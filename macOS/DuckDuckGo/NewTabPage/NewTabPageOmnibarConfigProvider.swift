@@ -106,6 +106,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
+    private let allowsSubscriptionUpsellProvider: () -> Bool
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
@@ -130,6 +131,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
+         allowsSubscriptionUpsellProvider: @escaping () -> Bool = { true },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
@@ -145,6 +147,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
+        self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.firePixel = firePixel
 
         Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
@@ -399,6 +402,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
                 currentModelIdProvider: { [aiChatPreferencesPersistor] in aiChatPreferencesPersistor.selectedModelId }
             ),
             isTrialEligible: isTrialEligibleProvider,
+            allowsSubscriptionUpsell: allowsSubscriptionUpsellProvider,
             isFireMode: { burnerMode.isBurner }
         )
         highUsageNoticeSource = store.makeHighUsageNoticeSource(modelProvider: { [aiChatPreferencesPersistor] in

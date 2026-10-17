@@ -113,12 +113,40 @@ struct EditingDriver {
     }
 
     /// Returns exactly what the current selection contains, by copying it. Returns `nil` when nothing is selected.
+    /// The previous pasteboard contents are restored afterwards.
     func selectedText() -> String? {
+        let pasteboard = NSPasteboard.general
+        let savedItems = Self.snapshot(of: pasteboard)
+        defer { Self.restore(savedItems, to: pasteboard) }
+
         let sentinel = "no-selection-\(UUID().uuidString)"
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(sentinel, forType: .string)
+        pasteboard.clearContents()
+        pasteboard.setString(sentinel, forType: .string)
         press(EditingKeys.copy)
-        let copied = NSPasteboard.general.string(forType: .string)
+        let copied = pasteboard.string(forType: .string)
         return copied == sentinel ? nil : copied
+    }
+
+    private static func snapshot(of pasteboard: NSPasteboard) -> [[NSPasteboard.PasteboardType: Data]] {
+        let items = pasteboard.pasteboardItems ?? []
+        return items.map { item in
+            var contents = [NSPasteboard.PasteboardType: Data]()
+            for type in item.types {
+                contents[type] = item.data(forType: type)
+            }
+            return contents
+        }
+    }
+
+    private static func restore(_ snapshot: [[NSPasteboard.PasteboardType: Data]], to pasteboard: NSPasteboard) {
+        pasteboard.clearContents()
+        let items = snapshot.map { contents -> NSPasteboardItem in
+            let item = NSPasteboardItem()
+            for (type, data) in contents {
+                item.setData(data, forType: type)
+            }
+            return item
+        }
+        pasteboard.writeObjects(items)
     }
 }

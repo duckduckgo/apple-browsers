@@ -68,9 +68,13 @@ class DuckAIOmnibarEditingTests: UITestCase {
         // The container hides the text view from the accessibility tree: the keys go to the focused text view through the app
         // and its contents are read by copying.
         let driver = EditingDriver(element: app, readsContentByCopying: true)
-        driver.press(EditingKeys.selectAll)
-        driver.type(prompt)
-        XCTAssertEqual(driver.rawValue, prompt)
+        // Keys sent right after the switch can be lost until the text view takes focus: retry replacing the text
+        for _ in 0..<3 {
+            driver.press(EditingKeys.selectAll)
+            driver.type(prompt)
+            if driver.rawValue == prompt { return driver }
+        }
+        XCTFail("The Duck.ai text view did not accept the typed prompt")
         return driver
     }
 

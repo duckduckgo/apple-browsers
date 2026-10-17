@@ -305,6 +305,9 @@ jobs:
         enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
         mode: deactivate
 
+    - name: "TEMP: UI diag before unit tests"
+      run: bash ../scripts/ci-ui-diag.sh before-unit-tests
+
     - name: Run unit tests
       id: run-unit-tests
       env:
@@ -329,6 +332,10 @@ jobs:
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml
 
+    - name: "TEMP: UI diag before integration tests"
+      if: always()
+      run: bash ../scripts/ci-ui-diag.sh before-integration-tests
+
     - name: Run integration tests
       id: run-integration-tests
       run: |
@@ -349,6 +356,18 @@ jobs:
           | tee ${{ matrix.flavor }}-integrationtests-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml
+
+    - name: "TEMP: UI diag after integration tests"
+      if: always()
+      run: bash ../scripts/ci-ui-diag.sh after-integration-tests
+
+    - name: "TEMP: Upload UI diag screenshots"
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ matrix.flavor }}-ui-diag
+        path: macOS/ui-diag
+        retention-days: 7
 
     - name: Compute Compilation Cache hash
       if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'

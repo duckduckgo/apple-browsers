@@ -502,6 +502,12 @@ extension TabBarViewItem/*: NSAccessibilityRadioButton*/ {
         NSNumber(value: isSelected)
     }
 
+    /// Exposes the hover state (highlight) of the tab for UI tests
+    @objc func accessibilityPlaceholderValue() -> String? {
+        guard AppVersion.runType == .uiTests else { return nil }
+        return isMouseOver ? "hovered" : "idle"
+    }
+
     @objc func isAccessibilitySelected() -> Bool {
         isSelected
     }

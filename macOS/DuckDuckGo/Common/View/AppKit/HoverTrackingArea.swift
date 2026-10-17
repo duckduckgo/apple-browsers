@@ -30,7 +30,7 @@ final class HoverTrackingArea: NSTrackingArea {
         let trackingArea = HoverTrackingArea(owner: view)
         view.addTrackingArea(trackingArea)
 
-        view.isMouseOver = view.isMouseLocationInsideBounds()
+        view.isMouseOver = view.isMouseLocationInsideBounds(inKeyWindowOnly: true)
         trackingArea.updateLayer(animated: false)
     }
 
@@ -62,6 +62,7 @@ final class HoverTrackingArea: NSTrackingArea {
     }
 
     private var observers: [NSKeyValueObservation]?
+    private var windowKeyStateObservers = [NSObjectProtocol]()
     private var lastEventTimestamp: TimeInterval = 0
 
     private static let mouseExitedSelector = NSStringFromSelector(#selector(NSResponder.mouseExited))
@@ -91,6 +92,12 @@ final class HoverTrackingArea: NSTrackingArea {
             },
             owner.observe(\.window) { [weak self] _, _ in self?.viewWindowDidChange() },
         ].compactMap { $0 }
+
+        observeWindowKeyState()
+    }
+
+    deinit {
+        windowKeyStateObservers.forEach(NotificationCenter.default.removeObserver)
     }
 
     required init?(coder: NSCoder) {
@@ -197,10 +204,41 @@ final class HoverTrackingArea: NSTrackingArea {
     }
 
     private func viewWindowDidChange() {
+        observeWindowKeyState()
+        refreshMouseOverState()
+    }
+
+    private func refreshMouseOverState() {
         guard let view else { return }
-        view.isMouseOver = view.isMouseLocationInsideBounds()
+        view.isMouseOver = view.isMouseLocationInsideBounds(inKeyWindowOnly: true)
         updateLayer(animated: false)
     }
+
+    /// The tracking area is `.activeInKeyWindow`: AppKit sends neither `mouseExited` when the window resigns key
+    /// (another app is activated, a menu or popup takes over, etc.) nor `mouseEntered` when it becomes key again
+    /// with the cursor already inside, so the hover state must be refreshed manually.
+    private func observeWindowKeyState() {
+        windowKeyStateObservers.forEach(NotificationCenter.default.removeObserver)
+        windowKeyStateObservers = []
+
+        guard let window = view?.window else { return }
+        let names: [Notification.Name] = [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification]
+        windowKeyStateObservers = names.map { name in
+            NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeMainThread { self?.refreshMouseOverState() }
+            }
+        }
+    }
+}
+
+private extension NSView {
+
+    /// `.activeInKeyWindow` tracking areas only get events when the window is key, hover state must follow the same rule.
+    func isMouseLocationInsideBounds(inKeyWindowOnly: Bool) -> Bool {
+        guard !inKeyWindowOnly || window?.isKeyWindow == true else { return false }
+        return isMouseLocationInsideBounds()
+    }
+
 }
 
 private extension HoverTrackingArea {

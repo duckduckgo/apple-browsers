@@ -29,6 +29,7 @@ final class TabBarViewItemTests: XCTestCase {
     var menu: NSMenu!
     var fireproofDomains: MockFireproofDomains!
     var tabBarViewItem: TabBarViewItem!
+    private var keepAlive = [NSWindow]()
 
     @MainActor
     override func setUp() {
@@ -40,7 +41,63 @@ final class TabBarViewItemTests: XCTestCase {
         tabBarViewItem.delegate = delegate
     }
 
+
+    // MARK: - Hover highlight of inactive tab
+
+    @MainActor
+    func testWhenWindowResignsKeyWithCursorOverInactiveTabThenHighlightIsRemoved() throws {
+        let window = try placeTabBarViewItemUnderCursor()
+        window.setKey(true)
+        hoverMouseOverView().updateTrackingAreas()
+        XCTAssertTrue(tabBarViewItem.isMouseOver)
+        XCTAssertEqual(highlightOverlayOpacity(), 0.8)
+
+        window.setKey(false)
+
+        XCTAssertFalse(tabBarViewItem.isMouseOver)
+        XCTAssertEqual(highlightOverlayOpacity(), 0)
+    }
+
+    @MainActor
+    func testWhenInactiveTabIsUpdatedInBackgroundWindowUnderCursorThenItIsNotHighlighted() throws {
+        let window = try placeTabBarViewItemUnderCursor()
+        window.setKey(false)
+
+        hoverMouseOverView().updateTrackingAreas()
+
+        XCTAssertFalse(tabBarViewItem.isMouseOver)
+        XCTAssertEqual(highlightOverlayOpacity(), 0)
+    }
+
+    @MainActor
+    private func placeTabBarViewItemUnderCursor() throws -> ToggleableKeyWindow {
+        let mouseLocation = NSEvent.mouseLocation
+        let frame = NSRect(x: mouseLocation.x - 100, y: mouseLocation.y - 20, width: 200, height: 40)
+        let window = ToggleableKeyWindow(contentRect: frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        tabBarViewItem.view.frame = window.contentView!.bounds
+        window.contentView!.addSubview(tabBarViewItem.view)
+        tabBarViewItem.isSelected = false
+        tabBarViewItem.view.layoutSubtreeIfNeeded()
+        keepAlive.append(window)
+        return window
+    }
+
+    @MainActor
+    private func hoverMouseOverView() -> MouseOverView {
+        tabBarViewItem.view.firstDescendant(ofType: MouseOverView.self)!
+    }
+
+    @MainActor
+    private func highlightOverlayOpacity() -> Float? {
+        let background = tabBarViewItem.view.firstDescendant(ofType: TabBackgroundView.self)
+        return background?.firstDescendant(ofType: ColorView.self)?.layer?.opacity
+    }
+
     override func tearDown() {
+        tabBarViewItem.view.removeFromSuperview()
+        keepAlive.forEach { $0.orderOut(nil) }
+        keepAlive.removeAll()
         delegate.clear()
         delegate = nil
         fireproofDomains = nil
@@ -423,4 +480,17 @@ private class TabBarViewModelMock: TabBarViewModel {
         self.error = error
         self.renderingProgressDidChangePublisher = .init()
     }
+}
+
+private extension NSView {
+
+    func firstDescendant<T: NSView>(ofType type: T.Type) -> T? {
+        for subview in subviews {
+            if let match = subview as? T ?? subview.firstDescendant(ofType: type) {
+                return match
+            }
+        }
+        return nil
+    }
+
 }

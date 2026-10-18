@@ -52,6 +52,7 @@ final class ConfigurationStore: ConfigurationStoring {
     }
 
     private let defaults: KeyValueStoring
+    private let directory: URL?
 
     private var trackerRadarEtag: String? {
         get {
@@ -116,8 +117,13 @@ final class ConfigurationStore: ConfigurationStoring {
         }
     }
 
-    init(defaults: KeyValueStoring = UserDefaults.appConfiguration) {
+    convenience init(defaults: KeyValueStoring = UserDefaults.appConfiguration) {
+        self.init(defaults: defaults, directory: nil)
+    }
+
+    init(defaults: KeyValueStoring, directory: URL?) {
         self.defaults = defaults
+        self.directory = directory
     }
 
     func loadEtag(for configuration: Configuration) -> String? {
@@ -216,7 +222,7 @@ final class ConfigurationStore: ConfigurationStoring {
     }
 
     func fileUrl(for configuration: Configuration) -> URL {
-        let dir = FileManager.default.configurationDirectory()
+        let dir = directory ?? FileManager.default.configurationDirectory()
         return dir.appendingPathComponent(configuration.fileName)
     }
 

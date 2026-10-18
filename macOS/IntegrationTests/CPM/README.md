@@ -24,7 +24,7 @@ handlers, and system WebKit:
   works with the diagnostics recorder absent, delegate proxy off and startup navigation gate off.
 - `testRuntimeKillSwitchPreservesContextAndAllowsRecoveryWhenEnabled`: disable the production flag,
   crash the Network process and verify lost replies with the original background PID retained;
-  enable the flag in that same manager and require background restart, existing-document response,
+  enable the flag through its update publisher in that same manager and require background restart without navigation, existing-document response,
   and a healthy subsequent navigation without replacing the context.
 
 Select **CPM Integration Tests - Fixes Disabled** and test again. It selects the first three tests
@@ -59,7 +59,9 @@ On 18 October 2026, macOS 26.7.1 / Xcode 27.1: enabled scheme **4 passed**, disa
 of all four methods, without rebuilding. All 4,717 app/XCTest bundle files stayed byte-identical.
 The earlier telemetry-base reproduction failed both scenarios. The response-policy guard was
 required to close a separately reproduced action-to-response Network-process replacement race.
-The full shared package passed **774 tests**; production macOS and iOS app builds passed, and the
+The full shared package passed **778 tests in each of two complete runs**, including four new
+regressions for initially disabled polling, runtime cancellation/resumption, enabling a healthy
+watch, and owner release with polling/subscription active; production macOS and iOS app builds passed, and the
 separate production macOS app passed deep/strict code-signature verification.
 
 The test host's root app and XCTest signatures verify. A whole-bundle deep check of this test-only

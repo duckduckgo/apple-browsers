@@ -6,7 +6,7 @@ Base: `alex/cpm-messaging-readiness-telemetry` (#7376), the same base as #7379. 
 
 Cookie Pop-up Management can stop answering across all tabs after WebKit replaces its Network process, while the extension background still appears loaded. Restart the affected background while preserving the extension context and the content scripts already injected into open documents. Check before navigation, again before the main-frame HTTP response is allowed to execute document-start scripts, and periodically while that background exists.
 
-The independent `webExtensions.cpmNetworkProcessRecovery` flag defaults to disabled on iOS and macOS and is read immediately before recovery. Rollout is controlled by that subfeature in `duckduckgo/privacy-configuration`; this change does not enable it remotely.
+The independent `webExtensions.cpmNetworkProcessRecovery` flag defaults to disabled on iOS and macOS and is read immediately before recovery. Runtime disable cancels periodic checks; flag updates resume recovery on the existing background without navigation, retaining the original Network-process baseline. Rollout is controlled by that subfeature in `duckduckgo/privacy-configuration`; this change does not enable it remotely.
 
 ### Testing Steps
 
@@ -29,7 +29,7 @@ The production branch contains the shared unit regressions. As in #7379, the app
 Verified locally on macOS 26.7.1 / Xcode 27.1:
 
 - Telemetry-base reproduction: **2 functional failures, 0 skips**. The additional action/response race also failed before the response guard was added.
-- Full WebExtensions package: **774 passed, 0 failed**, repeated across complete runs; 16 new unit regressions.
+- Full WebExtensions package: **778 passed, 0 failed**, in two complete runs; 20 new unit regressions, including no polling while disabled, runtime cancellation/resumption and owner release during active polling.
 - Same app/XCTest binaries: **ON 4 passed → OFF 3 expected functional failures → ON 12/12 executions passed** (all four tests repeated three times), with no skips or expected-failure annotations. All 4,717 bundle files were byte-identical across the cycle.
 - Separate production macOS app: **build passed and deep/strict code-signature verification passed**, without app harness hooks.
 - Full production iOS app: **build passed** for the iOS 26.4 Simulator, including the platform response guard and feature flag.
@@ -42,7 +42,7 @@ Medium: restarts only the embedded CPM background after an observed Network-proc
 #### What could go wrong?
 
 - A replaced/unloaded background could be restarted → weak references, live context/view identity checks and unload cleanup discard its watch; unit tests cover replacement, unload and synchronous replacement during restart.
-- A restart could repeat or outlive flag disable → clear the watch after a successful restart and check the runtime flag immediately before acting; unit and app tests cover the transitions.
+- A restart could repeat or outlive flag disable → clear the watch after a successful restart, check the runtime flag before acting, and cancel periodic checks when disabled; flag-update subscriptions resume an existing watch when re-enabled. Unit and app tests cover the transitions.
 - WebKit SPI or a usable process identifier could be unavailable → guarded selectors and positive PID checks leave the background alone. No speculative restart is triggered by a missing identifier or an ordinary CPM timeout.
 
 ### Quality Considerations

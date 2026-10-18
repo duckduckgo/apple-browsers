@@ -370,6 +370,12 @@ extension DuckAIOmnibarEditingTests {
         XCTAssertEqual(bar.rawValue, mouseText + "!")
     }
 
+    func test_shiftClick_pastTheTextOnTheFirstLine_extendsTheSelectionToTheEnd() {
+        typeMouseText()
+        bar.shiftClick(bar.point(x: Points.pastTheTextX, y: Points.firstLineY))
+        XCTAssertEqual(bar.selectedText(), mouseText)
+    }
+
     func test_drag_fromTheFirstWordPastTheTextEnd_selectsTheTail() {
         typeMouseText()
         bar.drag(from: bar.point(x: Points.onFirstWord, y: Points.firstLineY), to: bar.point(x: Points.pastTheTextX, y: Points.firstLineY))

@@ -125,6 +125,9 @@ public enum WebExtensionManagerFactory {
             isCPMMessagingHangRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
             },
+            isCPMNetworkProcessRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,

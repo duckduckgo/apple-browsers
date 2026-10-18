@@ -77,6 +77,7 @@ public final class WebExtensionLifecycleCoordinator {
     }
 
     public var initialLoadWaiter: WebExtensionInitialLoadWaiter? {
+        manager.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
         guard initialLoadGateEnabledProvider(), !isInitialLoadGateOpen else { return nil }
         return { [weak self] in
             await self?.waitOnInitialLoadAndSync()

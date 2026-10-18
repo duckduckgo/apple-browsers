@@ -156,6 +156,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
 
+    private let cpmNetworkProcessRecovery: CPMNetworkProcessRecovery
+
     // MARK: - AsyncStream
 
     private var continuation: AsyncStream<Void>.Continuation?
@@ -172,6 +174,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public init(configuration: WebExtensionConfigurationProviding,
+                controllerConfiguration: WKWebExtensionController.Configuration? = nil,
                 windowTabProvider: WebExtensionWindowTabProviding,
                 storageProvider: WebExtensionStorageProviding,
                 installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
@@ -184,13 +187,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
-        let controllerConfiguration = WKWebExtensionController.Configuration.default()
+        let controllerConfiguration = controllerConfiguration ?? WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
         // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,
@@ -221,6 +225,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
+        self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(isEnabled: isCPMNetworkProcessRecoveryEnabled)
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
@@ -413,6 +418,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
+            cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
             Logger.webExtensions.debug("✅ Unloaded extension '\(identifier)' from memory")
         } catch {
@@ -509,6 +515,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             do {
                 try controller.unload(context)
                 permissionController?.didUnload(identifier)
+                cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
                 cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
                 // Capture the parsed extension only after a confirmed unload, so the cache never
                 // holds an extension still loaded in the controller. reloadInstalledExtensions()
@@ -576,6 +583,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
+            cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         } catch {
             // The extension and its native handlers are still active when unload fails.
@@ -877,6 +885,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
     }
 
+    @MainActor
+    public func recoverEmbeddedBackgroundAfterNetworkProcessReplacement() {
+        cpmNetworkProcessRecovery.recoverIfNeeded()
+    }
+
     func notifyUpdate() {
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
@@ -919,6 +932,12 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        forExtensionContext extensionContext: WKWebExtensionContext) {
         guard extensionContext.webExtension.duckDuckGoWebExtensionType == .embedded else { return }
         MainActor.assumeIsolated {
+            cpmNetworkProcessRecovery.watch(webView, identifier: extensionContext.uniqueIdentifier) { [weak controller, weak extensionContext, weak webView] in
+                guard let extensionContext, let webView,
+                      controller?.extensionContexts.contains(extensionContext) == true,
+                      extensionContext.responds(to: NSSelectorFromString("_backgroundWebView")) else { return false }
+                return extensionContext.value(forKey: "_backgroundWebView") as? WKWebView === webView
+            }
             cpmDiagnosticsRecorder?.didCreateBackgroundWebView(webView, for: extensionContext)
         }
     }

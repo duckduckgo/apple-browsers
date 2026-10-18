@@ -749,46 +749,58 @@ final class TabManagerTests: XCTestCase {
         }
     }
 
-    func testControllerForwardsRefreshAndReloadRetryIntentAfterFailure() throws {
+    func testControllerForwardsRefreshAndReloadRetryIntentAfterFailure() async throws {
         let retryCases = [(refresh: true, hasURL: true), (refresh: true, hasURL: false),
                           (refresh: false, hasURL: true), (refresh: false, hasURL: false)]
         for retryCase in retryCases {
-            let manager = try makeManager(TabsModel(desktop: false),
-                                          featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs]))
-            let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
-            guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
-            controller.attachWebView(configuration: WKWebViewConfiguration(), andLoadRequest: nil, consumeCookies: false,
-                                     customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) })
-            let webView = try XCTUnwrap(controller.webView as? InitialPromptRetryWebView)
-            let navigationSource = WKWebView()
-            let url = URL(string: "https://duck.ai/chat")!
-            webView.currentURL = retryCase.hasURL ? url : nil
-            var consumptionCount = 0
-            let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) { consumptionCount += 1 }
-            controller.setInitialAIChatTabAttachmentPrompt(delivery)
-            let navigation = try makeNavigation(using: navigationSource)
-            controller.webView(webView, didStartProvisionalNavigation: navigation)
-            let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
-            controller.webView(webView, didFailProvisionalNavigation: navigation, withError: error)
-            controller.url = url
-            controller.error.isHidden = false
+            let webViewReleased = expectation(description: "Retry web view released")
+            let contentControllerReleased = expectation(description: "Retry content controller released")
+            try autoreleasepool {
+                let controller = TabViewController.fake(
+                    customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) },
+                    featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs]),
+                    specialErrorPageNavigationHandler: SpecialErrorPageNavigationHandler(
+                        maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
+                            maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager()
+                        )
+                    )
+                )
+                guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
+                let webView = try XCTUnwrap(controller.webView as? InitialPromptRetryWebView)
+                let contentController = webView.configuration.userContentController
+                webView.onDeinit { webViewReleased.fulfill() }
+                contentController.onDeinit { contentControllerReleased.fulfill() }
+                let navigationSource = WKWebView()
+                let url = URL(string: "https://duck.ai/chat")!
+                webView.currentURL = retryCase.hasURL ? url : nil
+                var consumptionCount = 0
+                let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) { consumptionCount += 1 }
+                controller.setInitialAIChatTabAttachmentPrompt(delivery)
+                let navigation = try makeNavigation(using: navigationSource)
+                controller.webView(webView, didStartProvisionalNavigation: navigation)
+                let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
+                controller.webView(webView, didFailProvisionalNavigation: navigation, withError: error)
+                controller.url = url
+                controller.error.isHidden = false
 
-            if retryCase.refresh {
-                controller.refresh()
-            } else {
-                controller.reload()
-                XCTAssertEqual(webView.reloadCount, 1)
-            }
-            controller.webView(webView, didStartProvisionalNavigation: try makeNavigation(using: navigationSource))
+                if retryCase.refresh {
+                    controller.refresh()
+                } else {
+                    controller.reload()
+                    XCTAssertEqual(webView.reloadCount, 1)
+                }
+                controller.webView(webView, didStartProvisionalNavigation: try makeNavigation(using: navigationSource))
 
-            XCTAssertTrue(controller.isProtectedFromCacheEviction)
-            guard case .recipient(let received) = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
-                return XCTFail("Retry must preserve recipient routing")
+                XCTAssertTrue(controller.isProtectedFromCacheEviction)
+                guard case .recipient(let received) = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
+                    return XCTFail("Retry must preserve recipient routing")
+                }
+                XCTAssertEqual(received, .queryPrompt("initial", autoSubmit: true))
+                XCTAssertNil(delivery.consume())
+                XCTAssertEqual(consumptionCount, 1)
+                XCTAssertFalse(controller.isProtectedFromCacheEviction)
             }
-            XCTAssertEqual(received, .queryPrompt("initial", autoSubmit: true))
-            XCTAssertNil(delivery.consume())
-            XCTAssertEqual(consumptionCount, 1)
-            XCTAssertFalse(controller.isProtectedFromCacheEviction)
+            await fulfillment(of: [webViewReleased, contentControllerReleased], timeout: 3.0)
         }
     }
 

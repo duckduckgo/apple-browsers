@@ -2005,6 +2005,7 @@ class TabViewController: UIViewController {
         cachedRuntimeConfigurationForDomain = [:]
         adBlockingNavigationHandler.handleReload()
         if duckPlayerNavigationHandler.handleReload(webView: webView) == .reload {
+            initialAIChatPromptSession.willRetryFailedNavigation()
             webView.reload()
         }
         delegate?.tabLoadingStateDidChange(tab: self)
@@ -3442,7 +3443,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
-            userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
+            userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
         }
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
@@ -3500,7 +3501,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
-            userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
+            userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
         }
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
@@ -4966,7 +4967,8 @@ extension TabViewController: UIGestureRecognizerDelegate {
         
         requeryLogic.onRefresh()
         if isError || webView.url == nil, let url = url {
-            load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: webView.url != nil)
+            let retriesInitialPrompt = initialAIChatPromptSession.willRetryFailedNavigation()
+            load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: webView.url != nil && !retriesInitialPrompt)
         } else {
             reload()
         }

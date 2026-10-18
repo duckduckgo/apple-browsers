@@ -737,6 +737,46 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         XCTAssertTrue(webView.prompts.isEmpty)
     }
 
+    func testNavigationFailureCancelsQueuedFollowUpButPreservesInitialPromptForReplacement() async throws {
+        let script = makeScript()
+        let waitStarted = expectation(description: "Follow-up waits for initial prompt")
+        let waitFinished = expectation(description: "Cancelled follow-up stops waiting")
+        let unexpected = expectation(description: "Cancelled follow-up is not dispatched")
+        unexpected.isInverted = true
+        webView.onPrompt = { _ in unexpected.fulfill() }
+        var consumptionCount = 0
+        let initial = AIChatNativePrompt.queryPrompt("initial", autoSubmit: true)
+        let delivery = AIChatInitialPromptDelivery(prompt: initial, waitUntilReady: { gate, timeout in
+            let ready = await gate.waitUntilReady(timeout: timeout, onWaitStarted: { waitStarted.fulfill() })
+            waitFinished.fulfill()
+            return ready
+        }, onConsumed: { consumptionCount += 1 })
+        initialPromptSession.install(delivery)
+        let navigation = DummyWKNavigation()
+        initialPromptSession.didStartNavigation(navigation)
+        script.submitPrompt("cancelled follow-up", images: nil, modelId: nil)
+        await fulfillment(of: [waitStarted], timeout: 1)
+
+        XCTAssertTrue(initialPromptSession.didFailNavigation(navigation))
+        script.cancelQueuedTabContextSubmissions()
+        await fulfillment(of: [waitFinished], timeout: 1)
+
+        XCTAssertTrue(delivery.hasPendingPrompt)
+        XCTAssertTrue(initialPromptSession.willRetryFailedNavigation())
+        XCTAssertFalse(initialPromptSession.didStartNavigation(DummyWKNavigation()))
+        script.cleanUpForReplacement()
+        let replacement = makeScript()
+        let pull = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let received = try await pull([:], .mock()) as? AIChatNativePrompt
+        let duplicate = try await pull([:], .mock()) as? AIChatNativePrompt
+        await fulfillment(of: [unexpected], timeout: 0.1)
+
+        XCTAssertEqual(received, initial)
+        XCTAssertNil(duplicate)
+        XCTAssertEqual(consumptionCount, 1)
+        XCTAssertTrue(webView.prompts.isEmpty)
+    }
+
     func testReplacementStartsWaitingBeforeOldWaitingSubmissionFinishes() async throws {
         let old = makeScript()
         let oldWaitStarted = expectation(description: "Old script is waiting on delivery")

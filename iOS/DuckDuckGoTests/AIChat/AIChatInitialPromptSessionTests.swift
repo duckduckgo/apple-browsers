@@ -186,13 +186,125 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertEqual(consume(session), prompt)
     }
 
-    func testMatchingFailureCancelsWithoutResettingRecipientRouting() {
+    func testMatchingFailurePreservesPromptForRetryAndSingleConsumption() {
+        let session = AIChatInitialPromptSession()
+        var consumptionCount = 0
+        session.install(AIChatInitialPromptDelivery(prompt: prompt) { consumptionCount += 1 })
+        let failedNavigation = DummyWKNavigation()
+        session.didStartNavigation(failedNavigation)
+
+        XCTAssertTrue(session.didFailNavigation(failedNavigation))
+        XCTAssertTrue(session.isProtectedFromCacheEviction)
+        XCTAssertTrue(session.willRetryFailedNavigation())
+        XCTAssertFalse(session.didStartNavigation(DummyWKNavigation()))
+        XCTAssertFalse(session.didFailNavigation(failedNavigation))
+
+        XCTAssertEqual(consume(session), prompt)
+        XCTAssertNil(consume(session))
+        XCTAssertEqual(consumptionCount, 1)
+        XCTAssertFalse(session.isProtectedFromCacheEviction)
+    }
+
+    func testRepeatedFailedRetriesPreserveTheSamePrompt() {
+        let session = installedSession()
+        var navigation = DummyWKNavigation()
+        session.didStartNavigation(navigation)
+
+        for _ in 0..<3 {
+            XCTAssertTrue(session.didFailNavigation(navigation))
+            XCTAssertTrue(session.willRetryFailedNavigation())
+            let retry = DummyWKNavigation()
+            XCTAssertFalse(session.didFailNavigation(navigation))
+            XCTAssertFalse(session.didStartNavigation(retry))
+            XCTAssertFalse(session.didFailNavigation(navigation))
+            navigation = retry
+        }
+
+        XCTAssertEqual(consume(session), prompt)
+        XCTAssertNil(consume(session))
+    }
+
+    func testReloadWithoutFailureDoesNotPreserveUnconsumedPrompt() {
+        let session = installedSession()
+        session.didStartNavigation(DummyWKNavigation())
+
+        XCTAssertFalse(session.willRetryFailedNavigation())
+        XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
+
+        XCTAssertNil(consume(session))
+        XCTAssertFalse(session.isProtectedFromCacheEviction)
+    }
+
+    func testExplicitLoadAfterFailureCancelsPromptAndPreventsRetry() {
         let session = installedSession()
         let navigation = DummyWKNavigation()
         session.didStartNavigation(navigation)
+        session.didFailNavigation(navigation)
+
+        XCTAssertTrue(session.willLoad(isInternalRetry: false))
+        XCTAssertFalse(session.willRetryFailedNavigation())
+        XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
+
+        XCTAssertNil(consume(session))
+        XCTAssertFalse(session.isProtectedFromCacheEviction)
+    }
+
+    func testNavigationAfterFailureWithoutRetryDiscardsPrompt() {
+        let session = installedSession()
+        let navigation = DummyWKNavigation()
+        session.didStartNavigation(navigation)
+        session.didFailNavigation(navigation)
+
+        XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
+
+        XCTAssertFalse(session.willRetryFailedNavigation())
+        XCTAssertNil(consume(session))
+        assertShared(session.consumeInitialPrompt())
+    }
+
+    func testConsumedPromptIsNotRestoredAfterFailure() {
+        let session = installedSession()
+        let navigation = DummyWKNavigation()
+        session.didStartNavigation(navigation)
+        XCTAssertEqual(consume(session), prompt)
+
         XCTAssertTrue(session.didFailNavigation(navigation))
+        XCTAssertFalse(session.willRetryFailedNavigation())
+
+        XCTAssertNil(consume(session))
+        XCTAssertFalse(session.isProtectedFromCacheEviction)
+    }
+
+    func testCancellationAfterFailurePreventsRetry() {
+        let session = installedSession()
+        let navigation = DummyWKNavigation()
+        session.didStartNavigation(navigation)
+        session.didFailNavigation(navigation)
+
+        session.cancel()
+
+        XCTAssertFalse(session.willRetryFailedNavigation())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
         XCTAssertNil(consume(session))
+    }
+
+    func testTimeoutAfterFailureDiscardsPromptAndPreventsRetry() async throws {
+        let session = AIChatInitialPromptSession()
+        session.install(AIChatInitialPromptDelivery(prompt: prompt, consumptionTimeout: 0) {
+            XCTFail("Timed-out prompt must not be consumed")
+        })
+        let navigation = DummyWKNavigation()
+        session.didStartNavigation(navigation)
+        session.didFailNavigation(navigation)
+        let connection = session.connect()
+        let wait = try XCTUnwrap(connection.captureInitialPromptWait())
+
+        let canContinue = await wait()
+
+        XCTAssertTrue(canContinue)
+        XCTAssertFalse(session.willRetryFailedNavigation())
+        XCTAssertNil(consume(session))
+        XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
     func testForeignAndNilFailuresPreserveDelivery() {

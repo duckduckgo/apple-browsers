@@ -566,7 +566,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         cancelQueuedTabContextSubmissions()
     }
 
-    private func cancelQueuedTabContextSubmissions() {
+    @MainActor
+    func cancelQueuedTabContextSubmissions() {
         tabContextSubmissionGeneration += 1
         pendingTabContextSubmission?.cancel()
         pendingTabContextSubmission = nil

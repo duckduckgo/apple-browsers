@@ -740,8 +740,51 @@ final class TabManagerTests: XCTestCase {
             } else {
                 controller.webView(webView, didFail: current, withError: error)
             }
-            XCTAssertFalse(controller.isProtectedFromCacheEviction)
+            XCTAssertTrue(controller.isProtectedFromCacheEviction)
+            controller.cancelPendingAIChatTabAttachmentPrompt()
             XCTAssertNil(delivery.consume())
+        }
+    }
+
+    func testControllerForwardsRefreshAndReloadRetryIntentAfterFailure() throws {
+        let retryCases = [(refresh: true, hasURL: true), (refresh: true, hasURL: false),
+                          (refresh: false, hasURL: true), (refresh: false, hasURL: false)]
+        for retryCase in retryCases {
+            let manager = try makeManager(TabsModel(desktop: false),
+                                          featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs]))
+            let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+            guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
+            controller.attachWebView(configuration: WKWebViewConfiguration(), andLoadRequest: nil, consumeCookies: false,
+                                     customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) })
+            let webView = try XCTUnwrap(controller.webView as? InitialPromptRetryWebView)
+            let url = URL(string: "https://duck.ai/chat")!
+            webView.currentURL = retryCase.hasURL ? url : nil
+            var consumptionCount = 0
+            let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) { consumptionCount += 1 }
+            controller.setInitialAIChatTabAttachmentPrompt(delivery)
+            let navigation = WKNavigation()
+            controller.webView(webView, didStartProvisionalNavigation: navigation)
+            let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
+            controller.webView(webView, didFailProvisionalNavigation: navigation, withError: error)
+            controller.url = url
+            controller.error.isHidden = false
+
+            if retryCase.refresh {
+                controller.refresh()
+            } else {
+                controller.reload()
+                XCTAssertEqual(webView.reloadCount, 1)
+            }
+            controller.webView(webView, didStartProvisionalNavigation: WKNavigation())
+
+            XCTAssertTrue(controller.isProtectedFromCacheEviction)
+            guard case .recipient(let received) = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
+                return XCTFail("Retry must preserve recipient routing")
+            }
+            XCTAssertEqual(received, .queryPrompt("initial", autoSubmit: true))
+            XCTAssertNil(delivery.consume())
+            XCTAssertEqual(consumptionCount, 1)
+            XCTAssertFalse(controller.isProtectedFromCacheEviction)
         }
     }
 
@@ -1213,6 +1256,23 @@ final class TabManagerTests: XCTestCase {
         return manager
     }
 
+}
+
+@MainActor
+private final class InitialPromptRetryWebView: WKWebView {
+    var currentURL: URL?
+    private(set) var reloadCount = 0
+
+    override var url: URL? { currentURL }
+
+    override func load(_ request: URLRequest) -> WKNavigation? {
+        WKNavigation()
+    }
+
+    override func reload() -> WKNavigation? {
+        reloadCount += 1
+        return WKNavigation()
+    }
 }
 
 /// Counts `set` calls so tests can assert how many disk writes actually landed.

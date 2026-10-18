@@ -80,6 +80,7 @@ final class AIChatInitialPromptSession {
     private var delivery: AIChatInitialPromptDelivery?
     private var usesRecipientBoundInitialPrompt = false
     private var awaitsNavigation = false
+    private var hasFailedNavigation = false
     private var navigation: (any WebViewNavigation & AnyObject)?
     private var connectionID: UUID?
 
@@ -131,6 +132,7 @@ final class AIChatInitialPromptSession {
         guard usesRecipientBoundInitialPrompt else { return .shared }
         let delivery = delivery
         self.delivery = nil
+        hasFailedNavigation = false
         return .recipient(delivery?.consume())
     }
 
@@ -141,6 +143,7 @@ final class AIChatInitialPromptSession {
         delivery?.cancel()
         delivery = nil
         awaitsNavigation = false
+        hasFailedNavigation = false
         preparation?.cancel()
     }
 
@@ -156,6 +159,13 @@ final class AIChatInitialPromptSession {
     }
 
     @discardableResult
+    func willRetryFailedNavigation() -> Bool {
+        guard hasFailedNavigation, delivery?.hasPendingPrompt == true else { return false }
+        awaitsNavigation = true
+        return true
+    }
+
+    @discardableResult
     func didStartNavigation(_ navigation: (any WebViewNavigation & AnyObject)?) -> Bool {
         let shouldCancel = !awaitsNavigation
         if shouldCancel {
@@ -163,6 +173,7 @@ final class AIChatInitialPromptSession {
             usesRecipientBoundInitialPrompt = false
         }
         awaitsNavigation = false
+        hasFailedNavigation = false
         self.navigation = navigation
         return shouldCancel
     }
@@ -170,7 +181,11 @@ final class AIChatInitialPromptSession {
     @discardableResult
     func didFailNavigation(_ navigation: (any WebViewNavigation & AnyObject)?) -> Bool {
         guard let navigation, self.navigation === navigation, !awaitsNavigation else { return false }
-        cancel()
+        if delivery?.hasPendingPrompt == true {
+            hasFailedNavigation = true
+        } else {
+            cancel()
+        }
         return true
     }
 }

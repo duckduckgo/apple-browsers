@@ -348,8 +348,8 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
-        XCTAssertEqual(delegate.submittedImages?.count, 3)
-        XCTAssertEqual(delegate.submittedFiles?.count, 3)
+        XCTAssertEqual(delegate.submittedAttachments?.images?.count, 3)
+        XCTAssertEqual(delegate.submittedAttachments?.files?.count, 3)
     }
 
     func testWhenSubmittingFileAttachmentWithoutTextThenFileIsSubmitted() {
@@ -364,7 +364,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(delegate.submittedPrompt, "")
-        XCTAssertEqual(delegate.submittedFiles?.count, 1)
+        XCTAssertEqual(delegate.submittedAttachments?.files?.count, 1)
     }
 
     func testWhenToolbarSubmitHasFileAttachmentWithoutTextThenFileIsSubmitted() {
@@ -380,7 +380,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         flushMainQueue()
 
         XCTAssertEqual(delegate.submittedPrompt, "")
-        XCTAssertEqual(delegate.submittedFiles?.count, 1)
+        XCTAssertEqual(delegate.submittedAttachments?.files?.count, 1)
     }
 
     func testWhenToolbarAttachmentOnlySubmitWouldExceedFileLimitThenPromptDoesNotSubmit() {
@@ -397,7 +397,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
 
         XCTAssertNil(delegate.submittedPrompt)
-        XCTAssertNil(delegate.submittedFiles)
+        XCTAssertNil(delegate.submittedAttachments?.files)
         XCTAssertEqual(
             sut.viewController.attachmentValidationMessage,
             UserText.aiChatAttachmentFileCountLimit(maxFilesPerConversation: 3)
@@ -433,7 +433,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertNil(delegate.submittedPrompt)
-        XCTAssertNil(delegate.submittedFiles)
+        XCTAssertNil(delegate.submittedAttachments?.files)
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
@@ -480,9 +480,9 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "use the file", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(delegate.submittedPrompt, "use the file")
-        XCTAssertEqual(delegate.submittedFiles?.count, 1)
-        XCTAssertEqual(delegate.submittedFiles?.first?.fileName, "a.pdf")
-        XCTAssertEqual(delegate.submittedFiles?.first?.mimeType, "application/pdf")
+        XCTAssertEqual(delegate.submittedAttachments?.files?.count, 1)
+        XCTAssertEqual(delegate.submittedAttachments?.files?.first?.fileName, "a.pdf")
+        XCTAssertEqual(delegate.submittedAttachments?.files?.first?.mimeType, "application/pdf")
     }
 
     func testWhenModelChangeMakesInvalidFileValidButSourceIsMissingThenExistingErrorIsPreserved() {
@@ -524,7 +524,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
 
         XCTAssertNil(delegate.submittedPrompt)
-        XCTAssertNil(delegate.submittedFiles)
+        XCTAssertNil(delegate.submittedAttachments?.files)
         XCTAssertEqual(
             sut.viewController.attachmentValidationMessage,
             UserText.aiChatAttachmentFileTooManyPages(maxPagesPerFile: 8)
@@ -710,7 +710,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
         XCTAssertEqual(sut.viewController.currentAttachments.count, 0)
-        XCTAssertNil(delegate.submittedImages)
+        XCTAssertNil(delegate.submittedAttachments?.images)
     }
 
     func testWhenFileUsageBecomesOverLimitBeforeSubmitThenPromptDoesNotSubmitAndAttachmentsRemain() {
@@ -725,7 +725,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
-        XCTAssertNil(delegate.submittedFiles)
+        XCTAssertNil(delegate.submittedAttachments?.files)
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
@@ -742,7 +742,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
 
-        XCTAssertNil(delegate.submittedImages)
+        XCTAssertNil(delegate.submittedAttachments?.images)
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
@@ -848,13 +848,11 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 @MainActor
 private final class SpyUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
-    var submittedImages: [AIChatNativePrompt.NativePromptImage]?
-    var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
+    var submittedAttachments: AIChatPromptAttachments?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool) {
         submittedPrompt = prompt
-        submittedImages = images
-        submittedFiles = files
+        submittedAttachments = attachments
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}
     func unifiedToggleInputDidRequestVoiceSearch() {}

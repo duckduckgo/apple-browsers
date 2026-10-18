@@ -45,8 +45,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool)
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
@@ -64,14 +63,13 @@ protocol AIChatUserScriptProviding: AnyObject {
 
 extension AIChatUserScriptProviding {
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
                       tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
-        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+        submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
                      pageContext: pageContext, reasoningEffort: reasoningEffort,
                      tabAttachmentRequest: tabAttachmentRequest, termsAccepted: false, onPromptDispatched: nil)
     }
@@ -137,8 +135,7 @@ protocol AIChatContentHandling: AnyObject {
 
     /// Submits a rich native prompt to the AI Chat.
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
@@ -181,14 +178,13 @@ protocol AIChatContentHandling: AnyObject {
 
 extension AIChatContentHandling {
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
                       reasoningEffort: AIChatReasoningEffort?,
                       tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
-        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+        submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
                      pageContext: pageContext, reasoningEffort: reasoningEffort,
                      tabAttachmentRequest: tabAttachmentRequest, termsAccepted: false, onPromptDispatched: nil)
     }
@@ -360,8 +356,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     }
 
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
@@ -373,7 +368,7 @@ final class AIChatContentHandler: AIChatContentHandling {
             Task { @MainActor in tabAttachmentRequest?.cancel() }
             return
         }
-        userScript.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+        userScript.submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
                                 pageContext: pageContext, reasoningEffort: reasoningEffort,
                                 tabAttachmentRequest: tabAttachmentRequest, termsAccepted: termsAccepted,
                                 onPromptDispatched: onPromptDispatched)

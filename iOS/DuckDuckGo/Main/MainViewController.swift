@@ -3151,8 +3151,7 @@ class MainViewController: UIViewController {
                       tools: [AIChatRAGTool]? = nil,
                       modelId: String? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil,
-                      images: [AIChatNativePrompt.NativePromptImage]? = nil,
-                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      attachments: AIChatPromptAttachments = .none,
                       termsAccepted: Bool = false,
                       source: AIChatEntryPointSource) {
         guard let currentTab else {
@@ -3162,7 +3161,7 @@ class MainViewController: UIViewController {
         if currentTab.tabModel.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: currentTab.tabModel.openedAfterIdle)
         }
-        let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
+        let hasAttachments = !attachments.isEmpty
         if Self.hasAutoSubmittedDuckAIPrompt(query: query, autoSend: autoSend, hasAttachments: hasAttachments) {
             postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
         } else {
@@ -3177,8 +3176,7 @@ class MainViewController: UIViewController {
                 tools: tools,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort,
-                images: images,
-                files: files,
+                attachments: attachments,
                 termsAccepted: termsAccepted
             )
         }
@@ -4866,8 +4864,7 @@ class MainViewController: UIViewController {
                     tools: [AIChatRAGTool]? = nil,
                     modelId: String? = nil,
                     reasoningEffort: AIChatReasoningEffort? = nil,
-                    images: [AIChatNativePrompt.NativePromptImage]? = nil,
-                    files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                    attachments: AIChatPromptAttachments = .none,
                     reportsNewTab: Bool? = nil,
                     forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false,
@@ -4875,7 +4872,7 @@ class MainViewController: UIViewController {
 
         openAIChat(source: source, query, autoSend: autoSend, payload: payload, flowType: flowType,
                    tools: tools, modelId: modelId, reasoningEffort: reasoningEffort,
-                   images: images, files: files, reportsNewTab: reportsNewTab, forcesNewTab: forcesNewTab,
+                   attachments: attachments, reportsNewTab: reportsNewTab, forcesNewTab: forcesNewTab,
                    fromDeepLink: fromDeepLink, termsAccepted: termsAccepted, tabAttachmentRequest: nil)
     }
 
@@ -4887,8 +4884,7 @@ class MainViewController: UIViewController {
                     tools: [AIChatRAGTool]? = nil,
                     modelId: String? = nil,
                     reasoningEffort: AIChatReasoningEffort? = nil,
-                    images: [AIChatNativePrompt.NativePromptImage]? = nil,
-                    files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                    attachments: AIChatPromptAttachments = .none,
                     reportsNewTab: Bool? = nil,
                     forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false,
@@ -4908,8 +4904,7 @@ class MainViewController: UIViewController {
             tools: tools,
             modelId: modelId,
             reasoningEffort: reasoningEffort,
-            images: images,
-            files: files,
+            attachments: attachments,
             reportsNewTab: reportsNewTab,
             forcesNewTab: forcesNewTab,
             fromDeepLink: fromDeepLink,
@@ -5016,7 +5011,6 @@ class MainViewController: UIViewController {
     ///   - flowType: Optional onboarding flow type to hand off to Duck.ai.
     ///   - tools: Optional RAG tools available in AI Chat
     ///   - modelId: Optional model ID to use for AI Chat
-    ///   - images: Optional images to send to AI Chat
     private func openAIChatInTab(source: AIChatEntryPointSource,
                                  _ query: String? = nil,
                                  autoSend: Bool = false,
@@ -5025,8 +5019,7 @@ class MainViewController: UIViewController {
                                  tools: [AIChatRAGTool]? = nil,
                                  modelId: String? = nil,
                                  reasoningEffort: AIChatReasoningEffort? = nil,
-                                 images: [AIChatNativePrompt.NativePromptImage]? = nil,
-                                 files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                                 attachments: AIChatPromptAttachments = .none,
                                  reportsNewTab: Bool? = nil,
                                  forcesNewTab: Bool = false,
                                  fromDeepLink: Bool = false,
@@ -5042,7 +5035,7 @@ class MainViewController: UIViewController {
         if let tabAttachmentRequest {
             openAIChatWithTabAttachments(query: query ?? "", autoSend: autoSend, payload: payload,
                                          flowType: flowType, tools: tools, modelId: modelId,
-                                         reasoningEffort: reasoningEffort, images: images, files: files,
+                                         reasoningEffort: reasoningEffort, attachments: attachments,
                                          termsAccepted: termsAccepted, source: source,
                                          opensNewTab: shouldOpenInNewTab, request: tabAttachmentRequest)
             return
@@ -5058,7 +5051,7 @@ class MainViewController: UIViewController {
             let chatURL = currentTab.aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, flowType: flowType, tools: tools)
             // Mirror the in-place `.aiPromptSubmitted` so the new-tab branch keeps idle-session parity.
             // Gated on `!fromDeepLink` so external entries aren't reclassified as address-bar submissions.
-            let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
+            let hasAttachments = !attachments.isEmpty
             if !fromDeepLink {
                 if Self.hasAutoSubmittedDuckAIPrompt(query: query, autoSend: autoSend, hasAttachments: hasAttachments) {
                     postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
@@ -5075,8 +5068,7 @@ class MainViewController: UIViewController {
                     query ?? "",
                     autoSubmit: autoSend,
                     toolChoice: tools?.map(\.rawValue),
-                    images: images,
-                    files: files,
+                    attachments: attachments,
                     modelId: modelId,
                     reasoningEffort: reasoningEffort
                 ).withTermsAccepted(termsAccepted)
@@ -5095,7 +5087,7 @@ class MainViewController: UIViewController {
         }
 
         stampDuckAIEntrySourceOnCurrentTab(source)
-        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
+        load(query, autoSend: autoSend, payload: payload, flowType: flowType, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, attachments: attachments,
              termsAccepted: termsAccepted, source: source)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
@@ -5120,14 +5112,13 @@ class MainViewController: UIViewController {
                                               tools: [AIChatRAGTool]?,
                                               modelId: String?,
                                               reasoningEffort: AIChatReasoningEffort?,
-                                              images: [AIChatNativePrompt.NativePromptImage]?,
-                                              files: [AIChatNativePrompt.NativePromptFile]?,
+                                              attachments: AIChatPromptAttachments,
                                               termsAccepted: Bool,
                                               source: AIChatEntryPointSource,
                                               opensNewTab: Bool,
                                               request: MultiTabAttachmentRequest) {
         let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: autoSend,
-                                                    toolChoice: tools?.map(\.rawValue), images: images, files: files,
+                                                    toolChoice: tools?.map(\.rawValue), attachments: attachments,
                                                     modelId: modelId, reasoningEffort: reasoningEffort)
             .withTermsAccepted(termsAccepted)
         prepareAIChatWithTabAttachments(prompt, payload: payload, flowType: flowType, source: source,
@@ -5873,8 +5864,7 @@ extension MainViewController: OmniBarDelegate {
         openAIChat(source: .ipadTogglePrompt, query, autoSend: true, tools: tools ?? controlValues.selectedTools,
                    modelId: controlValues.selectedModelId,
                    reasoningEffort: controlValues.selectedReasoningEffort,
-                   images: controlValues.selectedImages,
-                   files: controlValues.selectedFiles,
+                   attachments: controlValues.selectedAttachments,
                    termsAccepted: termsAccepted)
     }
 

@@ -43,8 +43,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private struct PendingRichPrompt {
         let prompt: String
-        let images: [AIChatNativePrompt.NativePromptImage]?
-        let files: [AIChatNativePrompt.NativePromptFile]?
+        let attachments: AIChatPromptAttachments
         let modelId: String?
         let tools: [AIChatRAGTool]?
         let pageContext: AIChatPageContextData?
@@ -252,8 +251,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
@@ -262,7 +260,7 @@ final class AIChatContextualWebViewController: UIViewController {
                       termsAccepted: Bool = false) {
         Logger.aiChat.debug("[ContextualWebVC] submit rich prompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if canDeliverPrompt {
-            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+            aiChatContentHandler.submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
                                              pageContext: pageContext, reasoningEffort: reasoningEffort,
                                              tabAttachmentRequest: tabAttachmentRequest, termsAccepted: termsAccepted,
                                              onPromptDispatched: { [weak self] in
@@ -272,8 +270,7 @@ final class AIChatContextualWebViewController: UIViewController {
             utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
             pendingRichPrompt?.tabAttachmentRequest?.cancel()
             pendingRichPrompt = PendingRichPrompt(prompt: prompt,
-                                                  images: images,
-                                                  files: files,
+                                                  attachments: attachments,
                                                   modelId: modelId,
                                                   tools: tools,
                                                   pageContext: pageContext,
@@ -480,8 +477,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private func submitPromptNow(_ richPrompt: PendingRichPrompt) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending rich prompt now")
         aiChatContentHandler.submitPrompt(richPrompt.prompt,
-                                         images: richPrompt.images,
-                                         files: richPrompt.files,
+                                         attachments: richPrompt.attachments,
                                          modelId: richPrompt.modelId,
                                          tools: richPrompt.tools,
                                          pageContext: richPrompt.pageContext,

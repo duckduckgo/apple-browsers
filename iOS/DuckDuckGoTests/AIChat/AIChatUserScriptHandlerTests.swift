@@ -481,7 +481,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     func testWhenFlagOnAndParamsValidThenEditPromptForwardsDecodedRequestAndReturnsInputBoxReply() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
         let inputBox = MockAIChatInputBox()
-        inputBox.editPromptResult = .submit(prompt: "edited", images: nil, files: nil)
+        inputBox.editPromptResult = .submit(prompt: "edited", attachments: .none)
         aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
 
         let params: [String: Any] = ["prompt": "original", "hasResponsesToLose": true]
@@ -490,7 +490,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         XCTAssertEqual(inputBox.receivedRequest?.prompt, "original")
         XCTAssertEqual(inputBox.receivedRequest?.hasResponsesToLose, true)
-        guard case .submit(let prompt, _, _) = reply else { return XCTFail("Expected the input box's .submit reply") }
+        guard case .submit(let prompt, _) = reply else { return XCTFail("Expected the input box's .submit reply") }
         XCTAssertEqual(prompt, "edited")
     }
 

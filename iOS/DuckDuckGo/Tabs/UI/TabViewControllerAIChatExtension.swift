@@ -25,7 +25,7 @@ import WebKit
 /// Protocol for tab controllers that support full mode AIChat content loading.
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool)
+    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool)
 
     /// Loads AIChat in voice mode.
     func loadVoiceMode()
@@ -54,21 +54,19 @@ extension TabViewController: AITabController {
               tools: [AIChatRAGTool]? = nil,
               modelId: String? = nil,
               reasoningEffort: AIChatReasoningEffort? = nil,
-              images: [AIChatNativePrompt.NativePromptImage]? = nil,
-              files: [AIChatNativePrompt.NativePromptFile]? = nil,
+              attachments: AIChatPromptAttachments = .none,
               termsAccepted: Bool = false) {
         isVoiceModeRequested = false
 
         aiChatContentHandler.setPayload(payload: payload)
         let hasText = query?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-        let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
+        let hasAttachments = !attachments.isEmpty
         if hasText || hasAttachments {
             let prompt = AIChatNativePrompt.queryPrompt(
                 query ?? "",
                 autoSubmit: autoSend,
                 toolChoice: tools?.map(\.rawValue),
-                images: images,
-                files: files,
+                attachments: attachments,
                 modelId: modelId,
                 reasoningEffort: reasoningEffort
             ).withTermsAccepted(termsAccepted)

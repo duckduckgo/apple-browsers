@@ -570,15 +570,13 @@ private final class MockUnifiedToggleInputReasoningDelegate: UnifiedToggleInputD
     var submittedPrompt: String?
     var submittedModelId: String?
     var submittedReasoningEffort: AIChatReasoningEffort?
-    var submittedImages: [AIChatNativePrompt.NativePromptImage]?
-    var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
+    var submittedAttachments: AIChatPromptAttachments?
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedReasoningEffort = reasoningEffort
-        submittedImages = images
-        submittedFiles = files
+        submittedAttachments = attachments
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {}

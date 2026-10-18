@@ -681,8 +681,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         )
 
         handler.submitPrompt("Summarize queued page",
-                             images: nil,
-                             files: nil,
+                             attachments: .none,
                              modelId: nil,
                              tools: nil,
                              pageContext: pageContext,
@@ -692,6 +691,16 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Summarize queued page")
         XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.title, "Queued Page")
         XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.url, "https://example.com/queued")
+    }
+
+    func testSubmitRichPromptForwardsAttachmentsUnchanged() {
+        let mockUserScript = MockAIChatUserScript()
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .contextual)
+        let file = AIChatNativePrompt.NativePromptFile(data: "ZmlsZQ==", fileName: "a.pdf", mimeType: "application/pdf")
+
+        handler.submitPrompt("Read this", attachments: AIChatPromptAttachments(images: [], files: [file]), modelId: nil, tools: nil, pageContext: nil, reasoningEffort: nil)
+
+        XCTAssertEqual(mockUserScript.lastSubmittedAttachments, AIChatPromptAttachments(images: [], files: [file]))
     }
     
     // MARK: - Delegate Notifications
@@ -876,6 +885,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitPromptCallCount = 0
     var lastSubmittedPrompt: String?
     var lastSubmittedPageContext: AIChatPageContextData?
+    var lastSubmittedAttachments: AIChatPromptAttachments?
     var submitStartChatActionCallCount = 0
     var cancelPendingTabContextSubmissionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
@@ -927,8 +937,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     }
 
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
@@ -939,6 +948,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext
+        lastSubmittedAttachments = attachments
     }
 
     func submitStartChatAction() {

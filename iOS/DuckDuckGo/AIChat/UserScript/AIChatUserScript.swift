@@ -449,25 +449,23 @@ final class AIChatUserScript: NSObject, Subfeature {
         }
     }
 
-    func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
-        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
+    func submitPrompt(_ prompt: String, attachments: AIChatPromptAttachments, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
+        submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
                       reasoningEffort: AIChatReasoningEffort? = nil) {
-        submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+        submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
                      pageContext: pageContext, reasoningEffort: reasoningEffort,
                      tabAttachmentRequest: attachedTabContextsProvider?())
     }
 
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
@@ -486,8 +484,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                 prompt,
                 autoSubmit: true,
                 toolChoice: tools?.map(\.rawValue),
-                images: images,
-                files: files,
+                attachments: attachments,
                 modelId: modelId,
                 pageContext: context,
                 selections: selections,

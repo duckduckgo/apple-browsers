@@ -657,7 +657,8 @@ final class TabManagerTests: XCTestCase {
     }
 
     func testPreparationProtectsBackgroundSourceFromCapacityAndMemoryWarningUntilCancelled() async throws {
-        let manager = try makeManager(TabsModel(desktop: false),
+        let currentTab = Tab(link: Link(title: "current", url: URL(string: "https://example.com/current")!))
+        let manager = try makeManager(TabsModel(tabs: [currentTab], desktop: false),
                                       featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction, .tabEvictionOnMemoryWarning]),
                                       privacyConfigurationManager: makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}"),
                                       applicationState: { .background })
@@ -696,12 +697,13 @@ final class TabManagerTests: XCTestCase {
         let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
         guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
         let webView = try XCTUnwrap(controller.webView)
+        let navigationSource = WKWebView()
         let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) {}
         controller.setInitialAIChatTabAttachmentPrompt(delivery)
 
-        controller.webView(webView, didStartProvisionalNavigation: WKNavigation())
+        controller.webView(webView, didStartProvisionalNavigation: try makeNavigation(using: navigationSource))
         XCTAssertTrue(controller.isProtectedFromCacheEviction)
-        controller.webView(webView, didStartProvisionalNavigation: WKNavigation())
+        controller.webView(webView, didStartProvisionalNavigation: try makeNavigation(using: navigationSource))
 
         XCTAssertFalse(controller.isProtectedFromCacheEviction)
         XCTAssertNil(delivery.consume())
@@ -721,17 +723,18 @@ final class TabManagerTests: XCTestCase {
         for isProvisional in [true, false] {
             let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) {}
             controller.setInitialAIChatTabAttachmentPrompt(delivery)
-            let current = WKNavigation()
-            controller.webView(foreignView, didStartProvisionalNavigation: WKNavigation())
+            let current = try makeNavigation(using: foreignView)
+            let stale = try makeNavigation(using: foreignView)
+            controller.webView(foreignView, didStartProvisionalNavigation: stale)
             controller.webView(webView, didStartProvisionalNavigation: current)
             XCTAssertTrue(controller.isProtectedFromCacheEviction)
             if isProvisional {
                 controller.webView(foreignView, didFailProvisionalNavigation: current, withError: error)
-                controller.webView(webView, didFailProvisionalNavigation: WKNavigation(), withError: error)
+                controller.webView(webView, didFailProvisionalNavigation: stale, withError: error)
                 controller.webView(webView, didFailProvisionalNavigation: nil, withError: error)
             } else {
                 controller.webView(foreignView, didFail: current, withError: error)
-                controller.webView(webView, didFail: WKNavigation(), withError: error)
+                controller.webView(webView, didFail: stale, withError: error)
                 controller.webView(webView, didFail: nil, withError: error)
             }
             XCTAssertTrue(controller.isProtectedFromCacheEviction)
@@ -757,12 +760,13 @@ final class TabManagerTests: XCTestCase {
             controller.attachWebView(configuration: WKWebViewConfiguration(), andLoadRequest: nil, consumeCookies: false,
                                      customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) })
             let webView = try XCTUnwrap(controller.webView as? InitialPromptRetryWebView)
+            let navigationSource = WKWebView()
             let url = URL(string: "https://duck.ai/chat")!
             webView.currentURL = retryCase.hasURL ? url : nil
             var consumptionCount = 0
             let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) { consumptionCount += 1 }
             controller.setInitialAIChatTabAttachmentPrompt(delivery)
-            let navigation = WKNavigation()
+            let navigation = try makeNavigation(using: navigationSource)
             controller.webView(webView, didStartProvisionalNavigation: navigation)
             let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
             controller.webView(webView, didFailProvisionalNavigation: navigation, withError: error)
@@ -775,7 +779,7 @@ final class TabManagerTests: XCTestCase {
                 controller.reload()
                 XCTAssertEqual(webView.reloadCount, 1)
             }
-            controller.webView(webView, didStartProvisionalNavigation: WKNavigation())
+            controller.webView(webView, didStartProvisionalNavigation: try makeNavigation(using: navigationSource))
 
             XCTAssertTrue(controller.isProtectedFromCacheEviction)
             guard case .recipient(let received) = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
@@ -836,6 +840,11 @@ final class TabManagerTests: XCTestCase {
 
         XCTAssertFalse(controller.isProtectedFromCacheEviction)
         XCTAssertNil(delivery.consume())
+    }
+
+    // WebKit must create navigation objects; direct initialization crashes during their deallocation.
+    private func makeNavigation(using webView: WKWebView) throws -> WKNavigation {
+        try XCTUnwrap(webView.loadHTMLString("", baseURL: nil))
     }
 
     /// Capacity 2 holds the current tab plus one background tab, so a second background tab forces eviction.
@@ -1266,12 +1275,12 @@ private final class InitialPromptRetryWebView: WKWebView {
     override var url: URL? { currentURL }
 
     override func load(_ request: URLRequest) -> WKNavigation? {
-        WKNavigation()
+        nil
     }
 
     override func reload() -> WKNavigation? {
         reloadCount += 1
-        return WKNavigation()
+        return nil
     }
 }
 

@@ -225,18 +225,23 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
     }
 
     func testReloadWithoutFailureDoesNotPreserveUnconsumedPrompt() {
-        let session = installedSession()
+        let session = AIChatInitialPromptSession()
+        let delivery = AIChatInitialPromptDelivery(prompt: prompt) {}
+        session.install(delivery)
         session.didStartNavigation(DummyWKNavigation())
 
         XCTAssertFalse(session.willRetryFailedNavigation())
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
 
-        XCTAssertNil(consume(session))
+        XCTAssertNil(delivery.consume())
+        assertShared(session.consumeInitialPrompt())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
     func testExplicitLoadAfterFailureCancelsPromptAndPreventsRetry() {
-        let session = installedSession()
+        let session = AIChatInitialPromptSession()
+        let delivery = AIChatInitialPromptDelivery(prompt: prompt) {}
+        session.install(delivery)
         let navigation = DummyWKNavigation()
         session.didStartNavigation(navigation)
         session.didFailNavigation(navigation)
@@ -245,12 +250,15 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertFalse(session.willRetryFailedNavigation())
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
 
-        XCTAssertNil(consume(session))
+        XCTAssertNil(delivery.consume())
+        assertShared(session.consumeInitialPrompt())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
     func testNavigationAfterFailureWithoutRetryDiscardsPrompt() {
-        let session = installedSession()
+        let session = AIChatInitialPromptSession()
+        let delivery = AIChatInitialPromptDelivery(prompt: prompt) {}
+        session.install(delivery)
         let navigation = DummyWKNavigation()
         session.didStartNavigation(navigation)
         session.didFailNavigation(navigation)
@@ -258,7 +266,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
 
         XCTAssertFalse(session.willRetryFailedNavigation())
-        XCTAssertNil(consume(session))
+        XCTAssertNil(delivery.consume())
         assertShared(session.consumeInitialPrompt())
     }
 

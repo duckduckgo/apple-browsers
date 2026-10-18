@@ -32,15 +32,6 @@ extension NSAttributedString {
         return attributes(at: 0, effectiveRange: nil)[.font] as? UIFont
     }
 
-    public func stringWithFontSize(_ size: CGFloat) -> NSAttributedString? {
-        guard let font = font else { return nil }
-        let newFont = font.withSize(size)
-
-        let newString = NSMutableAttributedString(attributedString: self)
-        newString.setAttributes([.font: newFont], range: string.fullRange)
-        return newString
-    }
-
     /// Creates a new `NSAttributedString` initialized with the characters and attributes of the current attributed string plus the specified font.
     ///
     /// - Parameter font: The `UIFont` to apply to the text in the `NSAttributedString`.

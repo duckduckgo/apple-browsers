@@ -24,18 +24,10 @@ class RemoveDeviceViewModel: ObservableObject {
     let device: SyncSettingsViewModel.Device
     let onRemove: (SyncSettingsViewModel.Device) -> Void
 
-    @Published var name: String
-
-    var imageName: String {
-        let type = device.type == "desktop" ? "Desktop" : "Mobile"
-        return "SyncRemoveDevice\(type)"
-    }
-
     init(device: SyncSettingsViewModel.Device,
          onRemove: @escaping (SyncSettingsViewModel.Device) -> Void) {
         self.device = device
         self.onRemove = onRemove
-        self.name = device.name
     }
 
     func remove() {

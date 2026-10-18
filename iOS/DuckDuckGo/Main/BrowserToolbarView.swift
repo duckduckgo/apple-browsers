@@ -138,7 +138,7 @@ struct FloatingOmnibarSwipeMorph {
     }
 }
 
-/// Custom bottom toolbar container (replaces `UIToolbar`) with widened touch targets matching legacy `HitTestingToolbar` behavior.
+/// Custom bottom toolbar container with widened touch targets.
 final class BrowserToolbarView: UIView {
 
     static let extendedHitWidth: CGFloat = 45

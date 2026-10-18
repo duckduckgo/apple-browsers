@@ -32,36 +32,8 @@ extension View {
     }
 
     @ViewBuilder
-    func disableScrolling() -> some View {
-        if #available(iOS 16, *) {
-            self.scrollDisabled(true)
-        } else {
-            self
-        }
-    }
-
-    @ViewBuilder
-    func regularMaterialBackground() -> some View {
-        self.background(.regularMaterial)
-    }
-
-    @ViewBuilder
     func thinMaterialBackground() -> some View {
         self.background(.ultraThinMaterial)
-    }
-
-    @ViewBuilder
-    func monospaceSystemFont(ofSize size: Double) -> some View {
-        font(.system(size: size).monospaced())
-    }
-
-    @ViewBuilder
-    func applyKerning(_ kerning: CGFloat) -> some View {
-        if #available(iOS 16.0, *) {
-            self.kerning(kerning)
-        } else {
-            self
-        }
     }
 
     @ViewBuilder

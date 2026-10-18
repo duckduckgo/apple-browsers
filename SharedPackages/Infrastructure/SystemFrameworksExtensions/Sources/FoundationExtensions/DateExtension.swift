@@ -157,11 +157,6 @@ public extension Date {
         Int(Date().timeIntervalSince(self))
     }
 
-    /// Returns the number of seconds since this date until now.
-    func secondsFromNow() -> Int {
-        Int(self.timeIntervalSince(Date()))
-    }
-
     /// The number of minutes since this date until now.
     /// Returns a negative number if self is in the future.
     func minutesSinceNow() -> Int {

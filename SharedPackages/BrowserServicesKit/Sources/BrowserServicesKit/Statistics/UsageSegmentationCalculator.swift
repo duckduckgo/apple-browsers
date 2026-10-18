@@ -32,14 +32,6 @@ public protocol UsageSegmentationCalculating {
 
 }
 
-public final class UsageSegmentationCalculatorFactory: UsageSegmentationCalculatorMaking {
-
-    public func make(installAtb: Atb) -> any UsageSegmentationCalculating {
-        return UsageSegmentationCalculator(installAtb: installAtb)
-    }
-
-}
-
 public final class DefaultCalculatorFactory: UsageSegmentationCalculatorMaking {
 
     public init() {}

@@ -36,14 +36,9 @@ class HomeRowReminder {
     }
 
     private var storage: HomeRowReminderStorage
-    private var homeMessageStorage: HomeMessageStorage
 
-    init(
-        storage: HomeRowReminderStorage = UserDefaultsHomeRowReminderStorage(),
-        homeMessageStorage: HomeMessageStorage = HomeMessageStorage()
-    ) {
+    init(storage: HomeRowReminderStorage = UserDefaultsHomeRowReminderStorage()) {
         self.storage = storage
-        self.homeMessageStorage = homeMessageStorage
     }
 
     func showNow() -> Bool {

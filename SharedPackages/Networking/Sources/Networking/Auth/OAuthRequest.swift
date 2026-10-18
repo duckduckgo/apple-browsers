@@ -215,27 +215,6 @@ public struct OAuthRequest {
         return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
     }
 
-    // MARK: Sent OTP
-
-    /// Unused in the current implementation
-    static func requestOTP(baseURL: URL, authSessionID: String, emailAddress: String) -> OAuthRequest? {
-        guard authSessionID.isEmpty == false,
-              emailAddress.isEmpty == false else { return nil }
-
-        let path = "/api/auth/v2/otp"
-        let queryItems: QueryItems = [(key: "email", value: emailAddress)]
-        guard let domain = baseURL.host,
-              let cookie = Self.ddgAuthSessionCookie(domain: domain, path: path, authSessionID: authSessionID)
-        else { return nil }
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
-                                         method: .post,
-                                         queryItems: queryItems,
-                                         headers: APIRequestV2.HeadersV2(cookies: [cookie])) else {
-            return nil
-        }
-        return OAuthRequest(apiRequest: request)
-    }
-
     // MARK: Login
 
     static func login(baseURL: URL, authSessionID: String, method: OAuthLoginMethod) -> OAuthRequest? {
@@ -339,51 +318,6 @@ public struct OAuthRequest {
             return nil
         }
         return OAuthRequest(apiRequest: request)
-    }
-
-    // MARK: Edit Account
-
-    /// Unused in the current implementation
-    static func editAccount(baseURL: URL, accessToken: String, email: String?) -> OAuthRequest? {
-        guard accessToken.isEmpty == false else { return nil }
-
-        let path = "/api/auth/v2/account/edit"
-        var queryItems: QueryItems = []
-        if let email {
-            queryItems.append((key: "email", value: email))
-        }
-
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
-                                         method: .post,
-                                         queryItems: queryItems,
-                                         headers: APIRequestV2.HeadersV2(
-                                            authToken: accessToken)) else {
-            return nil
-        }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
-    }
-
-    /// Unused in the current implementation
-    static func confirmEditAccount(baseURL: URL, accessToken: String, email: String, hash: String, otp: String) -> OAuthRequest? {
-        guard accessToken.isEmpty == false,
-              email.isEmpty == false,
-              hash.isEmpty == false,
-              otp.isEmpty == false else { return nil }
-
-        let path = "/account/edit/confirm"
-        let queryItems: QueryItems = [
-            (key: "email", value: email),
-            (key: "hash", value: hash),
-            (key: "otp", value: otp)
-        ]
-
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
-                                         method: .get,
-                                         queryItems: queryItems,
-                                         headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
-            return nil
-        }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
     }
 
     // MARK: Logout

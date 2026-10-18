@@ -21,11 +21,6 @@ import UIKit
 
 extension UIView {
 
-    public func addEqualSizeConstraints(subView: UIView) {
-        addEqualWidthConstraint(subView: subView)
-        addEqualHeightConstraint(subView: subView)
-    }
-
     public func addEqualHeightConstraint(subView: UIView) {
         addConstraint(NSLayoutConstraint(
             item: subView,
@@ -66,12 +61,6 @@ extension UIView {
         layer.shadowOffset = CGSize(width: 0, height: 1.5)
         layer.shadowOpacity = 0.2
         layer.shadowRadius = 1.5
-    }
-
-    public func clearSubviews() {
-        for view in subviews {
-            view.removeFromSuperview()
-        }
     }
 
     /// True when the app isn't full screen (Split View / Slide Over / Stage Manager). Sides are sorted

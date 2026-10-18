@@ -93,7 +93,6 @@ public struct UserText {
     // Standard Buttons
     static let cancelButton = NSLocalizedString("cancel.button", bundle: Bundle.module, value: "Cancel", comment: "Standard Buttons - Cancel Button")
     static let doneButton = NSLocalizedString("done.button", bundle: Bundle.module, value: "Done", comment: "Standard Buttons - Done Button")
-    static let backButton = NSLocalizedString("back.button", bundle: Bundle.module, value: "Back", comment: "Standard Buttons - Back Button")
     static let notNowButton = NSLocalizedString("not.now.button", bundle: Bundle.module, value: "Not Now", comment: "Standard Buttons - Not Now Button")
     static let copyButton = NSLocalizedString("copy.button", bundle: Bundle.module, value: "Copy", comment: "Standard Buttons - Copy Button")
 

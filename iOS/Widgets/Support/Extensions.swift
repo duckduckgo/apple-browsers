@@ -91,11 +91,6 @@ extension View {
         }
     }
 
-    /// Logically inverse of `isHidden`
-    @ViewBuilder func isVisible(_ visible: Bool, remove: Bool = false) -> some View {
-        self.isHidden(!visible, remove: remove)
-    }
-
 }
 
 extension Image {

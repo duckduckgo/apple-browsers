@@ -51,21 +51,6 @@ public class FileStore {
         }
     }
 
-    func removeData(forFile file: String) -> Bool {
-        var fileUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier)
-        fileUrl = fileUrl!.appendingPathComponent(file)
-        guard let fileUrl = fileUrl else { return false }
-        guard FileManager.default.fileExists(atPath: fileUrl.path) else { return true }
-
-        do {
-            try FileManager.default.removeItem(at: fileUrl)
-        } catch {
-            return false
-        }
-
-        return true
-    }
-
     public func loadAsString(for configuration: Configuration) -> String? {
         try? String(contentsOf: persistenceLocation(for: configuration))
     }

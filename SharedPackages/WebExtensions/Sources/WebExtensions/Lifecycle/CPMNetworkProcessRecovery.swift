@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import os.log
 import WebKit
@@ -37,8 +38,10 @@ final class CPMNetworkProcessRecovery {
     private var originalProcess: Int32?
     private var isCurrent: @MainActor () -> Bool = { false }
     private var periodicCheck: Task<Void, Never>?
+    private var featureFlagSubscription: AnyCancellable?
 
     init(isEnabled: @escaping @MainActor () -> Bool,
+         featureFlagUpdates: AnyPublisher<Void, Never>? = nil,
          checkInterval: TimeInterval = 1,
          processIdentifier: @escaping ProcessIdentifier = CPMNetworkProcessRecovery.networkProcessIdentifier,
          restart: @escaping Restart = CPMNetworkProcessRecovery.restartBackground) {
@@ -46,6 +49,13 @@ final class CPMNetworkProcessRecovery {
         self.checkInterval = checkInterval
         self.processIdentifier = processIdentifier
         self.restart = restart
+        featureFlagSubscription = featureFlagUpdates?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                MainActor.assumeIsolated {
+                    self?.recoverIfNeeded()
+                }
+            }
     }
 
     deinit { periodicCheck?.cancel() }
@@ -56,6 +66,11 @@ final class CPMNetworkProcessRecovery {
         self.identifier = identifier
         originalProcess = processIdentifier(webView)
         self.isCurrent = isCurrent
+        startPeriodicCheckIfNeeded()
+    }
+
+    private func startPeriodicCheckIfNeeded() {
+        guard periodicCheck == nil, background != nil, isEnabled() else { return }
         let interval = checkInterval
         periodicCheck = Task { @MainActor [weak self] in
             while !Task.isCancelled {
@@ -69,11 +84,17 @@ final class CPMNetworkProcessRecovery {
     /// Also checked before navigation, without depending on the startup gate or diagnostics flags.
     @discardableResult
     func recoverIfNeeded() -> Bool {
+        guard isEnabled() else {
+            // Keep the baseline for re-enabling recovery on an already loaded background.
+            stopPeriodicCheck()
+            return false
+        }
         guard let background, isCurrent() else {
             stop()
             return false
         }
-        guard isEnabled(), let current = processIdentifier(background), current > 0 else { return false }
+        startPeriodicCheckIfNeeded()
+        guard let current = processIdentifier(background), current > 0 else { return false }
         guard let originalProcess, originalProcess > 0 else {
             originalProcess = current
             return false
@@ -89,9 +110,13 @@ final class CPMNetworkProcessRecovery {
         stop()
     }
 
-    private func stop() {
+    private func stopPeriodicCheck() {
         periodicCheck?.cancel()
         periodicCheck = nil
+    }
+
+    private func stop() {
+        stopPeriodicCheck()
         background = nil
         identifier = nil
         originalProcess = nil

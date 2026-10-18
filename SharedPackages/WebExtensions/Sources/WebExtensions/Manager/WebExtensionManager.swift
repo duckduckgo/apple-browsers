@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import os.log
 import Persistence
@@ -188,6 +189,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
+                cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
@@ -225,7 +227,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
-        self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(isEnabled: isCPMNetworkProcessRecoveryEnabled)
+        self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
+            isEnabled: isCPMNetworkProcessRecoveryEnabled,
+            featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates
+        )
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler

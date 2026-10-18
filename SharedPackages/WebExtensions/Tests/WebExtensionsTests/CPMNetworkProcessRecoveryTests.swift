@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import WebKit
 import XCTest
 @testable import WebExtensions
@@ -23,6 +24,10 @@ import XCTest
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class CPMNetworkProcessRecoveryTests: XCTestCase {
+    private let flagUpdates = PassthroughSubject<Void, Never>()
+    private var flagReads = 0
+    private var processReads = 0
+    private var contextChecks = 0
     private var process: Int32? = 100
     private var enabled = true
     private var current = true
@@ -30,8 +35,14 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
     private var restarted: [WKWebView] = []
 
     private func makeRecovery(interval: TimeInterval = 60) -> CPMNetworkProcessRecovery {
-        CPMNetworkProcessRecovery(isEnabled: { [unowned self] in self.enabled }, checkInterval: interval,
-                                  processIdentifier: { [unowned self] _ in self.process },
+        CPMNetworkProcessRecovery(isEnabled: { [unowned self] in
+            self.flagReads += 1
+            return self.enabled
+        }, featureFlagUpdates: flagUpdates.eraseToAnyPublisher(), checkInterval: interval,
+                                  processIdentifier: { [unowned self] _ in
+            self.processReads += 1
+            return self.process
+        },
                                   restart: { [unowned self] webView in
             guard self.canRestart else { return false }
             self.restarted.append(webView)
@@ -40,7 +51,10 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
     }
 
     private func watch(_ view: WKWebView, in recovery: CPMNetworkProcessRecovery, identifier: String = "embedded") {
-        recovery.watch(view, identifier: identifier, isCurrent: { [unowned self] in self.current })
+        recovery.watch(view, identifier: identifier, isCurrent: { [unowned self] in
+            self.contextChecks += 1
+            return self.current
+        })
     }
 
     func testUnchangedNetworkProcessDoesNotRestartHealthyBackground() {
@@ -105,6 +119,81 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         process = 200
         enabled = false
         XCTAssertFalse(recovery.recoverIfNeeded())
+        XCTAssertTrue(restarted.isEmpty)
+    }
+
+    func testInitiallyDisabledFlagDoesNotStartPolling() async throws {
+        enabled = false
+        let recovery = makeRecovery(interval: 0.01)
+        let view = WKWebView()
+        watch(view, in: recovery)
+        let initialFlagReads = flagReads
+        let initialProcessReads = processReads
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(flagReads, initialFlagReads, "Disabled recovery must not wake to poll the flag")
+        XCTAssertEqual(processReads, initialProcessReads)
+        XCTAssertEqual(contextChecks, 0)
+        withExtendedLifetime(recovery) {}
+    }
+
+    func testRuntimeDisableStopsPollingAndEnableRecoversWithoutNavigation() async throws {
+        let recovery = makeRecovery(interval: 0.01)
+        let view = WKWebView()
+        watch(view, in: recovery)
+        var deadline = Date().addingTimeInterval(2)
+        while contextChecks == 0, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertGreaterThan(contextChecks, 0, "The enabled watch must poll before testing disable")
+        enabled = false
+        flagUpdates.send(())
+        // Allow the main-queue flag notification and any already scheduled tick to drain.
+        try await Task.sleep(for: .milliseconds(50))
+        let disabledFlagReads = flagReads
+        let disabledProcessReads = processReads
+        let disabledContextChecks = contextChecks
+        process = 200
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(flagReads, disabledFlagReads, "Flag disable must cancel the periodic task")
+        XCTAssertEqual(processReads, disabledProcessReads)
+        XCTAssertEqual(contextChecks, disabledContextChecks)
+        XCTAssertTrue(restarted.isEmpty)
+        enabled = true
+        flagUpdates.send(())
+        deadline = Date().addingTimeInterval(2)
+        while restarted.isEmpty, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(restarted, [view], "Re-enable must recover using the retained baseline without navigation")
+        withExtendedLifetime(recovery) {}
+    }
+
+    func testRuntimeEnableStartsPollingForInitiallyDisabledHealthyBackground() async throws {
+        enabled = false
+        let recovery = makeRecovery(interval: 0.01)
+        let view = WKWebView()
+        watch(view, in: recovery)
+        enabled = true
+        flagUpdates.send(())
+        var deadline = Date().addingTimeInterval(2)
+        while contextChecks == 0, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertGreaterThan(contextChecks, 0)
+        XCTAssertTrue(restarted.isEmpty)
+        process = 200
+        deadline = Date().addingTimeInterval(2)
+        while restarted.isEmpty, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(restarted, [view])
+        withExtendedLifetime(recovery) {}
+    }
+
+    func testActivePollingAndFlagSubscriptionDoNotRetainOwner() async throws {
+        var recovery: CPMNetworkProcessRecovery? = makeRecovery(interval: 0.01)
+        weak var released = recovery
+        let view = WKWebView()
+        watch(view, in: try XCTUnwrap(recovery))
+        let deadline = Date().addingTimeInterval(2)
+        while contextChecks == 0, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertGreaterThan(contextChecks, 0)
+        recovery = nil
+        XCTAssertNil(released)
+        flagUpdates.send(())
+        try await Task.sleep(for: .milliseconds(50))
         XCTAssertTrue(restarted.isEmpty)
     }
 

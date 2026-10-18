@@ -200,6 +200,18 @@ class AddressBarMouseSelectionTests: UITestCase {
         XCTAssertTrue(query.hasPrefix(selected), "A prefix of the query is expected, got \(selected)")
     }
 
+    // MARK: - Direction of a mouse selection
+
+    /// After Shift+click before the caret the moving end is the left one, so Opt+Shift+Left must keep extending to the left.
+    func test_shiftClick_beforeTheCaret_thenOptShiftLeft_extendsTheSelectionFurtherLeft() {
+        typeQuery()
+        bar.shiftClick(bar.point(x: Points.firstWord))
+        let clicked = bar.selectedText() ?? ""
+        XCTAssertFalse(clicked.isEmpty, "Shift+click should select from the click to the caret")
+        bar.press(EditingKeys.optShiftLeft)
+        XCTAssertEqual(bar.selectedText(), query, "The click side must keep moving: the selection extends to the start of the word")
+    }
+
     // MARK: - Combined with the keyboard
 
     func test_click_inTheMiddle_thenOptShiftRight_selectsTheRestOfTheWord() {

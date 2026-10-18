@@ -23,7 +23,6 @@ import XCTest
 class DuckAIOmnibarEditingTests: UITestCase {
 
     private enum AccessibilityIdentifiers {
-        static let showSearchAndDuckAIToggle = "Preferences.AIChat.showSearchAndDuckAIToggleToggle"
         static let aiChatOmnibarContainerView = "AIChatOmnibarTextContainerViewController.view"
     }
 
@@ -54,7 +53,7 @@ class DuckAIOmnibarEditingTests: UITestCase {
         let app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         app.addressBar.typeURL(URL(string: "duck://settings/aichat")!)
-        let toggle = app.checkBoxes[AccessibilityIdentifiers.showSearchAndDuckAIToggle]
+        let toggle = app.checkBoxes[XCUIApplication.AccessibilityIdentifiers.showSearchAndDuckAIToggleToggle]
         XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Search/Duck.ai toggle setting should exist")
         if toggle.value as? Bool == false {
             toggle.click()

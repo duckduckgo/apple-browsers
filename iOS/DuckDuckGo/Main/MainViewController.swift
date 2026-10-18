@@ -1617,7 +1617,7 @@ class MainViewController: UIViewController {
 
         // Check if first responder is within the sheet's view hierarchy
         if let firstResponder = UIResponder.currentFirstResponder(),
-           firstResponder.isInViewHierarchy(of: sheetVC.view) {
+           firstResponder.isInViewHierarchy(ofPresentationChainFrom: sheetVC) {
             // Keyboard is for the sheet, don't dismiss
             return
         }

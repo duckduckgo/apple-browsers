@@ -656,6 +656,145 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNil(manager.controller(for: recipient.tabModel))
     }
 
+    func testPreparationProtectsBackgroundSourceFromCapacityAndMemoryWarningUntilCancelled() async throws {
+        let manager = try makeManager(TabsModel(desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction, .tabEvictionOnMemoryWarning]),
+                                      privacyConfigurationManager: makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}"),
+                                      applicationState: { .background })
+        _ = manager.current(createIfNeeded: true)
+        let source = manager.add(url: nil, inBackground: true, inheritedAttribution: nil)
+        let started = expectation(description: "Source preparation started")
+        var contextsContinuation: CheckedContinuation<[AIChatPageContextData], Never>?
+        var completions = 0
+        source.prepareInitialAIChatPrompt(.queryPrompt("initial", autoSubmit: true), request: .init(contexts: {
+            await withCheckedContinuation {
+                contextsContinuation = $0
+                started.fulfill()
+            }
+        }, didConsume: { XCTFail("Cancelled source must not consume contexts") })) {
+            XCTAssertNil($0)
+            completions += 1
+        }
+        await fulfillment(of: [started], timeout: 1)
+
+        let later = manager.add(url: nil, inBackground: true, inheritedAttribution: nil)
+        XCTAssertNil(manager.controller(for: later.tabModel))
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+        XCTAssertTrue(manager.controller(for: source.tabModel) === source)
+
+        source.cancelPendingAIChatTabAttachmentPrompt()
+        XCTAssertEqual(completions, 1)
+        contextsContinuation?.resume(returning: [])
+        contextsContinuation = nil
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+        XCTAssertNil(manager.controller(for: source.tabModel))
+    }
+
+    func testControllerForwardsExpectedAndUnexpectedNavigationStartsToSession() throws {
+        let manager = try makeManager(TabsModel(desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs]))
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
+        let webView = try XCTUnwrap(controller.webView)
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) {}
+        controller.setInitialAIChatTabAttachmentPrompt(delivery)
+
+        controller.webView(webView, didStartProvisionalNavigation: WKNavigation())
+        XCTAssertTrue(controller.isProtectedFromCacheEviction)
+        controller.webView(webView, didStartProvisionalNavigation: WKNavigation())
+
+        XCTAssertFalse(controller.isProtectedFromCacheEviction)
+        XCTAssertNil(delivery.consume())
+        guard case .shared = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
+            return XCTFail("Unexpected navigation must reset prompt routing")
+        }
+    }
+
+    func testControllerFiltersForeignViewsAndStaleFailuresForBothFailureCallbacks() throws {
+        let manager = try makeManager(TabsModel(desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs]))
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
+        let webView = try XCTUnwrap(controller.webView)
+        let foreignView = WKWebView()
+        let error = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
+        for isProvisional in [true, false] {
+            let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) {}
+            controller.setInitialAIChatTabAttachmentPrompt(delivery)
+            let current = WKNavigation()
+            controller.webView(foreignView, didStartProvisionalNavigation: WKNavigation())
+            controller.webView(webView, didStartProvisionalNavigation: current)
+            XCTAssertTrue(controller.isProtectedFromCacheEviction)
+            if isProvisional {
+                controller.webView(foreignView, didFailProvisionalNavigation: current, withError: error)
+                controller.webView(webView, didFailProvisionalNavigation: WKNavigation(), withError: error)
+                controller.webView(webView, didFailProvisionalNavigation: nil, withError: error)
+            } else {
+                controller.webView(foreignView, didFail: current, withError: error)
+                controller.webView(webView, didFail: WKNavigation(), withError: error)
+                controller.webView(webView, didFail: nil, withError: error)
+            }
+            XCTAssertTrue(controller.isProtectedFromCacheEviction)
+            if isProvisional {
+                controller.webView(webView, didFailProvisionalNavigation: current, withError: error)
+            } else {
+                controller.webView(webView, didFail: current, withError: error)
+            }
+            XCTAssertFalse(controller.isProtectedFromCacheEviction)
+            XCTAssertNil(delivery.consume())
+        }
+    }
+
+    func testControllerRefreshBeforeFirstURLPreservesPromptButExplicitLoadCancels() throws {
+        let manager = try makeManager(TabsModel(desktop: false),
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs]))
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        guard controller.devicePlatform.isIphone else { throw XCTSkip("Tab attachments require iPhone") }
+        XCTAssertNil(controller.webView.url)
+        controller.url = URL(string: "about:blank")!
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) {}
+        controller.setInitialAIChatTabAttachmentPrompt(delivery)
+
+        controller.refresh()
+        XCTAssertTrue(controller.isProtectedFromCacheEviction)
+        controller.load(url: URL(string: "about:blank")!)
+
+        XCTAssertFalse(controller.isProtectedFromCacheEviction)
+        XCTAssertNil(delivery.consume())
+    }
+
+    func testControllerStopAndProcessTerminationCancelOnlyOwnSession() throws {
+        let manager = try makeManager(TabsModel(desktop: false))
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        let webView = try XCTUnwrap(controller.webView)
+        for terminatesProcess in [true, false] {
+            let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) {}
+            controller.setInitialAIChatTabAttachmentPrompt(delivery)
+            if terminatesProcess {
+                controller.webViewWebContentProcessDidTerminate(WKWebView())
+                XCTAssertTrue(controller.isProtectedFromCacheEviction)
+                controller.webViewWebContentProcessDidTerminate(webView)
+            } else {
+                controller.stopLoading()
+            }
+            XCTAssertFalse(controller.isProtectedFromCacheEviction)
+            XCTAssertNil(delivery.consume())
+        }
+    }
+
+    func testEvictionCancelsSessionEvenWhenControllerIsRetainedElsewhere() throws {
+        let model = TabsModel(desktop: false)
+        let manager = try makeManager(model)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("initial", autoSubmit: true)) {}
+        controller.setInitialAIChatTabAttachmentPrompt(delivery)
+
+        manager.remove(tab: controller.tabModel)
+
+        XCTAssertFalse(controller.isProtectedFromCacheEviction)
+        XCTAssertNil(delivery.consume())
+    }
+
     /// Capacity 2 holds the current tab plus one background tab, so a second background tab forces eviction.
     private func makeManagerWithLoadedCurrentTab() throws -> TabManager {
         let currentTab = Tab(link: Link(title: "current", url: URL(string: "https://example.com/current")!))

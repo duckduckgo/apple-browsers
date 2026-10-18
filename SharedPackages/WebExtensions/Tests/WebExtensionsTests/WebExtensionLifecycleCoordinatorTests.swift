@@ -44,6 +44,24 @@ private final class SpyWebExtensionPixelFiring: WebExtensionPixelFiring {
 final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
 
     @MainActor
+    func testNetworkRecoveryIsCheckedAfterStartupGateOpens() async {
+        let manager = RecordingWebExtensionManager()
+        let coordinator = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+        await coordinator.loadAndSync().value
+        XCTAssertNil(coordinator.initialLoadWaiter)
+        XCTAssertEqual(manager.networkRecoveryChecks, 1)
+    }
+
+    @MainActor
+    func testNetworkRecoveryIsIndependentOfDisabledStartupGate() {
+        let manager = RecordingWebExtensionManager()
+        let coordinator = WebExtensionLifecycleCoordinator(manager: manager, initialLoadGateEnabledProvider: { false },
+                                                           enabledTypesProvider: { [.embedded] })
+        XCTAssertNil(coordinator.initialLoadWaiter)
+        XCTAssertEqual(manager.networkRecoveryChecks, 1)
+    }
+
+    @MainActor
     func testOperationsRunSeriallyInSubmissionOrder() async {
         let manager = RecordingWebExtensionManager()
         let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [] })
@@ -560,6 +578,10 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
         active -= 1
         finished.append(op)
     }
+
+    private(set) var networkRecoveryChecks = 0
+
+    func recoverEmbeddedBackgroundAfterNetworkProcessReplacement() { networkRecoveryChecks += 1 }
 
     // Recorded lifecycle methods
     func loadInstalledExtensions() async {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Review-only negative controls: six recovery tests must fail with their fix flags disabled. -->
+<!-- Review-only negative controls: three Network-process recovery tests must fail with the recovery flag disabled. -->
 <Scheme LastUpgradeVersion="2710" version="1.7">
   <BuildAction parallelizeBuildables="YES" buildImplicitDependencies="YES">
     <BuildActionEntries>

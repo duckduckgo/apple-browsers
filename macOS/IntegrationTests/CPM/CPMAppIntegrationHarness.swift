@@ -177,6 +177,7 @@ final class CPMAppIntegrationHarness {
             cpmDiagnosticsRecorder: diagnosticsEnabled ? diagnostics : nil,
             isCPMMessagingHangRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmMessagingHangRecovery) == true },
             isCPMNetworkProcessRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmNetworkProcessRecovery) == true },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: flags.updatesPublisher,
             handlerProvider: CPMAppHandlerProvider(production: handler, native: native)
         )
         let failureRecorder = CPMAppFailureRecorder(recorder: diagnostics)

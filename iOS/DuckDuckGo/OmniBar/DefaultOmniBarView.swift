@@ -73,6 +73,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
     private var textAreaTopPaddingConstraint: NSLayoutConstraint?
     private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
+    private var searchAreaPreferredHeightConstraint: NSLayoutConstraint?
     private var stackViewLeadingConstraint: NSLayoutConstraint?
     private var stackViewTrailingConstraint: NSLayoutConstraint?
 
@@ -767,6 +768,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView(configuration: desiredGlassConfiguration)
     private var glassEffectConfiguration: FloatingFieldGlassConfiguration?
     private var pageGlassInterfaceStyle: UIUserInterfaceStyle?
+    private lazy var materialRefreshScheduler = FloatingMaterialRefreshScheduler(view: self)
 
     private var desiredGlassConfiguration: FloatingFieldGlassConfiguration {
         FloatingFieldGlassConfiguration(
@@ -880,6 +882,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             makeOpaque()
             return
         }
+        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshMaterialAppearance() }) else { return }
         if isBottomFloatingField, !isFloatingMinimalChromeBar, fireMode {
             makeOpaque()
             return
@@ -941,7 +944,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 setFieldBackgroundColor(.clear)
             }
 
-            searchAreaContainerView.layoutIfNeeded()
+            searchAreaContainerView.setNeedsLayout()
         }
     }
 
@@ -974,7 +977,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         if let interfaceStyle {
             pageGlassInterfaceStyle = interfaceStyle
         }
-        glassEffectConfiguration = nil
+        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshMaterialAppearance() }) else { return }
         updateFireModeAppearance()
     }
 
@@ -1154,6 +1157,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             floatingHostToContainerConstraints = []
         }
         let chromeContentContainerView = self.chromeContentContainerView
+
+        if isFloatingUIEnabled {
+            let height = searchAreaView.heightAnchor.constraint(equalToConstant: OmniBarMetrics.itemSize).withPriority(.defaultHigh)
+            height.isActive = true
+            searchAreaPreferredHeightConstraint = height
+        }
 
         NSLayoutConstraint.activate([
             leadingConstraint,
@@ -1508,6 +1517,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         textAreaTopPaddingConstraint?.constant = topPadding
         textAreaBottomPaddingConstraint?.constant = -bottomPadding
+        searchAreaPreferredHeightConstraint?.constant = isBottomFloatingField ? Metrics.floatingEmbeddedHeight : OmniBarMetrics.itemSize
         updateFireModeAppearance()
     }
 
@@ -2602,33 +2612,6 @@ final class ResignSuppressingTextView: UITextView {
 }
 
 #if DEBUG
-final class RebrandPreviewOverride: ObservableObject {
-    private let isRebranded: Bool
-    private let previousAppRebrand: () -> Bool
-    private let previousDesignSystemRebrand: () -> Bool
-    private let previousPalette: ColorPalette
-
-    init(isRebranded: Bool) {
-        self.isRebranded = isRebranded
-        previousAppRebrand = AppRebrand.isAppRebranded
-        previousDesignSystemRebrand = DesignSystemRebrand.isAppRebranded
-        previousPalette = DesignSystemPalette.current
-        apply()
-    }
-
-    func apply() {
-        AppRebrand.isAppRebranded = { [isRebranded] in isRebranded }
-        DesignSystemRebrand.isAppRebranded = { [isRebranded] in isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
-    }
-
-    deinit {
-        AppRebrand.isAppRebranded = previousAppRebrand
-        DesignSystemRebrand.isAppRebranded = previousDesignSystemRebrand
-        DesignSystemPalette.current = previousPalette
-    }
-}
-
 /// Bridges the UIKit ``DefaultOmniBarView`` into SwiftUI so it can be shown in a `#Preview`.
 private struct DefaultOmniBarViewRepresentable: UIViewRepresentable {
     let omniBarView: DefaultOmniBarView
@@ -2638,25 +2621,14 @@ private struct DefaultOmniBarViewRepresentable: UIViewRepresentable {
 }
 
 private struct DefaultOmniBarViewGallery: View {
-    @StateObject private var rebrandOverride: RebrandPreviewOverride
-
-    init(isRebranded: Bool) {
-        _rebrandOverride = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
-    }
-
     var body: some View {
-        rebrandOverride.apply()
-        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
+        DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
             .frame(width: 360, height: 60)
             .padding()
     }
 }
 
-#Preview("Address bar / Legacy") {
-    DefaultOmniBarViewGallery(isRebranded: false)
-}
-
-#Preview("Address bar / Rebranded") {
-    DefaultOmniBarViewGallery(isRebranded: true)
+#Preview("Address bar") {
+    DefaultOmniBarViewGallery()
 }
 #endif

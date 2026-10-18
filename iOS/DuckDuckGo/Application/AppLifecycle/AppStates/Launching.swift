@@ -19,8 +19,6 @@
 
 import AIChat
 import Core
-import DesignResourcesKit
-import DesignResourcesKitIcons
 import DuckAiDataStore
 import HangMetrics
 import Persistence
@@ -74,20 +72,6 @@ struct Launching: LaunchingHandling {
         // that hangs or crashes later in this init still reports the previous one.
         let launchBreadcrumb = LaunchBreadcrumb()
         launchBreadcrumb.reportIncompleteLaunch()
-
-        // Wire the DesignSystem rebrand singleton to the live feature flag.
-        // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer
-        // so call sites don't need to read the flag directly.
-        AppRebrand.isAppRebranded = { [featureFlagger] in
-            featureFlagger.isFeatureOn(.appRebranding)
-        }
-
-        // Temporary feature flag and wiring during rebrand rollout – used to enable color palette updates.
-        DesignSystemRebrand.isAppRebranded = { [featureFlagger] in
-            featureFlagger.isFeatureOn(.appRebranding)
-        }
-
-        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
 
         favicons = Favicons(fireproofing: fireproofing)
 
@@ -228,7 +212,7 @@ struct Launching: LaunchingHandling {
         let freemiumPIREligibilityChecker = DefaultFreemiumPIREligibilityChecker(
             featureFlagger: featureFlagger,
             runPrerequisitesDelegate: dbpService.dbpIOSPublicInterface,
-            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             freemiumPIRDebugSettings: freemiumPIRDebugSettings
         )
 
@@ -242,6 +226,8 @@ struct Launching: LaunchingHandling {
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             isStillOnboarding: { daxDialogs.isStillOnboarding() }
         )
+        // The app's single owner of the Duck.ai bonus record. Shared instance between consumers.
+        let aiChatBonusService = AIChatBonusService()
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                                             database: configuration.persistentStoresConfiguration.database,
                                                             appSettings: appSettings,
@@ -257,11 +243,12 @@ struct Launching: LaunchingHandling {
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                                            aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager
@@ -303,6 +290,13 @@ struct Launching: LaunchingHandling {
         // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
         let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        let backgroundDateStorage = lastBackgroundDateStorage
+        let promptExposureReporter = PromptExposureReporter(
+            storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),
+            installDateProvider: { StatisticsUserDefaults().installDate },
+            onboardingCompletedProvider: { daxDialogs.hasSeenOnboarding },
+            lastBackgroundDateProvider: { (try? backgroundDateStorage.lastBackgroundDate) ?? nil }
+        )
         let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -326,7 +320,8 @@ struct Launching: LaunchingHandling {
                 subscriptionPromoExistingUserPresenter: subscriptionPromoExistingUserPresenter,
                 subscriptionPromoExistingUserCoordinator: subscriptionPromoExistingUserCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies,
-                omniBarFocuser: omniBarFocuser
+                omniBarFocuser: omniBarFocuser,
+                promptExposureReporter: promptExposureReporter
             )
         )
 
@@ -375,7 +370,8 @@ struct Launching: LaunchingHandling {
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
                                               onboardingManager: onboardingManager,
-                                              eventHub: eventHubService.eventHub
+                                              eventHub: eventHubService.eventHub,
+                                              promptExposureReporter: promptExposureReporter
         )
         launchBreadcrumb.mark(.mainCoordinator)
 

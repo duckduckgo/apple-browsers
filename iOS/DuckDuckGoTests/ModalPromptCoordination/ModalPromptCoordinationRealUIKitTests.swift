@@ -137,14 +137,15 @@ final class ModalPromptCoordinationRealUIKitTests {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
         let provider = MockModalPromptProvider()
         let exactRoot = UIViewController()
-        provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+        provider.modalConfigurationToReturn = ModalPromptConfiguration(exposureID: .remoteMessageModal, viewController: exactRoot)
         let attachmentChecker = MockModalPromptRootAttachmentChecker()
         sut = ModalPromptCoordinationManager(
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock,
-            rootAttachmentChecker: attachmentChecker
+            rootAttachmentChecker: attachmentChecker,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
         sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
@@ -188,6 +189,7 @@ final class ModalPromptCoordinationRealUIKitTests {
         let provider = MockModalPromptProvider()
         let exactRoot = UIViewController()
         provider.modalConfigurationToReturn = ModalPromptConfiguration(
+            exposureID: .remoteMessageModal,
             viewController: exactRoot,
             animated: false
         )
@@ -198,7 +200,8 @@ final class ModalPromptCoordinationRealUIKitTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
         // Wait on UIKit's own presentation completion rather than assuming an unanimated presentation settles within

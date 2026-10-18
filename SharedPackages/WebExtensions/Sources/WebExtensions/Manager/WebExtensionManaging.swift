@@ -38,9 +38,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var webExtensionIdentifiers: [String] { get }
 
-    /// The web extension controller.
+    /// Lets web views created with `configuration` run the loaded web
+    /// extensions.
     @available(macOS 15.4, iOS 18.4, *)
-    var controller: WKWebExtensionController { get }
+    func attachExtensions(to configuration: WKWebViewConfiguration)
 
     /// The events listener for web extension events.
     @available(macOS 15.4, iOS 18.4, *)
@@ -235,3 +236,20 @@ public extension WebExtensionManaging {
         context.performCommand(command)
     }
 }
+
+#if os(macOS)
+@available(macOS 15.4, *)
+public extension WebExtensionManaging {
+    /// Performs the command of a third-party extension whose keyboard shortcut matches `event`.
+    @MainActor
+    func performCommand(for event: NSEvent) -> Bool {
+        let contexts = loadedExtensions
+            .filter(\.needsChromeCompatibility)
+            .sorted(by: { $0.uniqueIdentifier < $1.uniqueIdentifier })
+        for context in contexts where context.performCommand(for: event) {
+            return true
+        }
+        return false
+    }
+}
+#endif

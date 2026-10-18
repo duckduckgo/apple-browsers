@@ -148,7 +148,7 @@ final class CookiePopupProtectionOptInPromoDelegate: InternalPromoDelegate {
                                                                                   timeSinceShown: self?.store.bucketedTimeSinceFirstShown()),
                                   frequency: .standard)
                 }
-                self?.resume(with: .actioned)
+                self?.resume(with: .actioned())
             })
             // The dialog couldn't be presented (no window, or one is already up): finish the session
             // immediately instead of leaving the promo hanging on an unresolved continuation.

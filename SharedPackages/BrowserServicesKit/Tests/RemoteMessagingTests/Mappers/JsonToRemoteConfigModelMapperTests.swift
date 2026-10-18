@@ -157,7 +157,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
     func testWhenValidJsonParsedThenRulesMappedIntoRemoteConfig() throws {
         let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config.json", bundle: .module)
-        XCTAssertTrue(config.rules.count == 7)
+        XCTAssertTrue(config.rules.count == 8)
 
         let rule5 = config.rules.filter { $0.id == 5 }.first
         XCTAssertNotNil(rule5)
@@ -268,6 +268,22 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         XCTAssertEqual(attribs?.count, 1)
         XCTAssertEqual(attribs?.first as? SyncEnabledMatchingAttribute, SyncEnabledMatchingAttribute(value: true, fallback: nil))
 
+        let rule12 = config.rules.filter { $0.id == 12 }.first
+        XCTAssertNotNil(rule12)
+        XCTAssertNil(rule12?.targetPercentile)
+        XCTAssertEqual(rule12?.attributes.count, 4)
+
+        attribs = rule12?.attributes.filter { $0 is IsReturningUserMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? IsReturningUserMatchingAttribute, IsReturningUserMatchingAttribute(value: true, fallback: nil))
+
+        attribs = rule12?.attributes.filter { $0 is IsDuckAIEnabledMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? IsDuckAIEnabledMatchingAttribute, IsDuckAIEnabledMatchingAttribute(value: true, fallback: nil))
+
+        attribs = rule12?.attributes.filter { $0 is TriedDuckAIDuringOnboardingMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? TriedDuckAIDuringOnboardingMatchingAttribute, TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil))
+
+        attribs = rule12?.attributes.filter { $0 is IsDuckAIBoostActiveMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? IsDuckAIBoostActiveMatchingAttribute, IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil))
     }
 
     func testWhenJsonMessagesHaveUnknownTypesThenMessagesNotMappedIntoConfig() throws {

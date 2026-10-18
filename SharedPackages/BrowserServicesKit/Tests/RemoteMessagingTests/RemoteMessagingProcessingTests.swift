@@ -95,7 +95,11 @@ class RemoteMessagingProcessingTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

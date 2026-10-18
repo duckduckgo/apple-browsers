@@ -374,14 +374,40 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Origin from the subscription page URL, sent as-is. Conversion pixel, so campaign origins are allowed in addition to the `subscriptionFunnelOrigin` values.",
+                "pattern": "^funnel_",
+                "examples": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_appsettings_macos_winback"]
+            },
+            "locale",
+            "freeTrial"
+        ]
     },
     "m_mac_direct_subscribe": {
         "description": "Fired when a subscription purchase is completed successfully on direct distribution. Used for attribution tracking.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Origin from the subscription page URL, sent as-is. Conversion pixel, so campaign origins are allowed in addition to the `subscriptionFunnelOrigin` values.",
+                "pattern": "^funnel_",
+                "examples": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_appsettings_macos_winback"]
+            },
+            "locale",
+            "freeTrial"
+        ]
     },
 
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {

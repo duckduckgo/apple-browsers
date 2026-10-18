@@ -105,6 +105,13 @@ final class WebExtensionAPICompatibilityMessageHandlerTests: XCTestCase {
         XCTAssertEqual(lines, [])
     }
 
+    func testWhenAPageClaimsUnsupportedURLDirectly_ThenItIsDropped() {
+        handler.handle(body: ["kind": "unsupportedURL", "api": "tabs.query"],
+                       originProtocol: "webkit-extension", originHost: "loaded")
+
+        XCTAssertEqual(lines, [])
+    }
+
     func testWhenTheBodyIsNotAReport_ThenItIsDropped() {
         for body: Any in ["text", 1, ["kind": 1], ["kind": "stubbed"], ["kind": "unknown", "api": "a.b"], ["kind": "stubbed", "api": "https://x.y"]] {
             handler.handle(body: body, originProtocol: "webkit-extension", originHost: "loaded")

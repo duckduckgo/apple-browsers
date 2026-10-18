@@ -87,6 +87,7 @@
                     "browsing_menu_webpage",
                     "tab_switcher",
                     "tabs_bar_button",
+                    "new_tab_long_press_menu",
                     "chat_history_new_chat",
                     "chat_history_open_chat",
                     "voice",
@@ -133,9 +134,9 @@
                 "description": "Whether the user pressed back/cancel during the session."
             },
             {
-                "key": "feature.data.ext.opening_screen_changed",
+                "key": "feature.data.ext.after_inactivity_settings_opened",
                 "type": "boolean",
-                "description": "Whether the user changed the Opening Screen option from the escape hatch's settings menu during the session."
+                "description": "Whether the user opened Settings > General from the escape hatch's After Inactivity menu item during the session."
             },
             {
                 "key": "feature.data.ext.close_tab_tapped",

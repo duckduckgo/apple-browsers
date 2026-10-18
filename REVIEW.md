@@ -118,8 +118,8 @@ and a guard test fails when the two drift apart.
 
 | Embedded data file | Paired provider |
 |---|---|
-| `iOS/Core/ios-config.json` | `iOS/Core/AppPrivacyConfigurationDataProvider.swift` |
-| `iOS/Core/trackerData.json` | `iOS/Core/AppTrackerDataSetProvider.swift` |
+| `iOS/Core/ContentBlocker/PrivacyConfiguration/ios-config.json` | `iOS/Core/ContentBlocker/AppPrivacyConfigurationDataProvider.swift` |
+| `iOS/Core/ContentBlocker/Domain/trackerData.json` | `iOS/Core/ContentBlocker/AppTrackerDataSetProvider.swift` |
 | `macOS/DuckDuckGo/ContentBlocker/Resources/macos-config.json` | `macOS/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift` |
 | `macOS/DuckDuckGo/ContentBlocker/Resources/trackerData.json` | `macOS/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift` |
 

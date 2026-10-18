@@ -614,8 +614,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
         receivedMessages.append(.setRefreshControlEnabled(isEnabled))
     }
 
+    var isUnifiedInputContentOverlaySuppressed = false
+
     func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
-        // no-op
+        isUnifiedInputContentOverlaySuppressed = suppressed
     }
 
     var canHideBars: Bool = false
@@ -632,7 +634,9 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
 
-    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { .zero }
+    var obscuredContentInsets: UIEdgeInsets = .zero
+
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { obscuredContentInsets }
 
     var floatingNewTabPageTopObscuredHeight: CGFloat = 0
 

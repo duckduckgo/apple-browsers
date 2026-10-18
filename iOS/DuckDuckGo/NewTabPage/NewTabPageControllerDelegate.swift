@@ -35,6 +35,7 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidRequestSwitchToTab(_ controller: any NewTabPage, tab: Tab)
     func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage)
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage)
+    func newTabPageDidChangeOnboardingPresentation(_ controller: any NewTabPage)
     func newTabPageDidScroll(_ controller: any NewTabPage)
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction)
 
@@ -44,6 +45,7 @@ protocol NewTabPageControllerDelegate: AnyObject {
 }
 
 extension NewTabPageControllerDelegate {
+    func newTabPageDidChangeOnboardingPresentation(_ controller: any NewTabPage) { }
     func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) { }
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) { }
     func newTabPageDidScroll(_ controller: any NewTabPage) { }

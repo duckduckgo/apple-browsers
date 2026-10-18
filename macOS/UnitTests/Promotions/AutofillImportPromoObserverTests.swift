@@ -178,7 +178,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         sut.overlayDidEndImportFlow(overlayA)
 
         XCTAssertFalse(sut.isVisible)
-        XCTAssertEqual(sut.resultWhenHidden, .actioned)
+        XCTAssertEqual(sut.resultWhenHidden, .actioned())
     }
 
     func testWhenImportFlowEndsWithoutStartedImportThenNothingChanges() {
@@ -193,7 +193,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
     func testResultWhenHiddenForEachResolutionPath() {
         let cases: [(actions: [Action], hadImportedLogins: Bool, expected: PromoResult)] = [
             ([], false, .ignored(cooldown: 0)),
-            ([.startImport, .importLogins, .endImportFlow], false, .actioned),
+            ([.startImport, .importLogins, .endImportFlow], false, .actioned()),
             ([.startImport, .endImportFlow], false, .ignored(cooldown: 0)),
             ([.startImport, .importLogins, .endImportFlow], true, .ignored(cooldown: 0)),
             ([.permanentlyDismiss], false, .ignored())
@@ -270,7 +270,7 @@ final class AutofillImportPromoObserverTests: XCTestCase {
         importState.hasImportedLogins = true
         sut.overlayDidEndImportFlow(overlayA)
 
-        XCTAssertEqual(resultWhenHiddenOnEmission, .actioned)
+        XCTAssertEqual(resultWhenHiddenOnEmission, .actioned())
     }
 
     // MARK: - Promo definition

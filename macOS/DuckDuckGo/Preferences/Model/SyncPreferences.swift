@@ -20,7 +20,6 @@ import Foundation
 import DDGSync
 import Combine
 import CombineExtensions
-import DesignResourcesKit
 import Common
 import FoundationExtensions
 import SystemConfiguration
@@ -37,10 +36,15 @@ extension SyncDevice {
         self.init(kind: .current, name: account.deviceName, id: account.deviceId)
     }
 
+    // Keep aligned with the RegisteredDeviceMapper placeholder type for undecryptable devices.
+    private static let unknownDeviceType = "unknown"
+
     init(_ device: RegisteredDevice) {
         let kind: Kind
         if device.credentialId == SyncCredentialID.thirdParty {
             kind = .thirdParty
+        } else if device.type == Self.unknownDeviceType {
+            kind = .unknown
         } else {
             kind = device.type == "desktop" ? .desktop : .mobile
         }
@@ -199,7 +203,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     @Published var isAccountRecoveryAvailable: Bool = true
     @Published var isAppVersionNotSupported: Bool = true
     @Published var isAIChatSyncEnabled: Bool = false
-    @Published var isAppRebranded: Bool = false
     @Published var isSimplifiedSyncSetupV2Enabled: Bool = false
 
     private let syncPausedStateManager: any SyncPausedStateManaging
@@ -248,7 +251,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncPausedStateManager = syncPausedStateManager
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
-        self.isAppRebranded = DesignSystemRebrand.isAppRebranded()
         self.isAIChatSyncEnabled = featureFlagger.isFeatureOn(.aiChatSync)
         self.isSimplifiedSyncSetupV2Enabled = featureFlagger.isFeatureOn(.simplifiedSyncSetupV2)
 

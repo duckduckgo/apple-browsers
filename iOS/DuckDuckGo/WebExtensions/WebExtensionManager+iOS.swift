@@ -128,6 +128,7 @@ public enum WebExtensionManagerFactory {
             isCPMNetworkProcessRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,

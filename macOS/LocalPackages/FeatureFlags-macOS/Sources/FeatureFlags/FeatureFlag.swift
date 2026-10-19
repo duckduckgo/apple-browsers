@@ -754,7 +754,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery), category: .webExtensions)
         case .cpmNetworkProcessRecovery:
-            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery), category: .webExtensions)
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),

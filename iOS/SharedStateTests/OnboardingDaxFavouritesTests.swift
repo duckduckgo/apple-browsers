@@ -34,6 +34,7 @@ import Common
 import SystemSettingsPiPTutorialTestSupport
 import Combine
 import PrivacyConfig
+import AIChat
 import AIChatTestingUtilities
 
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
@@ -107,7 +108,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                                                                               internalUserDecider: MockInternalUserDecider(),
                                                                               syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                              webExtensionAvailability: nil)
+                                                                              webExtensionAvailability: nil,
+                                                                              aiChatBonusService: AIChatBonusService(store: MockAIChatBonusStore()))
 
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
         let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence)

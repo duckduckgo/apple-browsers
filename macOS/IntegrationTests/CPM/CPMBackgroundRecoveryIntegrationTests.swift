@@ -31,6 +31,10 @@ import XCTest
 // Review-only app/WebKit suite; this branch is not intended for merging.
 // Runs only through the opt-in CPM Integration Tests scheme; keep it out of CI.
 final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
+    // Exceed both the five-second navigation gate and four-second response deadline.
+    // Newer WebKit can otherwise buffer the first message until an eight-second startup finishes.
+    private let lateStartupDelayMilliseconds = 12_000
+
     private var installStartupDelayMilliseconds: Int {
         Int(ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION_INSTALL_DELAY_MS"] ?? "") ?? 4500
     }
@@ -124,7 +128,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         let originalContext = try XCTUnwrap(harness.context)
         harness.observeBackgroundLoadErrors(in: originalContext)
         try await harness.waitForIdle()
-        let navigation = Task { try await harness.navigate(tabs[0], label: "frozen-recovery-failure", timeout: 20) }
+        async let navigation = harness.navigate(tabs[0], label: "frozen-recovery-failure", timeout: 20)
         try await harness.wait("new background process", timeout: 10) {
             CPMAppWebKit.process(CPMAppWebKit.background(originalContext)) != nil
         }
@@ -134,7 +138,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         // Keep the actual 30-second deadline, then resume before waiting for the error notification.
         try await harness.pause(45)
         harness.resume(process)
-        let failed = try await navigation.value
+        let failed = try await navigation
         assertFailed(failed)
         try await harness.wait("real WebKit error 6", timeout: 15) {
             harness.backgroundLoadErrorContexts.contains(ObjectIdentifier(originalContext))
@@ -182,16 +186,17 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
 
     func testLateStartupIsDetectedWithRecoveryDisabledWithoutReload() async throws {
         let harness = try XCTUnwrap(harness)
-        harness.startupDelayMilliseconds = 8000
+        harness.startupDelayMilliseconds = lateStartupDelayMilliseconds
         try await harness.start(embeddedEnabled: false)
         harness.setFlag(.cpmLateBackgroundDocumentRecovery, enabled: false)
         let tab = try harness.openWindow()[0]
+        try await harness.warmUpWindow(for: tab)
         harness.setFlag(.embeddedExtension, enabled: true)
         try await harness.wait("detection-only install", timeout: 10) { harness.context != nil }
         let context = try XCTUnwrap(harness.context)
         let probe = try await harness.navigate(tab, label: "late-startup-detection-only", timeout: 15)
         assertFailed(probe)
-        try await harness.wait("P4 detection with recovery disabled", timeout: 3) {
+        try await harness.wait("P4 detection with recovery disabled", timeout: 10) {
             harness.pixels.startupResponseMissingCount == 1
         }
         try await harness.pause(1)
@@ -217,18 +222,21 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
 
     func testLateStartupDoesNotReloadEditedDocument() async throws {
         let harness = try XCTUnwrap(harness)
-        harness.startupDelayMilliseconds = 8000
+        harness.startupDelayMilliseconds = lateStartupDelayMilliseconds
         try await harness.start(embeddedEnabled: false)
         let tab = try harness.openWindow()[0]
+        try await harness.warmUpWindow(for: tab)
         harness.setFlag(.embeddedExtension, enabled: true)
         try await harness.wait("late install context", timeout: 10) { harness.context != nil }
         let began = Date()
-        let navigation = Task { try await harness.navigate(tab, label: "late-edited-document", timeout: 15) }
-        try await harness.wait("editable first document", timeout: 6.5) {
+        async let navigation = harness.navigate(tab, label: "late-edited-document", timeout: 15)
+        try await harness.wait("editable first document", timeout: 15) {
             harness.finishedURLDates.values.contains { $0.contains { $0 >= began } }
         }
+        _ = try XCTUnwrap(harness.manager.pendingEmbeddedBackgroundStartup,
+                          "Edit the first document while the background startup is still pending")
         _ = try await tab.webView.evaluateJavaScript("const input = document.createElement('input'); document.body.append(input); input.value = 'local edit';", in: nil, contentWorld: .defaultClient)
-        let probe = try await navigation.value
+        let probe = try await navigation
         await harness.manager.loadEmbeddedExtensionBackgroundContent()
         try await harness.pause(1)
         XCTAssertEqual(harness.finishedURLDates[probe.url]?.count, 1)
@@ -238,15 +246,16 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
 
     private func exerciseLateStartup(upgrade: Bool) async throws {
         let harness = try XCTUnwrap(harness)
-        harness.startupDelayMilliseconds = upgrade ? 0 : 8000
+        harness.startupDelayMilliseconds = upgrade ? 0 : lateStartupDelayMilliseconds
         try await harness.start(embeddedEnabled: upgrade)
         let tab = try harness.openWindow()[0]
+        try await harness.warmUpWindow(for: tab)
         var sync: Task<Void, Never>?
         var expectedContext: WKWebExtensionContext?
         if upgrade {
             assertHealthy(try await harness.navigate(tab, label: "late-upgrade-baseline"))
             let original = try XCTUnwrap(harness.context)
-            try XCTUnwrap(harness.storages.last).startupDelayMilliseconds = 8000
+            try XCTUnwrap(harness.storages.last).startupDelayMilliseconds = lateStartupDelayMilliseconds
             try XCTUnwrap(harness.installationStore).markInstalledVersionAsOutdated()
             sync = try XCTUnwrap(harness.app.webExtensionLifecycleCoordinator).sync()
             try await harness.wait("over-budget replacement context", timeout: 10) {
@@ -260,15 +269,21 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         }
         let context = try XCTUnwrap(expectedContext)
         let began = Date()
-        let navigation = Task { try await harness.navigate(tab, label: "late-\(upgrade ? "upgrade" : "install")", timeout: 15) }
-        try await harness.wait("first navigation finishes within the existing five-second budget", timeout: 6.5) {
+        async let navigation = harness.navigate(tab, label: "late-\(upgrade ? "upgrade" : "install")", timeout: 15)
+        try await harness.wait("first document after the bounded navigation gate", timeout: 15) {
             harness.finishedURLDates.values.contains { $0.contains { $0 >= began } }
         }
         let firstFinish = try XCTUnwrap(harness.finishedURLDates.values.flatMap { $0 }.filter { $0 >= began }.min())
-        XCTAssertLessThan(firstFinish.timeIntervalSince(began), 6.5, "Five-second gate plus local document load; the worker is still busy for eight seconds")
+        let gate = try XCTUnwrap(harness.navigationGateWaits.last { $0.beganAt >= began })
+        XCTAssertLessThan(gate.elapsed, 6.5, "The production five-second gate, with scheduler tolerance; exclude cold UI/page loading")
+        XCTAssertTrue(gate.startupWasPendingAtRelease, "Navigation must resume while background startup remains pending")
         let firstURL = try XCTUnwrap(tab.webView.url)
         XCTAssertFalse(harness.native.forwardedDashboardURLs.contains(firstURL.absoluteString))
-        let probe = try await navigation.value
+        let probe = try await navigation
+        assertFailed(probe)
+        try await harness.wait("P4 detection after late background readiness", timeout: 10) {
+            harness.pixels.startupResponseMissingCount > 0
+        }
         XCTAssertEqual(harness.pixels.startupResponseMissingCount, 1)
         try await harness.wait("automatic first-document recovery after late background readiness", timeout: 15) {
             harness.native.forwardedDashboardURLs.contains(firstURL.absoluteString)
@@ -282,8 +297,10 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         XCTAssertTrue(harness.context === context)
         XCTAssertEqual(harness.pixels.recoveryOutcomes(.lateDocumentReload), [.reloadStarted, .responseReceived])
         await sync?.value
-        harness.note(["regression": upgrade ? "late-upgrade" : "late-install", "workerDelayMilliseconds": 8000,
+        harness.note(["regression": upgrade ? "late-upgrade" : "late-install", "workerDelayMilliseconds": lateStartupDelayMilliseconds,
                       "firstFinishSeconds": firstFinish.timeIntervalSince(began),
+                      "navigationGateSeconds": gate.elapsed,
+                      "startupWasPendingAtGateRelease": gate.startupWasPendingAtRelease,
                       "finishCount": harness.finishedURLDates[firstURL]?.count ?? 0,
                       "initialProbe": probe.report,
                       "requiredBehavior": "Navigation gate remains five seconds; exactly one automatic GET reload delivers real page initResp"])

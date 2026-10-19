@@ -32,6 +32,12 @@ import XCTest
 @available(macOS 15.4, *)
 @MainActor
 final class CPMAppIntegrationHarness {
+    struct NavigationGateWait {
+        let beganAt: Date
+        let elapsed: TimeInterval
+        let startupWasPendingAtRelease: Bool
+    }
+
     struct Probe {
         let label: String
         let url: URL
@@ -75,6 +81,8 @@ final class CPMAppIntegrationHarness {
     private var cancellables: Set<AnyCancellable> = []
     private var finishedURLs: Set<URL> = []
     private(set) var finishedURLDates: [URL: [Date]] = [:]
+    private var finishedNavigationCounts: [String: Int] = [:]
+    private(set) var navigationGateWaits: [NavigationGateWait] = []
     private var frozenProcesses: Set<Int32> = []
     private(set) var backgroundLoadErrorContexts: Set<ObjectIdentifier> = []
     private var probes: [Probe] = []
@@ -207,6 +215,7 @@ final class CPMAppIntegrationHarness {
             tabs.forEach { collection.append(tab: $0) }
             let model = TabCollectionViewModel(tabCollection: collection, windowControllersManager: app.windowControllersManager)
             let window = try XCTUnwrap(WindowsManager.openNewWindow(with: model, burnerMode: .regular))
+            window.animationBehavior = .none
             windows.append(window)
             return tabs
         }
@@ -224,14 +233,38 @@ final class CPMAppIntegrationHarness {
     private func makeTab() -> Tab {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = dataStore
-        let tab = Tab(content: .none, webViewConfiguration: configuration, privacyFeatures: privacyFeatures)
+        let tab = Tab(content: .none, webViewConfiguration: configuration, privacyFeatures: privacyFeatures,
+                      webExtensionInitialLoadWaiterProvider: { [weak self] in
+            guard let waiter = self?.app.webExtensionLifecycleCoordinator?.initialLoadWaiter else { return nil }
+            return { [weak self] in
+                let began = Date()
+                await waiter()
+                let pending = self?.app.webExtensionManager?.pendingEmbeddedBackgroundStartup != nil
+                self?.navigationGateWaits.append(NavigationGateWait(beganAt: began, elapsed: Date().timeIntervalSince(began),
+                                                                  startupWasPendingAtRelease: pending))
+            }
+        })
         tab.webViewDidFinishNavigationPublisher.sink { [weak self, weak tab] in
-            if let url = tab?.webView.url {
-                self?.finishedURLs.insert(url)
-                self?.finishedURLDates[url, default: []].append(Date())
+            guard let self, let tab else { return }
+            self.finishedNavigationCounts[tab.uuid, default: 0] += 1
+            if let url = tab.webView.url {
+                self.finishedURLs.insert(url)
+                self.finishedURLDates[url, default: []].append(Date())
             }
         }.store(in: &cancellables)
         return tab
+    }
+
+    /// Prime the real window/web process before timing an install. about:blank is ineligible
+    /// for CPM health measurement, so this cannot create a stale warm-up response deadline.
+    func warmUpWindow(for tab: Tab) async throws {
+        let previousFinishes = finishedNavigationCounts[tab.uuid, default: 0]
+        autoreleasepool {
+            tab.webView.loadHTMLString("<!doctype html><html><body></body></html>", baseURL: nil)
+        }
+        try await wait("initial window document", timeout: 15) {
+            self.finishedNavigationCounts[tab.uuid, default: 0] > previousFinishes
+        }
     }
 
     func url(_ label: String) -> URL {

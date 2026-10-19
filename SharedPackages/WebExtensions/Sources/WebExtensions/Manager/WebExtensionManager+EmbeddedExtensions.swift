@@ -156,6 +156,8 @@ extension WebExtensionManager {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
+        cpmBaseURLPolicy.pendingInstallations[identifier] = type
+        defer { cpmBaseURLPolicy.pendingInstallations[identifier] = nil }
         permissionController?.trustedInstallations.insert(identifier)
         defer { permissionController?.trustedInstallations.remove(identifier) }
         if requiresExtraction {

@@ -80,6 +80,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     public let installationStore: InstalledWebExtensionStoring
     public let storageProvider: WebExtensionStorageProviding
+    let cpmBaseURLPolicy: CPMExtensionBaseURLPolicy
     public let loader: WebExtensionLoading
     public let permissionController: WebExtensionPermissionController?
     public var chromeWebStore: ChromeWebStoreManaging?
@@ -173,6 +174,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public init(configuration: WebExtensionConfigurationProviding,
+                controllerConfiguration: WKWebExtensionController.Configuration? = nil,
                 windowTabProvider: WebExtensionWindowTabProviding,
                 storageProvider: WebExtensionStorageProviding,
                 installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
@@ -184,13 +186,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
-        let controllerConfiguration = WKWebExtensionController.Configuration.default()
+        let controllerConfiguration = controllerConfiguration ?? WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
         // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,
@@ -211,9 +214,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.installationStore = installationStore
         self.permissionController = permissionController
         self.bundledExtensionURL = bundledExtensionURL
+        let baseURLPolicy = CPMExtensionBaseURLPolicy(installationStore: installationStore, isEnabled: isCPMStableBaseURLEnabled)
+        self.cpmBaseURLPolicy = baseURLPolicy
         self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider,
                                                    isInspectable: configuration.isInspectable,
-                                                   permissionController: permissionController)
+                                                   permissionController: permissionController,
+                                                   baseURLProvider: baseURLPolicy.baseURL)
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring

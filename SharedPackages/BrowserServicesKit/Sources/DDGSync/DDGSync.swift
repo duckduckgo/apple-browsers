@@ -358,6 +358,21 @@ public class DDGSync: DDGSyncing {
         }
     }
 
+    public func fetchAuditLogForDebug() async throws -> AuditLogDebugSummary {
+        guard let account = try dependencies.secureStore.account() else {
+            throw SyncError.accountNotFound
+        }
+
+        do {
+            let page = try await dependencies.account.fetchAuditLog(for: account, cursor: nil, limit: nil)
+            return AuditLogDebugSummary(entryCount: page.entries.count,
+                                        hasAfterCursor: !page.after.isEmpty,
+                                        hasBeforeCursor: page.before != nil)
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
     public func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
         guard let account = try dependencies.secureStore.account() else {
             throw SyncError.accountNotFound

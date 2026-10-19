@@ -117,6 +117,17 @@ class AccountManagingMock: AccountManaging {
         }
     }
 
+    var fetchAuditLogCalls: [(SyncAccount, AuditLogCursor?, Int?)] = []
+    var fetchAuditLogStub = AuditLogPage(entries: [], after: "cursor", before: nil)
+    var fetchAuditLogError: Error?
+    func fetchAuditLog(for account: SyncAccount, cursor: AuditLogCursor?, limit: Int?) async throws -> AuditLogPage {
+        fetchAuditLogCalls.append((account, cursor, limit))
+        if let fetchAuditLogError {
+            throw fetchAuditLogError
+        }
+        return fetchAuditLogStub
+    }
+
     var fetchDevicesForAccountCalls: [SyncAccount] = []
     var fetchDevicesForAccountStub = RegisteredDeviceMappingResult(devices: [.mock], needsCurrentDeviceInfoRepair: false)
     var fetchDevicesForAccountError: Error?

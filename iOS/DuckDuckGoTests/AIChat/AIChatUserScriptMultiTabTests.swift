@@ -439,8 +439,31 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         XCTAssertEqual(releaseCount, 1)
         XCTAssertEqual(submissions.count, 1)
         XCTAssertEqual(submissions.first?.totalTabCount, 1)
-        XCTAssertEqual(submissions.first?.additionalTabCount, 1)
+        XCTAssertEqual(submissions.first?.deliveredAttachmentCount, 1)
         XCTAssertTrue(webView.prompts.isEmpty)
+    }
+
+    func testPreparedCurrentOmnibarTabCountsAsDeliveredAttachmentWithoutTabID() async throws {
+        let currentTab = context()
+        var submissions: [MultiTabAttachmentRequest.SubmissionResult] = []
+        let prepared = expectation(description: "Current tab context prepared")
+        var preparedDelivery: AIChatInitialPromptDelivery?
+        let request = MultiTabAttachmentRequest(contexts: { [currentTab] }, didConsume: {},
+                                                didDispatch: { submissions.append($0) })
+        let preparation = AIChatInitialPromptPreparation(prompt: .queryPrompt("hello", autoSubmit: true), request: request) {
+            preparedDelivery = $0
+            prepared.fulfill()
+        }
+        defer { preparation.cancel() }
+        await fulfillment(of: [prepared], timeout: 1)
+        let delivery = try XCTUnwrap(preparedDelivery)
+        defer { delivery.cancel() }
+        XCTAssertTrue(submissions.isEmpty)
+
+        XCTAssertEqual(delivery.consume()?.pageContext, .multiple([currentTab]))
+        XCTAssertEqual(submissions.count, 1)
+        XCTAssertEqual(submissions.first?.totalTabCount, 1)
+        XCTAssertEqual(submissions.first?.deliveredAttachmentCount, 1)
     }
 
     func testReplacementAfterFrontendRequestDoesNotDeliverInitialPromptTwice() async throws {
@@ -613,6 +636,27 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         XCTAssertEqual(webView.prompts.last?.pageContext, .multiple([attached]))
     }
 
+    func testCurrentOmnibarTabCountsAsDeliveredAttachmentWithoutTabID() async {
+        let script = makeScript()
+        let currentTab = context().withTabId(nil)
+        let reporter = UTIPixelReporter(firing: UTIPixelFiring(pixelKit: { [pixelKitMock] in pixelKitMock }), context: {
+            UTIPixelContext(surface: .addressBar, isDuckAISurfaceForAttribution: false,
+                            inputMode: .aiChat, isToggleVisible: false, pageType: .website, duckAIEntrySource: nil)
+        })
+        let delivered = expectation(description: "Current tab prompt dispatched")
+        webView.onPrompt = { _ in delivered.fulfill() }
+
+        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+                            tabAttachmentRequest: .init(contexts: { [currentTab] }, didConsume: {},
+                                                        didDispatch: reporter.makeTabSubmissionReporter(requestedTabCount: 1)))
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(webView.prompts.last?.pageContext, .multiple([currentTab]))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["aichat_unified_input_tabs_sent"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters,
+                       ["surface": "address_bar", "page_type": "website", "payload_tab_count": "one"])
+    }
+
     func testDeliveryRevalidatesContextsAfterAwait() async {
         let script = makeScript()
         let attached = context(tabId: "submitted")
@@ -662,8 +706,10 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         }
         _ = await dispatch(script)
         XCTAssertEqual(pixelKitMock.actualFireCalls.count, 2)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "payload_tab_count": "some"])
-        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["surface": "contextual_chat", "outcome": "partial"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters,
+                       ["surface": "contextual_chat", "page_type": "contextual", "payload_tab_count": "some"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters,
+                       ["surface": "contextual_chat", "page_type": "contextual", "outcome": "partial"])
     }
 
     func testWhenNoAdditionalContextSurvivesThenMeasuresIncompleteSubmission() async {
@@ -673,7 +719,8 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         _ = await dispatch(script)
         XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
         XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, "aichat_unified_input_tabs_submission_incomplete")
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "outcome": "all"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters,
+                       ["surface": "contextual_chat", "page_type": "contextual", "outcome": "all"])
     }
 
     func testWhenEveryContextIsMissingWithoutCurrentPageThenReportsAllMissing() async {
@@ -682,7 +729,8 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let prompt = await dispatch(script)
         XCTAssertNil(prompt?.pageContext)
         XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters, ["surface": "contextual_chat", "outcome": "all"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters,
+                       ["surface": "contextual_chat", "page_type": "contextual", "outcome": "all"])
     }
 
     func testWhenFeatureDisabledThenDoesNotMeasureTabsSent() async {

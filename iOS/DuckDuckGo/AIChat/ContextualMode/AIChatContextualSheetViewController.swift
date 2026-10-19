@@ -43,7 +43,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController)
 
     /// Called when the user taps expand to open duck.ai in a new tab with the current chat URL
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL)
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didRequestExpandWithURL url: URL,
+                                             entrySource: AIChatEntryPointSource)
 
     /// Called when the user taps "View all chats" and the native chat history page should open.
     func aiChatContextualSheetViewControllerDidRequestViewAllChats(_ viewController: AIChatContextualSheetViewController)
@@ -626,7 +628,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private func requestExpand() {
         let url = sessionState.contextualChatURL ?? aiChatSettings.aiChatURL
         Logger.aiChat.debug("[AIChatContextual] Expand tapped with URL: \(url.shortDescription)")
-        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, entrySource: .contextualChat)
     }
 
     @objc private func fireButtonTapped() {
@@ -1146,7 +1148,7 @@ extension AIChatContextualSheetViewController {
     func recentChatsMenuDidSelectChat(_ chat: AIChatSuggestion) {
         pixelHandler.fireRecentChatSelected()
         let url = aiChatSettings.aiChatURL.withChatID(chat.chatId)
-        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+        delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, entrySource: .chatHistoryOpenChat)
     }
 
     func recentChatsMenuDidSelectViewAll() {
@@ -1157,7 +1159,7 @@ extension AIChatContextualSheetViewController {
             delegate?.aiChatContextualSheetViewControllerDidRequestViewAllChats(self)
         } else {
             let url = AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL)
-            delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url)
+            delegate?.aiChatContextualSheetViewController(self, didRequestExpandWithURL: url, entrySource: .chatHistoryViewAll)
         }
     }
 
@@ -1218,6 +1220,7 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue) {
         transitionToWebViewAfterInitialPromptStatusIfNeeded(status)
+        webViewController?.notifyChatStatusChanged(status)
     }
 
     func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {

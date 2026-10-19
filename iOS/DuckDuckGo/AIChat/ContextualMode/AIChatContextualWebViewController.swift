@@ -64,12 +64,14 @@ final class AIChatContextualWebViewController: UIViewController {
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isFireTab: Bool
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private let usageContextProvider: UsageContextProviding
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
     private var utiHost: AIChatContextualUTIHost?
+    private var promptFlowReporter: ContextualDuckAIPromptFlowReporting?
     private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
@@ -158,6 +160,7 @@ final class AIChatContextualWebViewController: UIViewController {
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          isFireTab: Bool = false,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         usageContextProvider: UsageContextProviding,
          downloadHandler: DownloadHandling,
          getPageContext: PageContextAsyncProvider?,
          pixelHandler: AIChatContextualModePixelFiring,
@@ -173,6 +176,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.isFireTab = isFireTab
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.usageContextProvider = usageContextProvider
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
@@ -182,6 +186,8 @@ final class AIChatContextualWebViewController: UIViewController {
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
+            pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: ContextualChatPromptPixelContext(),
+                                                         usageContextProvider: usageContextProvider),
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
             onboardingActivationRecorder: onboardingActivationRecorder,
@@ -206,6 +212,7 @@ final class AIChatContextualWebViewController: UIViewController {
         if shouldInstallUTIHost, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
         }
+        promptFlowReporter = utiHost ?? makeStandalonePromptFlowReporter()
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
@@ -602,7 +609,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         let nsError = error as NSError
         guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
 
-        utiHost?.pageLoadFailed(error: error)
+        promptFlowReporter?.pageLoadFailed(error: error)
     }
 }
 
@@ -611,14 +618,24 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
 extension AIChatContextualWebViewController {
 
     func notifySheetDismissed() {
-        utiHost?.sheetDismissed()
+        promptFlowReporter?.sheetDismissed()
     }
 
     func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
-        utiHost?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
+        promptFlowReporter?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 
     func notifyFrontendPromptSubmissionAcknowledged() {
-        utiHost?.frontendSubmissionAcknowledged()
+        promptFlowReporter?.frontendSubmissionAcknowledged()
+    }
+
+    func notifyChatStatusChanged(_ status: AIChatStatusValue) {
+        promptFlowReporter?.chatStatusChanged(status)
+    }
+
+    private func makeStandalonePromptFlowReporter() -> ContextualDuckAIPromptFlowReporting {
+        let instrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                                    usageContextProvider: usageContextProvider)
+        return ContextualDuckAIPromptFlowReporter(instrumentation: instrumentation, isFireMode: isFireTab)
     }
 }

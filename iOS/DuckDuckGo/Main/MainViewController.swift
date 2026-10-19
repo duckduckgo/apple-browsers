@@ -1307,7 +1307,8 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.swipeOverlayView = overlay
     }
 
-    func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
+    /// `result` says whether the current web page's first preview snapshot timed out; see `TabViewController.preparePreview`.
+    func updatePreviewForCurrentTab(completion: ((_ result: WebContentHealthPixel.SnapshotResult) -> Void)? = nil) {
         assert(Thread.isMainThread)
         // Returning by swipe also needs chrome and screen geometry when the NTP was left
         // through the tab switcher, which otherwise only saves a content-sized thumbnail.
@@ -1322,25 +1323,26 @@ class MainViewController: UIViewController {
             if let image = viewCoordinator.logoContainer.createImageSnapshot(inBounds: viewCoordinator.contentContainer.frame) {
                 previewsSource.update(preview: image, forTab: tab)
             }
-            completion?()
+            completion?(.skipped)
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
-            currentTab.preparePreview(completion: { image in
-                if let image {
+            // A snapshot that never answers (a frozen page) must not keep a closed tab alive.
+            currentTab.preparePreview(completion: { [weak currentTab] image, result in
+                if let image, let currentTab {
                     self.previewsSource.update(preview: image,
                                                forTab: currentTab.tabModel)
                 }
-                completion?()
+                completion?(result)
             })
         } else if let tab = self.tabManager.currentTabsModel.currentTab {
             // Favorites, etc
             if let image = viewCoordinator.contentContainer.createImageSnapshot() {
                 previewsSource.update(preview: image, forTab: tab)
             }
-            completion?()
+            completion?(.skipped)
         } else {
-            completion?()
+            completion?(.skipped)
         }
     }
 
@@ -8586,7 +8588,10 @@ extension MainViewController: TabSwitcherButtonDelegate {
         // Don't clear `openedAfterIdle` on switcher open — the after-idle session
         // ends on actual tab transition (see `transitionTo`), not on peeking.
         hideNotificationBarIfBrokenSitePromptShown()
-        updatePreviewForCurrentTab {
+        updatePreviewForCurrentTab { result in
+            if result.isTimeout {
+                self.tabManager.current()?.previewSnapshotTimedOut(result: result)
+            }
             ViewHighlighter.hideAll()
             Task { @MainActor in
                 await self.segueToTabSwitcher()

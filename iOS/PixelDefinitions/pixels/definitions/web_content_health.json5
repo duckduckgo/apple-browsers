@@ -115,5 +115,29 @@
                 "type": "boolean"
             }
         ]
+    },
+    "web-content_preview-snapshot-timeout": {
+        "description": "Fires when opening the tab switcher waited more than a second for the current page's preview snapshot. Any page that does not draw within that time counts, so this includes short stalls and heavy pages as well as frozen ones; on its own it is an upper bound on users stuck on a page. unresponsive marks the pages WebKit had already reported as hung. Use web-content_unresponsive-result to size freezes. On a page WebKit has already reported, the first snapshot is skipped and the fallback runs at once; the pixel still fires, with unresponsive=true.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "result",
+                "description": "How the fallback snapshot, which does not wait for the page to draw, ended after the first one timed out: it returned an image, returned without one, or also timed out",
+                "enum": ["retry-image", "retry-no-image", "retry-timeout"]
+            },
+            {
+                "key": "unresponsive",
+                "description": "Whether WebKit had already reported the page as unresponsive",
+                "type": "boolean"
+            },
+            {
+                "key": "app_state",
+                "description": "App state when the snapshot timed out",
+                "enum": ["foreground", "background"]
+            }
+        ]
     }
 }

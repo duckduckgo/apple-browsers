@@ -384,6 +384,8 @@ final class AddressBarTextEditor: NSTextView {
                     stillSelecting: false
                 )
             }
+            // The moving end is the left one: keep it visible on a long text
+            self.scrollToSelectionStart()
             return
         }
         guard let index = nextWordSelectionIndex(backwards: false) else { return }
@@ -414,6 +416,8 @@ final class AddressBarTextEditor: NSTextView {
                     stillSelecting: false
                 )
             }
+            // The moving end is the right one: keep it visible on a long text
+            self.scrollToSelectionEnd()
             return
         }
 

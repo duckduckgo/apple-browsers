@@ -642,6 +642,7 @@ public enum FeatureFlag: String, CaseIterable {
     case pageSignals
 
     /// Exposes the tab preview window to accessibility. It‘s hidden from accessibility otherwise, UI tests that observe the preview pass this flag.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213733523353564
     case tabPreviewAccessibilityForUITests
 }
 

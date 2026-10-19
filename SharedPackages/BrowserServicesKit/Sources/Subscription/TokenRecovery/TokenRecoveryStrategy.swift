@@ -31,7 +31,7 @@ public enum TokenRecoveryTrigger: String {
 public struct TokenRecoveryContext {
     /// What made the recovery necessary.
     public let trigger: TokenRecoveryTrigger
-    /// The current token container that failed to refresh. Nil when the trigger is `.missingToken`.
+    /// The current token container that failed to refresh. Nil when the trigger is `.missingToken`, or when it couldn't be read.
     public let deadPrimary: TokenContainer?
     /// The cut-off recorded at the last explicit sign-out, or nil if the user never signed out explicitly.
     public let signOutCutoff: Date?

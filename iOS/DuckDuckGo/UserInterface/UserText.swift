@@ -2571,11 +2571,12 @@ public struct UserText {
     public static let aiChatPastedTextSheetTitle = NSLocalizedString("aichat.pasted.text.sheet.title", value: "Pasted Text", comment: "Title of the sheet that shows and edits a long block of text the user pasted into Duck.ai")
     public static let aiChatPastedTextFormattingNote = NSLocalizedString("aichat.pasted.text.formatting.note", value: "Formatting may be inconsistent from source.", comment: "Subtitle of the sheet that shows a long block of text the user pasted into Duck.ai")
     public static func aiChatPastedTextCharacterCount(_ count: Int) -> String {
-        let format = NSLocalizedString("aichat.pasted.text.character.count", value: "%d characters", comment: "Character count below the pasted text in the Duck.ai pasted-text sheet. %d is the count")
-        return String(format: format, count)
+        let format = Bundle.main.localizedString(forKey: "aichat.pasted.text.character.count", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
     }
     public static func aiChatPastedTextOverLimitCount(count: Int, limit: Int) -> String {
-        String(format: aiChatPromptTooLongCountFormat, count, limit)
+        let format = NSLocalizedString("aichat.pasted.text.over.limit.count", value: "%1$d/%2$d characters", comment: "Count line in the Duck.ai pasted-text sheet while the message is over the length limit, e.g. 16800/16000 characters. %1$d is the current character count, %2$d is the most this pasted text may hold")
+        return String(format: format, count, limit)
     }
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")

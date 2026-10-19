@@ -133,9 +133,17 @@ final class UserScripts: UserScriptsProvider {
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
         let aiChatSettings = AIChatSettings()
         let homepageAiChatsProvider = HomepageAiChatsProvider(featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        let aiChatBonusHandler = AIChatBonusHandler(
+            service: sourceProvider.aiChatBonusService,
+            factsProvider: AIChatBonusFactsProvider(
+                statisticsStore: StatisticsUserDefaults(),
+                aiChatSettings: aiChatSettings
+            )
+        )
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
                                                           syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
                                                                                          httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
+                                                          bonusHandler: aiChatBonusHandler,
                                                           featureFlagger: featureFlagger,
                                                           isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
                                                           attachmentPrivacyWebKeySource: duckAiNativeStorageHandler,

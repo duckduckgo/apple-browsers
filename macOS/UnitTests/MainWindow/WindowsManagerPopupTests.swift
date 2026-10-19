@@ -189,6 +189,20 @@ final class WindowsManagerPopupTests: XCTestCase {
 
     @available(macOS 15.4, *)
     @MainActor
+    func testRegisteredAppWindowExposesPinnedTabsBeforeContextKnowsIt() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let fixture = makeWindowCloseFixture(tabs: [retained], retainedTabs: [retained])
+        fixture.manager.register(fixture.controller)
+        defer { fixture.manager.unregister(fixture.controller) }
+        XCTAssertTrue(context.openWindows.isEmpty)
+
+        XCTAssertTrue(fixture.controller.tabs(for: context).first === retained)
+        XCTAssertTrue(fixture.controller.activeTab(for: context) === retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
     func testWindowCloseUsesTheRequestingContextsOpenWindowState() async throws {
         let openContext = try await makeWindowCloseContext()
         let closingContext = try await makeWindowCloseContext()

@@ -626,12 +626,11 @@ extension MainWindowController: NSWindowDelegate {
             let tabsInClosingWindow = mainViewController.tabCollectionViewModel.loadedPinnedTabs
                 + mainViewController.tabCollectionViewModel.loadedTabs
 
-            let closingTabs = Self.tabsToCloseForWebExtensions(
+            for tab in Self.tabsToCloseForWebExtensions(
                 in: tabsInClosingWindow,
                 retainedByOpenWindows: tabsInRemainingWindows,
                 retainedBySharedPinnedTabs: sharedPinnedTabs
-            )
-            for tab in closingTabs {
+            ) {
                 webExtensionManager.eventsListener.didCloseTab(tab, windowIsClosing: true)
             }
         }
@@ -658,10 +657,11 @@ extension MainWindowController: NSWindowDelegate {
     func webExtensionTabsForClosingWindow(in context: WKWebExtensionContext) -> [Tab]? {
         // WebKit removes the window from openWindows before querying its tabs in didCloseWindow.
         // On opening, it adds the window first, even before our window manager registers it.
-        guard !context.openWindows.contains(where: { $0 === self }),
-              (featureFlagger ?? Application.appDelegate.featureFlagger).isFeatureOn(.webExtensionSharedPinnedTabWindowClose) else { return nil }
-
         let windowControllersManager = self.windowControllersManager ?? Application.appDelegate.windowControllersManager
+        guard (featureFlagger ?? Application.appDelegate.featureFlagger).isFeatureOn(.webExtensionSharedPinnedTabWindowClose),
+              !windowControllersManager.mainWindowControllers.contains(where: { $0 === self }),
+              !context.openWindows.contains(where: { $0 === self }) else { return nil }
+
         let tabsInRemainingWindows = windowControllersManager.mainWindowControllers
             .filter { $0 !== self }
             .flatMap { $0.mainViewController.tabCollectionViewModel.loadedPinnedTabs + $0.mainViewController.tabCollectionViewModel.loadedTabs }

@@ -84,6 +84,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let loader: WebExtensionLoading
     public let permissionController: WebExtensionPermissionController?
     public var chromeWebStore: ChromeWebStoreManaging?
+    /// Disables extensions that remote configuration lists. `nil` until the host starts enforcement.
+    public var remoteDisableEnforcer: WebExtensionRemoteDisableEnforcer?
     let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening { listener }
     private let listener = WebExtensionEventsListener()
@@ -689,7 +691,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         guard !installedExtension.isEmbedded else {
             throw WebExtensionError.embeddedExtensionCannotBeUnloaded
         }
-        guard !installedExtension.isUnloaded else { return }
+        // A disabled extension can still be loaded when it was disabled while installed extensions were loading.
+        guard !installedExtension.isDisabled || context(for: identifier) != nil else { return }
 
         Logger.webExtensions.debug("🔄 Unloading extension '\(identifier)'")
         await unloadGuard.awaitSettled(context(for: identifier))
@@ -710,7 +713,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         dataClearingReloadIdentifiers.remove(identifier)
 
         var unloadedExtension = installedExtension
-        unloadedExtension.isUnloaded = true
+        unloadedExtension.isDisabled = true
         installationStore.update(unloadedExtension)
 
         Logger.webExtensions.info("✅ Unloaded extension '\(identifier)'")
@@ -722,7 +725,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
             throw WebExtensionError.extensionNotInstalled
         }
-        guard installedExtension.isUnloaded else { return }
+        guard installedExtension.isDisabled else { return }
 
         Logger.webExtensions.debug("🔄 Loading extension '\(identifier)'")
         do {
@@ -736,7 +739,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         var loadedExtension = installedExtension
-        loadedExtension.isUnloaded = false
+        loadedExtension.isDisabled = false
         installationStore.update(loadedExtension)
         reportLifecycleEvent(.loaded(identifier: identifier, type: nil))
 
@@ -782,7 +785,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
 
         // Unloaded extensions stay installed, so orphan cleanup below keeps their files.
-        let extensions = installationStore.installedExtensions.filter { !$0.isUnloaded }
+        let extensions = installationStore.installedExtensions.filter { !$0.isDisabled }
         Logger.webExtensions.debug("🔄 Loading installed extensions (count: \(extensions.count))")
 
         let identifiers = extensions.map(\.uniqueIdentifier)

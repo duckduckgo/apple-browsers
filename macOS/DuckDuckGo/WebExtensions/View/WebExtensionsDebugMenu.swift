@@ -94,9 +94,16 @@ final class WebExtensionsDebugMenu: NSMenu {
                 let name = webExtensionManager.extensionName(for: identifier)
                 let version = webExtensionManager.extensionVersion(for: identifier)
                 let installedExtension = webExtensionManager.installedExtension(identifier: identifier)
-                // Embedded extensions can't be unloaded, so they get no load state.
-                let isUnloaded = installedExtension.flatMap { $0.isEmbedded ? nil : $0.isUnloaded }
-                let menuItem = WebExtensionMenuItem(identifier: identifier, webExtensionName: name, version: version, isUnloaded: isUnloaded)
+                // Embedded extensions can't be disabled, so they get no load state.
+                let isDisabled = installedExtension.flatMap { $0.isEmbedded ? nil : $0.isDisabled }
+                let isRemotelyDisabled = installedExtension.map {
+                    (webExtensionManager as? WebExtensionManager)?.remoteDisableEnforcer?.isRemotelyDisabled($0) == true
+                } ?? false
+                let menuItem = WebExtensionMenuItem(identifier: identifier,
+                                                    webExtensionName: name,
+                                                    version: version,
+                                                    isDisabled: isDisabled,
+                                                    isRemotelyDisabled: isRemotelyDisabled)
                 self.addItem(menuItem)
             }
         }
@@ -223,13 +230,22 @@ final class WebExtensionMenuItem: NSMenuItem {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// - Parameter isUnloaded: The extension's load state, or `nil` when it can't be unloaded.
-    init(identifier: String, webExtensionName: String?, version: String?, isUnloaded: Bool? = nil, submenu: NSMenu? = nil) {
+    /// - Parameters:
+    ///   - isDisabled: The extension's load state, or `nil` when it can't be unloaded.
+    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so it can't be loaded.
+    init(identifier: String,
+         webExtensionName: String?,
+         version: String?,
+         isDisabled: Bool? = nil,
+         isRemotelyDisabled: Bool = false,
+         submenu: NSMenu? = nil) {
         let displayName = webExtensionName ?? identifier
         let versionedName = version.map { "\(displayName) v\($0)" } ?? displayName
-        let title = isUnloaded == true ? "\(versionedName) (unloaded)" : versionedName
+        let title = isDisabled == true ? "\(versionedName) (disabled)" : versionedName
         super.init(title: title, action: nil, keyEquivalent: "")
-        self.submenu = submenu ?? WebExtensionSubMenu(extensionIdentifier: identifier, isUnloaded: isUnloaded)
+        self.submenu = submenu ?? WebExtensionSubMenu(extensionIdentifier: identifier,
+                                                      isDisabled: isDisabled,
+                                                      isRemotelyDisabled: isRemotelyDisabled)
     }
 }
 
@@ -242,15 +258,23 @@ final class WebExtensionSubMenu: NSMenu {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// - Parameter isUnloaded: The extension's load state, or `nil` to leave out the load and unload item.
-    init(extensionIdentifier: String, isUnloaded: Bool? = nil) {
+    /// - Parameters:
+    ///   - isDisabled: The extension's load state, or `nil` to leave out the load and unload item.
+    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so the load item is unavailable.
+    init(extensionIdentifier: String, isDisabled: Bool? = nil, isRemotelyDisabled: Bool = false) {
         self.extensionIdentifier = extensionIdentifier
         super.init(title: "")
 
-        let loadStateMenuItem = isUnloaded.map { isUnloaded in
-            isUnloaded
-                ? NSMenuItem(title: "Load the extension", action: #selector(loadExtension), target: self)
-                : NSMenuItem(title: "Unload the extension", action: #selector(unloadExtension), target: self)
+        let loadStateMenuItem = isDisabled.map { isDisabled in
+            switch (isDisabled, isRemotelyDisabled) {
+            case (true, true):
+                // An item without an action is disabled.
+                NSMenuItem(title: "Load the extension (disabled remotely)", action: nil)
+            case (true, false):
+                NSMenuItem(title: "Load the extension", action: #selector(loadExtension), target: self)
+            case (false, _):
+                NSMenuItem(title: "Unload the extension", action: #selector(unloadExtension), target: self)
+            }
         }
 
         buildItems {

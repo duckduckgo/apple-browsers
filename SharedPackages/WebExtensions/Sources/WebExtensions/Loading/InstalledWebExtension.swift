@@ -41,10 +41,10 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// Nil for bundled extensions, manual installations, and records saved before this field existed.
     public let storeIdentity: WebExtensionStoreIdentity?
 
-    /// Whether the user unloaded the extension. An unloaded extension stays on disk and keeps its
-    /// permissions, but it is not loaded until the user loads it again.
+    /// Whether the extension is disabled, by the user or by remote configuration. A disabled extension
+    /// stays on disk and keeps its permissions, but it is not loaded until the user enables it again.
     /// False for records saved before this field existed.
-    public var isUnloaded: Bool
+    public var isDisabled: Bool
 
     public var id: String { uniqueIdentifier }
 
@@ -60,7 +60,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         version: String?,
         embeddedType: DuckDuckGoWebExtensionType? = nil,
         storeIdentity: WebExtensionStoreIdentity? = nil,
-        isUnloaded: Bool = false
+        isDisabled: Bool = false
     ) {
         self.uniqueIdentifier = uniqueIdentifier
         self.filename = filename
@@ -68,7 +68,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         self.version = version
         self.embeddedType = embeddedType
         self.storeIdentity = storeIdentity
-        self.isUnloaded = isUnloaded
+        self.isDisabled = isDisabled
     }
 
     public init(from decoder: Decoder) throws {
@@ -79,7 +79,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         version = try container.decodeIfPresent(String.self, forKey: .version)
         embeddedType = try container.decodeIfPresent(DuckDuckGoWebExtensionType.self, forKey: .embeddedType)
         storeIdentity = try container.decodeIfPresent(WebExtensionStoreIdentity.self, forKey: .storeIdentity)
-        isUnloaded = try container.decodeIfPresent(Bool.self, forKey: .isUnloaded) ?? false
+        isDisabled = try container.decodeIfPresent(Bool.self, forKey: .isDisabled) ?? false
     }
 }
 

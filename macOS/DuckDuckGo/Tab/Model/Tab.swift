@@ -1488,8 +1488,12 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     func willStart(_ navigation: Navigation) {
 #if DEBUG
         // prevent real navigation actions when running Unit Tests
+        let isCPMIntegrationFixture = AppVersion.runType == .integrationTests
+            && ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION"] == "1"
+            && navigation.url.host == "127.0.0.1"
         if [.unitTests, .integrationTests].contains(AppVersion.runType),
            [.http, .https].contains(navigation.url.navigationalScheme),
+           !isCPMIntegrationFixture,
            self.webView.configuration.urlSchemeHandler(forURLScheme: navigation.url.scheme!) == nil {
             fatalError("The test is causing a real navigation action to \(navigation.url.absoluteString)")
         }

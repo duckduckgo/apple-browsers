@@ -2458,8 +2458,10 @@
 		7BE33DE32DC12C4E00A96502 /* NativeMessagingHostSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE22DC12C0300A96502 /* NativeMessagingHostSession.swift */; };
 		7BE33DE52DC12C4E00A96502 /* NativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */; };
 		7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
+		24BC335FEDD4648077F55C7F /* TabWebExtensionTabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA600E7807DAAC35E090695 /* TabWebExtensionTabTests.swift */; };
 		7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
 		7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
+		359AF8855F896E21B88C51EE /* TabWebExtensionTabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA600E7807DAAC35E090695 /* TabWebExtensionTabTests.swift */; };
 		7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
 		7BEC182F2AD5D8DC00D30536 /* SystemExtensionManager in Frameworks */ = {isa = PBXBuildFile; productRef = 7BEC182E2AD5D8DC00D30536 /* SystemExtensionManager */; };
 		7BEC20422B0F505F00243D3E /* AddBookmarkPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */; };
@@ -4974,6 +4976,16 @@
 		FEE12B412E520E4D00AD9809 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FFA1DFE4967209A9C47D7160 /* QuitSurveyPromoObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03DA09FC744669CD57C604C /* QuitSurveyPromoObserverTests.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
+		DB8AC5A0C79DFB244FA0AE62 /* CPMAppFixtureServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC6A165FBB879F7149F325C /* CPMAppFixtureServer.swift */; };
+		94722236F3F24EC9AC8E96EA /* CPMAppFixtureServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC6A165FBB879F7149F325C /* CPMAppFixtureServer.swift */; };
+		2FFCDE36F48B3264B6E1689B /* CPMAppIntegrationBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DC4B7EA1170D972857F6DA /* CPMAppIntegrationBridge.swift */; };
+		F1F1FFC4FBE13B69AED078C3 /* CPMAppIntegrationBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DC4B7EA1170D972857F6DA /* CPMAppIntegrationBridge.swift */; };
+		EE00D1463787C73B9165060C /* CPMAppIntegrationHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687CE905338448ABB574DADB /* CPMAppIntegrationHarness.swift */; };
+		2D673BFC3D93CACA5E2C0C1E /* CPMAppIntegrationHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687CE905338448ABB574DADB /* CPMAppIntegrationHarness.swift */; };
+		87DAF95F7D3B2B44BF0CFDA3 /* CPMAppIntegrationSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854C204C02A6E21137E0872B /* CPMAppIntegrationSupport.swift */; };
+		409D476693107B46306D26B2 /* CPMAppIntegrationSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854C204C02A6E21137E0872B /* CPMAppIntegrationSupport.swift */; };
+		A88E82DF0AD3BB7E8B1B5558 /* CPMStableBaseURLIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF22F2F904679733FDE5878 /* CPMStableBaseURLIntegrationTests.swift */; };
+		968C3A1CC5F4410F5B36F757 /* CPMStableBaseURLIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BF22F2F904679733FDE5878 /* CPMStableBaseURLIntegrationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -6249,6 +6261,7 @@
 		7BE33DE22DC12C0300A96502 /* NativeMessagingHostSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostSession.swift; sourceTree = "<group>"; };
 		7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHandler.swift; sourceTree = "<group>"; };
 		7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostManifestTests.swift; sourceTree = "<group>"; };
+		4EA600E7807DAAC35E090695 /* TabWebExtensionTabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabWebExtensionTabTests.swift; sourceTree = "<group>"; };
 		7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostSessionTests.swift; sourceTree = "<group>"; };
 		7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAPICompatibilityLogViewModelTests.swift; sourceTree = "<group>"; };
 		7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemExtensionManager; sourceTree = "<group>"; };
@@ -7618,6 +7631,11 @@
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		FE6295B8821741B1BF7FDCF6 /* BookmarksBarPromptViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarPromptViewModelTests.swift; sourceTree = "<group>"; };
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
+		8EC6A165FBB879F7149F325C /* CPMAppFixtureServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPMAppFixtureServer.swift; sourceTree = "<group>"; };
+		A4DC4B7EA1170D972857F6DA /* CPMAppIntegrationBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPMAppIntegrationBridge.swift; sourceTree = "<group>"; };
+		687CE905338448ABB574DADB /* CPMAppIntegrationHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPMAppIntegrationHarness.swift; sourceTree = "<group>"; };
+		854C204C02A6E21137E0872B /* CPMAppIntegrationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPMAppIntegrationSupport.swift; sourceTree = "<group>"; };
+		0BF22F2F904679733FDE5878 /* CPMStableBaseURLIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CPMStableBaseURLIntegrationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -8924,6 +8942,7 @@
 				7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */,
 				DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */,
 				7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */,
+				4EA600E7807DAAC35E090695 /* TabWebExtensionTabTests.swift */,
 				7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */,
 				7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */,
 			);
@@ -9470,6 +9489,7 @@
 				84537A072C99C1EF008723BC /* App */,
 				4B43468D285ED6BD00177407 /* BookmarksBar */,
 				563A3CF82D37ADFA001966FD /* Configurations */,
+				FC9EB4B970195363AEE8EB3D /* CPM */,
 				EEE0E1CB2C32F53C0058E148 /* DataImport */,
 				B6EC37DC29B5D05A001ACE79 /* Downloads */,
 				84DD63E62E9791190043A25E /* Encryption */,
@@ -14136,6 +14156,18 @@
 			path = PromptInput;
 			sourceTree = "<group>";
 		};
+		FC9EB4B970195363AEE8EB3D /* CPM */ = {
+			isa = PBXGroup;
+			children = (
+				8EC6A165FBB879F7149F325C /* CPMAppFixtureServer.swift */,
+				A4DC4B7EA1170D972857F6DA /* CPMAppIntegrationBridge.swift */,
+				687CE905338448ABB574DADB /* CPMAppIntegrationHarness.swift */,
+				854C204C02A6E21137E0872B /* CPMAppIntegrationSupport.swift */,
+				0BF22F2F904679733FDE5878 /* CPMStableBaseURLIntegrationTests.swift */,
+			);
+			path = CPM;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -17462,6 +17494,7 @@
 				3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */,
 				7BD5A0312F0A0C0100000031 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */,
 				7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */,
+				24BC335FEDD4648077F55C7F /* TabWebExtensionTabTests.swift in Sources */,
 				7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */,
 				1D9FDEC72B9B64DB0040B78C /* PrivacyProtectionStatusTests.swift in Sources */,
 				BBE497DD2EDF9AE6000C3DB5 /* QuitSurveyDeciderTests.swift in Sources */,
@@ -17907,6 +17940,11 @@
 				84E4A4962E79BDDC00D6A1E7 /* FireMock.swift in Sources */,
 				EEE0E1CD2C32F5690058E148 /* CSVImporterIntegrationTests.swift in Sources */,
 				563A3CFB2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
+				94722236F3F24EC9AC8E96EA /* CPMAppFixtureServer.swift in Sources */,
+				F1F1FFC4FBE13B69AED078C3 /* CPMAppIntegrationBridge.swift in Sources */,
+				2D673BFC3D93CACA5E2C0C1E /* CPMAppIntegrationHarness.swift in Sources */,
+				409D476693107B46306D26B2 /* CPMAppIntegrationSupport.swift in Sources */,
+				968C3A1CC5F4410F5B36F757 /* CPMStableBaseURLIntegrationTests.swift in Sources */,
 				8434E6B82DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				56A054362C205820007D8FAB /* OnboardingPageTests.swift in Sources */,
 				8434E6AD2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */,
@@ -17974,6 +18012,11 @@
 				84E4A4972E79BDDC00D6A1E7 /* FireMock.swift in Sources */,
 				EEE0E1D12C32F8620058E148 /* CSVImporterIntegrationTests.swift in Sources */,
 				563A3CFA2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
+				DB8AC5A0C79DFB244FA0AE62 /* CPMAppFixtureServer.swift in Sources */,
+				2FFCDE36F48B3264B6E1689B /* CPMAppIntegrationBridge.swift in Sources */,
+				EE00D1463787C73B9165060C /* CPMAppIntegrationHarness.swift in Sources */,
+				87DAF95F7D3B2B44BF0CFDA3 /* CPMAppIntegrationSupport.swift in Sources */,
+				A88E82DF0AD3BB7E8B1B5558 /* CPMStableBaseURLIntegrationTests.swift in Sources */,
 				8434E6B72DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				56A054352C20581F007D8FAB /* OnboardingPageTests.swift in Sources */,
 				8434E6AC2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */,
@@ -19960,6 +20003,7 @@
 				4B59CC8C290083240058F2F6 /* ConnectBitwardenViewModelTests.swift in Sources */,
 				7BD5A0322F0A0C0100000032 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */,
 				7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */,
+				359AF8855F896E21B88C51EE /* TabWebExtensionTabTests.swift in Sources */,
 				7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */,
 				B68412202B6A30680092F66A /* StringExtensionTests.swift in Sources */,
 				B6106BB526A809E60013B453 /* GeolocationProviderTests.swift in Sources */,

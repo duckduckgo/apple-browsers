@@ -33,17 +33,17 @@ public struct TokenRecoveryContext {
     public let trigger: TokenRecoveryTrigger
     /// The current token container that failed to refresh. Nil when the trigger is `.missingToken`.
     public let deadPrimary: TokenContainer?
-    /// When the user last signed out explicitly, or nil if they never did.
-    public let lastSignOutDate: Date?
+    /// The cut-off recorded at the last explicit sign-out, or nil if the user never signed out explicitly.
+    public let signOutCutoff: Date?
 
     /// - Parameters:
     ///   - trigger: What made the recovery necessary.
     ///   - deadPrimary: The current token container that failed to refresh, or nil when none is stored.
-    ///   - lastSignOutDate: When the user last signed out explicitly, or nil.
-    public init(trigger: TokenRecoveryTrigger, deadPrimary: TokenContainer?, lastSignOutDate: Date?) {
+    ///   - signOutCutoff: The cut-off recorded at the last explicit sign-out, or nil.
+    public init(trigger: TokenRecoveryTrigger, deadPrimary: TokenContainer?, signOutCutoff: Date?) {
         self.trigger = trigger
         self.deadPrimary = deadPrimary
-        self.lastSignOutDate = lastSignOutDate
+        self.signOutCutoff = signOutCutoff
     }
 }
 

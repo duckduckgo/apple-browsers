@@ -569,6 +569,7 @@ extension DefaultOmniBarViewController {
     /// Only an Ask tap accepts the Terms of Service; Return can't send while the disclaimer shows.
     fileprivate func submitIPadDuckAIText(from textView: UITextView, sentWithAsk: Bool) {
         let query = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let hasAttachments = attachmentController?.hasAttachments ?? false
         let hasValidAttachment = attachmentController?.hasValidAttachment ?? false
         let hasInvalidAttachment = attachmentController?.hasInvalidAttachment ?? false
         // Mirror the iPhone unified toggle rule: submit needs text or a valid attachment, and is
@@ -581,7 +582,8 @@ extension DefaultOmniBarViewController {
             omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
             omniBarView.updateAIChatSendButton(hasText: false)
 
-            if URL.isValidAddressBarURLInput(query) {
+            // A URL only navigates when nothing is attached; attachments make it a Duck.ai prompt.
+            if !hasAttachments, URL.isValidAddressBarURLInput(query) {
                 PixelKit.fire(Pixel.Event.aiChatIPadToggleURLSubmitted, frequency: .dailyAndCount)
                 dismissIPadDuckAIMode()
                 omniDelegate?.onOmniQuerySubmitted(query)

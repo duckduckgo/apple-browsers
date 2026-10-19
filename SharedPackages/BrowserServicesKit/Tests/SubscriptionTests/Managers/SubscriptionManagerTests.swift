@@ -439,7 +439,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(result, restored)
         XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
         XCTAssertNil(mockOAuthClient.restoreFromBackupCalls.first?.expectedExternalID)
-        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
+        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
     }
 
     func testMissingPrimary_NeverRunsAppStoreRestore() async throws {
@@ -555,16 +555,23 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertFalse(subscriptionManager.isUserAuthenticated)
     }
 
-    func testLoadInitialData_PrimaryMissing_RestoresFromBackup() async {
+    func testLoadInitialData_PrimaryMissing_RestoresFromBackupBeforeLoadingTheSubscription() async {
+        let restored = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.internalCurrentTokenContainer = nil
-        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        mockOAuthClient.getTokensResponse = .success(restored)
         mockSubscriptionEndpointService.getSubscriptionResult = .failure(.noData)
-        installCoordinator(backupResult: .success(OAuthTokensFactory.makeValidTokenContainer()), appStoreSucceeds: true)
+        installCoordinator(backupResult: .success(restored), appStoreSucceeds: true)
+        var restoresBeforeFirstTokenRead: Int?
+        mockOAuthClient.onGetTokens = { [unowned self] in
+            if restoresBeforeFirstTokenRead == nil {
+                restoresBeforeFirstTokenRead = self.mockOAuthClient.restoreFromBackupCalls.count
+            }
+        }
 
         await subscriptionManager.loadInitialData()
 
-        XCTAssertGreaterThanOrEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
-        XCTAssertNotNil(mockOAuthClient.internalCurrentTokenContainer)
+        XCTAssertEqual(restoresBeforeFirstTokenRead, 1)
+        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
     }
 
     func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_Pixels() async throws {

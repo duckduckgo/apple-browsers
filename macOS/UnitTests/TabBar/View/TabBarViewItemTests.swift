@@ -49,6 +49,42 @@ final class TabBarViewItemTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenOptionClickingTabThenClickedTabIsDuplicated() throws {
+        tabBarViewItem.mouseDown(with: try mouseDownEvent(modifierFlags: .option))
+
+        XCTAssertEqual(delegate.duplicatedTabBarViewItems.count, 1)
+        XCTAssertTrue(delegate.duplicatedTabBarViewItems.first === tabBarViewItem)
+    }
+
+    @MainActor
+    func testWhenClickingTabWithoutOptionThenTabIsNotDuplicated() throws {
+        tabBarViewItem.mouseDown(with: try mouseDownEvent())
+
+        XCTAssertTrue(delegate.duplicatedTabBarViewItems.isEmpty)
+    }
+
+    @MainActor
+    func testWhenOptionClickingTabThatCannotBeDuplicatedThenTabIsNotDuplicated() throws {
+        delegate.canDuplicateTab = false
+
+        tabBarViewItem.mouseDown(with: try mouseDownEvent(modifierFlags: .option))
+
+        XCTAssertTrue(delegate.duplicatedTabBarViewItems.isEmpty)
+    }
+
+    private func mouseDownEvent(modifierFlags: NSEvent.ModifierFlags = []) throws -> NSEvent {
+        try XCTUnwrap(NSEvent.mouseEvent(with: .leftMouseDown,
+                                        location: .zero,
+                                        modifierFlags: modifierFlags,
+                                        timestamp: 0,
+                                        windowNumber: 0,
+                                        context: nil,
+                                        eventNumber: 0,
+                                        clickCount: 1,
+                                        pressure: 1))
+    }
+
+    @MainActor
     func testThatMenuNeedsUpdateCallsContextMenuDelegateCallback() {
         XCTAssertFalse(delegate.tabBarViewItemWillOpenContextMenuCalled)
         tabBarViewItem.menuNeedsUpdate(menu)

@@ -730,6 +730,14 @@ final class TabBarViewItem: NSCollectionViewItem {
             return
         }
 
+        if event.type == .leftMouseDown,
+           event.modifierFlags.contains(.option),
+           !event.isContextClick,
+           delegate?.tabBarViewItemCanBeDuplicated(self) == true {
+            delegate?.tabBarViewItemDuplicateAction(self)
+            return
+        }
+
         super.mouseDown(with: event)
     }
 

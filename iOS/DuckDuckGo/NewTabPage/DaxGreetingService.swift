@@ -17,11 +17,19 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 
 @MainActor
 protocol DaxGreetingProviding {
     func getGreeting() -> String
+}
+
+@MainActor
+protocol DaxGreetingDebugging: AnyObject {
+    var clockOffset: TimeInterval { get }
+    func skipToNextGreeting()
+    func resetGreetingState()
 }
 
 /// Nil values make the corresponding greeting rules ineligible.
@@ -34,7 +42,7 @@ struct DaxGreetingContext {
 
 @MainActor
 final class DaxGreetingService {
-    private static let greetingLifetime: TimeInterval = 60 * 60
+    static let greetingLifetime: TimeInterval = 60 * 60
 
     private struct Selection {
         let greeting: DaxGreeting
@@ -50,6 +58,10 @@ final class DaxGreetingService {
     private let randomIndex: (Range<Int>) -> Int
     private var selection: Selection?
     private var recentGreetings: [DaxGreeting] = []
+    private(set) var clockOffset: TimeInterval = 0
+    private let debugChangesSubject = PassthroughSubject<Void, Never>()
+
+    var debugChanges: AnyPublisher<Void, Never> { debugChangesSubject.eraseToAnyPublisher() }
 
     init(now: @escaping () -> Date = Date.init,
          calendarProvider: @escaping () -> Calendar = { Calendar.current },
@@ -114,7 +126,7 @@ final class DaxGreetingService {
 
 extension DaxGreetingService: DaxGreetingProviding {
     func getGreeting() -> String {
-        let date = now()
+        let date = now().addingTimeInterval(clockOffset)
         let calendar = calendarProvider()
         let context = contextProvider(date, calendar)
         let isEnglish = languageProvider().map { Locale(identifier: $0).languageCode == "en" } ?? false
@@ -136,5 +148,19 @@ extension DaxGreetingService: DaxGreetingProviding {
         recentGreetings.append(greeting)
         recentGreetings = Array(recentGreetings.suffix(5))
         return greeting.text
+    }
+}
+
+extension DaxGreetingService: DaxGreetingDebugging {
+    func skipToNextGreeting() {
+        clockOffset += Self.greetingLifetime
+        debugChangesSubject.send()
+    }
+
+    func resetGreetingState() {
+        clockOffset = 0
+        selection = nil
+        recentGreetings = []
+        debugChangesSubject.send()
     }
 }

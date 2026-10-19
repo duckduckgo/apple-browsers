@@ -216,6 +216,19 @@ final class TokenRefresherTests: XCTestCase {
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
     }
 
+    func testForkError_isADDGErrorCarryingTheUnderlyingError() {
+        let underlying = URLError(.timedOut)
+        let minted = [OAuthTokensFactory.makeTokenContainer(refreshToken: "r1")]
+        let error = TokenForkError.incomplete(minted: minted, underlying: underlying)
+
+        XCTAssertEqual(TokenForkError.errorDomain, "com.duckduckgo.networking.TokenForkError")
+        XCTAssertEqual(error.errorCode, 11300)
+        XCTAssertEqual((error.underlyingError as? URLError)?.code, .timedOut)
+        XCTAssertEqual(error, TokenForkError.incomplete(minted: minted, underlying: URLError(.timedOut)))
+        XCTAssertNotEqual(error, TokenForkError.incomplete(minted: [], underlying: URLError(.timedOut)))
+        XCTAssertNotEqual(error, TokenForkError.incomplete(minted: minted, underlying: URLError(.notConnectedToInternet)))
+    }
+
     func testFork_threePairs_returnsThree() async throws {
         mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
         await refresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])

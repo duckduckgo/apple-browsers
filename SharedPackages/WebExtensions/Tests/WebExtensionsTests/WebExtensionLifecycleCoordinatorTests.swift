@@ -600,8 +600,8 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     var loadedExtensions: Set<WKWebExtensionContext> { [] }
     var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> { stubbedLoadedTypes }
     var webExtensionIdentifiers: [String] { [] }
-    var controller: WKWebExtensionController { WKWebExtensionController() }
     var eventsListener: WebExtensionEventsListening { RecordingEventsListener() }
+    func attachExtensions(to configuration: WKWebViewConfiguration) {}
     var extensionsDirectory: URL { URL(fileURLWithPath: "/tmp") }
     var extensionUpdates: AsyncStream<Void> { AsyncStream { _ in } }
     var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { AsyncStream { _ in } }
@@ -628,7 +628,6 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 
 @available(macOS 15.4, iOS 18.4, *)
 private final class RecordingEventsListener: WebExtensionEventsListening {
-    var controller: WKWebExtensionController?
     var droppedCallbacksCount = 0
     func didOpenWindow(_ window: WKWebExtensionWindow) {}
     func didCloseWindow(_ window: WKWebExtensionWindow) {}

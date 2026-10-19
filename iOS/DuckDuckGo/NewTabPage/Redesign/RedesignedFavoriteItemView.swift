@@ -81,7 +81,7 @@ struct RedesignedFavoriteIconView: View {
     let faviconLoading: FavoritesFaviconLoading?
 
     var body: some View {
-        FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+        FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading, showsFaviconSurface: false)
             .frame(width: Metrics.sourceIconSize, height: Metrics.sourceIconSize)
             .scaleEffect(Metrics.faviconSize / Metrics.sourceIconSize)
             .frame(width: Metrics.faviconSize, height: Metrics.faviconSize)

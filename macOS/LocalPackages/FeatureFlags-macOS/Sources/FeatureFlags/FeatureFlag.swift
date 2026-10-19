@@ -119,7 +119,7 @@ public enum FeatureFlag: String, CaseIterable {
     case cpmMessagingHangRecovery
 
     /// Preserve surviving shared pinned tabs when WebKit processes a window close.
-    /// https://app.asana.com/1/137249556945/task/1219231427593373
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
     case webExtensionSharedPinnedTabWindowClose
 
     /// Remotely activated Web Extension background Web View graveyard treatment.

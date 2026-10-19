@@ -37,7 +37,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         }
     }
 
-    private let invalidTokenContext = TokenRecoveryContext(trigger: .invalidToken, deadPrimary: nil, lastSignOutDate: nil)
+    private let invalidTokenContext = TokenRecoveryContext(trigger: .invalidToken, deadPrimary: nil, signOutCutoff: nil)
 
     // MARK: - Coordinator
 
@@ -135,7 +135,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let missingOnly = StubStrategy(.success(()))
         let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [invalidOnly], missingTokenStrategies: [missingOnly])
 
-        try await coordinator.recover(TokenRecoveryContext(trigger: .missingToken, deadPrimary: nil, lastSignOutDate: nil))
+        try await coordinator.recover(TokenRecoveryContext(trigger: .missingToken, deadPrimary: nil, signOutCutoff: nil))
 
         XCTAssertEqual(invalidOnly.calls, 0)
         XCTAssertEqual(missingOnly.calls, 1)
@@ -152,11 +152,11 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
 
         try await strategy.recover(TokenRecoveryContext(trigger: .invalidToken,
                                                         deadPrimary: OAuthTokensFactory.makeTokenContainer(externalID: "acct"),
-                                                        lastSignOutDate: signOut))
+                                                        signOutCutoff: signOut))
 
         XCTAssertEqual(client.restoreFromBackupCalls.count, 1)
         XCTAssertEqual(client.restoreFromBackupCalls.first?.expectedExternalID, "acct")
-        XCTAssertEqual(client.restoreFromBackupCalls.first?.notIssuedBefore, signOut)
+        XCTAssertEqual(client.restoreFromBackupCalls.first?.issuedAfter, signOut)
         XCTAssertEqual(restoredTriggers, [.invalidToken])
     }
 
@@ -165,7 +165,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         client.restoreFromBackupResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         let strategy = BackupTokenRecovery(oAuthClient: client, onRestored: { _ in })
 
-        try await strategy.recover(TokenRecoveryContext(trigger: .missingToken, deadPrimary: nil, lastSignOutDate: nil))
+        try await strategy.recover(TokenRecoveryContext(trigger: .missingToken, deadPrimary: nil, signOutCutoff: nil))
 
         XCTAssertEqual(client.restoreFromBackupCalls.count, 1)
         XCTAssertNil(client.restoreFromBackupCalls.first?.expectedExternalID)

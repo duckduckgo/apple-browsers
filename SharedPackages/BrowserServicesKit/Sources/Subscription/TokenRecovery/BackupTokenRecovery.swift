@@ -35,10 +35,10 @@ public struct BackupTokenRecovery: TokenRecoveryStrategy {
     }
 
     /// Restores from the backup. The backup must belong to the dead current token's account, when there is one,
-    /// and must have been issued after the last explicit sign-out.
+    /// and its refresh token must have been issued after the cut-off recorded at the last explicit sign-out.
     public func recover(_ context: TokenRecoveryContext) async throws {
         _ = try await oAuthClient.restoreFromBackup(expectedExternalID: context.deadPrimary?.decodedAccessToken.externalID,
-                                                    notIssuedBefore: context.lastSignOutDate)
+                                                    issuedAfter: context.signOutCutoff)
         Logger.subscriptionTokensManagement.log("Token restored from backup, trigger: \(context.trigger.rawValue, privacy: .public)")
         onRestored(context.trigger)
     }

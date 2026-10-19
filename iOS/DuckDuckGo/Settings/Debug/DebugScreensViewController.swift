@@ -64,7 +64,7 @@ struct DebugScreensView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 }
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 Section(header: Text(verbatim: "Device")) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(verbatim: "Hardware model")
@@ -74,10 +74,10 @@ struct DebugScreensView: View {
                             .textSelection(.enabled)
                     }
                 }
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
                 DebugTogglesView(model: model)
-                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
                 if !model.pinnedScreens.isEmpty {
                     DebugScreensListView(model: model, sectionTitle: "Pinned", screens: model.pinnedScreens)
@@ -88,7 +88,7 @@ struct DebugScreensView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
                 DebugScreensListView(model: model, sectionTitle: "Screens", screens: model.unpinnedScreens)
                 DebugScreensListView(model: model, sectionTitle: "Actions", screens: model.actions)
@@ -138,7 +138,7 @@ struct DebugScreensView: View {
                             }
                         }
                     }
-                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 }
             }
         }
@@ -195,7 +195,7 @@ struct DebugScreensListView: View {
                     }
                 }
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         } header: {
             Text(verbatim: sectionTitle)
         }

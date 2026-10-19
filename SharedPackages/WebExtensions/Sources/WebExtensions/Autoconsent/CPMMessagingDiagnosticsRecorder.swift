@@ -237,7 +237,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             guard let context = notification.object as? WKWebExtensionContext else { return }
             MainActor.assumeMainThread {
                 guard let self, self.context === context, self.contextGeneration == generation else { return }
-                let errors = context.errors.map { $0 as NSError }
+                let errors = context.errors.map(NSError.webKitSafe)
                 for error in errors {
                     Logger.webExtensions.error("[CPM Diagnostics] Context error: \(error.domainAndCode, privacy: .public)")
                 }
@@ -248,12 +248,14 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     public func contextUnloadFailed(identifier: String, error: Error) {
         guard identifier == cpmContextIdentifier else { return }
-        record(.contextUnloadFailed((error as NSError).domainAndCode))
+        let descriptor = NSError.webKitSafe(error).domainAndCode
+        record(.contextUnloadFailed(descriptor))
     }
 
     public func extensionFilesRemoveFailed(identifier: String, error: Error) {
         guard identifier == cpmContextIdentifier else { return }
-        record(.extensionFilesRemoveFailed((error as NSError).domainAndCode))
+        let descriptor = NSError.webKitSafe(error).domainAndCode
+        record(.extensionFilesRemoveFailed(descriptor))
     }
 
     /// Call after the embedded extension context was unloaded; a background web view still alive afterwards is a leak.
@@ -491,7 +493,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     private func currentContextErrors() -> [String] {
         var errors = recordedContextErrors
-        for domainAndCode in (context?.errors ?? []).map({ ($0 as NSError).domainAndCode }) where !errors.contains(domainAndCode) {
+        let contextErrors = (context?.errors ?? []).map(NSError.webKitSafe)
+        let descriptors = contextErrors.map(\.domainAndCode)
+        for domainAndCode in descriptors where !errors.contains(domainAndCode) {
             errors.append(domainAndCode)
         }
         return errors
@@ -557,7 +561,7 @@ private extension NSError {
     /// `domain:code`, followed by the immediate underlying domain/code; excludes error text.
     var domainAndCode: String {
         var descriptor = "\(domain):\(code)"
-        if let underlying = userInfo[NSUnderlyingErrorKey] as? NSError {
+        if let underlying = underlyingError {
             descriptor += ":\(underlying.domain):\(underlying.code)"
         }
         return descriptor

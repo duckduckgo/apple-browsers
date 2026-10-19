@@ -54,6 +54,40 @@ struct RecoverSyncedDataView: View {
     @EnvironmentObject var model: ManagementDialogModel
 
     var body: some View {
+        if model.isImprovedPairingFlowEnabled {
+            improvedBody
+        } else {
+            legacyBody
+        }
+    }
+
+    private var improvedBody: some View {
+        SyncDialogV2(spacing: 20.0) {
+            VStack(alignment: .center, spacing: 20) {
+                Image(.clipboardSyncRecoverFeature128)
+                VStack(alignment: .center, spacing: 8) {
+                    SyncUIViewsV2.TextHeader(text: UserText.recoverSyncedDataDialogTitleImproved)
+                    SyncUIViewsV2.TextDetailSecondary(text: UserText.recoverSyncedDataDialogSubtitleImproved)
+                }
+            }
+        } buttons: {
+            Spacer()
+            Button(UserText.cancel) {
+                model.cancelPressed()
+            }
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+
+            Button(UserText.recoverSyncedDataDialogButtonImproved) {
+                Task {
+                    await model.delegate?.enterRecoveryCodePressed()
+                }
+            }
+            .buttonStyle(DefaultActionButtonStyle(enabled: !model.isAuthenticating, stateColors: .themedActionButton))
+            .disabled(model.isAuthenticating)
+        }
+    }
+
+    private var legacyBody: some View {
         SyncDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPair96)
@@ -67,10 +101,29 @@ struct RecoverSyncedDataView: View {
             }
             .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             Button(UserText.reciverSyncedDataDialogButton) {
-                model.delegate?.enterRecoveryCodePressed()
+                Task {
+                    await model.delegate?.enterRecoveryCodePressed()
+                }
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
+            .buttonStyle(DefaultActionButtonStyle(enabled: !model.isAuthenticating, stateColors: .themedActionButton))
+            .disabled(model.isAuthenticating)
         }
     }
 
 }
+
+#if DEBUG
+#Preview("Recover Synced Data") {
+    RecoverSyncedDataView()
+        .environmentObject(ManagementDialogModel())
+}
+
+#Preview("Recover Synced Data - Improved Pairing Flow") {
+    RecoverSyncedDataView()
+        .environmentObject({
+            let model = ManagementDialogModel()
+            model.isImprovedPairingFlowEnabled = true
+            return model
+        }())
+}
+#endif

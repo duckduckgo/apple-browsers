@@ -133,7 +133,7 @@ struct NetworkProtectionVPNSettingsView: View {
                     .foregroundColor(.init(designSystemColor: .textSecondary))
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -164,7 +164,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .daxFootnoteRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     private var copySupportInfoIcon: Image {
@@ -251,7 +251,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -267,7 +267,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -289,7 +289,7 @@ struct NetworkProtectionVPNSettingsView: View {
                 .daxFootnoteRegular()
                 .padding(.top, 6)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     @ViewBuilder
@@ -335,7 +335,7 @@ struct NetworkProtectionVPNSettingsView: View {
             } header: {
                 Text(UserText.netPVPNShortcutsSectionHeader)
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
     }
 }

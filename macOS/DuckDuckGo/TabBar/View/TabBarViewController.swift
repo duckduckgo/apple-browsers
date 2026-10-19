@@ -2038,17 +2038,23 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func enableScrollButtons() {
         rightScrollButton.isEnabled = !collectionView.isAtEndScrollPosition
         leftScrollButton.isEnabled = !collectionView.isAtStartScrollPosition
+        refreshScrollShadowsVisibility()
     }
 
     private func displayScrollButtons() {
         let scrollViewsAreHidden = tabMode == .divided
         rightScrollButton.isHidden = scrollViewsAreHidden
         leftScrollButton.isHidden = scrollViewsAreHidden
-        rightShadowImageView.isHidden = scrollViewsAreHidden
-        leftShadowImageView.isHidden = scrollViewsAreHidden
         addTabButton.isHidden = scrollViewsAreHidden
 
+        refreshScrollShadowsVisibility()
         adjustStandardTabPosition()
+    }
+
+    private func refreshScrollShadowsVisibility() {
+        let isOverflowing = tabMode == .overflow
+        leftShadowImageView.isHidden = !isOverflowing || collectionView.isAtStartScrollPosition
+        rightShadowImageView.isHidden = !isOverflowing || collectionView.isAtEndScrollPosition
     }
 
     private func adjustStandardTabPosition() {

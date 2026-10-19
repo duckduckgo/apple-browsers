@@ -17,8 +17,6 @@
 //
 
 import AppKit
-import Combine
-import PrivacyConfig
 import WebExtensions
 
 /// The extension that manages autofill instead of DuckDuckGo.
@@ -33,12 +31,21 @@ struct AutofillManagingExtension: Equatable {
     }
 }
 
+/// Which extension manages autofill, and a way to give autofill back to DuckDuckGo.
+protocol WebExtensionAutofillTakeoverManaging: AnyObject {
+    /// The extension that manages autofill instead of DuckDuckGo, if any.
+    @MainActor var managingExtension: AutofillManagingExtension? { get }
+
+    /// Gives autofill back to DuckDuckGo.
+    @MainActor func giveBackToDuckDuckGo()
+}
+
 /// Whether a password manager extension has taken autofill over from DuckDuckGo.
 ///
 /// An extension becomes the password manager the way it does in Chrome: it turns the browser's password
 /// saving off through `chrome.privacy.services`, as Bitwarden does when the user makes it the default
 /// password manager. DuckDuckGo's built-in password manager then steps aside entirely, for passwords,
-/// addresses and cards, until the extension turns password saving back on, is uninstalled, or the user
+/// addresses and cards, until the extension turns password saving back on, is uninstalled or disabled, or the user
 /// gives autofill back to DuckDuckGo in Settings.
 ///
 /// Whether an extension manages autofill is saved in the autofill preferences, where every autofill
@@ -47,13 +54,12 @@ struct AutofillManagingExtension: Equatable {
 ///
 /// It is read again when:
 /// - extensions load or unload, or an extension changes its setting (`.webExtensionPrivacySettingsDidChange`);
-/// - Bitwarden's catalog entry (`extensionsCatalog.bitwarden`) is turned on or off remotely;
 /// - web extensions become unavailable (`extensionsDidBecomeUnavailable()`).
 ///
 /// Handing it a new extension manager doesn't read it: its extensions haven't loaded yet, and reading
 /// now would clear the saved state that tabs restored at launch rely on. The first read comes once
 /// they've loaded.
-final class WebExtensionAutofillTakeover {
+final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
 
     /// The app's extension manager. The app delegate sets it when it creates one.
     @MainActor weak var manager: WebExtensionManaging?
@@ -66,15 +72,12 @@ final class WebExtensionAutofillTakeover {
     private let clearSettings: (@MainActor () -> Void)?
     private let notificationCenter: NotificationCenter
     private var observer: NSObjectProtocol?
-    private var flagCancellable: AnyCancellable?
 
     /// - Parameters:
     ///   - preferences: Where whether an extension manages autofill is saved for autofill to read.
-    ///   - privacyConfigurationManager: Its Bitwarden catalog entry decides whether an extension may take autofill over.
     ///   - readManagingExtension: Which loaded extension manages autofill. Reads `manager` when `nil`.
     ///   - clearSettings: Removes every extension's control of the privacy settings. Uses `manager` when `nil`.
     init(preferences: AutofillPreferencesPersistor = AutofillPreferences(),
-         privacyConfigurationManager: PrivacyConfigurationManaging,
          notificationCenter: NotificationCenter = .default,
          readManagingExtension: (@MainActor () -> AutofillManagingExtension?)? = nil,
          clearSettings: (@MainActor () -> Void)? = nil) {
@@ -89,20 +92,6 @@ final class WebExtensionAutofillTakeover {
                 }
             }
         }
-        // Starts from the entry's current state, so only an actual change reads the takeover again.
-        flagCancellable = privacyConfigurationManager.updatesPublisher
-            .map { [privacyConfigurationManager] in
-                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
-            }
-            .prepend(privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden))
-            .removeDuplicates()
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                MainActor.assumeMainThread {
-                    self?.refresh()
-                }
-            }
     }
 
     deinit {

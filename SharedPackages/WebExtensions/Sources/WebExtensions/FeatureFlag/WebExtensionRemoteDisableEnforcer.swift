@@ -22,10 +22,12 @@ import os.log
 import PrivacyConfig
 
 /// Disables installed Chrome Web Store extensions whose IDs are listed in `disabledExtensionIds`
-/// of the `extensionManagement` Privacy Configuration feature.
+/// of the `extensionManagement` Privacy Configuration feature, or that the app disables itself
+/// (`disabledExtensionIDs`), such as an extension whose feature flag is off.
 ///
-/// While `extensionManagement.isLaunchedExtensions` is enabled, a pass runs when the enforcer starts,
-/// on every Privacy Configuration update, and whenever the loaded extensions change. The last one
+/// The configuration's list counts only while `extensionManagement.isLaunchedExtensions` is enabled.
+/// A pass runs when the enforcer starts, on every Privacy Configuration update or
+/// `disabledExtensionIDsDidChange`, and whenever the loaded extensions change. The last one
 /// covers new installations and the user enabling a listed extension, which is disabled again.
 ///
 /// Disabling is one-way, matching the Windows browser: the enforcer never enables an extension.
@@ -36,22 +38,34 @@ public final class WebExtensionRemoteDisableEnforcer {
 
     private weak var manager: WebExtensionManaging?
     private let configurationManager: PrivacyConfigurationManaging
+    private let disabledExtensionIDs: @MainActor () -> Set<String>
+    private let disabledExtensionIDsDidChange: AnyPublisher<Void, Never>
     private var cancellables = Set<AnyCancellable>()
 
     /// The most recent pass. Each pass waits for the previous one, so passes never overlap.
     private(set) var enforcementTask: Task<Void, Never>?
 
-    public init(manager: WebExtensionManaging, configurationManager: PrivacyConfigurationManaging) {
+    /// - Parameters:
+    ///   - disabledExtensionIDs: Chrome Web Store IDs the app disables, whether or not extension management is launched.
+    ///   - disabledExtensionIDsDidChange: Fires when `disabledExtensionIDs` may have changed.
+    public init(manager: WebExtensionManaging,
+                configurationManager: PrivacyConfigurationManaging,
+                disabledExtensionIDs: @escaping @MainActor () -> Set<String> = { [] },
+                disabledExtensionIDsDidChange: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()) {
         self.manager = manager
         self.configurationManager = configurationManager
+        self.disabledExtensionIDs = disabledExtensionIDs
+        self.disabledExtensionIDsDidChange = disabledExtensionIDsDidChange
     }
 
-    /// The lowercased Chrome Web Store IDs to disable. Empty while extension management isn't launched.
+    /// The lowercased Chrome Web Store IDs to disable. The configuration's list counts only while extension
+    /// management is launched.
     public var remotelyDisabledExtensionIDs: Set<String> {
         let config = configurationManager.privacyConfig
-        guard config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) else { return [] }
-
-        let identifiers = config.settings(for: .extensionManagement)["disabledExtensionIds"] as? [String] ?? []
+        var identifiers = disabledExtensionIDs()
+        if config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) {
+            identifiers.formUnion(config.settings(for: .extensionManagement)["disabledExtensionIds"] as? [String] ?? [])
+        }
         return Set(identifiers.map { $0.lowercased() })
     }
 
@@ -66,6 +80,7 @@ public final class WebExtensionRemoteDisableEnforcer {
         guard cancellables.isEmpty, let manager else { return }
 
         configurationManager.updatesPublisher
+            .merge(with: disabledExtensionIDsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 Task { @MainActor in

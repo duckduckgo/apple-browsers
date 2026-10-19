@@ -19,7 +19,6 @@
 import XCTest
 import Combine
 import PrivacyConfig
-import PrivacyConfigTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
@@ -177,7 +176,6 @@ final class AutofillPreferencesModelTests: XCTestCase {
         let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
         var managing: AutofillManagingExtension?
         let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
-                                                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                     notificationCenter: NotificationCenter(),
                                                     readManagingExtension: { managing },
                                                     clearSettings: {})
@@ -196,7 +194,6 @@ final class AutofillPreferencesModelTests: XCTestCase {
     private func makeTakeover(_ managing: AutofillManagingExtension?,
                               clearSettings: @escaping @MainActor () -> Void = {}) -> WebExtensionAutofillTakeover {
         let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
-                                                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                                     notificationCenter: NotificationCenter(),
                                                     readManagingExtension: { managing },
                                                     clearSettings: clearSettings)

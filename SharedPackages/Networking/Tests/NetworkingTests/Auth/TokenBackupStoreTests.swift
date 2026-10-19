@@ -110,6 +110,79 @@ final class TokenBackupStoreTests: XCTestCase {
     func testRemove_failureIsIgnored() {
         makeStore(storage: ThrowingTokenStorage()).remove()
     }
+
+    // MARK: - usableBackup
+
+    private func assertRejected(_ expected: TokenBackupError,
+                                store: TokenBackupStore,
+                                expectedExternalID: String?,
+                                notIssuedBefore: Date?,
+                                file: StaticString = #filePath,
+                                line: UInt = #line) {
+        do {
+            _ = try store.usableBackup(expectedExternalID: expectedExternalID, notIssuedBefore: notIssuedBefore)
+            XCTFail("Expected \(expected)", file: file, line: line)
+        } catch {
+            XCTAssertEqual(error, expected, file: file, line: line)
+        }
+    }
+
+    func testUsableBackup_validBackup_returnsIt() throws {
+        let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "acct")
+        let storage = MockTokenStorage(tokenContainer: backup)
+
+        let result = try makeStore(storage: storage).usableBackup(expectedExternalID: "acct", notIssuedBefore: nil)
+
+        XCTAssertEqual(result, backup)
+        XCTAssertEqual(try storage.getTokenContainer(), backup)
+    }
+
+    func testUsableBackup_noBackup_isUnavailable() {
+        assertRejected(.unavailable, store: makeStore(storage: MockTokenStorage()), expectedExternalID: nil, notIssuedBefore: nil)
+    }
+
+    func testUsableBackup_readFails_isUnavailable() {
+        assertRejected(.unavailable, store: makeStore(storage: ThrowingTokenStorage()), expectedExternalID: nil, notIssuedBefore: nil)
+    }
+
+    func testUsableBackup_anotherAccount_isRejectedAndDeleted() throws {
+        let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "other"))
+
+        assertRejected(.accountMismatch, store: makeStore(storage: storage), expectedExternalID: "acct", notIssuedBefore: nil)
+        XCTAssertNil(try storage.getTokenContainer())
+    }
+
+    func testUsableBackup_noExpectedAccount_acceptsAnyAccount() throws {
+        let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "other")
+
+        XCTAssertEqual(try makeStore(storage: MockTokenStorage(tokenContainer: backup)).usableBackup(expectedExternalID: nil, notIssuedBefore: nil), backup)
+    }
+
+    func testUsableBackup_issuedBeforeSignOut_isRejectedAndDeleted() throws {
+        let signOut = Date()
+        let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR",
+                                                                                                 refreshTokenIssuedAt: signOut.addingTimeInterval(-60)))
+
+        assertRejected(.predatesSignOut, store: makeStore(storage: storage), expectedExternalID: nil, notIssuedBefore: signOut)
+        XCTAssertNil(try storage.getTokenContainer())
+    }
+
+    func testUsableBackup_issuedAfterSignOut_isUsable() throws {
+        let signOut = Date().addingTimeInterval(-60)
+        let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", refreshTokenIssuedAt: Date())
+
+        XCTAssertEqual(try makeStore(storage: MockTokenStorage(tokenContainer: backup)).usableBackup(expectedExternalID: nil, notIssuedBefore: signOut), backup)
+    }
+
+    func testUsableBackup_expiredByTheInjectedClock_isRejectedAndDeleted() throws {
+        let issuedAt = Date()
+        let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR",
+                                                                                                 refreshTokenIssuedAt: issuedAt,
+                                                                                                 refreshTokenExpiresAt: issuedAt.addingTimeInterval(.days(30))))
+
+        assertRejected(.expired, store: makeStore(storage: storage, now: issuedAt.addingTimeInterval(.days(31))), expectedExternalID: nil, notIssuedBefore: nil)
+        XCTAssertNil(try storage.getTokenContainer())
+    }
 }
 
 private final class ThrowingTokenStorage: AuthTokenStoring {

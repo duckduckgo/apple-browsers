@@ -168,6 +168,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var backgroundLoadErrorObserver: NSObjectProtocol?
     private var backgroundStartupFix: [String: CPMRecoveryFix] = [:]
     private var navigationWaitContexts: Set<String> = []
+    /// Distinguishes first startup from idle wakes without retaining replaced contexts.
+    private let preparedEmbeddedBackgroundContexts = NSHashTable<WKWebExtensionContext>.weakObjects()
     @MainActor
     private var backgroundRecovery: CPMBackgroundReadinessRecovery? {
         (cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery
@@ -754,7 +756,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         embeddedBackgroundStartupCompletion = continuation
         let started = Date()
         let startupID = UUID()
-        backgroundRecovery?.backgroundStarted(startupID)
+        let isFirstLoad = !preparedEmbeddedBackgroundContexts.contains(context)
+        preparedEmbeddedBackgroundContexts.add(context)
+        backgroundRecovery?.backgroundStarted(startupID, isFirstLoad: isFirstLoad)
         let identifier = context.uniqueIdentifier
         let fix = backgroundStartupFix.removeValue(forKey: identifier) ?? .backgroundWake
         Logger.webExtensions.debug("[CPM Background] Starting background wait for \(identifier, privacy: .public)")

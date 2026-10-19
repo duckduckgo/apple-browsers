@@ -39,6 +39,7 @@ public enum CPMRecoveryOutcome: String, Sendable {
 @available(macOS 15.4, iOS 18.4, *)
 protocol CPMRecoveryInstrumentation {
     func record(_ fix: CPMRecoveryFix, outcome: CPMRecoveryOutcome)
+    func recordStartupResponseMissing()
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -48,9 +49,14 @@ struct WebExtensionCPMRecoveryInstrumentation: CPMRecoveryInstrumentation {
     func record(_ fix: CPMRecoveryFix, outcome: CPMRecoveryOutcome) {
         pixels.fire(.cpmRecovery(fix, outcome: outcome))
     }
+
+    func recordStartupResponseMissing() {
+        pixels.fire(WebExtensionPixelEvent.cpmStartupResponseMissing)
+    }
 }
 
-/// Repairs only a document committed during a known, unfinished background startup. The normal
+/// Counts first-startup response failures independently of the repair flag. Repairs only a
+/// document committed during a known, unfinished background startup. The normal
 /// navigation deadline remains unchanged. A missing dashboard response and a successful background
 /// callback are both required. Navigation changes, errors and context replacement invalidate work.
 @available(macOS 15.4, iOS 18.4, *)
@@ -60,6 +66,7 @@ final class CPMBackgroundReadinessRecovery {
     private struct Startup {
         let identifier: UUID
         let beganAt: Date
+        let isFirstLoad: Bool
         var isReady = false
     }
 
@@ -67,7 +74,10 @@ final class CPMBackgroundReadinessRecovery {
         let identifier = UUID()
         let startup: UUID
         let url: URL
+        /// Enabling recovery later must not reload a document tracked only for detection.
+        let allowsRecovery: Bool
         var failed = false
+        var didReportMissingResponse = false
         var prepareReload: (@MainActor () async -> Reload?)?
         var attempted = false
     }
@@ -99,10 +109,10 @@ final class CPMBackgroundReadinessRecovery {
         self.now = now
     }
 
-    func backgroundStarted(_ identifier: UUID) {
+    func backgroundStarted(_ identifier: UUID, isFirstLoad: Bool = false) {
         startups = startups.filter { now().timeIntervalSince($0.value.beganAt) < 30 }
         activeStartup = identifier
-        startups[identifier] = Startup(identifier: identifier, beganAt: now())
+        startups[identifier] = Startup(identifier: identifier, beganAt: now(), isFirstLoad: isFirstLoad)
     }
 
     func backgroundCompleted(_ identifier: UUID, succeeded: Bool) {
@@ -114,7 +124,10 @@ final class CPMBackgroundReadinessRecovery {
             return
         }
         startups[identifier]?.isReady = true
-        for tab in Array(documents.keys) { attemptRecovery(in: tab) }
+        for tab in Array(documents.keys) {
+            reportStartupResponseMissingIfNeeded(in: tab)
+            attemptRecovery(in: tab)
+        }
     }
 
     func navigationStarted(in tab: String) {
@@ -141,10 +154,10 @@ final class CPMBackgroundReadinessRecovery {
         if awaitingReloadResponse[tab]?.url.matchesCPMDiagnosticsDocument(url) == false {
             awaitingReloadResponse[tab] = nil
         }
-        guard isEnabled(), let identifier = activeStartup, let startup = startups[identifier], !startup.isReady,
+        guard let identifier = activeStartup, let startup = startups[identifier], !startup.isReady,
               now().timeIntervalSince(startup.beganAt) < 30,
               ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
-        documents[tab] = Document(startup: startup.identifier, url: url)
+        documents[tab] = Document(startup: startup.identifier, url: url, allowsRecovery: isEnabled())
         Logger.webExtensions.debug("[CPM Recovery] Armed document during pending background startup")
     }
 
@@ -156,6 +169,7 @@ final class CPMBackgroundReadinessRecovery {
     func initializationFailed(in tab: String) {
         Logger.webExtensions.debug("[CPM Recovery] Missing response; candidate=\(self.documents[tab] != nil), enabled=\(self.isEnabled())")
         documents[tab]?.failed = true
+        reportStartupResponseMissingIfNeeded(in: tab)
         attemptRecovery(in: tab)
     }
 
@@ -180,8 +194,17 @@ final class CPMBackgroundReadinessRecovery {
         synchronousNavigationMatches.removeAll()
     }
 
+    private func reportStartupResponseMissingIfNeeded(in tab: String) {
+        guard let document = documents[tab], document.failed, !document.didReportMissingResponse,
+              let startup = startups[document.startup], startup.isFirstLoad, startup.isReady,
+              now().timeIntervalSince(startup.beganAt) < 30 else { return }
+        documents[tab]?.didReportMissingResponse = true
+        instrumentation.recordStartupResponseMissing()
+    }
+
     private func attemptRecovery(in tab: String) {
         guard isEnabled(), !isApplicationInBackground(), let document = documents[tab],
+              document.allowsRecovery,
               let startup = startups[document.startup], startup.isReady,
               now().timeIntervalSince(startup.beganAt) < 30,
               document.failed, !document.attempted, let prepareReload = document.prepareReload else { return }

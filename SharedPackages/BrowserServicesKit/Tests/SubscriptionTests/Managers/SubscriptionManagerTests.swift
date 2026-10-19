@@ -237,6 +237,292 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(mockOAuthClient.logoutCallCount, 2)
     }
 
+    func testSignOut_Explicit_RecordsTimeAndDeletesBackupBeforeLogout() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        let before = Date()
+
+        await subscriptionManager.signOut(notifyUI: false)
+
+        XCTAssertEqual(mockOAuthClient.removeBackupCallCount, 1)
+        XCTAssertEqual(mockOAuthClient.callOrder.prefix(2), ["removeBackup", "logout"])
+        let recorded = try XCTUnwrap(subscriptionManager.lastSignOutDate)
+        XCTAssertGreaterThanOrEqual(recorded, before)
+        XCTAssertLessThanOrEqual(recorded, Date())
+    }
+
+    func testSignOut_Explicit_RecordsTimeWhenLogoutFails() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.logoutError = NSError(domain: "Logout", code: 1)
+
+        await subscriptionManager.signOut(notifyUI: false)
+
+        XCTAssertNotNil(subscriptionManager.lastSignOutDate)
+        XCTAssertEqual(mockOAuthClient.removeBackupCallCount, 1)
+    }
+
+    func testAutomaticSignOut_DoesNotRecordTimeOrDeleteBackup() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.unknownAccount)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertNil(subscriptionManager.lastSignOutDate)
+        XCTAssertEqual(mockOAuthClient.removeBackupCallCount, 0)
+    }
+
+    // MARK: - Backup recovery
+
+    private func installCoordinator(backupResult: Result<TokenContainer, Error>?, appStoreSucceeds: Bool) {
+        mockOAuthClient.restoreFromBackupResponse = backupResult
+        let backup = BackupTokenRecovery(oAuthClient: mockOAuthClient, onRestored: { _ in })
+        let appStore = AppStoreTokenRecovery(recoverer: DeadTokenRecoverer(),
+                                             purchasePlatform: .appStore,
+                                             restoreFlow: mockAppStoreRestoreFlowV2)
+        if !appStoreSucceeds {
+            mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "AppStore", code: 1)
+        }
+        subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backup, appStore],
+                                                                                missingTokenStrategies: [backup])
+    }
+
+    func testInvalidToken_BackupSucceeds_ReturnsRestoredWithoutAppStore() async throws {
+        let restored = OAuthTokensFactory.makeTokenContainer(accessToken: "restoredA", refreshToken: "restoredR")
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(externalID: "acct")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .success(restored), appStoreSucceeds: false)
+
+        let result = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(result, restored)
+        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.first?.expectedExternalID, "acct")
+        XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered))
+        XCTAssertNil(automaticSignOutPixel())
+    }
+
+    func testInvalidToken_BackupFails_FallsBackToAppStore_ThenSignsOut() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .failure(OAuthClientError.invalidTokenRequest(.reused)), appStoreSucceeds: false)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
+        XCTAssertTrue(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
+    }
+
+    func testInvalidToken_StoredTokenAlreadyReplaced_ReturnsItWithoutRecovery() async throws {
+        let dead = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        let fresh = OAuthTokensFactory.makeTokenContainer(refreshToken: "freshR")
+        mockOAuthClient.internalCurrentTokenContainer = dead
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        mockOAuthClient.onGetTokens = { [unowned self] in self.mockOAuthClient.internalCurrentTokenContainer = fresh }
+        installCoordinator(backupResult: nil, appStoreSucceeds: false)
+
+        let result = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(result, fresh)
+        XCTAssertTrue(mockOAuthClient.restoreFromBackupCalls.isEmpty)
+        XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+        XCTAssertNil(automaticSignOutPixel())
+    }
+
+    func testInvalidToken_AlreadyReplaced_CompletesThePendingRecoveryFlowAsSucceeded() async throws {
+        let pendingFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          globalData: WideEventGlobalData(id: "refresh-1"))
+        pendingFlow.errorData = WideEventErrorData(error: OAuthClientError.invalidTokenRequest(.reused))
+        pendingFlow.recoveryDuration = .startingNow()
+        mockWideEvent.startFlow(pendingFlow)
+        let fresh = OAuthTokensFactory.makeTokenContainer(refreshToken: "freshR")
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        mockOAuthClient.onGetTokens = { [unowned self] in self.mockOAuthClient.internalCurrentTokenContainer = fresh }
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let refreshData = try XCTUnwrap(mockWideEvent.completions.first?.0 as? AuthV2TokenRefreshWideEventData)
+        XCTAssertEqual(refreshData.recoveryOutcome, .succeeded)
+    }
+
+    func testInvalidToken_FirstReadFailed_DoesNotTreatTheDeadTokenAsAReplacement() async throws {
+        let dead = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        let recovered = OAuthTokensFactory.makeTokenContainer(refreshToken: "recoveredR")
+        mockOAuthClient.currentTokenContainerError = NSError(domain: "keychain", code: 1)
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        mockOAuthClient.onGetTokens = { [unowned self] in
+            self.mockOAuthClient.currentTokenContainerError = nil
+            self.mockOAuthClient.internalCurrentTokenContainer = dead
+        }
+        overrideTokenResponseInRecoveryHandler = .success(recovered)
+
+        let result = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(result, recovered)
+    }
+
+    func testInvalidToken_SignOutDuringRestore_NeitherSignsOutAgainNorRunsAppStoreRestore() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .failure(TokenBackupError.sessionChanged), appStoreSucceeds: true)
+        mockOAuthClient.onRestoreFromBackup = { [unowned self] in self.mockOAuthClient.internalCurrentTokenContainer = nil }
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? SubscriptionManagerError, .noTokenAvailable)
+        }
+        XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 0)
+        XCTAssertNil(automaticSignOutPixel())
+    }
+
+    func testInvalidToken_SignInDuringRestore_ReturnsTheNewSessionWithoutSigningOut() async throws {
+        let otherAccount = OAuthTokensFactory.makeTokenContainer(refreshToken: "otherR", externalID: "other")
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .failure(TokenBackupError.sessionChanged), appStoreSucceeds: true)
+        mockOAuthClient.onRestoreFromBackup = { [unowned self] in self.mockOAuthClient.internalCurrentTokenContainer = otherAccount }
+
+        let result = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(result, otherAccount)
+        XCTAssertEqual(mockOAuthClient.internalCurrentTokenContainer, otherAccount)
+        XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+        XCTAssertNil(automaticSignOutPixel())
+    }
+
+    func testInvalidToken_NoCoordinator_StillUsesTokenRecoveryHandler() async throws {
+        let recovered = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        overrideTokenResponseInRecoveryHandler = .success(recovered)
+
+        let result = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(result, recovered)
+        XCTAssertTrue(mockOAuthClient.restoreFromBackupCalls.isEmpty)
+    }
+
+    func testMissingPrimary_RestoresFromBackup() async throws {
+        let restored = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        installCoordinator(backupResult: .success(restored), appStoreSucceeds: true)
+
+        let result = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(result, restored)
+        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
+        XCTAssertNil(mockOAuthClient.restoreFromBackupCalls.first?.expectedExternalID)
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
+    }
+
+    func testMissingPrimary_NeverRunsAppStoreRestore() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        installCoordinator(backupResult: .failure(TokenBackupError.unavailable), appStoreSucceeds: true)
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? SubscriptionManagerError, .noTokenAvailable)
+        }
+        XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+    }
+
+    func testMissingPrimary_NoCoordinator_ThrowsNoTokenAsToday() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? SubscriptionManagerError, .noTokenAvailable)
+        }
+        XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+    }
+
+    func testMissingPrimary_PassesLastSignOutDate() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        await subscriptionManager.signOut(notifyUI: false)
+        let signOutDate = try XCTUnwrap(subscriptionManager.lastSignOutDate)
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        installCoordinator(backupResult: .failure(TokenBackupError.predatesSignOut), appStoreSucceeds: true)
+
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.first?.notIssuedBefore, signOutDate)
+    }
+
+    func testCreateIfNeeded_MissingPrimary_RestoresBeforeTheClientCanCreateAnAccount() async throws {
+        let restored = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        mockOAuthClient.getTokensResponse = .success(restored)
+        var restoredBeforeGetTokens = false
+        mockOAuthClient.onGetTokens = { [unowned self] in restoredBeforeGetTokens = !self.mockOAuthClient.restoreFromBackupCalls.isEmpty }
+        installCoordinator(backupResult: .success(restored), appStoreSucceeds: true)
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
+
+        XCTAssertTrue(restoredBeforeGetTokens)
+        XCTAssertEqual(mockOAuthClient.getTokensPolicies, [.createIfNeeded])
+    }
+
+    func testCreateIfNeeded_PrimaryPresent_DoesNotTouchTheBackup() async throws {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        installCoordinator(backupResult: .success(OAuthTokensFactory.makeValidTokenContainer()), appStoreSucceeds: true)
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
+
+        XCTAssertTrue(mockOAuthClient.restoreFromBackupCalls.isEmpty)
+    }
+
+    func testRestoreMissingTokenIfPossible_PrimaryPresent_DoesNothing() async {
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        installCoordinator(backupResult: .success(OAuthTokensFactory.makeValidTokenContainer()), appStoreSucceeds: true)
+
+        await subscriptionManager.restoreMissingTokenIfPossible()
+
+        XCTAssertTrue(mockOAuthClient.restoreFromBackupCalls.isEmpty)
+    }
+
+    func testRestoreMissingTokenIfPossible_PrimaryMissing_RestoresAndMarksAuthenticated() async {
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        installCoordinator(backupResult: .success(OAuthTokensFactory.makeValidTokenContainer()), appStoreSucceeds: true)
+
+        await subscriptionManager.restoreMissingTokenIfPossible()
+
+        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
+        XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+    }
+
+    func testRestoreMissingTokenIfPossible_NoCoordinator_DoesNothing() async {
+        mockOAuthClient.internalCurrentTokenContainer = nil
+
+        await subscriptionManager.restoreMissingTokenIfPossible()
+
+        XCTAssertTrue(mockOAuthClient.restoreFromBackupCalls.isEmpty)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
+    }
+
+    func testLoadInitialData_PrimaryMissing_RestoresFromBackup() async {
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        mockSubscriptionEndpointService.getSubscriptionResult = .failure(.noData)
+        installCoordinator(backupResult: .success(OAuthTokensFactory.makeValidTokenContainer()), appStoreSucceeds: true)
+
+        await subscriptionManager.loadInitialData()
+
+        XCTAssertGreaterThanOrEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
+        XCTAssertNotNil(mockOAuthClient.internalCurrentTokenContainer)
+    }
+
     func testGetTokenContainer_InvalidTokenRequest_RecoverySuccess_Pixels() async throws {
         let recoveredTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))

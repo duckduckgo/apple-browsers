@@ -34,8 +34,25 @@ final class CPMExtensionBaseURLPolicy {
     }
 
     func baseURL(for identifier: String, webExtension: WKWebExtension) -> URL? {
-        guard isEnabled(),
-              (pendingInstallations[identifier] ?? installationStore.installedExtension(withUniqueIdentifier: identifier)?.embeddedType) == .embedded,
+        guard isEnabled(), let uuid = originIdentifier(for: identifier, webExtension: webExtension) else { return nil }
+        return URL(string: "webkit-extension://\(uuid.uuidString.lowercased())/")
+    }
+
+    /// WebKit can retain a stale service-worker registration after website data is cleared.
+    /// Rotate only for the data-clearing lifecycle, and persist the new origin for subsequent launches/reloads.
+    func prepareForDataClearingReload(of context: WKWebExtensionContext) {
+        let identifier = context.uniqueIdentifier
+        guard originIdentifier(for: identifier, webExtension: context.webExtension) != nil,
+              let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) else { return }
+        installationStore.update(InstalledWebExtension(
+            uniqueIdentifier: identifier, filename: installed.filename, name: installed.name, version: installed.version,
+            embeddedType: installed.embeddedType, storeIdentity: installed.storeIdentity, cpmOriginIdentifier: UUID()
+        ))
+    }
+
+    private func originIdentifier(for identifier: String, webExtension: WKWebExtension) -> UUID? {
+        let installed = installationStore.installedExtension(withUniqueIdentifier: identifier)
+        guard (pendingInstallations[identifier] ?? installed?.embeddedType) == .embedded,
               webExtension.duckDuckGoWebExtensionType == .embedded,
               let uuid = UUID(uuidString: identifier) else { return nil }
 
@@ -44,6 +61,6 @@ final class CPMExtensionBaseURLPolicy {
             guard let resources = resources as? [Any], resources.isEmpty else { return nil }
         }
 
-        return URL(string: "webkit-extension://\(uuid.uuidString.lowercased())/")
+        return installed?.cpmOriginIdentifier ?? uuid
     }
 }

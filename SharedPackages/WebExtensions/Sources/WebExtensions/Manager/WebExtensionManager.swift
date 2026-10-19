@@ -513,6 +513,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: .dataClearing))
             do {
                 try controller.unloadCopyingErrors(context)
+                cpmBaseURLPolicy.prepareForDataClearingReload(of: context)
                 permissionController?.didUnload(identifier)
                 cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
                 // Capture the parsed extension only after a confirmed unload, so the cache never

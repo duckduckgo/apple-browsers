@@ -41,6 +41,9 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// Nil for bundled extensions, manual installations, and records saved before this field existed.
     public let storeIdentity: WebExtensionStoreIdentity?
 
+    /// CPM's private origin after a data clear. Nil preserves the installation UUID for existing records.
+    public let cpmOriginIdentifier: UUID?
+
     public var id: String { uniqueIdentifier }
 
     /// Whether this extension was installed from the app bundle (embedded).
@@ -54,7 +57,8 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         name: String?,
         version: String?,
         embeddedType: DuckDuckGoWebExtensionType? = nil,
-        storeIdentity: WebExtensionStoreIdentity? = nil
+        storeIdentity: WebExtensionStoreIdentity? = nil,
+        cpmOriginIdentifier: UUID? = nil
     ) {
         self.uniqueIdentifier = uniqueIdentifier
         self.filename = filename
@@ -62,6 +66,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         self.version = version
         self.embeddedType = embeddedType
         self.storeIdentity = storeIdentity
+        self.cpmOriginIdentifier = cpmOriginIdentifier
     }
 }
 

@@ -148,6 +148,47 @@ final class CPMExtensionBaseURLTests: XCTestCase {
                           policy.baseURL(for: otherIdentifier, webExtension: webExtension))
     }
 
+    func testDataClearRotatesOriginAndNewPolicyRestoresIt() async throws {
+        let store = registry()
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
+        let webExtension = try await webExtension()
+        let initial = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = identifier
+        policy.prepareForDataClearingReload(of: context)
+        let rotated = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
+        XCTAssertNotEqual(rotated, initial)
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(store.installedExtensions[0]))
+        let restoredStore = InstalledWebExtensionStoringMock()
+        restoredStore.add(decoded)
+        let restored = CPMExtensionBaseURLPolicy(installationStore: restoredStore, isEnabled: { true })
+        XCTAssertEqual(restored.baseURL(for: identifier, webExtension: webExtension), rotated)
+        XCTAssertEqual(decoded.filename, store.installedExtensions[0].filename)
+        XCTAssertEqual(decoded.embeddedType, .embedded)
+    }
+
+    func testDataClearWhileFlagDisabledPreparesSafeOriginForReenable() async throws {
+        var enabled = false
+        let policy = CPMExtensionBaseURLPolicy(installationStore: registry(), isEnabled: { enabled })
+        let webExtension = try await webExtension()
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = identifier
+        policy.prepareForDataClearingReload(of: context)
+        XCTAssertNil(policy.baseURL(for: identifier, webExtension: webExtension))
+        enabled = true
+        XCTAssertNotEqual(policy.baseURL(for: identifier, webExtension: webExtension)?.host, identifier.lowercased())
+    }
+
+    func testLegacyRegistryRecordStillDecodesWithoutOriginIdentifier() throws {
+        let record = installed()
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(record)) as? [String: Any])
+        object.removeValue(forKey: "cpmOriginIdentifier")
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertNil(decoded.cpmOriginIdentifier)
+        XCTAssertEqual(decoded.uniqueIdentifier, record.uniqueIdentifier)
+        XCTAssertEqual(decoded.embeddedType, .embedded)
+    }
+
     private func installed(type: DuckDuckGoWebExtensionType? = .embedded) -> InstalledWebExtension {
         InstalledWebExtension(uniqueIdentifier: identifier, filename: "test", name: "CPM", version: "1", embeddedType: type)
     }

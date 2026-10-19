@@ -27,11 +27,12 @@ final class YandexDataImporter: ChromiumDataImporter {
         super.init(profile: profile,
                    loginImporter: nil,
                    bookmarkImporter: bookmarkImporter,
-                   faviconManager: NSApp.delegateTyped.faviconManager)
+                   faviconManager: NSApp.delegateTyped.faviconManager,
+                   historyCoordinator: NSApp.delegateTyped.historyCoordinator)
     }
 
     override var importableTypes: [DataImport.DataType] {
-        return [.bookmarks]
+        return [.bookmarks, .history]
     }
 
     override func importData(types: Set<DataImport.DataType>) -> DataImportTask {

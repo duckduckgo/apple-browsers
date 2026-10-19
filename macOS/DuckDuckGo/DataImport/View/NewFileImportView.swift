@@ -30,9 +30,9 @@ import UIComponents
 func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> [NewInstructionsView.InstructionsItem] {
     switch source {
     case .safari, .safariTechnologyPreview:
-        NSLocalizedString("import.zip.instructions.safari", value: """
+        NSLocalizedString("import.zip.instructions.safari.with-history", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
-        %d Choose **Bookmarks, Passwords,** and **Credit Cards**, → **Export** and save the file
+        %d Select from **Bookmarks, Passwords, Credit Cards,** and **History** → **Export** and save the file
         %d Upload the exported ZIP or CSV file to DuckDuckGo
         """, comment: """
         Instructions to import multiple data types exported as ZIP from Safari.

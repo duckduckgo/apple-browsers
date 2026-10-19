@@ -658,13 +658,15 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                            faviconManager: NSApp.delegateTyped.faviconManager)
+                            faviconManager: NSApp.delegateTyped.faviconManager,
+                            historyCoordinator: source == .firefox ? NSApp.delegateTyped.historyCoordinator : nil)
     case .safari, .safariTechnologyPreview:
         if #available(macOS 15.2, *), !source.archiveImportSupportedFiles.isEmpty {
             SafariArchiveImporter(archiveURL: url,
                                   bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                   loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                                   faviconManager: NSApp.delegateTyped.faviconManager,
+                                  historyCoordinator: NSApp.delegateTyped.historyCoordinator,
                                   featureFlagger: Application.appDelegate.featureFlagger,
                                   secureVaultReporter: SecureVaultReporter.shared,
                                   tld: Application.appDelegate.tld)
@@ -1168,7 +1170,8 @@ extension DataImportViewModel {
                                 /* primaryPassword: */ nil)
         }), selectedDataTypes.intersects(importer.importableTypes) else {
             if #available(macOS 15.2, *), .safari == importSource {
-                screen = .archiveImport(dataTypes: importSource.supportedDataTypes)
+                // History is optional in the export, so only import it when its toggle is on.
+                screen = .archiveImport(dataTypes: importSource.supportedDataTypes.filter { $0 != .history || selectedDataTypes.contains(.history) })
                 return
             }
 

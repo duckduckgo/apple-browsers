@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import GRDB
 import History
 import PrivacyConfig
 import UniformTypeIdentifiers
@@ -192,7 +191,8 @@ final class HistoryDebugMenu: NSMenu {
             do {
                 let cutoff = Date.monthAgo
                 let rows = try await Task.detached {
-                    try Self.firefoxHistoryRows(at: url, since: cutoff)
+                    try FirefoxHistoryReader(firefoxDataDirectoryURL: url.deletingLastPathComponent(), tld: Application.appDelegate.tld)
+                        .readVisits(since: cutoff).get()
                 }.value
                 let summary = try await SafariHistoryImporter.importVisits(FirefoxHistoryImporter.parse(rows),
                                                                            into: historyCoordinator,
@@ -200,40 +200,6 @@ final class HistoryDebugMenu: NSMenu {
                 showSummaryAlert(title: "Firefox History Imported", summary: summary, skippedReasons: "redirects, embeds, downloads, non-web URLs")
             } catch {
                 showAlert(title: "Firefox History Import Failed", message: "\(error)")
-            }
-        }
-    }
-
-    /// Reads a copy of the database. Firefox uses WAL mode, so recent visits may still be in
-    /// `places.sqlite-wal`; it's copied alongside under the matching name so SQLite applies it.
-    private static func firefoxHistoryRows(at url: URL, since cutoff: Date) throws -> [FirefoxHistoryImporter.Row] {
-        let fileManager = FileManager.default
-        let directory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? fileManager.removeItem(at: directory) }
-
-        let databaseCopy = directory.appendingPathComponent(url.lastPathComponent)
-        try fileManager.copyItem(at: url, to: databaseCopy)
-        let walURL = URL(fileURLWithPath: url.path + "-wal")
-        if fileManager.fileExists(atPath: walURL.path) {
-            try fileManager.copyItem(at: walURL, to: URL(fileURLWithPath: databaseCopy.path + "-wal"))
-        }
-
-        let queue = try DatabaseQueue(path: databaseCopy.path)
-        return try queue.read { database in
-            try GRDB.Row.fetchAll(database, sql: """
-                SELECT moz_places.url, moz_places.title, moz_places.hidden,
-                       moz_historyvisits.visit_date, moz_historyvisits.visit_type
-                FROM moz_historyvisits JOIN moz_places ON moz_places.id = moz_historyvisits.place_id
-                WHERE moz_historyvisits.visit_date >= ?
-                """, arguments: [FirefoxHistoryImporter.firefoxTime(for: cutoff)])
-            .compactMap { row in
-                guard let url: String = row["url"] else { return nil }
-                return FirefoxHistoryImporter.Row(url: url,
-                                                  title: row["title"],
-                                                  visitDate: row["visit_date"],
-                                                  visitType: row["visit_type"],
-                                                  hidden: (row["hidden"] as Int? ?? 0) != 0)
             }
         }
     }

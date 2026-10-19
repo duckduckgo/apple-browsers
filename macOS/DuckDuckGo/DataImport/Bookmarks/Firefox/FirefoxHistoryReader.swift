@@ -21,6 +21,7 @@ import GRDB
 import BrowserServicesKit
 import Common
 import FoundationExtensions
+import History
 
 final class FirefoxHistoryReader {
 
@@ -33,16 +34,19 @@ final class FirefoxHistoryReader {
             case copyTemporaryFile
             case dbOpen
             case fetchTopSites
+            case fetchVisits
+            case importVisits
         }
 
-        var action: DataImportAction { .favorites }
+        var action: DataImportAction = .favorites
         let type: OperationType
         let underlyingError: Error?
 
         var errorType: DataImport.ErrorType {
             switch type {
             case .copyTemporaryFile: .noData
-            case .dbOpen, .fetchTopSites: .dataCorrupted
+            case .dbOpen, .fetchTopSites, .fetchVisits: .dataCorrupted
+            case .importVisits: .other
             }
         }
     }
@@ -91,7 +95,56 @@ final class FirefoxHistoryReader {
         }
     }
 
+    /// Returns the visits made since `cutoff` from the Firefox history database.
+    func readVisits(since cutoff: Date) -> DataImportResult<[FirefoxHistoryImporter.Row]> {
+        currentOperationType = .copyTemporaryFile
+        do {
+            return try withTemporaryCopyIncludingWriteAheadLog { temporaryDatabaseURL in
+                currentOperationType = .dbOpen
+                let queue = try DatabaseQueue(path: temporaryDatabaseURL.path)
+
+                currentOperationType = .fetchVisits
+                let rows = try queue.read { database in
+                    try Row.fetchAll(database, sql: """
+                        SELECT moz_places.url, moz_places.title, moz_places.hidden,
+                               moz_historyvisits.visit_date, moz_historyvisits.visit_type
+                        FROM moz_historyvisits JOIN moz_places ON moz_places.id = moz_historyvisits.place_id
+                        WHERE moz_historyvisits.visit_date >= ?
+                        """, arguments: [FirefoxHistoryImporter.firefoxTime(for: cutoff)])
+                    .compactMap { row -> FirefoxHistoryImporter.Row? in
+                        guard let url: String = row["url"] else { return nil }
+                        return FirefoxHistoryImporter.Row(url: url,
+                                                          title: row["title"],
+                                                          visitDate: row["visit_date"],
+                                                          visitType: row["visit_type"],
+                                                          hidden: (row["hidden"] as Int? ?? 0) != 0)
+                    }
+                }
+                return .success(rows)
+            }
+        } catch {
+            return .failure(ImportError(action: .history, type: currentOperationType, underlyingError: error))
+        }
+    }
+
     // MARK: - Private
+
+    /// Firefox uses WAL mode, so recent visits may still be in `places.sqlite-wal`.
+    /// It's copied alongside the database under the matching name so SQLite applies it.
+    private func withTemporaryCopyIncludingWriteAheadLog<T>(_ body: (URL) throws -> T) throws -> T {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: directory) }
+
+        let databaseCopy = directory.appendingPathComponent(firefoxHistoryDatabaseURL.lastPathComponent)
+        try fileManager.copyItem(at: firefoxHistoryDatabaseURL, to: databaseCopy)
+        let writeAheadLogURL = URL(fileURLWithPath: firefoxHistoryDatabaseURL.path + "-wal")
+        if fileManager.fileExists(atPath: writeAheadLogURL.path) {
+            try fileManager.copyItem(at: writeAheadLogURL, to: URL(fileURLWithPath: databaseCopy.path + "-wal"))
+        }
+        return try body(databaseCopy)
+    }
 
     private func readFrecentSites(from databaseURL: URL) throws -> [FirefoxFrecentSite] {
         currentOperationType = .dbOpen

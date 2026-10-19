@@ -430,7 +430,7 @@ final class DataImportViewModelTests: XCTestCase {
         model.update(with: .firefox)
 
         // THEN: the explicit narrowing is preserved
-        XCTAssertEqual(model.selectableImportTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.selectableImportTypes, [.bookmarks, .passwords, .history])
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
     }
 

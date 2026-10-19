@@ -204,8 +204,11 @@ extension DataImport {
             case .creditCards:
                 return false
             case .history:
-                guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
-                return profileDirectoryContents.contains("History")
+                // Safari history comes from its browsing data export, not from the profile directory.
+                if browser.isSafari { return true }
+                guard let historyDatabaseName = browser.historyDatabaseName,
+                      let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
+                return profileDirectoryContents.contains(historyDatabaseName)
             }
         }
 
@@ -412,13 +415,11 @@ extension DataImport.Source {
 
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
-        case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
+        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
             return [.bookmarks, .passwords, .history]
-        case .firefox, .yandex:
-            return [.bookmarks, .passwords]
         case .safari, .safariTechnologyPreview:
             if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
-                return [.bookmarks, .passwords, .creditCards]
+                return [.bookmarks, .passwords, .creditCards, .history]
             } else {
                 return [.bookmarks, .passwords]
             }

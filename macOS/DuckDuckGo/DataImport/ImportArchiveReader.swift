@@ -52,16 +52,18 @@ public struct ImportArchiveReader: ImportArchiveReading {
         public let passwords: [String]  // CSV contents
         public let bookmarks: [String]  // HTML contents
         public let creditCards: [String] // JSON contents
+        public let history: [Data] // Safari History.json contents
         public var type: ContentType { ContentType(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards) }
 
         public var isEmpty: Bool {
-            passwords.isEmpty && bookmarks.isEmpty && creditCards.isEmpty
+            passwords.isEmpty && bookmarks.isEmpty && creditCards.isEmpty && history.isEmpty
         }
 
-        public init(passwords: [String], bookmarks: [String], creditCards: [String]) {
+        public init(passwords: [String], bookmarks: [String], creditCards: [String], history: [Data] = []) {
             self.passwords = passwords
             self.bookmarks = bookmarks
             self.creditCards = creditCards
+            self.history = history
         }
     }
 
@@ -79,6 +81,7 @@ public struct ImportArchiveReader: ImportArchiveReading {
         var passwords = [String]()
         var bookmarks = [String]()
         var creditCards = [String]()
+        var history = [Data]()
 
         for entry in archive {
             let lowercasedPath = entry.path.lowercased()
@@ -96,11 +99,13 @@ public struct ImportArchiveReader: ImportArchiveReading {
                       let content = extractFileContent(from: entry, in: archive) {
                 if isPaymentCardsJSON(content) {
                     creditCards.append(content)
+                } else if Self.isHistoryJSON(content) {
+                    history.append(Data(content.utf8))
                 }
             }
         }
 
-        return Contents(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards)
+        return Contents(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards, history: history)
     }
 
     // MARK: - Private
@@ -118,6 +123,13 @@ public struct ImportArchiveReader: ImportArchiveReading {
         }
 
         return content
+    }
+
+    /// Safari's History.json identifies itself with `"metadata": { "data_type": "history" }`.
+    static func isHistoryJSON(_ content: String) -> Bool {
+        guard let jsonObject = try? JSONSerialization.jsonObject(with: Data(content.utf8)) as? [String: Any],
+              let metadata = jsonObject["metadata"] as? [String: Any] else { return false }
+        return metadata["data_type"] as? String == "history"
     }
 
     private func isPaymentCardsJSON(_ content: String) -> Bool {

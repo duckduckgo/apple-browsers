@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import History
 import SecureStorage
 import PixelKit
 import BrowserServicesKit
@@ -26,6 +27,7 @@ internal class FirefoxDataImporter: DataImporter {
     private let loginImporter: LoginImporter
     private let bookmarkImporter: BookmarkImporter
     private let faviconManager: FaviconManagement
+    private let historyCoordinator: HistoryCoordinating?
     private let profile: DataImport.BrowserProfile
     private var source: DataImport.Source {
         profile.browser.importSource
@@ -33,16 +35,24 @@ internal class FirefoxDataImporter: DataImporter {
 
     private let primaryPassword: String?
 
-    init(profile: DataImport.BrowserProfile, primaryPassword: String?, loginImporter: LoginImporter, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement) {
+    init(
+        profile: DataImport.BrowserProfile,
+        primaryPassword: String?,
+        loginImporter: LoginImporter,
+        bookmarkImporter: BookmarkImporter,
+        faviconManager: FaviconManagement,
+        historyCoordinator: HistoryCoordinating? = nil
+    ) {
         self.profile = profile
         self.primaryPassword = primaryPassword
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.historyCoordinator = historyCoordinator
     }
 
     var importableTypes: [DataImport.DataType] {
-        return [.passwords, .bookmarks]
+        historyCoordinator == nil ? [.passwords, .bookmarks] : [.passwords, .bookmarks, .history]
     }
 
     func importData(types: Set<DataImport.DataType>) -> DataImportTask {
@@ -90,7 +100,7 @@ internal class FirefoxDataImporter: DataImporter {
         }
 
         let passwordsFraction: Double = types.contains(.passwords) ? 0.5 : 0.0
-        if types.contains(.bookmarks)
+        bookmarksImport: if types.contains(.bookmarks)
             // don‘t proceed with bookmarks import on invalid Primary Password
             && (summary[.passwords]?.error as? FirefoxLoginReader.ImportError)?.type != .requiresPrimaryPassword {
 
@@ -101,7 +111,7 @@ internal class FirefoxDataImporter: DataImporter {
 
             guard case .success(var importedBookmarks) = bookmarkResult else {
                 summary[.bookmarks] = .failure(bookmarkResult.error!)
-                return summary
+                break bookmarksImport
             }
 
             let newTabFavorites = fetchNewTabFavorites()
@@ -119,9 +129,38 @@ internal class FirefoxDataImporter: DataImporter {
             try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 1.0))
         }
+
+        if types.contains(.history), let historyCoordinator {
+            let historyFraction = dataTypeFraction * Double(types.intersection([.passwords, .bookmarks]).count)
+            try updateProgress(.importingHistory(numberOfVisits: nil, fraction: historyFraction))
+
+            let historySummary = await importHistory(into: historyCoordinator)
+            summary[.history] = historySummary
+
+            try updateProgress(.importingHistory(numberOfVisits: try? historySummary.get().successful,
+                                                 fraction: historyFraction + dataTypeFraction))
+        }
         try updateProgress(.done)
 
         return summary
+    }
+
+    private func importHistory(into historyCoordinator: HistoryCoordinating) async -> DataImportResult<DataImport.DataTypeSummary> {
+        let cutoff = Date.monthAgo
+        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: profile.profileURL, tld: Application.appDelegate.tld)
+        switch historyReader.readVisits(since: cutoff) {
+        case .success(let rows):
+            do {
+                let importSummary = try await SafariHistoryImporter.importVisits(FirefoxHistoryImporter.parse(rows),
+                                                                                 into: historyCoordinator,
+                                                                                 cutoff: cutoff)
+                return .success(.init(successful: importSummary.imported, duplicate: importSummary.alreadyInHistory, failed: 0))
+            } catch {
+                return .failure(FirefoxHistoryReader.ImportError(action: .history, type: .importVisits, underlyingError: error))
+            }
+        case .failure(let error):
+            return .failure(error)
+        }
     }
 
     private func importFavicons() async {

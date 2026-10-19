@@ -263,6 +263,18 @@ enum ThirdPartyBrowser: CaseIterable {
         self == .safari || self == .safariTechnologyPreview
     }
 
+    /// The profile file that browsing history is imported from.
+    var historyDatabaseName: String? {
+        switch self {
+        case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
+            return ChromiumHistoryReader.Constants.historyDatabaseName
+        case .firefox:
+            return FirefoxHistoryReader.Constants.historyDatabaseName
+        case .safari, .safariTechnologyPreview, .tor, .bitwarden, .lastPass, .onePassword7, .onePassword8:
+            return nil
+        }
+    }
+
     private func findRunningApplications() -> [NSRunningApplication] {
         var applications = [NSRunningApplication]()
 

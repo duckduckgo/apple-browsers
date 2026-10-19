@@ -23,6 +23,7 @@ import PixelKit
 import PrivacyConfig
 import Common
 import FoundationExtensions
+import History
 import UniformTypeIdentifiers
 
 /// A DataImporter that can import Safari archives as well as standalone Safari exports
@@ -39,6 +40,7 @@ final class SafariArchiveImporter: DataImporter {
             case unarchive
             case createTempFiles
             case importContents
+            case importHistory
         }
 
         let action: DataImportAction
@@ -53,7 +55,7 @@ final class SafariArchiveImporter: DataImporter {
                 return .other
             case .importContents:
                 return .noData
-            case .unarchive:
+            case .unarchive, .importHistory:
                 return .other
             }
         }
@@ -90,6 +92,7 @@ final class SafariArchiveImporter: DataImporter {
     private let creditCardImporter: CreditCardImporter
     private let vault: (any AutofillSecureVault)?
     private let faviconManager: FaviconManagement
+    private let historyCoordinator: HistoryCoordinating?
     private let featureFlagger: FeatureFlagger
     private let secureVaultReporter: SecureVaultReporting
     private let tld: TLD
@@ -102,6 +105,7 @@ final class SafariArchiveImporter: DataImporter {
     ///   - bookmarkImporter: The bookmark importer to use for importing bookmarks
     ///   - loginImporter: The login importer to use for importing passwords
     ///   - faviconManager: The favicon manager for handling favicons
+    ///   - historyCoordinator: Where imported browsing history is added; history isn't importable without it
     ///   - featureFlagger: Feature flagger for controlling import behavior
     ///   - secureVaultReporter: Reporter for secure vault operations
     ///   - tld: TLD helper for URL processing
@@ -112,6 +116,7 @@ final class SafariArchiveImporter: DataImporter {
          creditCardImporter: CreditCardImporter = SecureVaultCreditCardImporter(),
          vault: (any AutofillSecureVault)? = nil,
          faviconManager: FaviconManagement,
+         historyCoordinator: HistoryCoordinating? = nil,
          featureFlagger: FeatureFlagger,
          secureVaultReporter: SecureVaultReporting,
          tld: TLD) {
@@ -123,6 +128,7 @@ final class SafariArchiveImporter: DataImporter {
         self.creditCardImporter = creditCardImporter
         self.vault = vault ?? (try? AutofillSecureVaultFactory.makeVault(reporter: secureVaultReporter))
         self.faviconManager = faviconManager
+        self.historyCoordinator = historyCoordinator
         self.featureFlagger = featureFlagger
         self.secureVaultReporter = secureVaultReporter
         self.tld = tld
@@ -148,13 +154,16 @@ final class SafariArchiveImporter: DataImporter {
             if !contents.creditCards.isEmpty {
                 types.append(.creditCards)
             }
+            if !contents.history.isEmpty, historyCoordinator != nil {
+                types.append(.history)
+            }
             return types
         case .passwords:
             return [.passwords]
         case .bookmarks:
             return [.bookmarks]
         case .creditCards:
-            return [.creditCards]
+            return isSelectedFileSafariHistory ? [.history] : [.creditCards]
         }
     }
 
@@ -261,6 +270,12 @@ final class SafariArchiveImporter: DataImporter {
             finalSummary.merge(summary) { (_, new) in new }
         }
 
+        // Import history if requested and available
+        if types.contains(.history), !contents.history.isEmpty, let historyCoordinator {
+            let summary = try await importHistory(contents.history, into: historyCoordinator, types, updateProgress, &cumulativeFraction)
+            finalSummary.merge(summary) { (_, new) in new }
+        }
+
         try updateProgress(.done)
         return finalSummary
     }
@@ -294,8 +309,17 @@ final class SafariArchiveImporter: DataImporter {
             return ImportArchiveReader.Contents(passwords: [], bookmarks: [bookmarkContent], creditCards: [])
         case .creditCards:
             let jsonContent = try String(contentsOf: archiveURL, encoding: .utf8)
+            if ImportArchiveReader.isHistoryJSON(jsonContent) {
+                return ImportArchiveReader.Contents(passwords: [], bookmarks: [], creditCards: [], history: [Data(jsonContent.utf8)])
+            }
             return ImportArchiveReader.Contents(passwords: [], bookmarks: [], creditCards: [jsonContent])
         }
+    }
+
+    /// A directly selected JSON file is either Safari's payment cards export or its History.json.
+    private var isSelectedFileSafariHistory: Bool {
+        guard let jsonContent = try? String(contentsOf: archiveURL, encoding: .utf8) else { return false }
+        return ImportArchiveReader.isHistoryJSON(jsonContent)
     }
 
     private func createTemporaryBookmarksFile(from contents: [String]) throws -> URL? {
@@ -408,6 +432,33 @@ final class SafariArchiveImporter: DataImporter {
         }
         let creditCardResults = await creditCardTask.task.value
         return creditCardResults
+    }
+
+    private func importHistory(_ historyFiles: [Data],
+                               into historyCoordinator: HistoryCoordinating,
+                               _ types: Set<DataImport.DataType>,
+                               _ updateProgress: DataImportProgressCallback,
+                               _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+        try updateProgress(.importingHistory(numberOfVisits: nil, fraction: cumulativeFraction))
+
+        let cutoff = Date.monthAgo
+        var imported = 0
+        var alreadyInHistory = 0
+        do {
+            for historyFile in historyFiles {
+                let importSummary = try await SafariHistoryImporter.importVisits(SafariHistoryImporter.parse(historyFile),
+                                                                                 into: historyCoordinator,
+                                                                                 cutoff: cutoff)
+                imported += importSummary.imported
+                alreadyInHistory += importSummary.alreadyInHistory
+            }
+        } catch {
+            return [.history: .failure(ImportError(action: .history, type: .importHistory, underlyingError: error))]
+        }
+
+        cumulativeFraction += 1.0 / Double(types.count)
+        try updateProgress(.importingHistory(numberOfVisits: imported, fraction: cumulativeFraction))
+        return [.history: .success(.init(successful: imported, duplicate: alreadyInHistory, failed: 0))]
     }
 
     private static func contentType(for url: URL) -> UTType? {

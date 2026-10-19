@@ -1691,67 +1691,98 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
     func testWhenPageIsNotLoadingThenSnapshotIsCaptured() {
         XCTAssertTrue(WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: false))
     }
+}
 
-    func testWhenSnapshotCompletesBeforeTimeoutThenCompletionRunsOnceWithImageAndNoRetry() {
+@MainActor
+final class WebViewPreviewSnapshotCapturerTests: XCTestCase {
+
+    private let webView = FakeSnapshottingWebView()
+    private var snapshots: [(afterScreenUpdates: Bool, completion: (UIImage?) -> Void)] { webView.snapshots }
+    private var results: [(UIImage?, WebContentHealthPixel.SnapshotResult)] = []
+
+    func testWhenFirstSnapshotAnswersThenItIsUsedWithoutSecondSnapshot() {
         let image = UIImage()
-        var retried = false
-        var results = [UIImage?]()
-        let completed = expectation(description: "completed")
-        WebViewPreviewSnapshotPolicy.capture(timeout: 0.05,
-                                             attempts: [{ $0(image) }, { _ in retried = true }],
-                                             completion: { results.append($0); completed.fulfill() })
-        wait(for: [completed], timeout: 5)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1)) // Past the timeout, to catch a retry or a second completion.
+        capture(waitForScreenUpdates: true)
+        snapshots[0].completion(image)
+        waitPastTimeouts()
 
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [true])
         XCTAssertEqual(results.count, 1)
-        XCTAssertIdentical(results[0], image)
-        XCTAssertFalse(retried)
+        XCTAssertIdentical(results[0].0, image)
+        XCTAssertEqual(results[0].1, .success)
     }
 
-    func testWhenSnapshotFailsBeforeTimeoutThenItIsNotRetried() {
-        var retried = false
-        var results = [UIImage?]()
-        let completed = expectation(description: "completed")
-        WebViewPreviewSnapshotPolicy.capture(timeout: 0.05,
-                                             attempts: [{ $0(nil) }, { _ in retried = true }],
-                                             completion: { results.append($0); completed.fulfill() })
-        wait(for: [completed], timeout: 5)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+    func testWhenFirstSnapshotTimesOutThenSnapshotWithoutWaitingIsUsedAndLateFirstAnswerIgnored() {
+        let image = UIImage()
+        capture(waitForScreenUpdates: true)
+        waitUntil { self.snapshots.count == 2 }
+        snapshots[0].completion(UIImage()) // Late, so ignored.
+        snapshots[1].completion(image)
 
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [true, false])
         XCTAssertEqual(results.count, 1)
-        XCTAssertNil(results[0])
-        XCTAssertFalse(retried)
+        XCTAssertIdentical(results[0].0, image)
+        XCTAssertEqual(results[0].1, .retryImage)
     }
 
-    func testWhenFirstSnapshotTimesOutThenRetryResultIsUsedAndLateFirstImageIsIgnored() {
-        let retryImage = UIImage()
-        var firstCompletion: ((UIImage?) -> Void)?
-        var retryCompletion: ((UIImage?) -> Void)?
-        var results = [UIImage?]()
-        let retryStarted = expectation(description: "retry started")
-        let completed = expectation(description: "completed")
-        WebViewPreviewSnapshotPolicy.capture(timeout: 0.05,
-                                             attempts: [{ firstCompletion = $0 }, { retryCompletion = $0; retryStarted.fulfill() }],
-                                             completion: { results.append($0); completed.fulfill() })
-        wait(for: [retryStarted], timeout: 5)
+    func testWhenSnapshotWithoutWaitingAnswersWithoutImageThenResultSaysSo() {
+        capture(waitForScreenUpdates: true)
+        waitUntil { self.snapshots.count == 2 }
+        snapshots[1].completion(nil)
 
-        firstCompletion?(UIImage()) // Late, so ignored.
-        retryCompletion?(retryImage)
-        wait(for: [completed], timeout: 5)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertIdentical(results[0], retryImage)
+        XCTAssertEqual(results.map(\.1), [.retryNoImage])
     }
 
-    func testWhenEverySnapshotTimesOutThenCompletionRunsOnceWithNil() {
-        var results = [UIImage?]()
-        let completed = expectation(description: "completed")
-        WebViewPreviewSnapshotPolicy.capture(timeout: 0.05,
-                                             attempts: [{ _ in }, { _ in }],
-                                             completion: { results.append($0); completed.fulfill() })
-        wait(for: [completed], timeout: 5)
+    func testWhenBothSnapshotsTimeOutThenCompletionRunsOnceWithoutImage() {
+        capture(waitForScreenUpdates: true)
+        waitUntil { !self.results.isEmpty }
+        waitPastTimeouts()
 
-        XCTAssertEqual(results, [nil])
+        XCTAssertEqual(results.count, 1)
+        XCTAssertNil(results[0].0)
+        XCTAssertEqual(results[0].1, .retryTimeout)
+    }
+
+    func testWhenNotWaitingForScreenUpdatesThenOnlyTheSnapshotThatDoesNotWaitIsTaken() {
+        capture(waitForScreenUpdates: false)
+        snapshots[0].completion(UIImage())
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [false])
+        XCTAssertEqual(results.map(\.1), [.retryImage])
+    }
+
+    private func capture(waitForScreenUpdates: Bool) {
+        WebViewPreviewSnapshotCapturer().capture(webView: webView,
+                                                 rect: CGRect(x: 0, y: 0, width: 100, height: 100),
+                                                 timeout: 0.05,
+                                                 waitForScreenUpdates: waitForScreenUpdates) { [weak self] image, result in
+            self?.results.append((image, result))
+        }
+    }
+
+    private func waitUntil(_ condition: @escaping () -> Bool) {
+        let deadline = Date().addingTimeInterval(5)
+        while !condition() && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
+        XCTAssertTrue(condition())
+    }
+
+    private func waitPastTimeouts() {
+        RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+    }
+}
+
+/// Records each snapshot request and answers only when the test calls its completion.
+@MainActor
+private final class FakeSnapshottingWebView: WebViewSnapshotting {
+
+    let window: UIWindow? = nil
+    private(set) var snapshots: [(afterScreenUpdates: Bool, completion: (UIImage?) -> Void)] = []
+
+    func takeSnapshot(with snapshotConfiguration: WKSnapshotConfiguration?,
+                      completionHandler: @escaping @MainActor @Sendable (UIImage?, (any Error)?) -> Void) {
+        snapshots.append((snapshotConfiguration?.afterScreenUpdates ?? true, { completionHandler($0, nil) }))
     }
 }
 

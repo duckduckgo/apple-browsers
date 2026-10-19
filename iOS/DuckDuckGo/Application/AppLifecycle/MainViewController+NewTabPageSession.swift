@@ -61,11 +61,7 @@ extension MainViewController {
         let isConnected = AppDependencyProvider.shared.connectionObserver.recentValue.isConnectedForSessionInstrumentation
         guard isConnected != wasConnected, isNewTabPageVisible else { return }
 
-        if isConnected {
-            newTabPageSessionInstrumentation.vpnOn()
-        } else {
-            newTabPageSessionInstrumentation.vpnOff()
-        }
+        newTabPageSessionInstrumentation.record(isConnected ? .vpnOn : .vpnOff)
     }
 
     /// Opens a visit when the app returns to a New Tab Page that is already on screen.
@@ -97,7 +93,7 @@ extension MainViewController {
     /// A visit stays open until something ends it, and not every way out of the New Tab Page has a
     /// terminal. Without this guard such a visit would keep collecting interactions belonging to
     /// whatever replaced it.
-    func recordNewTabPageSessionAction(_ record: (NewTabPageSessionInstrumentation) -> Void) {
+    func recordNewTabPageSessionAction(_ action: NewTabPageSessionWideEventData.Action) {
         guard isNewTabPageVisible else { return }
 
         // Acting with a screen still presented, such as picking a login in Passwords, happens
@@ -107,7 +103,7 @@ extension MainViewController {
         }
 
         recordNewTabPageSessionVPNChangeIfNeeded()
-        record(newTabPageSessionInstrumentation)
+        newTabPageSessionInstrumentation.record(action)
     }
 
     /// Records text entry from either the omnibar or the unified input.
@@ -117,7 +113,7 @@ extension MainViewController {
     /// putting a query in.
     func recordNewTabPageSessionTextEntry(_ text: String) {
         guard !text.isEmpty else { return }
-        recordNewTabPageSessionAction { $0.typeInInput() }
+        recordNewTabPageSessionAction(.typeInInput)
     }
 
     /// Ends the visit on a navigation the user asked for, splitting Duck.ai from search results
@@ -142,11 +138,17 @@ extension MainViewController {
 
     /// Records the user moving the Search / Duck.ai toggle, in whichever direction.
     func recordNewTabPageSessionToggleSwitch(to mode: TextEntryMode) {
-        recordNewTabPageSessionAction { instrumentation in
-            switch mode {
-            case .search: instrumentation.switchToggleToSearch()
-            case .aiChat: instrumentation.switchToggleToAiChat()
-            }
+        switch mode {
+        case .search: recordNewTabPageSessionAction(.switchToggleToSearch)
+        case .aiChat: recordNewTabPageSessionAction(.switchToggleToAiChat)
+        }
+    }
+
+    /// Records the user pressing a control of a New Tab Page message.
+    func recordNewTabPageSessionMessageInteraction(_ interaction: NewTabPageMessageInteraction) {
+        switch interaction {
+        case .callToAction: recordNewTabPageSessionAction(.clickMessageCta)
+        case .dismiss: recordNewTabPageSessionAction(.clickMessageDismiss)
         }
     }
 
@@ -155,8 +157,8 @@ extension MainViewController {
     /// The visit stays open: the menu takes the user somewhere else in the app, and they usually
     /// come back. Ending it here would lose everything they do next, including the selection the
     /// entry leads to.
-    func recordNewTabPageSessionMenuEntry(_ record: (NewTabPageSessionInstrumentation) -> Void) {
-        recordNewTabPageSessionAction(record)
+    func recordNewTabPageSessionMenuEntry(_ action: NewTabPageSessionWideEventData.Action) {
+        recordNewTabPageSessionAction(action)
         recordNewTabPageSessionDeparture()
     }
 
@@ -222,7 +224,7 @@ extension MainViewController {
     /// not navigate leave the visit open: a bookmarklet runs against the current page, and Duck.ai
     /// reports its own terminal once the chat opens.
     func endNewTabPageSessionWithSuggestion(_ suggestion: Suggestion) {
-        recordNewTabPageSessionAction { $0.chooseSuggestion() }
+        recordNewTabPageSessionAction(.chooseSuggestion)
 
         let terminalAction: NewTabPageSessionWideEventData.TerminalAction?
         switch suggestion {

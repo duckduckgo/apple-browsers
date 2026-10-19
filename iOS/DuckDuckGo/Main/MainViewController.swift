@@ -1631,7 +1631,7 @@ class MainViewController: UIViewController {
         if !didSendGestureDismissPixel, newTabPageViewController?.isDragging == true, keyboardShowing {
             cancelPendingAppOpenKeyboard()
             PixelKit.fire(Pixel.Event.addressBarGestureDismiss)
-            recordNewTabPageSessionAction { $0.dismissKeyboard() }
+            recordNewTabPageSessionAction(.dismissKeyboard)
             didSendGestureDismissPixel = true
         }
         collapseExpandedUTIOnKeyboardDismiss()
@@ -2715,7 +2715,7 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
-        recordNewTabPageSessionAction { $0.tapFireButton() }
+        recordNewTabPageSessionAction(.tapFireButton)
         let wasContextualFireOnboardingDialogVisible = daxDialogsManager.isShowingFireDialog
 
         func showFireConfirmation() {
@@ -2779,7 +2779,7 @@ class MainViewController: UIViewController {
     }
 
     @objc func onPasswordsPressed() {
-        recordNewTabPageSessionAction { $0.tapPasswordsToolbarItem() }
+        recordNewTabPageSessionAction(.tapPasswordsToolbarItem)
         recordNewTabPageSessionDeparture()
         launchAutofillLogins(source: .newTabPageToolbar)
     }
@@ -5146,7 +5146,7 @@ class MainViewController: UIViewController {
             completion(false)
             return
         }
-        recordNewTabPageSessionAction { $0.hitSubmit() }
+        recordNewTabPageSessionAction(.hitSubmit)
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadDuckaiResponse)
         let opensNewTab = shouldOpenAIChatInNewTab(forcesNewTab: false, fromDeepLink: false)
         prepareAIChatWithTabAttachments(prompt, payload: nil, flowType: .default, source: .addressBarPrompt,
@@ -5751,7 +5751,7 @@ extension MainViewController: BrowserChromeDelegate {
         }
 
         postIdleSessionInstrumentation.sessionEnded(reason: .favoriteSelected)
-        recordNewTabPageSessionAction { $0.tapFavorite() }
+        recordNewTabPageSessionAction(.tapFavorite)
         newTabPageViewController?.chromeDelegate = nil
         dismissOmniBar()
         favicons.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
@@ -5873,7 +5873,7 @@ extension MainViewController: OmniBarDelegate {
         commitToggleMode(.aiChat)
 
         // Recorded before `openAIChat`, which ends the visit on its own terminal.
-        recordNewTabPageSessionAction { $0.hitSubmit() }
+        recordNewTabPageSessionAction(.hitSubmit)
 
         openAIChat(source: .ipadTogglePrompt, query, autoSend: true, tools: tools ?? controlValues.selectedTools,
                    modelId: controlValues.selectedModelId,
@@ -6008,7 +6008,7 @@ extension MainViewController: OmniBarDelegate {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
-        recordNewTabPageSessionAction { $0.hitSubmit() }
+        recordNewTabPageSessionAction(.hitSubmit)
         if postIdleSubmissionReason(for: query) == .searchSubmitted {
             recordDuckAISessionPendingExit(.searchStarted)
         }
@@ -6053,7 +6053,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     private func launchBrowsingMenu() {
-        recordNewTabPageSessionAction { $0.openMenu() }
+        recordNewTabPageSessionAction(.openMenu)
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
@@ -6237,7 +6237,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     @objc func onToolbarBookmarksPressed() {
-        recordNewTabPageSessionAction { $0.tapBookmarksToolbarItem() }
+        recordNewTabPageSessionAction(.tapBookmarksToolbarItem)
         recordNewTabPageSessionDeparture()
         PixelKit.fire(Pixel.Event.bookmarksOpenFromToolbar)
         onBookmarksPressed()
@@ -6450,7 +6450,7 @@ extension MainViewController: OmniBarDelegate {
             ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.backPressed()
-        recordNewTabPageSessionAction { $0.utiBackArrow() }
+        recordNewTabPageSessionAction(.utiBackArrow)
         performCancel()
     }
 
@@ -6536,7 +6536,7 @@ extension MainViewController: OmniBarDelegate {
                                      website: .addressBarClickOnWebsite,
                                      aiChat: .addressBarClickOnAIChat,
                                      additionalParameters: modeParam)
-            recordNewTabPageSessionAction { $0.tapInputBar() }
+            recordNewTabPageSessionAction(.tapInputBar)
         }
 
         guard newTabPageViewController == nil else { return }
@@ -6618,7 +6618,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onAIChatPressed(prefilledText: String?, source: AIChatEntryPointSource = .addressBarIcon) {
-        recordNewTabPageSessionAction { $0.tapDuckaiButton() }
+        recordNewTabPageSessionAction(.tapDuckaiButton)
         ViewHighlighter.hideAll()
         hideSuggestionTray()
 
@@ -6848,7 +6848,7 @@ extension MainViewController: OmniBarDelegate {
                                  website: .addressBarClickOnWebsite,
                                  aiChat: .addressBarClickOnAIChat,
                                  additionalParameters: modeParam)
-        recordNewTabPageSessionAction { $0.tapInputBar() }
+        recordNewTabPageSessionAction(.tapInputBar)
     }
 
     func onExperimentalAddressBarClearPressed() {
@@ -7114,7 +7114,7 @@ extension MainViewController: EscapeHatchActionRouter {
 
         // Hooked here rather than in `onSwitchToTab`, which the "switch to open tab" suggestion
         // row also reaches after already reporting its own terminal.
-        recordNewTabPageSessionAction { $0.tapReturnToLast() }
+        recordNewTabPageSessionAction(.tapReturnToLast)
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .lastTabLoaded)
         if tab.isAITab {
             fireAIChatEntryPointPixel(source: .returnToChatCard, opensNewTab: false, hasPrompt: false)
@@ -7200,7 +7200,7 @@ extension MainViewController: EscapeHatchActionRouter {
     }
 
     func escapeHatchDidRequestTabSwitcher() {
-        recordNewTabPageSessionAction { $0.tapTabViewerEscapeHatch() }
+        recordNewTabPageSessionAction(.tapTabViewerEscapeHatch)
         requestTabSwitcher()
         ntpAfterIdleInstrumentation.escapeHatchTabSwitcherTapped()
     }
@@ -7221,7 +7221,7 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidOpenCustomization(_ controller: any NewTabPage) {
-        recordNewTabPageSessionMenuEntry { $0.tapCustomize() }
+        recordNewTabPageSessionMenuEntry(.tapCustomize)
     }
 
     func newTabPageDidCloseCustomization(_ controller: any NewTabPage) {
@@ -7233,16 +7233,11 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidScroll(_ controller: any NewTabPage) {
-        recordNewTabPageSessionAction { $0.scrollView() }
+        recordNewTabPageSessionAction(.scrollView)
     }
 
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) {
-        recordNewTabPageSessionAction { instrumentation in
-            switch interaction {
-            case .callToAction: instrumentation.clickMessageCta()
-            case .dismiss: instrumentation.clickMessageDismiss()
-            }
-        }
+        recordNewTabPageSessionMessageInteraction(interaction)
     }
 
     func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
@@ -7250,7 +7245,7 @@ extension MainViewController: NewTabPageControllerDelegate {
         // tap, and nothing would then report the sheet closing.
         guard presentedViewController == nil else { return }
 
-        recordNewTabPageSessionMenuEntry { $0.tapAddFavorite() }
+        recordNewTabPageSessionMenuEntry(.tapAddFavorite)
         let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel)
         model.reportOpening()
         model.onSave = { [weak self] in
@@ -7767,7 +7762,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {
-        recordNewTabPageSessionMenuEntry { $0.menuChats() }
+        recordNewTabPageSessionMenuEntry(.menuChats)
         openAIChatHistory(source: source)
     }
 
@@ -7815,7 +7810,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestBookmarks(tab: TabViewController) {
-        recordNewTabPageSessionMenuEntry { $0.menuBookmarks() }
+        recordNewTabPageSessionMenuEntry(.menuBookmarks)
         PixelKit.fire(Pixel.Event.bookmarksButtonPressed,
                       options: .parameters([PixelParameters.originatedFromMenu: "1"]))
         onBookmarksPressed()
@@ -7826,7 +7821,7 @@ extension MainViewController: TabDelegate {
     }
     
     func tabDidRequestDownloads(tab: TabViewController) {
-        recordNewTabPageSessionMenuEntry { $0.menuDownloads() }
+        recordNewTabPageSessionMenuEntry(.menuDownloads)
         segueToDownloads()
     }
     
@@ -7835,7 +7830,7 @@ extension MainViewController: TabDelegate {
              source: AutofillSettingsSource, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
         // In-page autofill reaches this too, so the source is what identifies the menu entry.
         if source == .overflow {
-            recordNewTabPageSessionMenuEntry { $0.menuPasswords() }
+            recordNewTabPageSessionMenuEntry(.menuPasswords)
         }
         launchAutofillLogins(with: currentTab?.url, currentTabUid: tab.tabModel.uid, source: source, selectedAccount: account, extensionPromotionManager: extensionPromotionManager)
     }
@@ -7865,7 +7860,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettingsToVPN(_ tab: TabViewController) {
-        recordNewTabPageSessionMenuEntry { $0.menuVpn() }
+        recordNewTabPageSessionMenuEntry(.menuVpn)
         noteNewTabPageSessionVPNStateBeforeLeaving()
         segueToVPN(source: .browserMenu)
     }
@@ -8301,7 +8296,7 @@ extension MainViewController: TabSwitcherDelegate {
 
 extension MainViewController: BookmarksDelegate {
     func bookmarksDidSelect(url: URL) {
-        recordNewTabPageSessionAction { $0.selectBookmark() }
+        recordNewTabPageSessionAction(.selectBookmark)
 
         dismissOmniBar()
         if url.isBookmarklet() {
@@ -8337,7 +8332,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
-        recordNewTabPageSessionAction { $0.tapTabViewerToolbar() }
+        recordNewTabPageSessionAction(.tapTabViewerToolbar)
         requestTabSwitcher()
     }
 
@@ -8403,7 +8398,7 @@ extension MainViewController: UIGestureRecognizerDelegate {
 extension MainViewController: GestureToolbarButtonDelegate {
     
     func singleTapDetected(in sender: GestureToolbarButton) {
-        recordNewTabPageSessionAction { $0.tapBookmarksToolbarItem() }
+        recordNewTabPageSessionAction(.tapBookmarksToolbarItem)
         recordNewTabPageSessionDeparture()
         PixelKit.fire(Pixel.Event.bookmarksButtonPressed,
                       options: .parameters([PixelParameters.originatedFromMenu: "0"]))
@@ -9116,7 +9111,7 @@ extension MainViewController {
 // MARK: - AutofillLoginSettingsListViewControllerDelegate
 extension MainViewController: AutofillLoginListViewControllerDelegate {
     func autofillLoginListViewControllerDidSelectAccount(_ controller: AutofillLoginListViewController) {
-        recordNewTabPageSessionAction { $0.selectPassword() }
+        recordNewTabPageSessionAction(.selectPassword)
     }
 
     func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController) {

@@ -142,7 +142,7 @@ extension MainViewController {
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) {
         if textEntryMode == .aiChat, !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             // Unified input locks to search when the toggle is disabled.
-            recordNewTabPageSessionAction { $0.tapDuckaiButton() }
+            recordNewTabPageSessionAction(.tapDuckaiButton)
             openAIChatFromAddressBar(prefilledText: nil)
             return
         }

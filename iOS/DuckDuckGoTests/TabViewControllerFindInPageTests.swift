@@ -19,15 +19,31 @@
 
 import WebKit
 import XCTest
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo
 
 @available(iOS 16.0, *)
 final class TabViewControllerFindInPageTests: XCTestCase {
 
+    func testWhenFindInPageIsRequestedThenFiresDailyUsagePixelWithoutSearchData() {
+        let pixelFiring = PixelKitMock()
+        let tab = TabViewController.fake(pixelFiring: pixelFiring)
+        (tab.webView as? WebView)?.lastFindInPageQuery = "private search"
+
+        tab.requestFindInPage()
+
+        let calls = pixelFiring.actualFireCalls.filter { $0.pixel is FindInPagePixel }
+        XCTAssertEqual(calls, [ExpectedFireCall(pixel: FindInPagePixel.opened, frequency: .daily)])
+        XCTAssertNil(calls.first?.pixel.parameters)
+        XCTAssertNil(calls.first?.pixel.standardParameters)
+        XCTAssertNil(calls.first?.additionalParameters)
+    }
+
     func testWhenNavigatorIsStuckVisibleThenRequestPresentsFreshNavigatorWithCurrentQuery() throws {
+        let pixelFiring = PixelKitMock()
         let webView = FindWebViewSpy(frame: .zero, configuration: WKWebViewConfiguration())
-        let tab = TabViewController.fake(customWebView: { _ in webView })
+        let tab = TabViewController.fake(customWebView: { _ in webView }, pixelFiring: pixelFiring)
         webView.isFindInteractionEnabled = true
         let previousInteraction = try XCTUnwrap(webView.findInteraction as? FindInteractionSpy)
         previousInteraction.navigatorVisible = true
@@ -40,6 +56,7 @@ final class TabViewControllerFindInPageTests: XCTestCase {
         XCTAssertFalse(interaction === previousInteraction)
         XCTAssertTrue(interaction.wasPresented)
         XCTAssertEqual(interaction.searchText, "in progress")
+        XCTAssertTrue(pixelFiring.actualFireCalls.contains(ExpectedFireCall(pixel: FindInPagePixel.opened, frequency: .daily)))
     }
 
     func testWhenCurrentQueryWasClearedThenRequestKeepsItEmpty() throws {

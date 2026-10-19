@@ -4850,6 +4850,8 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
+        pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
+
         if #available(iOS 16.0, *) {
             let previousInteraction = webView.findInteraction
             let query = previousInteraction?.isFindNavigatorVisible == true

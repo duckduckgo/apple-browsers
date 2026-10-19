@@ -2264,7 +2264,7 @@
 		B0DB60093086A7DD00B8B79C /* AtbUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0DB60103086A7DE00B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AtbUITests; sourceTree = "<group>"; };
 		B0DB601B3086A92200B8B79C /* WebViewUnitTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = WebViewUnitTests; sourceTree = "<group>"; };
 		B0DB60273086A92B00B8B79C /* SharedStateTests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0DB602D3086A92C00B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SharedStateTests; sourceTree = "<group>"; };
-		B0DB60383086A93600B8B79C /* PerformanceTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PerformanceTests; sourceTree = "<group>"; };
+		B0DB604E3086A95500B8B79C /* PerformanceTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PerformanceTests; sourceTree = "<group>"; };
 		E5DD6A2E95504643A9EF50AA /* UITests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = UITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -3259,7 +3259,7 @@
 				98E5630A2DE8AF3100E6E75F /* SharedTestUtils */,
 				B0DB60093086A7DD00B8B79C /* AtbUITests */,
 				E5DD6A2E95504643A9EF50AA /* UITests */,
-				B0DB60383086A93600B8B79C /* PerformanceTests */,
+				B0DB604E3086A95500B8B79C /* PerformanceTests */,
 				85D33FCC25C97B6E002B91A6 /* IntegrationTests */,
 				966FDBA6308109DD009807C4 /* AutofillCredentialProvider */,
 				F1AA545F1E48D90700223211 /* Frameworks */,
@@ -4911,7 +4911,7 @@
 				9825F9CC293F2DE900F220F2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				B0DB60383086A93600B8B79C /* PerformanceTests */,
+				B0DB604E3086A95500B8B79C /* PerformanceTests */,
 			);
 			name = PerformanceTests;
 			packageProductDependencies = (

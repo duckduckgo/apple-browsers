@@ -162,7 +162,7 @@ final class DaxGreetingServiceTests: XCTestCase {
         inputs.context.foregroundOpenCount = 3
         let laterDays: [(Weekday, Int, DaxGreeting)] = [
             (.wednesday, 0, .readyWhenYouAre), (.thursday, 0, .readyToSearchPrivately), (.saturday, 0, .heyThere),
-            (.tuesday, 1, .whatsOnYourMind), (.wednesday, 1, .youreBack)
+            (.tuesday, 1, .duckDuckHello), (.wednesday, 1, .youreBack)
         ]
         for (weekday, week, expected) in laterDays {
             inputs.setDate(weekday, week: week, hour: 13)

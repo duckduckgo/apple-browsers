@@ -111,8 +111,8 @@ public enum FeatureFlag: String, CaseIterable {
     case webExtensionNativeMessaging
 
     /// Turns Bitwarden on or off. While off, an installed Bitwarden is disabled but kept with its data, and the
-    /// Debug menu hides Install Bitwarden. Follows Bitwarden's extensions catalog entry, which also controls
-    /// installing Bitwarden.
+    /// Debug menu hides Install Bitwarden. Turning the flag back on doesn't re-enable Bitwarden; the user does.
+    /// Follows Bitwarden's extensions catalog entry, which also controls installing Bitwarden.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219519018819111
     case webExtensionBitwarden
 

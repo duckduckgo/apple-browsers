@@ -2312,7 +2312,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.webExtensionLifecycleCoordinator = coordinator
 
             // Load extensions asynchronously - the controller is already attached to tabs
-            coordinator.loadAndSync()
+            let initialLoad = coordinator.loadAndSync()
+            Task { @MainActor [weak self] in
+                await initialLoad.value
+                self?.startRemoteDisableEnforcer(for: webExtensionManager)
+            }
         } else {
             webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
         }
@@ -2350,9 +2354,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.webExtensionLifecycleCoordinator = coordinator
         await coordinator.loadAndSync().value
+        startRemoteDisableEnforcer(for: webExtensionManager)
+    }
 
-        // Start after the initial load, so an enforcement pass can't race it.
-        guard self.webExtensionManager === webExtensionManager else { return }
+    /// Call it after the initial load, so an enforcement pass can't race it.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
+        guard self.webExtensionManager === webExtensionManager, webExtensionManager.remoteDisableEnforcer == nil else { return }
         let remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(
             manager: webExtensionManager,
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,

@@ -1626,6 +1626,13 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(recovery, .reminder(permissionTypes: [.camera]))
         XCTAssertEqual(harness.store.decision(for: .camera, at: harness.site), .allow)
         XCTAssertEqual(harness.store.decision(for: .microphone, at: harness.site), .allow)
+
+        // The undetermined microphone must not bring back the site prompt while iOS still blocks the camera.
+        recovery = nil
+        harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, _ in
+            XCTFail("A combined request that iOS already blocks must go straight to the reminder")
+        }, completion: { _ in })
+        XCTAssertEqual(recovery, .reminder(permissionTypes: [.camera]))
     }
 
     func testWhenFreshCombinedSystemRequestsBothFailThenOneCombinedToastIsShown() async throws {

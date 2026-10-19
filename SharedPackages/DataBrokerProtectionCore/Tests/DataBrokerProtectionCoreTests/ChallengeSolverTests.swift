@@ -128,61 +128,110 @@ final class ChallengeSolverTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSolverIsDisabled_thenDoesNotAwaitSolveButFiresDetectionPixel() {
-        let env = Environment(isEnabled: false)
+    func testWhenJobIsIneligible_thenDoesNotStartSolving() async throws {
+        let cases = [
+            ("{}", true, true),
+            (#"{"enabledBrokers":[]}"#, true, true),
+            (#"{"enabledBrokers":["other.org","www.example.com","EXAMPLE.COM"]}"#, true, true),
+            (#"{"enabledBrokers":["example.com"]}"#, false, true),
+            (#"{"enabledBrokers":["example.com"]}"#, true, false)
+        ]
+        for (json, isEnabled, hasPixelContext) in cases {
+            let settings = try JSONDecoder().decode(ChallengeSolverSettings.self, from: Data(json.utf8))
+            let pixelContext = hasPixelContext
+                ? ChallengePixelContext(dataBroker: "example.com", brokerVersion: "1.2.3", attemptId: Self.attemptId)
+                : nil
+            let env = Environment(isEnabled: isEnabled, settings: settings, pixelContext: pixelContext)
 
-        XCTAssertFalse(env.solver.handleMainFrameResponse(Self.challengeResponse()))
+            XCTAssertFalse(env.solver.handleMainFrameResponse(Self.challengeResponse()), json)
+            XCTAssertFalse(env.solver.isAwaitingSolve, json)
+            XCTAssertNil(env.solver.solveTask, json)
+            await env.solver.solveTask?.value
 
-        XCTAssertFalse(env.solver.isAwaitingSolve)
-        XCTAssertNil(env.solver.solveTask)
-        XCTAssertEqual(env.mockPixelHandler?.firedEvents.count, 1)
-        guard case .mainFrameChallengeDetected(_, _, _, let isSolverEnabled) = env.mockPixelHandler?.firedEvents.first else {
-            return XCTFail("Expected the detection pixel")
+            XCTAssertEqual(env.clock.dateProvider.currentDate, Date(timeIntervalSince1970: 0), json)
+            XCTAssertEqual(env.page.locateCount, 0, json)
+            XCTAssertTrue(env.page.clickedPoints.isEmpty, json)
+            XCTAssertTrue(env.failures.isEmpty, json)
+            XCTAssertTrue(env.solvedResolutions.isEmpty, json)
+            XCTAssertEqual(env.mockPixelHandler?.firedEvents.count, hasPixelContext ? 1 : 0, json)
+            if hasPixelContext {
+                guard case .mainFrameChallengeDetected(_, _, _, let isSolverEnabled) = env.mockPixelHandler?.firedEvents.first else {
+                    return XCTFail("Expected the detection pixel")
+                }
+                XCTAssertFalse(isSolverEnabled, json)
+            }
         }
-        XCTAssertFalse(isSolverEnabled)
+    }
+
+    @MainActor
+    func testWhenJobBrokerIsIncludedAndChallengeHostDiffers_thenStartsSolving() async throws {
+        let settings = try JSONDecoder().decode(ChallengeSolverSettings.self,
+                                               from: Data(#"{"enabledBrokers":["example.com"]}"#.utf8))
+        let env = Environment(settings: settings)
+        env.page.locate = { Self.label }
+        env.page.onClick = { _ = env.solver.handleMainFrameResponse(Self.brokerResponse()) }
+
+        XCTAssertTrue(env.solver.handleMainFrameResponse(Self.challengeResponse(url: URL(string: "https://other.org")!)))
+        await env.solver.solveTask?.value
+
+        XCTAssertEqual(env.page.clickedPoints, [CGPoint(x: 80, y: 210)])
+        XCTAssertTrue(env.failures.isEmpty)
+        XCTAssertEqual(env.solvedResolutions, [.assisted])
     }
 
     @MainActor
     func testWhenClearanceCookieExistedBeforeChallenge_thenClearancePixelFiresOnceAfterItChanges() throws {
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)"))
-        var firedPixelNames: [String] = []
-        var firedPixelParameters: [[String: String]] = []
-        let pixelKit = PixelKit(dryRun: false,
-                                appVersion: "1.0.0",
-                                source: PixelKit.Source.macDMG.rawValue,
-                                defaultHeaders: [:],
-                                defaults: defaults) { pixelName, _, parameters, _, _, _ in
-            firedPixelNames.append(pixelName)
-            firedPixelParameters.append(parameters)
-        }
-        let env = Environment(isEnabled: false,
-                              pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS))
-        let staleCookie = try Self.clearanceCookie(value: "stale")
-        let freshCookie = try Self.clearanceCookie(value: "fresh")
+        let cases = [
+            ("{}", true, false),
+            (#"{"enabledBrokers":[]}"#, true, false),
+            (#"{"enabledBrokers":["other.org"]}"#, true, false),
+            (#"{"enabledBrokers":["example.com"]}"#, false, false),
+            (#"{"enabledBrokers":["example.com"]}"#, true, true)
+        ]
+        for (json, isEnabled, isSolverEnabled) in cases {
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)"))
+            var firedPixelNames: [String] = []
+            var firedPixelParameters: [[String: String]] = []
+            let pixelKit = PixelKit(dryRun: false,
+                                    appVersion: "1.0.0",
+                                    source: PixelKit.Source.macDMG.rawValue,
+                                    defaultHeaders: [:],
+                                    defaults: defaults) { pixelName, _, parameters, _, _, _ in
+                firedPixelNames.append(pixelName)
+                firedPixelParameters.append(parameters)
+            }
+            let settings = try JSONDecoder().decode(ChallengeSolverSettings.self, from: Data(json.utf8))
+            let env = Environment(isEnabled: isEnabled,
+                                  settings: settings,
+                                  pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS))
+            defer { env.solver.cancel() }
+            let staleCookie = try Self.clearanceCookie(value: "stale")
+            let freshCookie = try Self.clearanceCookie(value: "fresh")
 
-        _ = env.solver.handleMainFrameResponse(Self.challengeResponse())
-        env.solver.handleCookies([staleCookie])
-        env.solver.handleCookies([staleCookie])
-        env.solver.handleCookies([freshCookie])
-        env.solver.handleCookies([try Self.clearanceCookie(value: "fresher")])
+            _ = env.solver.handleMainFrameResponse(Self.challengeResponse())
+            env.solver.handleCookies([staleCookie])
+            env.solver.handleCookies([staleCookie])
+            env.solver.handleCookies([freshCookie])
+            env.solver.handleCookies([try Self.clearanceCookie(value: "fresher")])
 
-        XCTAssertEqual(firedPixelNames, [
-            "dbp_challenge_main-frame_detected_macos_daily",
-            "dbp_challenge_main-frame_detected_macos_count",
-            "dbp_challenge_clearance_observed_macos_daily",
-            "dbp_challenge_clearance_observed_macos_count"
-        ])
-        for parameters in firedPixelParameters {
-            XCTAssertEqual(parameters["data_broker"], "example.com")
-            XCTAssertEqual(parameters["broker_version"], "1.2.3")
-            XCTAssertEqual(parameters["attempt_id"], Self.attemptId.uuidString)
-            XCTAssertEqual(parameters["is_solver_enabled"], "false")
+            XCTAssertEqual(firedPixelNames, [
+                "dbp_challenge_main-frame_detected_macos_daily",
+                "dbp_challenge_main-frame_detected_macos_count",
+                "dbp_challenge_clearance_observed_macos_daily",
+                "dbp_challenge_clearance_observed_macos_count"
+            ])
+            for parameters in firedPixelParameters {
+                XCTAssertEqual(parameters["data_broker"], "example.com")
+                XCTAssertEqual(parameters["broker_version"], "1.2.3")
+                XCTAssertEqual(parameters["attempt_id"], Self.attemptId.uuidString)
+                XCTAssertEqual(parameters["is_solver_enabled"], String(isSolverEnabled))
+            }
+            XCTAssertEqual(firedPixelParameters.last?["resolution"], isSolverEnabled ? "unknown" : "unassisted")
         }
-        XCTAssertEqual(firedPixelParameters.last?["resolution"], "unassisted")
     }
 
-    private static func challengeResponse() -> HTTPURLResponse {
-        HTTPURLResponse(url: brokerURL, statusCode: 403, httpVersion: nil, headerFields: ["cf-mitigated": "challenge"])!
+    private static func challengeResponse(url: URL = brokerURL) -> HTTPURLResponse {
+        HTTPURLResponse(url: url, statusCode: 403, httpVersion: nil, headerFields: ["cf-mitigated": "challenge"])!
     }
 
     private static func brokerResponse(url: URL = brokerURL) -> HTTPURLResponse {
@@ -223,13 +272,17 @@ private final class Environment {
     }
 
     init(isEnabled: Bool = true,
+         settings: ChallengeSolverSettings? = nil,
+         pixelContext: ChallengePixelContext? = .init(dataBroker: "example.com", brokerVersion: "1.2.3", attemptId: ChallengeSolverTests.attemptId),
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = MockDataBrokerProtectionPixelsHandler()) {
         self.pixelHandler = pixelHandler
         let fakeClock = clock
+        var defaultSettings = ChallengeSolverSettings()
+        defaultSettings.enabledBrokers = ["example.com"]
         solver = ChallengeSolver(
             isEnabled: isEnabled,
-            settings: ChallengeSolverSettings(),
-            pixelContext: .init(dataBroker: "example.com", brokerVersion: "1.2.3", attemptId: ChallengeSolverTests.attemptId),
+            settings: settings ?? defaultSettings,
+            pixelContext: pixelContext,
             pixelHandler: pixelHandler,
             reportEvent: { _, _ in },
             sleeper: Sleeper { try await fakeClock.sleep($0) },
@@ -257,10 +310,12 @@ private final class FakeClock {
 private final class FakeChallengePage: ChallengePage {
     var locate: () -> ChallengeLabel? = { nil }
     var onClick: (() -> Void)?
+    private(set) var locateCount = 0
     private(set) var clickedPoints: [CGPoint] = []
 
     func locateLabel(matching text: String) async -> ChallengeLabel? {
-        locate()
+        locateCount += 1
+        return locate()
     }
 
     func click(at point: CGPoint, onMouseDown: () -> Void) async throws {

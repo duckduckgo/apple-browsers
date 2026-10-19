@@ -30,12 +30,14 @@ public struct ChallengePixelContext {
 
 #if os(macOS)
 struct ChallengeSolverSettings: Decodable {
+    var enabledBrokers: [String] = []
     var autoPassWait: TimeInterval = 5
     var deadline: TimeInterval = 45
     var checkboxOffset: CGFloat = 20
     var labelText = "Verify you are human"
 
     private enum CodingKeys: String, CodingKey {
+        case enabledBrokers
         case autoPassWait = "autoPassWaitSeconds"
         case deadline = "deadlineSeconds"
         case checkboxOffset = "checkboxOffsetPoints"
@@ -47,6 +49,7 @@ struct ChallengeSolverSettings: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = ChallengeSolverSettings()
+        enabledBrokers = try container.decodeIfPresent([String].self, forKey: .enabledBrokers) ?? defaults.enabledBrokers
         autoPassWait = try container.decodeIfPresent(TimeInterval.self, forKey: .autoPassWait) ?? defaults.autoPassWait
         deadline = try container.decodeIfPresent(TimeInterval.self, forKey: .deadline) ?? defaults.deadline
         checkboxOffset = try container.decodeIfPresent(CGFloat.self, forKey: .checkboxOffset) ?? defaults.checkboxOffset
@@ -128,7 +131,7 @@ final class ChallengeSolver {
          reportEvent: @escaping (String, Bool) -> Void,
          sleeper: Sleeper = .default,
          dateProvider: CurrentDateProviding = DefaultCurrentDateProvider()) {
-        self.isEnabled = isEnabled
+        self.isEnabled = isEnabled && (pixelContext.map { settings.enabledBrokers.contains($0.dataBroker) } ?? false)
         self.settings = settings
         self.pixelContext = pixelContext
         self.pixelHandler = pixelHandler

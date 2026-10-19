@@ -28,7 +28,8 @@ final class TabPreviewOverlayUITests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        app = XCUIApplication.setUp()
+        // exposes the tab preview window to accessibility
+        app = XCUIApplication.setUp(featureFlags: ["tabPreviewAccessibilityForUITests": true])
         app.openNewWindow()
     }
 

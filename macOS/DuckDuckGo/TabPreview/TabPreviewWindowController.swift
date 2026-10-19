@@ -27,7 +27,7 @@ final class TabPreviewWindowController: NSWindowController {
     static let padding: CGFloat = 2
     static let bottomPadding: CGFloat = 40
     static let delay: CGFloat = 1
-    /// The preview is hidden from accessibility, except for UI tests that need to observe it
+    /// The preview is hidden from accessibility, except for UI tests that need to observe it (see `FeatureFlag.tabPreviewAccessibilityForUITests`)
     static let uiTestsAccessibilityIdentifier = "TabPreviewWindowController.window"
 
     private var previewTimer: Timer? {
@@ -48,8 +48,8 @@ final class TabPreviewWindowController: NSWindowController {
     }
     // swiftlint:enable force_cast
 
-    init() {
-        super.init(window: Self.loadWindow())
+    init(isAccessibilityEnabled: Bool = false) {
+        super.init(window: Self.loadWindow(isAccessibilityEnabled: isAccessibilityEnabled))
     }
 
     required init?(coder: NSCoder) {
@@ -66,7 +66,7 @@ final class TabPreviewWindowController: NSWindowController {
 #endif
     }
 
-    private static func loadWindow() -> NSWindow {
+    private static func loadWindow(isAccessibilityEnabled: Bool) -> NSWindow {
         let tabPreviewViewController = TabPreviewViewController()
 
         let window = NSWindow(contentRect: CGRect(x: 294, y: 313, width: 280, height: 58), styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: true)
@@ -78,7 +78,7 @@ final class TabPreviewWindowController: NSWindowController {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.animationBehavior = .utilityWindow
-        if AppVersion.runType == .uiTests {
+        if isAccessibilityEnabled {
             window.setAccessibilityIdentifier(uiTestsAccessibilityIdentifier)
         } else {
             window.setAccessibilityEnabled(false)

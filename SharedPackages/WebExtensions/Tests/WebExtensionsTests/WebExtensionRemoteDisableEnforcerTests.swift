@@ -51,7 +51,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, ["listed"])
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed"])
         XCTAssertEqual(manager.installedExtension(identifier: "listed")?.isDisabled, true)
     }
 
@@ -62,7 +62,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, ["listed", "other"])
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed", "other"])
     }
 
     func testWhenListedExtensionIsAlreadyDisabled_ThenItIsNotDisabledAgain() async {
@@ -71,7 +71,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, [])
+        XCTAssertEqual(manager.disabledIdentifiers, [])
     }
 
     func testWhenExtensionIsNotListed_ThenItStaysEnabled() async {
@@ -80,7 +80,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, [])
+        XCTAssertEqual(manager.disabledIdentifiers, [])
     }
 
     func testWhenListedIDDiffersInCase_ThenExtensionIsDisabled() async throws {
@@ -90,7 +90,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, ["listed"])
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed"])
     }
 
     func testWhenExtensionHasNoStoreIdentity_ThenItIsNotDisabled() async {
@@ -99,7 +99,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, [])
+        XCTAssertEqual(manager.disabledIdentifiers, [])
     }
 
     func testWhenExtensionManagementIsNotLaunched_ThenNothingIsDisabled() async throws {
@@ -109,19 +109,19 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, [])
+        XCTAssertEqual(manager.disabledIdentifiers, [])
         XCTAssertEqual(enforcer.remotelyDisabledExtensionIDs, [])
     }
 
     func testWhenDisablingFails_ThenOtherListedExtensionsAreStillDisabled() async throws {
         configurationManager.privacyConfig = try makeConfiguration(disabledIDs: [listedStoreID, otherStoreID])
         install(storeExtension("listed", storeID: listedStoreID), storeExtension("other", storeID: otherStoreID))
-        manager.unloadExtensionError = NSError(domain: "test", code: 1)
+        manager.disableExtensionError = NSError(domain: "test", code: 1)
 
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, ["listed", "other"])
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed", "other"])
     }
 
     // MARK: - One-way
@@ -135,7 +135,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         await enforcer.scheduleEnforcement().value
 
         XCTAssertEqual(manager.installedExtension(identifier: "listed")?.isDisabled, true)
-        XCTAssertEqual(manager.loadedIdentifiers, [])
+        XCTAssertEqual(manager.enabledIdentifiers, [])
         XCTAssertFalse(enforcer.isRemotelyDisabled(try XCTUnwrap(manager.installedExtension(identifier: "listed"))))
     }
 
@@ -155,7 +155,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         enforcer.start()
         await enforcer.enforcementTask?.value
 
-        XCTAssertEqual(manager.unloadedIdentifiers, ["listed"])
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed"])
     }
 
     func testWhenConfigurationUpdatesWithNewListedID_ThenExtensionIsDisabled() async throws {
@@ -164,13 +164,13 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         enforcer.start()
         await enforcer.enforcementTask?.value
         let disabled = expectation(description: "Extension disabled")
-        manager.unloadExtensionHandler = { _ in disabled.fulfill() }
+        manager.disableExtensionHandler = { _ in disabled.fulfill() }
 
         configurationManager.privacyConfig = try makeConfiguration(disabledIDs: [otherStoreID])
         configurationManager.updatesSubject.send()
 
         await fulfillment(of: [disabled], timeout: 5)
-        XCTAssertEqual(manager.unloadedIdentifiers, ["other"])
+        XCTAssertEqual(manager.disabledIdentifiers, ["other"])
     }
 
     func testWhenUserEnablesListedExtension_ThenItIsDisabledAgain() async throws {
@@ -179,13 +179,13 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         enforcer.start()
         await enforcer.enforcementTask?.value
         let disabledAgain = expectation(description: "Extension disabled again")
-        manager.unloadExtensionHandler = { _ in disabledAgain.fulfill() }
+        manager.disableExtensionHandler = { _ in disabledAgain.fulfill() }
 
-        try await manager.loadExtension(identifier: "listed")
+        try await manager.enableExtension(identifier: "listed")
         NotificationCenter.default.post(name: .webExtensionsDidChangeLoadedExtensions, object: manager)
 
         await fulfillment(of: [disabledAgain], timeout: 5)
-        XCTAssertEqual(manager.unloadedIdentifiers, ["listed", "listed"])
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed", "listed"])
         XCTAssertEqual(manager.installedExtension(identifier: "listed")?.isDisabled, true)
     }
 

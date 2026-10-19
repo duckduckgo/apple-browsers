@@ -434,16 +434,16 @@ final class WebExtensionManagerTests: XCTestCase {
         }
     }
 
-    // MARK: - Unload/Load Extension Tests
+    // MARK: - Disable/Enable Extension Tests
 
     @MainActor
-    func testWhenExtensionIsUnloaded_ThenLoaderUnloadsItAndStoreMarksItDisabled() async throws {
+    func testWhenExtensionIsDisabled_ThenLoaderUnloadsItAndStoreMarksItDisabled() async throws {
         let manager = makeManager()
         let identifier = "extension1"
         installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
         try await loadRealContext(identifier: identifier, into: manager.controller)
 
-        try await manager.unloadExtension(identifier: identifier)
+        try await manager.disableExtension(identifier: identifier)
 
         XCTAssertEqual(webExtensionLoadingMock.unloadedIdentifier, identifier)
         XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isDisabled, true)
@@ -452,15 +452,15 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenEmbeddedExtensionIsUnloaded_ThenUnloadFailsAndExtensionStaysLoaded() async {
+    func testWhenEmbeddedExtensionIsDisabled_ThenDisablingFailsAndExtensionStaysEnabled() async {
         let manager = makeManager()
         let identifier = "embedded"
         installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier, embeddedType: .embedded)]
 
         do {
-            try await manager.unloadExtension(identifier: identifier)
+            try await manager.disableExtension(identifier: identifier)
             XCTFail("Expected an error")
-        } catch WebExtensionError.embeddedExtensionCannotBeUnloaded {
+        } catch WebExtensionError.embeddedExtensionCannotBeDisabled {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -470,7 +470,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUnloadFails_ThenExtensionIsNotMarkedDisabled() async throws {
+    func testWhenUnloadingFails_ThenExtensionIsNotMarkedDisabled() async throws {
         let manager = makeManager()
         let identifier = "extension1"
         installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
@@ -478,7 +478,7 @@ final class WebExtensionManagerTests: XCTestCase {
         webExtensionLoadingMock.mockUnloadError = NSError(domain: "test", code: 1)
 
         do {
-            try await manager.unloadExtension(identifier: identifier)
+            try await manager.disableExtension(identifier: identifier)
             XCTFail("Expected an error")
         } catch {}
 
@@ -500,14 +500,14 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenDisabledExtensionIsLoaded_ThenLoaderLoadsItAndStoreMarksItEnabled() async throws {
+    func testWhenDisabledExtensionIsEnabled_ThenLoaderLoadsItAndStoreMarksItEnabled() async throws {
         let manager = makeManager()
         let identifier = "extension1"
         installedExtensionStoringMock.installedExtensions = [
             InstalledWebExtension(uniqueIdentifier: identifier, filename: "extension.zip", name: nil, version: nil, isDisabled: true)
         ]
 
-        try await manager.loadExtension(identifier: identifier)
+        try await manager.enableExtension(identifier: identifier)
 
         XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, [identifier])
         XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isDisabled, false)
@@ -515,7 +515,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenLoadFails_ThenExtensionStaysDisabled() async {
+    func testWhenLoadingFails_ThenExtensionStaysDisabled() async {
         let manager = makeManager()
         let identifier = "extension1"
         installedExtensionStoringMock.installedExtensions = [
@@ -524,7 +524,7 @@ final class WebExtensionManagerTests: XCTestCase {
         webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
 
         do {
-            try await manager.loadExtension(identifier: identifier)
+            try await manager.enableExtension(identifier: identifier)
             XCTFail("Expected an error")
         } catch {}
 

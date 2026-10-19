@@ -80,24 +80,24 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public func unloadAllExtensions() {}
 
     public func reloadExtension(identifier: String) async throws {}
-    /// Records returned by `installedExtension(identifier:)`. Unloading and loading update `isDisabled`.
+    /// Records returned by `installedExtension(identifier:)`. Disabling and enabling update `isDisabled`.
     public var installedExtensions: [InstalledWebExtension] = []
-    public private(set) var unloadedIdentifiers: [String] = []
-    public private(set) var loadedIdentifiers: [String] = []
-    public var unloadExtensionError: Error?
-    public var unloadExtensionHandler: ((String) -> Void)?
+    public private(set) var disabledIdentifiers: [String] = []
+    public private(set) var enabledIdentifiers: [String] = []
+    public var disableExtensionError: Error?
+    public var disableExtensionHandler: ((String) -> Void)?
 
-    public func unloadExtension(identifier: String) async throws {
-        unloadedIdentifiers.append(identifier)
-        defer { unloadExtensionHandler?(identifier) }
-        if let unloadExtensionError {
-            throw unloadExtensionError
+    public func disableExtension(identifier: String) async throws {
+        disabledIdentifiers.append(identifier)
+        defer { disableExtensionHandler?(identifier) }
+        if let disableExtensionError {
+            throw disableExtensionError
         }
         setDisabled(true, for: identifier)
     }
 
-    public func loadExtension(identifier: String) async throws {
-        loadedIdentifiers.append(identifier)
+    public func enableExtension(identifier: String) async throws {
+        enabledIdentifiers.append(identifier)
         setDisabled(false, for: identifier)
     }
 

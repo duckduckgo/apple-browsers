@@ -108,7 +108,7 @@ public final class WebExtensionRemoteDisableEnforcer {
         for installedExtension in extensionsToDisable {
             let identifier = installedExtension.uniqueIdentifier
             do {
-                try await manager.unloadExtension(identifier: identifier)
+                try await manager.disableExtension(identifier: identifier)
                 Logger.webExtensions.info("Disabled extension '\(identifier)' because remote configuration lists it")
             } catch {
                 Logger.webExtensions.error("Failed to disable remotely disabled extension '\(identifier)': \(error.localizedDescription)")

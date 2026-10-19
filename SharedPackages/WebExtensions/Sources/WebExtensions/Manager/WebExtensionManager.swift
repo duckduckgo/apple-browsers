@@ -684,17 +684,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
     @MainActor
-    public func unloadExtension(identifier: String) async throws {
+    public func disableExtension(identifier: String) async throws {
         guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
             throw WebExtensionError.extensionNotInstalled
         }
         guard !installedExtension.isEmbedded else {
-            throw WebExtensionError.embeddedExtensionCannotBeUnloaded
+            throw WebExtensionError.embeddedExtensionCannotBeDisabled
         }
         // A disabled extension can still be loaded when it was disabled while installed extensions were loading.
         guard !installedExtension.isDisabled || context(for: identifier) != nil else { return }
 
-        Logger.webExtensions.debug("🔄 Unloading extension '\(identifier)'")
+        Logger.webExtensions.debug("🔄 Disabling extension '\(identifier)'")
         await unloadGuard.awaitSettled(context(for: identifier))
 
         // An extension whose consent could not be read at launch is installed but has no context.
@@ -703,7 +703,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 // The loader saves the extension's permissions before it forgets the context.
                 try loader.unloadExtension(identifier: identifier, from: controller)
             } catch {
-                Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
+                Logger.webExtensions.error("❌ Failed to disable extension '\(identifier)': \(error.localizedDescription)")
                 throw WebExtensionError.failedToUnloadWebExtension(error)
             }
         }
@@ -712,38 +712,38 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         unloadedExtensionsCache.removeValue(forKey: identifier)
         dataClearingReloadIdentifiers.remove(identifier)
 
-        var unloadedExtension = installedExtension
-        unloadedExtension.isDisabled = true
-        installationStore.update(unloadedExtension)
+        var disabledExtension = installedExtension
+        disabledExtension.isDisabled = true
+        installationStore.update(disabledExtension)
 
-        Logger.webExtensions.info("✅ Unloaded extension '\(identifier)'")
+        Logger.webExtensions.info("✅ Disabled extension '\(identifier)'")
         notifyUpdate()
     }
 
     @MainActor
-    public func loadExtension(identifier: String) async throws {
+    public func enableExtension(identifier: String) async throws {
         guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
             throw WebExtensionError.extensionNotInstalled
         }
         guard installedExtension.isDisabled else { return }
 
-        Logger.webExtensions.debug("🔄 Loading extension '\(identifier)'")
+        Logger.webExtensions.debug("🔄 Enabling extension '\(identifier)'")
         do {
             _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
         } catch {
             // A partially completed load can leave handlers behind for a context that never became active.
             unregisterHandlers(for: identifier)
-            Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
+            Logger.webExtensions.error("❌ Failed to enable extension '\(identifier)': \(error.localizedDescription)")
             throw WebExtensionError.failedToLoadWebExtension(error)
         }
 
-        var loadedExtension = installedExtension
-        loadedExtension.isDisabled = false
-        installationStore.update(loadedExtension)
+        var enabledExtension = installedExtension
+        enabledExtension.isDisabled = false
+        installationStore.update(enabledExtension)
         reportLifecycleEvent(.loaded(identifier: identifier, type: nil))
 
-        Logger.webExtensions.info("✅ Loaded extension '\(identifier)'")
+        Logger.webExtensions.info("✅ Enabled extension '\(identifier)'")
         notifyUpdate()
     }
 
@@ -784,7 +784,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
 
-        // Unloaded extensions stay installed, so orphan cleanup below keeps their files.
+        // Disabled extensions stay installed, so orphan cleanup below keeps their files.
         let extensions = installationStore.installedExtensions.filter { !$0.isDisabled }
         Logger.webExtensions.debug("🔄 Loading installed extensions (count: \(extensions.count))")
 

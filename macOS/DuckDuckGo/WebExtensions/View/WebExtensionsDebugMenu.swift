@@ -94,7 +94,7 @@ final class WebExtensionsDebugMenu: NSMenu {
                 let name = webExtensionManager.extensionName(for: identifier)
                 let version = webExtensionManager.extensionVersion(for: identifier)
                 let installedExtension = webExtensionManager.installedExtension(identifier: identifier)
-                // Embedded extensions can't be disabled, so they get no load state.
+                // Embedded extensions can't be disabled, so they get no enabled state.
                 let isDisabled = installedExtension.flatMap { $0.isEmbedded ? nil : $0.isDisabled }
                 let isRemotelyDisabled = installedExtension.map {
                     (webExtensionManager as? WebExtensionManager)?.remoteDisableEnforcer?.isRemotelyDisabled($0) == true
@@ -231,8 +231,8 @@ final class WebExtensionMenuItem: NSMenuItem {
     }
 
     /// - Parameters:
-    ///   - isDisabled: The extension's load state, or `nil` when it can't be unloaded.
-    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so it can't be loaded.
+    ///   - isDisabled: The extension's enabled state, or `nil` when it can't be disabled.
+    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so it can't be enabled.
     init(identifier: String,
          webExtensionName: String?,
          version: String?,
@@ -259,8 +259,8 @@ final class WebExtensionSubMenu: NSMenu {
     }
 
     /// - Parameters:
-    ///   - isDisabled: The extension's load state, or `nil` to leave out the load and unload item.
-    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so the load item is unavailable.
+    ///   - isDisabled: The extension's enabled state, or `nil` to leave out the enable and disable item.
+    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so the enable item is unavailable.
     init(extensionIdentifier: String, isDisabled: Bool? = nil, isRemotelyDisabled: Bool = false) {
         self.extensionIdentifier = extensionIdentifier
         super.init(title: "")
@@ -269,11 +269,11 @@ final class WebExtensionSubMenu: NSMenu {
             switch (isDisabled, isRemotelyDisabled) {
             case (true, true):
                 // An item without an action is disabled.
-                NSMenuItem(title: "Load the extension (disabled remotely)", action: nil)
+                NSMenuItem(title: "Enable the extension (disabled remotely)", action: nil)
             case (true, false):
-                NSMenuItem(title: "Load the extension", action: #selector(loadExtension), target: self)
+                NSMenuItem(title: "Enable the extension", action: #selector(enableExtension), target: self)
             case (false, _):
-                NSMenuItem(title: "Unload the extension", action: #selector(unloadExtension), target: self)
+                NSMenuItem(title: "Disable the extension", action: #selector(disableExtension), target: self)
             }
         }
 
@@ -296,30 +296,30 @@ final class WebExtensionSubMenu: NSMenu {
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: folder.path)
     }
 
-    @objc func unloadExtension() {
+    @objc func disableExtension() {
         guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
             return
         }
 
         Task { @MainActor in
             do {
-                try await webExtensionManager.unloadExtension(identifier: extensionIdentifier)
+                try await webExtensionManager.disableExtension(identifier: extensionIdentifier)
             } catch {
-                Logger.webExtensions.error("Failed to unload extension '\(self.extensionIdentifier)': \(error.localizedDescription)")
+                Logger.webExtensions.error("Failed to disable extension '\(self.extensionIdentifier)': \(error.localizedDescription)")
             }
         }
     }
 
-    @objc func loadExtension() {
+    @objc func enableExtension() {
         guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
             return
         }
 
         Task { @MainActor in
             do {
-                try await webExtensionManager.loadExtension(identifier: extensionIdentifier)
+                try await webExtensionManager.enableExtension(identifier: extensionIdentifier)
             } catch {
-                Logger.webExtensions.error("Failed to load extension '\(self.extensionIdentifier)': \(error.localizedDescription)")
+                Logger.webExtensions.error("Failed to enable extension '\(self.extensionIdentifier)': \(error.localizedDescription)")
             }
         }
     }

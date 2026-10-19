@@ -146,16 +146,16 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func reloadExtension(identifier: String) async throws
 
-    /// Unloads an installed extension and remembers it, so it stays unloaded after relaunch.
-    /// The extension keeps its files and permissions. Embedded extensions cannot be unloaded.
+    /// Disables an installed extension: unloads it and remembers it, so it stays disabled after relaunch.
+    /// The extension keeps its files and permissions. Embedded extensions cannot be disabled.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
-    func unloadExtension(identifier: String) async throws
+    func disableExtension(identifier: String) async throws
 
-    /// Loads an extension that `unloadExtension(identifier:)` unloaded, with its saved permissions.
+    /// Enables a disabled extension and loads it with its saved permissions.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
-    func loadExtension(identifier: String) async throws
+    func enableExtension(identifier: String) async throws
 
     /// Returns the installed extension record for the given identifier, loaded or not.
     @available(macOS 15.4, iOS 18.4, *)

@@ -43,7 +43,9 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
+    @MainActor
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool)
+    @MainActor
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
@@ -54,15 +56,22 @@ protocol AIChatUserScriptProviding: AnyObject {
                       tabAttachmentRequest: MultiTabAttachmentRequest?,
                       termsAccepted: Bool,
                       onPromptDispatched: (() -> Void)?)
+    @MainActor
     func submitStartChatAction()
+    @MainActor
     func cancelPendingTabContextSubmission()
+    @MainActor func cleanUpForReplacement()
+    @MainActor
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
+    @MainActor
     func submitToggleSidebarAction()
+    @MainActor
     func submitOpenChatProtectionAction()
 }
 
 extension AIChatUserScriptProviding {
+    @MainActor
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
@@ -76,10 +85,12 @@ extension AIChatUserScriptProviding {
                      tabAttachmentRequest: tabAttachmentRequest, termsAccepted: false, onPromptDispatched: nil)
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
         submitPrompt(prompt, pageContext: pageContext, termsAccepted: false)
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
@@ -121,6 +132,7 @@ protocol AIChatContentHandling: AnyObject {
     var delegate: AIChatContentHandlingDelegate? { get set }
 
     /// Configures the user script, WebView and display mode for AIChat interaction.
+    @MainActor
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
 
     /// Sets the initial payload data for the AIChat session.
@@ -133,9 +145,11 @@ protocol AIChatContentHandling: AnyObject {
     func buildVoiceModeURL() -> URL
 
     /// Submits a prompt to the AI Chat with optional page context. `termsAccepted` is `true` only for a prompt sent with Ask.
+    @MainActor
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool)
 
     /// Submits a rich native prompt to the AI Chat.
+    @MainActor
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
@@ -148,17 +162,22 @@ protocol AIChatContentHandling: AnyObject {
                       onPromptDispatched: (() -> Void)?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
+    @MainActor
     func submitStartChatAction() async
 
+    @MainActor
     func cancelPendingTabContextSubmission()
 
     /// Submits an open settings action to open the AI Chat settings.
+    @MainActor
     func submitOpenSettingsAction()
 
     /// Submits a toggle sidebar action to open/close the sidebar.
+    @MainActor
     func submitToggleSidebarAction()
 
     /// Submits a chat-protection action, opening the "All chats are private" page.
+    @MainActor
     func submitOpenChatProtectionAction()
 
     /// Pushes page context to the frontend (for context updates during navigation).
@@ -180,6 +199,7 @@ protocol AIChatContentHandling: AnyObject {
 }
 
 extension AIChatContentHandling {
+    @MainActor
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
@@ -193,10 +213,12 @@ extension AIChatContentHandling {
                      tabAttachmentRequest: tabAttachmentRequest, termsAccepted: false, onPromptDispatched: nil)
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
         submitPrompt(prompt, pageContext: pageContext, termsAccepted: false)
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
@@ -268,8 +290,9 @@ final class AIChatContentHandler: AIChatContentHandling {
         self.getPageContext = getPageContext
     }
 
+    @MainActor
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
-        self.userScript?.cancelPendingTabContextSubmission()
+        self.userScript?.cleanUpForReplacement()
         self.userScript = userScript
         self.userScript?.delegate = self
         self.userScript?.setDisplayMode(displayMode)
@@ -350,6 +373,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.canDispatchBridgeMessages ?? false
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
         if let context = pageContext {
             Logger.aiChat.debug("[PageContext] Prompt submitted with context - title: \(context.title.prefix(50))")
@@ -359,6 +383,7 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]?,
@@ -370,7 +395,7 @@ final class AIChatContentHandler: AIChatContentHandling {
                       termsAccepted: Bool,
                       onPromptDispatched: (() -> Void)?) {
         guard let userScript else {
-            Task { @MainActor in tabAttachmentRequest?.cancel() }
+            tabAttachmentRequest?.cancel()
             return
         }
         userScript.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
@@ -381,6 +406,7 @@ final class AIChatContentHandler: AIChatContentHandling {
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     /// Only pushes page context if auto-attach is enabled; manual attach goes through explicit pushPageContext calls.
+    @MainActor
     func submitStartChatAction() async {
         cancelPendingTabContextSubmission()
         if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = await getPageContext?(.other) {
@@ -389,20 +415,24 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitStartChatAction()
     }
 
+    @MainActor
     func cancelPendingTabContextSubmission() {
         userScript?.cancelPendingTabContextSubmission()
     }
 
     /// Submits an open settings action to open the AI Chat settings.
+    @MainActor
     func submitOpenSettingsAction() {
         userScript?.submitOpenSettingsAction()
     }
 
     /// Submits a toggle sidebar action to open/close the sidebar.
+    @MainActor
     func submitToggleSidebarAction() {
         userScript?.submitToggleSidebarAction()
     }
 
+    @MainActor
     func submitOpenChatProtectionAction() {
         userScript?.submitOpenChatProtectionAction()
     }

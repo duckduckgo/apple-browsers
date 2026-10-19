@@ -1145,6 +1145,8 @@
 		CB781CCD3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CCC3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift */; };
 		CB781CCF30112EC9008DCD60 /* UTISessionMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CCE30112EC9008DCD60 /* UTISessionMonitorTests.swift */; };
 		CB781CD4301135BE008DCD60 /* UTITextModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CD3301135BE008DCD60 /* UTITextModelTests.swift */; };
+		72B0F0F35DF8452B77134DE6 /* PastedTextSheetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E6E694C6DF92E58D4D6770 /* PastedTextSheetTests.swift */; };
+		5D7A8B623FE970269525BE01 /* UTIPromptLengthGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA45A4680A958361B196759 /* UTIPromptLengthGateTests.swift */; };
 		CB781CDE30138F52008DCD60 /* UTIPixelReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CDD30138F52008DCD60 /* UTIPixelReporterTests.swift */; };
 		CB781CE030138F52008DCD70 /* UTIStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CDF30138F52008DCD70 /* UTIStateMachineTests.swift */; };
 		CB781CE230138F52008DCD80 /* UnifiedToggleInputToolbarViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB781CE130138F52008DCD80 /* UnifiedToggleInputToolbarViewTests.swift */; };
@@ -2243,6 +2245,8 @@
 		CB781CCC3010E961008DCD60 /* AutocompleteSuggestionsPixelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutocompleteSuggestionsPixelsTests.swift; sourceTree = "<group>"; };
 		CB781CCE30112EC9008DCD60 /* UTISessionMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTISessionMonitorTests.swift; sourceTree = "<group>"; };
 		CB781CD3301135BE008DCD60 /* UTITextModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTITextModelTests.swift; sourceTree = "<group>"; };
+		29E6E694C6DF92E58D4D6770 /* PastedTextSheetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastedTextSheetTests.swift; sourceTree = "<group>"; };
+		BAA45A4680A958361B196759 /* UTIPromptLengthGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIPromptLengthGateTests.swift; sourceTree = "<group>"; };
 		CB781CDD30138F52008DCD60 /* UTIPixelReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIPixelReporterTests.swift; sourceTree = "<group>"; };
 		CB781CDF30138F52008DCD70 /* UTIStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UTIStateMachineTests.swift; sourceTree = "<group>"; };
 		CB781CE130138F52008DCD80 /* UnifiedToggleInputToolbarViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputToolbarViewTests.swift; sourceTree = "<group>"; };
@@ -4646,6 +4650,8 @@
 				CB27DAFC30064B5800EEEADB /* UnifiedInputTextChangeGateTests.swift */,
 				CB781CCE30112EC9008DCD60 /* UTISessionMonitorTests.swift */,
 				CB781CD3301135BE008DCD60 /* UTITextModelTests.swift */,
+				29E6E694C6DF92E58D4D6770 /* PastedTextSheetTests.swift */,
+				BAA45A4680A958361B196759 /* UTIPromptLengthGateTests.swift */,
 				CB781CDD30138F52008DCD60 /* UTIPixelReporterTests.swift */,
 				401C74C51B7044B4AD76B9BC /* MultiTabAttachmentTests.swift */,
 				CB781CE73019069B008DCD60 /* UTIAttachmentControllerTests.swift */,
@@ -6614,6 +6620,8 @@
 				9F60CBBD2E98A13D004D2367 /* MockBrowserTabURLOpener.swift in Sources */,
 				EEC02C162B065BE00045CE11 /* NetworkProtectionVPNLocationViewModelTests.swift in Sources */,
 				CB781CD4301135BE008DCD60 /* UTITextModelTests.swift in Sources */,
+				72B0F0F35DF8452B77134DE6 /* PastedTextSheetTests.swift in Sources */,
+				5D7A8B623FE970269525BE01 /* UTIPromptLengthGateTests.swift in Sources */,
 				C16670E42EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift in Sources */,
 				9F60CBB82E989EDC004D2367 /* MockLastSearchStateRefresher.swift in Sources */,
 				9FF967B72E0E31D300E45B54 /* MockDefaultBrowserPromptUserTypeStoring.swift in Sources */,

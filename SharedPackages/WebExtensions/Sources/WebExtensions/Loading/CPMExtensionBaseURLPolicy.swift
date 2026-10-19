@@ -34,7 +34,15 @@ final class CPMExtensionBaseURLPolicy {
     }
 
     func baseURL(for identifier: String, webExtension: WKWebExtension) -> URL? {
-        guard isEnabled(), let uuid = originIdentifier(for: identifier, webExtension: webExtension) else { return nil }
+        guard let uuid = originIdentifier(for: identifier, webExtension: webExtension) else { return nil }
+        guard isEnabled() else {
+            // WebKit removes the old origin's service-worker data when migrating to its random origin.
+            // Re-enabling must use a fresh origin, never that abandoned worker registration.
+            if let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) {
+                rotateOrigin(of: installed)
+            }
+            return nil
+        }
         return URL(string: "webkit-extension://\(uuid.uuidString.lowercased())/")
     }
 
@@ -44,8 +52,12 @@ final class CPMExtensionBaseURLPolicy {
         let identifier = context.uniqueIdentifier
         guard originIdentifier(for: identifier, webExtension: context.webExtension) != nil,
               let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) else { return }
+        rotateOrigin(of: installed)
+    }
+
+    private func rotateOrigin(of installed: InstalledWebExtension) {
         installationStore.update(InstalledWebExtension(
-            uniqueIdentifier: identifier, filename: installed.filename, name: installed.name, version: installed.version,
+            uniqueIdentifier: installed.uniqueIdentifier, filename: installed.filename, name: installed.name, version: installed.version,
             embeddedType: installed.embeddedType, storeIdentity: installed.storeIdentity, cpmOriginIdentifier: UUID()
         ))
     }

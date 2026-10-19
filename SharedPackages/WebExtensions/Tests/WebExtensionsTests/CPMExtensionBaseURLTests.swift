@@ -66,7 +66,10 @@ final class CPMExtensionBaseURLTests: XCTestCase {
         try loader.unloadExtension(identifier: identifier, from: controller)
         enabled = true
         try await loader.reloadWebExtension(initial.webExtension, identifier: identifier, into: controller)
-        XCTAssertEqual(controller.extensionContexts.first?.baseURL, initial.baseURL)
+        let restored = try XCTUnwrap(controller.extensionContexts.first)
+        XCTAssertNotEqual(restored.baseURL, initial.baseURL)
+        let origin = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: initial.webExtension))
+        XCTAssertEqual(restored.baseURL, origin)
         try loader.unloadExtension(identifier: identifier, from: controller)
     }
 
@@ -176,7 +179,8 @@ final class CPMExtensionBaseURLTests: XCTestCase {
         policy.prepareForDataClearingReload(of: context)
         XCTAssertNil(policy.baseURL(for: identifier, webExtension: webExtension))
         enabled = true
-        XCTAssertNotEqual(policy.baseURL(for: identifier, webExtension: webExtension)?.host, identifier.lowercased())
+        let restored = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
+        XCTAssertNotEqual(restored.host, identifier.lowercased())
     }
 
     func testLegacyRegistryRecordStillDecodesWithoutOriginIdentifier() throws {

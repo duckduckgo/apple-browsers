@@ -129,12 +129,13 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         let startedAt: Date
         /// Measurements up to this identifier were already in flight when the first failure arrived.
         let confirmationMustBeginAfter: UInt
-        /// Treatment state captured from the termination associated with this episode.
-        let graveyardTreatmentEnabled: Bool?
+        /// First-failure snapshot; later transitions do not replace it.
+        let diagnostics: CPMMessagingDiagnostics?
         var failedTabIdentifiers: Set<String>
         var isStuck = false
         /// The successful reload that a recovery must post-date to be attributed to that reload.
         var reloadGeneration: UInt?
+        var reloadState: CPMMessagingEpisodeReport.ReloadState = .none
     }
 
     private let pixelFiring: WebExtensionPixelFiring
@@ -143,6 +144,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private let responseGracePeriod: TimeInterval
     private let now: () -> Date
     private var episode: Episode?
+    private var episodeDeadlineTask: Task<Void, Never>?
     private var latestMeasurementIdentifier: UInt = 0
     private var measurements: [UInt: MeasurementRecord] = [:]
     private(set) var extensionReloadGeneration: UInt = 0
@@ -150,7 +152,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Debug-only switch that makes dashboard responses invisible to the health algorithm.
     public private(set) var isCPMMessagingBreakageSimulationEnabled = false
 
-    /// Supplies PII-free attribution facts for failure and stuck pixels.
+    /// Supplies local diagnostics captured once at the first failure; the report uploads only its allowlist.
     public weak var diagnosticsProvider: CPMMessagingDiagnosticsProviding?
 
     /// Navigation state is keyed by the app's stable tab identifier. The extension's numeric tab
@@ -200,6 +202,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         self.extensionLoadWait = extensionLoadWait
         self.responseGracePeriod = responseGracePeriod
         self.now = now
+    }
+
+    deinit {
+        episodeDeadlineTask?.cancel()
     }
 
     /// Applies one tab, native-message, or extension-lifecycle event to the shared health state.
@@ -445,12 +451,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         if let episode, episode.reloadGeneration != nil {
             return
         }
-        diagnosticsProvider?.consumeBackgroundGraveyardTreatmentState()
-        guard let episode else { return }
-        if episode.isStuck {
-            pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: .messagingStuck))
-        }
-        self.episode = nil
+        finishEpisode(outcome: .unattributedResponse)
     }
 
     /// Whether the tab's navigation belongs to the extension context that is currently loaded.
@@ -615,7 +616,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
         record.state = .failed
         measurements[measurement.identifier] = record
-        let graveyardTreatmentEnabled = diagnosticsProvider?.consumeBackgroundGraveyardTreatmentState()
         // Reload attribution is reserved when the navigation begins, so simultaneous tabs cannot
         // race to become "first" merely by returning their result sooner.
         let isPostExtensionReload = postReloadMeasurementIdentifier == measurement.identifier
@@ -626,16 +626,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         } else {
             failureReason = measurement.navigationKind.failureReason
         }
-        fireWithDiagnostics(
-            tabIdentifier: measurement.tabIdentifier,
-            graveyardTreatmentEnabled: graveyardTreatmentEnabled
-        ) { diagnostics in
-            .cpmInitializationFailed(reason: failureReason, diagnostics: diagnostics)
-        }
-        if isPostExtensionReload {
-            pixelFiring.fire(.cpmMessagingExtensionReloadFailed)
-        }
-
         // Snapshot every measurement already in flight. None of them can independently confirm this
         // failure. Restoration failures seed an episode, but only a later non-restoration navigation
         // can confirm it because delayed startup affects the whole restored-tab batch.
@@ -644,10 +634,12 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
                 failureReason: failureReason,
                 startedAt: now(),
                 confirmationMustBeginAfter: latestMeasurementIdentifier,
-                graveyardTreatmentEnabled: graveyardTreatmentEnabled,
+                diagnostics: captureDiagnostics(tabIdentifier: measurement.tabIdentifier),
                 failedTabIdentifiers: [measurement.tabIdentifier],
-                reloadGeneration: isPostExtensionReload ? measurement.extensionReloadGeneration : nil
+                reloadGeneration: isPostExtensionReload ? measurement.extensionReloadGeneration : nil,
+                reloadState: isPostExtensionReload ? .responseTimedOut : .none
             )
+            scheduleEpisodeDeadline()
             return false
         }
 
@@ -660,29 +652,53 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
            measurement.identifier > episode.confirmationMustBeginAfter {
             episode.isStuck = true
             didBecomeStuck = true
-            let stuckReason = episode.failureReason
-            fireWithDiagnostics(
-                tabIdentifier: measurement.tabIdentifier,
-                graveyardTreatmentEnabled: episode.graveyardTreatmentEnabled
-            ) { diagnostics in
-                .cpmMessagingStuck(reason: stuckReason, diagnostics: diagnostics)
-            }
             onConfirmedHang?()
         }
 
         if isPostExtensionReload {
             episode.reloadGeneration = measurement.extensionReloadGeneration
+            episode.reloadState = .responseTimedOut
         }
         self.episode = episode
         return didBecomeStuck
     }
 
-    private func fireWithDiagnostics(tabIdentifier: String,
-                                     graveyardTreatmentEnabled: Bool? = nil,
-                                     makeEvent: (CPMMessagingDiagnostics?) -> WebExtensionPixelEvent) {
-        var diagnostics = diagnosticsProvider?.collectDiagnostics(tabIdentifier: tabIdentifier)
-        diagnostics?.backgroundGraveyardTreatmentEnabled = graveyardTreatmentEnabled
-        pixelFiring.fire(makeEvent(diagnostics))
+    private func captureDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics? {
+        diagnosticsProvider?.collectDiagnostics(tabIdentifier: tabIdentifier)
+    }
+
+    /// A standalone deadline also closes quiet episodes, with no dependency on another navigation.
+    /// The task captures no episode or monitor strongly. Process termination can still lose an in-memory report.
+    private func scheduleEpisodeDeadline() {
+        episodeDeadlineTask?.cancel()
+        let lifetime = episodeLifetime
+        episodeDeadlineTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(lifetime * 1_000_000_000))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.finishEpisode(outcome: .noResponseBeforeDeadline)
+        }
+    }
+
+    /// The only CPM health emission: either a qualifying response closes the episode, or its deadline expires.
+    /// Clear state before firing so repeated callbacks cannot emit another report for the same episode.
+    /// Response outcomes describe dashboard evidence only, never an initResp ACK or recovery of every failed tab.
+    private func finishEpisode(outcome: CPMMessagingEpisodeReport.Outcome) {
+        guard let episode else { return }
+        self.episode = nil
+        episodeDeadlineTask?.cancel()
+        episodeDeadlineTask = nil
+        pixelFiring.fire(.cpmMessagingEpisode(CPMMessagingEpisodeReport(
+            reason: episode.failureReason,
+            wasStuck: episode.isStuck,
+            outcome: outcome,
+            reloadState: episode.reloadState,
+            secondsToResponse: outcome == .noResponseBeforeDeadline ? nil : now().timeIntervalSince(episode.startedAt),
+            diagnostics: episode.diagnostics
+        )))
     }
 
     /// Records a CPM dashboard response and closes any active health episode.
@@ -693,7 +709,6 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         discardExpiredState()
         guard let record = measurements[measurement.identifier], record.measurement == measurement else { return }
         measurements[measurement.identifier] = nil
-        diagnosticsProvider?.consumeBackgroundGraveyardTreatmentState()
         if postReloadMeasurementIdentifier == measurement.identifier {
             postReloadMeasurementIdentifier = nil
         }
@@ -705,16 +720,15 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             return
         }
 
-        let didThisMeasurementFail = record.state == .failed
-        if episode.isStuck || didThisMeasurementFail || episode.failedTabIdentifiers.contains(measurement.tabIdentifier) {
-            let source: CPMMessagingRecoverySource = episode.isStuck ? .messagingStuck : .initializationFailed
-            if episode.reloadGeneration != nil {
-                pixelFiring.fire(.cpmMessagingRecoveredAfterExtensionReload(from: source))
-            } else {
-                pixelFiring.fire(.cpmMessagingRecoveredWithoutExtensionReload(from: source))
-            }
+        let outcome: CPMMessagingEpisodeReport.Outcome
+        if record.state == .failed {
+            outcome = .failedMeasurementResponse
+        } else if episode.failedTabIdentifiers.contains(measurement.tabIdentifier) {
+            outcome = .failedTabResponse
+        } else {
+            outcome = .otherTabResponse
         }
-        self.episode = nil
+        finishEpisode(outcome: outcome)
     }
 
     /// Updates CPM correlation state from an extension-manager lifecycle event.
@@ -726,6 +740,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         case .loaded:
             startGracePeriodsForFinishedNavigations()
         case .willReload:
+            episode?.reloadState = .pending
             invalidateNavigationEvidenceForReload()
         case .reloaded:
             // A response delivered while the old context was being unloaded is not evidence about
@@ -736,9 +751,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             pendingExtensionReloadMeasurementGeneration = extensionReloadGeneration
             guard var episode else { return }
             episode.reloadGeneration = extensionReloadGeneration
+            episode.reloadState = .loaded
             self.episode = episode
         case .reloadFailed:
-            break
+            episode?.reloadState = .failed
         }
     }
 
@@ -788,7 +804,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func discardExpiredState() {
         let currentDate = now()
         if let episode, currentDate.timeIntervalSince(episode.startedAt) >= episodeLifetime {
-            self.episode = nil
+            finishEpisode(outcome: .noResponseBeforeDeadline)
         }
         let expiredMeasurements = measurements.values.filter { currentDate.timeIntervalSince($0.startedAt) >= episodeLifetime }
         for record in expiredMeasurements {

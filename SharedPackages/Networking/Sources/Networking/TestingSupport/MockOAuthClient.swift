@@ -135,12 +135,12 @@ public class MockOAuthClient: OAuthClient {
 
     /// The result of `restoreFromBackup`. When nil, it throws `TokenBackupError.unavailable`. On success the container also becomes the current one.
     public var restoreFromBackupResponse: Result<Networking.TokenContainer, Error>?
-    /// The `(expectedExternalID, notIssuedBefore)` arguments of every `restoreFromBackup` call, in order.
-    public private(set) var restoreFromBackupCalls: [(expectedExternalID: String?, notIssuedBefore: Date?)] = []
+    /// The `(expectedExternalID, issuedAfter)` arguments of every `restoreFromBackup` call, in order.
+    public private(set) var restoreFromBackupCalls: [(expectedExternalID: String?, issuedAfter: Date?)] = []
     /// Called at the start of every `restoreFromBackup` call, before `restoreFromBackupResponse` is returned.
     public var onRestoreFromBackup: (() -> Void)?
-    public func restoreFromBackup(expectedExternalID: String?, notIssuedBefore: Date?) async throws -> Networking.TokenContainer {
-        restoreFromBackupCalls.append((expectedExternalID, notIssuedBefore))
+    public func restoreFromBackup(expectedExternalID: String?, issuedAfter: Date?) async throws -> Networking.TokenContainer {
+        restoreFromBackupCalls.append((expectedExternalID, issuedAfter))
         onRestoreFromBackup?()
         switch restoreFromBackupResponse {
         case .success(let tokenContainer):
@@ -151,6 +151,11 @@ public class MockOAuthClient: OAuthClient {
         case nil:
             throw TokenBackupError.unavailable
         }
+    }
+
+    public var internalBackupTokenContainer: Networking.TokenContainer?
+    public func backupTokenContainer() -> Networking.TokenContainer? {
+        internalBackupTokenContainer
     }
 
     public private(set) var removeBackupCallCount = 0

@@ -32,8 +32,9 @@ protocol AutofillPreferencesPersistor {
     var passwordManager: PasswordManager { get set }
     var debugScriptEnabled: Bool { get set }
     var showInMenuBar: Bool { get set }
-    /// Whether a password manager extension has taken autofill over, so DuckDuckGo leaves all of it alone.
-    /// Only `WebExtensionAutofillTakeover` writes it.
+    /// Whether a password manager extension has taken autofill over, so DuckDuckGo leaves all of it alone:
+    /// it neither fills nor saves anything, including the login it would otherwise create without asking
+    /// when the user picks a private Duck Address. Only `WebExtensionAutofillTakeover` writes it.
     var isManagedByExtension: Bool { get set }
 }
 

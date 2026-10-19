@@ -245,14 +245,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         return (codeVerifier, codeChallenge)
     }
 
-#if DEBUG
-    /// Makes every decode return `container` instead of verifying the tokens.
-    /// Only applies when the client uses a `DefaultTokenRefresher`.
-    func setTestingDecodedTokenContainer(_ container: TokenContainer) async {
-        await (tokenRefresher as? DefaultTokenRefresher)?.setTestingDecodedTokenContainers([container])
-    }
-#endif
-
     public func decode(accessToken: String, refreshToken: String, refreshID: String? = nil) async throws -> TokenContainer {
         try await tokenRefresher.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: refreshID)
     }
@@ -337,7 +329,12 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     let refreshedTokens = try await tokenRefresher.refresh(localTokenContainer, refreshID: refreshID)
 
                     refreshEventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
-                    try tokenStorage.saveTokenContainer(refreshedTokens)
+                    do {
+                        try tokenStorage.saveTokenContainer(refreshedTokens)
+                    } catch {
+                        Logger.OAuthClient.error("Failed to save the refreshed tokens: \(String(describing: error), privacy: .public)")
+                        throw error
+                    }
 
                     refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 

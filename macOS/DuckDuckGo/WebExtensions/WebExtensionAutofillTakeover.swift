@@ -33,6 +33,15 @@ struct AutofillManagingExtension: Equatable {
     }
 }
 
+/// What Settings needs from the autofill takeover: which extension manages autofill, and a way to give it back.
+protocol WebExtensionAutofillTakeoverManaging: AnyObject {
+    /// The extension that manages autofill instead of DuckDuckGo, if any.
+    @MainActor var managingExtension: AutofillManagingExtension? { get }
+
+    /// Gives autofill back to DuckDuckGo.
+    @MainActor func giveBackToDuckDuckGo()
+}
+
 /// Whether a password manager extension has taken autofill over from DuckDuckGo.
 ///
 /// An extension becomes the password manager the way it does in Chrome: it turns the browser's password
@@ -53,7 +62,7 @@ struct AutofillManagingExtension: Equatable {
 /// Handing it a new extension manager doesn't read it: its extensions haven't loaded yet, and reading
 /// now would clear the saved state that tabs restored at launch rely on. The first read comes once
 /// they've loaded.
-final class WebExtensionAutofillTakeover {
+final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
 
     /// The app's extension manager. The app delegate sets it when it creates one.
     @MainActor weak var manager: WebExtensionManaging?

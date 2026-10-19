@@ -168,7 +168,7 @@ final class AutofillPreferencesModel: ObservableObject {
         bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager,
         neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AutofillNeverPromptWebsitesManager.shared,
         syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager,
-        autofillTakeover: WebExtensionAutofillTakeover = Application.appDelegate.webExtensionAutofillTakeover
+        autofillTakeover: WebExtensionAutofillTakeoverManaging = Application.appDelegate.webExtensionAutofillTakeover
     ) {
         self.persistor = persistor
         self.autofillTakeover = autofillTakeover
@@ -220,7 +220,7 @@ final class AutofillPreferencesModel: ObservableObject {
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private let syncPromoManager: SyncPromoManaging
     private var syncPromoCancellable: AnyCancellable?
-    private let autofillTakeover: WebExtensionAutofillTakeover
+    private let autofillTakeover: WebExtensionAutofillTakeoverManaging
     private var autofillTakeoverCancellable: AnyCancellable?
     lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in

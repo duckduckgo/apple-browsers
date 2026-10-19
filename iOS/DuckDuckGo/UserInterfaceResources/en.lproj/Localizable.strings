@@ -436,6 +436,21 @@
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "attachment";
 
+/* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
+"aichat.pasted.text.accessibility.label" = "Pasted text";
+
+/* Character count below the pasted text in the Duck.ai pasted-text sheet. %d is the count */
+"aichat.pasted.text.character.count" = "%d characters";
+
+/* Subtitle of the sheet that shows a long block of text the user pasted into Duck.ai */
+"aichat.pasted.text.formatting.note" = "Formatting may be inconsistent from source.";
+
+/* VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message */
+"aichat.pasted.text.remove" = "Remove";
+
+/* Title of the sheet that shows and edits a long block of text the user pasted into Duck.ai */
+"aichat.pasted.text.sheet.title" = "Pasted Text";
+
 /* Character count below the Duck.ai too-long message error, e.g. 16800/16000. %1$d is the message's character count, %2$d is the maximum allowed */
 "aichat.prompt.too.long.count" = "%1$d/%2$d";
 

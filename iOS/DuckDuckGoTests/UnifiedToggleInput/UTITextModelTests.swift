@@ -28,14 +28,27 @@ final class UTITextModelTests: XCTestCase {
     private var persistCount = 0
     private var floatingKeyUpdateCount = 0
     private var attachmentErrorClearCount = 0
+    private var textChangedCount = 0
 
     private func makeSUT() -> UTITextModel {
         UTITextModel(sideEffects: .init(
             applyTextToView: { [weak self] in self?.appliedToView.append($0) },
             persistDraft: { [weak self] in self?.persistCount += 1 },
             updateFloatingReturnKey: { [weak self] in self?.floatingKeyUpdateCount += 1 },
-            clearAttachmentValidationErrorIfPossible: { [weak self] in self?.attachmentErrorClearCount += 1 }
+            clearAttachmentValidationErrorIfPossible: { [weak self] in self?.attachmentErrorClearCount += 1 },
+            onTextChanged: { [weak self] in self?.textChangedCount += 1 }
         ))
+    }
+
+    func test_everyTextSetter_runsTheTextChangedSideEffect() {
+        let sut = makeSUT()
+
+        sut.setText("restored draft")
+        sut.handleUserTextChange("typed")
+        sut.resetToEmpty()
+        sut.clearForDismiss()
+
+        XCTAssertEqual(textChangedCount, 4)
     }
 
     func test_setText_setsCurrentTextAndUserTypedState_andRunsSideEffects() {

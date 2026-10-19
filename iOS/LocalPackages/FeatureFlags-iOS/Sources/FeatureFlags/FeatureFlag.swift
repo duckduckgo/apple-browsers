@@ -361,6 +361,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1218397803938552
     case unifiedToggleInputAttachmentPrivacy
 
+    /// Long pastes in the native Duck.ai inputs become pasted-text attachments.
+    /// https://app.asana.com/0/0/1219207880593588/f
+    case unifiedToggleInputPastedText
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     /// https://app.asana.com/1/137249556945/task/1218992416130371
     case aiChatAttachmentPrivacyIPad
@@ -889,6 +893,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .unifiedToggleInputAttachmentPrivacy:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPrivacy))
+        case .unifiedToggleInputPastedText:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputPastedText))
         case .aiChatAttachmentPrivacyIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadAttachmentPrivacy))
         case .freeTrialConversionWideEvent:

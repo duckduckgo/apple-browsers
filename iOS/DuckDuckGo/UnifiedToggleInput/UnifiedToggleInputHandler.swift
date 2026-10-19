@@ -135,6 +135,8 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     /// the buttons that look closed.
     var isInputBlockedByUsageLimit: Bool = false
 
+    var isSubmitBlockedByPromptLength: () -> Bool = { false }
+
     // MARK: - SwitchBarHandling — Publishers
 
     var currentTextPublisher: AnyPublisher<String, Never> {
@@ -219,16 +221,16 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String, trigger: TextSubmissionTrigger) {
-        guard !isInputBlockedByUsageLimit else { return }
+        guard !isInputBlockedByUsageLimit, !isSubmitBlockedByPromptLength() else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState, trigger: trigger))
     }
 
     /// Only the send button submits a prompt with nothing but attachments.
-    func submitAIChatAttachmentOnlyPrompt() {
-        guard !isInputBlockedByUsageLimit else { return }
-        textSubmissionSubject.send((text: "", mode: .aiChat, trigger: .sendButton))
+    func submitAIChatAttachmentOnlyPrompt(trigger: TextSubmissionTrigger = .sendButton) {
+        guard !isInputBlockedByUsageLimit, !isSubmitBlockedByPromptLength() else { return }
+        textSubmissionSubject.send((text: "", mode: .aiChat, trigger: trigger))
     }
 
     func setToggleState(_ state: TextEntryMode) {

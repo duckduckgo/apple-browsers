@@ -746,7 +746,182 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
+    private func longText(_ count: Int) -> String { String(repeating: "a", count: count) }
+
+    func testOverLimitTypedDraftBlocksSendOnEveryTriggerWhilePastedTextIsOn() {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+
+        sut.setText(longText(16_001))
+
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertTrue(sut.viewController.handler.isSubmitBlockedByPromptLength())
+        sut.viewController.handler.submitText(sut.currentText, trigger: .textEntry)
+        sut.viewController.handler.submitText(sut.currentText, trigger: .pasteAndGo)
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        sut.submitProgrammatic(text: sut.currentText)
+        flushMainQueue()
+        XCTAssertNil(delegate.submittedPrompt)
+
+        sut.setText(longText(16_000))
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+        XCTAssertEqual(delegate.submittedPrompt, longText(16_000))
+    }
+
+    func testOverLimitDraftRestoredOnTabSwitchIsBlockedWithoutAKeystrokeAndReleasedAfterSubmitClears() {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+
+        sut.applyState(TabInputState(text: longText(16_001), toggleMode: .aiChat, attachments: []))
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+
+        sut.setText("")
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+    }
+
+    func testWithPastedTextOffATypedDraftOverTheLimitStillSubmits() {
+        let sut = makeCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.setText(longText(16_001))
+
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, longText(16_001))
+    }
+
+    func testSearchModeIsNeverBlockedAndDuckAIModeBlocksAgain() {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.setText(longText(16_001))
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+
+        sut.updateInputMode(.search, animated: false)
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+
+        sut.updateInputMode(.aiChat, animated: false)
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+    }
+
+    func testImageLowersTheLimitToTheModelValueAndAFileDoesNot() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "mixed-model"
+        let sut = makePastedTextCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "mixed-model", supportsImageUpload: true, supportedFileTypes: ["application/pdf"])]
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.setText(longText(4_501))
+
+        sut.addFileAttachment(makeFileAttachment())
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength, "Files never lower the limit")
+
+        sut.addImageAttachment(image: UIImage(systemName: "photo")!, fileName: "a.jpg")
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength, "The model's 4,500 applies with an image")
+        XCTAssertEqual(sut.promptLengthGate.promptLength?.limit, 4_500)
+    }
+
+    func testLongPasteBecomesAChipAndAnOverLimitPasteTurnsTheChipsRed() throws {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+        let pasteHandler = try XCTUnwrap(sut.viewController.attachmentPasteHandler)
+
+        XCTAssertFalse(pasteHandler.attachInsertedTextIfLong(longText(3_999)))
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+
+        XCTAssertTrue(pasteHandler.attachInsertedTextIfLong(longText(4_000)))
+        XCTAssertEqual(sut.viewController.currentAttachments.compactMap(\.pastedText).map(\.length), [4_000])
+        XCTAssertFalse(sut.viewController.showsPromptLengthError)
+
+        XCTAssertTrue(pasteHandler.attachInsertedTextIfLong(longText(12_001)))
+        XCTAssertTrue(sut.viewController.showsPromptLengthError)
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+
+        sut.removeAttachment(id: sut.viewController.currentAttachments[1].id)
+        XCTAssertFalse(sut.viewController.showsPromptLengthError)
+    }
+
+    func testWithPastedTextOffTheHandlerStaysOffWhenImagePasteIsOffToo() {
+        let sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: StubAIChatPreferences(),
+                                                attachmentPasteEnabled: false,
+                                                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+
+        XCTAssertNil(sut.viewController.attachmentPasteHandler)
+    }
+
+    func testWithImagePasteOffTheHandlerIsInstalledForPastedTextButRefusesImages() throws {
+        let sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: StubAIChatPreferences(),
+                                                attachmentPasteEnabled: false,
+                                                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputPastedText]))
+        let prefs = StubAIChatPreferences()
+        _ = prefs
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.updateInputMode(.aiChat, animated: false)
+        let pasteHandler = try XCTUnwrap(sut.viewController.attachmentPasteHandler)
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        pasteboard.image = UIImage(systemName: "photo")
+
+        XCTAssertFalse(pasteHandler.canPasteAttachments(from: pasteboard))
+        XCTAssertTrue(pasteHandler.attachInsertedTextIfLong(longText(4_000)))
+    }
+
+    func testPasteAndGoThatConvertsSubmitsAPasteOnlyPrompt() {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        _ = sut.viewController.attachmentPasteHandler?.attachInsertedTextIfLong(longText(4_000))
+
+        sut.viewController.handler.submitAIChatAttachmentOnlyPrompt(trigger: .pasteAndGo)
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, "")
+    }
+
+    func testPasteWhileEditingASentPromptStaysInline() throws {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.beginEditMode(prompt: "sent")
+
+        let pasteHandler = try XCTUnwrap(sut.viewController.attachmentPasteHandler)
+        XCTAssertFalse(pasteHandler.attachInsertedTextIfLong(longText(4_000)))
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
+    func testLegacyAttachmentLengthBannerIsSkippedWhilePastedTextIsOn() {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let sut = makePastedTextCoordinator(preferences: prefs)
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.addImageAttachment(image: UIImage(systemName: "photo")!, fileName: "a.jpg")
+        sut.setText(longText(4_500))
+
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, longText(4_500), "4,500 is within the image limit; the old banner would have counted differently")
+    }
+
     // MARK: - Helpers
+
+    private func makePastedTextCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences()) -> UnifiedToggleInputCoordinator {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputPastedText]))
+        coordinator.modelStore.attachmentLimits = makeLimits()
+        return coordinator
+    }
 
     private func makeCoordinator(host: UnifiedToggleInputHost = .omnibar,
                                  preferences: AIChatPreferencesPersisting = StubAIChatPreferences(),

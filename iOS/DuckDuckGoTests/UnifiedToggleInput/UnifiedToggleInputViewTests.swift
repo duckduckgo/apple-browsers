@@ -388,6 +388,50 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(stack.arrangedSubviews.map { $0.bounds.width }, [240, 240, 196, 82])
     }
 
+    func testPastedTextChipIsOneVoiceOverButtonThatOpensTheSheetAndOffersRemove() throws {
+        let paste = AIChatPastedText(content: "\n  First line of the paste \nsecond line")
+        let sut = UnifiedToggleInputAttachmentThumbnailView(attachment: .pastedText(paste), usesCompactLayout: true)
+        var tapped: [UUID] = []
+        var removed: [UUID] = []
+        sut.onTap = { tapped.append($0) }
+        sut.onRemove = { removed.append($0) }
+
+        XCTAssertTrue(sut.isAccessibilityElement)
+        XCTAssertTrue(sut.accessibilityTraits.contains(.button))
+        XCTAssertEqual(sut.accessibilityLabel, "Pasted text")
+        XCTAssertEqual(sut.accessibilityValue, "First line of the paste")
+        XCTAssertEqual(sut.intrinsicContentSize.width, UnifiedToggleInputAttachmentThumbnailView.Constants.fileChipWidth)
+        let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        XCTAssertEqual(label.text, "First line of the paste")
+
+        XCTAssertTrue(sut.accessibilityActivate())
+        XCTAssertEqual(tapped, [paste.id])
+
+        let actions = try XCTUnwrap(sut.accessibilityCustomActions)
+        XCTAssertEqual(actions.map(\.name), ["Remove"])
+        XCTAssertTrue(actions[0].actionHandler?(actions[0]) ?? false)
+        XCTAssertEqual(removed, [paste.id])
+    }
+
+    func testPastedTextChipTakesTheErrorColoursOnlyWhileTheStripShowsThePromptLengthError() throws {
+        let strip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
+        strip.addAttachment(.pastedText(AIChatPastedText(content: "pasted")))
+        strip.addAttachment(makeFileAttachment())
+        let chips = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: strip)).arrangedSubviews.compactMap { $0 as? UnifiedToggleInputAttachmentThumbnailView }
+        let pastedChip = try XCTUnwrap(chips.first)
+        let fileChip = try XCTUnwrap(chips.last)
+        let normalBorder = pastedChip.subviews[0].layer.borderColor
+
+        strip.showsPromptLengthError = true
+
+        XCTAssertNotEqual(pastedChip.subviews[0].layer.borderColor, normalBorder)
+        XCTAssertEqual(fileChip.subviews[0].layer.borderColor, normalBorder, "Only pasted-text chips show the length error")
+        XCTAssertFalse(strip.attachments[0].isInvalid, "The error state is not the invalid-file state")
+
+        strip.showsPromptLengthError = false
+        XCTAssertEqual(pastedChip.subviews[0].layer.borderColor, normalBorder)
+    }
+
     func testWhenCompactLayoutIsDisabledThenImageRemainsThumbnailBesideRemoveButton() throws {
         let sut = UnifiedToggleInputAttachmentThumbnailView(
             attachment: .image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg")),

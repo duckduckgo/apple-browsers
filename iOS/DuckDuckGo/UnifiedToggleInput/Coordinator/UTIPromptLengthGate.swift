@@ -1,0 +1,89 @@
+//
+//  UTIPromptLengthGate.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import Foundation
+
+extension AIChatPromptLimits {
+
+    func evaluate(prompt: String,
+                  attachments: [UnifiedToggleInputAttachment],
+                  attachmentLimits: AIChatAttachmentTierLimits?) -> AIChatPromptLength {
+        evaluate(prompt: prompt,
+                 pastedTexts: attachments.compactMap(\.pastedText),
+                 hasImage: attachments.contains(where: \.isImage),
+                 maxCharactersWithImage: attachmentLimits?.images.maxInputCharsWithAttachments)
+    }
+}
+
+@MainActor
+final class UTIPromptLengthGate {
+
+    struct Inputs {
+        let promptText: () -> String
+        let attachments: () -> [UnifiedToggleInputAttachment]
+        let attachmentLimits: () -> AIChatAttachmentTierLimits?
+        let isEnabled: () -> Bool
+    }
+
+    struct Outputs {
+        let onOverLimitChanged: (UTIFooterPromptOverLimit?) -> Void
+        let onSubmitBlockedChanged: (Bool) -> Void
+        let onChipErrorChanged: (Bool) -> Void
+    }
+
+    private let limits: AIChatPromptLimits
+    private let inputs: Inputs
+    private let outputs: Outputs
+
+    private(set) var promptLength: AIChatPromptLength?
+    private var reportedOverLimit: UTIFooterPromptOverLimit?
+    private var reportedSubmitBlocked = false
+
+    init(limits: AIChatPromptLimits = .current, inputs: Inputs, outputs: Outputs) {
+        self.limits = limits
+        self.inputs = inputs
+        self.outputs = outputs
+    }
+
+    var isSubmitBlocked: Bool { promptLength?.isOverLimit == true }
+
+    func sheetLimit(for paste: AIChatPastedText) -> Int {
+        let length = promptLength ?? limits.evaluate(prompt: inputs.promptText(), attachments: inputs.attachments(),
+                                                     attachmentLimits: inputs.attachmentLimits())
+        return max(0, length.limit(forEditing: paste))
+    }
+
+    func refresh() {
+        promptLength = inputs.isEnabled()
+            ? limits.evaluate(prompt: inputs.promptText(), attachments: inputs.attachments(), attachmentLimits: inputs.attachmentLimits())
+            : nil
+        let overLimit = promptLength.flatMap { $0.isOverLimit ? UTIFooterPromptOverLimit(count: $0.count, limit: $0.limit) : nil }
+        if overLimit != reportedOverLimit {
+            reportedOverLimit = overLimit
+            outputs.onOverLimitChanged(overLimit)
+        }
+        let blocked = overLimit != nil
+        if blocked != reportedSubmitBlocked {
+            reportedSubmitBlocked = blocked
+            outputs.onSubmitBlockedChanged(blocked)
+            outputs.onChipErrorChanged(blocked)
+        }
+    }
+}

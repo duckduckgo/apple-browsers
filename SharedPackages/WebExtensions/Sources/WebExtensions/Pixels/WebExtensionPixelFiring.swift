@@ -112,19 +112,20 @@ public struct CPMMessagingEpisodeReport: Equatable, Sendable {
     }
 
     var pixelParameters: [String: String] {
+        typealias Name = CPMMessagingDiagnostics.ParameterName
         // Explicit allowlist of first-failure facts and the existing bounded lifecycle timeline.
         // Later transitions never add a second snapshot or append another timeline to the report.
         var parameters: [String: String] = [:]
-        parameters["context_loaded"] = diagnostics?.extensionContextLoaded.map(String.init)
-        parameters["bg_view_alive"] = diagnostics?.backgroundWebViewAlive.map(String.init)
-        parameters["bg_process_alive"] = diagnostics?.backgroundWebProcessAlive.map(String.init)
-        parameters["bg_process_responsive"] = diagnostics?.backgroundWebProcessResponsive.map(String.init)
-        parameters["tab_in_context"] = diagnostics?.tabKnownToWebKit.map(String.init)
-        parameters["handler_registered"] = diagnostics?.nativeMessageHandlerRegistered.map(String.init)
-        parameters["tab_controller_match"] = diagnostics?.tabControllerMatchesContext.map(String.init)
-        parameters["tab_has_ext_scripts"] = diagnostics?.tabHasExtensionUserScripts.map(String.init)
+        parameters[Name.extensionContextLoaded] = diagnostics?.extensionContextLoaded.map(String.init)
+        parameters[Name.backgroundViewAlive] = diagnostics?.backgroundWebViewAlive.map(String.init)
+        parameters[Name.backgroundWebProcessAlive] = diagnostics?.backgroundWebProcessAlive.map(String.init)
+        parameters[Name.backgroundWebProcessResponsive] = diagnostics?.backgroundWebProcessResponsive.map(String.init)
+        parameters[Name.tabKnownToWebKit] = diagnostics?.tabKnownToWebKit.map(String.init)
+        parameters[Name.nativeMessageHandlerRegistered] = diagnostics?.nativeMessageHandlerRegistered.map(String.init)
+        parameters[Name.tabControllerMatchesContext] = diagnostics?.tabControllerMatchesContext.map(String.init)
+        parameters[Name.tabHasExtensionUserScripts] = diagnostics?.tabHasExtensionUserScripts.map(String.init)
         if let events = diagnostics?.backgroundEvents, !events.isEmpty {
-            parameters["bg_events"] = CPMMessagingDiagnostics.backgroundEventsValue(events)
+            parameters[Name.backgroundEvents] = CPMMessagingDiagnostics.backgroundEventsValue(events)
         }
         // Load facts use the same first-failure snapshot; error fields exist only for its attributed error 6.
         parameters.merge(diagnostics?.backgroundLoadParameters ?? [:]) { _, value in value }

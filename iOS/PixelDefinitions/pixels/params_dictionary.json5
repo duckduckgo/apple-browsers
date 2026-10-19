@@ -580,13 +580,13 @@
         "key": "bg_load_error_app_state",
         "type": "string",
         "enum": ["active", "inactive", "background"],
-        "description": "App state captured when the first newly observed WebKit error 6 was attributed to the affected background-load attempt. Only sent when that error is in the first-failure snapshot and state is known; macOS reports active/inactive. Not a generic app-state dimension."
+        "description": "App state captured when the first newly observed WebKit error 6 was attributed to the affected background-load attempt. Only sent when that error is in the first-failure snapshot and state is known; macOS reports active/inactive. Errors observed after the first failure are not included in this episode. Not a generic app-state dimension."
     },
     "background_load_error_after": {
         "key": "bg_load_error_after",
         "type": "string",
         "enum": ["under_5s", "5s_to_25s", "25s_to_35s", "over_35s"],
-        "description": "Time from the affected background view's creation to the first newly observed WebKit error 6 for that load attempt: <5 s, 5-<25 s, 25-<35 s, >=35 s. Only sent when the first-failure snapshot contains an attributed error 6 with known timing; cleared for a replacement view/context. Historical error-list entries do not qualify."
+        "description": "Time from the affected background view's creation to the first newly observed WebKit error 6 for that load attempt: <5 s, 5-<25 s, 25-<35 s, >=35 s. Only sent when the first-failure snapshot contains an attributed error 6 with known timing; cleared for a replacement view/context. Historical error-list entries and errors observed after the first failure do not qualify for the episode report."
     },
     "background_view_age": {
         "key": "bg_view_age",
@@ -598,7 +598,7 @@
         "key": "bg_ready_after",
         "type": "string",
         "enum": ["none", "pending", "failed", "under_1s", "1s_to_4s", "4s_to_10s", "10s_to_30s", "over_30s"],
-        "description": "Background-load evidence at the first failure: no current background view, pending, failed, or time from view creation to load completion. Completion buckets: <1 s, 1-<4 s, 4-<10 s, 10-<30 s, >=30 s. Omitted when observation is disabled or unavailable; readiness does not prove initResp delivery."
+        "description": "Background-load evidence frozen at the first failure. none means no current view and no attributed error 6 for the latest attempt. failed includes an attributed error 6 after its view disappears, until a new view/context resets attribution. pending means loading had not completed at the snapshot; it may complete or fail later. Load fields are not refreshed when the episode is reported, so later errors are omitted. Completion buckets: <1 s, 1-<4 s, 4-<10 s, 10-<30 s, >=30 s. Omitted when observation is disabled or unavailable; readiness does not prove initResp delivery."
     },
     "web_extension_type": {
         "key": "extension_type",

@@ -33,20 +33,20 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "none")
-        XCTAssertNil(recorder.snapshot().pixelParameters[Name.backgroundViewAge])
+        XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter], "none")
+        XCTAssertNil(recorder.snapshot().backgroundLoadParameters[Name.backgroundViewAge])
 
         let webView = WKWebView(frame: .zero)
         recorder.didCreateBackgroundWebView(webView, for: context)
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "pending")
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundViewAge], "under_4s")
+        XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter], "pending")
+        XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundViewAge], "under_4s")
 
         await nextMainQueueTurn()
         XCTAssertEqual(completions.count, 1, "the load is requested on the next turn, not from inside WebKit's callback")
         date += 5.2
         completions[0](nil)
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "4s_to_10s")
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundViewAge], "4s_to_8s")
+        XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter], "4s_to_10s")
+        XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundViewAge], "4s_to_8s")
     }
 
     func testFailedBackgroundLoadIsReportedAsFailed() async throws {
@@ -62,7 +62,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         completions.first?(NSError(domain: WKWebExtensionContext.errorDomain,
                                    code: WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue))
 
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "failed")
+        XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter], "failed")
     }
 
     func testLoadOfAReplacedBackgroundViewDoesNotMarkTheNewOneReady() async throws {
@@ -79,7 +79,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
 
         completions.first?(nil)
 
-        XCTAssertEqual(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter], "pending")
+        XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter], "pending")
     }
 
     func testReadinessIsOmittedWhenBackgroundObservationIsDisabled() async throws {
@@ -89,13 +89,13 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         recorder.backgroundReadinessObserver.loadBackgroundContent = { _, _ in loadRequests += 1 }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
-        XCTAssertNil(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter])
+        XCTAssertNil(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter])
 
         let webView = WKWebView(frame: .zero)
         recorder.didCreateBackgroundWebView(webView, for: context)
         await nextMainQueueTurn()
 
-        XCTAssertNil(recorder.snapshot().pixelParameters[Name.backgroundReadyAfter])
+        XCTAssertNil(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter])
         XCTAssertEqual(loadRequests, 0)
     }
 
@@ -268,23 +268,48 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         XCTAssertNil(recorder.snapshot().backgroundLoadParameters[Name.backgroundLoadErrorAppState])
     }
 
-    func testErrorAfterViewDeallocationStillBelongsToItsLastLoadAttempt() async throws {
-        var date = Date(timeIntervalSince1970: 1000)
-        let recorder = makeRecorder(now: { date })
-        let context = try await makeContext()
-        recorder.contextWillLoad(context)
-        weak var released: WKWebView?
-        autoreleasepool {
-            let view = WKWebView(frame: .zero)
-            released = view
-            recorder.didCreateBackgroundWebView(view, for: context)
+    func testFailedLoadRemainsFailedWithoutItsViewAndResetsForTheNextAttempt() async throws {
+        for errorBeforeDeallocation in [true, false] {
+            var date = Date(timeIntervalSince1970: 1000)
+            let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundDelegateProxyEnabled: true)
+            let recorder = makeRecorder(now: { date }, flags: flags)
+            let context = try await makeContext()
+            recorder.contextWillLoad(context)
+            weak var released: WKWebView?
+            autoreleasepool {
+                let view = WKWebView(frame: .zero)
+                released = view
+                recorder.didCreateBackgroundWebView(view, for: context)
+                date += 30
+                if errorBeforeDeallocation { recorder.recordContextErrors([loadError()]) }
+            }
+            await nextMainQueueTurn()
+            XCTAssertNil(released)
+            if !errorBeforeDeallocation { recorder.recordContextErrors([loadError()]) }
+
+            let snapshot = recorder.snapshot()
+            XCTAssertEqual(snapshot.backgroundReadiness, .failed)
+            XCTAssertEqual(snapshot.backgroundWebViewAlive, false)
+            XCTAssertEqual(snapshot.backgroundLoadParameters[Name.backgroundLoadErrorAfter], "25s_to_35s")
+            XCTAssertNil(snapshot.secondsSinceBackgroundViewCreation)
+
+            flags.isBackgroundDelegateProxyEnabled = false
+            recorder.applyFeatureFlags()
+            XCTAssertNil(recorder.snapshot().backgroundReadiness)
+            flags.isBackgroundDelegateProxyEnabled = true
+            recorder.applyFeatureFlags()
+            XCTAssertEqual(recorder.snapshot().backgroundReadiness, .failed)
+
+            let replacement = WKWebView(frame: .zero)
+            recorder.didCreateBackgroundWebView(replacement, for: context)
+            withExtendedLifetime(replacement) {
+                XCTAssertEqual(recorder.snapshot().backgroundReadiness, .pending)
+                XCTAssertNil(recorder.snapshot().backgroundLoadParameters[Name.backgroundLoadErrorAfter])
+            }
+            recorder.contextWillLoad(try await makeContext())
+            XCTAssertEqual(recorder.snapshot().backgroundReadiness, .noBackground)
+            XCTAssertNil(recorder.snapshot().backgroundLoadParameters[Name.backgroundLoadErrorAfter])
         }
-        await nextMainQueueTurn()
-        XCTAssertNil(released)
-        date += 30
-        recorder.recordContextErrors([loadError()])
-        XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundLoadErrorAfter], "25s_to_35s")
-        XCTAssertNil(recorder.snapshot().secondsSinceBackgroundViewCreation)
     }
 
     private func makeRecorder(now: @escaping () -> Date = Date.init, appSession: CPMAppSessionDiagnostics? = nil,

@@ -30,17 +30,19 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
     private var reloads = 0
     private let reloadNavigation = WKNavigation()
     private var outcomes: [CPMRecoveryOutcome] = []
+    private var detections = 0
 
     private func makeRecovery() -> CPMBackgroundReadinessRecovery {
         CPMBackgroundReadinessRecovery(isEnabled: { [unowned self] in enabled },
                                        isApplicationInBackground: { [unowned self] in backgrounded },
-                                       instrumentation: Instrumentation { [unowned self] in outcomes.append($0) },
+                                       instrumentation: Instrumentation(callback: { [unowned self] in outcomes.append($0) },
+                                                                        detection: { [unowned self] in detections += 1 }),
                                        now: { [unowned self] in date })
     }
 
-    private func pendingDocument(_ recovery: CPMBackgroundReadinessRecovery) -> UUID {
+    private func pendingDocument(_ recovery: CPMBackgroundReadinessRecovery, isFirstLoad: Bool = false) -> UUID {
         let id = UUID()
-        recovery.backgroundStarted(id)
+        recovery.backgroundStarted(id, isFirstLoad: isFirstLoad)
         recovery.navigationStarted(in: "tab")
         recovery.navigationCommitted(in: "tab", url: url)
         recovery.registerDocument(in: "tab") { [unowned self] in
@@ -114,20 +116,131 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
         }
     }
 
-    func testDisabledFlagDoesNotArmDocumentAndCanBeEnabledAtRuntime() async {
+    func testDisabledFlagDetectsWithoutRetroactiveReloadAndCanBeEnabledAtRuntime() async {
         let recovery = makeRecovery()
         enabled = false
-        let id = pendingDocument(recovery)
+        let id = pendingDocument(recovery, isFirstLoad: true)
         enabled = true
         recovery.initializationFailed(in: "tab")
         recovery.backgroundCompleted(id, succeeded: true)
         await drain()
         XCTAssertEqual(reloads, 0)
-        let next = pendingDocument(recovery)
+        XCTAssertEqual(detections, 1)
+        let next = pendingDocument(recovery, isFirstLoad: true)
         recovery.initializationFailed(in: "tab")
         recovery.backgroundCompleted(next, succeeded: true)
         await drain()
         XCTAssertEqual(reloads, 1)
+        XCTAssertEqual(detections, 2)
+    }
+
+    func testFirstStartupIsDetectedOnceWithRecoveryDisabledWithoutCallingPreflight() async {
+        enabled = false
+        let recovery = makeRecovery()
+        let id = pendingDocument(recovery, isFirstLoad: true)
+        recovery.registerDocument(in: "tab") {
+            XCTFail("Detection must not evaluate document safety or request a reload")
+            return nil
+        }
+        recovery.initializationFailed(in: "tab")
+        XCTAssertEqual(detections, 0, "Successful background startup is still required")
+        recovery.backgroundCompleted(id, succeeded: true)
+        recovery.backgroundCompleted(id, succeeded: true)
+        recovery.initializationFailed(in: "tab")
+        await drain()
+        XCTAssertEqual(detections, 1)
+        XCTAssertEqual(reloads, 0)
+        XCTAssertTrue(outcomes.isEmpty)
+    }
+
+    func testFirstStartupIsDetectedWhenFailureArrivesAfterReadinessWithoutReloadClosure() async {
+        enabled = false
+        let recovery = makeRecovery()
+        let id = UUID()
+        recovery.backgroundStarted(id, isFirstLoad: true)
+        recovery.navigationStarted(in: "tab")
+        recovery.navigationCommitted(in: "tab", url: url)
+        recovery.backgroundCompleted(id, succeeded: true)
+        XCTAssertEqual(detections, 0)
+        recovery.initializationFailed(in: "tab")
+        await drain()
+        XCTAssertEqual(detections, 1)
+        XCTAssertEqual(reloads, 0)
+        XCTAssertTrue(outcomes.isEmpty)
+    }
+
+    func testIdleWakeDoesNotCountAsFirstStartupDetection() async {
+        enabled = false
+        let recovery = makeRecovery()
+        let id = pendingDocument(recovery)
+        recovery.initializationFailed(in: "tab")
+        recovery.backgroundCompleted(id, succeeded: true)
+        await drain()
+        XCTAssertEqual(detections, 0)
+        XCTAssertEqual(reloads, 0)
+    }
+
+    func testFirstStartupCountsEachFailedDocumentOnlyOnce() async {
+        enabled = false
+        let recovery = makeRecovery()
+        let id = UUID()
+        recovery.backgroundStarted(id, isFirstLoad: true)
+        for tab in ["first", "second"] {
+            recovery.navigationStarted(in: tab)
+            recovery.navigationCommitted(in: tab, url: url)
+            recovery.initializationFailed(in: tab)
+        }
+        recovery.backgroundCompleted(id, succeeded: true)
+        recovery.backgroundCompleted(id, succeeded: true)
+        for tab in ["first", "second"] { recovery.initializationFailed(in: tab) }
+        await drain()
+        XCTAssertEqual(detections, 2)
+        XCTAssertEqual(reloads, 0)
+    }
+
+    func testHealthyInvalidatedFailedAndExpiredFirstStartupDocumentsAreNotDetected() async {
+        enabled = false
+        for invalidation in 0..<6 {
+            date = Date()
+            let recovery = makeRecovery()
+            let id = pendingDocument(recovery, isFirstLoad: true)
+            switch invalidation {
+            case 0: recovery.responseReceived(in: "tab")
+            case 1: recovery.navigationStarted(in: "tab")
+            case 2: recovery.navigationCancelled(in: "tab")
+            case 3: recovery.invalidate()
+            case 4: recovery.backgroundCompleted(id, succeeded: false)
+            default: date.addTimeInterval(31)
+            }
+            recovery.initializationFailed(in: "tab")
+            recovery.backgroundCompleted(id, succeeded: true)
+            await drain()
+            XCTAssertEqual(detections, 0)
+            XCTAssertEqual(reloads, 0)
+        }
+    }
+
+    func testDetectionAndRecoveryHaveIndependentOutcomes() async {
+        let recovery = makeRecovery()
+        let id = pendingDocument(recovery, isFirstLoad: true)
+        recovery.initializationFailed(in: "tab")
+        recovery.backgroundCompleted(id, succeeded: true)
+        await drain()
+        XCTAssertEqual(detections, 1)
+        XCTAssertEqual(reloads, 1)
+        XCTAssertEqual(outcomes, [.reloadStarted])
+        recovery.navigationStarted(in: "tab")
+        recovery.matchNavigationStarted(in: "tab") { [reloadNavigation] in $0 === reloadNavigation }
+        recovery.responseReceived(in: "tab")
+        XCTAssertEqual(detections, 1)
+        XCTAssertEqual(outcomes, [.reloadStarted, .responseReceived])
+    }
+
+    func testDetectionHasSeparatePIIFreeDailyCountMetadata() {
+        let metadata = CPMWebExtensionPixelMetadata(event: .cpmStartupResponseMissing)
+        XCTAssertEqual(metadata?.name, "web_extension_cpm_startup_response_missing")
+        XCTAssertEqual(metadata?.frequency, .dailyAndCount)
+        XCTAssertEqual(metadata?.parameters, [:])
     }
 
     func testExpiredStartupAndUnsafeDocumentDoNotReloadOrClaimSuccess() async {
@@ -258,8 +371,13 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 private struct Instrumentation: CPMRecoveryInstrumentation {
     let callback: (CPMRecoveryOutcome) -> Void
+    let detection: () -> Void
     func record(_ fix: CPMRecoveryFix, outcome: CPMRecoveryOutcome) {
         XCTAssertEqual(fix, .lateDocumentReload)
         callback(outcome)
+    }
+
+    func recordStartupResponseMissing() {
+        detection()
     }
 }

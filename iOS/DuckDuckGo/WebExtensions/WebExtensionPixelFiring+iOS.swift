@@ -167,7 +167,7 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             PixelKit.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
-        case .cpmMessagingEpisode, .cpmRecovery:
+        case .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
             fireCPMPixel(event)
         }
     }

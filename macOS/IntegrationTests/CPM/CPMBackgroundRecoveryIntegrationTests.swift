@@ -106,6 +106,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         XCTAssertEqual(harness.pixels.recoveryOutcomes(.backgroundWake), [.backgroundReady])
         XCTAssertTrue(harness.pixels.episodes.isEmpty)
         XCTAssertEqual(probe.diagnostics["bg_view_creations"], "2")
+        XCTAssertEqual(harness.pixels.startupResponseMissingCount, 0, "An idle wake must not count as a first-startup failure")
         harness.note(["regression": "P1", "workerDelayMilliseconds": 8000,
                       "requiredBehavior": "First document receives initResp and native dashboard without a CPM timeout"])
     }
@@ -146,6 +147,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         let pageReceived = try await harness.waitForPageInitResponse(in: tabs[0])
         XCTAssertTrue(pageReceived, "The original failed document must receive initResp without navigating again")
         XCTAssertEqual(harness.pixels.recoveryOutcomes(.backgroundLoadRetry), [.backgroundReady])
+        XCTAssertEqual(harness.pixels.startupResponseMissingCount, 0)
         XCTAssertTrue(harness.context === originalContext, "A one-wake load failure must not replace the live extension context")
         XCTAssertEqual(harness.pixels.episodes.last?.outcome, .failedMeasurementResponse)
         XCTAssertEqual(harness.pixels.episodes.last?.reloadState, .none as CPMMessagingEpisodeReport.ReloadState)
@@ -169,6 +171,40 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
             XCTAssertEqual(call.frequency, .dailyAndCount)
             XCTAssertEqual(call.pixel.parameters, ["outcome": fix == .lateDocumentReload ? "reload_started" : "background_ready"])
         }
+        adapter.fire(WebExtensionPixelEvent.cpmStartupResponseMissing)
+        XCTAssertEqual(pixels.actualFireCalls.count, CPMRecoveryFix.allCases.count + 1)
+        let detection = pixels.actualFireCalls.last
+        XCTAssertEqual(detection?.pixel.name, "web_extension_cpm_startup_response_missing_macos")
+        XCTAssertEqual(detection?.pixel.namePrefix, PixelKitNamePrefix.none)
+        XCTAssertEqual(detection?.frequency, .dailyAndCount)
+        XCTAssertEqual(detection?.pixel.parameters, [:])
+    }
+
+    func testLateStartupIsDetectedWithRecoveryDisabledWithoutReload() async throws {
+        let harness = try XCTUnwrap(harness)
+        harness.startupDelayMilliseconds = 8000
+        try await harness.start(embeddedEnabled: false)
+        harness.setFlag(.cpmLateBackgroundDocumentRecovery, enabled: false)
+        let tab = try harness.openWindow()[0]
+        harness.setFlag(.embeddedExtension, enabled: true)
+        try await harness.wait("detection-only install", timeout: 10) { harness.context != nil }
+        let context = try XCTUnwrap(harness.context)
+        let probe = try await harness.navigate(tab, label: "late-startup-detection-only", timeout: 15)
+        assertFailed(probe)
+        try await harness.wait("P4 detection with recovery disabled", timeout: 3) {
+            harness.pixels.startupResponseMissingCount == 1
+        }
+        try await harness.pause(1)
+        XCTAssertEqual(harness.finishedURLDates[probe.url]?.count, 1)
+        XCTAssertFalse(harness.native.forwardedDashboardURLs.contains(probe.url.absoluteString))
+        XCTAssertTrue(harness.pixels.recoveryOutcomes(.lateDocumentReload).isEmpty)
+        XCTAssertTrue(harness.context === context)
+        harness.note(["regression": "P4-detection-only", "recoveryEnabled": false,
+                      "detections": harness.pixels.startupResponseMissingCount,
+                      "finishCount": harness.finishedURLDates[probe.url]?.count ?? 0,
+                      "requiredBehavior": "Count the first-startup missing response without reloading or claiming recovery"])
+        assertHealthy(try await harness.navigate(tab, label: "manual-navigation-after-detection-only"))
+        XCTAssertEqual(harness.pixels.startupResponseMissingCount, 1)
     }
 
     func testOverBudgetInstallRecoversFirstDocumentWithoutExtendingNavigationWait() async throws {
@@ -233,6 +269,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         let firstURL = try XCTUnwrap(tab.webView.url)
         XCTAssertFalse(harness.native.forwardedDashboardURLs.contains(firstURL.absoluteString))
         let probe = try await navigation.value
+        XCTAssertEqual(harness.pixels.startupResponseMissingCount, 1)
         try await harness.wait("automatic first-document recovery after late background readiness", timeout: 15) {
             harness.native.forwardedDashboardURLs.contains(firstURL.absoluteString)
         }

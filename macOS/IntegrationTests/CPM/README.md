@@ -11,15 +11,15 @@ To run the app regressions:
    ```
 2. On macOS 15.4 or later, open `DuckDuckGo.xcworkspace` in Xcode.
 3. Select **CPM Integration Tests** and **My Mac**.
-4. Choose **Product → Test** (⌘U). Expect **8 passed, 0 failed, 0 skipped**. The scheme sets the opt-in and test flags automatically; leave the negative-control overrides unset.
+4. Choose **Product → Test** (⌘U). Expect **9 passed, 0 failed, 0 skipped**. The scheme sets the opt-in and test flags automatically; leave the negative-control overrides unset.
 5. Select **CPM Integration Tests - Fixes Disabled** and choose **Product → Test**. Expect exactly **6 failed, 0 passed, 0 skipped**. This scheme selects the six recovery tests and disables their production fix flags automatically; the expected failures are listed below.
-6. Select **CPM Integration Tests** again and choose **Product → Test**. All **8 tests must pass** again.
+6. Select **CPM Integration Tests** again and choose **Product → Test**. All **9 tests must pass** again.
 7. Return to the production PR when finished:
    ```sh
    git switch --detach origin/alex/cpm-fix-init-loss
    ```
 
-Run the **CPM Integration Tests** scheme on macOS 15.4 or later. It builds and signs the normal DuckDuckGo app and runs eight app-hosted XCTest methods, without the UI scheme's profile-cleaning preactions:
+Run the **CPM Integration Tests** scheme on macOS 15.4 or later. It builds and signs the normal DuckDuckGo app and runs nine app-hosted XCTest methods, without the UI scheme's profile-cleaning preactions:
 
 - `testSlowBackgroundWakeKeepsFirstNavigationHealthy`: after real WebKit idle unloading, an 8-second worker startup still delivers the first document's native dashboard and content-script `initResp`, without an initialization timeout or stuck event. The navigation gate waits at most 5 seconds.
 - `testBackgroundLoadFailureRecoversOriginalDocument`: suspend only the test extension's background process for 45 seconds, observe WebKit's actual background-load error 6, resume it, and require automatic delivery to the original failed document. The context stays identical; subsequent navigation, a new tab and a new window must work.
@@ -28,9 +28,10 @@ Run the **CPM Integration Tests** scheme on macOS 15.4 or later. It builds and s
 
 - `testOverBudgetInstallRecoversFirstDocumentWithoutExtendingNavigationWait` and `testOverBudgetUpgradeRecoversFirstDocumentWithoutExtendingNavigationWait`: an 8-second startup outlives the unchanged 5-second gate. Require the first local document to finish within 6.5 seconds, before its dashboard response; then require exactly one automatic reload, unchanged URL/context, native dashboard, page `initResp` and both reload/response instrumentation stages.
 - `testLateStartupDoesNotReloadEditedDocument`: change a field in the first document while the worker is still starting. Require no automatic reload or recovery pixel, and a healthy subsequent manual navigation.
+- `testLateStartupIsDetectedWithRecoveryDisabledWithoutReload`: explicitly disable late recovery, delay the first startup by 8 seconds, and require one startup-response-missing pixel while the original document remains failed, finishes only once, and emits no reload/recovery outcomes. A subsequent manual navigation must work.
 - `testRecoveryPixelsUseSeparateNamesAndDailyCountFrequency`: use `PixelKitMock` to verify all five macOS names, prefixes, parameters and frequency through the production adapter.
 
-The seven WebKit scenarios use real AppDelegate lifecycle callbacks, windows, tabs, native handlers and system WebKit. The extension ZIP is unchanged. An extracted test copy delays worker startup and records actual `initResp` delivery; it does not fabricate messages or drop callbacks. Temporary extension files, nonpersistent WebKit stores and a loopback HTTP server isolate the fixture. External extension pixel delivery is intercepted; native health events are attached as JSON. Any stopped process is resumed during cleanup. The host must have no existing windows or pinned tabs.
+The eight WebKit scenarios use real AppDelegate lifecycle callbacks, windows, tabs, native handlers and system WebKit. The extension ZIP is unchanged. An extracted test copy delays worker startup and records actual `initResp` delivery; it does not fabricate messages or drop callbacks. Temporary extension files, nonpersistent WebKit stores and a loopback HTTP server isolate the fixture. External extension pixel delivery is intercepted; native health events are attached as JSON. Any stopped process is resumed during cleanup. The host must have no existing windows or pinned tabs.
 
 The **CPM Integration Tests - Fixes Disabled** scheme sets `CPM_APP_INTEGRATION_DISABLE_P1_P2_FIXES=1` and `CPM_APP_INTEGRATION_DISABLE_LATE_RECOVERY=1`. These fixture overrides switch the actual production feature flags, without changing the app binary or remote configuration. No environment editing or manual test selection is needed. The edited-document veto and pixel-adapter tests are omitted from this scheme because disabling recovery should not make them fail.
 
@@ -52,9 +53,11 @@ cd SharedPackages/WebExtensions
 swift test --filter 'WebExtensionManagerTests|WebExtensionLifecycleCoordinatorTests|CPMBackgroundLoadDiagnosticsTests|CPMMessagingHealthMonitorTests|CPMBackgroundReadinessRecoveryTests'
 ```
 
-The previous 22-method research suite remains in the original investigation worktree. The eight app methods and their app hooks live only on this branch; the twenty-nine new shared unit regressions remain in the production PR and are inherited here. These injected macOS timing/process conditions validate the fixes; they do not establish the natural trigger in every production session or reproduce real iOS suspension/resume.
+The previous 22-method research suite remains in the original investigation worktree. The nine app methods and their app hooks live only on this branch; the thirty-six new shared unit regressions remain in the production PR and are inherited here. These injected macOS timing/process conditions validate the fixes; they do not establish the natural trigger in every production session or reproduce real iOS suspension/resume.
 
 The install/upgrade delay can be overridden with `CPM_APP_INTEGRATION_INSTALL_DELAY_MS`. A value of `5000` deliberately crosses the 5-second gate budget once WebKit startup overhead is included: measured callbacks arrived after 5.15–5.18 seconds, and upgrade sometimes lost its first document's response. The checkpoint commit `dff29dfb1e` documents this failure. The new opt-in document recovery targets it after gate release; increasing this value still does not extend the production timeout. The default 4500 ms leaves startup headroom while preserving the strict first-document assertions. Timeout/cancellation unit tests separately require releasing navigation when readiness never completes.
+
+The independent `web_extension_cpm_startup_response_missing` dailyAndCount pixel (`_macos` on macOS) counts a document committed during a context's first monitored background startup when its dashboard response times out and startup succeeds within the existing 30-second observation window. It fires once per document with recovery ON or OFF, without a safety-script evaluation or reload requirement. Daily estimates affected installations per day; count measures detected documents. Ordinary idle wakes, healthy/invalidated documents and failed startups are excluded. This is a P4 candidate signature, not proof of a lost initResp or its root cause. Seven shared regressions cover flag-OFF detection, callback ordering, per-document deduplication, idle-wake exclusion, invalidation/expiry, independent recovery outcomes and metadata. The PixelKitMock adapter check also covers this separate name/frequency.
 
 The independent remote flag `webExtensions.cpmLateBackgroundDocumentRecovery` defaults to **disabled** on both platforms; this harness explicitly enables it unless the negative-control variable is set. Recovery requires a document committed during a known unfinished startup, a real missing-response timeout, and a successful public WebKit background callback. It attempts at most one GET reload per document/startup within 30 seconds of startup. Changed/loading/closed/failed documents, edits/contenteditable, extension replacement or active-context removal, application background state and runtime flag disable veto it. The original five-second navigation bound and existing P1/P2 flags remain unchanged. Recovery does not depend on diagnostics being enabled.
 

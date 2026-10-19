@@ -53,6 +53,13 @@ final class CPMAppPixelRecorder: WebExtensionPixelFiring, @unchecked Sendable {
         }
     }
 
+    var startupResponseMissingCount: Int {
+        events.filter {
+            if case .cpmStartupResponseMissing = $0 { return true }
+            return false
+        }.count
+    }
+
     var episodes: [CPMMessagingEpisodeReport] {
         events.compactMap {
             guard case .cpmMessagingEpisode(let report) = $0 else { return nil }

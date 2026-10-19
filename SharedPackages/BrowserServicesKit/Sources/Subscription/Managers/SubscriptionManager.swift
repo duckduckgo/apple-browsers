@@ -606,7 +606,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
         // Send notification when entitlements change
         if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newEntitlements) {
-            Logger.subscription.debug("Entitlements changed - New \(String(describing: newEntitlements)) Old \(String(describing: currentCachedUserEntitlements))")
+            Logger.subscription.log("Entitlements changed - New \(String(describing: newEntitlements), privacy: .public) Old \(String(describing: currentCachedUserEntitlements), privacy: .public)")
             let payload = EntitlementsDidChangePayload(entitlements: newEntitlements)
 
             var userInfo = payload.notificationUserInfo
@@ -626,13 +626,13 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         // Send notification when the login changes
         switch (currentCachedIsAuthenticated, newValue) {
         case (false, true):
-            Logger.subscription.debug("Login detected")
+            Logger.subscription.log("Login detected")
             NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
         case (true, false):
-            Logger.subscription.debug("Logout detected")
+            Logger.subscription.log("Logout detected")
             NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
         default:
-            Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
+            Logger.subscription.log("Login state unchanged - Current: \(currentCachedIsAuthenticated, privacy: .public), new: \(newValue, privacy: .public)")
         }
 
         if newValue == false {
@@ -641,7 +641,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     @discardableResult public func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
-        Logger.subscriptionTokensManagement.debug("Get tokens \(policy.description, privacy: .public)")
+        Logger.subscriptionTokensManagement.log("Get tokens \(policy.description, privacy: .public)")
         let tokenBeforeAttempt = localTokenSnapshot()
 
         if policy == .createIfNeeded, tokenBeforeAttempt == .missing, tokenRecoveryCoordinator != nil {
@@ -714,6 +714,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     // can't restore), which is a different finding from a restore that ran and
                     // failed to yield a valid token. Either way the refresh is a failure.
                     let notAttempted = (recoveryError as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
+                    Logger.subscriptionTokensManagement.error("Token recovery \(notAttempted ? "not attempted" : "failed", privacy: .public), signing out: \(String(describing: recoveryError), privacy: .public)")
                     await automaticallySignOut(recoveryOutcome: notAttempted ? .notAttempted : .failed,
                                                failedRequest: failedRequest,
                                                triggeringError: tokenRequestError,
@@ -786,7 +787,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` when no recovery applies,
     ///   `SubscriptionManagerError.noTokenAvailable` when the recovery left no usable token, otherwise the recovery failure.
     private func recoverToken(trigger: TokenRecoveryTrigger, deadPrimary: TokenContainer?) async throws -> TokenContainer {
-        Logger.subscriptionTokensManagement.debug("Attempting token recovery, trigger: \(trigger.rawValue, privacy: .public)")
+        Logger.subscriptionTokensManagement.log("Attempting token recovery, trigger: \(trigger.rawValue, privacy: .public)")
 
         if let tokenRecoveryCoordinator {
             try await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger,
@@ -795,7 +796,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         } else if trigger == .invalidToken, let tokenRecoveryHandler {
             try await tokenRecoveryHandler()
         } else {
-            Logger.subscription.log("Recovery not possible, no handler configured.")
+            Logger.subscriptionTokensManagement.log("Token recovery not possible, no handler configured, trigger: \(trigger.rawValue, privacy: .public)")
             throw SubscriptionManagerError.tokenRecoveryNotAttempted
         }
 
@@ -910,11 +911,21 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI, privacy: .public), User Initiated: \(userInitiated, privacy: .public), Revoke on server: \(revokeOnServer, privacy: .public)")
 
         if revokeOnServer {
-            userDefaults.subscriptionSignOutCutoff = currentSignOutCutoff()
+            let signOutCutoff = currentSignOutCutoff()
+            Logger.subscriptionTokensManagement.log("SignOut: Recording the sign-out cut-off: \(signOutCutoff, privacy: .public)")
+            userDefaults.subscriptionSignOutCutoff = signOutCutoff
             oAuthClient.removeBackup()
-            try? await oAuthClient.logout()
+            do {
+                try await oAuthClient.logout()
+            } catch {
+                Logger.subscriptionTokensManagement.error("SignOut: Failed to log out: \(String(describing: error), privacy: .public)")
+            }
         } else {
-            try? oAuthClient.removeLocalAccount()
+            do {
+                try oAuthClient.removeLocalAccount()
+            } catch {
+                Logger.subscriptionTokensManagement.error("SignOut: Failed to remove the current token: \(String(describing: error), privacy: .public)")
+            }
         }
         subscriptionCachingService.reset()
 
@@ -965,7 +976,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(feature)
         } catch {
             // Fallback to the cached user entitlements in case of keychain reading error
-            Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
+            Logger.subscription.error("Failed to read user entitlements from keychain: \(error, privacy: .public)")
             return self.cachedUserEntitlements.contains(feature)
         }
     }
@@ -978,7 +989,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             return EntitlementStatus(enabledEntitlements: entitlements)
         } catch {
             // Fallback to the cached user entitlements in case of keychain reading error
-            Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
+            Logger.subscription.error("Failed to read user entitlements from keychain: \(error, privacy: .public)")
             return EntitlementStatus(enabledEntitlements: self.cachedUserEntitlements)
         }
     }

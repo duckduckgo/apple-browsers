@@ -99,6 +99,7 @@ let package = Package(
                 "AppUpdaterShared",
                 "AppUpdaterTestHelpers",
                 .product(name: "Common", package: "Common"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),

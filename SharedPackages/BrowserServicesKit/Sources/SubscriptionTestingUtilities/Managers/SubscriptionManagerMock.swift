@@ -42,6 +42,11 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func loadInitialData() async {}
 
+    public private(set) var restoreMissingTokenIfPossibleCallCount = 0
+    public func restoreMissingTokenIfPossible() async {
+        restoreMissingTokenIfPossibleCallCount += 1
+    }
+
     public var resultSubscription: Result<DuckDuckGoSubscription, Error>?
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
         switch resultSubscription {

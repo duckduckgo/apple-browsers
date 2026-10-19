@@ -40,3 +40,15 @@ enum DangerDemoCompliantError: DDGError {
     var underlyingError: Error? { nil }
     var description: String { "Demo failure" }
 }
+
+// Should not warn: declared with plain Error, adopts DDGError in an extension.
+enum DangerDemoExtensionError: Error {
+    case failed
+}
+
+extension DangerDemoExtensionError: DDGError {
+    static var errorDomain: String { "com.duckduckgo.dangerDemo.extension" }
+    var errorCode: Int { 1 }
+    var underlyingError: Error? { nil }
+    var description: String { "Demo failure" }
+}

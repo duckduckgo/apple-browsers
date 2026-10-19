@@ -1123,7 +1123,7 @@ struct UserText {
         return String(format: format, extensionName)
     }
     static func autofillManagedByExtensionExplanation(_ extensionName: String) -> String {
-        let format = NSLocalizedString("autofill.managed-by-extension.explanation", value: "%@ saves and fills your passwords, addresses and credit cards instead of DuckDuckGo.", comment: "Autofill settings: the parameter is the name of a browser extension that manages the user's passwords, addresses and credit cards instead of DuckDuckGo")
+        let format = NotLocalizedString("autofill.managed-by-extension.explanation", value: "%@ saves and fills your passwords, addresses and credit cards instead of DuckDuckGo.", comment: "Autofill settings: the parameter is the name of a browser extension that manages the user's passwords, addresses and credit cards instead of DuckDuckGo")
         return String(format: format, extensionName)
     }
     static let autofillUseDuckDuckGoInstead = NSLocalizedString("autofill.use-duckduckgo-instead", value: "Use DuckDuckGo Instead", comment: "Autofill settings button: DuckDuckGo takes back saving and filling passwords, addresses and credit cards from a browser extension")

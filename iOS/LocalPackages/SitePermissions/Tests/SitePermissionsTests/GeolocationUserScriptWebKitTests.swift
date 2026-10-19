@@ -246,6 +246,36 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.permissionQueryCount, 1)
     }
 
+    func testEmbeddingPageSeesSandboxProbeOnlyAfterIframeAsksForLocation() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let server = try await WebKitLoopbackHTTPServer.start(html: frameHostHTML(source: "/frame?idle"),
+                                                              frameHTML: frameExerciseHTML)
+        defer { server.stop() }
+
+        try await harness.load(try XCTUnwrap(server.url))
+        try await waitUntil(in: harness.webView, expression: "window.frameIdle === true")
+        // Before the fix the probe arrived within milliseconds of the frame loading.
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let idleProbeCount = try await harness.webView.callAsyncJavaScript("return window.sandboxProbeCount ?? 0;",
+                                                                           arguments: [:], in: nil, contentWorld: .page)
+        XCTAssertEqual(idleProbeCount as? Int, 0, "Loading an iframe must not post the sandbox probe to the embedding page")
+
+        _ = try await harness.webView.callAsyncJavaScript("""
+        document.getElementById("test-frame").contentWindow.postMessage({ test: "rerun-geolocation" }, "*");
+        """, arguments: [:], in: nil, contentWorld: .page)
+        try await waitUntil(in: harness.webView, expression: "window.frameResult !== undefined")
+        let state = try await javaScriptDictionary(in: harness.webView, body: "return window.frameResult;")
+        let requestProbeCount = try await harness.webView.callAsyncJavaScript("return window.sandboxProbeCount ?? 0;",
+                                                                              arguments: [:], in: nil, contentWorld: .page)
+
+        assertAllowed(state)
+        XCTAssertEqual(requestProbeCount as? Int, 1, "Asking for location must probe the embedding page exactly once")
+        XCTAssertEqual(delegate.positionRequestCount, 1)
+    }
+
     func testSameOriginIframeWorksWithApplicationPromiseSubclass() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
@@ -427,6 +457,42 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(state["status"] as? String, "error")
         XCTAssertEqual(state["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
         XCTAssertEqual(delegate.positionRequestCount, 0)
+    }
+
+    func testNestedIframeRequestProbesIdleIntermediateFrameOnDemand() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let server = try await WebKitLoopbackHTTPServer.start(
+            html: frameHostHTML(source: "/frame?outer"),
+            frameHTML: """
+            <html><head><script>
+                if (location.search === "?outer") {
+                    window.addEventListener("load", () => {
+                        const child = document.createElement("iframe");
+                        child.src = "/frame?inner";
+                        document.body.appendChild(child);
+                    });
+                } else {
+                    window.addEventListener("load", () => navigator.geolocation.getCurrentPosition(
+                        () => top.postMessage({ test: "geolocation-frame-result", status: "success" }, "*"),
+                        (error) => top.postMessage({ test: "geolocation-frame-result", status: "error", code: error.code }, "*")
+                    ));
+                }
+            </script></head><body></body></html>
+            """
+        )
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+        try await waitUntil(in: harness.webView, expression: "window.frameResult !== undefined")
+        let state = try await javaScriptDictionary(in: harness.webView, body: """
+        return { ...window.frameResult, sandboxProbeCount: window.sandboxProbeCount ?? 0 };
+        """)
+
+        XCTAssertEqual(state["status"] as? String, "success", "Page state: \(state)")
+        XCTAssertEqual(state["sandboxProbeCount"] as? Int, 1, "The idle intermediate frame must probe the top page once, for its child")
+        XCTAssertEqual(delegate.positionRequestCount, 1)
     }
 
     func testWatchAcceptsRepeatedUpdatesUntilClearWatch() async throws {
@@ -818,6 +884,10 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
                     event.source.postMessage({ test: "sandbox-removed" }, "*");
                 } else if (event.data?.test === "geolocation-frame-result") {
                     window.frameResult = event.data;
+                } else if (event.data?.test === "frame-idle") {
+                    window.frameIdle = true;
+                } else if (event.data?.channel === "ddg-site-permissions-geolocation-sandbox") {
+                    window.sandboxProbeCount = (window.sandboxProbeCount ?? 0) + 1;
                 }
             });
         </script></head><body>
@@ -856,6 +926,8 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
             });
             if (globalThis.location.search === "?removeSandbox") {
                 parent.postMessage({ test: "remove-sandbox" }, "*");
+            } else if (globalThis.location.search === "?idle") {
+                window.addEventListener("load", () => parent.postMessage({ test: "frame-idle" }, "*"));
             } else {
                 window.addEventListener("load", exerciseGeolocation);
             }

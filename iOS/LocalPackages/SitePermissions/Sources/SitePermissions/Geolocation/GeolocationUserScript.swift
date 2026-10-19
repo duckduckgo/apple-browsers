@@ -429,9 +429,11 @@ public final class GeolocationUserScript: NSObject, UserScript {
             return ["status": "registered", "enabled": false]
         }
         let generation = lifecycleGeneration
+        // Registration at document load skips the sandbox probe, which the embedding page can observe.
+        let probeSandbox = body["probeSandbox"] as? Bool ?? true
         guard let webView,
               frame.isAssociated(with: webView),
-              let policy = await documentPolicy(in: frame, webView: webView, generation: generation),
+              let policy = await documentPolicy(in: frame, webView: webView, generation: generation, probeSandbox: probeSandbox),
               await isCurrentDocument(pageDocumentID, in: frame, webView: webView, generation: generation),
               generation == lifecycleGeneration,
               activationHandler?(frame) == true,
@@ -452,11 +454,12 @@ public final class GeolocationUserScript: NSObject, UserScript {
     @MainActor
     private func documentPolicy(in frame: GeolocationFrame,
                                 webView: WKWebView,
-                                generation: UInt64) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
+                                generation: UInt64,
+                                probeSandbox: Bool = true) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
         let value = await evaluateDocumentJavaScript(generation: generation) { completion in
             webView.callAsyncJavaScript(
-                "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints();",
-                arguments: [:], in: frame.frameInfo, in: .defaultClient, completionHandler: completion)
+                "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints(probeSandbox);",
+                arguments: ["probeSandbox": probeSandbox], in: frame.frameInfo, in: .defaultClient, completionHandler: completion)
         }
         guard let value,
               let policy = value as? [String: Any],

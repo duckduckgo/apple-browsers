@@ -76,6 +76,11 @@ struct PromptCoordinationDebugView: View {
                     viewModel.resetAppRatingPrompt()
                 }
                 .disabled(!viewModel.canResetCooldowns)
+
+                Button("Reset Prompt Exposure State (Debug Only)", role: .destructive) {
+                    viewModel.resetPromptExposureState()
+                }
+                .disabled(!viewModel.canResetCooldowns)
             } header: {
                 Text(verbatim: "Manual Testing")
             } footer: {
@@ -206,6 +211,10 @@ final class PromptCoordinationDebugViewModel: ObservableObject {
     func resetAppRatingPrompt() {
         cooldownResetter?.resetAppRatingPrompt()
         refresh()
+    }
+
+    func resetPromptExposureState() {
+        cooldownResetter?.resetPromptExposureState()
     }
 
     private func formattedDate(_ date: Date?, nilDescription: String) -> String {

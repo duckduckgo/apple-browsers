@@ -362,7 +362,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    private func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
+    func makeTabAttachmentSource(for tab: Tab) -> MultiTabAttachmentSource {
         let mode = tab.mode
         return MultiTabAttachmentSource(currentTabID: tab.uid, mode: mode, tabsProvider: { [weak self] in
             self?.tabsModel(for: mode).tabs ?? []
@@ -428,7 +428,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         }
 
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
-            configuration.webExtensionController = webExtensionManager.controller
+            configuration.attachWebExtensions(of: webExtensionManager)
         }
 
         let specialErrorPageNavigationHandler = SpecialErrorPageNavigationHandler(
@@ -569,7 +569,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         let shouldCreateFireTab = model.shouldCreateFireTabs
         if #available(iOS 18.4, *), let webExtensionManager = webExtensionManager {
-            configCopy.webExtensionController = webExtensionManager.controller
+            configCopy.attachWebExtensions(of: webExtensionManager)
         }
 
         let tab: Tab
@@ -702,7 +702,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     func add(url: URL?,
              inBackground: Bool = false,
              inheritedAttribution: AdClickAttributionLogic.State?,
-             in tabsModel: TabsModelManaging? = nil) -> TabViewController {
+             in tabsModel: TabsModelManaging? = nil,
+             prepareBeforeCaching: ((TabViewController) -> Void)? = nil) -> TabViewController {
 
         let model = tabsModel ?? currentTabsModel
         if !inBackground {
@@ -717,6 +718,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tab.viewed = true
         }
 
+        // Inserting the controller enforces cache capacity, so state that protects it from eviction goes first.
+        prepareBeforeCaching?(controller)
         addToCache(controller)
 
         _ = save()
@@ -787,6 +790,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tabAttachmentControllerChanges.send()
         }
         tabTerminationErrorPageDetector.removeHistory(forTabID: controller.tabModel.uid)
+        controller.cancelPendingAIChatTabAttachmentPrompt()
         controller.closeSitePermissions()
         controller.dismiss()
     }
@@ -818,7 +822,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         let effectiveMaximumCapacity = maximumCapacity + (currentControllerIsNewTabPage ? 1 : 0)
         while tabControllerCache.count > effectiveMaximumCapacity {
             let evictionCandidates = tabControllerCache.filter {
-                $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
+                $0 !== currentController && !$0.isProtectedFromCacheEviction
+                    && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
             }
             guard let controller = evictionCandidates.first(where: { $0.tabModel.link == nil }) ?? evictionCandidates.first else { return }
             evictFromCache(controller, reason: .lruCapacity)
@@ -1181,7 +1186,10 @@ extension TabManager {
         if featureFlagger.isFeatureOn(.tabEvictionOnMemoryWarning), applicationState() == .background {
             let currentController = current()
             tabControllerCache
-                .filter { $0 !== currentController && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil }
+                .filter {
+                    $0 !== currentController && !$0.isProtectedFromCacheEviction
+                        && tabAttachmentReservations[ObjectIdentifier($0.tabModel)] == nil
+                }
                 .forEach { evictFromCache($0, reason: .memoryWarning) }
         }
         flushPendingSave()

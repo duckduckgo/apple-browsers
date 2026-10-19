@@ -49,7 +49,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -69,7 +70,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -92,7 +94,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: schedulerMock,
             rootAttachmentChecker: attachmentChecker,
-            closeCheckScheduling: closeChecks
+            closeCheckScheduling: closeChecks,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         var handlerRunCount = 0
         sut.presentModalPromptIfNeeded(from: presenterMock, with: try acquireModalLease())
@@ -130,7 +133,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [ineligibleProvider, selectedProvider, lowerPriorityProvider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: false),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -161,7 +165,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: false),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -187,7 +192,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             providers: [provider],
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
 
@@ -217,7 +223,8 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
             modalPromptScheduling: scheduler,
-            rootAttachmentChecker: attachmentChecker
+            rootAttachmentChecker: attachmentChecker,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try acquireModalLease()
         weak var weakExactRoot: UIViewController?
@@ -225,7 +232,7 @@ final class ModalPromptCoordinationManagerPromoQueueTests {
         autoreleasepool {
             var exactRoot: UIViewController! = UIViewController()
             weakExactRoot = exactRoot
-            provider.modalConfigurationToReturn = ModalPromptConfiguration(viewController: exactRoot)
+            provider.modalConfigurationToReturn = ModalPromptConfiguration(exposureID: .remoteMessageModal, viewController: exactRoot)
             attachmentChecker.markAttached(exactRoot)
 
             sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)

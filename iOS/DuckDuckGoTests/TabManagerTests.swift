@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 @_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
@@ -452,6 +453,29 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(model.tabs.count, 3)
     }
 
+    func testWhenMemoryWarningIsReceivedInBackgroundThenTabHoldingUnconsumedInitialAIChatPromptIsPreservedUntilConsumed() throws {
+        let currentTab = Tab(link: Link(title: "current", url: URL(string: "https://example.com/current")!))
+        let model = TabsModel(tabs: [currentTab], desktop: false)
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.tabEvictionOnMemoryWarning])
+        let manager = try makeManager(model,
+                                      featureFlagger: featureFlagger,
+                                      applicationState: { .background })
+        _ = manager.current(createIfNeeded: true)
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("prompt", autoSubmit: true)) {}
+        let recipient = manager.add(url: URL(string: "https://example.com/chat")!, inBackground: true, inheritedAttribution: nil) {
+            $0.setInitialAIChatTabAttachmentPrompt(delivery)
+        }
+
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertTrue(manager.controller(for: recipient.tabModel) === recipient)
+
+        _ = delivery.consume()
+        NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+
+        XCTAssertNil(manager.controller(for: recipient.tabModel))
+    }
+
     func testWhenMemoryWarningEvictionFlagIsDisabledThenControllersRemainCached() throws {
         let tabs = (0..<2).map {
             Tab(link: Link(title: "tab-\($0)", url: URL(string: "https://example.com/\($0)")!))
@@ -582,6 +606,66 @@ final class TabManagerTests: XCTestCase {
         XCTAssertNil(manager.controller(for: controllers[0].tabModel))
         XCTAssertNotNil(manager.controller(for: controllers[1].tabModel))
         XCTAssertNotNil(manager.controller(for: controllers[2].tabModel))
+    }
+
+    func testWhenBackgroundTabHoldsUnconsumedInitialAIChatPromptThenLRUCapacityDoesNotEvictIt() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        let firstDelivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("first", autoSubmit: true)) {}
+        let secondDelivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("second", autoSubmit: true)) {}
+        let firstRecipient = manager.add(url: URL(string: "https://example.com/chat-1")!, inBackground: true, inheritedAttribution: nil) {
+            $0.setInitialAIChatTabAttachmentPrompt(firstDelivery)
+        }
+
+        // Exceeds capacity on insertion with every other candidate protected, so only the recipient itself could go.
+        let secondRecipient = manager.add(url: URL(string: "https://example.com/chat-2")!, inBackground: true, inheritedAttribution: nil) {
+            $0.setInitialAIChatTabAttachmentPrompt(secondDelivery)
+        }
+        let laterTab = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertTrue(manager.controller(for: firstRecipient.tabModel) === firstRecipient)
+        XCTAssertTrue(manager.controller(for: secondRecipient.tabModel) === secondRecipient)
+        XCTAssertNil(manager.controller(for: laterTab.tabModel))
+    }
+
+    func testWhenInitialAIChatPromptIsConsumedThenLRUCapacityEvictsItsTab() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("prompt", autoSubmit: true)) {}
+        let recipient = manager.add(url: URL(string: "https://example.com/chat")!, inBackground: true, inheritedAttribution: nil) {
+            $0.setInitialAIChatTabAttachmentPrompt(delivery)
+        }
+
+        _ = delivery.consume()
+        _ = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertNil(manager.controller(for: recipient.tabModel))
+    }
+
+    func testWhenInitialAIChatPromptProtectionExpiresThenLRUCapacityEvictsItsTab() throws {
+        let manager = try makeManagerWithLoadedCurrentTab()
+        var now = Date()
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("prompt", autoSubmit: true),
+                                                   evictionProtectionDuration: 30,
+                                                   now: { now }) {}
+        let recipient = manager.add(url: URL(string: "https://example.com/chat")!, inBackground: true, inheritedAttribution: nil) {
+            $0.setInitialAIChatTabAttachmentPrompt(delivery)
+        }
+
+        now = now.addingTimeInterval(30)
+        _ = manager.add(url: URL(string: "https://example.com/later")!, inBackground: true, inheritedAttribution: nil)
+
+        XCTAssertNil(manager.controller(for: recipient.tabModel))
+    }
+
+    /// Capacity 2 holds the current tab plus one background tab, so a second background tab forces eviction.
+    private func makeManagerWithLoadedCurrentTab() throws -> TabManager {
+        let currentTab = Tab(link: Link(title: "current", url: URL(string: "https://example.com/current")!))
+        let model = TabsModel(tabs: [currentTab], desktop: false)
+        let manager = try makeManager(model,
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.tabLRUEviction]),
+                                      privacyConfigurationManager: makePrivacyConfigurationManager(settings: "{\"maxCapacityPhone\": 2}"),
+                                      isPad: false)
+        _ = manager.current(createIfNeeded: true)
+        return manager
     }
 
     func testLRUCapacityIsSharedAcrossNormalAndFireTabs() throws {

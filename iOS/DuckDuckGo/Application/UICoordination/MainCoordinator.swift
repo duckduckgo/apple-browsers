@@ -72,6 +72,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let promoCoordinationService: PromoCoordinationService
+    let promptExposureReporter: PromptExposureReporting
     private let homePageConfiguration: HomePageConfiguration
     private let launchSourceManager: LaunchSourceManaging
     private let keyValueStore: ThrowingKeyValueStoring
@@ -145,7 +146,8 @@ final class MainCoordinator {
          wideEvent: WideEventManaging,
          onboardingManager: OnboardingManaging,
          eventHub: EventHubManaging,
-         usageContextProvider: UsageContextProviding
+         usageContextProvider: UsageContextProviding,
+         promptExposureReporter: PromptExposureReporting
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -154,6 +156,7 @@ final class MainCoordinator {
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.promoCoordinationService = promoCoordinationService
+        self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
@@ -165,7 +168,8 @@ final class MainCoordinator {
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() },
                                                           promoGate: promoCoordinationService,
-                                                          isRMFAdmissionEnabled: !isAppLaunchedInBackground)
+                                                          isRMFAdmissionEnabled: !isAppLaunchedInBackground,
+                                                          promptExposureReporter: promptExposureReporter)
         self.homePageConfiguration = homePageConfiguration
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
@@ -203,6 +207,7 @@ final class MainCoordinator {
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
             await appSwitcherSnapshotCleaner.clearSnapshots()
         }
+        WebContentFreezeMonitor.reportFreezeEndedWithApp(featureFlagger: featureFlagger)
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -344,7 +349,8 @@ final class MainCoordinator {
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
                                         promoCoordinationService: promoCoordinationService,
-                                        usageContextProvider: usageContextProvider)
+                                        usageContextProvider: usageContextProvider,
+                                        promptExposureReporter: promptExposureReporter)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 

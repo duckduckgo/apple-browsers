@@ -627,8 +627,8 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "Where the authentication was requested. settings_not_synced: Sync with Another Device or the back-up toggle while not synced, including promotions that open the pairing flow. settings_synced: Sync with Another Device while already synced. this_device: Sync This Device Only on the sync another device prompt. recover: recovering synced data with a recovery code. deep_link: a Sync setup deep link.",
-                "enum": ["settings_not_synced", "settings_synced", "this_device", "recover", "deep_link"]
+                "description": "Where the authentication was requested. settings_not_synced: Sync with Another Device or the back-up toggle while not synced, including promotions that open the pairing flow. settings_synced: Sync with Another Device while already synced. this_device: Sync This Device Only on the sync another device prompt. recover: recovering synced data with a recovery code. deep_link: a Sync setup deep link. session_restore: Resume Sync & Backup, or Continue Setup when recovering, on the previous Sync & Backup session prompt.",
+                "enum": ["settings_not_synced", "settings_synced", "this_device", "recover", "deep_link", "session_restore"]
             }
         ]
     },

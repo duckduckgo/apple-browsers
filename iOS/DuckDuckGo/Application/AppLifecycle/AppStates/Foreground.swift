@@ -135,6 +135,9 @@ struct Foreground: ForegroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
+        // Close the previous session before foreground work can report another prompt.
+        appDependencies.mainCoordinator.promptExposureReporter.appDidEnterForeground()
+
         configureAppearance()
 
         interactionManager.start(

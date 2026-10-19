@@ -110,6 +110,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
     case webExtensionNativeMessaging
 
+    /// Lets a password manager extension replace DuckDuckGo autofill through `chrome.privacy`, and offers
+    /// the Bitwarden shortcut in the Debug menu. Follows Bitwarden's extensions catalog entry, which also
+    /// decides whether Bitwarden can be installed, so one remote switch controls both.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219519018819111
+    case webExtensionBitwarden
+
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
@@ -755,6 +761,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .webExtensions)
         case .webExtensionNativeMessaging:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
+        case .webExtensionBitwarden:
+            Config(source: .remoteReleasable(ExtensionsCatalogSubfeature.bitwarden), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:

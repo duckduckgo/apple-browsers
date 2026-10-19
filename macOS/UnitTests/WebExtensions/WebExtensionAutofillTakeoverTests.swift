@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_macOS
 import PrivacyConfig
-import PrivacyConfigTestsUtils
 import WebExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -29,9 +29,7 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     private var notificationCenter: NotificationCenter!
     private var preferences: AutofillPreferencesPersistorMock!
-    private var privacyConfiguration: MockPrivacyConfiguration!
-    private var privacyConfigurationManager: MockPrivacyConfigurationManager!
-    private var isBitwardenEnabled = true
+    private var featureFlagger: MockFeatureFlagger!
     private var managingExtension: AutofillManagingExtension?
     private var givenBackCount = 0
 
@@ -39,19 +37,13 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         super.setUp()
         notificationCenter = NotificationCenter()
         preferences = AutofillPreferencesPersistorMock()
-        privacyConfiguration = MockPrivacyConfiguration()
-        privacyConfiguration.isSubfeatureEnabledCheck = { [unowned self] subfeature, _ in
-            (subfeature as? ExtensionsCatalogSubfeature) == .bitwarden && self.isBitwardenEnabled
-        }
-        privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: privacyConfiguration)
+        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionBitwarden.rawValue: true])
     }
 
     override func tearDown() {
         notificationCenter = nil
         preferences = nil
-        privacyConfiguration = nil
-        privacyConfigurationManager = nil
-        isBitwardenEnabled = true
+        featureFlagger = nil
         managingExtension = nil
         givenBackCount = 0
         super.tearDown()
@@ -59,7 +51,7 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     private func makeTakeover() -> WebExtensionAutofillTakeover {
         WebExtensionAutofillTakeover(preferences: preferences,
-                                     privacyConfigurationManager: privacyConfigurationManager,
+                                     featureFlagger: featureFlagger,
                                      notificationCenter: notificationCenter,
                                      readManagingExtension: { [unowned self] in self.managingExtension },
                                      clearSettings: { [unowned self] in self.givenBackCount += 1 })
@@ -121,23 +113,23 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         XCTAssertTrue(preferences.isManagedByExtension)
     }
 
-    /// The first change after launch must apply: Bitwarden's catalog entry can change remotely at any time.
-    func testWhenBitwardensCatalogEntryChangesForTheFirstTime_ThenTheTakeoverIsReadAgain() {
+    /// The flag's first change after launch must apply: it follows a remote setting and can be overridden locally.
+    func testWhenTheBitwardenFlagChangesForTheFirstTime_ThenTheTakeoverIsReadAgain() {
         let takeover = makeTakeover()
         managingExtension = Self.bitwarden
 
-        isBitwardenEnabled = false
-        privacyConfigurationManager.updatesSubject.send()
+        featureFlagger.featuresStub[FeatureFlag.webExtensionBitwarden.rawValue] = false
+        featureFlagger.triggerUpdate()
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         XCTAssertEqual(takeover.managingExtension, Self.bitwarden)
     }
 
-    func testWhenAConfigUpdateLeavesBitwardensCatalogEntryAsItWas_ThenNothingIsReadAgain() {
+    func testWhenAFlagUpdateLeavesTheBitwardenFlagAsItWas_ThenNothingIsReadAgain() {
         let takeover = makeTakeover()
         managingExtension = Self.bitwarden
 
-        privacyConfigurationManager.updatesSubject.send()
+        featureFlagger.triggerUpdate()
         RunLoop.main.run(until: Date().addingTimeInterval(0.1))
 
         XCTAssertNil(takeover.managingExtension)

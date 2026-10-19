@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import FeatureFlags_macOS
 import PrivacyConfig
 import WebExtensions
 
@@ -56,7 +57,7 @@ protocol WebExtensionAutofillTakeoverManaging: AnyObject {
 ///
 /// It is read again when:
 /// - extensions load or unload, or an extension changes its setting (`.webExtensionPrivacySettingsDidChange`);
-/// - Bitwarden's catalog entry (`extensionsCatalog.bitwarden`) is turned on or off remotely;
+/// - the `webExtensionBitwarden` flag changes;
 /// - web extensions become unavailable (`extensionsDidBecomeUnavailable()`).
 ///
 /// Handing it a new extension manager doesn't read it: its extensions haven't loaded yet, and reading
@@ -79,11 +80,11 @@ final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
 
     /// - Parameters:
     ///   - preferences: Where whether an extension manages autofill is saved for autofill to read.
-    ///   - privacyConfigurationManager: Its Bitwarden catalog entry decides whether an extension may take autofill over.
+    ///   - featureFlagger: Its `webExtensionBitwarden` flag decides whether an extension may take autofill over.
     ///   - readManagingExtension: Which loaded extension manages autofill. Reads `manager` when `nil`.
     ///   - clearSettings: Removes every extension's control of the privacy settings. Uses `manager` when `nil`.
     init(preferences: AutofillPreferencesPersistor = AutofillPreferences(),
-         privacyConfigurationManager: PrivacyConfigurationManaging,
+         featureFlagger: FeatureFlagger,
          notificationCenter: NotificationCenter = .default,
          readManagingExtension: (@MainActor () -> AutofillManagingExtension?)? = nil,
          clearSettings: (@MainActor () -> Void)? = nil) {
@@ -98,12 +99,12 @@ final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
                 }
             }
         }
-        // Starts from the entry's current state, so only an actual change reads the takeover again.
-        flagCancellable = privacyConfigurationManager.updatesPublisher
-            .map { [privacyConfigurationManager] in
-                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
+        // Starts from the flag's current value, so only an actual change reads the takeover again.
+        flagCancellable = featureFlagger.updatesPublisher
+            .compactMap { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.webExtensionBitwarden)
             }
-            .prepend(privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden))
+            .prepend(featureFlagger.isFeatureOn(.webExtensionBitwarden))
             .removeDuplicates()
             .dropFirst()
             .receive(on: DispatchQueue.main)

@@ -124,9 +124,8 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
-            // Bitwarden's catalog entry decides whether a password manager extension may replace DuckDuckGo autofill.
             isAutofillTakeoverEnabled: {
-                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
+                Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionBitwarden)
             },
             scriptletConfiguration: scriptletConfiguration
         )

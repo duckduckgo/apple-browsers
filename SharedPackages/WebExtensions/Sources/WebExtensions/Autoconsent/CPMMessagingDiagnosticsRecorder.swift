@@ -28,16 +28,9 @@ import WebKit
 public protocol CPMMessagingDiagnosticsProviding: AnyObject {
     /// Captures native state synchronously at the failed handshake, before the context or tab can change.
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics
-    /// Returns and clears treatment attribution for the pending background-process termination.
-    func consumeBackgroundGraveyardTreatmentState() -> Bool?
 }
 
-@available(macOS 15.4, iOS 18.4, *)
-public extension CPMMessagingDiagnosticsProviding {
-    func consumeBackgroundGraveyardTreatmentState() -> Bool? { nil }
-}
-
-/// Collects CPM lifecycle events and WebKit state for initialization-failure and stuck-messaging pixels.
+/// Collects CPM lifecycle events and WebKit state for the first-failure snapshot in an episode report.
 /// Snapshots use native state without JavaScript probes.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
@@ -449,7 +442,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
                 diagnostics.backgroundReadiness = backgroundReadinessObserver.readiness(of: backgroundWebView)
             }
         } else if isBackgroundDelegateProxyEnabled {
-            diagnostics.backgroundReadiness = .noBackground
+            // A failed load may outlive its weak view. Keep the latest attempt's error evidence
+            // until a replacement view/context resets it, rather than classifying that failure as absent.
+            diagnostics.backgroundReadiness = lastBackgroundLoadError != nil ? .failed : .noBackground
         }
         let snapshotTime = now()
         diagnostics.backgroundEvents = backgroundEvents.suffix(Self.maximumEventsInPixel).map {
@@ -481,10 +476,6 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         guard webView === currentBackgroundWebView else { return }
         backgroundProcessIsUnresponsive = false
         record(.responsive)
-    }
-
-    public func consumeBackgroundGraveyardTreatmentState() -> Bool? {
-        backgroundWebViewGraveyard.consumeTerminationTreatmentState()
     }
 
     /// Name of the isolated world WebKit injects the context's content scripts into (`WebExtensionContext::load`).

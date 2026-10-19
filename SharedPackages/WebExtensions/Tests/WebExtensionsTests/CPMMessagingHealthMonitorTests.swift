@@ -48,26 +48,6 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(confirmedHangCount, 1)
     }
 
-    func testEpisodeDoesNotReadOrReportGraveyardTreatmentState() {
-        for treatment in [false, true] {
-            let pixelFiring = CapturingWebExtensionPixelFiring()
-            let provider = StubDiagnosticsProvider()
-            provider.nextTreatmentState = treatment
-            let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-            monitor.diagnosticsProvider = provider
-
-            monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "healthy", navigationKind: .other))
-            XCTAssertFalse(beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other))
-            XCTAssertTrue(beginAndReportFailure(on: monitor, tabIdentifier: "tab-2", navigationKind: .other))
-            monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other))
-
-            XCTAssertEqual(pixelFiring.reports.count, 1)
-            XCTAssertNil(pixelFiring.metadata.first?.parameters["background_graveyard_enabled"])
-            XCTAssertEqual(provider.treatmentReadCount, 0)
-            XCTAssertEqual(provider.nextTreatmentState, treatment)
-        }
-    }
-
     func testRepeatedSessionRestorationFailuresDoNotStartStuckEpisode() {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
@@ -1392,18 +1372,10 @@ private final class StubDiagnosticsProvider: CPMMessagingDiagnosticsProviding {
 
     private(set) var requests: [Request] = []
     var diagnostics = CPMMessagingDiagnostics(extensionContextLoaded: true, tabKnownToWebKit: true)
-    var nextTreatmentState: Bool?
-    private(set) var treatmentReadCount = 0
 
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics {
         requests.append(Request(tabIdentifier: tabIdentifier))
         return diagnostics
-    }
-
-    func consumeBackgroundGraveyardTreatmentState() -> Bool? {
-        treatmentReadCount += 1
-        defer { nextTreatmentState = nil }
-        return nextTreatmentState
     }
 }
 

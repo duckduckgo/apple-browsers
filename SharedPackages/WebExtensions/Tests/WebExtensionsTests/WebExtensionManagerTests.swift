@@ -74,9 +74,11 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Helper
 
     @MainActor
-    private func makeManager(cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
+    private func makeManager(controllerConfiguration: WKWebExtensionController.Configuration? = nil,
+                             cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                              pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                              isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                             isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                              isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                              storageProvider: WebExtensionStorageProviding? = nil,
                              bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
@@ -85,6 +87,7 @@ final class WebExtensionManagerTests: XCTestCase {
                              }) -> WebExtensionManager {
         let manager = WebExtensionManager(
             configuration: configurationMock,
+            controllerConfiguration: controllerConfiguration,
             windowTabProvider: windowTabProviderMock,
             storageProvider: storageProvider ?? storageProvidingMock,
             installationStore: installedExtensionStoringMock,
@@ -95,6 +98,7 @@ final class WebExtensionManagerTests: XCTestCase {
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             isCPMMessagingHangRecoveryEnabled: isCPMMessagingHangRecoveryEnabled,
             isApplicationInBackground: isApplicationInBackground,
+            isCPMLateBackgroundDocumentRecoveryEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
             bundledExtensionURL: bundledExtensionURL
         )
         manager.unloadGuard = WebExtensionUnloadGuard(
@@ -155,6 +159,85 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     // MARK: - Background wake selection and recovery safety
+
+    @MainActor
+    private func loadDeferredEmbeddedContext(_ identifier: String, into manager: WebExtensionManager) async throws -> DeferredCPMBackgroundContext {
+        let directory = try makeTestExtensionDirectory(embeddedType: .embedded)
+        let manifestURL = directory.appendingPathComponent("manifest.json")
+        var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        manifest["manifest_version"] = 2
+        manifest["background"] = ["scripts": ["background.js"], "persistent": false]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        try "// Background completion ordering fixture".write(to: directory.appendingPathComponent("background.js"), atomically: true, encoding: .utf8)
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        let context = DeferredCPMBackgroundContext(for: webExtension)
+        context.uniqueIdentifier = identifier
+        try manager.controller.load(context)
+        installedExtensionStoringMock.add(makeInstalledWebExtension(uniqueIdentifier: identifier, embeddedType: .embedded))
+        return context
+    }
+
+    @MainActor
+    func testFailedFirstStartupCannotReportP4OrReloadAfterRetainedCallbacksSucceed() async throws {
+        for lateRecoveryEnabled in [false, true] {
+            let pixels = CapturingCPMStartupPixels()
+            let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+            let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
+                                      pixelFiring: pixels, isCPMLateBackgroundDocumentRecoveryEnabled: { lateRecoveryEnabled })
+            let context = try await loadDeferredEmbeddedContext(UUID().uuidString, into: manager)
+            defer { manager.unloadAllExtensions() }
+            let startup = try XCTUnwrap(manager.prepareEmbeddedBackgroundForNavigation())
+            let url = URL(string: "https://example.com/first")!
+            monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+            monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: url))
+            var preflightCalls = 0
+            try XCTUnwrap(monitor.backgroundReadinessRecovery).registerDocument(in: "tab") {
+                preflightCalls += 1
+                return nil
+            }
+            monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
+            let retryStarted = expectation(description: "Error 6 starts a background-only retry")
+            context.onBackgroundLoad = { retryStarted.fulfill() }
+            context.recordedErrors = [NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)]
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+            await fulfillment(of: [retryStarted], timeout: 2)
+            XCTAssertEqual(context.completions.count, 2)
+            // WebKit can retain the failed load's callback and complete it successfully with the retry.
+            context.finishBackgroundLoads()
+            await startup.value
+            for _ in 0..<10 { await Task.yield() }
+            XCTAssertEqual(pixels.missingResponseCount, 0)
+            XCTAssertEqual(preflightCalls, 0, "A known failed startup must not trigger document recovery")
+            monitor.handle(.tabClosed(tabIdentifier: "tab"))
+        }
+    }
+
+    @MainActor
+    func testUnrelatedErrorPreservesCurrentFirstStartupDetection() async throws {
+        for errorOnCurrentContext in [false, true] {
+            let pixels = CapturingCPMStartupPixels()
+            let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+            let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor, pixelFiring: pixels)
+            let old = try await loadDeferredEmbeddedContext("old", into: manager)
+            let replacement = try await loadDeferredEmbeddedContext("replacement", into: manager)
+            defer { manager.unloadAllExtensions() }
+            let startup = try XCTUnwrap(manager.prepareEmbeddedBackgroundForNavigation())
+            monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+            monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: URL(string: "https://example.com/first")!))
+            monitor.reportFailure(monitor.beginMeasurement(tabIdentifier: "tab", navigationKind: .other))
+            let source = errorOnCurrentContext ? replacement : old
+            let domain = errorOnCurrentContext ? "UnrelatedErrorDomain" : "WKWebExtensionContextErrorDomain"
+            source.recordedErrors = [NSError(domain: domain, code: 6)]
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: source)
+            for _ in 0..<10 { await Task.yield() }
+            XCTAssertEqual(manager.pendingEmbeddedBackgroundStartup, startup)
+            XCTAssertEqual(old.completions.count, 0, "An obsolete context must not be retried")
+            replacement.finishBackgroundLoads()
+            await startup.value
+            XCTAssertEqual(pixels.missingResponseCount, 1)
+            monitor.handle(.tabClosed(tabIdentifier: "tab"))
+        }
+    }
 
     @MainActor
     private func loadEmbeddedContext(_ identifier: String, into manager: WebExtensionManager) async throws -> WKWebExtensionContext {
@@ -1063,6 +1146,37 @@ private final class CapturingCPMLifecycleMonitor: CPMMessagingHealthMonitoring {
     func handle(_ event: CPMMessagingHealthEvent) {
         guard case .extensionLifecycle(let lifecycleEvent) = event else { return }
         lifecycleEvents.append(lifecycleEvent)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class DeferredCPMBackgroundContext: WKWebExtensionContext {
+    var completions: [(Swift.Error?) -> Void] = []
+    var recordedErrors: [Swift.Error] = []
+    var onBackgroundLoad: (() -> Void)?
+
+    override var errors: [Swift.Error] { recordedErrors }
+
+    override func loadBackgroundContent(completionHandler: @escaping (Swift.Error?) -> Void) {
+        completions.append(completionHandler)
+        onBackgroundLoad?()
+    }
+
+    func finishBackgroundLoads() {
+        recordedErrors = []
+        let pending = completions
+        completions.removeAll()
+        onBackgroundLoad = nil
+        for completion in pending { completion(nil) }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class CapturingCPMStartupPixels: WebExtensionPixelFiring {
+    private(set) var missingResponseCount = 0
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        if case .cpmStartupResponseMissing = event { missingResponseCount += 1 }
     }
 }
 

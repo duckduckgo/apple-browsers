@@ -103,6 +103,8 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     /// Age of the current view, omitted after it disappears.
     public var secondsSinceBackgroundViewCreation: TimeInterval?
     /// Omitted when observation is disabled or was not started for this view.
+    /// An attributed error 6 remains failed after its view disappears, until the next view/context.
+    /// The episode keeps this first-failure value; pending does not rule out a later load failure.
     public var backgroundReadiness: CPMBackgroundReadiness?
     /// Most recent background lifecycle events, oldest first (context load, view created/deallocated, process death with
     /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@<age bucket>`.
@@ -143,15 +145,8 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
     // MARK: - Pixel parameters
 
     public enum ParameterName {
-        public static let appVersionChange = "app_version_change"
-        public static let appLaunchAge = "app_launch_age"
         public static let extensionContextLoaded = "context_loaded"
-        public static let memoryPressureCritical = "critical_memory_age"
-        public static let networkProcessRestarted = "network_restarted"
-        public static let extensionContextErrors = "context_errors"
-        public static let backgroundViewCreateCount = "bg_view_creations"
         public static let backgroundViewAlive = "bg_view_alive"
-        public static let backgroundViewLeakedCount = "bg_view_leaked_count"
         public static let backgroundWebProcessAlive = "bg_process_alive"
         public static let tabKnownToWebKit = "tab_in_context"
         public static let nativeMessageHandlerRegistered = "handler_registered"
@@ -167,32 +162,6 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
 
     /// Longest `bg_events` value; older events are dropped first.
     static let maximumBackgroundEventsLength = 255
-
-    /// Bucketed, PII-free representation for pixel parameters. Unknown facts are omitted.
-    public var pixelParameters: [String: String] {
-        var parameters: [String: String] = [:]
-        parameters[ParameterName.appVersionChange] = appVersionChange?.rawValue
-        parameters[ParameterName.appLaunchAge] = secondsSinceAppLaunch.map(Self.ageBucket)
-
-        parameters[ParameterName.extensionContextLoaded] = extensionContextLoaded.map(String.init)
-        parameters[ParameterName.memoryPressureCritical] = Self.memoryPressureBucket(secondsSinceCriticalMemoryPressure)
-        parameters[ParameterName.networkProcessRestarted] = networkProcessRestarted.map(String.init)
-        parameters[ParameterName.extensionContextErrors] = extensionContextErrors.isEmpty ? "none" : extensionContextErrors.joined(separator: ",")
-        parameters[ParameterName.backgroundViewCreateCount] = backgroundWebViewCreateCount.map(Self.countBucket)
-        parameters[ParameterName.backgroundViewAlive] = backgroundWebViewAlive.map(String.init)
-        parameters[ParameterName.backgroundViewLeakedCount] = leakedBackgroundWebViewCount.map(Self.countBucket)
-        parameters[ParameterName.backgroundWebProcessAlive] = backgroundWebProcessAlive.map(String.init)
-        parameters[ParameterName.tabKnownToWebKit] = tabKnownToWebKit.map(String.init)
-        parameters[ParameterName.nativeMessageHandlerRegistered] = nativeMessageHandlerRegistered.map(String.init)
-        parameters[ParameterName.tabControllerMatchesContext] = tabControllerMatchesContext.map(String.init)
-        parameters[ParameterName.tabHasExtensionUserScripts] = tabHasExtensionUserScripts.map(String.init)
-        parameters[ParameterName.backgroundWebProcessResponsive] = backgroundWebProcessResponsive.map(String.init)
-        if !backgroundEvents.isEmpty {
-            parameters[ParameterName.backgroundEvents] = Self.backgroundEventsValue(backgroundEvents)
-        }
-        parameters.merge(backgroundLoadParameters) { _, value in value }
-        return parameters
-    }
 
     /// The four allowlisted load fields shared by local diagnostics and the terminal episode report.
     /// Error facts are conditional on an attributed error 6; absence never uploads a synthetic `none` error.
@@ -241,26 +210,6 @@ public struct CPMMessagingDiagnostics: Equatable, Sendable {
             case ..<30: return "10s_to_30s"
             default: return "over_30s"
             }
-        }
-    }
-
-    static func memoryPressureBucket(_ seconds: TimeInterval?) -> String {
-        guard let seconds else { return "none" }
-        switch seconds {
-        case ..<60: return "1m"
-        case ..<300: return "5m"
-        case ..<1800: return "30m"
-        default: return "over_30"
-        }
-    }
-
-    static func countBucket(_ count: Int) -> String {
-        switch count {
-        case ...0: return "0"
-        case 1: return "1"
-        case 2: return "2"
-        case 3...5: return "3_to_5"
-        default: return "over_5"
         }
     }
 

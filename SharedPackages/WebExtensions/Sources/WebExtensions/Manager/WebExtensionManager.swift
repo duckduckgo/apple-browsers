@@ -312,11 +312,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             MainActor.assumeIsolated {
                 guard let self, self.context(for: context.uniqueIdentifier) === context,
                       let error = context.errors.first(where: {
-                    ($0 as NSError).code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
+                    let error = $0 as NSError
+                    return error.domain == "WKWebExtensionContextErrorDomain" &&
+                        error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
                 }) else { return }
                 // WebKit can record a service-worker load failure without invoking pending
                 // loadBackgroundContent callbacks. Release callers before retrying its background.
                 if self.embeddedBackgroundStartupContext === context {
+                    // Retained callbacks may succeed with a later retry. They must not turn this
+                    // known failed startup into a P4 detection or an automatic document reload.
+                    self.backgroundRecovery?.invalidate()
                     self.clearEmbeddedBackgroundStartup()
                 }
                 Task { @MainActor [weak self] in

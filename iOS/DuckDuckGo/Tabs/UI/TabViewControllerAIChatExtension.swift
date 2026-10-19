@@ -181,6 +181,7 @@ extension TabViewController {
               targetURL != pendingNativeLoadURL else {
             return nil
         }
-        return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL)
+        return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL,
+                                                          isLinkActivation: navigationAction.navigationType == .linkActivated)
     }
 }

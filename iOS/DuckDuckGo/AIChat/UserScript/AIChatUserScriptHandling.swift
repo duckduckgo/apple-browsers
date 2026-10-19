@@ -469,7 +469,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             && devicePlatform.isIphone
             && supportsNativeChatInput
             && isNativeStorageBridgeAvailable
-        let config = AIChatNativeConfigValues(
+        var config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
             supportsOpeningSettings: defaults.supportsOpeningSettings,
@@ -498,6 +498,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message),
             supportsCanonicalChatFormat: true
         )
+        config.supportsResponseStateReporting = true
         return config
     }
 

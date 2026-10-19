@@ -105,6 +105,8 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsOpeningSettings: Bool
     public let supportsNativePrompt: Bool
     public let supportsNativeChatInput: Bool
+    /// `true` when native wants `responseState` updates even while Duck.ai keeps its own web input.
+    public var supportsResponseStateReporting = false
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool

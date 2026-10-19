@@ -51,6 +51,12 @@ final class PastedTextSheetTests: XCTestCase {
         XCTAssertNotEqual(edited.id, original.id, "A new id so id-based draft equality sees the edit")
     }
 
+    func testEditableSheetOpensWithTheKeyboardAndViewOnlyDoesNot() {
+        let paste = AIChatPastedText(content: "pasted")
+        XCTAssertTrue(PastedTextSheetRules(original: paste, mode: .editable(limit: 100)).opensWithKeyboard)
+        XCTAssertFalse(PastedTextSheetRules(original: paste, mode: .viewOnly).opensWithKeyboard)
+    }
+
     func testCountIsUTF16() {
         let rules = PastedTextSheetRules(original: original, mode: .editable(limit: 100))
 

@@ -49,6 +49,8 @@ struct PastedTextSheetRules: Equatable {
         return !AIChatPromptLimits.isBlank(text) && !isOverLimit(text)
     }
 
+    var opensWithKeyboard: Bool { mode != .viewOnly }
+
     func outcome(savingText text: String) -> PastedTextSheetOutcome {
         text == original.content ? .unchanged : .saved(AIChatPastedText(content: text))
     }
@@ -57,6 +59,7 @@ struct PastedTextSheetRules: Equatable {
 struct PastedTextSheetView: View {
 
     @State private var text: String
+    @FocusState private var isTextFocused: Bool
     private let rules: PastedTextSheetRules
     private let onSave: (String) -> Void
     private let onCancel: () -> Void
@@ -80,6 +83,7 @@ struct PastedTextSheetView: View {
                 TextEditor(text: $text)
                     .daxBodyRegular()
                     .disabled(isViewOnly)
+                    .focused($isTextFocused)
                     .accessibilityIdentifier("PastedTextSheet.TextView")
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(designSystemColor: .lines)))
 
@@ -88,6 +92,7 @@ struct PastedTextSheetView: View {
                     .accessibilityIdentifier("PastedTextSheet.Count")
             }
             .padding(16)
+            .onAppear { isTextFocused = rules.opensWithKeyboard }
             .navigationTitle(UserText.aiChatPastedTextSheetTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

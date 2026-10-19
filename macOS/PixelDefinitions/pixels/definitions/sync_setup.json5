@@ -398,7 +398,7 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "Where the authentication was requested. settings_not_synced: Sync With Another Device while not synced, Sync With Another Device on the device-selection prompt, or Back Up This Device when the improved pairing flow is off. settings_synced: Sync With Another Device while already synced. this_device: Sync This Device Only on the device-selection prompt. recover: recovering synced data with a recovery code.",
+                "description": "Where the authentication was requested. settings_not_synced: Sync With Another Device while not synced, including promotions that open the pairing flow; Sync With Another Device on the device-selection prompt; or Back Up This Device when the improved pairing flow is off. settings_synced: Sync With Another Device while already synced. this_device: Sync This Device Only on the device-selection prompt. recover: recovering synced data with a recovery code.",
                 "enum": ["settings_not_synced", "settings_synced", "this_device", "recover"]
             }
         ]

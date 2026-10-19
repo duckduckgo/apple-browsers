@@ -177,6 +177,58 @@ final class TokenRefresherTests: XCTestCase {
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1, "A failed call stops the fork")
     }
 
+    func testFork_onePair_spendsTheTokenOnceAndReportsTheCall() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        let pair = OAuthTokensFactory.makeTokenContainer(accessToken: "a1", refreshToken: "r1")
+        await refresher.setTestingDecodedTokenContainers([pair])
+
+        let result = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 1, refreshID: "r")
+
+        XCTAssertEqual(result, [pair])
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
+        XCTAssertEqual(eventCapture.capturedEvents, [.tokenRefreshRefreshingAccessToken(refreshID: "r"),
+                                                     .tokenRefreshRefreshedAccessToken(refreshID: "r")])
+    }
+
+    func testFork_middleCallFails_throwsIncompleteWithThePairsBeforeIt_andStops() async throws {
+        mockOAuthService.refreshAccessTokenResponses = [
+            .success(OAuthTokenResponse(accessToken: "a1", refreshToken: "r1")),
+            .failure(URLError(.networkConnectionLost)),
+            .success(OAuthTokenResponse(accessToken: "a3", refreshToken: "r3"))
+        ]
+        let first = OAuthTokensFactory.makeTokenContainer(accessToken: "a1", refreshToken: "r1")
+        await refresher.setTestingDecodedTokenContainers([first])
+
+        do {
+            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 3, refreshID: nil)
+            XCTFail("Expected error")
+        } catch {
+            guard case .incomplete(let minted, let underlying) = error else {
+                return XCTFail("Expected incomplete, got \(error)")
+            }
+            XCTAssertEqual(minted, [first])
+            XCTAssertEqual((underlying as? URLError)?.code, .networkConnectionLost)
+        }
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 2)
+    }
+
+    func testFork_decodeFailsAfterASuccessfulRefresh_throwsIncompleteWithNothingMinted() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+
+        do {
+            _ = try await refresher.fork(OAuthTokensFactory.makeValidTokenContainer(), count: 2, refreshID: nil)
+            XCTFail("Expected error")
+        } catch {
+            guard case .incomplete(let minted, let underlying) = error else {
+                return XCTFail("Expected incomplete, got \(error)")
+            }
+            XCTAssertTrue(minted.isEmpty)
+            XCTAssertNil(underlying as? OAuthClientError)
+            XCTAssertNil(underlying as? OAuthServiceError)
+        }
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
+    }
+
     func testFork_threePairs_returnsThree() async throws {
         mockOAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
         await refresher.setTestingDecodedTokenContainers([OAuthTokensFactory.makeValidTokenContainer()])

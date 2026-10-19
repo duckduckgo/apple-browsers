@@ -274,14 +274,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         return (codeVerifier, codeChallenge)
     }
 
-#if DEBUG
-    /// Makes every decode return `container` instead of verifying the tokens.
-    /// Only applies when the client uses a `DefaultTokenRefresher`.
-    func setTestingDecodedTokenContainer(_ container: TokenContainer) async {
-        await (tokenRefresher as? DefaultTokenRefresher)?.setTestingDecodedTokenContainers([container])
-    }
-#endif
-
     public func decode(accessToken: String, refreshToken: String, refreshID: String? = nil) async throws -> TokenContainer {
         try await tokenRefresher.decode(accessToken: accessToken, refreshToken: refreshToken, refreshID: refreshID)
     }
@@ -366,10 +358,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     let (refreshedTokens, newBackup) = try await refreshPossiblyForking(localTokenContainer, refreshID: refreshID)
 
                     refreshEventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
-                    try tokenStorage.saveTokenContainer(refreshedTokens)
-                    if let newBackup {
-                        backupStore?.save(newBackup)
-                    }
+                    try saveRefreshedTokens(refreshedTokens, backup: newBackup)
 
                     refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 
@@ -410,6 +399,23 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
     // MARK: Backup
+
+    /// Stores the refreshed token container, then the new backup when there is one.
+    /// - Parameters:
+    ///   - refreshedTokens: The new current token container.
+    ///   - backup: The new backup token container, or nil when the refresh didn't mint one.
+    /// - Throws: The storage error when saving `refreshedTokens` fails; the backup is then not saved. A failure to save the backup is only logged.
+    private func saveRefreshedTokens(_ refreshedTokens: TokenContainer, backup: TokenContainer?) throws {
+        do {
+            try tokenStorage.saveTokenContainer(refreshedTokens)
+        } catch {
+            Logger.OAuthClient.error("Failed to save the refreshed tokens: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+        if let backup {
+            backupStore?.save(backup)
+        }
+    }
 
     /// Spends the refresh token of `source` once, or twice when the backup needs renewal.
     /// - Parameters:

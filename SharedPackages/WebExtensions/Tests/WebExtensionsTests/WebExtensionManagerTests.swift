@@ -85,7 +85,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenOtherManagerIsAttached_ThenThatManagerAttaches() {
+    func testWhenOtherManagerIsAttached_ThenThatManagerAttaches() throws {
         let manager = MockWebExtensionManaging()
         let configuration = WKWebViewConfiguration()
 
@@ -497,7 +497,7 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Reload Installed Extensions Tests
 
     @MainActor
-    func testWhenExplicitReloadUnloadFails_ThenFiresReloadErrorPixel() async {
+    func testWhenExplicitReloadUnloadFails_ThenFiresReloadErrorPixel() async throws {
         let pixelFiring = CapturingReloadErrorPixelFiring()
         let manager = makeManager(pixelFiring: pixelFiring)
         installedExtensionStoringMock.installedExtensions = [
@@ -516,7 +516,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenExplicitReloadLoadFails_ThenFiresReloadErrorPixel() async {
+    func testWhenExplicitReloadLoadFails_ThenFiresReloadErrorPixel() async throws {
         let pixelFiring = CapturingReloadErrorPixelFiring()
         let manager = makeManager(pixelFiring: pixelFiring)
         installedExtensionStoringMock.installedExtensions = [
@@ -806,7 +806,7 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
 
         let store = try XCTUnwrap(manager.privacySettings)
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
         date += 59 * 60
         manager.eventsListener.onBrowsingActivity?()
         XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden"], "Activity within the hour isn't checked again")
@@ -943,14 +943,14 @@ final class WebExtensionManagerTests: XCTestCase {
         let context = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
         try await manager.permissionController?.prepare(context)
         let store = try XCTUnwrap(manager.privacySettings)
-        XCTAssertTrue(store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+        XCTAssertNoThrow(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
 
         isTakeoverEnabled = false
 
         XCTAssertNil(store.identifierTurningOff(.passwordSavingEnabled))
         XCTAssertEqual(store.details(of: .passwordSavingEnabled, for: "bitwarden").levelOfControl, .notControllable)
-        XCTAssertFalse(store.set(false, for: .autofillAddressEnabled, by: "bitwarden"))
-        store.clear(.passwordSavingEnabled, for: "bitwarden")
+        XCTAssertThrowsError(try store.set(false, for: .autofillAddressEnabled, by: "bitwarden"))
+        XCTAssertThrowsError(try store.clear(.passwordSavingEnabled, for: "bitwarden"))
 
         isTakeoverEnabled = true
 
@@ -1013,7 +1013,7 @@ final class WebExtensionManagerTests: XCTestCase {
         _ = try await loadRealContext(identifier: "other", into: manager.controller, permissions: ["storage"])
         let store = try XCTUnwrap(manager.privacySettings)
 
-        XCTAssertFalse(store.set(false, for: .passwordSavingEnabled, by: "other"))
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "other"))
         XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
     }
 
@@ -1147,7 +1147,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenManagerIsCreated_ThenThirdPartyScriptsAreNotAddedForEveryExtension() {
+    func testWhenManagerIsCreated_ThenThirdPartyScriptsAreNotAddedForEveryExtension() throws {
         let manager = makeManager()
 
         let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts

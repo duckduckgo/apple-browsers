@@ -98,10 +98,19 @@ public final class WebExtensionPrivacySettingsStore {
 
     // MARK: - Changes
 
-    /// Records the value `identifier` set. Returns `false`, changing nothing, when it may not control settings.
-    @discardableResult
-    public func set(_ value: Bool, for setting: WebExtensionPrivacySetting, by identifier: String) -> Bool {
-        guard canControl(identifier) else { return false }
+    /// Why an extension's change to a setting was refused.
+    public enum ChangeError: Error, LocalizedError {
+        /// The extension may not control settings.
+        case notControllable
+
+        public var errorDescription: String? {
+            "The extension can't control this setting"
+        }
+    }
+
+    /// Records the value `identifier` set. Throws, changing nothing, when it may not control settings.
+    public func set(_ value: Bool, for setting: WebExtensionPrivacySetting, by identifier: String) throws {
+        guard canControl(identifier) else { throw ChangeError.notControllable }
         let wasTurnedOff = isTurnedOff(setting, by: identifier)
         update { overrides in
             overrides[identifier, default: [:]][setting.rawValue] = Override(value: value, date: now())
@@ -109,13 +118,13 @@ public final class WebExtensionPrivacySettingsStore {
         if setting == .passwordSavingEnabled, !value, !wasTurnedOff {
             onDefaultPasswordManagerSet(identifier)
         }
-        return true
     }
 
     /// Removes the value `identifier` set, so the setting goes back to its default or to another extension.
-    /// Does nothing when the extension may not control settings, so its value is kept for when it may again.
-    public func clear(_ setting: WebExtensionPrivacySetting, for identifier: String) {
-        guard canControl(identifier) else { return }
+    /// Throws, changing nothing, when the extension may not control settings, so its value is kept for when
+    /// it may again.
+    public func clear(_ setting: WebExtensionPrivacySetting, for identifier: String) throws {
+        guard canControl(identifier) else { throw ChangeError.notControllable }
         update { overrides in
             overrides[identifier]?[setting.rawValue] = nil
             if overrides[identifier]?.isEmpty == true {

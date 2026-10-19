@@ -720,6 +720,30 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         notifyUpdate()
     }
 
+    /// Whether the extension is installed and not disabled. Loads re-check it after each suspension point,
+    /// because the extension can be disabled while they wait.
+    @MainActor
+    private func isInstalledAndEnabled(_ identifier: String) -> Bool {
+        installationStore.installedExtension(withUniqueIdentifier: identifier)?.isDisabled == false
+    }
+
+    /// Unloads an extension that was disabled while it was loading. Disabling found no context to unload
+    /// then, so the load put the extension back into the controller.
+    @MainActor
+    private func unloadExtensionDisabledWhileLoading(_ identifier: String) async {
+        guard installationStore.installedExtension(withUniqueIdentifier: identifier) != nil else {
+            // A removed extension isn't recorded anymore, so unload its context directly.
+            try? loader.unloadExtension(identifier: identifier, from: controller)
+            unregisterHandlers(for: identifier)
+            return
+        }
+        do {
+            try await disableExtension(identifier: identifier)
+        } catch {
+            Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)' disabled while loading: \(error.localizedDescription)")
+        }
+    }
+
     @MainActor
     public func enableExtension(identifier: String) async throws {
         guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
@@ -792,6 +816,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let results = await loader.loadWebExtensions(identifiers: identifiers, into: controller)
 
         let summary = processInstalledExtensionLoadResults(extensions: extensions, results: results, lifecycle: lifecycle)
+
+        for (installedExtension, result) in zip(extensions, results) {
+            guard case .success = result, !isInstalledAndEnabled(installedExtension.uniqueIdentifier) else { continue }
+            await unloadExtensionDisabledWhileLoading(installedExtension.uniqueIdentifier)
+        }
 
         for (identifier, error) in summary.failures {
             // Uninstall broken 3rd-party extensions, unless they only failed to load because of a consent/settings read failure.
@@ -910,8 +939,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             // Yield between extensions so the main run loop can service system events,
             // mirroring loadWebExtensions' watchdog (0x8badf00d) mitigation.
             await Task.yield()
+            guard isInstalledAndEnabled(identifier) else {
+                Logger.webExtensions.debug("Skipping reload of extension '\(identifier)' because it was disabled or removed")
+                continue
+            }
             do {
                 try await loader.reloadWebExtension(webExtension, identifier: identifier, into: controller)
+                guard isInstalledAndEnabled(identifier) else {
+                    await unloadExtensionDisabledWhileLoading(identifier)
+                    continue
+                }
                 unloadGuard.recordLoad(of: identifier)
                 reportLifecycleEvent(.reloaded(identifier: identifier, type: type, trigger: .dataClearing))
                 successCount += 1

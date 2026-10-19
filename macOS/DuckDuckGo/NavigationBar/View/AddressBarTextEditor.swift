@@ -388,7 +388,8 @@ final class AddressBarTextEditor: NSTextView {
         }
         guard let index = nextWordSelectionIndex(backwards: false) else { return }
 
-        let range = NSRange(location: selectedRange.location, length: index - selectedRange.location)
+        // The length can't be negative for a clamped selection; keep it that way if the selection ever reaches the suffix
+        let range = NSRange(location: selectedRange.location, length: max(0, index - selectedRange.location))
         self.setSelectedRange(range, affinity: .downstream, stillSelecting: false)
         self.scrollToSelectionEnd()
     }
@@ -419,7 +420,7 @@ final class AddressBarTextEditor: NSTextView {
         // Extend the left edge of the selection (or move the caret left if there is no selection).
         // For an upstream selection this grows it further left; for an empty selection it creates one.
         guard let index = nextWordSelectionIndex(backwards: true, cursorOverride: selectedRange.location) else { return }
-        let range = NSRange(location: index, length: selectedRange.upperBound - index)
+        let range = NSRange(location: index, length: max(0, selectedRange.upperBound - index))
         self.setSelectedRange(range, affinity: .upstream, stillSelecting: false)
         self.scrollToSelectionStart()
     }

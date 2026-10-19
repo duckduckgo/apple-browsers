@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import StoreKit
 import SwiftUI
 import UIKit
 import WebKit
@@ -67,6 +68,57 @@ extension DebugScreensViewModel {
             }),
             .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
+            }),
+            .action(title: "Open App Store Subscriptions Deep Link", { _ in
+                UIApplication.shared.open(URL(string: "https://apps.apple.com/account/subscriptions")!)
+            }),
+            .action(title: "Open App Store Billing Deep Link", { _ in
+                UIApplication.shared.open(URL(string: "https://apps.apple.com/account/billing")!)
+            }),
+            .action(title: "Show Manage Subscriptions (Subscription Group ID)", { _ in
+                guard #available(iOS 17.0, *) else {
+                    ActionMessageView.present(message: "Requires iOS 17")
+                    return
+                }
+                Task { @MainActor in
+                    var groupID: String?
+                    for await case .verified(let transaction) in StoreKit.Transaction.currentEntitlements where transaction.productType == .autoRenewable {
+                        groupID = transaction.subscriptionGroupID
+                        break
+                    }
+                    if groupID == nil {
+                        let productIDs = ["ddg.privacy.pro.monthly.renews.us.freetrial",
+                                          "ddg.privacy.pro.yearly.renews.us.freetrial",
+                                          "ddg.privacy.pro.monthly.renews.row.freetrial",
+                                          "ddg.privacy.pro.yearly.renews.row.freetrial"]
+                        let products = (try? await StoreKit.Product.products(for: productIDs)) ?? []
+                        groupID = products.compactMap { $0.subscription?.subscriptionGroupID }.first
+                    }
+                    guard let groupID else {
+                        ActionMessageView.present(message: "No subscription group ID found")
+                        return
+                    }
+                    guard let windowScene = UIApplication.shared.connectedScenes
+                        .compactMap({ $0 as? UIWindowScene })
+                        .first(where: { $0.activationState == .foregroundActive }) else {
+                        ActionMessageView.present(message: "No active window scene")
+                        return
+                    }
+                    do {
+                        try await AppStore.showManageSubscriptions(in: windowScene, subscriptionGroupID: groupID)
+                    } catch {
+                        ActionMessageView.present(message: "showManageSubscriptions failed: \(error)")
+                    }
+                }
+            }),
+            .action(title: "Open Finance App Subscriptions Deep Link", { _ in
+                UIApplication.shared.open(URL(string: "https://finance-app.itunes.apple.com/account/subscriptions")!)
+            }),
+            .action(title: "Open Finance App Subscriptions Deep Link (adamId)", { _ in
+                UIApplication.shared.open(URL(string: "https://finance-app.itunes.apple.com/account/subscriptions?adamId=663592361")!)
+            }),
+            .action(title: "Open Finance App Subscriptions Deep Link (id)", { _ in
+                UIApplication.shared.open(URL(string: "https://finance-app.itunes.apple.com/account/subscriptions?id=663592361")!)
             }),
             .action(title: "Reset Settings > Complete Setup", { d in
                 try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)

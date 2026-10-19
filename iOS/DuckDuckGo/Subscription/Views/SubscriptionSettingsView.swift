@@ -492,6 +492,13 @@ struct SubscriptionSettingsViewV2: View {
         .sheet(item: $preCancellationSheet, onDismiss: handlePreCancellationDismiss) { sheet in
             PreCancellationFlowView(context: sheet.context,
                                     baseURL: settingsViewModel.subscriptionManager.url(for: .baseURL),
+                                    subscriptionManager: settingsViewModel.subscriptionManager,
+                                    makeStripePortalViewModel: { url in
+                SubscriptionExternalLinkViewModel(url: url,
+                                                  allowedDomains: ["stripe.com"],
+                                                  userScriptsDependencies: settingsViewModel.userScriptsDependencies,
+                                                  featureFlagger: settingsViewModel.featureFlagger)
+            },
                                     onAction: { action in
                 pendingPreCancellationAction = action
                 preCancellationSheet = nil

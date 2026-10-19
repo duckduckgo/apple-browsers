@@ -746,7 +746,156 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
     }
 
+    private func longText(_ count: Int) -> String { String(repeating: "a", count: count) }
+
+    private func addPastedText(_ text: String, to sut: UnifiedToggleInputCoordinator) {
+        sut.viewController.addAttachment(.pastedText(AIChatPastedText(content: text)))
+    }
+
+    func testPasteOnlyPromptIsDeliveredWithEmptyTextAndThePasteInThePayload() throws {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        addPastedText(longText(4_000), to: sut)
+
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, "")
+        XCTAssertEqual(delegate.submittedAttachments?.textPasted, [AIChatNativePrompt.NativePromptPastedText(content: longText(4_000))])
+        XCTAssertEqual(delegate.submittedAttachments?.isEmpty, false, "A paste-only prompt must not be dropped as empty")
+        XCTAssertNil(delegate.submittedAttachments?.images)
+        XCTAssertNil(delegate.submittedAttachments?.files)
+    }
+
+    func testTextAndTwoPastesAreDeliveredInPasteOrder() throws {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        let first = longText(4_000)
+        let second = String(repeating: "b", count: 4_000)
+        addPastedText(first, to: sut)
+        addPastedText(second, to: sut)
+        sut.setText("Summarise these")
+
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, "Summarise these")
+        XCTAssertEqual(delegate.submittedAttachments?.textPasted?.map(\.content), [first, second])
+    }
+
+    func testPastedTextIsSentToTheFrontendOnlyThroughThePayloadNotTheURL() throws {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        addPastedText(longText(4_000), to: sut)
+        sut.setText("typed")
+
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, "typed", "Only the typed text reaches the URL builder")
+        XCTAssertFalse(delegate.submittedPrompt?.contains(longText(4_000)) ?? true)
+    }
+
+    func testEditWithPastesMakesViewOnlyChipsAndRepliesWithWhatRemains() async throws {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+        let request = EditPromptRequest(prompt: "sent", attachments: AIChatPromptAttachments(textPasted: [.init(content: "one"), .init(content: "two")]), hasResponsesToLose: false)
+
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield()
+        XCTAssertEqual(sut.viewController.currentAttachments.compactMap(\.pastedText).map(\.content), ["one", "two"])
+        sut.removeAttachment(id: sut.viewController.currentAttachments[0].id)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
+        let json = try await encodedReply(editTask)
+
+        XCTAssertEqual(json, #"{"prompt":"edited","textPasted":[{"content":"two"}]}"#)
+    }
+
+    func testEditWithAllPastesRemovedRepliesWithAnEmptyList() async throws {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+        let request = EditPromptRequest(prompt: "sent", attachments: AIChatPromptAttachments(textPasted: [.init(content: "one")]), hasResponsesToLose: false)
+
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield()
+        sut.clearAttachments()
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
+        let json = try await encodedReply(editTask)
+
+        XCTAssertEqual(json, #"{"prompt":"edited","textPasted":[]}"#)
+    }
+
+    func testEditWithPastesWhileTheFlagIsOffMakesNoChipsAndLeavesTheKeyOut() async throws {
+        let sut = makeCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+        let request = EditPromptRequest(prompt: "sent", attachments: AIChatPromptAttachments(textPasted: [.init(content: "one")]), hasResponsesToLose: false)
+
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield()
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
+        let json = try await encodedReply(editTask)
+
+        XCTAssertEqual(json, #"{"prompt":"edited"}"#)
+    }
+
+    func testEditWithoutPastesLeavesTheKeyOutEvenWithTheFlagOn() async throws {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+        let request = EditPromptRequest(prompt: "sent", attachments: .none, hasResponsesToLose: false)
+
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield()
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
+        let json = try await encodedReply(editTask)
+
+        XCTAssertEqual(json, #"{"prompt":"edited"}"#)
+    }
+
+    func testEditWithAnEmptyPromptAndAKeptPasteIsSent() async throws {
+        let sut = makePastedTextCoordinator()
+        sut.updateInputMode(.aiChat, animated: false)
+        let request = EditPromptRequest(prompt: "sent", attachments: AIChatPromptAttachments(textPasted: [.init(content: "kept")]), hasResponsesToLose: false)
+
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield()
+        sut.setText("")
+
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        await withCheckedContinuation { continuation in DispatchQueue.main.async { continuation.resume() } }
+        let json = try await encodedReply(editTask)
+
+        XCTAssertEqual(json, #"{"prompt":"","textPasted":[{"content":"kept"}]}"#)
+    }
+
+    private func encodedReply(_ editTask: Task<EditPromptReply, Never>) async throws -> String {
+        let reply = await editTask.value
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return try XCTUnwrap(String(data: encoder.encode(reply), encoding: .utf8))
+    }
+
     // MARK: - Helpers
+
+    private func makePastedTextCoordinator(preferences: AIChatPreferencesPersisting = StubAIChatPreferences()) -> UnifiedToggleInputCoordinator {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputPastedText]))
+        coordinator.modelStore.attachmentLimits = makeLimits()
+        return coordinator
+    }
 
     private func makeCoordinator(host: UnifiedToggleInputHost = .omnibar,
                                  preferences: AIChatPreferencesPersisting = StubAIChatPreferences(),

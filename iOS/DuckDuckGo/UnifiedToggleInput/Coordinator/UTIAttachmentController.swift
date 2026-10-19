@@ -549,7 +549,7 @@ final class UTIAttachmentController {
     var attachmentCount: Int {
         view.currentAttachments().filter {
             switch $0 {
-            case .image, .file, .tab: return true
+            case .image, .file, .tab, .pastedText: return true
             case .invalidFile: return false
             }
         }.count

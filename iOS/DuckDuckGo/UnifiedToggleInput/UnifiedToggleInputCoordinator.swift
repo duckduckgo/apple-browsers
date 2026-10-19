@@ -220,6 +220,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
     private var attachmentController: UTIAttachmentController!
+    private var isPastedTextEnabled: Bool { featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) }
     private var tabAttachmentContext: MultiTabAttachmentContext?
     private var tabAttachmentPreparations: [UUID: MultiTabAttachmentPreparation] = [:]
     private var transferredTabAttachmentIDs = Set<UUID>()
@@ -986,10 +987,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private var editContinuation: CheckedContinuation<EditPromptReply, Never>?
     private var editHasResponsesToLose = false
+    private var editCarriesPastedText = false
 
     func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
         resolveEdit(.cancelled)
         pixelReporter.reportEditReceived()
+        editCarriesPastedText = isPastedTextEnabled && request.attachments.textPasted?.isEmpty == false
         beginEditMode(prompt: request.prompt,
                       attachments: makeAttachments(from: request),
                       hasResponsesToLose: request.hasResponsesToLose)
@@ -1024,6 +1027,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         guard isEditing else { return }
         clearAttachments()
         isEditing = false
+        editCarriesPastedText = false
         resolveEdit(reply)
         resetToolsSelection()
         setText("")
@@ -1051,6 +1055,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             attachments.append(.file(UnifiedToggleInputAttachmentPresenter.makeFileAttachment(data: data,
                                                                                               fileName: file.fileName,
                                                                                               mimeType: file.mimeType)))
+        }
+        if editCarriesPastedText {
+            for pastedText in request.attachments.textPasted ?? [] {
+                attachments.append(.pastedText(AIChatPastedText(content: pastedText.content)))
+            }
         }
         return attachments
     }
@@ -2258,7 +2267,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         if isEditing {
             let attachments = UnifiedToggleInputAttachmentEncoder.encodeForEdit(viewController.currentAttachments,
                                                                                 imagesSupported: selectedModelSupportsImageUpload,
-                                                                                filesSupported: selectedModelSupportsFileUpload)
+                                                                                filesSupported: selectedModelSupportsFileUpload,
+                                                                                carriesPastedText: editCarriesPastedText)
             _ = acceptTermsOfServiceIfAskTapped(trigger)
             footerController?.recordPromptSubmitted()
             pixelReporter.reportEditSubmitted()

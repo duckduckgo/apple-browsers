@@ -128,7 +128,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         let originalContext = try XCTUnwrap(harness.context)
         harness.observeBackgroundLoadErrors(in: originalContext)
         try await harness.waitForIdle()
-        async let navigation = harness.navigate(tabs[0], label: "frozen-recovery-failure", timeout: 20)
+        let navigation = Task { try await harness.navigate(tabs[0], label: "frozen-recovery-failure", timeout: 20) }
         try await harness.wait("new background process", timeout: 10) {
             CPMAppWebKit.process(CPMAppWebKit.background(originalContext)) != nil
         }
@@ -138,7 +138,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         // Keep the actual 30-second deadline, then resume before waiting for the error notification.
         try await harness.pause(45)
         harness.resume(process)
-        let failed = try await navigation
+        let failed = try await navigation.value
         assertFailed(failed)
         try await harness.wait("real WebKit error 6", timeout: 15) {
             harness.backgroundLoadErrorContexts.contains(ObjectIdentifier(originalContext))

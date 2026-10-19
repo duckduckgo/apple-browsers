@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 import os.log
 import Persistence
 import WebKit
@@ -163,6 +164,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
+    private let now: () -> Date
 
     // MARK: - AsyncStream
 
@@ -197,7 +199,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
                 scriptletConfiguration: ScriptletConfiguration? = nil,
-                bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
+                bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL },
+                now: @escaping () -> Date = Date.init) {
         let controllerConfiguration = WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
@@ -228,6 +231,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
+        self.now = now
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
@@ -257,6 +261,24 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         privacyHandler.store = privacySettings
         privacyHandler.extensionIdentifier = { [weak self] url in
             self?.extensionContext(for: url)?.uniqueIdentifier
+        }
+        launchDate = now()
+        listener.onBrowsingActivity = { [weak self] in
+            MainActor.assumeIsolated {
+                self?.fireBitwardenDailyActiveIfLoaded()
+                self?.fireAPICompatibilityGapsIfDue()
+            }
+        }
+        apiCompatibilityHandler.onIssue = { [weak self] issue, url in
+            MainActor.assumeIsolated {
+                guard let identifier = self?.extensionContext(for: url)?.uniqueIdentifier else { return }
+                self?.recordAPICompatibilityIssue(issue, for: identifier)
+            }
+        }
+        privacySettings?.onDefaultPasswordManagerSet = { [weak self] identifier in
+            guard let self else { return }
+            let storeIdentity = installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity
+            pixelFiring.fire(.defaultPasswordManagerSet(extension: pixelExtension(for: storeIdentity)))
         }
         // Only a loaded extension that declares `privacy` can take over autofill, and only while the app allows it.
         privacySettings?.canControl = { [weak self] identifier in
@@ -390,7 +412,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             reportLifecycleEvent(.loaded(identifier: identifier, type: embeddedType))
 
             Logger.webExtensions.info("✅ Successfully installed extension \(installedExtension.filename) v\(installedExtension.version ?? "unknown") (\(identifier))")
-            pixelFiring.fire(.installed)
+            pixelFiring.fire(.installed(extension: pixelExtension(for: storeIdentity)))
 
             if let type = embeddedType {
                 await scriptletCoordinator?.onExtensionEnabled(for: type)
@@ -416,7 +438,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
 
             Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
-            pixelFiring.fire(.installError(error: error))
+            pixelFiring.fire(.installError(extension: pixelExtension(for: storeIdentity), error: error))
             throw WebExtensionError.failedToLoadWebExtension(error)
         }
 
@@ -474,7 +496,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
-        pixelFiring.fire(.uninstalled)
+        pixelFiring.fire(.uninstalled(extension: pixelExtension(for: installedExtension?.storeIdentity)))
         notifyUpdate()
         if let storeIdentity = installedExtension?.storeIdentity, storeIdentity.store == .chromeWebStore {
             NotificationCenter.default.post(name: .chromeWebStoreExtensionChanged, object: self,
@@ -914,6 +936,84 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
     }
 
+    /// The extension pixels report: its Chrome Web Store catalog entry, or `other` for one the catalog
+    /// doesn't list.
+    @MainActor
+    func pixelExtension(for storeIdentity: WebExtensionStoreIdentity?) -> WebExtensionPixelExtension {
+        guard let storeIdentity, storeIdentity.store == .chromeWebStore,
+              let entry = chromeWebStore?.catalogEntry(of: storeIdentity.id) else {
+            return .other
+        }
+        return .catalog(entry)
+    }
+
+#if os(macOS)
+    /// When the Bitwarden daily pixel was last sent, to skip checking again within the hour.
+    private var lastBitwardenDailyActiveDate: Date?
+
+    /// When this manager was created, at launch or when web extensions are turned back on.
+    private var launchDate = Date.distantPast
+    /// When the gap counts were last reported, to skip reporting again within the hour.
+    private var lastAPICompatibilityGapsDate: Date?
+    /// The distinct missing APIs and Chrome pages each installation ran into since launch, by identifier.
+    private var apiCompatibilityGaps: [String: (missingAPIs: Set<String>, unsupportedURLs: Set<String>)] = [:]
+
+    /// Counts what the compatibility log takes. A permission WebKit dropped is not an API the extension
+    /// used, a stub stands in for its API, and a call WebKit rejected for its arguments is not a missing
+    /// API, so none of them counts.
+    @MainActor
+    func recordAPICompatibilityIssue(_ issue: WebExtensionAPICompatibilityClassifier.Issue, for identifier: String) {
+        switch issue.kind {
+        case .missing:
+            guard !issue.api.hasPrefix(WebExtensionAPICompatibilityClassifier.permissionPrefix) else { return }
+            apiCompatibilityGaps[identifier, default: ([], [])].missingAPIs.insert(issue.api)
+        case .unsupportedURL:
+            apiCompatibilityGaps[identifier, default: ([], [])].unsupportedURLs.insert(issue.api)
+        case .stubbed, .invalidArgs:
+            return
+        }
+    }
+
+    /// Reports each loaded catalog extension's gap counts since launch, zeros included, once the app has
+    /// been running for an hour, so the counts cover some use. It runs on browsing activity at most once
+    /// an hour; each pixel is daily, so each extension reports once a day.
+    @MainActor
+    private func fireAPICompatibilityGapsIfDue() {
+        let date = now()
+        guard date.timeIntervalSince(launchDate) >= 60 * 60 else { return }
+        if let lastAPICompatibilityGapsDate, date.timeIntervalSince(lastAPICompatibilityGapsDate) < 60 * 60 {
+            return
+        }
+        lastAPICompatibilityGapsDate = date
+        for installedExtension in installationStore.installedExtensions {
+            guard let context = context(for: installedExtension.uniqueIdentifier),
+                  case .catalog(let catalogEntry) = pixelExtension(for: installedExtension.storeIdentity) else { continue }
+            let gaps = apiCompatibilityGaps[installedExtension.uniqueIdentifier]
+            pixelFiring.fire(.apiCompatibilityGaps(extension: catalogEntry,
+                                                   version: WebExtensionPixelExtension.version(context.webExtension.version),
+                                                   missingAPICount: gaps?.missingAPIs.count ?? 0,
+                                                   unsupportedURLCount: gaps?.unsupportedURLs.count ?? 0))
+        }
+    }
+
+    /// Reports that Bitwarden is loaded while the browser is in use, and whether it's the default password
+    /// manager. It runs on browsing activity, which is frequent; the pixel is daily, so each device counts once a day.
+    @MainActor
+    private func fireBitwardenDailyActiveIfLoaded() {
+        if let lastBitwardenDailyActiveDate, now().timeIntervalSince(lastBitwardenDailyActiveDate) < 60 * 60 {
+            return
+        }
+        let bitwarden = installationStore.installedExtensions.first { installedExtension in
+            context(for: installedExtension.uniqueIdentifier) != nil
+                && pixelExtension(for: installedExtension.storeIdentity) == .catalog(.bitwarden)
+        }
+        guard let bitwarden else { return }
+        let isDefault = privacySettings?.identifierTurningOff(.passwordSavingEnabled) == bitwarden.uniqueIdentifier
+        pixelFiring.fire(.bitwardenDailyActive(isDefault: isDefault))
+        lastBitwardenDailyActiveDate = now()
+    }
+#endif
+
     func notifyUpdate() {
         continuation?.yield()
         lifecycleDelegate?.webExtensionManagerDidUpdateExtensions(self)
@@ -989,10 +1089,14 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
             if windowTabProvider.openChromePage(url, for: extensionContext) {
                 return nil
             }
+            let page = "chrome://" + (url.host ?? "") + url.path
             compatibilityReporter.report(kind: .unsupportedURL,
-                                         api: "chrome://" + (url.host ?? "") + url.path,
+                                         api: page,
                                          extensionName: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.displayName),
                                          version: WebExtensionAPICompatibilityLog.sanitizedField(extensionContext.webExtension.version))
+#if os(macOS)
+            recordAPICompatibilityIssue(.init(kind: .unsupportedURL, api: page), for: extensionContext.uniqueIdentifier)
+#endif
             return nil
         }
         return try await windowTabProvider.openNewTab(using: configuration, for: extensionContext)

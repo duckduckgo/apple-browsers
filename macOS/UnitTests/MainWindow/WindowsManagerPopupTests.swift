@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import FeatureFlags_macOS
 import PrivacyConfig
 import SharedTestUtilities
 import WebKit
@@ -98,7 +99,7 @@ final class WindowsManagerPopupTests: XCTestCase {
         let retained = Tab(content: .newtab)
         let closing = Tab(content: .newtab)
         let flags = MockFeatureFlagger()
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = true
         let (controller, model) = makeWindowController(tabs: [retained, closing], featureFlagger: flags)
         model.select(tab: retained)
         XCTAssertEqual(controller.tabs(for: context).count, 2)
@@ -118,7 +119,7 @@ final class WindowsManagerPopupTests: XCTestCase {
         let context = try await makeWindowCloseContext()
         let retained = Tab(content: .newtab)
         let flags = MockFeatureFlagger()
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = true
         let (controller, model) = makeWindowController(tabs: [retained], featureFlagger: flags)
         model.select(tab: retained)
 
@@ -135,7 +136,7 @@ final class WindowsManagerPopupTests: XCTestCase {
         let context = try await makeWindowCloseContext()
         let retained = Tab(content: .newtab)
         let flags = MockFeatureFlagger()
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = false
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = false
         let (controller, model) = makeWindowController(tabs: [retained], featureFlagger: flags)
         model.select(tab: retained)
 
@@ -151,9 +152,9 @@ final class WindowsManagerPopupTests: XCTestCase {
         let context = try await makeWindowCloseContext()
         let retained = Tab(content: .newtab)
         let flags = MockFeatureFlagger()
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = false
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = false
         let (controller, _) = makeWindowController(tabs: [retained], featureFlagger: flags)
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = true
 
         controller.prepareWebExtensionTabsForWindowClose([])
 
@@ -166,9 +167,9 @@ final class WindowsManagerPopupTests: XCTestCase {
         let context = try await makeWindowCloseContext()
         let retained = Tab(content: .newtab)
         let flags = MockFeatureFlagger()
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = true
         let (controller, _) = makeWindowController(tabs: [retained], featureFlagger: flags)
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = false
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = false
 
         controller.prepareWebExtensionTabsForWindowClose([])
 
@@ -181,14 +182,31 @@ final class WindowsManagerPopupTests: XCTestCase {
         let context = try await makeWindowCloseContext()
         let retained = Tab(content: .newtab)
         let flags = MockFeatureFlagger()
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = true
         let (controller, _) = makeWindowController(tabs: [retained], featureFlagger: flags)
         controller.prepareWebExtensionTabsForWindowClose([])
 
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = false
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = false
         controller.prepareWebExtensionTabsForWindowClose([retained])
 
         XCTAssertTrue(controller.tabs(for: context).isEmpty, "Closing-window queries must use one stable snapshot")
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testRuntimeEnableDoesNotChangeQueriesForACloseStartedWithFlagDisabled() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let flags = MockFeatureFlagger()
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = false
+        let (controller, model) = makeWindowController(tabs: [retained], featureFlagger: flags)
+        model.select(tab: retained)
+        controller.prepareWebExtensionTabsForWindowClose([])
+
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = true
+
+        XCTAssertTrue(controller.tabs(for: context).first === retained)
+        XCTAssertTrue(controller.activeTab(for: context) === retained)
     }
 
     @available(macOS 15.4, *)
@@ -198,7 +216,7 @@ final class WindowsManagerPopupTests: XCTestCase {
         let first = Tab(content: .newtab)
         let second = Tab(content: .newtab)
         let flags = MockFeatureFlagger()
-        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        flags.featuresStub[FeatureFlag.webExtensionSharedPinnedTabWindowClose.rawValue] = true
         let (controller, model) = makeWindowController(tabs: [first, second], featureFlagger: flags)
         model.select(tab: second)
 

@@ -166,7 +166,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         }
         XCTAssertEqual(pixels.actualFireCalls.count, CPMRecoveryFix.allCases.count)
         for (call, fix) in zip(pixels.actualFireCalls, CPMRecoveryFix.allCases) {
-            XCTAssertEqual(call.pixel.name, "web_extension_cpm_\(fix.rawValue)_macos")
+            XCTAssertEqual(call.pixel.name, "web_extension_cpm_\(fix.rawValue)")
             XCTAssertEqual(call.pixel.namePrefix, .none)
             XCTAssertEqual(call.frequency, .dailyAndCount)
             XCTAssertEqual(call.pixel.parameters, ["outcome": fix == .lateDocumentReload ? "reload_started" : "background_ready"])
@@ -174,7 +174,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         adapter.fire(WebExtensionPixelEvent.cpmStartupResponseMissing)
         XCTAssertEqual(pixels.actualFireCalls.count, CPMRecoveryFix.allCases.count + 1)
         let detection = pixels.actualFireCalls.last
-        XCTAssertEqual(detection?.pixel.name, "web_extension_cpm_startup_response_missing_macos")
+        XCTAssertEqual(detection?.pixel.name, "web_extension_cpm_startup_response_missing")
         XCTAssertEqual(detection?.pixel.namePrefix, PixelKitNamePrefix.none)
         XCTAssertEqual(detection?.frequency, .dailyAndCount)
         XCTAssertEqual(detection?.pixel.parameters, [:])

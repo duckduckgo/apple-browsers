@@ -292,8 +292,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         footerController?.isTermsOfServiceVisible == true
     }
 
+    private var isTermsOfServiceInEffect: Bool {
+        footerController?.isTermsOfServiceInEffect == true
+    }
+
     private var submitsAIChatPromptOnKeyboardReturn: Bool {
-        (isOmnibarNewAIChatPrompt || isContextualChatState) && !isTermsOfServiceDisclaimerShown
+        (isOmnibarNewAIChatPrompt || isContextualChatState) && !isTermsOfServiceInEffect
     }
 
     private var usesReturnKeySubmitButtonStyle: Bool {
@@ -301,7 +305,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private var usesFloatingReturnKey: Bool {
-        isOmnibarEditing && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt && !isTermsOfServiceDisclaimerShown
+        isOmnibarEditing && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt && !isTermsOfServiceInEffect
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -2677,7 +2681,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func syncTermsOfServiceSendButtonToHandler() {
-        viewController.handler.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? termsOfServiceSendButton : nil
+        viewController.handler.termsOfServiceSendButton = isTermsOfServiceInEffect ? termsOfServiceSendButton : nil
         viewController.handler.reservesTermsOfServiceSendButton = footerController?.isTermsOfServicePending == true
     }
 

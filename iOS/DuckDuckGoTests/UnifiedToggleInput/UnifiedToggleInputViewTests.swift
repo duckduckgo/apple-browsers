@@ -165,6 +165,26 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(visible, [.usageWarning])
     }
 
+    func testFooterErrorWhileEditingHidesTheEditDisclaimerAndItReturnsWhenTheErrorClears() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        defer { sut.removeFromSuperview() }
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let label = try XCTUnwrap(allDescendants(of: UILabel.self, in: sut).first { $0.text == UserText.aiChatEditReplaceResponseDisclaimer })
+        let disclaimer = try XCTUnwrap(sequence(first: label as UIView, next: \.superview).first { $0.superview === sut })
+        let error = UTIFooterItem(id: .promptTooLong, message: UTIFooterMessageMapper().promptTooLongMessage(count: 16_100, limit: 16_000))
+
+        sut.setEditMode(true, showsReplaceDisclaimer: true)
+        XCTAssertEqual(disclaimer.alpha, 1)
+
+        sut.setFooterMessages([error])
+        XCTAssertEqual(disclaimer.alpha, 0)
+
+        sut.setFooterMessages([])
+        XCTAssertEqual(disclaimer.alpha, 1)
+    }
+
     func testWhenTheHandlerAsksForTheAskButtonThenSubmitReadsAsk() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
@@ -1227,6 +1247,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     private func makePageContext(title: String, url: String) -> AIChatPageContext {
         let data = AIChatPageContextData(title: title, favicon: [], url: url, content: "", truncated: false, fullContentLength: 0)
         return AIChatPageContext(contextData: data, favicon: nil)
+    }
+
+    private func allDescendants<T: UIView>(of type: T.Type, in view: UIView) -> [T] {
+        view.subviews.flatMap { [$0 as? T].compactMap { $0 } + allDescendants(of: type, in: $0) }
     }
 
     private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {

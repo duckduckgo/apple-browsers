@@ -12,15 +12,16 @@ Enabled by default on iOS and macOS, with remote kill switch `webExtensions.cpmS
 
 ### Testing Steps
 
-The app harness and DEBUG hooks live only in local review branch `codex/cpm-p3-integration-tests`; that branch must not be merged into main.
+The app harness and DEBUG hooks live only in the [review-only integration branch](https://github.com/duckduckgo/apple-browsers/tree/codex/cpm-p3-integration-tests); that branch must not be merged into main.
 
 1. On the production branch, run `swift test --package-path SharedPackages/WebExtensions --skip-update` → all tests pass, including P3 origin-policy and runtime flag regressions.
-2. Switch to `codex/cpm-p3-integration-tests`.
-3. On macOS 15.4 or later, open `DuckDuckGo.xcworkspace` in Xcode and select **My Mac**.
-4. Run **CPM Integration Tests** → reload, disk load, 20,000-entry persistent cache, runtime rollback, extension storage, version upgrade, data clear, process crashes and resource privacy tests pass.
-5. Run **CPM Integration Tests - Fixes Disabled** → the three origin-continuity regressions fail because the original randomized origin returns. Host crashes, skips and setup failures do not count as this result. A missing CPM reply is not required: this Mac has not reproduced the complete production P3 failure.
-6. Run **CPM Integration Tests** again → all tests pass again on the same app/XCTest binaries.
-7. Return to `alex/cpm-p3-stable-base-url` for production review.
+2. Run `git fetch origin codex/cpm-p3-integration-tests`.
+3. Switch to `codex/cpm-p3-integration-tests`.
+4. On macOS 15.4 or later, open `DuckDuckGo.xcworkspace` in Xcode and select **My Mac**.
+5. Run **CPM Integration Tests** → reload, disk load, 20,000-entry persistent cache, runtime rollback, extension storage, version upgrade, data clear, process crashes and resource privacy tests pass.
+6. Run **CPM Integration Tests - Fixes Disabled** → the three origin-continuity regressions fail because the original randomized origin returns. Host crashes, skips and setup failures do not count as this result. A missing CPM reply is not required: this Mac has not reproduced the complete production P3 failure.
+7. Run **CPM Integration Tests** again → all tests pass again on the same app/XCTest binaries.
+8. Return to `alex/cpm-p3-stable-base-url` for production review.
 
 Each app test uses its own persistent website/controller stores. A passive observer records actual WebKit origin-migration calls without changing their arguments or completion. The tests require actual page `initResp` and native dashboard delivery. They record the origin, startup observations and any real failure snapshots. No synthetic startup delay is injected.
 

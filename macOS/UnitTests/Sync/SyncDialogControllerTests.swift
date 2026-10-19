@@ -2670,6 +2670,18 @@ final class SyncDialogControllerTests: XCTestCase {
         XCTAssertNil(managementDialogModel.currentDialog)
     }
 
+    func testCancellingPairing_whenFallbackNotOffered_firesSetupEndedAbandoned() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        setUpWithSingleDevice(id: "1")
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        let abandonedCalls = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "sync_setup_ended_abandoned_mac" }
+        XCTAssertEqual(abandonedCalls.count, 1)
+        XCTAssertEqual(abandonedCalls.first?.pixel.parameters?["reason"], "scanning_cancelled")
+    }
+
     func testCancellingPairing_whenSyncThisDeviceFallbackShown_doesNotFireSetupEndedAbandonedYet() async {
         let confirmation = StubCloseSetupConfirmation(answer: true)
         presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)

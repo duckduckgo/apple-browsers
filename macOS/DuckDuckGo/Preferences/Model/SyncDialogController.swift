@@ -792,7 +792,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
         switch dialog {
         case .syncWithAnotherDevice, .enterRecoveryCode:
             if let pixel = setupEndedAbandonedPixel(cancelling: dialog) {
-                PixelKit.fire(pixel)
+                pixelFiring?.fire(pixel)
             }
         case .syncThisDeviceFallback:
             pixelFiring?.fire(SyncSettingsPixelKitEvent.syncThisDeviceFallbackCancelTapped)

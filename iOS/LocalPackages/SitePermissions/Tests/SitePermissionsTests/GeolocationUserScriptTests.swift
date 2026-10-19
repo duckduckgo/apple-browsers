@@ -72,15 +72,15 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(policySource.contains("sandboxedEmbeddingFrames"),
                       "An embedding frame that was ever sandboxed must stay fail-closed for its surviving document")
         XCTAssertTrue(policySource.contains("apply(weakSetHas, sandboxedEmbeddingFrames, [embeddingFrame])"))
-        XCTAssertTrue(policySource.contains("callThen(sandboxVerdict, (ancestorSandboxed) => {"),
+        XCTAssertTrue(policySource.contains("callThen(sandboxVerdict(), (ancestorSandboxed) => {"),
                       "A child must inherit the sandbox verdict from every ancestor")
         XCTAssertTrue(policySource.contains("signHMAC(\"HMAC\""),
                       "The page-visible probe must authenticate without exposing the native capability")
         XCTAssertTrue(policySource.contains("sandboxProbeTimeout = scheduleTask(() => finishSandboxProbe(true)"),
                       "An unanswered parent probe must fail closed")
-        XCTAssertTrue(source.contains("const registration = registerFrame()"),
-                      "Every operation must register with native policy enforcement")
-        XCTAssertTrue(source.contains("message(\"registerFrame\")"), "Each frame must authenticate before sending requests")
+        XCTAssertTrue(source.contains("const registration = registerFrame(false)"),
+                      "Document-load registration must not probe the sandbox")
+        XCTAssertTrue(source.contains("message(\"registerFrame\", { probeSandbox })"), "Each frame must authenticate before sending requests")
         XCTAssertTrue(source.contains("const capability ="), "Every message must carry the native bridge capability")
         XCTAssertTrue(source.contains("documentID: frameNonce"), "Requests must identify the exact page document")
         XCTAssertFalse(source.contains("signHMAC"), "Signing must be absent from the page world")
@@ -125,7 +125,7 @@ final class GeolocationUserScriptTests: XCTestCase {
     func testEachOperationRefreshesNativeFrameRegistration() {
         let source = GeolocationUserScript().source
 
-        XCTAssertTrue(source.contains("const registerFrame = () => callThen(postOneShot(message(\"registerFrame\"))"))
+        XCTAssertTrue(source.contains("const registerFrame = (probeSandbox = true) => callThen(postOneShot(message(\"registerFrame\", { probeSandbox }))"))
         XCTAssertEqual(source.components(separatedBy: "callThen(registerFrame(), (enabled)").count - 1, 4,
                        "Position requests, permission queries, watch starts, and watch cancellation must recover after native registration resets")
     }
@@ -136,7 +136,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("isPolicyAllowed: result.constraints?.isPolicyAllowed === true"))
         XCTAssertTrue(source.contains("constraints.isPolicyAllowed && policyAllowsGeolocation() && !constraints.isSandboxed"))
         let policySource = GeolocationUserScript().policyScript.source
-        XCTAssertTrue(policySource.contains("const getConstraints = () => {"))
+        XCTAssertTrue(policySource.contains("const getConstraints = (probeSandbox) => {"))
         XCTAssertTrue(policySource.contains("isFramePolicyEligible && policyAllowsGeolocation()"))
         XCTAssertTrue(source.contains("const receiveWatchResult = (requestID, result) => {"))
         XCTAssertTrue(source.contains("if (!isAllowedByPlatform()) {\n                apply(mapDelete, activeWatches, [requestID]);"),

@@ -229,10 +229,19 @@
 
     let finishSandboxProbe;
     let sandboxProbeTimeout;
+    let sandboxVerdictPromise;
+    // The embedding page can observe the probe, so it starts only when this frame
+    // or a descendant requests location or queries its permission state.
     // Missing or unverifiable parent replies deny access after the timeout.
-    const sandboxVerdict = parentWindow === globalThis
-        ? Promise.resolve(hasOpaqueOrigin)
-        : new Promise((resolve) => {
+    const sandboxVerdict = () => {
+        if (sandboxVerdictPromise) {
+            return sandboxVerdictPromise;
+        }
+        if (parentWindow === globalThis) {
+            sandboxVerdictPromise = Promise.resolve(hasOpaqueOrigin);
+            return sandboxVerdictPromise;
+        }
+        sandboxVerdictPromise = new Promise((resolve) => {
             let finished = false;
             finishSandboxProbe = (sandboxed) => {
                 if (finished) {
@@ -244,6 +253,32 @@
             };
             sandboxProbeTimeout = scheduleTask(() => finishSandboxProbe(true), 1_000);
         });
+        try {
+            if (nonce === null) {
+                finishSandboxProbe(true);
+            } else {
+                signSandboxProbe(sandboxRequestValue(nonce), (proof) => {
+                    if (proof === null) {
+                        finishSandboxProbe(true);
+                        return;
+                    }
+                    try {
+                        apply(postWindowMessage, parentWindow, [{
+                            channel: sandboxProbeChannel,
+                            kind: "request",
+                            nonce,
+                            proof
+                        }, "*"]);
+                    } catch (_) {
+                        finishSandboxProbe(true);
+                    }
+                });
+            }
+        } catch (_) {
+            finishSandboxProbe(true);
+        }
+        return sandboxVerdictPromise;
+    };
 
     const handleSandboxProbeMessage = (event) => {
         try {
@@ -296,7 +331,7 @@
                     return;
                 }
                 try {
-                    callThen(sandboxVerdict, (ancestorSandboxed) => {
+                    callThen(sandboxVerdict(), (ancestorSandboxed) => {
                         const sandboxed = ancestorSandboxed || directlySandboxed;
                         signSandboxProbe(sandboxResponseValue(childNonce, sandboxed), (responseProof) => {
                             clearPendingSource();
@@ -324,38 +359,16 @@
         handleSandboxProbeMessage(event);
     }, false]);
 
-    if (parentWindow !== globalThis) {
-        try {
-            if (nonce === null) {
-                finishSandboxProbe(true);
-            } else {
-                signSandboxProbe(sandboxRequestValue(nonce), (proof) => {
-                    if (proof === null) {
-                        finishSandboxProbe(true);
-                        return;
-                    }
-                    try {
-                        apply(postWindowMessage, parentWindow, [{
-                            channel: sandboxProbeChannel,
-                            kind: "request",
-                            nonce,
-                            proof
-                        }, "*"]);
-                    } catch (_) {
-                        finishSandboxProbe(true);
-                    }
-                });
-            }
-        } catch (_) {
-            finishSandboxProbe(true);
-        }
-    }
-
     const isSecureContext = globalThis.isSecureContext === true;
     const isFramePolicyEligible = hasNetworkOrigin && isSameOriginAsTopLevel;
-    const getConstraints = () => {
+    // Registration at document load passes false so loading a frame never posts
+    // the probe. Without a probe, a subframe stays sandboxed.
+    const getConstraints = (probeSandbox) => {
         const requestedDocumentID = documentID;
-        return callThen(sandboxVerdict, (isSandboxed) => freeze({
+        const verdict = probeSandbox === false && parentWindow !== globalThis
+            ? Promise.resolve(true)
+            : sandboxVerdict();
+        return callThen(verdict, (isSandboxed) => freeze({
             documentID: requestedDocumentID,
             isSecureContext,
             isPolicyAllowed: requestedDocumentID !== null && isFramePolicyEligible && policyAllowsGeolocation(),

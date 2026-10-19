@@ -118,22 +118,29 @@
     const message = (kind, values = {}) => ({ capability, nonce, documentID: frameNonce, kind, ...values });
 
     // Native registration obtains policy in the isolated world and rechecks activation.
-    const registerFrame = () => callThen(postOneShot(message("registerFrame")), (result) => {
+    // Only operations probe the sandbox, so only their replies update constraints.
+    const registerFrame = (probeSandbox = true) => callThen(postOneShot(message("registerFrame", { probeSandbox })), (result) => {
         if (result?.status === "error" && result.code === 1) {
-            constraints = freeze({ isSecureContext: false, isPolicyAllowed: false, isSandboxed: true });
+            if (probeSandbox) {
+                constraints = freeze({ isSecureContext: false, isPolicyAllowed: false, isSandboxed: true });
+            }
             return false;
         }
         if (result?.status !== "registered") {
             throw new Error("Unable to register geolocation frame");
         }
-        constraints = freeze({
-            isSecureContext: result.constraints?.isSecureContext === true,
-            isPolicyAllowed: result.constraints?.isPolicyAllowed === true,
-            isSandboxed: result.constraints?.isSandboxed !== false
-        });
+        if (probeSandbox) {
+            constraints = freeze({
+                isSecureContext: result.constraints?.isSecureContext === true,
+                isPolicyAllowed: result.constraints?.isPolicyAllowed === true,
+                isSandboxed: result.constraints?.isSandboxed !== false
+            });
+        }
         return result.enabled === true;
     });
-    const registration = registerFrame();
+    // The sandbox probe posts a message the embedding page can observe, so
+    // registering every loaded frame must not start it.
+    const registration = registerFrame(false);
 
     const optionsPayload = (options = {}) => {
         options = options ?? {};

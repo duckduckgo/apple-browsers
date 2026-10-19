@@ -512,17 +512,38 @@ class SubscriptionManagerTests: XCTestCase {
         await subscriptionManager.restoreMissingTokenIfPossible()
 
         XCTAssertTrue(mockOAuthClient.restoreFromBackupCalls.isEmpty)
+        XCTAssertFalse(mockSubscriptionEndpointService.getSubscriptionCalled)
     }
 
-    func testRestoreMissingTokenIfPossible_PrimaryMissing_RestoresAndMarksAuthenticated() async {
+    func testRestoreMissingTokenIfPossible_PrimaryMissing_RestoresUpdatesTheCachedStateAndRefreshesTheSubscription() async {
+        let restored = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockOAuthClient.internalCurrentTokenContainer = nil
-        installCoordinator(backupResult: .success(OAuthTokensFactory.makeValidTokenContainer()), appStoreSucceeds: true)
+        mockOAuthClient.getTokensResponse = .success(restored)
+        mockSubscriptionEndpointService.getSubscriptionResult = .failure(.noData)
+        installCoordinator(backupResult: .success(restored), appStoreSucceeds: true)
+        let signedIn = expectation(forNotification: .accountDidSignIn, object: subscriptionManager)
 
         await subscriptionManager.restoreMissingTokenIfPossible()
 
+        await fulfillment(of: [signedIn], timeout: 1)
         XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
-        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
+        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+        XCTAssertTrue(mockSubscriptionEndpointService.getSubscriptionCalled)
+    }
+
+    func testInvalidToken_RecoverySucceeds_UpdatesTheCachedStateAndEntitlements() async throws {
+        let restored = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR")
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        installCoordinator(backupResult: .success(restored), appStoreSucceeds: false)
+        let entitlementsChanged = expectation(forNotification: .entitlementsDidChange, object: subscriptionManager)
+        let signedIn = expectation(forNotification: .accountDidSignIn, object: subscriptionManager)
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+
+        await fulfillment(of: [entitlementsChanged, signedIn], timeout: 1)
+        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
     }
 
     func testRestoreMissingTokenIfPossible_NoCoordinator_DoesNothing() async {

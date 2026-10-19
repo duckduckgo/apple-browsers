@@ -47,8 +47,8 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// Tries to get an authentication token and the subscription
     func loadInitialData() async
 
-    /// Restores the current token from the backup when none is stored. Does nothing when a token is stored,
-    /// no recovery is configured, or the restore fails.
+    /// Restores the current token from the backup when none is stored, then refreshes the cached subscription.
+    /// Does nothing when a token is stored, no recovery is configured, or the restore fails.
     func restoreMissingTokenIfPossible() async
 
     /// Retrieve the purchased subscription.
@@ -362,7 +362,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
-        await restoreMissingTokenIfPossible()
+        _ = await restoreMissingToken()
 
         do {
             if let subscription = try await getSubscription(forceRefresh: true) {
@@ -688,6 +688,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 pixelHandler.handle(pixel: .invalidRefreshToken)
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery(deadPrimary: tokenBeforeAttempt.tokenContainer)
+                    updateCachedUserEntitlements(recoveredTokenContainer.decodedAccessToken.subscriptionEntitlements)
+                    updateCachedIsUserAuthenticated(true)
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil, signedOut: false)
                     return recoveredTokenContainer
@@ -778,7 +780,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` when no recovery applies,
     ///   `SubscriptionManagerError.noTokenAvailable` when the recovery left no usable token, otherwise the recovery failure.
     private func recoverToken(trigger: TokenRecoveryTrigger, deadPrimary: TokenContainer?) async throws -> TokenContainer {
-        Logger.subscriptionTokensManagement.log("Attempting token recovery, trigger: \(trigger.rawValue, privacy: .public)")
+        Logger.subscriptionTokensManagement.debug("Attempting token recovery, trigger: \(trigger.rawValue, privacy: .public)")
 
         if let tokenRecoveryCoordinator {
             try await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger,
@@ -864,10 +866,18 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func restoreMissingTokenIfPossible() async {
-        guard tokenRecoveryCoordinator != nil, localTokenSnapshot() == .missing else { return }
-        guard let restored = try? await recoverToken(trigger: .missingToken, deadPrimary: nil) else { return }
+        guard await restoreMissingToken() != nil else { return }
+        _ = try? await getSubscription(forceRefresh: true)
+    }
+
+    /// Restores the current token from the backup when none is stored, and updates the cached entitlements and authentication state.
+    /// - Returns: The restored token container, or nil when a token is stored, no recovery is configured, or the restore fails.
+    private func restoreMissingToken() async -> TokenContainer? {
+        guard tokenRecoveryCoordinator != nil, localTokenSnapshot() == .missing else { return nil }
+        guard let restored = try? await recoverToken(trigger: .missingToken, deadPrimary: nil) else { return nil }
         updateCachedUserEntitlements(restored.decodedAccessToken.subscriptionEntitlements)
         updateCachedIsUserAuthenticated(true)
+        return restored
     }
 
     /// The cut-off recorded at the last explicit sign-out, or nil if the user never signed out explicitly.

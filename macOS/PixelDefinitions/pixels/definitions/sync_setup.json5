@@ -148,7 +148,7 @@
         ]
     },
     "sync_setup_ended_abandoned_mac": {
-        "description": "Fired when the user abandons Sync setup before completion.",
+        "description": "Fired when the user abandons Sync setup before completion. When closing the Sync with another device dialog offers to sync only this computer, fired when that dialog ends without syncing instead of when it is shown.",
         "owners": ["amddg44"],
         "triggers": ["other"],
         "parameters": [
@@ -307,7 +307,7 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "The setup source."
+                "description": "The setup source. fallback: the user synced only this computer from the dialog shown after closing the Sync with another device dialog."
             },
             {
                 "key": "flow_version",
@@ -374,6 +374,34 @@
         "owners": ["pballart"],
         "triggers": ["user_interaction"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_settings_sync_this_device_fallback_cancel_tapped_mac": {
+        "description": "Fired when the user taps 'Cancel' on the dialog offering to sync only this computer, in the improved pairing flow.",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "sync_setup_authentication_result_mac": {
+        "description": "Fired when the user responds to the device authentication prompt (Touch ID or password) that gates a Sync setup flow, or when the prompt can't be shown because the device has no authentication set up. Not fired when a recent authentication is reused and no prompt is shown, or for the retry from the authentication cancelled dialog (see sync_settings_authentication_cancelled_prompt_retry_*_mac).",
+        "owners": ["pballart"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "result",
+                "type": "string",
+                "description": "Outcome of the authentication. failed includes the user cancelling the prompt. unconfigured means the device has no authentication set up.",
+                "enum": ["succeeded", "failed", "unconfigured"]
+            },
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where the authentication was requested. settings_not_synced: Sync With Another Device while not synced, Sync With Another Device on the device-selection prompt, or Back Up This Device when the improved pairing flow is off. settings_synced: Sync With Another Device while already synced. this_device: Sync This Device Only on the device-selection prompt. recover: recovering synced data with a recovery code.",
+                "enum": ["settings_not_synced", "settings_synced", "this_device", "recover"]
+            }
+        ]
     },
     "sync_settings_authentication_cancelled_prompt_shown_mac": {
         "description": "Fired when the prompt asking the user to authenticate is shown after they cancel the device authentication prompt while setting up Sync in the simplified V2 setup.",

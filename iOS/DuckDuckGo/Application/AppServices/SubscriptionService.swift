@@ -46,5 +46,9 @@ final class SubscriptionService {
 
     // MARK: - Resume
 
-    func resume() {}
+    func resume() {
+        Task { [subscriptionManager] in
+            await subscriptionManager.restoreMissingTokenIfPossible()
+        }
+    }
 }

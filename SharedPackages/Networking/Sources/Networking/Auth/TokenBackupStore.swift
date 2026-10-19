@@ -18,7 +18,57 @@
 
 import Foundation
 import os.log
+import DDGError
 import FoundationExtensions
+
+/// Why a backup token container can't be used to restore a session.
+public enum TokenBackupError: DDGError {
+    /// No backup storage is configured, no backup is stored, or reading it failed.
+    case unavailable
+    /// The backup belongs to another account than the expected one.
+    case accountMismatch
+    /// The backup's refresh token was issued before the last explicit sign-out.
+    case predatesSignOut
+    /// The backup's refresh token has expired.
+    case expired
+    /// The session changed while the restore was in progress: the backup was deleted or another current token was stored.
+    /// Nothing was stored.
+    case sessionChanged
+
+    public var description: String {
+        switch self {
+        case .unavailable:
+            return "No usable backup token"
+        case .accountMismatch:
+            return "The backup token belongs to another account"
+        case .predatesSignOut:
+            return "The backup token was issued before the last sign-out"
+        case .expired:
+            return "The backup token has expired"
+        case .sessionChanged:
+            return "The session changed during the backup restore"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.networking.TokenBackupError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .unavailable:
+            return 11100
+        case .accountMismatch:
+            return 11101
+        case .predatesSignOut:
+            return 11102
+        case .expired:
+            return 11103
+        case .sessionChanged:
+            return 11104
+        }
+    }
+
+    public var underlyingError: (any Error)? { nil }
+}
 
 /// Keeps the backup token container, an independent token pair forked from the current one, and decides when it must be renewed.
 struct TokenBackupStore {
@@ -56,6 +106,49 @@ struct TokenBackupStore {
         if backup.decodedRefreshToken.expirationDate <= now { return true }
         if backup.decodedAccessToken.externalID != primary.decodedAccessToken.externalID { return true }
         return now.timeIntervalSince(backup.decodedRefreshToken.issuedAtDate) > maxAge
+    }
+
+    /// Returns the stored backup when it can be used to restore a session. Expiry is measured with `now`.
+    /// - Parameters:
+    ///   - expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
+    ///   - notIssuedBefore: A backup whose refresh token was issued before this date is rejected. When nil, no such check is made.
+    /// - Returns: The stored backup token container.
+    /// - Throws: `TokenBackupError.unavailable` when no backup is stored or reading it fails, otherwise the reason the backup was rejected.
+    ///   A rejected backup is deleted; an unavailable one is left as it is.
+    func usableBackup(expectedExternalID: String?, notIssuedBefore: Date?) throws(TokenBackupError) -> TokenContainer {
+        let stored: TokenContainer?
+        do {
+            stored = try storage.getTokenContainer()
+        } catch {
+            Logger.OAuthClient.error("Failed to read the backup token: \(String(describing: error), privacy: .public)")
+            throw .unavailable
+        }
+        guard let backup = stored else { throw .unavailable }
+
+        let rejection: TokenBackupError?
+        if let expectedExternalID, backup.decodedAccessToken.externalID != expectedExternalID {
+            rejection = .accountMismatch
+        } else if let notIssuedBefore, backup.decodedRefreshToken.issuedAtDate < notIssuedBefore {
+            rejection = .predatesSignOut
+        } else if backup.decodedRefreshToken.expirationDate <= now() {
+            rejection = .expired
+        } else {
+            rejection = nil
+        }
+
+        if let rejection {
+            Logger.OAuthClient.log("Backup token rejected: \(rejection.description, privacy: .public)")
+            remove()
+            throw rejection
+        }
+        return backup
+    }
+
+    /// Whether `backup` is still the stored backup.
+    /// - Parameter backup: A backup token container read earlier.
+    /// - Returns: `true` when the stored backup has the same refresh token as `backup`; `false` when it differs, is missing or can't be read.
+    func isStored(_ backup: TokenContainer) -> Bool {
+        (try? storage.getTokenContainer())?.refreshToken == backup.refreshToken
     }
 
     /// Stores `backup`, replacing any previous one. A failure is logged and otherwise ignored.

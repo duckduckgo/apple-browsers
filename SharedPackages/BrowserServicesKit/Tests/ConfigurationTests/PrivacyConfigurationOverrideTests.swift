@@ -115,7 +115,7 @@ struct PrivacyConfigurationOverrideMarkerTests {
 final class PrivacyConfigurationOverrideHandlerTests {
 
     let overrideArgument = "http://localhost:8080/ios-config.json"
-    let appliedLine = "CONFIG_OVERRIDE_APPLIED stage=config version=1700000000001 etag=abc123 source=http://localhost:8080/ios-config.json"
+    let appliedLine = "CONFIG_OVERRIDE_APPLIED version=1700000000001 etag=abc123 source=http://localhost:8080/ios-config.json"
     let downloadFailedLine = "CONFIG_OVERRIDE_FAILED action=set_url reason=download_failed source=http://localhost:8080/ios-config.json"
     let privacyConfig = MockPrivacyConfiguration()
     let privacyConfigurationManager: OverridePrivacyConfigurationManagerMock
@@ -150,7 +150,7 @@ final class PrivacyConfigurationOverrideHandlerTests {
     @Test("Formats the log line", .timeLimit(.minutes(1)))
     func formatsLogLine() {
         let line = PrivacyConfigurationOverrideHandler.logLine(version: "1700000000001", etag: "W/\"abc 123\"", source: URL(string: overrideArgument)!)
-        #expect(line == "CONFIG_OVERRIDE_APPLIED stage=config version=1700000000001 etag=W/abc123 source=http://localhost:8080/ios-config.json")
+        #expect(line == "CONFIG_OVERRIDE_APPLIED version=1700000000001 etag=W/abc123 source=http://localhost:8080/ios-config.json")
     }
 
     @available(iOS 16, macOS 13, *)

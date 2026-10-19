@@ -45,7 +45,13 @@ struct DataBrokerProtectionAppEvents {
         self.loginItemInterface = loginItemInterface
     }
 
+#if DEBUG
+    @MainActor
+#endif
     func applicationDidFinishLaunching() {
+#if DEBUG
+        if DataBrokerProtectionManager.shared.handleDebugLaunch(LaunchOptionsHandler()) { return }
+#endif
         let loginItemsManager = LoginItemsManager()
         let loginItemInterface = DataBrokerProtectionManager.shared.loginItemInterface
 
@@ -70,6 +76,9 @@ struct DataBrokerProtectionAppEvents {
 
         // Check feature prerequisites and disable the login item if they are not satisfied
         Task { @MainActor in
+#if DEBUG
+            await DataBrokerProtectionManager.shared.waitForDebugLaunch()
+#endif
             // Failure doesn't mean no entitlements, so we just bail out and do nothing
             let prerequisitesMet = try await featureGatekeeper.arePrerequisitesSatisfied()
 

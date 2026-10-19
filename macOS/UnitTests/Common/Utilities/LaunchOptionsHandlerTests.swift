@@ -150,6 +150,67 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertTrue(handler.acceptsInsecureCertificates)
     }
 
+#if DEBUG
+    private var pirProfileJSON: String {
+        """
+        {"names":[{"firstName":"Test","lastName":"Person"}],"addresses":[{"city":"Test City","state":"CA"}],"phones":[],"birthYear":1980}
+        """
+    }
+
+    func testPIRDebugLaunchIgnoresPersistentDefaults() throws {
+        userDefaults.set(true, forKey: "pirDebugServer")
+        userDefaults.set(pirProfileJSON, forKey: "pirProfileJSON")
+        userDefaults.set(true, forKey: "pirResetBeforeSeeding")
+        XCTAssertNil(try makeHandler(arguments: [:]).pirDebugLaunchOptions())
+    }
+
+    func testPIRDebugLaunchReadsEnvironmentAndNativeProfile() throws {
+        let options = try XCTUnwrap(makeHandler(arguments: [:], environment: [
+            "PIR_DEBUG_SERVER": "true",
+            "PIR_PROFILE_JSON": pirProfileJSON,
+            "PIR_RESET_BEFORE_SEEDING": "true",
+        ]).pirDebugLaunchOptions())
+        XCTAssertTrue(options.startServer)
+        guard case .resetAndSeed(let profile) = options.profileSetup else {
+            return XCTFail("Expected explicit reset and seed")
+        }
+        XCTAssertEqual(profile.names.first?.firstName, "Test")
+        XCTAssertEqual(profile.addresses.first?.city, "Test City")
+        XCTAssertEqual(profile.birthYear, 1980)
+        XCTAssertTrue(profile.phones.isEmpty)
+    }
+
+    func testPIRDebugLaunchArgumentsOverrideEnvironmentIncludingFalse() throws {
+        let options = try XCTUnwrap(makeHandler(arguments: [
+            "pirDebugServer": false,
+            "pirProfileJSON": pirProfileJSON,
+            "pirResetBeforeSeeding": "false",
+        ], environment: [
+            "PIR_DEBUG_SERVER": "true",
+            "PIR_PROFILE_JSON": "invalid",
+            "PIR_RESET_BEFORE_SEEDING": "true",
+        ]).pirDebugLaunchOptions())
+        guard case .seedIfMissing(let profile) = options.profileSetup else {
+            return XCTFail("Expected non-destructive profile seeding")
+        }
+        XCTAssertEqual(profile.birthYear, 1980)
+        XCTAssertFalse(options.startServer)
+    }
+
+    func testPIRDebugLaunchRejectsResetWithoutValidFixtureEvenWithServer() {
+        XCTAssertThrowsError(try makeHandler(arguments: ["pirResetBeforeSeeding": true]).pirDebugLaunchOptions())
+        XCTAssertThrowsError(try makeHandler(arguments: [
+            "pirResetBeforeSeeding": true,
+            "pirDebugServer": true,
+            "pirProfileJSON": "invalid",
+        ]).pirDebugLaunchOptions())
+        XCTAssertThrowsError(try makeHandler(arguments: [
+            "pirResetBeforeSeeding": true,
+            "pirProfileJSON": pirProfileJSON.replacingOccurrences(of: "Test City", with: " "),
+        ]).pirDebugLaunchOptions())
+    }
+#endif
+
     private func makeHandler(
         arguments: [String: Any],
         environment: [String: String] = [:]

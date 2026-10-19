@@ -21,6 +21,9 @@ import AppKitExtensions
 import Foundation
 import Common
 import FoundationExtensions
+#if DEBUG
+import DataBrokerProtectionCore
+#endif
 
 /// Handles launch options and user defaults for automation and testing scenarios
 public final class LaunchOptionsHandler {
@@ -186,3 +189,83 @@ extension LaunchOptionsHandler {
     }
 
 }
+
+#if DEBUG
+struct PIRDebugLaunchOptions {
+    enum ProfileSetup {
+        case seedIfMissing(DataBrokerProtectionProfile)
+        case resetAndSeed(DataBrokerProtectionProfile)
+    }
+
+    let profileSetup: ProfileSetup?
+    let startServer: Bool
+}
+
+extension LaunchOptionsHandler {
+    enum PIRDebugLaunchError: LocalizedError {
+        case invalidBooleanArgument(name: String)
+        case invalidProfile
+        case resetRequiresProfile
+
+        var errorDescription: String? {
+            switch self {
+            case .invalidBooleanArgument(let name): return "Launch argument \(name) must be true or false."
+            case .invalidProfile: return "Invalid PIR profile JSON or required profile fields."
+            case .resetRequiresProfile: return "PIR reset requires valid profile JSON."
+            }
+        }
+    }
+
+    func pirDebugLaunchOptions() throws -> PIRDebugLaunchOptions? {
+        let startServer = try pirDebugBoolean(argument: "pirDebugServer", environmentKey: "PIR_DEBUG_SERVER")
+        let reset = try pirDebugBoolean(argument: "pirResetBeforeSeeding", environmentKey: "PIR_RESET_BEFORE_SEEDING")
+        let profileValue = pirDebugValue(argument: "pirProfileJSON", environmentKey: "PIR_PROFILE_JSON")
+        let profileSetup: PIRDebugLaunchOptions.ProfileSetup?
+        if let profileValue {
+            guard let data = pirDebugProfileData(profileValue),
+                  let profile = try? JSONDecoder().decode(DataBrokerProtectionProfile.self, from: data),
+                  !profile.names.isEmpty, !profile.addresses.isEmpty,
+                  profile.names.allSatisfy({ !$0.firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                      && !$0.lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
+                  profile.addresses.allSatisfy({ !$0.city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                      && !$0.state.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
+                  profile.phones.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
+                  (1900...Calendar.current.component(.year, from: Date())).contains(profile.birthYear) else {
+                throw PIRDebugLaunchError.invalidProfile
+            }
+            profileSetup = reset ? .resetAndSeed(profile) : .seedIfMissing(profile)
+        } else {
+            guard !reset else { throw PIRDebugLaunchError.resetRequiresProfile }
+            profileSetup = nil
+        }
+        guard profileSetup != nil || startServer else { return nil }
+        return PIRDebugLaunchOptions(profileSetup: profileSetup, startServer: startServer)
+    }
+
+    private func pirDebugValue(argument: String, environmentKey: String) -> Any? {
+        if let value = argumentDomain[argument] { return value }
+        return environment[environmentKey]
+    }
+
+    private func pirDebugProfileData(_ value: Any) -> Data? {
+        if let json = value as? String { return Data(json.utf8) }
+        guard let json = value as? [String: Any] else { return nil }
+        return try? JSONSerialization.data(withJSONObject: json)
+    }
+
+    private func pirDebugBoolean(argument: String, environmentKey: String) throws -> Bool {
+        guard let value = pirDebugValue(argument: argument, environmentKey: environmentKey) else { return false }
+        if let string = value as? String {
+            switch string.lowercased() {
+            case "1", "true", "yes": return true
+            case "0", "false", "no": return false
+            default: throw PIRDebugLaunchError.invalidBooleanArgument(name: argument)
+            }
+        }
+        if let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() {
+            return number.boolValue
+        }
+        throw PIRDebugLaunchError.invalidBooleanArgument(name: argument)
+    }
+}
+#endif

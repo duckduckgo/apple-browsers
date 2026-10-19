@@ -174,7 +174,8 @@ enum WebExtensionPixel: PixelKit.Event {
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
         case .debugCPM(let metadata):
-            return metadata.name == "web_extension_cpm_episode" ? metadata.name : metadata.name + "_macos"
+            // Preserve the shared canonical CPM names on both platforms.
+            return metadata.name
         }
     }
 

@@ -247,8 +247,7 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         if #available(macOS 15.4, *), navigationAction.isForMainFrame,
-           let scheme = navigationAction.url.scheme?.lowercased(),
-           URL.NavigationalScheme.hypertextSchemes.contains(.init(rawValue: scheme)) {
+           navigationAction.url.isHttpOrHttps {
             // Hold restored web content until the embedded extension's background listeners are
             // ready, matching the existing startup gates for user scripts and Content Blocking.
             await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,

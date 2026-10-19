@@ -32,6 +32,7 @@ import WebKit
 @_spi(Testing) import PixelKit
 
 // swiftlint:disable inclusive_language
+@MainActor
 class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!

@@ -34,14 +34,24 @@ final class CPMNetworkProcessRecovery {
     typealias ProcessIdentifier = @MainActor (WKWebView) -> Int32?
     typealias Restart = @MainActor (WKWebView) -> Bool
 
+    private final class Watch {
+        weak var background: WKWebView?
+        var originalProcess: Int32?
+        let isCurrent: @MainActor () -> Bool
+
+        init(background: WKWebView, originalProcess: Int32?, isCurrent: @escaping @MainActor () -> Bool) {
+            self.background = background
+            self.originalProcess = originalProcess
+            self.isCurrent = isCurrent
+        }
+    }
+
     private let isEnabled: @MainActor () -> Bool
     private let processIdentifier: ProcessIdentifier
     private let restart: Restart
     private let checkInterval: TimeInterval
-    private weak var background: WKWebView?
-    private var identifier: String?
-    private var originalProcess: Int32?
-    private var isCurrent: @MainActor () -> Bool = { false }
+    // Old and new extension contexts can coexist while an embedded extension is upgraded.
+    private var watches: [String: Watch] = [:]
     private var periodicCheck: Task<Void, Never>?
     private var featureFlagSubscription: AnyCancellable?
 
@@ -66,16 +76,12 @@ final class CPMNetworkProcessRecovery {
     deinit { periodicCheck?.cancel() }
 
     func watch(_ webView: WKWebView, identifier: String, isCurrent: @escaping @MainActor () -> Bool) {
-        stop()
-        background = webView
-        self.identifier = identifier
-        originalProcess = processIdentifier(webView)
-        self.isCurrent = isCurrent
+        watches[identifier] = Watch(background: webView, originalProcess: processIdentifier(webView), isCurrent: isCurrent)
         startPeriodicCheckIfNeeded()
     }
 
     private func startPeriodicCheckIfNeeded() {
-        guard periodicCheck == nil, background != nil, isEnabled() else { return }
+        guard periodicCheck == nil, !watches.isEmpty, isEnabled() else { return }
         let interval = checkInterval
         periodicCheck = Task { @MainActor [weak self] in
             while !Task.isCancelled {
@@ -94,38 +100,46 @@ final class CPMNetworkProcessRecovery {
             stopPeriodicCheck()
             return false
         }
-        guard let background, isCurrent() else {
-            stop()
-            return false
-        }
         startPeriodicCheckIfNeeded()
-        guard let current = processIdentifier(background), current > 0 else { return false }
-        guard let originalProcess, originalProcess > 0 else {
-            originalProcess = current
-            return false
+        var recovered = false
+        // Restarting a background can synchronously replace a watch or unload another context.
+        for (identifier, watch) in watches {
+            guard watches[identifier] === watch else { continue }
+            guard let background = watch.background, watch.isCurrent() else {
+                removeWatch(identifier: identifier, matching: watch)
+                continue
+            }
+            guard let current = processIdentifier(background), current > 0 else { continue }
+            guard let originalProcess = watch.originalProcess, originalProcess > 0 else {
+                watch.originalProcess = current
+                continue
+            }
+            guard current != originalProcess else { continue }
+            guard isEnabled() else {
+                stopPeriodicCheck()
+                return recovered
+            }
+            guard restart(background) else { continue }
+            Logger.webExtensions.info("[CPM Recovery] Restarted embedded background after Network process replacement")
+            removeWatch(identifier: identifier, matching: watch)
+            recovered = true
         }
-        guard current != originalProcess, restart(background) else { return false }
-        Logger.webExtensions.info("[CPM Recovery] Restarted embedded background after Network process replacement")
-        if self.background === background { stop() }
-        return true
+        return recovered
     }
 
     func stopWatching(identifier: String) {
-        guard self.identifier == identifier else { return }
-        stop()
+        watches.removeValue(forKey: identifier)
+        if watches.isEmpty { stopPeriodicCheck() }
+    }
+
+    private func removeWatch(identifier: String, matching watch: Watch) {
+        guard watches[identifier] === watch else { return }
+        stopWatching(identifier: identifier)
     }
 
     private func stopPeriodicCheck() {
         periodicCheck?.cancel()
         periodicCheck = nil
-    }
-
-    private func stop() {
-        stopPeriodicCheck()
-        background = nil
-        identifier = nil
-        originalProcess = nil
-        isCurrent = { false }
     }
 
     private static func networkProcessIdentifier(_ webView: WKWebView) -> Int32? {

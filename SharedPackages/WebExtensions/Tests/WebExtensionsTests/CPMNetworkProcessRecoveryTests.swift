@@ -221,6 +221,51 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         XCTAssertEqual(restarted, [replacement])
     }
 
+    func testLateOldBackgroundDuringUpgradeDoesNotDiscardReplacementWatch() {
+        let recovery = makeRecovery()
+        let old = WKWebView()
+        let replacement = WKWebView()
+        let lateOld = WKWebView()
+        watch(old, in: recovery, identifier: "old")
+        watch(replacement, in: recovery, identifier: "new")
+        watch(lateOld, in: recovery, identifier: "old")
+        recovery.stopWatching(identifier: "old")
+
+        process = 200
+        XCTAssertTrue(recovery.recoverIfNeeded())
+        XCTAssertEqual(restarted, [replacement])
+        XCTAssertFalse(recovery.recoverIfNeeded(), "The surviving background must only restart once")
+    }
+
+    func testOverlappingContextsKeepIndependentNetworkProcessBaselines() {
+        let recovery = makeRecovery()
+        let old = WKWebView()
+        let replacement = WKWebView()
+        watch(old, in: recovery, identifier: "old")
+        process = 200
+        watch(replacement, in: recovery, identifier: "new")
+
+        XCTAssertTrue(recovery.recoverIfNeeded())
+        XCTAssertEqual(restarted, [old], "Only the background with a replaced Network process should restart")
+        process = 300
+        XCTAssertTrue(recovery.recoverIfNeeded())
+        XCTAssertEqual(restarted, [old, replacement])
+        XCTAssertFalse(recovery.recoverIfNeeded())
+    }
+
+    func testDiscardingStaleContextDoesNotDiscardAnotherContextWatch() {
+        let recovery = makeRecovery()
+        let old = WKWebView()
+        let replacement = WKWebView()
+        recovery.watch(old, identifier: "old", isCurrent: { false })
+        watch(replacement, in: recovery, identifier: "new")
+
+        XCTAssertFalse(recovery.recoverIfNeeded())
+        process = 200
+        XCTAssertTrue(recovery.recoverIfNeeded())
+        XCTAssertEqual(restarted, [replacement])
+    }
+
     func testUnloadingWatchedIdentifierStopsRecovery() {
         let recovery = makeRecovery()
         let view = WKWebView()
@@ -264,7 +309,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
                                              processIdentifier: { [unowned self] _ in self.process },
                                              restart: { [unowned self] view in
             self.restarted.append(view)
-            if view === old { recovery?.watch(replacement, identifier: "new", isCurrent: { true }) }
+            if view === old { recovery?.watch(replacement, identifier: "embedded", isCurrent: { true }) }
             return true
         })
         let sut = try XCTUnwrap(recovery)

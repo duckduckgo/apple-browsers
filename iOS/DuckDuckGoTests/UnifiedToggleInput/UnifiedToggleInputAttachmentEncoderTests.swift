@@ -85,8 +85,30 @@ final class UnifiedToggleInputAttachmentEncoderTests: XCTestCase {
         XCTAssertNotNil(result?.first.flatMap { Data(base64Encoded: $0.data) })
     }
 
+    func testPastedTextIsSentInPasteOrderAndCountsAsContent() {
+        let first = AIChatPastedText(content: "first paste")
+        let second = AIChatPastedText(content: "second paste")
+
+        let result = encode([.pastedText(first), .file(makeFileAttachment()), .pastedText(second)])
+
+        XCTAssertEqual(result.textPasted, [first.payload, second.payload])
+        XCTAssertFalse(result.isEmpty)
+    }
+
+    func testPastedTextIsNilWhenNonePasted() {
+        XCTAssertNil(encode([.file(makeFileAttachment())]).textPasted)
+    }
+
+    func testPastedTextIsSentEvenWhenTheModelTakesNoUploads() {
+        let paste = AIChatPastedText(content: "paste")
+
+        let result = UnifiedToggleInputAttachmentEncoder.encode([.pastedText(paste)], imagesSupported: false, filesSupported: false)
+
+        XCTAssertEqual(result, AIChatPromptAttachments(textPasted: [paste.payload]))
+    }
+
     func testEditSendsEmptyArrayForSupportedKindWithNothingAttached() {
-        let result = UnifiedToggleInputAttachmentEncoder.encodeForEdit([], imagesSupported: true, filesSupported: true)
+        let result = UnifiedToggleInputAttachmentEncoder.encodeForEdit([], imagesSupported: true, filesSupported: true, carriesPastedText: false)
 
         XCTAssertEqual(result, AIChatPromptAttachments(images: [], files: []))
     }
@@ -94,10 +116,27 @@ final class UnifiedToggleInputAttachmentEncoderTests: XCTestCase {
     func testEditSendsNilForUnsupportedKind() {
         let result = UnifiedToggleInputAttachmentEncoder.encodeForEdit([.image(makeImageAttachment())],
                                                                        imagesSupported: false,
-                                                                       filesSupported: true)
+                                                                       filesSupported: true,
+                                                                       carriesPastedText: false)
 
         XCTAssertNil(result.images)
         XCTAssertEqual(result.files, [])
+    }
+
+    func testEditThatCarriesPastedTextSendsTheRemainingPastesOrEmpty() {
+        let kept = AIChatPastedText(content: "kept")
+
+        let remaining = UnifiedToggleInputAttachmentEncoder.encodeForEdit([.pastedText(kept)], imagesSupported: false, filesSupported: false, carriesPastedText: true)
+        let allRemoved = UnifiedToggleInputAttachmentEncoder.encodeForEdit([], imagesSupported: false, filesSupported: false, carriesPastedText: true)
+
+        XCTAssertEqual(remaining.textPasted, [kept.payload])
+        XCTAssertEqual(allRemoved.textPasted, [])
+    }
+
+    func testEditThatDoesNotCarryPastedTextLeavesTheKeyOutSoTheFrontendKeepsThem() {
+        let result = UnifiedToggleInputAttachmentEncoder.encodeForEdit([], imagesSupported: true, filesSupported: true, carriesPastedText: false)
+
+        XCTAssertNil(result.textPasted)
     }
 
     private func encode(_ attachments: [UnifiedToggleInputAttachment]) -> AIChatPromptAttachments {

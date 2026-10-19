@@ -26,6 +26,7 @@ import UIComponents
 
 struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
+    @State private var isSyncWithAnotherDevicePending = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 28) {
@@ -60,8 +61,10 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
             .padding(.bottom, 20)
 
             Button {
+                isSyncWithAnotherDevicePending = true
                 Task {
                     await model.syncWithAnotherDevicePressed()
+                    isSyncWithAnotherDevicePending = false
                 }
             } label: {
                 HStack(spacing: 6) {
@@ -71,8 +74,8 @@ struct SyncSetupViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
                     Text(UserText.beginSyncButtonV2)
                 }
             }
-            .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable))
-            .disabled(!model.isConnectingDevicesAvailable)
+            .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable && !isSyncWithAnotherDevicePending))
+            .disabled(!model.isConnectingDevicesAvailable || isSyncWithAnotherDevicePending)
             .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity)

@@ -118,7 +118,7 @@ struct ManageDeviceView: View {
                 }
                 .accessibility(identifier: "deviceName")
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     private var syncToggleSection: some View {
@@ -138,7 +138,7 @@ struct ManageDeviceView: View {
         } footer: {
             Text(turnOffFooter)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         .removeDeviceConfirmationAlert(isPresented: $model.isThisDeviceTurnOffConfirmationVisible,
                                        deviceName: editModel.name,
                                        isImprovedPairingFlowEnabled: model.isImprovedPairingFlowEnabled) {
@@ -183,7 +183,7 @@ struct ManageDeviceView: View {
         } footer: {
             Text(removeFooter)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         .removeDeviceConfirmationAlert(isPresented: $isShowingRemoveConfirmation,
                                        deviceName: device.name,
                                        isImprovedPairingFlowEnabled: model.isImprovedPairingFlowEnabled) {

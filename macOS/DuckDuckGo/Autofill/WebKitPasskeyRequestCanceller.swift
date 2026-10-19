@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import AuthenticationServices
 import Foundation
 import os.log
@@ -53,7 +54,7 @@ final class WebKitPasskeyRequestCanceller {
     private let webKitDelegateClass: AnyClass
     /// The latest WebKit request, cancelled when the next one starts. Held strongly because WebKit lets go of it as
     /// soon as it replaces it.
-    private var lastWebKitController: PasskeyAuthorizationController?
+    private(set) var lastWebKitController: PasskeyAuthorizationController?
     /// How long a new request waits after cancelling one still open in another page, so it starts only after the agent
     /// has finished winding down the cancelled one. The app gets no signal when that happens, so a fixed delay is the
     /// only safe option found.
@@ -152,6 +153,7 @@ extension WebKitPasskeyRequestCanceller {
     ///
     /// If WebKit's delegate class is missing, for example because a macOS update changed WebKit, nothing is installed,
     /// passkeys behave as they would without it, and a pixel reports it.
+    @MainActor
     static func install(pixelFiring: PixelFiring? = PixelKit.shared) {
         guard #available(macOS 13.0, *), installed == nil else { return }
 
@@ -165,10 +167,30 @@ extension WebKitPasskeyRequestCanceller {
 
         installed = WebKitPasskeyRequestCanceller(webKitDelegateClass: webKitDelegateClass)
         _ = ASAuthorizationController.swizzlePasskeyRequestMethodsOnce
+        outcomeReporter = PasskeyRequestOutcomeReporter(pixelFiring: pixelFiring)
+        _ = NSObject.swizzleWebKitDelegateCompletionMethodsOnce
+        willTerminateObserver = NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification,
+                                                                       object: nil,
+                                                                       queue: .main) { _ in
+            cancelOpenRequestBeforeQuitting()
+        }
+    }
+
+    private static var willTerminateObserver: NSObjectProtocol?
+
+    /// Cancels WebKit's request if it's still open in the agent. The agent keeps a request the app never cancelled even
+    /// after the app quits, and then refuses every passkey request from the app's next launch.
+    @available(macOS 13.0, *)
+    private static func cancelOpenRequestBeforeQuitting() {
+        guard let controller = installed?.lastWebKitController as? ASAuthorizationController,
+              let start = controller.passkeyRequestStart, !start.wasCancelled else { return }
+
+        Logger.general.log("Cancelling the open WebKit passkey request before quitting")
+        controller.cancel()
     }
 
     /// WebKit's private `ASAuthorizationController` delegate, which is how WebKit's passkey requests are recognised.
-    private static let webKitDelegateClassName = "_WKASDelegate"
+    fileprivate static let webKitDelegateClassName = "_WKASDelegate"
 }
 
 @available(macOS 13.0, *)
@@ -192,19 +214,121 @@ extension ASAuthorizationController {
     /// Lets the canceller decide when the request starts.
     @objc dynamic fileprivate func swizzled_performRequests() {
         guard let canceller = WebKitPasskeyRequestCanceller.installed else { return swizzled_performRequests() }
-        canceller.willPerform(self) { self.swizzled_performRequests() } // calls the original method
+        canceller.willPerform(self) {
+            self.passkeyRequestStart = PasskeyRequestStart(style: .modal)
+            self.swizzled_performRequests() // calls the original method
+        }
     }
 
     /// Lets the canceller decide when the AutoFill request starts.
     @objc dynamic fileprivate func swizzled_performAutoFillAssistedRequests() {
         guard let canceller = WebKitPasskeyRequestCanceller.installed else { return swizzled_performAutoFillAssistedRequests() }
-        canceller.willPerform(self) { self.swizzled_performAutoFillAssistedRequests() } // calls the original method
+        canceller.willPerform(self) {
+            self.passkeyRequestStart = PasskeyRequestStart(style: .autofill)
+            self.swizzled_performAutoFillAssistedRequests() // calls the original method
+        }
     }
 
     /// Lets the canceller answer a held request without it being sent to the agent.
     @objc dynamic fileprivate func swizzled_cancel() {
+        passkeyRequestStart?.wasCancelled = true
         guard WebKitPasskeyRequestCanceller.installed?.willCancel(self) ?? true else { return }
         swizzled_cancel() // calls the original method
+    }
+
+    private static let passkeyRequestStartKey = UnsafeRawPointer(bitPattern: "passkeyRequestStartKey".hashValue)!
+
+    /// How the request was sent to the agent, so its outcome can be reported with it. `nil` for a request that
+    /// never reached the agent.
+    fileprivate var passkeyRequestStart: PasskeyRequestStart? {
+        get {
+            objc_getAssociatedObject(self, Self.passkeyRequestStartKey) as? PasskeyRequestStart
+        }
+        set {
+            objc_setAssociatedObject(self, Self.passkeyRequestStartKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+}
+
+/// How a WebKit passkey request was sent to the agent.
+private final class PasskeyRequestStart: NSObject {
+    let style: PasskeyRequestOutcome.Style
+    /// Whether WebKit or the canceller cancelled the request, so its failure isn't something the user did or saw.
+    var wasCancelled = false
+
+    init(style: PasskeyRequestOutcome.Style) {
+        self.style = style
+    }
+}
+
+extension WebKitPasskeyRequestCanceller {
+
+    /// Reports how WebKit's passkey requests end, kept so it's created only once.
+    @MainActor
+    fileprivate static var outcomeReporter: PasskeyRequestOutcomeReporter?
+
+    /// Reports the outcome of a request the user saw end. Requests that never reached the agent, and failures of
+    /// requests WebKit or the canceller cancelled, aren't reported.
+    @available(macOS 13.0, *)
+    fileprivate static func reportOutcome(of controller: ASAuthorizationController, error: NSError?) {
+        guard let start = controller.passkeyRequestStart else { return }
+        controller.passkeyRequestStart = nil
+        if error != nil && start.wasCancelled { return }
+
+        let request = controller.authorizationRequests.first
+        let type: PasskeyRequestOutcome.RequestType
+        switch request {
+        case is ASAuthorizationPublicKeyCredentialAssertionRequest: type = .get
+        case is ASAuthorizationPublicKeyCredentialRegistrationRequest: type = .create
+        default: type = .other
+        }
+
+        let outcome = PasskeyRequestOutcome(style: start.style, type: type, result: .init(error: error))
+        // The reporter's debouncing relies on a single thread, and the delegate isn't guaranteed to be called on main.
+        DispatchQueue.main.async {
+            outcomeReporter?.report(outcome)
+        }
+    }
+}
+
+/// Swizzled methods for WebKit's private passkey delegate, which Swift can't extend. They're declared on `NSObject` and
+/// copied onto WebKit's delegate class before being exchanged, so `NSObject` itself is left unchanged.
+@available(macOS 13.0, *)
+extension NSObject {
+
+    fileprivate static let swizzleWebKitDelegateCompletionMethodsOnce: Void = {
+        guard let delegateClass = NSClassFromString(WebKitPasskeyRequestCanceller.webKitDelegateClassName) else { return }
+        swizzle(#selector(ASAuthorizationControllerDelegate.authorizationController(controller:didCompleteWithAuthorization:)),
+                with: #selector(swizzled_authorizationController(_:didCompleteWithAuthorization:)),
+                in: delegateClass)
+        swizzle(#selector(ASAuthorizationControllerDelegate.authorizationController(controller:didCompleteWithError:)),
+                with: #selector(swizzled_authorizationController(_:didCompleteWithError:)),
+                in: delegateClass)
+    }()
+
+    private static func swizzle(_ originalSelector: Selector, with swizzledSelector: Selector, in delegateClass: AnyClass) {
+        guard let originalMethod = class_getInstanceMethod(delegateClass, originalSelector),
+              let swizzledMethod = class_getInstanceMethod(NSObject.self, swizzledSelector),
+              class_addMethod(delegateClass, swizzledSelector, method_getImplementation(swizzledMethod), method_getTypeEncoding(swizzledMethod)),
+              let addedMethod = class_getInstanceMethod(delegateClass, swizzledSelector) else {
+            assertionFailure("Failed to swizzle \(originalSelector)")
+            return
+        }
+        method_exchangeImplementations(originalMethod, addedMethod)
+    }
+
+    /// Reports the request's success before WebKit handles it.
+    @objc dynamic fileprivate func swizzled_authorizationController(_ controller: ASAuthorizationController,
+                                                                    didCompleteWithAuthorization authorization: ASAuthorization) {
+        WebKitPasskeyRequestCanceller.reportOutcome(of: controller, error: nil)
+        swizzled_authorizationController(controller, didCompleteWithAuthorization: authorization) // calls the original method
+    }
+
+    /// Reports the request's failure before WebKit handles it.
+    @objc dynamic fileprivate func swizzled_authorizationController(_ controller: ASAuthorizationController,
+                                                                    didCompleteWithError error: Error) {
+        WebKitPasskeyRequestCanceller.reportOutcome(of: controller, error: error as NSError)
+        swizzled_authorizationController(controller, didCompleteWithError: error) // calls the original method
     }
 }
 

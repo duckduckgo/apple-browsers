@@ -42,8 +42,13 @@ struct RemoveDeviceViewV2: View {
             VStack(alignment: .center, spacing: 20) {
                 illustration
                     .accessibilityHidden(true)
-                SyncUIViews.TextHeader(text: UserText.removeDeviceConfirmTitleV2)
-                SyncUIViewsV2.TextDetailMultilineMarkdown(text: UserText.removeDeviceConfirmMessageV2(device.name))
+                if model.isImprovedPairingFlowEnabled {
+                    SyncUIViews.TextHeader(text: UserText.removeDeviceConfirmTitleImproved(device.name))
+                    SyncUIViewsV2.TextDetailMultiline(text: UserText.removeDeviceConfirmMessageImproved(device.name))
+                } else {
+                    SyncUIViews.TextHeader(text: UserText.removeDeviceConfirmTitleV2)
+                    SyncUIViewsV2.TextDetailMultilineMarkdown(text: UserText.removeDeviceConfirmMessageV2(device.name))
+                }
             }
         } buttons: {
             Spacer()
@@ -62,7 +67,7 @@ struct RemoveDeviceViewV2: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(UserText.removeDeviceConfirmButtonV2)
+                    Text(model.isImprovedPairingFlowEnabled ? UserText.removeDeviceConfirmButtonImproved : UserText.removeDeviceConfirmButtonV2)
                 }
             }
             .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),
@@ -87,5 +92,14 @@ struct RemoveDeviceViewV2: View {
 #Preview("Other Device") {
     RemoveDeviceViewV2(device: SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"))
         .environmentObject(ManagementDialogModel())
+}
+
+#Preview("Improved Pairing Flow") {
+    RemoveDeviceViewV2(device: SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"))
+        .environmentObject({
+            let model = ManagementDialogModel()
+            model.isImprovedPairingFlowEnabled = true
+            return model
+        }())
 }
 #endif

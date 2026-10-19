@@ -71,6 +71,6 @@ final class VPNUpsellDotBadgePromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func buttonClicked() {
-        session.resolve(.actioned)
+        session.resolve(.actioned())
     }
 }

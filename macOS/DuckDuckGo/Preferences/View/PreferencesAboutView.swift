@@ -180,8 +180,8 @@ extension Preferences {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
                             .background(
-                                RoundedRectangle(cornerRadius: DesignSystemRebrand.isAppRebranded() ? 11 : 4)
-                                    .fill(DesignSystemRebrand.isAppRebranded() ? Color(designSystemColor: .statusYellowTertiary) : Color(.betaLabelBackground))
+                                RoundedRectangle(cornerRadius: 11)
+                                    .fill(Color(designSystemColor: .statusYellowTertiary))
                             )
                             .foregroundColor(Color(.betaLabelForeground))
                     }
@@ -496,22 +496,10 @@ struct UpdateButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor: Color
-        let disabledBackgroundColor: Color
-        let labelColor: Color
-        let cornerRadius: CGFloat
-
-        if DesignSystemRebrand.isAppRebranded() {
-            enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
-            disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
-            labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
-            cornerRadius = 14
-        } else {
-            enabledBackgroundColor = configuration.isPressed ? Color(NSColor.controlAccentColor).opacity(0.5) : Color(NSColor.controlAccentColor)
-            disabledBackgroundColor = Color.gray.opacity(0.1)
-            labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
-            cornerRadius = 8
-        }
+        let enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
+        let disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
+        let labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
+        let cornerRadius: CGFloat = 14
 
         return configuration.label
             .lineLimit(1)

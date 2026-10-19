@@ -20,6 +20,7 @@ import XCTest
 import WebKit
 import ZIPFoundation
 @testable import WebExtensions
+import WebExtensionsTestSupport
 
 @available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionManagerTests: XCTestCase {
@@ -28,7 +29,6 @@ final class WebExtensionManagerTests: XCTestCase {
     var storageProvidingMock: WebExtensionStorageProvidingMock!
     var webExtensionLoadingMock: WebExtensionLoadingMock!
     var windowTabProviderMock: WebExtensionWindowTabProvidingMock!
-    var eventsListenerMock: WebExtensionEventsListenerMock!
     var lifecycleDelegateMock: WebExtensionLifecycleDelegateMock!
     var configurationMock: WebExtensionConfigurationProvidingMock!
     private var createdTestExtensionDirs: [URL] = []
@@ -46,7 +46,6 @@ final class WebExtensionManagerTests: XCTestCase {
         storageProvidingMock = WebExtensionStorageProvidingMock()
         webExtensionLoadingMock = WebExtensionLoadingMock()
         windowTabProviderMock = WebExtensionWindowTabProvidingMock()
-        eventsListenerMock = WebExtensionEventsListenerMock()
         lifecycleDelegateMock = WebExtensionLifecycleDelegateMock()
         configurationMock = WebExtensionConfigurationProvidingMock()
         recordedSleeps = []
@@ -64,11 +63,33 @@ final class WebExtensionManagerTests: XCTestCase {
         storageProvidingMock = nil
         webExtensionLoadingMock = nil
         windowTabProviderMock = nil
-        eventsListenerMock = nil
         lifecycleDelegateMock = nil
         configurationMock = nil
 
         super.tearDown()
+    }
+
+    // MARK: - Web view configuration
+
+    @MainActor
+    func testWhenExtensionsAreAttached_ThenConfigurationUsesController() {
+        let manager = makeManager()
+        let configuration = WKWebViewConfiguration()
+
+        configuration.attachWebExtensions(of: manager)
+
+        let attachedController = configuration.webExtensionController
+        XCTAssertIdentical(attachedController, manager.controller)
+    }
+
+    @MainActor
+    func testWhenOtherManagerIsAttached_ThenThatManagerAttaches() {
+        let manager = MockWebExtensionManaging()
+        let configuration = WKWebViewConfiguration()
+
+        configuration.attachWebExtensions(of: manager)
+
+        XCTAssertEqual(manager.attachedConfigurations, [configuration])
     }
 
     // MARK: - Helper
@@ -87,7 +108,6 @@ final class WebExtensionManagerTests: XCTestCase {
             storageProvider: storageProvider ?? storageProvidingMock,
             installationStore: installedExtensionStoringMock,
             loader: webExtensionLoadingMock,
-            eventsListener: eventsListenerMock,
             lifecycleDelegate: lifecycleDelegateMock,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
@@ -435,13 +455,15 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenLoadInstalledExtensions_ThenEventsListenerControllerIsSet() async {
+    func testWhenExtensionsLoad_ThenListenerForwardsToController() async {
         let manager = makeManager()
+        let listener = manager.eventsListener as? WebExtensionEventsListener
+        let message = "Events before the first load are dropped"
+        XCTAssertNil(listener?.controller, message)
 
         await manager.loadInstalledExtensions()
 
-        XCTAssertNotNil(eventsListenerMock.controller)
-        XCTAssertTrue(eventsListenerMock.controller === manager.controller)
+        XCTAssertIdentical(listener?.controller, manager.controller)
     }
 
     @MainActor
@@ -881,7 +903,6 @@ final class WebExtensionManagerTests: XCTestCase {
             storageProvider: storageProvidingMock,
             installationStore: installedExtensionStoringMock,
             loader: nil,
-            eventsListener: eventsListenerMock,
             lifecycleDelegate: lifecycleDelegateMock
         )
     }

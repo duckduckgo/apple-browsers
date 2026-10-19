@@ -94,6 +94,7 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         Logger.modalPrompt.info("\(self.logPrefix) - What's New - Providing modal for message: \(message.id, privacy: .public)")
 
         return ModalPromptConfiguration(
+            exposureID: .remoteMessageModal,
             viewController: viewController,
             animated: true
         )

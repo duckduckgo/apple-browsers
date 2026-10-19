@@ -1238,6 +1238,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: try? KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "EventHubKeyValueStore"))
 
         if AppVersion.runType.requiresEnvironment {
+            let reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: keyValueStore)
+            let isSparkleBuild = StandardApplicationBuildType().isSparkleBuild
             remoteMessagingClient = RemoteMessagingClient(
                 remoteMessagingDatabase: RemoteMessagingDatabase().db,
                 bookmarksDatabase: bookmarkDatabase.db,
@@ -1255,7 +1257,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
                 themeManager: themeManager,
-                dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager }
+                dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager },
+                // App Store builds can't detect reinstalls, so rules using it fail there rather than treating everyone as new.
+                isReturningUser: { isSparkleBuild ? reinstallUserDetection.isReinstallingUser : nil }
             )
             let subscriptionManagerForPIR = subscriptionManager
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in

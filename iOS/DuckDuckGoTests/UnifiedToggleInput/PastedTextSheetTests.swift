@@ -81,6 +81,12 @@ final class PastedTextSheetTests: XCTestCase {
         XCTAssertEqual(outcomes, [.unchanged])
     }
 
+    func testCharacterCountStringsReadNaturally() {
+        XCTAssertEqual(UserText.aiChatPastedTextCharacterCount(1), "1 character")
+        XCTAssertEqual(UserText.aiChatPastedTextCharacterCount(2), "2 characters")
+        XCTAssertEqual(UserText.aiChatPastedTextOverLimitCount(count: 16800, limit: 16000), "16800/16000 characters", "No grouping separators, as in the footer")
+    }
+
     func testPresenterPresentsFromTheTopmostControllerAboveTheHost() {
         let host = UIViewController()
         let presented = UIViewController()

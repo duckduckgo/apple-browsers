@@ -374,9 +374,14 @@ final class AppDependencyProvider: DependencyProvider {
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        subscriptionManager.tokenRecoveryHandler = {
-            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient) { trigger in
+            Logger.subscription.log("Subscription token restored from backup, trigger: \(trigger.rawValue, privacy: .public)")
         }
+        let appStoreRecovery = AppStoreTokenRecovery(recoverer: Self.deadTokenRecoverer,
+                                                     purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
+                                                     restoreFlow: restoreFlow)
+        subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
+                                                                                missingTokenStrategies: [backupRecovery])
 
         self.subscriptionManager = subscriptionManager
         tokenHandler = subscriptionManager

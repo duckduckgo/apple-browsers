@@ -991,9 +991,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        defaultSubscriptionManager.tokenRecoveryHandler = {
-            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient) { trigger in
+            Logger.subscription.log("Subscription token restored from backup, trigger: \(trigger.rawValue, privacy: .public)")
         }
+        let appStoreRecovery = AppStoreTokenRecovery(recoverer: Self.deadTokenRecoverer,
+                                                     purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
+                                                     restoreFlow: restoreFlow)
+        defaultSubscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
+                                                                                       missingTokenStrategies: [backupRecovery])
 
         subscriptionManager = defaultSubscriptionManager
         freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
@@ -1833,6 +1838,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         promoService?.applicationDidBecomeActive()
 
         hangMetricsService.resume()
+
+        Task { [subscriptionManager] in
+            await subscriptionManager.restoreMissingTokenIfPossible()
+        }
 
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)

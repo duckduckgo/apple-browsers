@@ -78,6 +78,40 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications !== undefined")
     }
 
+    // MARK: - Extension Fixes
+
+    func testWhenTheExtensionIsBitwarden_ThenItsURLsReportChromesProtocol() throws {
+        try installFakeURL()
+        try declareManifest("{ homepage_url: 'https://bitwarden.com' }")
+        try evaluateStubScript()
+
+        try assertTrue("new URL('webkit-extension://abc/overlay/menu.html').protocol === 'chrome-extension:'")
+        try assertTrue("new URL('webkit-extension://abc/overlay/menu.html').href === 'webkit-extension://abc/overlay/menu.html'")
+        try assertTrue("new URL('https://example.com/').protocol === 'https:'")
+    }
+
+    func testWhenBitwardenSetsChromesProtocol_ThenTheURLKeepsTheRealScheme() throws {
+        try installFakeURL()
+        try declareManifest("{ homepage_url: 'https://bitwarden.com' }")
+        try evaluateStubScript()
+
+        try assertTrue("""
+        (function() {
+            var url = new URL('webkit-extension://abc/');
+            url.protocol = url.protocol;
+            return url.scheme === 'webkit-extension:';
+        })()
+        """)
+    }
+
+    func testWhenTheExtensionIsAnotherOne_ThenItsURLsAreLeftAlone() throws {
+        try installFakeURL()
+        try declareManifest("{ homepage_url: 'https://example.com' }")
+        try evaluateStubScript()
+
+        try assertTrue("new URL('webkit-extension://abc/').protocol === 'webkit-extension:'")
+    }
+
     // MARK: - DuckDuckGo Extensions
 
     func testWhenManifestIsADuckDuckGoExtension_ThenScriptDoesNothing() throws {
@@ -430,6 +464,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     func testWhenPrivacyIsUnknownToTheHost_ThenContainsResolvesTrueWithoutAskingTheHost() throws {
         try installFakePermissions()
+        try declareManifestPermissions(["privacy"])
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
@@ -440,6 +475,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     func testWhenContainsMixesPrivacyWithAHostPermission_ThenTheHostAnswersForTheRest() throws {
         try installFakePermissions()
+        try declareManifestPermissions(["privacy"])
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'tabs'] })")
@@ -453,6 +489,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     func testWhenContainsMixesPrivacyWithAnUnknownPermission_ThenItResolvesFalse() throws {
         try installFakePermissions()
+        try declareManifestPermissions(["privacy"])
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'downloads'] })")
@@ -462,6 +499,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     func testWhenPrivacyIsRequested_ThenRequestResolvesTrueWithBothStyles() throws {
         try installFakePermissions()
+        try declareManifestPermissions(["privacy"])
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
@@ -479,12 +517,108 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     func testWhenOnlyPrivacyIsRemoved_ThenRemoveResolvesFalseAndTheHostIsNotAsked() throws {
         try installFakePermissions()
+        try declareManifestPermissions(["privacy"])
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['privacy'] })")
 
         try assertTrue("permissionsResult === false")
         try assertTrue("permissionsLog.remove.length === 0")
+    }
+
+    func testWhenTheManifestDoesNotDeclarePrivacy_ThenItIsNotGranted() throws {
+        try installFakePermissions()
+        try declareManifestPermissions(["storage"])
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === false")
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === false")
+    }
+
+    func testWhenTheManifestDeclaresPrivacyAsOptional_ThenItIsGranted() throws {
+        try installFakePermissions()
+        try declareManifestPermissions([], optional: ["privacy"])
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+
+        try assertTrue("permissionsResult === true")
+    }
+
+    // MARK: - Privacy Settings Kept by the App
+
+    func testWhenTheAppKeepsTheSettings_ThenSetGoesToTheAppAndNotToStorage() throws {
+        try installFakePrivacyHandler()
+        try evaluateStubScript()
+
+        try disableBrowserPasswordManagerTheWayBitwardenDoes()
+
+        try assertTrue("overridden === true")
+        try assertTrue("""
+        JSON.stringify(privacyRequests.filter(function(request) { return request.action === 'set'; })) === JSON.stringify([
+            { action: 'set', setting: 'autofillAddressEnabled', value: false },
+            { action: 'set', setting: 'autofillCreditCardEnabled', value: false },
+            { action: 'set', setting: 'passwordSavingEnabled', value: false }
+        ])
+        """)
+        XCTAssertNil(storageLocalItems["__ddgPrivacySettings"])
+    }
+
+    func testWhenTheAppSaysAnotherExtensionControlsTheSetting_ThenGetReportsIt() throws {
+        try installFakePrivacyHandler()
+        try evaluateStubScript()
+        context.evaluateScript("""
+        privacyState.passwordSavingEnabled = { value: false, levelOfControl: 'controlled_by_other_extensions' };
+        var details = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.get({}).then(function(result) { details = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("details.levelOfControl === 'controlled_by_other_extensions' && details.value === false")
+    }
+
+    func testWhenTheAppRefusesASet_ThenSetRejects() throws {
+        try installFakePrivacyHandler(refusesSet: true)
+        try evaluateStubScript()
+        context.evaluateScript("""
+        var setOutcome = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.set({ value: false })
+            .then(function() { setOutcome = 'resolved'; }, function() { setOutcome = 'rejected'; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("setOutcome === 'rejected'")
+    }
+
+    func testWhenTheAppRefusesASetMadeWithACallback_ThenTheCallbackGetsTheErrorInLastError() throws {
+        try installFakePrivacyHandler(refusesSet: true)
+        try evaluateStubScript()
+        context.evaluateScript("""
+        var callbackError = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.set({ value: false }, function() {
+            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("callbackError === \"The extension can't control this setting\"")
+        try assertTrue("chrome.runtime.lastError === undefined")
+    }
+
+    func testWhenTheAppAnswersNothingUsable_ThenGetReportsTheSettingAsNotControllable() throws {
+        try installFakePrivacyHandler()
+        try evaluateStubScript()
+        context.evaluateScript("""
+        privacyState.passwordSavingEnabled = { value: false, levelOfControl: 'made_up' };
+        var details = 'pending';
+        chrome.privacy.services.passwordSavingEnabled.get({}, function(result) { details = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("details.levelOfControl === 'not_controllable' && details.value === true")
     }
 
     // MARK: - Privacy Settings
@@ -1426,6 +1560,72 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         var originalPermissionsOnAdded = chrome.permissions.onAdded;
         var originalPermissionsOnRemoved = chrome.permissions.onRemoved;
         var originalPermissionsGetAll = chrome.permissions.getAll;
+        """)
+        try assertNoExceptions()
+    }
+
+    /// A `URL` whose `protocol` is an accessor on the prototype, as in WebKit. A bare `JSContext`
+    /// has no `URL`.
+    private func installFakeURL() throws {
+        context.evaluateScript("""
+        globalThis.URL = function(href) {
+            this.href = href;
+            this.scheme = href.slice(0, href.indexOf(':') + 1);
+        };
+        Object.defineProperty(URL.prototype, 'protocol', {
+            get: function() { return this.scheme; },
+            set: function(value) { this.scheme = value; },
+            enumerable: true,
+            configurable: true
+        });
+        """)
+        try assertNoExceptions()
+    }
+
+    /// Gives the page the manifest `literal`, a JavaScript object literal.
+    private func declareManifest(_ literal: String) throws {
+        context.evaluateScript("chrome.runtime.getManifest = function() { return \(literal); };")
+        try assertNoExceptions()
+    }
+
+    /// Gives the page a manifest that asks for `permissions` and `optional` permissions.
+    private func declareManifestPermissions(_ permissions: [String], optional: [String] = []) throws {
+        func list(_ names: [String]) -> String { "[" + names.map { "'\($0)'" }.joined(separator: ", ") + "]" }
+        context.evaluateScript("""
+        chrome.runtime.getManifest = function() {
+            return { permissions: \(list(permissions)), optional_permissions: \(list(optional)) };
+        };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// A page whose app keeps the `chrome.privacy.services` settings: `privacyState` holds what `get`
+    /// answers per setting, `set` and `clear` update it the way the app does for the only extension, and
+    /// `privacyRequests` collects what the script posted. With `refusesSet`, every `set` is rejected.
+    private func installFakePrivacyHandler(refusesSet: Bool = false) throws {
+        context.evaluateScript("""
+        var privacyRequests = [];
+        var privacyState = {};
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.privacyMessageHandlerName)": {
+                postMessage: function(payload) {
+                    privacyRequests.push(payload);
+                    if (payload.action === 'get') {
+                        return Promise.resolve(privacyState[payload.setting]
+                            || { value: true, levelOfControl: 'controllable_by_this_extension' });
+                    }
+                    if (payload.action === 'set') {
+                        if (\(refusesSet)) {
+                            return Promise.reject(new Error("The extension can't control this setting"));
+                        }
+                        privacyState[payload.setting] = { value: payload.value, levelOfControl: 'controlled_by_this_extension' };
+                        return Promise.resolve(null);
+                    }
+                    delete privacyState[payload.setting];
+                    return Promise.resolve(null);
+                }
+            }
+        } };
         """)
         try assertNoExceptions()
     }

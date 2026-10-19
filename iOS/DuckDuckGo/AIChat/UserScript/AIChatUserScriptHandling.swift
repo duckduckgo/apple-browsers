@@ -157,7 +157,11 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
-    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func connectInitialPromptSession(_ session: AIChatInitialPromptSession)
+    @MainActor func disconnectInitialPromptSession()
+    @MainActor func captureInitialPromptWait() -> (@MainActor () async -> Bool)?
+    @MainActor func cancelInitialPrompt()
     /// The `termsAccepted` value `prompt` carries across the bridge.
     func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -209,6 +213,8 @@ protocol AIChatUserScriptHandling: AnyObject {
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
+
+    @MainActor private var initialPromptConnection: AIChatInitialPromptSession.Connection?
 
     private var payloadHandler: (any AIChatConsumableDataHandling)?
     private let promptHandler: any AIChatConsumableDataHandling
@@ -463,7 +469,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             && devicePlatform.isIphone
             && supportsNativeChatInput
             && isNativeStorageBridgeAvailable
-        let config = AIChatNativeConfigValues(
+        var config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
             supportsOpeningSettings: defaults.supportsOpeningSettings,
@@ -492,6 +498,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message),
             supportsCanonicalChatFormat: true
         )
+        config.supportsResponseStateReporting = true
         return config
     }
 
@@ -544,9 +551,39 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard let prompt = promptHandler.consumeData() as? AIChatNativePrompt else { return nil }
-        return prompt.withTermsAccepted(termsAcceptedMarker(for: prompt))
+    @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard !Task.isCancelled else { return nil }
+        let prompt: AIChatNativePrompt?
+        switch initialPromptConnection?.consumeInitialPrompt() ?? .shared {
+        case .shared:
+            prompt = promptHandler.consumeData() as? AIChatNativePrompt
+        case .recipient(let initialPrompt):
+            prompt = initialPrompt
+        }
+        return prompt.map { $0.withTermsAccepted(termsAcceptedMarker(for: $0)) }
+    }
+
+    @MainActor
+    func connectInitialPromptSession(_ session: AIChatInitialPromptSession) {
+        guard initialPromptConnection?.isConnected(to: session) != true else { return }
+        initialPromptConnection?.disconnect()
+        initialPromptConnection = session.connect()
+    }
+
+    @MainActor
+    func disconnectInitialPromptSession() {
+        // Keep the invalid connection so a stale script cannot fall back to the shared prompt.
+        initialPromptConnection?.disconnect()
+    }
+
+    @MainActor
+    func captureInitialPromptWait() -> (@MainActor () async -> Bool)? {
+        initialPromptConnection?.captureInitialPromptWait()
+    }
+
+    @MainActor
+    func cancelInitialPrompt() {
+        initialPromptConnection?.cancel()
     }
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {

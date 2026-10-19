@@ -27,7 +27,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
     private let oAuthClient: any OAuthClient
     private let retryInterval: TimeInterval
     private let now: () -> Date
-    private let onRestored: (TokenRecoveryTrigger) -> Void
+    private let onRestored: ((TokenRecoveryTrigger) -> Void)?
     private let lock = NSLock()
     private var missingTokenRetryAfter: Date?
 
@@ -35,11 +35,11 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
     ///   - oAuthClient: The client that holds the backup and stores the restored token container.
     ///   - retryInterval: After a restore for a missing token fails for a transient reason, how long further missing-token restores are skipped.
     ///   - now: The current date, used to measure `retryInterval`.
-    ///   - onRestored: Called with the recovery trigger after each successful restore.
+    ///   - onRestored: Called with the recovery trigger after each successful restore, or nil.
     public init(oAuthClient: any OAuthClient,
                 retryInterval: TimeInterval = .minutes(5),
                 now: @escaping () -> Date = { Date() },
-                onRestored: @escaping (TokenRecoveryTrigger) -> Void) {
+                onRestored: ((TokenRecoveryTrigger) -> Void)? = nil) {
         self.oAuthClient = oAuthClient
         self.retryInterval = retryInterval
         self.now = now
@@ -68,7 +68,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
 
         setRetryAfter(nil)
         Logger.subscriptionTokensManagement.log("Token restored from backup, trigger: \(context.trigger.rawValue, privacy: .public)")
-        onRestored(context.trigger)
+        onRestored?(context.trigger)
     }
 
     /// Whether a restore failure may succeed when retried: anything but a rejected or missing backup, or a refresh the server rejected.

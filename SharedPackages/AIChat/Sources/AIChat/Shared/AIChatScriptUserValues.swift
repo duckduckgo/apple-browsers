@@ -383,6 +383,14 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
     }
 
+    public struct NativePromptPastedText: Codable, Equatable {
+        public let content: String
+
+        public init(content: String) {
+            self.content = content
+        }
+    }
+
     public struct Query: Codable, Equatable {
         public static let tool = "query"
 
@@ -391,6 +399,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let toolChoice: [String]?
         public let images: [NativePromptImage]?
         public let files: [NativePromptFile]?
+        public let textPasted: [NativePromptPastedText]?
         public let modelId: String?
         public let mode: String?
         public let reasoningEffort: AIChatReasoningEffort?
@@ -401,6 +410,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             case toolChoice
             case images
             case files
+            case textPasted
             case modelId
             case mode
             case reasoningEffort
@@ -420,6 +430,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             self.toolChoice = toolChoice
             self.images = attachments.images
             self.files = attachments.files
+            self.textPasted = attachments.textPasted
             self.modelId = modelId
             self.mode = mode
             self.reasoningEffort = reasoningEffort
@@ -432,6 +443,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             toolChoice = try container.decodeIfPresent([String].self, forKey: .toolChoice)
             images = try container.decodeIfPresent([NativePromptImage].self, forKey: .images)
             files = try container.decodeIfPresent([NativePromptFile].self, forKey: .files)
+            textPasted = try container.decodeIfPresent([NativePromptPastedText].self, forKey: .textPasted)
             modelId = try container.decodeIfPresent(String.self, forKey: .modelId)
             mode = try container.decodeIfPresent(String.self, forKey: .mode)
             let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
@@ -439,7 +451,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
 
         public var attachments: AIChatPromptAttachments {
-            AIChatPromptAttachments(images: images, files: files)
+            AIChatPromptAttachments(images: images, files: files, textPasted: textPasted)
         }
     }
 

@@ -27,24 +27,39 @@ struct AIChatPromptAttachmentsWireTests {
     private static let imageJSON = #"{"data":"aW1n","format":"png"}"#
     private static let fileJSON = #"{"data":"ZmlsZQ==","fileName":"a.pdf","mimeType":"application\/pdf"}"#
 
+    private static let pastes = [
+        AIChatNativePrompt.NativePromptPastedText(content: "line one 😀\n\"quoted\" line two"),
+        AIChatNativePrompt.NativePromptPastedText(content: "second"),
+    ]
+    private static let pastesJSON = #"[{"content":"line one 😀\n\"quoted\" line two"},{"content":"second"}]"#
+
     private struct Case {
         let images: [AIChatNativePrompt.NativePromptImage]?
         let files: [AIChatNativePrompt.NativePromptFile]?
-        let expectedKeys: String
+        var textPasted: [AIChatNativePrompt.NativePromptPastedText]?
+        var keysBeforePrompt = ""
+        var keysAfterPrompt = ""
 
         var attachments: AIChatPromptAttachments {
-            AIChatPromptAttachments(images: images, files: files)
+            AIChatPromptAttachments(images: images, files: files, textPasted: textPasted)
         }
+
+        var description: String { "images: \(String(describing: images)), files: \(String(describing: files)), textPasted: \(String(describing: textPasted))" }
     }
 
     private static let cases: [Case] = [
-        Case(images: nil, files: nil, expectedKeys: ""),
-        Case(images: [], files: nil, expectedKeys: #","images":[]"#),
-        Case(images: [image], files: nil, expectedKeys: #","images":["# + imageJSON + "]"),
-        Case(images: nil, files: [], expectedKeys: #","files":[]"#),
-        Case(images: nil, files: [file], expectedKeys: #","files":["# + fileJSON + "]"),
-        Case(images: [], files: [], expectedKeys: #","files":[],"images":[]"#),
-        Case(images: [image], files: [file], expectedKeys: #","files":["# + fileJSON + #"],"images":["# + imageJSON + "]"),
+        Case(images: nil, files: nil),
+        Case(images: [], files: nil, keysBeforePrompt: #","images":[]"#),
+        Case(images: [image], files: nil, keysBeforePrompt: #","images":["# + imageJSON + "]"),
+        Case(images: nil, files: [], keysBeforePrompt: #","files":[]"#),
+        Case(images: nil, files: [file], keysBeforePrompt: #","files":["# + fileJSON + "]"),
+        Case(images: [], files: [], keysBeforePrompt: #","files":[],"images":[]"#),
+        Case(images: [image], files: [file], keysBeforePrompt: #","files":["# + fileJSON + #"],"images":["# + imageJSON + "]"),
+        Case(images: nil, files: nil, textPasted: [], keysAfterPrompt: #","textPasted":[]"#),
+        Case(images: nil, files: nil, textPasted: pastes, keysAfterPrompt: #","textPasted":"# + pastesJSON),
+        Case(images: [image], files: [file], textPasted: pastes,
+             keysBeforePrompt: #","files":["# + fileJSON + #"],"images":["# + imageJSON + "]",
+             keysAfterPrompt: #","textPasted":"# + pastesJSON),
     ]
 
     @available(iOS 16, macOS 13, *)
@@ -52,8 +67,20 @@ struct AIChatPromptAttachmentsWireTests {
     func queryPromptEncodesEachAttachmentKindAsGiven() throws {
         for testCase in Self.cases {
             let prompt = AIChatNativePrompt.queryPrompt("p", autoSubmit: true, attachments: testCase.attachments)
-            let expected = #"{"platform":"\#(Platform.name)","query":{"autoSubmit":true"# + testCase.expectedKeys + #","prompt":"p"},"tool":"query"}"#
-            #expect(try canonicalJSON(prompt) == expected, "images: \(String(describing: testCase.images)), files: \(String(describing: testCase.files))")
+            let expected = #"{"platform":"\#(Platform.name)","query":{"autoSubmit":true"# + testCase.keysBeforePrompt + #","prompt":"p""# + testCase.keysAfterPrompt + #"},"tool":"query"}"#
+            #expect(try canonicalJSON(prompt) == expected, "\(testCase.description)")
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func queryPromptDecodesEachAttachmentKindAsGiven() throws {
+        for testCase in Self.cases {
+            let prompt = AIChatNativePrompt.queryPrompt("p", autoSubmit: true, attachments: testCase.attachments)
+            let decoded = try JSONDecoder().decode(AIChatNativePrompt.self, from: try JSONEncoder().encode(prompt))
+            #expect(decoded == prompt, "\(testCase.description)")
+            guard case .query(let query) = decoded.tool else { Issue.record("not a query"); continue }
+            #expect(query.attachments == testCase.attachments)
         }
     }
 
@@ -63,8 +90,8 @@ struct AIChatPromptAttachmentsWireTests {
     func editReplyEncodesEachAttachmentKindAsGiven() throws {
         for testCase in Self.cases {
             let reply = EditPromptReply.submit(prompt: "p", attachments: testCase.attachments)
-            let expected = "{" + testCase.expectedKeys.dropFirst() + (testCase.expectedKeys.isEmpty ? "" : ",") + #""prompt":"p"}"#
-            #expect(try canonicalJSON(reply) == expected, "images: \(String(describing: testCase.images)), files: \(String(describing: testCase.files))")
+            let expected = "{" + testCase.keysBeforePrompt.dropFirst() + (testCase.keysBeforePrompt.isEmpty ? "" : ",") + #""prompt":"p""# + testCase.keysAfterPrompt + "}"
+            #expect(try canonicalJSON(reply) == expected, "\(testCase.description)")
         }
     }
 
@@ -72,7 +99,7 @@ struct AIChatPromptAttachmentsWireTests {
     @Test(.timeLimit(.minutes(1)))
     func editRequestDecodesEachAttachmentKindAsGiven() throws {
         for testCase in Self.cases {
-            let json = #"{"hasResponsesToLose":false"# + testCase.expectedKeys + #","prompt":"p"}"#
+            let json = #"{"hasResponsesToLose":false"# + testCase.keysBeforePrompt + #","prompt":"p""# + testCase.keysAfterPrompt + "}"
             let request = try JSONDecoder().decode(EditPromptRequest.self, from: Data(json.utf8))
             #expect(request.attachments == testCase.attachments, "\(json)")
         }

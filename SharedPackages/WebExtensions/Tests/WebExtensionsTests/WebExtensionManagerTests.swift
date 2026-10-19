@@ -973,11 +973,11 @@ final class WebExtensionManagerTests: XCTestCase {
         let permissionController = try XCTUnwrap(manager.permissionController)
         try await permissionController.prepare(context)
         let store = try XCTUnwrap(manager.privacySettings)
-        XCTAssertFalse(store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
 
         let granted = await permissionController.request(.init(appPermissions: [.privacy]), for: context)
         XCTAssertTrue(granted)
-        XCTAssertTrue(store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+        XCTAssertNoThrow(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
         XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "bitwarden")
 
         XCTAssertTrue(permissionController.revoke(.privacy, from: context))
@@ -998,7 +998,7 @@ final class WebExtensionManagerTests: XCTestCase {
         _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
         let store = try XCTUnwrap(manager.privacySettings)
 
-        XCTAssertFalse(store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
     }
 
     @MainActor

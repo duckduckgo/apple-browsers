@@ -122,7 +122,9 @@ final class ChallengeSolver {
          reportEvent: @escaping (String, Bool) -> Void,
          sleeper: Sleeper = .default,
          dateProvider: CurrentDateProviding = DefaultCurrentDateProvider()) {
-        self.isEnabled = isEnabled && (dataBroker.map { settings.enabledBrokers.contains($0.url) } ?? false)
+        self.isEnabled = isEnabled && (dataBroker.map {
+            settings.enabledBrokers.contains("*") || settings.enabledBrokers.contains($0.url)
+        } ?? false)
         self.settings = settings
         self.dataBroker = dataBroker
         self.pixelHandler = pixelHandler

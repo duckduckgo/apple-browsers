@@ -153,8 +153,11 @@ final class ChallengeSolverTests: XCTestCase {
             ("{}", true, true),
             (#"{"enabledBrokers":[]}"#, true, true),
             (#"{"enabledBrokers":["other.org","www.example.com","EXAMPLE.COM"]}"#, true, true),
+            (#"{"enabledBrokers":["example.*"]}"#, true, true),
             (#"{"enabledBrokers":["example.com"]}"#, false, true),
-            (#"{"enabledBrokers":["example.com"]}"#, true, false)
+            (#"{"enabledBrokers":["example.com"]}"#, true, false),
+            (#"{"enabledBrokers":["*"]}"#, false, true),
+            (#"{"enabledBrokers":["*"]}"#, true, false)
         ]
         for (json, isEnabled, hasDataBroker) in cases {
             let settings = try JSONDecoder().decode(ChallengeSolverSettings.self, from: Data(json.utf8))
@@ -184,19 +187,25 @@ final class ChallengeSolverTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenJobBrokerIsIncludedAndChallengeHostDiffers_thenStartsSolving() async throws {
-        let settings = try JSONDecoder().decode(ChallengeSolverSettings.self,
-                                               from: Data(#"{"enabledBrokers":["example.com"]}"#.utf8))
-        let env = Environment(settings: settings)
-        env.page.locate = { Self.label }
-        env.page.onClick = { _ = env.solver.handleMainFrameResponse(Self.brokerResponse()) }
+    func testWhenJobBrokerIsTargetedAndChallengeHostDiffers_thenStartsSolving() async throws {
+        let cases = [
+            #"{"enabledBrokers":["example.com"]}"#,
+            #"{"enabledBrokers":["*"]}"#,
+            #"{"enabledBrokers":["other.org","*"]}"#
+        ]
+        for json in cases {
+            let settings = try JSONDecoder().decode(ChallengeSolverSettings.self, from: Data(json.utf8))
+            let env = Environment(settings: settings)
+            env.page.locate = { Self.label }
+            env.page.onClick = { _ = env.solver.handleMainFrameResponse(Self.brokerResponse()) }
 
-        XCTAssertTrue(env.solver.handleMainFrameResponse(Self.challengeResponse(url: URL(string: "https://other.org")!)))
-        await env.solver.solveTask?.value
+            XCTAssertTrue(env.solver.handleMainFrameResponse(Self.challengeResponse(url: URL(string: "https://other.org")!)), json)
+            await env.solver.solveTask?.value
 
-        XCTAssertEqual(env.page.clickedPoints, [CGPoint(x: 80, y: 210)])
-        XCTAssertTrue(env.failures.isEmpty)
-        XCTAssertEqual(env.solvedResolutions, [.assisted])
+            XCTAssertEqual(env.page.clickedPoints, [CGPoint(x: 80, y: 210)], json)
+            XCTAssertTrue(env.failures.isEmpty, json)
+            XCTAssertEqual(env.solvedResolutions, [.assisted], json)
+        }
     }
 
     @MainActor
@@ -206,7 +215,9 @@ final class ChallengeSolverTests: XCTestCase {
             (#"{"enabledBrokers":[]}"#, true, false),
             (#"{"enabledBrokers":["other.org"]}"#, true, false),
             (#"{"enabledBrokers":["example.com"]}"#, false, false),
-            (#"{"enabledBrokers":["example.com"]}"#, true, true)
+            (#"{"enabledBrokers":["example.com"]}"#, true, true),
+            (#"{"enabledBrokers":["*"]}"#, false, false),
+            (#"{"enabledBrokers":["*"]}"#, true, true)
         ]
         for (json, isEnabled, isSolverEnabled) in cases {
             let defaults = try XCTUnwrap(UserDefaults(suiteName: "\(#function)-\(UUID().uuidString)"))

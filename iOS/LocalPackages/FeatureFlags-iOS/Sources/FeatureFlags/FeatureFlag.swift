@@ -930,7 +930,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
         case .cpmNetworkProcessRecovery:
-            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery))
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery))
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment))
         case .webExtensionProtectedDataLoadGate:

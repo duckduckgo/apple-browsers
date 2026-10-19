@@ -202,6 +202,41 @@ struct AIChatBonusServiceTests {
         #expect(store.writeCallCount == 0)
     }
 
+    // MARK: - Boost state
+
+    @Test("Check the boost is active with an unexpired record stored")
+    func boostIsActiveWithAnUnexpiredRecord() throws {
+        // GIVEN
+        store.storedRecord = AIChatBonusRecordMock.active
+        let beforeExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt - 1)
+
+        // WHEN
+        let result = try sut.isBoostActive(at: beforeExpiry)
+
+        // THEN
+        #expect(result)
+    }
+
+    @Test("Check the boost isn't active without a record")
+    func boostIsNotActiveWithoutARecord() throws {
+        // WHEN
+        let result = try sut.isBoostActive()
+
+        // THEN
+        #expect(!result)
+    }
+
+    @Test("Check the boost state throws when the record can't be read")
+    func boostStateThrowsWhenTheReadFails() {
+        // GIVEN
+        store.readError = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+
+        // WHEN / THEN
+        #expect(throws: AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)) {
+            try sut.isBoostActive()
+        }
+    }
+
     // MARK: - Record publisher
 
     @available(iOS 16, macOS 13, *)

@@ -38,20 +38,12 @@ public struct DesignSystemPalette {
     // `current` is a globally mutable & nonisolated variable, which isn't allowed in Swift 6.
     // To get around this, the public `current` getter is protected by a lock, and `nonisolated(unsafe)` is applied to
     // promise the Swift compiler that this value is threadsafe.
-#if os(iOS)
-    nonisolated(unsafe) private static var _current: ColorPalette = .rebranded
-#else
     nonisolated(unsafe) private static var _current: ColorPalette = .default
-#endif
     private static let lock = NSLock()
 }
 
 public enum ColorPalette {
     case `default`
-
-#if os(iOS)
-    case rebranded
-#endif
 
 #if os(macOS)
     case coolGray
@@ -86,12 +78,7 @@ public enum ColorPalette {
 
 #if os(iOS)
     var paletteDefinition: ColorPaletteDefinition.Type {
-        switch self {
-        case .default:
-            DefaultColorPalette.self
-        case .rebranded:
-            RebrandedColorPalette.self
-        }
+        DefaultColorPalette.self
     }
 #endif
 }

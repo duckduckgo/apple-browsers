@@ -43,6 +43,9 @@ final class BookmarksBarViewController: NSViewController {
         static let clippedItemsIndicatorSize = CGSize(width: 28, height: 24)
         static let promptAnchorSize: CGFloat = 20
         static let mouseOverCornerRadius: CGFloat = 4
+        static let syncDismissButtonSize: CGFloat = 24
+        static let syncDividerHeight: CGFloat = 16
+        static let syncDividerWidth: CGFloat = 5    /// 1pt line plus AppKit's 2pt separator insets on each side
     }
 
     private(set) var importBookmarksButton: NSView!
@@ -61,6 +64,8 @@ final class BookmarksBarViewController: NSViewController {
     private(set) var syncMouseOverView: MouseOverView!
     private(set) var syncButtonIcon: NSImageView!
     private(set) var syncButtonLabel: NSTextField!
+    private(set) var syncButtonDivider: NSBox!
+    private(set) var syncDismissButton: MouseOverButton!
     private(set) var bookmarksBarScrollView: NSScrollView!
 
     private var bookmarkMenuPopover: (any BookmarksBarMenuPopoverPresenting)?
@@ -148,7 +153,8 @@ final class BookmarksBarViewController: NSViewController {
     /// and pressed fills and is the click target, so the whole pill reacts, not just the label.
     private func makeBarButton(action: Selector,
                                iconLeadingInset: CGFloat,
-                               priority: NSLayoutConstraint.Priority) -> (container: NSView, icon: NSImageView, label: NSTextField, mouseOverView: MouseOverView) {
+                               priority: NSLayoutConstraint.Priority,
+                               trailingAccessory: NSView? = nil) -> (container: NSView, icon: NSImageView, label: NSTextField, mouseOverView: MouseOverView) {
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.setContentHuggingPriority(.init(750), for: .vertical)
@@ -177,7 +183,7 @@ final class BookmarksBarViewController: NSViewController {
         container.addSubview(label)
         container.addSubview(mouseOverView)
 
-        let constraints = [
+        var constraints = [
             container.heightAnchor.constraint(equalToConstant: Constants.barHeight),
 
             icon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
@@ -193,13 +199,26 @@ final class BookmarksBarViewController: NSViewController {
             mouseOverView.topAnchor.constraint(equalTo: container.topAnchor),
             container.bottomAnchor.constraint(equalTo: mouseOverView.bottomAnchor),
         ]
+
+        // Added above the overlay so it receives its own clicks.
+        if let trailingAccessory {
+            trailingAccessory.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(trailingAccessory)
+            constraints += [
+                trailingAccessory.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: Constants.labelSpacing),
+                trailingAccessory.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            ]
+        }
+
         constraints.forEach { $0.priority = priority }
 
-        // Required, unlike the rest: the label must never run into the container's trailing edge,
+        // Required, unlike the rest: the last view must never run into the container's trailing edge,
         // even when the caller lets the surrounding constraints break to collapse the button.
-        let labelTrailing = container.trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: Constants.labelTrailingInset)
+        let lastView = trailingAccessory ?? label
+        let lastViewInset = trailingAccessory == nil ? Constants.labelTrailingInset : 0
+        let lastViewTrailing = container.trailingAnchor.constraint(equalTo: lastView.trailingAnchor, constant: lastViewInset)
 
-        NSLayoutConstraint.activate(constraints + [labelTrailing])
+        NSLayoutConstraint.activate(constraints + [lastViewTrailing])
 
         return (container, icon, label, mouseOverView)
     }
@@ -267,9 +286,31 @@ final class BookmarksBarViewController: NSViewController {
         importBookmarksLabel = importBookmarks.label
         importBookmarksMouseOverView = importBookmarks.mouseOverView
 
+        // Taller than wide so AppKit treats it as a vertical separator.
+        syncButtonDivider = NSBox(frame: NSRect(x: 0, y: 0, width: Constants.syncDividerWidth, height: Constants.syncDividerHeight))
+        syncButtonDivider.boxType = .separator
+        syncButtonDivider.setContentHuggingPriority(.init(750), for: .horizontal)
+
+        syncDismissButton = MouseOverButton(frame: .zero)
+        syncDismissButton.setButtonType(.momentaryPushIn)
+        syncDismissButton.bezelStyle = .rounded
+        syncDismissButton.isBordered = false
+        syncDismissButton.imagePosition = .imageOverlaps
+        syncDismissButton.title = ""
+        syncDismissButton.imageScaling = .scaleProportionallyDown
+        syncDismissButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        syncDismissButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        syncDismissButton.target = self
+        syncDismissButton.action = #selector(dismissSyncClicked(_:))
+        syncDismissButton.setAccessibilityLabel(UserText.close)
+
+        let syncDismissAccessory = NSStackView(views: [syncButtonDivider, syncDismissButton])
+        syncDismissAccessory.spacing = 0
+
         let sync = makeBarButton(action: #selector(syncClicked(_:)),
                                  iconLeadingInset: Constants.syncIconLeadingInset,
-                                 priority: .init(750))
+                                 priority: .init(750),
+                                 trailingAccessory: syncDismissAccessory)
         syncButton = sync.container
         syncButtonIcon = sync.icon
         syncButtonLabel = sync.label
@@ -321,6 +362,11 @@ final class BookmarksBarViewController: NSViewController {
                                                 constant: Constants.horizontalInset),
             syncButton.centerYAnchor.constraint(equalTo: bookmarksBarScrollView.centerYAnchor),
             syncButtonZeroWidthConstraint,
+
+            syncButtonDivider.widthAnchor.constraint(equalToConstant: Constants.syncDividerWidth),
+            syncButtonDivider.heightAnchor.constraint(equalToConstant: Constants.syncDividerHeight),
+            syncDismissButton.widthAnchor.constraint(equalToConstant: Constants.syncDismissButtonSize),
+            syncDismissButton.heightAnchor.constraint(equalToConstant: Constants.syncDismissButtonSize),
         ])
 
         // Resolve the layout right away. Clipping decides how many bar items fit by comparing the
@@ -369,11 +415,21 @@ final class BookmarksBarViewController: NSViewController {
     private func setUpSyncButton() {
         syncButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         syncMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
+        syncDismissButton.cornerRadius = theme.toolbarButtonsCornerRadius
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
         syncButtonIcon.contentTintColor = NSColor(resource: .textPrimary)
         syncButtonLabel.stringValue = UserText.bookmarksEmptyStateSyncButtonTitle
         syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
+        syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
+        syncDismissButton.normalTintColor = NSColor(resource: .textPrimary)
+        setSyncDismissButtonHidden(true)
+    }
+
+    /// Hides the arranged views rather than the stack: the stack then detaches them and collapses.
+    private func setSyncDismissButtonHidden(_ hidden: Bool) {
+        syncButtonDivider.isHidden = hidden
+        syncDismissButton.isHidden = hidden
     }
 
     private func setUpImportBookmarksButton() {
@@ -494,6 +550,7 @@ final class BookmarksBarViewController: NSViewController {
                 if self?.bookmarkManager.list != nil {
                     self?.importBookmarksButton.isHidden = !items.isEmpty
                 }
+                self?.setSyncDismissButtonHidden(items.isEmpty)
             }
             .store(in: &cancellables)
 
@@ -585,6 +642,10 @@ final class BookmarksBarViewController: NSViewController {
 
     @objc func syncClicked(_ sender: Any) {
         syncButtonModel.syncButtonAction()
+    }
+
+    @objc private func dismissSyncClicked(_ sender: Any) {
+        syncButtonModel.dismissSyncButtonAction()
     }
 
     @objc private func clippedItemsIndicatorClicked(_ sender: NSButton) {

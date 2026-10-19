@@ -412,8 +412,6 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenReturnKeyPressedDuringIMECompositionAndFeatureFlagIsDisabled_customKeyDownHandlesEvent() throws {
-        throw XCTSkip("Flaky test")
-
         featureFlagger.featuresStub[FeatureFlag.addressBarIMEConfirmFix.rawValue] = false
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
             Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
@@ -569,8 +567,6 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenDeactivatingAddressBar_webViewShouldBecomeFirstResponder() async throws {
-        throw XCTSkip("Flaky test")
-
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -965,8 +961,6 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenPageRedirectedWhenAddressBarIsInactive_addressBarShouldReset() async throws {
-        throw XCTSkip("Flaky test")
-
         NSApp.delegateTyped.appearancePreferences.showFullURL = true
 
         let expectation = expectation(description: "request sent")
@@ -1017,8 +1011,6 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenActivatingWindowWithPinnedTabOpen_webViewBecomesFirstResponder() async throws {
-        throw XCTSkip("Flaky test")
-
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: TabCollection(tabs: [tab]))
 
@@ -1066,8 +1058,6 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenActivatingWindowWithPinnedTabWhenAddressBarIsActive_addressBarIsKeptActive() async throws {
-        throw XCTSkip("Flaky test")
-
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: TabCollection(tabs: [tab]))
         let newTabTab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())

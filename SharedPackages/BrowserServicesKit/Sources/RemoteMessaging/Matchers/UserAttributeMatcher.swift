@@ -76,7 +76,11 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 isFreemiumPIRActivated: Bool = false,
                 freemiumPIRFirstScanResult: String? = nil,
                 isCurrentPIRUser: Bool? = false,
-                ntpAfterIdleState: String = ""
+                ntpAfterIdleState: String = "",
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.isWidgetInstalled = isWidgetInstalled
         self.isSyncEnabled = isSyncEnabled
@@ -110,7 +114,11 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags
+            enabledFeatureFlags: enabledFeatureFlags,
+            isReturningUser: isReturningUser,
+            isAIChatEnabled: isAIChatEnabled,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
@@ -175,7 +183,11 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 isCurrentFreemiumPIRUser: Bool,
                 isCurrentPIRUser: Bool = false,
                 dismissedDeprecatedMacRemoteMessageIds: [String],
-                enabledFeatureFlags: [String]
+                enabledFeatureFlags: [String],
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.pinnedTabsCount = pinnedTabsCount
         self.hasCustomHomePage = hasCustomHomePage
@@ -206,7 +218,11 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags
+            enabledFeatureFlags: enabledFeatureFlags,
+            isReturningUser: isReturningUser,
+            isAIChatEnabled: isAIChatEnabled,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
@@ -265,6 +281,10 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
     private let dismissedMessageIds: [String]
     private let shownMessageIds: [String]
     private let enabledFeatureFlags: [String]
+    private let isReturningUser: Bool? // `nil` when it can't be determined (macOS App Store)
+    private let isAIChatEnabled: Bool
+    private let triedAIChatDuringOnboarding: Bool
+    private let isAIChatBoostActive: Bool? // `nil` when the bonus record can't be read, so a rule using it fails whatever the expected value.
 
     public init(statisticsStore: StatisticsStore,
                 featureDiscovery: FeatureDiscovery,
@@ -288,7 +308,11 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
-                enabledFeatureFlags: [String]
+                enabledFeatureFlags: [String],
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.statisticsStore = statisticsStore
         self.featureDiscovery = featureDiscovery
@@ -313,6 +337,10 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
         self.dismissedMessageIds = dismissedMessageIds
         self.shownMessageIds = shownMessageIds
         self.enabledFeatureFlags = enabledFeatureFlags
+        self.isReturningUser = isReturningUser
+        self.isAIChatEnabled = isAIChatEnabled
+        self.triedAIChatDuringOnboarding = triedAIChatDuringOnboarding
+        self.isAIChatBoostActive = isAIChatBoostActive
     }
 
     public func evaluate(matchingAttribute: MatchingAttribute) -> EvaluationResult? {
@@ -389,6 +417,14 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             } else {
                 return .fail
             }
+        case let matchingAttribute as IsReturningUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isReturningUser)
+        case let matchingAttribute as IsDuckAIEnabledMatchingAttribute:
+            return matchingAttribute.evaluate(for: isAIChatEnabled)
+        case let matchingAttribute as TriedDuckAIDuringOnboardingMatchingAttribute:
+            return matchingAttribute.evaluate(for: triedAIChatDuringOnboarding)
+        case let matchingAttribute as IsDuckAIBoostActiveMatchingAttribute:
+            return matchingAttribute.evaluate(for: isAIChatBoostActive)
         default:
             assertionFailure("Could not find matching attribute")
             return nil

@@ -53,6 +53,8 @@ enum UserText {
 
     // Device selection prompt shown after enabling Sync (V2 — simplifiedSyncSetupV2).
     static let syncAnotherDevicePromptTitleV2 = NSLocalizedString("preferences.sync.another-device-prompt-v2.title", bundle: Bundle.module, value: "Sync this device with a nearby phone.", comment: "Title of the prompt asking whether to sync with another device or just this device (V2)")
+    static let syncAnotherDevicePromptTitleImproved = NotLocalizedString("preferences.sync.another-device-prompt-v3.title", bundle: Bundle.module, value: "Do you have another device nearby? Sync your devices.", comment: "Title of the prompt asking whether to sync with another device or just this device")
+    static let syncAnotherDevicePromptSubtitleImproved = NotLocalizedString("preferences.sync.another-device-prompt-v3.subtitle", bundle: Bundle.module, value: "Don’t have another device right now? Sync this device only and sync with another one later.", comment: "Subtitle of the prompt explaining that the user can sync this device only and pair another device later")
     static let syncAnotherDevicePromptSubtitleV2 = NSLocalizedString("preferences.sync.another-device-prompt-v2.subtitle", bundle: Bundle.module, value: "We’ll help you sync your devices.", comment: "Subtitle of the prompt asking whether to sync with another device or just this device (V2)")
     static let syncThisDeviceOnlyButtonV2 = NSLocalizedString("preferences.sync.another-device-prompt-v2.this-device-only-button", bundle: Bundle.module, value: "Sync This Device Only", comment: "Button to enable Sync & Backup on the current device only, without pairing another device (V2)")
     static let syncWithAnotherDeviceButtonV2 = NSLocalizedString("preferences.sync.another-device-prompt-v2.another-device-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button to continue to the pairing screen to sync with another device (V2)")
@@ -74,6 +76,10 @@ enum UserText {
     static let syncWithAnotherDeviceCopiedV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copied", bundle: Bundle.module, value: "Copied", comment: "Confirmation shown after copying the sync code (V2)")
     static let syncWithAnotherDeviceCopyConfirmationTitleV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copy-confirmation-title", bundle: Bundle.module, value: "Don’t close this page", comment: "Title of the reminder shown after copying the sync code (V2)")
     static let syncWithAnotherDeviceCopyConfirmationMessageV2 = NSLocalizedString("preferences.sync.sync-with-another-device-v2.copy-confirmation-message", bundle: Bundle.module, value: "Open DuckDuckGo on your other device and paste the code.", comment: "Message of the reminder shown after copying the sync code (V2)")
+
+    static let syncThisDeviceFallbackTitleImproved = NotLocalizedString("preferences.sync.sync-this-device-fallback.title", bundle: Bundle.module, value: "Sync this computer for now?", comment: "Title of the dialog offering to sync only this computer after the user closes the Sync with another device dialog")
+    static let syncThisDeviceFallbackSubtitleImproved = NotLocalizedString("preferences.sync.sync-this-device-fallback.subtitle", bundle: Bundle.module, value: "You can sync with another DuckDuckGo app later and get your autofill data, bookmarks, and Duck.ai chats on all your apps.", comment: "Subtitle of the dialog offering to sync only this computer after the user closes the Sync with another device dialog")
+    static let syncThisDeviceFallbackButtonImproved = NotLocalizedString("preferences.sync.sync-this-device-fallback.button", bundle: Bundle.module, value: "Sync This Device", comment: "Button on the dialog offering to sync only this computer, which turns on Sync & Backup for this device only")
 
     // Alert shown when the user cancels the device authentication prompt while setting up Sync (V2 — simplifiedSyncSetupV2).
     static let syncAuthenticationCancelledTitleV2 = NSLocalizedString("preferences.sync.authentication-cancelled-v2.title", bundle: Bundle.module, value: "Please give it another try!", comment: "Title of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)")
@@ -115,6 +121,15 @@ enum UserText {
                                        comment: "Message of the confirmation shown before removing a synced device (V2). The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.")
         return String(format: format, deviceName)
     }
+    static func removeDeviceConfirmTitleImproved(_ deviceName: String) -> String {
+        let format = NotLocalizedString("preferences.sync.remove-device-v3.title", bundle: Bundle.module, value: "Remove %@ from Sync & Backup?", comment: "Title of the confirmation shown before removing a device from Sync & Backup. The device name is inserted in place of %@")
+        return String(format: format, deviceName)
+    }
+    static func removeDeviceConfirmMessageImproved(_ deviceName: String) -> String {
+        let format = NotLocalizedString("preferences.sync.remove-device-v3.message", bundle: Bundle.module, value: "“%@” will no longer be able to access your synced data on other devices. Bookmarks, Autofill data and Duck.ai chats will remain on your devices.", comment: "Message of the confirmation shown before removing a device from Sync & Backup. The device name is inserted in place of %@")
+        return String(format: format, deviceName)
+    }
+    static let removeDeviceConfirmButtonImproved = NotLocalizedString("preferences.sync.remove-device-v3.button", bundle: Bundle.module, value: "Remove", comment: "Button that confirms removing a device from Sync & Backup")
 
     // Turn off and delete server data confirmation dialog (V2 — simplifiedSyncSetupV2).
     static let deleteAccountConfirmTitleV2 = NSLocalizedString("preferences.sync.delete-account-v2.title", bundle: Bundle.module, value: "Stop Sync & Backup and Delete Server Data?", comment: "Title of the confirmation shown before turning Sync off and deleting the server data (V2)")
@@ -155,6 +170,9 @@ enum UserText {
     static let enterRecoveryCodeDialogAction2 = NSLocalizedString("preferences.enter-recovery-code.dialog-action2", bundle: Bundle.module, value: "or scan QR code with a device that is still connected", comment: "Sync enter recovery code dialog second possible action")
 
     // Recover synced data dialog
+    static let recoverSyncedDataDialogTitleImproved = NotLocalizedString("preferences.recover-synced-data-v3.dialog-title", bundle: Bundle.module, value: "Recover your synced data", comment: "Title of the dialog shown before entering a Sync recovery code")
+    static let recoverSyncedDataDialogSubtitleImproved = NotLocalizedString("preferences.recover-synced-data-v3.dialog-subtitle", bundle: Bundle.module, value: "You’ll need the Recovery Code you got when you set up Sync & Backup. You may have saved it as a PDF on the device you used.", comment: "Subtitle of the dialog shown before entering a Sync recovery code")
+    static let recoverSyncedDataDialogButtonImproved = NotLocalizedString("preferences.recover-synced-data-v3.dialog-button", bundle: Bundle.module, value: "Recover Synced Data", comment: "Button on the dialog shown before entering a Sync recovery code that continues to the recovery code screen")
     static let reciverSyncedDataDialogTitle = NSLocalizedString("preferences.recover-synced-data.dialog-title", bundle: Bundle.module, value: "Recover Synced Data", comment: "Sync recover synced data dialog title")
     static let reciverSyncedDataDialogSubitle = NSLocalizedString("preferences.recover-synced-data.dialog-subtitle", bundle: Bundle.module, value: "To restore your synced data, you'll need the Recovery Code you saved when you first set up Sync. This code may have been saved as a PDF on the device you originally used to set up Sync.", comment: "Recover synced data during Sync recovery process dialog subtitle")
     static let reciverSyncedDataDialogButton = NSLocalizedString("preferences.recover-synced-data.dialog-button", bundle: Bundle.module, value: "Get Started", comment: "Sync recover synced data dialog button")

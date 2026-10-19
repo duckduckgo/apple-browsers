@@ -358,7 +358,7 @@ extension DataImport.Source {
     var importSourceImage: NSImage? {
         switch self {
         case .csv, .bookmarksHTML, .fileImport:
-            return AppRebrand.isAppRebranded() ? DesignSystemImages.Color.Size56.fileCSV : DesignSystemImages.Color.Size32.document
+            return DesignSystemImages.Color.Size56.fileCSV
         default:
             break
         }

@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import Common
+import DDGError
 
 /// Exchanges refresh tokens for new token pairs and decodes them. It never reads or writes token storage.
 public protocol TokenRefreshing: Sendable {
@@ -49,11 +50,44 @@ public protocol TokenRefreshing: Sendable {
 }
 
 /// Thrown by `TokenRefreshing.fork` when one of its refresh calls fails.
-public enum TokenForkError: Error {
+public enum TokenForkError: DDGError {
     /// - Parameters:
     ///   - minted: The pairs created before the failure, oldest first. Empty when the first call failed.
     ///   - underlying: The error of the failed call, as `TokenRefreshing.refresh` would throw it.
     case incomplete(minted: [TokenContainer], underlying: Error)
+
+    public static var errorDomain: String { "com.duckduckgo.networking.TokenForkError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .incomplete:
+            return 11300
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .incomplete(_, let underlying):
+            return underlying
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .incomplete(let minted, _):
+            return "Fork stopped after \(minted.count) token pairs"
+        }
+    }
+
+    /// Two errors are equal when they minted the same pairs and their underlying errors have the same domain and code.
+    public static func == (lhs: TokenForkError, rhs: TokenForkError) -> Bool {
+        switch (lhs, rhs) {
+        case let (.incomplete(lhsMinted, lhsUnderlying), .incomplete(rhsMinted, rhsUnderlying)):
+            let lhsError = lhsUnderlying as NSError
+            let rhsError = rhsUnderlying as NSError
+            return lhsMinted == rhsMinted && lhsError.domain == rhsError.domain && lhsError.code == rhsError.code
+        }
+    }
 }
 
 /// `TokenRefreshing` backed by an `OAuthService`.

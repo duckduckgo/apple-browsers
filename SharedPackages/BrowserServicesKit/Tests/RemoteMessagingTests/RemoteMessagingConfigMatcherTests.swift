@@ -63,7 +63,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -167,7 +171,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -281,7 +289,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -372,7 +384,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -425,7 +441,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -476,7 +496,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -527,7 +551,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -578,7 +606,11 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -1108,7 +1140,11 @@ private extension RemoteMessagingConfigMatcherTests {
                 enabledFeatureFlags: [],
                 isSyncEnabled: false,
                 shouldShowWinBackOfferUrgencyMessage: false,
-                isCurrentPIRUser: false
+                isCurrentPIRUser: false,
+                isReturningUser: nil,
+                isAIChatEnabled: false,
+                triedAIChatDuringOnboarding: false,
+                isAIChatBoostActive: nil
             ),
             percentileStore: percentileStore,
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

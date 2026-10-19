@@ -321,7 +321,7 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertTrue(sut.isPromoActive, "Tapping the CTA alone doesn't resolve the promo")
         syncService.authState = .active
 
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
         await eligibility(of: sut, becomes: false)
     }
 
@@ -333,7 +333,7 @@ final class SyncPromoManagerTests: XCTestCase {
         sut.goToSyncSettings(for: .bookmarks)
         syncService.authState = .addingNewDevice
 
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
     }
 
     func testWhenPromoIsHiddenBecauseSyncTurnedOnAfterCTATapThenActionedIsStillRecorded() async {
@@ -347,7 +347,7 @@ final class SyncPromoManagerTests: XCTestCase {
 
         let result = await showTask.value
         XCTAssertEqual(result, .noChange)
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
     }
 
     func testWhenSyncTurnsOnWithoutTappingTheCTAThenNothingIsRecorded() async {

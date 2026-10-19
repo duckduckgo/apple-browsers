@@ -99,6 +99,11 @@ extension MainViewController {
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             self.dismissUnifiedToggleInputOmnibarSession(coordinator: coordinator, completion: completion)
         }
+        coordinator.browserTabAttachmentSourceProvider = { [weak self] uid in
+            guard let self, let tab = (tabManager.normalTabsModel.tabs + tabManager.fireModeTabsModel.tabs)
+                .first(where: { $0.uid == uid }) else { return nil }
+            return tabManager.makeTabAttachmentSource(for: tab)
+        }
         self.unifiedToggleInputCoordinator = coordinator
 
         installUnifiedToggleInputViewController(coordinator.viewController)
@@ -117,6 +122,9 @@ extension MainViewController {
             aiChatTabChatHeaderView?.setOnboardingLocked(true)
         }
         installUnifiedInputContentViewController()
+        let mentions = BrowserTabMentionSuggestionsController(coordinator: coordinator, parentView: view)
+        browserTabMentionSuggestionsController = mentions
+        coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
         installFloatingReturnKeyViewController()
         installSwipeTabsGesturesForUnifiedInput()
 
@@ -227,13 +235,17 @@ extension MainViewController {
         }
     }
 
+    func activateUnifiedToggleInput(for tab: Tab) {
+        unifiedToggleInputCoordinator?.activateForTab(tab.uid)
+    }
+
     func refreshUnifiedToggleInput(for tab: TabViewController) {
         guard unifiedToggleInputFeature.isAvailable,
               let coordinator = unifiedToggleInputCoordinator else {
             return
         }
 
-        coordinator.activateForTab(tab.tabModel.uid)
+        activateUnifiedToggleInput(for: tab.tabModel)
 
         let action = refreshAction(for: tab, coordinator: coordinator)
 
@@ -1326,6 +1338,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             return .intercept
         }
         guard let coordinator = unifiedToggleInputCoordinator, currentTab?.isAITab != true else { return .allowDefault }
+        if coordinator.isTabAttachmentFeatureAvailable, let tab = tabManager.currentTabsModel.currentTab {
+            activateUnifiedToggleInput(for: tab)
+        }
         if coordinator.isOmnibarSession {
             coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: completion)
             return .intercept
@@ -1356,6 +1371,9 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         guard let coordinator = unifiedToggleInputCoordinator,
               currentTab?.isAITab != true else {
             return .allowDefault
+        }
+        if coordinator.isTabAttachmentFeatureAvailable, let tab = tabManager.currentTabsModel.currentTab {
+            activateUnifiedToggleInput(for: tab)
         }
         // Reveal before unified input measures the bar for its transition.
         revealAddressBarForEditing()
@@ -1401,12 +1419,17 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+        unifiedToggleInputDidSubmitPrompt(prompt, modelId: modelId, tools: tools, reasoningEffort: reasoningEffort,
+                                         images: images, files: files, termsAccepted: termsAccepted, tabAttachmentRequest: nil)
+    }
+
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?) {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
         // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
         // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
-        if currentTab?.isAITab != true,
+        if currentTab?.isAITab != true, tabAttachmentRequest == nil,
            images?.isEmpty ?? true, files?.isEmpty ?? true,
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
@@ -1418,7 +1441,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
             return
         }
         openAIChat(source: .addressBarPrompt, prompt, autoSend: true, tools: tools, modelId: modelId, reasoningEffort: reasoningEffort, images: images, files: files,
-                   termsAccepted: termsAccepted)
+                   termsAccepted: termsAccepted, tabAttachmentRequest: tabAttachmentRequest)
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {

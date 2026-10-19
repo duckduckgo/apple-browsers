@@ -1083,7 +1083,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
-                locationServicesEnabled: { true },
                 avAuthorizationStatus: { _ in .authorized },
                 avRequestAccess: { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -1164,7 +1163,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()
@@ -1220,7 +1218,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
-                locationServicesEnabled: { true },
                 avAuthorizationStatus: { _ in .authorized },
                 avRequestAccess: { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -1305,7 +1302,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()
@@ -1350,7 +1346,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()
@@ -1449,7 +1444,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()
@@ -1493,7 +1487,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
-                locationServicesEnabled: { true },
                 avAuthorizationStatus: { _ in .authorized },
                 avRequestAccess: { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -1553,7 +1546,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
-                locationServicesEnabled: { true },
                 avAuthorizationStatus: { _ in .authorized },
                 avRequestAccess: { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -2099,6 +2091,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     ) -> TabViewController {
         let featureFlagger = providedFeatureFlagger
             ?? MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
+        let locationManager = MockLocationManager()
+        locationManager.authorizationStatusValue = .denied
         let sut = TabViewController.fake(
             customWebView: { SitePermissionURLWebView(url: committedURL, configuration: $0) },
             featureFlagger: featureFlagger,
@@ -2108,8 +2102,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let dependencies = SitePermissionsDependencies(
             store: store ?? SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring()),
             systemPermissionClient: systemPermissionClient ?? SystemPermissionClient(
-                locationManager: CLLocationManager(),
-                locationServicesEnabled: { false },
+                locationManager: locationManager,
                 avAuthorizationStatus: avAuthorizationStatus ?? { _ in systemAuthorizationStatus },
                 avRequestAccess: avRequestAccess ?? { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -2304,10 +2297,11 @@ private final class SitePermissionURLWebView: WKWebView {
 
 private final class MockLocationManager: CLLocationManager {
 
+    var authorizationStatusValue = CLAuthorizationStatus.authorizedWhenInUse
     private(set) var startUpdatingCallCount = 0
     private(set) var stopUpdatingCallCount = 0
 
-    override var authorizationStatus: CLAuthorizationStatus { .authorizedWhenInUse }
+    override var authorizationStatus: CLAuthorizationStatus { authorizationStatusValue }
 
     override func startUpdatingLocation() {
         startUpdatingCallCount += 1

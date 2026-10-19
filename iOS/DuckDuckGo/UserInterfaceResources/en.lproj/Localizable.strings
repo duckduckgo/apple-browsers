@@ -436,12 +436,6 @@
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "attachment";
 
-/* Character count below the Duck.ai too-long message error, e.g. 16800/16000. %1$d is the message's character count, %2$d is the maximum allowed */
-"aichat.prompt.too.long.count" = "%1$d/%2$d";
-
-/* Error shown below the Duck.ai input while the message is longer than the allowed number of characters */
-"aichat.prompt.too.long.title" = "Please try a shorter message.";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "For analytical tasks";
 

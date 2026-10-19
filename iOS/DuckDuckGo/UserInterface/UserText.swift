@@ -2563,8 +2563,8 @@ public struct UserText {
 
     public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
 
-    public static let aiChatPromptTooLongTitle = NSLocalizedString("aichat.prompt.too.long.title", value: "Please try a shorter message.", comment: "Error shown below the Duck.ai input while the message is longer than the allowed number of characters")
-    public static let aiChatPromptTooLongCountFormat = NSLocalizedString("aichat.prompt.too.long.count", value: "%1$d/%2$d", comment: "Character count below the Duck.ai too-long message error, e.g. 16800/16000. %1$d is the message's character count, %2$d is the maximum allowed")
+    public static let aiChatPromptTooLongTitle = NotLocalizedString("aichat.prompt.too.long.title", value: "Please try a shorter message.", comment: "Error shown below the Duck.ai input while the message is longer than the allowed number of characters")
+    public static let aiChatPromptTooLongCountFormat = NotLocalizedString("aichat.prompt.too.long.count", value: "%1$d/%2$d", comment: "Character count below the Duck.ai too-long message error, e.g. 16800/16000. %1$d is the message's character count, %2$d is the maximum allowed")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")

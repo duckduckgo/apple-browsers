@@ -433,6 +433,17 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: An image chip is added to the New Tab Page omnibar (reported by the page)
     case aiChatNtpImageAttached(source: AIChatImageAttachmentSource)
 
+    // MARK: - Screenshot Permission Funnel
+
+    /// Event Trigger: First Add Screenshot attempt without Screen Recording, on any surface. Once per install
+    case aiChatScreenshotPermissionNeeded
+
+    /// Event Trigger: First Open System Settings click in the Screen Recording alert. Once per install
+    case aiChatScreenshotPermissionSettingsOpened
+
+    /// Event Trigger: First successful capture on an install that once had no Screen Recording. Once per install
+    case aiChatScreenshotPermissionConverted
+
     /// Event Trigger: User removes an image chip in the New Tab Page omnibar (reported by the page)
     case aiChatNtpImageRemoved(source: AIChatImageAttachmentSource)
 
@@ -866,6 +877,12 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_ntp_screenshot_failed"
         case .aiChatNtpImageAttached:
             return "aichat_ntp_image_attached"
+        case .aiChatScreenshotPermissionNeeded:
+            return "aichat_screenshot_permission_needed_macos_u"
+        case .aiChatScreenshotPermissionSettingsOpened:
+            return "aichat_screenshot_permission_settings_opened_macos_u"
+        case .aiChatScreenshotPermissionConverted:
+            return "aichat_screenshot_permission_converted_macos_u"
         case .aiChatNtpImageRemoved:
             return "aichat_ntp_image_removed"
         case .aiChatNtpModelSelected:
@@ -1014,6 +1031,9 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatOnboardingFinishedToggleOff,
                 .aiChatAddressBarScreenshotRemoved,
                 .aiChatNtpScreenshotRemoved,
+                .aiChatScreenshotPermissionNeeded,
+                .aiChatScreenshotPermissionSettingsOpened,
+                .aiChatScreenshotPermissionConverted,
                 .aiChatAddressBarFileAttached,
                 .aiChatAddressBarFileRemoved,
                 .aiChatAddressBarAttachTabsPickerShown,
@@ -1326,6 +1346,9 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpSubmitWithImage,
                 .aiChatNtpScreenshotTaken,
                 .aiChatNtpScreenshotRemoved,
+                .aiChatScreenshotPermissionNeeded,
+                .aiChatScreenshotPermissionSettingsOpened,
+                .aiChatScreenshotPermissionConverted,
                 .aiChatNtpScreenshotFailed,
                 .aiChatNtpImageAttached,
                 .aiChatNtpImageRemoved,
@@ -1397,7 +1420,10 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpGatedRowClick,
                 .aiChatDuckAIDirectNavigation,
                 .aiChatEntryPoint,
-                .aiChatSettingsState:
+                .aiChatSettingsState,
+                .aiChatScreenshotPermissionNeeded,
+                .aiChatScreenshotPermissionSettingsOpened,
+                .aiChatScreenshotPermissionConverted:
             return .none
         default:
             return .platformDefault

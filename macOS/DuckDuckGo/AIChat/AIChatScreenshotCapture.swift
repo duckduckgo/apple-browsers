@@ -18,6 +18,8 @@
 
 import AppKit
 import CoreGraphics
+import Persistence
+import PixelKit
 
 /// Raw values match the NTP `screenshot-mode` schema.
 enum AIChatScreenshotMode: String {
@@ -132,5 +134,41 @@ struct AIChatScreenRecordingPermission {
     func openSystemSettings() {
         requestAccess()
         openURL(.screenRecordingSystemSettings)
+    }
+}
+
+/// Installs held back by Screen Recording: how many hit it, open System Settings from the alert, then capture.
+protocol AIChatScreenshotPermissionInstrumentation {
+    func permissionNeeded()
+    func systemSettingsOpened()
+    func captureSucceeded()
+}
+
+final class DefaultAIChatScreenshotPermissionInstrumentation: AIChatScreenshotPermissionInstrumentation {
+
+    private static let neededKey = "aichat.screenshot.permission-needed"
+
+    private let pixelFiring: PixelFiring?
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(pixelFiring: PixelFiring? = PixelKit.shared, keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
+        self.pixelFiring = pixelFiring
+        self.keyValueStore = keyValueStore
+    }
+
+    /// Remembered across launches: macOS relaunches the app once Screen Recording is turned on.
+    func permissionNeeded() {
+        try? keyValueStore.set(true, forKey: Self.neededKey)
+        pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionNeeded, frequency: .uniqueByName)
+    }
+
+    func systemSettingsOpened() {
+        pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionSettingsOpened, frequency: .uniqueByName)
+    }
+
+    /// Only installs that once hit the permission count, so converted over needed is the funnel's conversion.
+    func captureSucceeded() {
+        guard (try? keyValueStore.object(forKey: Self.neededKey)) as? Bool == true else { return }
+        pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionConverted, frequency: .uniqueByName)
     }
 }

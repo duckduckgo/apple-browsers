@@ -2252,7 +2252,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             guard let window = view.window, window.attachedSheet == nil else { return }
             NSAlert.screenRecordingPermission().beginSheetModal(for: window) { response in
                 guard response == .OK else { return }
-                AIChatScreenRecordingPermission().openSystemSettings()
+                AIChatScreenshotCaptureService.shared.openSystemSettings()
             }
         case .failed:
             lastAttachmentError = UserText.aiChatScreenshotCaptureFailed

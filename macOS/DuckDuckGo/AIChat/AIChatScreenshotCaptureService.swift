@@ -28,11 +28,20 @@ final class AIChatScreenshotCaptureService {
 
     private(set) var isCapturing = false
     private let permission: AIChatScreenRecordingPermission
+    private let instrumentation: AIChatScreenshotPermissionInstrumentation
     private var contextObservation: AnyCancellable?
     private var dismissCapture: (() -> Void)?
 
-    init(permission: AIChatScreenRecordingPermission = AIChatScreenRecordingPermission()) {
+    init(permission: AIChatScreenRecordingPermission = AIChatScreenRecordingPermission(),
+         instrumentation: AIChatScreenshotPermissionInstrumentation = DefaultAIChatScreenshotPermissionInstrumentation()) {
         self.permission = permission
+        self.instrumentation = instrumentation
+    }
+
+    /// What the Screen Recording alert's Open System Settings does, on every surface.
+    func openSystemSettings() {
+        instrumentation.systemSettingsOpened()
+        permission.openSystemSettings()
     }
 
     /// - Parameters:
@@ -55,7 +64,10 @@ final class AIChatScreenshotCaptureService {
         }
 
         // Our own picker lists every window, so both modes need Screen Recording.
-        guard permission.isGranted() else { return .permissionDenied }
+        guard permission.isGranted() else {
+            instrumentation.permissionNeeded()
+            return .permissionDenied
+        }
 
         // The picker and the overlay are windows of their own, so nothing else closes them with the context.
         var hasContextEnded = false
@@ -70,7 +82,11 @@ final class AIChatScreenshotCaptureService {
         let result = await captureImage(mode: mode,
                                         excludingWindowIDs: windows.map { CGWindowID($0.windowNumber) },
                                         presentingOn: focusWindow)
-        return hasContextEnded ? .cancelled : result
+        guard !hasContextEnded else { return .cancelled }
+        if case .image = result {
+            instrumentation.captureSucceeded()
+        }
+        return result
     }
 
     private func captureImage(mode: AIChatScreenshotMode,

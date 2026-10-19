@@ -17,6 +17,8 @@
 //
 
 import AppKit
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -111,7 +113,8 @@ struct AIChatScreenshotCaptureTests {
     func deniedCaptureNeverAsksMacOS() async {
         var requests = 0
         let service = AIChatScreenshotCaptureService(permission: AIChatScreenRecordingPermission(isGranted: { false },
-                                                                                                 requestAccess: { requests += 1 }))
+                                                                                                 requestAccess: { requests += 1 }),
+                                                     instrumentation: AIChatScreenshotPermissionInstrumentationSpy())
         for mode in [AIChatScreenshotMode.dragToSelect, .selectWindowOrDisplay, .dragToSelect] {
             let result = await service.capture(mode: mode, excluding: [], returningFocusTo: nil)
             guard case .permissionDenied = result else {
@@ -131,6 +134,43 @@ struct AIChatScreenshotCaptureTests {
                                                          openURL: { events.append($0.absoluteString) })
         permission.openSystemSettings()
         #expect(events == ["request", URL.screenRecordingSystemSettings.absoluteString])
+    }
+
+    // MARK: - Permission funnel
+
+    @available(macOS 13, *)
+    @Test("A capture without Screen Recording and the alert's Open System Settings report the funnel", .timeLimit(.minutes(1)))
+    @MainActor
+    func deniedCaptureAndSettingsReportTheFunnel() async {
+        let instrumentation = AIChatScreenshotPermissionInstrumentationSpy()
+        let service = AIChatScreenshotCaptureService(permission: AIChatScreenRecordingPermission(isGranted: { false },
+                                                                                                 requestAccess: {},
+                                                                                                 openURL: { _ in }),
+                                                     instrumentation: instrumentation)
+        _ = await service.capture(mode: .dragToSelect, excluding: [], returningFocusTo: nil)
+        service.openSystemSettings()
+        #expect(instrumentation.events == ["needed", "settingsOpened"])
+    }
+
+    @available(macOS 13, *)
+    @Test("Converted fires only on installs that once lacked Screen Recording, across relaunches", .timeLimit(.minutes(1)))
+    func convertedNeedsAnEarlierNeeded() {
+        let pixels = PixelKitMock()
+        let store = InMemoryThrowingKeyValueStore()
+        let instrumentation = DefaultAIChatScreenshotPermissionInstrumentation(pixelFiring: pixels, keyValueStore: store)
+
+        instrumentation.captureSucceeded()
+        #expect(pixels.actualFireCalls.isEmpty)
+
+        instrumentation.permissionNeeded()
+        instrumentation.systemSettingsOpened()
+        // macOS relaunches the app after the grant: only the store carries over.
+        DefaultAIChatScreenshotPermissionInstrumentation(pixelFiring: pixels, keyValueStore: store).captureSucceeded()
+
+        #expect(pixels.actualFireCalls.map(\.pixel.name) == ["aichat_screenshot_permission_needed_macos_u",
+                                                             "aichat_screenshot_permission_settings_opened_macos_u",
+                                                             "aichat_screenshot_permission_converted_macos_u"])
+        #expect(pixels.actualFireCalls.allSatisfy { $0.frequency == .uniqueByName })
     }
 
     // MARK: - Helpers
@@ -154,4 +194,12 @@ struct AIChatScreenshotCaptureTests {
         }
         return try #require(context.makeImage())
     }
+}
+
+final class AIChatScreenshotPermissionInstrumentationSpy: AIChatScreenshotPermissionInstrumentation {
+    private(set) var events: [String] = []
+
+    func permissionNeeded() { events.append("needed") }
+    func systemSettingsOpened() { events.append("settingsOpened") }
+    func captureSucceeded() { events.append("converted") }
 }

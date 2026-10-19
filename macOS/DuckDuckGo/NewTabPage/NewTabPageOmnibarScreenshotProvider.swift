@@ -29,17 +29,14 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
 
     private let featureFlagger: FeatureFlagger
     private let captureService: AIChatScreenshotCaptureService
-    private let permission: AIChatScreenRecordingPermission
     private let firePixel: (AIChatPixel) -> Void
 
     /// `captureService` is resolved in the body: a default argument is evaluated off the main actor.
     init(featureFlagger: FeatureFlagger,
          captureService: AIChatScreenshotCaptureService? = nil,
-         permission: AIChatScreenRecordingPermission = AIChatScreenRecordingPermission(),
          firePixel: @escaping (AIChatPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
         self.featureFlagger = featureFlagger
         self.captureService = captureService ?? .shared
-        self.permission = permission
         self.firePixel = firePixel
     }
 
@@ -104,9 +101,9 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
 
     private func presentPermissionExplainer(on window: NSWindow?) {
         guard let window, window.attachedSheet == nil else { return }
-        NSAlert.screenRecordingPermission().beginSheetModal(for: window) { [permission] response in
+        NSAlert.screenRecordingPermission().beginSheetModal(for: window) { [captureService] response in
             guard response == .OK else { return }
-            permission.openSystemSettings()
+            captureService.openSystemSettings()
         }
     }
 }

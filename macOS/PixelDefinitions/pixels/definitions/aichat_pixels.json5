@@ -551,5 +551,23 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "aichat_screenshot_permission_needed_macos_u": {
+        "description": "Fired once per install, the first time an Add Screenshot attempt (either mode, any surface) finds Screen Recording off. Start of the Screen Recording funnel",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_screenshot_permission_settings_opened_macos_u": {
+        "description": "Fired once per install, the first time the user clicks Open System Settings in the Duck.ai Screen Recording alert",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_screenshot_permission_converted_macos_u": {
+        "description": "Fired once per install, on the first successful Add Screenshot capture after aichat_screenshot_permission_needed_macos_u fired on that install. End of the Screen Recording funnel",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

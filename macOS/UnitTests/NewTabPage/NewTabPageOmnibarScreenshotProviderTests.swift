@@ -127,6 +127,7 @@ struct NewTabPageOmnibarScreenshotProviderTests {
 
     /// Screen Recording off, so a capture ends before any UI.
     private func makeDeniedCaptureService() -> AIChatScreenshotCaptureService {
-        AIChatScreenshotCaptureService(permission: AIChatScreenRecordingPermission(isGranted: { false }, requestAccess: {}))
+        AIChatScreenshotCaptureService(permission: AIChatScreenRecordingPermission(isGranted: { false }, requestAccess: {}),
+                                       instrumentation: AIChatScreenshotPermissionInstrumentationSpy())
     }
 }

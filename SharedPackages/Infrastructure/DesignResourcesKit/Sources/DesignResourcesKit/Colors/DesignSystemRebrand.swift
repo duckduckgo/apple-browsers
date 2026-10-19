@@ -23,6 +23,5 @@ import Foundation
 public enum DesignSystemRebrand {
 
     /// Returns `true` when the app should display rebranded design-system colors; `false` for legacy.
-    /// Set this once at launch from the host app.
-    nonisolated(unsafe) public static var isAppRebranded: () -> Bool = { false }
+    nonisolated(unsafe) public static var isAppRebranded: () -> Bool = { true }
 }

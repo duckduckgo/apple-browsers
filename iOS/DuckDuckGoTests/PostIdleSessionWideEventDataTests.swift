@@ -33,7 +33,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(PostIdleSessionWideEventData.metadata.pixelName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.featureName == "post_idle_session")
         #expect(PostIdleSessionWideEventData.metadata.type == "ios-post-idle-session")
-        #expect(PostIdleSessionWideEventData.metadata.version == "1.2.0")
+        #expect(PostIdleSessionWideEventData.metadata.version == "1.3.0")
     }
 
     // MARK: - jsonParameters
@@ -51,7 +51,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(params["feature.data.ext.page_engaged"] as? Bool == false)
         #expect(params["feature.data.ext.toggle_used"] as? Bool == false)
         #expect(params["feature.data.ext.back_pressed"] as? Bool == false)
-        #expect(params["feature.data.ext.opening_screen_changed"] as? Bool == false)
+        #expect(params["feature.data.ext.after_inactivity_settings_opened"] as? Bool == false)
         #expect(params["feature.data.ext.close_tab_tapped"] as? Bool == false)
         #expect(params["feature.data.ext.burn_tab_tapped"] as? Bool == false)
     }
@@ -118,14 +118,14 @@ struct PostIdleSessionWideEventDataTests {
                                                 pageEngaged: true,
                                                 toggleUsed: true,
                                                 backPressed: true,
-                                                openingScreenChanged: true,
+                                                afterInactivitySettingsOpened: true,
                                                 closeTabTapped: true,
                                                 burnTabTapped: true)
         let params = data.jsonParameters()
         #expect(params["feature.data.ext.page_engaged"] as? Bool == true)
         #expect(params["feature.data.ext.toggle_used"] as? Bool == true)
         #expect(params["feature.data.ext.back_pressed"] as? Bool == true)
-        #expect(params["feature.data.ext.opening_screen_changed"] as? Bool == true)
+        #expect(params["feature.data.ext.after_inactivity_settings_opened"] as? Bool == true)
         #expect(params["feature.data.ext.close_tab_tapped"] as? Bool == true)
         #expect(params["feature.data.ext.burn_tab_tapped"] as? Bool == true)
     }
@@ -229,7 +229,7 @@ struct PostIdleSessionWideEventDataTests {
         original.pageEngaged = true
         original.toggleUsed = true
         original.backPressed = true
-        original.openingScreenChanged = true
+        original.afterInactivitySettingsOpened = true
         original.closeTabTapped = true
         original.burnTabTapped = true
 
@@ -245,7 +245,7 @@ struct PostIdleSessionWideEventDataTests {
         #expect(decoded.pageEngaged == true)
         #expect(decoded.toggleUsed == true)
         #expect(decoded.backPressed == true)
-        #expect(decoded.openingScreenChanged == true)
+        #expect(decoded.afterInactivitySettingsOpened == true)
         #expect(decoded.closeTabTapped == true)
         #expect(decoded.burnTabTapped == true)
     }

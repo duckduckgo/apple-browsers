@@ -70,21 +70,21 @@ struct SettingsRootView: View {
             if #available(iOS 18.2, *) {
                 if viewModel.shouldShowSetAsDefaultBrowser || viewModel.shouldShowImportPasswords {
                     SettingsCompleteSetupView()
-                        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 }
             }
             SettingsPrivacyProtectionsView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsSubscriptionView().environmentObject(subscriptionNavigationCoordinator)
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsMainSettingsView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsNextStepsView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsOthersView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsDebugView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
         .navigationBarTitle(UserText.settingsTitle, displayMode: .inline)
         .navigationBarItems(trailing: Button(UserText.navigationTitleDone) {

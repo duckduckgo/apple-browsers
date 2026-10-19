@@ -294,7 +294,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.showAutoRestoreReadyContinuations, [.setup(.pairing)])
         XCTAssertTrue(delegate.continueAfterPreservedAccountRemovalContinuations.isEmpty)
 
-        sut.startAutoRestoreSecondaryAction()
+        await sut.startAutoRestoreSecondaryAction()
         XCTAssertEqual(delegate.continueAfterPreservedAccountRemovalContinuations, [.setup(.pairing)])
         XCTAssertEqual(delegate.showRecoveryCodeEntryCallCount, 0)
     }
@@ -316,7 +316,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.showAutoRestoreReadyContinuations, [.recover])
         XCTAssertTrue(delegate.continueAfterPreservedAccountRemovalContinuations.isEmpty)
 
-        sut.startAutoRestoreSecondaryAction()
+        await sut.startAutoRestoreSecondaryAction()
 
         XCTAssertEqual(delegate.continueAfterPreservedAccountRemovalContinuations, [.recover])
         XCTAssertEqual(delegate.showRecoveryCodeEntryCallCount, 0)
@@ -742,26 +742,106 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.firedSyncSetupPixelEvents, [])
     }
 
-    func testWhenImprovedPairingFlowOnAndPreservedAccountPromptNeededThenAuthenticatesUpFrontAndNotAgainOnChoice() async {
+    func testWhenImprovedPairingFlowOnAndPreservedAccountPromptNeededThenPromptIsShownWithoutAuthentication() async {
         let delegate = MockSyncSettingsViewModelDelegate()
         delegate.isPreservedAccountPromptNeededValue = true
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
-        let promptShownExpectation = expectation(description: "Auto-restore ready prompt shown")
-        delegate.onShowAutoRestoreReady = {
-            promptShownExpectation.fulfill()
+
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+        XCTAssertEqual(delegate.showAutoRestoreReadyContinuations, [.setup(.simplifiedToggle)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreResumedThenAuthenticatesBeforeRestoring() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+        let restoreShownExpectation = expectation(description: "Recovering data auto-restore flow shown")
+        delegate.onShowRecoveringDataAutoRestore = {
+            restoreShownExpectation.fulfill()
         }
 
-        sut.enableSyncToggleTapped()
-        await fulfillment(of: [promptShownExpectation], timeout: 1.0)
-        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        sut.startAutoRestore()
 
-        sut.startAutoRestoreSecondaryAction()
+        await fulfillment(of: [restoreShownExpectation], timeout: 1.0)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .sessionRestore)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreResumeAuthenticationFailsThenRestoreDoesNotStart() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed
+        let authenticationFinished = expectation(description: "Authentication finished")
+        delegate.onAuthenticateUserFinished = { authenticationFinished.fulfill() }
+
+        sut.startAutoRestore()
+
+        await fulfillment(of: [authenticationFinished], timeout: 1.0)
+        await Task.yield()
+        XCTAssertEqual(delegate.showRecoveringDataAutoRestoreCallCount, 0)
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreSkippedFromToggleThenAuthenticatesOnlyOnChoice() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+
+        await sut.startAutoRestoreSecondaryAction()
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+        XCTAssertEqual(delegate.continueAfterPreservedAccountRemovalContinuations, [.setup(.simplifiedToggle)])
+
         sut.isBusy = false
         sut.connectingSheetPhase = .syncAnotherDevice(isConnecting: false)
         await sut.syncThisDeviceOnlyFromConnectingSheet()
 
         XCTAssertEqual(delegate.authenticateUserCallCount, 1)
         XCTAssertEqual(delegate.simplifiedCreateAccountAndStartSyncingCallCount, 1)
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreSkippedFromRecoverThenAuthenticatesBeforeContinuing() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await beginRecoverFlowAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 0)
+
+        await sut.startAutoRestoreSecondaryAction()
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertEqual(delegate.continueAfterPreservedAccountRemovalContinuations, [.recover])
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .sessionRestore)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndAutoRestoreSkippedFromRecoverAndAuthenticationFailsThenDoesNotContinue() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await beginRecoverFlowAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed
+
+        await sut.startAutoRestoreSecondaryAction()
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertTrue(delegate.continueAfterPreservedAccountRemovalContinuations.isEmpty)
+    }
+
+    func testWhenImprovedPairingFlowOffAndPreservedAccountPromptNeededThenAuthenticatesUpFront() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isPreservedAccountPromptNeededValue = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: false)
+
+        await enableSyncAndWaitForAutoRestorePrompt(sut, delegate: delegate)
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
     }
 
     func testWhenImprovedPairingFlowOnAndBeginRecoverFlowThenRecoverSheetIsShownWithoutAuthentication() async {
@@ -910,6 +990,192 @@ final class SyncSettingsViewModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testWhenImprovedPairingFlowOnAndTurnOffSyncTappedThenAuthenticatesAndShowsTurnOffSheet() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        var isDeleteAllDataAlertShown = false
+        delegate.onConfirmAndDeleteAllData = { isDeleteAllDataAlertShown = true }
+        let sheetShown = expectation(description: "Turn off sheet shown")
+        let cancellable = sut.$isTurnOffSyncSheetVisible
+            .dropFirst()
+            .sink { isVisible in
+                if isVisible {
+                    sheetShown.fulfill()
+                }
+            }
+
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [sheetShown], timeout: 5)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertFalse(isDeleteAllDataAlertShown)
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.sheetShown])
+        cancellable.cancel()
+    }
+
+    func testWhenImprovedPairingFlowOnAndTurnOffSyncTappedTwiceThenAuthenticatesOnlyOnce() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        let sheetShown = expectation(description: "Turn off sheet shown")
+        let cancellable = sut.$isTurnOffSyncSheetVisible
+            .dropFirst()
+            .sink { isVisible in
+                if isVisible {
+                    sheetShown.fulfill()
+                }
+            }
+
+        sut.turnOffSyncTapped()
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [sheetShown], timeout: 5)
+        await Task.yield()
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.sheetShown])
+        XCTAssertFalse(sut.isBusy)
+        cancellable.cancel()
+    }
+
+    func testWhenImprovedPairingFlowOnAndTurnOffSyncAuthenticationFailsThenTurnOffSheetIsNotShown() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        let authenticationFinished = expectation(description: "Authentication finished")
+        delegate.onAuthenticateUserFinished = { authenticationFinished.fulfill() }
+
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [authenticationFinished], timeout: 5)
+        await Task.yield()
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+        XCTAssertTrue(delegate.firedTurnOffSyncSheetPixelEvents.isEmpty)
+    }
+
+    func testWhenImprovedPairingFlowOffAndTurnOffSyncTappedThenShowsDeleteAllDataAlertInsteadOfSheet() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: false)
+        let deleteAllDataAlertShown = expectation(description: "Delete all data alert shown")
+        delegate.onConfirmAndDeleteAllData = { deleteAllDataAlertShown.fulfill() }
+
+        sut.turnOffSyncTapped()
+
+        await fulfillment(of: [deleteAllDataAlertShown], timeout: 5)
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+    }
+
+    func testWhenTurnOffSheetRemoveDeviceConfirmedThenDisablesSyncAfterSheetDismisses() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isSyncEnabled = true
+        sut.isTurnOffSyncSheetVisible = true
+        var isSyncDisabledByDelegate = false
+        var isServerDataDeleted = false
+        delegate.onDisableSync = { isSyncDisabledByDelegate = true }
+        delegate.onDeleteAllData = { isServerDataDeleted = true }
+        let syncDisabled = expectation(description: "Sync disabled")
+        let cancellable = sut.$isSyncEnabled
+            .dropFirst()
+            .sink { isEnabled in
+                if !isEnabled {
+                    syncDisabled.fulfill()
+                }
+            }
+
+        sut.turnOffSyncSheetRemoveDeviceConfirmed()
+
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+        XCTAssertFalse(isSyncDisabledByDelegate)
+
+        sut.turnOffSyncSheetDidDismiss()
+
+        await fulfillment(of: [syncDisabled], timeout: 5)
+        XCTAssertTrue(isSyncDisabledByDelegate)
+        XCTAssertFalse(isServerDataDeleted)
+        cancellable.cancel()
+    }
+
+    func testWhenTurnOffSheetDeleteServerDataConfirmedThenDeletesServerDataAfterSheetDismisses() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isSyncEnabled = true
+        sut.isTurnOffSyncSheetVisible = true
+        var isSyncDisabledByDelegate = false
+        var isServerDataDeleted = false
+        delegate.onDisableSync = { isSyncDisabledByDelegate = true }
+        delegate.onDeleteAllData = { isServerDataDeleted = true }
+        let syncDisabled = expectation(description: "Sync disabled")
+        let cancellable = sut.$isSyncEnabled
+            .dropFirst()
+            .sink { isEnabled in
+                if !isEnabled {
+                    syncDisabled.fulfill()
+                }
+            }
+
+        sut.turnOffSyncSheetDeleteServerDataConfirmed()
+
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+        XCTAssertFalse(isServerDataDeleted)
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.deleteServerDataConfirmationConfirmed])
+
+        sut.turnOffSyncSheetDidDismiss()
+
+        await fulfillment(of: [syncDisabled], timeout: 5)
+        XCTAssertTrue(isServerDataDeleted)
+        XCTAssertFalse(isSyncDisabledByDelegate)
+        cancellable.cancel()
+    }
+
+    func testWhenTurnOffSheetClosedThenSyncStaysOn() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isSyncEnabled = true
+        sut.isTurnOffSyncSheetVisible = true
+        var isSyncDisabledByDelegate = false
+        var isServerDataDeleted = false
+        delegate.onDisableSync = { isSyncDisabledByDelegate = true }
+        delegate.onDeleteAllData = { isServerDataDeleted = true }
+
+        sut.dismissTurnOffSyncSheet()
+        sut.turnOffSyncSheetDidDismiss()
+        await Task.yield()
+
+        XCTAssertFalse(sut.isTurnOffSyncSheetVisible)
+        XCTAssertTrue(sut.isSyncEnabled)
+        XCTAssertFalse(isSyncDisabledByDelegate)
+        XCTAssertFalse(isServerDataDeleted)
+        XCTAssertTrue(delegate.firedTurnOffSyncSheetPixelEvents.isEmpty)
+    }
+
+    func testWhenTurnOffSheetRemoveDeviceTappedThenFiresThisDeviceOptionSelected() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+
+        sut.turnOffSyncSheetRemoveDeviceTapped()
+
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.optionSelected(.thisDevice)])
+    }
+
+    func testWhenTurnOffSheetDeleteServerDataTappedThenFiresAllDevicesAndServerDataOptionSelected() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+
+        sut.turnOffSyncSheetDeleteServerDataTapped()
+
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.optionSelected(.allDevicesAndServerData)])
+    }
+
+    func testWhenTurnOffSheetDeleteServerDataCancelledThenFiresConfirmationDismissedAndKeepsSheetOpen() {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isTurnOffSyncSheetVisible = true
+
+        sut.turnOffSyncSheetDeleteServerDataCancelled()
+
+        XCTAssertEqual(delegate.firedTurnOffSyncSheetPixelEvents, [.deleteServerDataConfirmationDismissed])
+        XCTAssertTrue(sut.isTurnOffSyncSheetVisible)
+    }
+
     func testWhenOtherDeviceDetailsRemoveDeviceTappedThenFiresRemoveDevicePixel() {
         let delegate = MockSyncSettingsViewModelDelegate()
         let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
@@ -935,6 +1201,160 @@ final class SyncSettingsViewModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testWhenPairingStartedWhileNotSyncedThenAuthenticationResultReportsSettingsNotSynced() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+
+        await beginPairingFlowAndWaitForPairing(sut, delegate: delegate)
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .settingsNotSynced)])
+    }
+
+    func testWhenPairingStartedWhileSyncedThenAuthenticationResultReportsSettingsSynced() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        sut.isSyncEnabled = true
+
+        await beginPairingFlowAndWaitForPairing(sut, delegate: delegate)
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .settingsSynced)])
+    }
+
+    func testWhenImprovedPairingFlowOffAndEnablingSyncThenAuthenticationResultReportsSettingsNotSynced() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .settingsNotSynced)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndSyncAnotherDeviceChosenThenAuthenticationResultReportsSettingsNotSynced() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+
+        await sut.syncAnotherDeviceFromConnectingSheet()
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .settingsNotSynced)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndThisDeviceOnlyChosenThenAuthenticationResultReportsThisDevice() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+
+        await sut.syncThisDeviceOnlyFromConnectingSheet()
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .thisDevice)])
+    }
+
+    func testWhenImprovedPairingFlowOffAndRecoverStartedThenAuthenticationResultReportsRecover() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        await beginRecoverFlowAndWaitForSheet(sut)
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .recover)])
+    }
+
+    func testWhenImprovedPairingFlowOnAndRecoverContinuedThenAuthenticationResultReportsRecover() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await beginRecoverFlowAndWaitForSheet(sut)
+
+        await sut.continueRecoverFlow()
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.succeeded, source: .recover)])
+    }
+
+    func testWhenSetupAuthenticationFailsThenAuthenticationResultReportsFailed() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed
+
+        await sut.syncThisDeviceOnlyFromConnectingSheet()
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.failed, source: .thisDevice)])
+    }
+
+    func testWhenSetupAuthenticationUnavailableThenAuthenticationResultReportsUnconfigured() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authUnavailable
+
+        await sut.syncThisDeviceOnlyFromConnectingSheet()
+
+        XCTAssertEqual(delegate.firedAuthenticationResultEvents, [.authenticationResult(.unconfigured, source: .thisDevice)])
+    }
+
+    func testWhenSetupAuthenticationReusesSessionThenAuthenticationResultIsNotFired() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = false
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+
+        await sut.syncThisDeviceOnlyFromConnectingSheet()
+
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+        XCTAssertTrue(delegate.firedAuthenticationResultEvents.isEmpty)
+    }
+
+    func testWhenNonSetupAuthenticationSucceedsThenAuthenticationResultIsNotFired() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.isUserAuthenticationPromptNeeded = true
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+
+        let authenticated = await sut.commonAuthenticate()
+
+        XCTAssertTrue(authenticated)
+        XCTAssertTrue(delegate.firedAuthenticationResultEvents.isEmpty)
+    }
+
+    private func beginPairingFlowAndWaitForPairing(_ sut: SyncSettingsViewModel, delegate: MockSyncSettingsViewModelDelegate) async {
+        let pairingExpectation = expectation(description: "Sync with another device is shown")
+        delegate.onShowSyncWithAnotherDevice = {
+            pairingExpectation.fulfill()
+        }
+
+        sut.beginPairingFlow()
+
+        await fulfillment(of: [pairingExpectation], timeout: 1.0)
+    }
+
+    private func enableSyncAndWaitForAutoRestorePrompt(_ sut: SyncSettingsViewModel, delegate: MockSyncSettingsViewModelDelegate) async {
+        let promptShownExpectation = expectation(description: "Auto-restore ready prompt shown")
+        delegate.onShowAutoRestoreReady = {
+            promptShownExpectation.fulfill()
+        }
+
+        sut.enableSyncToggleTapped()
+
+        await fulfillment(of: [promptShownExpectation], timeout: 1.0)
+    }
+
+    private func beginRecoverFlowAndWaitForAutoRestorePrompt(_ sut: SyncSettingsViewModel, delegate: MockSyncSettingsViewModelDelegate) async {
+        let promptShownExpectation = expectation(description: "Auto-restore ready prompt shown")
+        delegate.onShowAutoRestoreReady = {
+            promptShownExpectation.fulfill()
+        }
+
+        sut.beginRecoverFlow()
+
+        await fulfillment(of: [promptShownExpectation], timeout: 1.0)
+    }
+
     private func beginRecoverFlowAndWaitForSheet(_ sut: SyncSettingsViewModel) async {
         let recoverSheetExpectation = expectation(description: "Recover synced data sheet is shown")
         let cancellable = sut.$isRecoverSyncedDataSheetVisible
@@ -949,6 +1369,29 @@ final class SyncSettingsViewModelTests: XCTestCase {
 
         await fulfillment(of: [recoverSheetExpectation], timeout: 1.0)
         cancellable.cancel()
+    }
+
+    func testWhenOnlyThisDeviceIsSyncedThenDeleteServerDataIsSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+        sut.devices = [.init(id: "1", name: "iPhone", type: "phone", isThisDevice: true)]
+
+        XCTAssertTrue(sut.isDeleteServerDataSelectedByDefault)
+    }
+
+    func testWhenOtherDevicesAreSyncedThenDeleteServerDataIsNotSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+        sut.devices = [
+            .init(id: "1", name: "iPhone", type: "phone", isThisDevice: true),
+            .init(id: "2", name: "Mac", type: "desktop", isThisDevice: false)
+        ]
+
+        XCTAssertFalse(sut.isDeleteServerDataSelectedByDefault)
+    }
+
+    func testWhenDevicesAreNotLoadedThenDeleteServerDataIsNotSelectedByDefault() {
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), isImprovedPairingFlowEnabled: true)
+
+        XCTAssertFalse(sut.isDeleteServerDataSelectedByDefault)
     }
 
     private func makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler,
@@ -969,6 +1412,7 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
 
     var authenticateUserCallCount = 0
     var authenticationError: Error?
+    var isUserAuthenticationPromptNeeded = false
     var isPreservedAccountPromptNeededValue = false
     var continueAfterPreservedAccountRemovalContinuations: [SyncSettingsViewModel.PreservedAccountContinuation] = []
     var showAutoRestoreReadyContinuations: [SyncSettingsViewModel.PreservedAccountContinuation] = []
@@ -983,9 +1427,18 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var onAuthenticateUserFinished: (() -> Void)?
     var onShowSyncWithAnotherDevice: (() -> Void)?
     var firedSyncSetupPixelEvents: [SyncSettingsViewModel.SyncSetupPixelEvent] = []
+    var firedAuthenticationResultEvents: [SyncSettingsViewModel.SyncSetupPixelEvent] {
+        firedSyncSetupPixelEvents.filter {
+            if case .authenticationResult = $0 { return true }
+            return false
+        }
+    }
     var firedDeviceDetailsPixelEvents: [SyncSettingsViewModel.DeviceDetailsPixelEvent] = []
+    var firedTurnOffSyncSheetPixelEvents: [SyncSettingsViewModel.TurnOffSyncSheetPixelEvent] = []
     var onSimplifiedConfirmAndDisableSync: (() -> Void)?
     var onDisableSync: (() -> Void)?
+    var onConfirmAndDeleteAllData: (() -> Void)?
+    var onDeleteAllData: (() -> Void)?
 
     var syncBookmarksPausedTitle: String?
     var syncCredentialsPausedTitle: String?
@@ -1042,7 +1495,14 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
         onDisableSync?()
         return true
     }
-    func confirmAndDeleteAllData() async -> Bool { true }
+    func confirmAndDeleteAllData() async -> Bool {
+        onConfirmAndDeleteAllData?()
+        return true
+    }
+    func deleteAllData() async -> Bool {
+        onDeleteAllData?()
+        return true
+    }
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool { true }
     func removeDevice(_ device: SyncSettingsViewModel.Device) {}
     func updateDeviceName(_ name: String) {}
@@ -1059,6 +1519,9 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     }
     func fireDeviceDetailsPixel(event: SyncSettingsViewModel.DeviceDetailsPixelEvent) {
         firedDeviceDetailsPixelEvents.append(event)
+    }
+    func fireTurnOffSyncSheetPixel(event: SyncSettingsViewModel.TurnOffSyncSheetPixelEvent) {
+        firedTurnOffSyncSheetPixelEvents.append(event)
     }
 }
 

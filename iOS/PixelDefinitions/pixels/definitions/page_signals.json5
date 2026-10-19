@@ -1,0 +1,9 @@
+{
+    "page-signals_resource-load-delegate-already-set": {
+        "description": "Fired when the page signals resource load observer cannot attach to a web view because another resource load delegate is already set",
+        "owners": ["jleandroperez"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

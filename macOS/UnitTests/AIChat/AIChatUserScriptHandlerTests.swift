@@ -141,6 +141,32 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A Duck.ai link opens with the link as its source", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatADuckAILinkOpensAttributedToTheLink() async {
+        let url = "https://duck.ai/chat?q=hello"
+
+        _ = await handler.openAIChatLink(params: ["url": url, "target": "same-tab"], message: WKScriptMessage.mock())
+        _ = await handler.openAIChatLink(params: ["url": url, "target": "new-tab"], message: WKScriptMessage.mock())
+
+        #expect(windowControllersManager.showCalled == .init(url: URL(string: url), source: .attributedUI(.duckAILink), newTab: true, selected: true))
+        #expect(windowControllersManager.openCalls.map(\.source) == [.attributedUI(.duckAILink)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Other links open as before", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatOtherLinksOpenAsBefore() async {
+        let url = "https://example.com/"
+
+        _ = await handler.openAIChatLink(params: ["url": url, "target": "same-tab"], message: WKScriptMessage.mock())
+        _ = await handler.openAIChatLink(params: ["url": url, "target": "new-tab"], message: WKScriptMessage.mock())
+
+        #expect(windowControllersManager.showCalled == .init(url: URL(string: url), source: .switchToOpenTab, newTab: true, selected: true))
+        #expect(windowControllersManager.openCalls.map(\.source) == [.link])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("getAIChatNativeConfigValues calls messageHandler", .timeLimit(.minutes(1)))
     func testThatGetAIChatNativeConfigValuesCallsMessageHandler() async {
         _ = await handler.getAIChatNativeConfigValues(params: [], message: WKScriptMessage.mock())
@@ -616,7 +642,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatUserDidSubmitFirstPromptFiresStartNewConversationPixel() async throws {
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .unattributed, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .unattributed, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .dailyAndStandard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -649,7 +675,7 @@ struct AIChatUserScriptHandlerTests {
         sourceHandler.setData(.tabBarButton)
 
         let testPixelFiring = PixelKitMock()
-        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .standard)]
+        testPixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatMetricStartNewConversation(source: .tabBarButton, hasPageContext: false, surface: .duckAI, firstPromptNewInstall: false), frequency: .dailyAndStandard)]
 
         let testHandler = AIChatUserScriptHandler(
             storage: storage,
@@ -1999,6 +2025,19 @@ struct AIChatUserScriptHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("supportsCanonicalChatFormat is true regardless of fire window", .timeLimit(.minutes(1)))
+    func testSupportsCanonicalChatFormatIsTrue() {
+        let featureFlagger = makeFeatureFlagger(aiChatSyncEnabled: false)
+        let handler = AIChatMessageHandler(featureFlagger: featureFlagger,
+                                           promptHandler: AIChatPromptHandler.shared,
+                                           installDateProvider: { nil },
+                                           installTypeProvider: { .new })
+
+        #expect(handler.getNativeConfigValues(isFireWindow: false).supportsCanonicalChatFormat == true)
+        #expect(handler.getNativeConfigValues(isFireWindow: true).supportsCanonicalChatFormat == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("When aiChatNativeStorage is enabled and bridge is available, supportsNativeStorage is true", .timeLimit(.minutes(1)))
     func testWhenAIChatNativeStorageEnabledAndBridgeAvailableThenSupportsNativeStorageIsTrue() {
         let featureFlagger = makeFeatureFlagger(aiChatNativeStorageEnabled: true)
@@ -2277,6 +2316,7 @@ struct AIChatConversationSourcePixelTests {
         "serp",
         "sidebar-handoff",
         "settings",
+        "subscription-page",
         "direct-typed",
         "direct-suggestion",
         "direct-bookmark",
@@ -2284,7 +2324,13 @@ struct AIChatConversationSourcePixelTests {
         "direct-history",
         "direct-external",
         "direct-link",
+        "direct-new-tab-page",
         "duckduckgo-homepage",
+        "duck-ai-link",
+        "duckduckgo-link",
+        "session-restore",
+        "reopened-tab",
+        "tab-copy",
         "unattributed"
     ]
 

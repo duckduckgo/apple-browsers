@@ -315,7 +315,7 @@ final class MainWindowController: NSWindowController {
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
     private var didMoveTabBarForFireAnimation = false
-    private var isClosingAndBurning = false
+    private(set) var isClosingAndBurning = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher

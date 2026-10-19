@@ -59,8 +59,8 @@ protocol NTPAfterIdleInstrumentation: AnyObject {
     /// - Parameter requiredConfirmation: `true` when the burn flow shows the fire confirmation prompt, `false` when the tab is burned immediately.
     func escapeHatchBurnTapped(requiredConfirmation: Bool)
 
-    /// The user changed the Opening Screen option from the escape hatch's settings menu.
-    func escapeHatchOptionChanged(to option: AfterInactivityOption)
+    /// The user tapped "After Inactivity" in the escape hatch card menu, which opens Settings → General.
+    func escapeHatchAfterInactivitySettingsTappedFromMenu()
 
     /// The user hid the "Return to tab" shortcut via the card's "Hide These Shortcuts" menu item.
     func escapeHatchHiddenFromMenu()
@@ -92,11 +92,14 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
 
     private let eligibilityManager: IdleReturnEligibilityManaging
     private let firePixel: (Pixel.Event) -> Void
+    private let firePixelKitEvent: (PixelKit.Event) -> Void
 
     init(eligibilityManager: IdleReturnEligibilityManaging,
-         firePixel: @escaping (Pixel.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount) }) {
+         firePixel: @escaping (Pixel.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount) },
+         firePixelKitEvent: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount) }) {
         self.eligibilityManager = eligibilityManager
         self.firePixel = firePixel
+        self.firePixelKitEvent = firePixelKitEvent
     }
 
     func ntpShown(afterIdle: Bool) {
@@ -147,8 +150,8 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
         firePixel(requiredConfirmation ? .ntpAfterIdleEscapeHatchBurnWithConfirmationTapped : .ntpAfterIdleEscapeHatchBurnImmediatelyTapped)
     }
 
-    func escapeHatchOptionChanged(to option: AfterInactivityOption) {
-        firePixel(option == .newTab ? .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab : .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab)
+    func escapeHatchAfterInactivitySettingsTappedFromMenu() {
+        firePixelKitEvent(NTPAfterIdleEscapeHatchPixel.afterInactivitySettingsTappedFromMenu)
     }
 
     func escapeHatchHiddenFromMenu() {
@@ -182,4 +185,19 @@ final class DefaultNTPAfterIdleInstrumentation: NTPAfterIdleInstrumentation {
     func escapeHatchBurnTappedFromButton() {
         firePixel(.ntpAfterIdleEscapeHatchBurnTappedFromButton)
     }
+}
+
+enum NTPAfterIdleEscapeHatchPixel: PixelKit.Event {
+    case afterInactivitySettingsTappedFromMenu
+
+    var name: String {
+        switch self {
+        case .afterInactivitySettingsTappedFromMenu:
+            return "ntp_after_idle_escape_hatch_after_inactivity_settings_tapped_from_menu"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

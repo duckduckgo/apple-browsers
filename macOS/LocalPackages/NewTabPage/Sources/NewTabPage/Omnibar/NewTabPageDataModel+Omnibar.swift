@@ -303,6 +303,10 @@ public extension NewTabPageDataModel {
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
         var createImageModelSwitch: OmnibarCreateImageModelSwitch?
         var usageLimits: OmnibarUsageLimits?
+        /// True until the user accepts Duck.ai's Terms of Service. The Duck.ai tab then shows the
+        /// disclaimer and an "Ask" button that sends `aiTermsAccepted` with `omnibar_submitChat`.
+        /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
+        var requiresAiTermsAcceptance: Bool?
         var launcherPromo: OmnibarLauncherPromo?
     }
 
@@ -534,6 +538,9 @@ public extension NewTabPageDataModel {
         let pageContext: [OmnibarPageContext]?
         /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
         let files: [OmnibarPromptFile]?
+        /// True only when the user clicked "Ask" (or "Create") with the terms disclaimer on screen.
+        /// Enter, voice and the "Ask Duck.ai" suggestion never send it, because legal requires a click.
+        var aiTermsAccepted: Bool?
         var launcherPromoVisible: Bool?
     }
 

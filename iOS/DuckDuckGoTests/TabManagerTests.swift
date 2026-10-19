@@ -707,7 +707,7 @@ final class TabManagerTests: XCTestCase {
 
         XCTAssertFalse(controller.isProtectedFromCacheEviction)
         XCTAssertNil(delivery.consume())
-        guard case .shared = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
+        guard case .sharedHandler = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
             return XCTFail("Unexpected navigation must reset prompt routing")
         }
     }
@@ -792,7 +792,7 @@ final class TabManagerTests: XCTestCase {
                 controller.webView(webView, didStartProvisionalNavigation: try makeNavigation(using: navigationSource))
 
                 XCTAssertTrue(controller.isProtectedFromCacheEviction)
-                guard case .recipient(let received) = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
+                guard case .tabSession(let received) = controller.initialAIChatPromptSession.consumeInitialPrompt() else {
                     return XCTFail("Retry must preserve recipient routing")
                 }
                 XCTAssertEqual(received, .queryPrompt("initial", autoSubmit: true))

@@ -24,8 +24,8 @@ import Foundation
 @MainActor
 final class AIChatInitialPromptSession {
     enum PromptSource {
-        case shared
-        case recipient(AIChatNativePrompt?)
+        case sharedHandler
+        case tabSession(AIChatNativePrompt?)
     }
 
     /// A replaceable bridge connection. Retaining an old handler never extends its access to the session.
@@ -49,7 +49,7 @@ final class AIChatInitialPromptSession {
         }
 
         func consumeInitialPrompt() -> PromptSource {
-            currentSession?.consumeInitialPrompt() ?? .recipient(nil)
+            currentSession?.consumeInitialPrompt() ?? .tabSession(nil)
         }
 
         func captureInitialPromptWait() -> (@MainActor () async -> Bool)? {
@@ -129,11 +129,11 @@ final class AIChatInitialPromptSession {
     }
 
     func consumeInitialPrompt() -> PromptSource {
-        guard usesRecipientBoundInitialPrompt else { return .shared }
+        guard usesRecipientBoundInitialPrompt else { return .sharedHandler }
         let delivery = delivery
         self.delivery = nil
         hasFailedNavigation = false
-        return .recipient(delivery?.consume())
+        return .tabSession(delivery?.consume())
     }
 
     func cancel() {

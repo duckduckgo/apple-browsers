@@ -27,7 +27,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
 
     func testInactiveSessionUsesSharedSource() {
         let session = AIChatInitialPromptSession()
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
@@ -148,7 +148,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         await fulfillment(of: [prepared], timeout: 1)
         sender.cancel()
         XCTAssertEqual(consume(recipient), prompt)
-        assertShared(sender.consumeInitialPrompt())
+        assertSharedHandler(sender.consumeInitialPrompt())
     }
 
     func testSameSessionCanInstallDeliveryInsidePreparationCompletion() async {
@@ -170,7 +170,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertTrue(session.isProtectedFromCacheEviction)
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
         XCTAssertFalse(session.isProtectedFromCacheEviction)
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
     }
 
     func testInternalRetryIgnoresFailureBeforeAndAfterReplacementStart() {
@@ -234,7 +234,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
 
         XCTAssertNil(delivery.consume())
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
@@ -251,7 +251,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
 
         XCTAssertNil(delivery.consume())
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
@@ -267,7 +267,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
 
         XCTAssertFalse(session.willRetryFailedNavigation())
         XCTAssertNil(delivery.consume())
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
     }
 
     func testConsumedPromptIsNotRestoredAfterFailure() {
@@ -502,23 +502,23 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
     }
 
     private func consume(_ session: AIChatInitialPromptSession) -> AIChatNativePrompt? {
-        recipientPrompt(session.consumeInitialPrompt())
+        tabSessionPrompt(session.consumeInitialPrompt())
     }
 
     private func consume(_ connection: AIChatInitialPromptSession.Connection) -> AIChatNativePrompt? {
-        recipientPrompt(connection.consumeInitialPrompt())
+        tabSessionPrompt(connection.consumeInitialPrompt())
     }
 
-    private func recipientPrompt(_ source: AIChatInitialPromptSession.PromptSource) -> AIChatNativePrompt? {
-        guard case .recipient(let prompt) = source else {
+    private func tabSessionPrompt(_ source: AIChatInitialPromptSession.PromptSource) -> AIChatNativePrompt? {
+        guard case .tabSession(let prompt) = source else {
             XCTFail("Recipient must never fall back to shared prompt")
             return nil
         }
         return prompt
     }
 
-    private func assertShared(_ source: AIChatInitialPromptSession.PromptSource) {
-        guard case .shared = source else {
+    private func assertSharedHandler(_ source: AIChatInitialPromptSession.PromptSource) {
+        guard case .sharedHandler = source else {
             XCTFail("Ordinary prompt must use shared source")
             return
         }

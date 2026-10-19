@@ -759,7 +759,7 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     private func prepareVoiceSearchWithDeniedMicrophone() {
-        launchApp(additionalArguments: ["-ff.utiDuckAIWarnings", "false"])
+        launchApp(additionalArguments: ["-ff.utiDuckAIWarnings", "false", "-ff.duckAINativeTermsOfService", "false"])
         enableDuckAIInput()
         openVoiceSearchSettings()
         XCTAssertEqual(voiceSearchSwitch.value as? String, "0")

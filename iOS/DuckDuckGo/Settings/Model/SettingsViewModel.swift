@@ -1726,7 +1726,7 @@ extension SettingsViewModel {
     }
 
     func openAIChat() {
-        urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
+        urlOpener.open(AIChatEntryPointSource.paidSettingsDeepLink)
     }
 
     func openAIFeaturesSettings() {

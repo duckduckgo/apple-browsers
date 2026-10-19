@@ -655,7 +655,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
 // MARK: - Duck.ai Wide Event
 
-extension AIChatContextualUTIHost {
+extension AIChatContextualUTIHost: ContextualDuckAIPromptFlowReporting {
+
+    /// Unified Input receives chat status through its own user-script binding.
+    func chatStatusChanged(_ status: AIChatStatusValue) {}
 
     func sheetDismissed() {
         duckAIWideEventInstrumentation.sheetDismissedDuringGeneration(scope: duckAIWideEventFlowScope)

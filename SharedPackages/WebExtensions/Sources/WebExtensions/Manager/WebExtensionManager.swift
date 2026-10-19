@@ -465,6 +465,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier)
         let embeddedType = installedExtension?.embeddedType
+        let removesCurrentEmbeddedContext = embeddedBackgroundContextForNavigation?.uniqueIdentifier == identifier
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
@@ -478,6 +479,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
         }
 
+        if removesCurrentEmbeddedContext {
+            // A preflight can still be suspended after startup completed. Do not reload its
+            // document after uninstall, or cancel the replacement when removing an old version.
+            backgroundRecovery?.invalidate()
+        }
         clearEmbeddedBackgroundStartup(identifier: identifier)
         do {
             try permissionController?.forget(identifier)

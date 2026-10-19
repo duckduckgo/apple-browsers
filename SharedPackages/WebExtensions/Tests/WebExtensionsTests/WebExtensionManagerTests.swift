@@ -233,6 +233,66 @@ final class WebExtensionManagerTests: XCTestCase {
         manager.unloadAllExtensions()
     }
 
+    @MainActor
+    func testUninstallingActiveEmbeddedContextCancelsPendingDocumentRecovery() async throws {
+        try await verifyUninstallDuringDocumentRecovery(removingSupersededContext: false, unloadFails: false)
+    }
+
+    @MainActor
+    func testUninstallingOldEmbeddedContextPreservesReplacementDocumentRecovery() async throws {
+        try await verifyUninstallDuringDocumentRecovery(removingSupersededContext: true, unloadFails: false)
+    }
+
+    @MainActor
+    func testFailedUninstallPreservesActiveDocumentRecovery() async throws {
+        try await verifyUninstallDuringDocumentRecovery(removingSupersededContext: false, unloadFails: true)
+    }
+
+    @MainActor
+    private func verifyUninstallDuringDocumentRecovery(removingSupersededContext: Bool, unloadFails: Bool) async throws {
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring())
+        let manager = WebExtensionManager(
+            configuration: configurationMock,
+            windowTabProvider: windowTabProviderMock,
+            storageProvider: storageProvidingMock,
+            installationStore: installedExtensionStoringMock,
+            loader: unloadFails ? webExtensionLoadingMock : nil,
+            cpmMessagingHealthMonitor: monitor,
+            isCPMLateBackgroundDocumentRecoveryEnabled: { true }
+        )
+        let original = try await loadEmbeddedContext("original", into: manager)
+        if removingSupersededContext {
+            _ = try await loadEmbeddedContext("replacement", into: manager)
+        }
+        let recovery = try XCTUnwrap(monitor.backgroundReadinessRecovery)
+        let startup = UUID()
+        recovery.backgroundStarted(startup)
+        recovery.navigationStarted(in: "tab")
+        recovery.navigationCommitted(in: "tab", url: URL(string: "https://example.com/page")!)
+        var completeCheck: CheckedContinuation<CPMBackgroundReadinessRecovery.Reload?, Never>?
+        recovery.registerDocument(in: "tab") { await withCheckedContinuation { completeCheck = $0 } }
+        recovery.initializationFailed(in: "tab")
+        recovery.backgroundCompleted(startup, succeeded: true)
+        while completeCheck == nil { await Task.yield() }
+
+        if unloadFails {
+            webExtensionLoadingMock.mockUnloadError = NSError(domain: "Test", code: 1)
+            XCTAssertThrowsError(try manager.uninstallExtension(identifier: original.uniqueIdentifier))
+            XCTAssertTrue(manager.context(for: original.uniqueIdentifier) === original)
+        } else {
+            try manager.uninstallExtension(identifier: original.uniqueIdentifier)
+            XCTAssertNil(manager.context(for: original.uniqueIdentifier), "The production loader must actually unload the context")
+            XCTAssertNil(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: original.uniqueIdentifier))
+        }
+
+        let shouldReload = removingSupersededContext || unloadFails
+        let reload = expectation(description: "Only removal of the active context cancels its recovery")
+        reload.isInverted = !shouldReload
+        completeCheck?.resume(returning: { reload.fulfill(); return nil })
+        await fulfillment(of: [reload], timeout: 0.2)
+        manager.unloadAllExtensions()
+    }
+
     // MARK: - Install Extension Tests
 
     @MainActor

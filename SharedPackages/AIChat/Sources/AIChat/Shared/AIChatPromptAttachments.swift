@@ -22,16 +22,19 @@ import Foundation
 public struct AIChatPromptAttachments: Equatable {
     public var images: [AIChatNativePrompt.NativePromptImage]?
     public var files: [AIChatNativePrompt.NativePromptFile]?
+    public var textPasted: [AIChatNativePrompt.NativePromptPastedText]?
 
     public static var none: AIChatPromptAttachments { AIChatPromptAttachments() }
 
     public init(images: [AIChatNativePrompt.NativePromptImage]? = nil,
-                files: [AIChatNativePrompt.NativePromptFile]? = nil) {
+                files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                textPasted: [AIChatNativePrompt.NativePromptPastedText]? = nil) {
         self.images = images
         self.files = files
+        self.textPasted = textPasted
     }
 
     public var isEmpty: Bool {
-        (images?.isEmpty ?? true) && (files?.isEmpty ?? true)
+        (images?.isEmpty ?? true) && (files?.isEmpty ?? true) && (textPasted?.isEmpty ?? true)
     }
 }

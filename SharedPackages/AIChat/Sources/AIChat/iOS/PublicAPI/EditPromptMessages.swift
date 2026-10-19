@@ -25,7 +25,7 @@ public struct EditPromptRequest: Decodable {
     public let hasResponsesToLose: Bool
 
     private enum CodingKeys: String, CodingKey {
-        case prompt, images, files, hasResponsesToLose
+        case prompt, images, files, textPasted, hasResponsesToLose
     }
 
     public init(prompt: String, attachments: AIChatPromptAttachments, hasResponsesToLose: Bool) {
@@ -39,7 +39,8 @@ public struct EditPromptRequest: Decodable {
         prompt = try container.decode(String.self, forKey: .prompt)
         attachments = AIChatPromptAttachments(
             images: try container.decodeIfPresent([AIChatNativePrompt.NativePromptImage].self, forKey: .images),
-            files: try container.decodeIfPresent([AIChatNativePrompt.NativePromptFile].self, forKey: .files)
+            files: try container.decodeIfPresent([AIChatNativePrompt.NativePromptFile].self, forKey: .files),
+            textPasted: try container.decodeIfPresent([AIChatNativePrompt.NativePromptPastedText].self, forKey: .textPasted)
         )
         hasResponsesToLose = try container.decode(Bool.self, forKey: .hasResponsesToLose)
     }
@@ -51,7 +52,7 @@ public enum EditPromptReply: Encodable {
     case cancelled
 
     private enum CodingKeys: String, CodingKey {
-        case cancelled, prompt, images, files
+        case cancelled, prompt, images, files, textPasted
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -63,6 +64,7 @@ public enum EditPromptReply: Encodable {
             try container.encode(prompt, forKey: .prompt)
             try container.encodeIfPresent(attachments.images, forKey: .images)
             try container.encodeIfPresent(attachments.files, forKey: .files)
+            try container.encodeIfPresent(attachments.textPasted, forKey: .textPasted)
         }
     }
 }

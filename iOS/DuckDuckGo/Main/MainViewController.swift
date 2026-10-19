@@ -7232,6 +7232,7 @@ extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
         let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel)
+        model.reportOpening()
         model.onSave = { [weak self] in
             WidgetCenter.shared.reloadAllTimelines()
             self?.syncService.scheduler.notifyDataChanged()

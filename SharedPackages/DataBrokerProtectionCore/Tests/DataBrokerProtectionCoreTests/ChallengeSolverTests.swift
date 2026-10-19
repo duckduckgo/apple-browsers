@@ -21,7 +21,7 @@ import BrowserServicesKitTestsUtils
 import Common
 import ConcurrencyExtensions
 import DataBrokerProtectionCoreTestsUtils
-import PixelKit
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import DataBrokerProtectionCore
 
@@ -29,7 +29,27 @@ final class ChallengeSolverTests: XCTestCase {
 
     private static let brokerURL = URL(string: "https://www.example.com/search")!
     private static let label = ChallengeLabel(frame: CGRect(x: 100, y: 200, width: 150, height: 20))
-    fileprivate static let attemptId = UUID()
+
+    func testWhenChallengePixelsFire_thenExcludeAttemptID() {
+        let events: [DataBrokerProtectionSharedPixels] = [
+            .mainFrameChallengeDetected(dataBroker: "example.com", brokerVersion: "1.2.3", isSolverEnabled: true),
+            .challengeClearanceObserved(dataBroker: "example.com", brokerVersion: "1.2.3",
+                                        resolution: .assisted, isSolverEnabled: true),
+            .challengeSolved(dataBroker: "example.com", brokerVersion: "1.2.3", resolution: .assisted),
+            .challengeFailed(dataBroker: "example.com", brokerVersion: "1.2.3", stage: .afterClick)
+        ]
+        let pixelKit = PixelKitMock()
+        for event in events {
+            pixelKit.fire(event, frequency: .dailyAndCount)
+        }
+
+        XCTAssertEqual(pixelKit.actualFireCalls.count, 4)
+        for call in pixelKit.actualFireCalls {
+            XCTAssertNil(call.pixel.parameters?["attempt_id"], call.pixel.name)
+            XCTAssertEqual(call.pixel.parameters?["data_broker"], "example.com")
+            XCTAssertEqual(call.pixel.parameters?["broker_version"], "1.2.3")
+        }
+    }
 
     @MainActor
     func testWhenChallengeClearsDuringAutoPassWait_thenSolvesUnassistedWithoutClicking() async {
@@ -136,12 +156,12 @@ final class ChallengeSolverTests: XCTestCase {
             (#"{"enabledBrokers":["example.com"]}"#, false, true),
             (#"{"enabledBrokers":["example.com"]}"#, true, false)
         ]
-        for (json, isEnabled, hasPixelContext) in cases {
+        for (json, isEnabled, hasDataBroker) in cases {
             let settings = try JSONDecoder().decode(ChallengeSolverSettings.self, from: Data(json.utf8))
-            let pixelContext = hasPixelContext
-                ? ChallengePixelContext(dataBroker: "example.com", brokerVersion: "1.2.3", attemptId: Self.attemptId)
+            let dataBroker = hasDataBroker
+                ? DataBroker.mockWithDefaults(url: "example.com", version: "1.2.3")
                 : nil
-            let env = Environment(isEnabled: isEnabled, settings: settings, pixelContext: pixelContext)
+            let env = Environment(isEnabled: isEnabled, settings: settings, dataBroker: dataBroker)
 
             XCTAssertFalse(env.solver.handleMainFrameResponse(Self.challengeResponse()), json)
             XCTAssertFalse(env.solver.isAwaitingSolve, json)
@@ -153,9 +173,9 @@ final class ChallengeSolverTests: XCTestCase {
             XCTAssertTrue(env.page.clickedPoints.isEmpty, json)
             XCTAssertTrue(env.failures.isEmpty, json)
             XCTAssertTrue(env.solvedResolutions.isEmpty, json)
-            XCTAssertEqual(env.mockPixelHandler?.firedEvents.count, hasPixelContext ? 1 : 0, json)
-            if hasPixelContext {
-                guard case .mainFrameChallengeDetected(_, _, _, let isSolverEnabled) = env.mockPixelHandler?.firedEvents.first else {
+            XCTAssertEqual(env.mockPixelHandler?.firedEvents.count, hasDataBroker ? 1 : 0, json)
+            if hasDataBroker {
+                guard case .mainFrameChallengeDetected(_, _, let isSolverEnabled) = env.mockPixelHandler?.firedEvents.first else {
                     return XCTFail("Expected the detection pixel")
                 }
                 XCTAssertFalse(isSolverEnabled, json)
@@ -223,7 +243,7 @@ final class ChallengeSolverTests: XCTestCase {
             for parameters in firedPixelParameters {
                 XCTAssertEqual(parameters["data_broker"], "example.com")
                 XCTAssertEqual(parameters["broker_version"], "1.2.3")
-                XCTAssertEqual(parameters["attempt_id"], Self.attemptId.uuidString)
+                XCTAssertNil(parameters["attempt_id"])
                 XCTAssertEqual(parameters["is_solver_enabled"], String(isSolverEnabled))
             }
             XCTAssertEqual(firedPixelParameters.last?["resolution"], isSolverEnabled ? "unknown" : "unassisted")
@@ -259,21 +279,21 @@ private final class Environment {
 
     var solvedResolutions: [DataBrokerProtectionSharedPixels.ChallengeResolution] {
         mockPixelHandler?.firedEvents.compactMap { event in
-            guard case .challengeSolved(_, _, _, let resolution) = event else { return nil }
+            guard case .challengeSolved(_, _, let resolution) = event else { return nil }
             return resolution
         } ?? []
     }
 
     var failedStages: [DataBrokerProtectionSharedPixels.ChallengeFailureStage] {
         mockPixelHandler?.firedEvents.compactMap { event in
-            guard case .challengeFailed(_, _, _, let stage) = event else { return nil }
+            guard case .challengeFailed(_, _, let stage) = event else { return nil }
             return stage
         } ?? []
     }
 
     init(isEnabled: Bool = true,
          settings: ChallengeSolverSettings? = nil,
-         pixelContext: ChallengePixelContext? = .init(dataBroker: "example.com", brokerVersion: "1.2.3", attemptId: ChallengeSolverTests.attemptId),
+         dataBroker: DataBroker? = .mockWithDefaults(url: "example.com", version: "1.2.3"),
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = MockDataBrokerProtectionPixelsHandler()) {
         self.pixelHandler = pixelHandler
         let fakeClock = clock
@@ -282,7 +302,7 @@ private final class Environment {
         solver = ChallengeSolver(
             isEnabled: isEnabled,
             settings: settings ?? defaultSettings,
-            pixelContext: pixelContext,
+            dataBroker: dataBroker,
             pixelHandler: pixelHandler,
             reportEvent: { _, _ in },
             sleeper: Sleeper { try await fakeClock.sleep($0) },

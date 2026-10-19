@@ -1109,7 +1109,6 @@
             "channel",
             "dbpDataBroker",
             "dbpBrokerVersion",
-            "dbpAttemptId",
             {
                 "key": "is_solver_enabled",
                 "type": "boolean",
@@ -1128,7 +1127,6 @@
             "channel",
             "dbpDataBroker",
             "dbpBrokerVersion",
-            "dbpAttemptId",
             {
                 "key": "resolution",
                 "type": "string",
@@ -1153,7 +1151,6 @@
             "channel",
             "dbpDataBroker",
             "dbpBrokerVersion",
-            "dbpAttemptId",
             {
                 "key": "resolution",
                 "type": "string",
@@ -1173,7 +1170,6 @@
             "channel",
             "dbpDataBroker",
             "dbpBrokerVersion",
-            "dbpAttemptId",
             {
                 "key": "stage",
                 "type": "string",

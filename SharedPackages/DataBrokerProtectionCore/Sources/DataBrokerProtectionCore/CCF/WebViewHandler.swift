@@ -64,7 +64,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 delegate: CCFCommunicationDelegate,
                 isFakeBroker: Bool = false,
                 executionConfig: BrokerJobExecutionConfig,
-                challengePixelContext: ChallengePixelContext? = nil,
+                dataBroker: DataBroker? = nil,
                 isChallengeSolverEnabled: Bool = false,
                 shouldContinueActionHandler: @escaping () -> Bool,
                 applicationNameForUserAgentProvider: () -> String?,
@@ -78,7 +78,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         self.challengeSolver = ChallengeSolver(
             isEnabled: isChallengeSolverEnabled,
             settings: ChallengeSolverSettings(privacyConfig: privacyConfig.privacyConfig),
-            pixelContext: challengePixelContext,
+            dataBroker: dataBroker,
             pixelHandler: pixelHandler,
             reportEvent: { message, isError in
                 DataBrokerProtectionWebViewHandler.reportChallengeEvent(message, isError: isError, actionLogContext: actionLogContext)

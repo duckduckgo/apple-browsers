@@ -185,10 +185,10 @@ public enum DataBrokerProtectionSharedPixels {
     case freemiumPIRMaintenanceScanSkipped
 
     // Challenge baseline pixels
-    case mainFrameChallengeDetected(dataBroker: String, brokerVersion: String, attemptId: UUID, isSolverEnabled: Bool)
-    case challengeClearanceObserved(dataBroker: String, brokerVersion: String, attemptId: UUID, resolution: ChallengeResolution, isSolverEnabled: Bool)
-    case challengeSolved(dataBroker: String, brokerVersion: String, attemptId: UUID, resolution: ChallengeResolution)
-    case challengeFailed(dataBroker: String, brokerVersion: String, attemptId: UUID, stage: ChallengeFailureStage)
+    case mainFrameChallengeDetected(dataBroker: String, brokerVersion: String, isSolverEnabled: Bool)
+    case challengeClearanceObserved(dataBroker: String, brokerVersion: String, resolution: ChallengeResolution, isSolverEnabled: Bool)
+    case challengeSolved(dataBroker: String, brokerVersion: String, resolution: ChallengeResolution)
+    case challengeFailed(dataBroker: String, brokerVersion: String, stage: ChallengeFailureStage)
 
     // events
     case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
@@ -570,33 +570,29 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
         case .freemiumUpsell,
                 .freemiumPIRMaintenanceScanSkipped:
             return [:]
-        case .mainFrameChallengeDetected(let dataBroker, let brokerVersion, let attemptId, let isSolverEnabled):
+        case .mainFrameChallengeDetected(let dataBroker, let brokerVersion, let isSolverEnabled):
             return [
                 Consts.dataBrokerParamKey: dataBroker,
                 Consts.dataBrokerVersionKey: brokerVersion,
-                Consts.attemptIdParamKey: attemptId.uuidString,
                 Consts.isChallengeSolverEnabledKey: isSolverEnabled.description
             ]
-        case .challengeClearanceObserved(let dataBroker, let brokerVersion, let attemptId, let resolution, let isSolverEnabled):
+        case .challengeClearanceObserved(let dataBroker, let brokerVersion, let resolution, let isSolverEnabled):
             return [
                 Consts.dataBrokerParamKey: dataBroker,
                 Consts.dataBrokerVersionKey: brokerVersion,
-                Consts.attemptIdParamKey: attemptId.uuidString,
                 Consts.challengeResolutionKey: resolution.rawValue,
                 Consts.isChallengeSolverEnabledKey: isSolverEnabled.description
             ]
-        case .challengeSolved(let dataBroker, let brokerVersion, let attemptId, let resolution):
+        case .challengeSolved(let dataBroker, let brokerVersion, let resolution):
             return [
                 Consts.dataBrokerParamKey: dataBroker,
                 Consts.dataBrokerVersionKey: brokerVersion,
-                Consts.attemptIdParamKey: attemptId.uuidString,
                 Consts.challengeResolutionKey: resolution.rawValue
             ]
-        case .challengeFailed(let dataBroker, let brokerVersion, let attemptId, let stage):
+        case .challengeFailed(let dataBroker, let brokerVersion, let stage):
             return [
                 Consts.dataBrokerParamKey: dataBroker,
                 Consts.dataBrokerVersionKey: brokerVersion,
-                Consts.attemptIdParamKey: attemptId.uuidString,
                 Consts.stageKey: stage.rawValue
             ]
         case .scanningEventNewMatch(let dataBrokerURL),

@@ -254,9 +254,7 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 delegate: webRunner,
                 isFakeBroker: broker.isFakeBroker,
                 executionConfig: jobDependencies.executionConfig,
-                challengePixelContext: ChallengePixelContext(dataBroker: broker.url,
-                                                             brokerVersion: broker.version,
-                                                             attemptId: stageDurationCalculator.attemptId),
+                dataBroker: broker,
                 isChallengeSolverEnabled: jobDependencies.featureFlagger.isChallengeSolverOn,
                 shouldContinueActionHandler: { [weak self] in
                     guard let self = self else { return false }

@@ -22,24 +22,16 @@ import Foundation
 import os.log
 import PrivacyConfig
 
-public struct ChallengePixelContext {
-    let dataBroker: String
-    let brokerVersion: String
-    let attemptId: UUID
-}
-
 #if os(macOS)
 struct ChallengeSolverSettings: Decodable {
     var enabledBrokers: [String] = []
     var autoPassWait: TimeInterval = 5
-    var deadline: TimeInterval = 45
     var checkboxOffset: CGFloat = 20
     var labelText = "Verify you are human"
 
     private enum CodingKeys: String, CodingKey {
         case enabledBrokers
         case autoPassWait = "autoPassWaitSeconds"
-        case deadline = "deadlineSeconds"
         case checkboxOffset = "checkboxOffsetPoints"
         case labelText
     }
@@ -51,7 +43,6 @@ struct ChallengeSolverSettings: Decodable {
         let defaults = ChallengeSolverSettings()
         enabledBrokers = try container.decodeIfPresent([String].self, forKey: .enabledBrokers) ?? defaults.enabledBrokers
         autoPassWait = try container.decodeIfPresent(TimeInterval.self, forKey: .autoPassWait) ?? defaults.autoPassWait
-        deadline = try container.decodeIfPresent(TimeInterval.self, forKey: .deadline) ?? defaults.deadline
         checkboxOffset = try container.decodeIfPresent(CGFloat.self, forKey: .checkboxOffset) ?? defaults.checkboxOffset
         labelText = try container.decodeIfPresent(String.self, forKey: .labelText) ?? defaults.labelText
     }
@@ -115,7 +106,7 @@ final class ChallengeSolver {
 
     private let isEnabled: Bool
     private let settings: ChallengeSolverSettings
-    private let pixelContext: ChallengePixelContext?
+    private let dataBroker: DataBroker?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let reportEvent: (String, Bool) -> Void
     private let sleeper: Sleeper
@@ -126,14 +117,14 @@ final class ChallengeSolver {
 
     init(isEnabled: Bool,
          settings: ChallengeSolverSettings,
-         pixelContext: ChallengePixelContext?,
+         dataBroker: DataBroker?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?,
          reportEvent: @escaping (String, Bool) -> Void,
          sleeper: Sleeper = .default,
          dateProvider: CurrentDateProviding = DefaultCurrentDateProvider()) {
-        self.isEnabled = isEnabled && (pixelContext.map { settings.enabledBrokers.contains($0.dataBroker) } ?? false)
+        self.isEnabled = isEnabled && (dataBroker.map { settings.enabledBrokers.contains($0.url) } ?? false)
         self.settings = settings
-        self.pixelContext = pixelContext
+        self.dataBroker = dataBroker
         self.pixelHandler = pixelHandler
         self.reportEvent = reportEvent
         self.sleeper = sleeper
@@ -169,10 +160,9 @@ final class ChallengeSolver {
         solveTask = nil
         let resolution = currentResolution
         reportEvent("Solved challenge \(resolution.rawValue); a non-challenge main-frame response arrived", false)
-        if let pixelContext {
-            pixelHandler?.fire(.challengeSolved(dataBroker: pixelContext.dataBroker,
-                                                brokerVersion: pixelContext.brokerVersion,
-                                                attemptId: pixelContext.attemptId,
+        if let dataBroker {
+            pixelHandler?.fire(.challengeSolved(dataBroker: dataBroker.url,
+                                                brokerVersion: dataBroker.version,
                                                 resolution: resolution))
         }
         return false
@@ -197,10 +187,9 @@ final class ChallengeSolver {
         clearanceObservation = .clearanceReported
         let resolution = currentResolution
         reportEvent("Supporting evidence: cf_clearance changed; resolution=\(resolution.rawValue)", false)
-        guard let pixelContext else { return }
-        pixelHandler?.fire(.challengeClearanceObserved(dataBroker: pixelContext.dataBroker,
-                                                       brokerVersion: pixelContext.brokerVersion,
-                                                       attemptId: pixelContext.attemptId,
+        guard let dataBroker else { return }
+        pixelHandler?.fire(.challengeClearanceObserved(dataBroker: dataBroker.url,
+                                                       brokerVersion: dataBroker.version,
                                                        resolution: resolution,
                                                        isSolverEnabled: isEnabled))
     }
@@ -218,11 +207,10 @@ final class ChallengeSolver {
     }
 
     private func fireDetectionPixel() {
-        guard let pixelContext else { return }
-        Logger.action.log("Challenge: pixel detected fired for \(pixelContext.dataBroker, privacy: .public)")
-        pixelHandler?.fire(.mainFrameChallengeDetected(dataBroker: pixelContext.dataBroker,
-                                                       brokerVersion: pixelContext.brokerVersion,
-                                                       attemptId: pixelContext.attemptId,
+        guard let dataBroker else { return }
+        Logger.action.log("Challenge: pixel detected fired for \(dataBroker.url, privacy: .public)")
+        pixelHandler?.fire(.mainFrameChallengeDetected(dataBroker: dataBroker.url,
+                                                       brokerVersion: dataBroker.version,
                                                        isSolverEnabled: isEnabled))
     }
 
@@ -235,7 +223,7 @@ final class ChallengeSolver {
     }
 
     private func solve() async {
-        let deadline = dateProvider.currentDate.addingTimeInterval(settings.deadline)
+        let deadline = dateProvider.currentDate.addingTimeInterval(BrokerJobExecutionConfig.Constants.defaultCssActionTimeout)
         do {
             try await sleep(for: settings.autoPassWait)
             while isAwaitingSolve, dateProvider.currentDate < deadline {
@@ -253,10 +241,9 @@ final class ChallengeSolver {
         let failureDescription = didSendChallengeClick ? "after click" : "with no click delivered"
         cancel()
         reportEvent("Failed challenge \(failureDescription); broker destination did not arrive before the deadline", true)
-        if let pixelContext {
-            pixelHandler?.fire(.challengeFailed(dataBroker: pixelContext.dataBroker,
-                                                brokerVersion: pixelContext.brokerVersion,
-                                                attemptId: pixelContext.attemptId,
+        if let dataBroker {
+            pixelHandler?.fire(.challengeFailed(dataBroker: dataBroker.url,
+                                                brokerVersion: dataBroker.version,
                                                 stage: failureStage))
         }
         onFailure?(.challengeNotSolved)

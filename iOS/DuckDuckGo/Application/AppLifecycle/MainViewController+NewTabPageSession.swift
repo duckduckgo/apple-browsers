@@ -319,3 +319,13 @@ final class NewTabPagePresentationCoordinator {
         hasPresentedPage = false
     }
 }
+
+extension NewTabPageSessionWideEventData.PageDesign {
+
+    /// The design of the given page.
+    init(of page: any NewTabPage) {
+        // Read from the page rather than the feature flag: reading the flag enrols the device in
+        // the redesign experiment, and the page is what the user actually saw.
+        self = page is RedesignedNewTabPageViewController ? .redesign : .legacy
+    }
+}

@@ -2468,8 +2468,9 @@ class MainViewController: UIViewController {
     }
 
     func scheduleNewTabPageForegroundVisit(for page: any NewTabPage) {
+        let pageDesign = NewTabPageSessionWideEventData.PageDesign(of: page)
         newTabPagePresentation.schedule(for: page, visit: { [weak self] in
-            self?.startNewTabPageSessionInstrumentation(trigger: .appOpen)
+            self?.startNewTabPageSessionInstrumentation(trigger: .appOpen, pageDesign: pageDesign)
         })
     }
 
@@ -2620,10 +2621,12 @@ class MainViewController: UIViewController {
         let recordsShown = presentedViewController == nil || presentedViewController !== tabSwitcherController
             || presentedViewController?.isBeingDismissed == true
         isAfterIdlePresentationPending = recordsShown && openedAfterIdle
+        let pageDesign = NewTabPageSessionWideEventData.PageDesign(of: controller)
         newTabPagePresentation.schedule(for: controller, visit: startsVisit ? { [weak self] in
             guard let self else { return }
             isAttachingNewTabPageAfterFire = false
-            startNewTabPageSessionInstrumentation(trigger: isAfterFire ? .newTabOpenedAfterFire : trigger)
+            startNewTabPageSessionInstrumentation(trigger: isAfterFire ? .newTabOpenedAfterFire : trigger,
+                                                  pageDesign: pageDesign)
         } : nil, shown: recordsShown ? { [weak self] in
             guard let self else { return }
             fireNewTabPixels()
@@ -2668,14 +2671,11 @@ class MainViewController: UIViewController {
     }
 
     /// Opens a New Tab Page visit for the Starting Experience Success Rate wide event.
-    func startNewTabPageSessionInstrumentation(trigger: NewTabPageSessionWideEventData.Trigger) {
+    func startNewTabPageSessionInstrumentation(trigger: NewTabPageSessionWideEventData.Trigger,
+                                               pageDesign: NewTabPageSessionWideEventData.PageDesign) {
         // A sample belongs to the visit the user left, so a fresh visit never inherits one: the
         // trip to the VPN screen it was taken for ended without coming back here.
         vpnConnectedWhenLeavingNewTabPage = nil
-        // Read from the page that was built rather than the feature flag: reading the flag enrols
-        // the device in the redesign experiment, and the page is what the user actually saw.
-        let pageDesign: NewTabPageSessionWideEventData.PageDesign =
-            newTabPageViewController is RedesignedNewTabPageViewController ? .redesign : .legacy
         newTabPageSessionInstrumentation.visitStarted(
             trigger: trigger,
             launchKeyboardMode: isInputFocused ? .up : .down,
@@ -7246,6 +7246,10 @@ extension MainViewController: NewTabPageControllerDelegate {
     }
 
     func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
+        // UIKit drops a presentation while another is on screen or in flight, such as on a double
+        // tap, and nothing would then report the sheet closing.
+        guard presentedViewController == nil else { return }
+
         recordNewTabPageSessionMenuEntry { $0.tapAddFavorite() }
         let model = AddFavoriteViewModel(bookmarks: menuBookmarksViewModel)
         model.reportOpening()

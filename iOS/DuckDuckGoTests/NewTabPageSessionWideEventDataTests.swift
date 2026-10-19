@@ -415,6 +415,7 @@ struct NewTabPageSessionWideEventDataTests {
         let original = makeData(trigger: .newTabOpened,
                                 launchKeyboardMode: .up,
                                 toggleEnabled: true,
+                                pageDesign: .redesign,
                                 startedAt: start)
         original.terminalAction = .loadSerp
         original.sessionInterval.end = start.addingTimeInterval(5)
@@ -429,6 +430,7 @@ struct NewTabPageSessionWideEventDataTests {
         #expect(decoded.trigger == .newTabOpened)
         #expect(decoded.launchKeyboardMode == .up)
         #expect(decoded.toggleEnabled == true)
+        #expect(decoded.pageDesign == .redesign)
         #expect(decoded.terminalAction == .loadSerp)
         #expect(decoded.sessionInterval.start == start)
         #expect(decoded.sessionInterval.end == start.addingTimeInterval(5))

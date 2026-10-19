@@ -39,8 +39,12 @@ extension MainWindowController: WKWebExtensionWindow {
 
     func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
         let selectedTab = mainViewController.tabCollectionViewModel.selectedTab
-        if let webExtensionTabsOnClose, let selectedTab,
-           !webExtensionTabsOnClose.contains(where: { $0 === selectedTab }) { return nil }
+        if let webExtensionTabsOnClose {
+            if let selectedTab, webExtensionTabsOnClose.contains(where: { $0 === selectedTab }) { return selectedTab }
+            // WebKit requires an active tab in every nonempty list, including during didCloseWindow.
+            // Keep its closing snapshot consistent without changing the browser's real selection.
+            return webExtensionTabsOnClose.first
+        }
         return selectedTab
     }
 

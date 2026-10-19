@@ -109,7 +109,8 @@ final class WindowsManagerPopupTests: XCTestCase {
 
         XCTAssertEqual(controller.tabs(for: context).count, 1)
         XCTAssertTrue(controller.tabs(for: context).first === closing)
-        XCTAssertNil(controller.activeTab(for: context), "A surviving tab is not active in the closed window")
+        XCTAssertTrue(controller.activeTab(for: context) === closing, "A nonempty closing list must contain WebKit's active tab")
+        XCTAssertIdentical(model.selectedTab, retained, "WebKit's closing snapshot must not change the browser's actual selection")
         XCTAssertEqual(model.loadedTabs.count, 2, "The fix must not remove the surviving tab from its model")
     }
 

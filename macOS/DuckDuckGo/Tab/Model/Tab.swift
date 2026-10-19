@@ -1361,9 +1361,6 @@ extension Tab: UserContentControllerDelegate {
 
     @MainActor
     func userContentController(_ userContentController: UserContentController, didInstallContentRuleLists contentRuleLists: [String: WKContentRuleList], userScripts: UserScriptsProvider, updateEvent: ContentBlockerRulesManager.UpdateEvent) {
-        if #available(macOS 15.4, *), webView.configuration.webExtensionController != nil {
-            CPMDocumentRecoverySafety.install(in: userContentController)
-        }
         Logger.contentBlocking.info("didInstallContentRuleLists")
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 

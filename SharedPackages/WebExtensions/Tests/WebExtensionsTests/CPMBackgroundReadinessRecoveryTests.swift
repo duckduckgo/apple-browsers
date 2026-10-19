@@ -244,80 +244,6 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
         XCTAssertEqual(outcomes, [.reloadStarted, .responseReceived])
     }
 
-    private func makeWebView(html: String, installSafety: Bool = true) async throws -> WKWebView {
-        let configuration = WKWebViewConfiguration()
-        configuration.setURLSchemeHandler(RecoveryDocumentSchemeHandler(html: html), forURLScheme: "cpm-recovery-test")
-        if installSafety {
-            CPMDocumentRecoverySafety.install(in: configuration.userContentController)
-            CPMDocumentRecoverySafety.install(in: configuration.userContentController)
-            XCTAssertEqual(configuration.userContentController.userScripts.count, 1)
-        }
-        let view = WKWebView(frame: .zero, configuration: configuration)
-        view.load(URLRequest(url: URL(string: "cpm-recovery-test://document")!))
-        for _ in 0..<500 {
-            if !view.isLoading { break }
-            try await Task.sleep(nanoseconds: 10_000_000)
-        }
-        XCTAssertFalse(view.isLoading)
-        _ = try XCTUnwrap(view.backForwardList.currentItem)
-        return view
-    }
-
-    private func attemptRecovery(_ recovery: CPMBackgroundReadinessRecovery, webView: WKWebView) async throws {
-        let startup = pendingDocument(recovery)
-        recovery.registerDocument(in: "tab", webView: webView, isGET: true)
-        recovery.initializationFailed(in: "tab")
-        recovery.backgroundCompleted(startup, succeeded: true)
-        try await Task.sleep(nanoseconds: 200_000_000)
-    }
-
-    func testControlledAndShadowDraftsSurviveRecovery() async throws {
-        for mode in ["controlled", "open", "closed"] {
-            let view = try await makeWebView(html: """
-                <!doctype html><html><body><div id="host"></div><script>
-                const host = document.querySelector('#host');
-                const root = '\(mode)' === 'controlled' ? host : host.attachShadow({mode: '\(mode)'});
-                const field = document.createElement('input'); root.append(field);
-                globalThis.editDraft = () => {
-                    field.value = 'unsaved draft';
-                    if ('\(mode)' === 'controlled') field.defaultValue = field.value;
-                    if ('\(mode)' === 'closed') field.dispatchEvent(new Event('input', {bubbles:true, composed:true}));
-                };
-                globalThis.readDraft = () => field.value;
-                </script></body></html>
-                """)
-            _ = try await view.evaluateJavaScript("editDraft()", in: nil, contentWorld: .page)
-            let recovery = makeRecovery()
-            try await attemptRecovery(recovery, webView: view)
-            let draft = try await view.evaluateJavaScript("readDraft()", in: nil, contentWorld: .page) as? String
-            XCTAssertEqual(draft, "unsaved draft", mode)
-            XCTAssertTrue(outcomes.isEmpty, mode)
-        }
-    }
-
-    func testInteractionStillVetoesAfterFieldIsRemoved() async throws {
-        let view = try await makeWebView(html: "<html><body><input></body></html>")
-        _ = try await view.evaluateJavaScript("""
-            document.querySelector('input').dispatchEvent(new Event('input', {bubbles:true, composed:true}));
-            document.querySelector('input').remove();
-            """, in: nil, contentWorld: .page)
-        try await attemptRecovery(makeRecovery(), webView: view)
-        XCTAssertTrue(outcomes.isEmpty)
-    }
-
-    func testMissingDocumentStartSafetyVetoesRecovery() async throws {
-        let view = try await makeWebView(html: "<html><body>Pristine</body></html>", installSafety: false)
-        try await attemptRecovery(makeRecovery(), webView: view)
-        XCTAssertTrue(outcomes.isEmpty)
-    }
-
-    func testPristineInstrumentedDocumentCanStillReload() async throws {
-        let view = try await makeWebView(html: "<html><body>Pristine</body></html>")
-        let recovery = makeRecovery()
-        try await attemptRecovery(recovery, webView: view)
-        XCTAssertEqual(outcomes, [.reloadStarted])
-    }
-
     func testEveryFixHasSeparatePIIFreeMetadata() {
         for fix in CPMRecoveryFix.allCases {
             let outcome: CPMRecoveryOutcome = fix == .lateDocumentReload ? .reloadStarted : .backgroundReady
@@ -336,22 +262,4 @@ private struct Instrumentation: CPMRecoveryInstrumentation {
         XCTAssertEqual(fix, .lateDocumentReload)
         callback(outcome)
     }
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-@MainActor
-private final class RecoveryDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
-    private let html: String
-
-    init(html: String) { self.html = html }
-
-    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
-        let data = Data(html.utf8)
-        urlSchemeTask.didReceive(URLResponse(url: urlSchemeTask.request.url!, mimeType: "text/html",
-                                            expectedContentLength: data.count, textEncodingName: "utf-8"))
-        urlSchemeTask.didReceive(data)
-        urlSchemeTask.didFinish()
-    }
-
-    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
 }

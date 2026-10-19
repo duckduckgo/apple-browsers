@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 import PrivacyConfig
 import WebExtensions
 import XCTest
@@ -29,7 +28,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     private var notificationCenter: NotificationCenter!
     private var preferences: AutofillPreferencesPersistorMock!
-    private var featureFlagger: MockFeatureFlagger!
     private var managingExtension: AutofillManagingExtension?
     private var givenBackCount = 0
 
@@ -37,13 +35,11 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         super.setUp()
         notificationCenter = NotificationCenter()
         preferences = AutofillPreferencesPersistorMock()
-        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionBitwarden.rawValue: true])
     }
 
     override func tearDown() {
         notificationCenter = nil
         preferences = nil
-        featureFlagger = nil
         managingExtension = nil
         givenBackCount = 0
         super.tearDown()
@@ -51,7 +47,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     private func makeTakeover() -> WebExtensionAutofillTakeover {
         WebExtensionAutofillTakeover(preferences: preferences,
-                                     featureFlagger: featureFlagger,
                                      notificationCenter: notificationCenter,
                                      readManagingExtension: { [unowned self] in self.managingExtension },
                                      clearSettings: { [unowned self] in self.givenBackCount += 1 })
@@ -111,28 +106,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
         XCTAssertEqual(takeover.managingExtension, Self.bitwarden)
         XCTAssertTrue(preferences.isManagedByExtension)
-    }
-
-    /// The flag's first change after launch must apply: it follows a remote setting and can be overridden locally.
-    func testWhenTheBitwardenFlagChangesForTheFirstTime_ThenTheTakeoverIsReadAgain() {
-        let takeover = makeTakeover()
-        managingExtension = Self.bitwarden
-
-        featureFlagger.featuresStub[FeatureFlag.webExtensionBitwarden.rawValue] = false
-        featureFlagger.triggerUpdate()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-
-        XCTAssertEqual(takeover.managingExtension, Self.bitwarden)
-    }
-
-    func testWhenAFlagUpdateLeavesTheBitwardenFlagAsItWas_ThenNothingIsReadAgain() {
-        let takeover = makeTakeover()
-        managingExtension = Self.bitwarden
-
-        featureFlagger.triggerUpdate()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-
-        XCTAssertNil(takeover.managingExtension)
     }
 
     func testWhenWebExtensionsBecomeUnavailable_ThenDuckDuckGoTakesAutofillBack() {

@@ -17,9 +17,6 @@
 //
 
 import AppKit
-import Combine
-import FeatureFlags_macOS
-import PrivacyConfig
 import WebExtensions
 
 /// The extension that manages autofill instead of DuckDuckGo.
@@ -48,7 +45,7 @@ protocol WebExtensionAutofillTakeoverManaging: AnyObject {
 /// An extension becomes the password manager the way it does in Chrome: it turns the browser's password
 /// saving off through `chrome.privacy.services`, as Bitwarden does when the user makes it the default
 /// password manager. DuckDuckGo's built-in password manager then steps aside entirely, for passwords,
-/// addresses and cards, until the extension turns password saving back on, is uninstalled, or the user
+/// addresses and cards, until the extension turns password saving back on, is uninstalled or disabled, or the user
 /// gives autofill back to DuckDuckGo in Settings.
 ///
 /// Whether an extension manages autofill is saved in the autofill preferences, where every autofill
@@ -57,7 +54,6 @@ protocol WebExtensionAutofillTakeoverManaging: AnyObject {
 ///
 /// It is read again when:
 /// - extensions load or unload, or an extension changes its setting (`.webExtensionPrivacySettingsDidChange`);
-/// - the `webExtensionBitwarden` flag changes;
 /// - web extensions become unavailable (`extensionsDidBecomeUnavailable()`).
 ///
 /// Handing it a new extension manager doesn't read it: its extensions haven't loaded yet, and reading
@@ -76,15 +72,12 @@ final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
     private let clearSettings: (@MainActor () -> Void)?
     private let notificationCenter: NotificationCenter
     private var observer: NSObjectProtocol?
-    private var flagCancellable: AnyCancellable?
 
     /// - Parameters:
     ///   - preferences: Where whether an extension manages autofill is saved for autofill to read.
-    ///   - featureFlagger: Its `webExtensionBitwarden` flag decides whether an extension may take autofill over.
     ///   - readManagingExtension: Which loaded extension manages autofill. Reads `manager` when `nil`.
     ///   - clearSettings: Removes every extension's control of the privacy settings. Uses `manager` when `nil`.
     init(preferences: AutofillPreferencesPersistor = AutofillPreferences(),
-         featureFlagger: FeatureFlagger,
          notificationCenter: NotificationCenter = .default,
          readManagingExtension: (@MainActor () -> AutofillManagingExtension?)? = nil,
          clearSettings: (@MainActor () -> Void)? = nil) {
@@ -99,20 +92,6 @@ final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
                 }
             }
         }
-        // Starts from the flag's current value, so only an actual change reads the takeover again.
-        flagCancellable = featureFlagger.updatesPublisher
-            .compactMap { [weak featureFlagger] in
-                featureFlagger?.isFeatureOn(.webExtensionBitwarden)
-            }
-            .prepend(featureFlagger.isFeatureOn(.webExtensionBitwarden))
-            .removeDuplicates()
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                MainActor.assumeMainThread {
-                    self?.refresh()
-                }
-            }
     }
 
     deinit {

@@ -124,9 +124,6 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
-            isAutofillTakeoverEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionBitwarden)
-            },
             scriptletConfiguration: scriptletConfiguration
         )
 

@@ -784,7 +784,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
-        webExtensionAutofillTakeover = WebExtensionAutofillTakeover(featureFlagger: featureFlagger)
+        webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
         networkSignalsProvider = NetworkSignalsProvider(
@@ -2318,6 +2318,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Bitwarden's Chrome Web Store ID. Bitwarden is disabled while the `webExtensionBitwarden` flag is off.
+    private static let bitwardenChromeWebStoreID = "nngceckbapebfimnlniiiahkandclblb"
+
     @available(macOS 15.4, *)
     @MainActor
     private func initializeWebExtensions() async {
@@ -2352,7 +2355,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard self.webExtensionManager === webExtensionManager else { return }
         let remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(
             manager: webExtensionManager,
-            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            disabledExtensionIDs: { [featureFlagger] in
+                featureFlagger.isFeatureOn(.webExtensionBitwarden) ? [] : [Self.bitwardenChromeWebStoreID]
+            },
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
         )
         webExtensionManager.remoteDisableEnforcer = remoteDisableEnforcer
         remoteDisableEnforcer.start()

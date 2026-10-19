@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
@@ -30,6 +31,8 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
     private let otherStoreID = String(repeating: "b", count: 32)
     private var manager: MockWebExtensionManaging!
     private var configurationManager: MockPrivacyConfigurationManager!
+    private var appDisabledIDs: Set<String> = []
+    private let appDisabledIDsDidChange = PassthroughSubject<Void, Never>()
 
     override func setUp() async throws {
         try await super.setUp()
@@ -40,6 +43,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
     override func tearDown() async throws {
         manager = nil
         configurationManager = nil
+        appDisabledIDs = []
         try await super.tearDown()
     }
 
@@ -124,6 +128,34 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         XCTAssertEqual(manager.disabledIdentifiers, ["listed", "other"])
     }
 
+    // MARK: - Disabled by the App
+
+    func testWhenTheAppDisablesAnExtension_ThenItIsDisabledEvenIfExtensionManagementIsNotLaunched() async throws {
+        configurationManager.privacyConfig = try makeConfiguration(disabledIDs: [], launchedState: "disabled")
+        appDisabledIDs = [otherStoreID.uppercased()]
+        install(storeExtension("other", storeID: otherStoreID))
+
+        let enforcer = makeEnforcer()
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(manager.disabledIdentifiers, ["other"])
+    }
+
+    func testWhenTheAppStartsDisablingAnExtension_ThenItIsDisabled() async {
+        install(storeExtension("other", storeID: otherStoreID))
+        let enforcer = makeEnforcer()
+        enforcer.start()
+        await enforcer.enforcementTask?.value
+        let disabled = expectation(description: "Extension disabled")
+        manager.disableExtensionHandler = { _ in disabled.fulfill() }
+
+        appDisabledIDs = [otherStoreID]
+        appDisabledIDsDidChange.send()
+
+        await fulfillment(of: [disabled], timeout: 5)
+        XCTAssertEqual(manager.disabledIdentifiers, ["other"])
+    }
+
     // MARK: - One-way
 
     func testWhenIDLeavesTheList_ThenExtensionStaysDisabled() async throws {
@@ -192,7 +224,10 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
     // MARK: - Helpers
 
     private func makeEnforcer() -> WebExtensionRemoteDisableEnforcer {
-        WebExtensionRemoteDisableEnforcer(manager: manager, configurationManager: configurationManager)
+        WebExtensionRemoteDisableEnforcer(manager: manager,
+                                          configurationManager: configurationManager,
+                                          disabledExtensionIDs: { [unowned self] in appDisabledIDs },
+                                          disabledExtensionIDsDidChange: appDisabledIDsDidChange.eraseToAnyPublisher())
     }
 
     private func install(_ extensions: InstalledWebExtension...) {

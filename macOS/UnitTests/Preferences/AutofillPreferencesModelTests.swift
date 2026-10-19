@@ -176,7 +176,6 @@ final class AutofillPreferencesModelTests: XCTestCase {
         let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
         var managing: AutofillManagingExtension?
         let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
-                                                    featureFlagger: MockFeatureFlagger(),
                                                     notificationCenter: NotificationCenter(),
                                                     readManagingExtension: { managing },
                                                     clearSettings: {})
@@ -195,7 +194,6 @@ final class AutofillPreferencesModelTests: XCTestCase {
     private func makeTakeover(_ managing: AutofillManagingExtension?,
                               clearSettings: @escaping @MainActor () -> Void = {}) -> WebExtensionAutofillTakeover {
         let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
-                                                    featureFlagger: MockFeatureFlagger(),
                                                     notificationCenter: NotificationCenter(),
                                                     readManagingExtension: { managing },
                                                     clearSettings: clearSettings)

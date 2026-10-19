@@ -217,6 +217,36 @@ struct AccountManager: AccountManaging {
             debugDevices: devices.map { RegisteredDeviceDebugInfo(device: $0, source: .legacy, deviceInfoIssue: nil) })
     }
 
+    func fetchAuditLog(for account: SyncAccount, cursor: AuditLogCursor?, limit: Int? = nil) async throws -> AuditLogPage {
+        guard let token = account.token else {
+            throw SyncError.noToken
+        }
+
+        var parameters: [String: String] = [:]
+        switch cursor {
+        case .after(let value): parameters["after"] = value
+        case .before(let value): parameters["before"] = value
+        case nil: break
+        }
+        if let limit {
+            parameters["limit"] = String(limit)
+        }
+
+        let request = api.createAuthenticatedGetRequest(url: endpoints.auditLog,
+                                                        authToken: token,
+                                                        parameters: parameters)
+        let result = try await request.execute()
+
+        guard let body = result.data else {
+            throw SyncError.noResponseBody
+        }
+
+        guard let response = try? JSONDecoder.snakeCaseKeys.decode(FetchAuditLogResult.self, from: body) else {
+            throw SyncError.unableToDecodeResponse("Failed to decode audit log")
+        }
+        return response.auditLog
+    }
+
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {
         guard let token = account.token else {
             throw SyncError.noToken
@@ -471,6 +501,50 @@ struct AccountManager: AccountManaging {
         }
 
         var devices: DeviceWrapper?
+    }
+
+    struct FetchAuditLogResult: Decodable {
+        let auditLog: AuditLogPage
+    }
+}
+
+enum AuditLogCursor {
+    case after(String)
+    case before(String)
+}
+
+struct AuditLogPage: Decodable {
+    let entries: [AuditLogEntry]
+    let after: String
+    let before: String?
+}
+
+struct AuditLogEntry: Decodable {
+    let id: String
+    let version: String
+    let payload: String
+
+    init(id: String, version: String, payload: String) {
+        self.id = id
+        self.version = version
+        self.payload = payload
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case version
+        case payload
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        payload = try container.decode(String.self, forKey: .payload)
+        if let stringVersion = try? container.decode(String.self, forKey: .version) {
+            version = stringVersion
+        } else {
+            version = String(try container.decode(Int.self, forKey: .version))
+        }
     }
 }
 

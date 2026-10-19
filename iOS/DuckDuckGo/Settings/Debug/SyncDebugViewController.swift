@@ -67,6 +67,7 @@ class SyncDebugViewController: UITableViewController {
 
         case ensureAccountInfoKey
         case resetMigrationMarker
+        case fetchAuditLog
 
     }
 
@@ -90,6 +91,7 @@ class SyncDebugViewController: UITableViewController {
     private var accountInfoKeyStatus = "Not checked"
     private var migrationStatus = "Not checked"
     private var isRefreshingDevices = false
+    private var auditLogStatus = "Not checked"
 
     var syncCancellable: Cancellable?
 
@@ -191,6 +193,9 @@ class SyncDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Ensure/repair account_info key"
             case .resetMigrationMarker:
                 cell.textLabel?.text = "Reset migration marker"
+            case .fetchAuditLog:
+                cell.textLabel?.text = "Fetch audit log"
+                cell.detailTextLabel?.text = auditLogStatus
             case .none:
                 break
             }
@@ -310,6 +315,8 @@ class SyncDebugViewController: UITableViewController {
                 ensureAccountInfoKey()
             case .resetMigrationMarker:
                 confirmResetMigrationMarker()
+            case .fetchAuditLog:
+                fetchAuditLogForDebug()
             case .none:
                 break
             }
@@ -435,6 +442,23 @@ class SyncDebugViewController: UITableViewController {
             migrationStatus = "Unavailable"
         }
         reloadUnifiedDevicesSection()
+    }
+
+    private func fetchAuditLogForDebug() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let summary = try await sync.fetchAuditLogForDebug()
+                let message = "Fetched \(summary.entryCount) entries. Newer cursor: \(summary.hasAfterCursor ? "available" : "none"). Older page: \(summary.hasBeforeCursor ? "available" : "none")."
+                auditLogStatus = "\(summary.entryCount) entries • newer: \(summary.hasAfterCursor ? "yes" : "no") • older: \(summary.hasBeforeCursor ? "yes" : "no")"
+                tableView.reloadSections(IndexSet(integer: Sections.testActions.rawValue), with: .automatic)
+                showAlert(title: "Audit Log Fetch Succeeded", message: message)
+            } catch {
+                auditLogStatus = "Failed"
+                tableView.reloadSections(IndexSet(integer: Sections.testActions.rawValue), with: .automatic)
+                showAlert(title: "Unable to Fetch Audit Log", message: String(reflecting: error))
+            }
+        }
     }
 
     private func confirmResetMigrationMarker() {

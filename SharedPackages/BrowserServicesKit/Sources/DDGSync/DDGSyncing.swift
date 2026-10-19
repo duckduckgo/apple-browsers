@@ -291,8 +291,21 @@ public protocol DDGSyncingDebuggingSupport {
     func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int)
     /// Fetches devices through the production mapping path and includes the source used for each displayed device.
     func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo]
+    func fetchAuditLogForDebug() async throws -> AuditLogDebugSummary
     func isDeviceInfoMigrationCompleteForDebug() throws -> Bool
     func resetDeviceInfoMigrationForDebug()
+}
+
+public struct AuditLogDebugSummary: Sendable {
+    public let entryCount: Int
+    public let hasAfterCursor: Bool
+    public let hasBeforeCursor: Bool
+
+    public init(entryCount: Int, hasAfterCursor: Bool, hasBeforeCursor: Bool) {
+        self.entryCount = entryCount
+        self.hasAfterCursor = hasAfterCursor
+        self.hasBeforeCursor = hasBeforeCursor
+    }
 }
 
 public extension DDGSyncingDebuggingSupport {
@@ -305,6 +318,10 @@ public extension DDGSyncingDebuggingSupport {
     }
 
     func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo] {
+        throw SyncError.accountNotFound
+    }
+
+    func fetchAuditLogForDebug() async throws -> AuditLogDebugSummary {
         throw SyncError.accountNotFound
     }
 

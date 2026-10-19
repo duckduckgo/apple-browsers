@@ -273,6 +273,8 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
     public func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
         let prefs = AutofillPreferences()
+        // While an extension manages autofill, DuckDuckGo hands out nothing from the vault.
+        guard !prefs.isManagedByExtension else { return false }
         switch type {
         case .card:
             return prefs.askToSavePaymentMethods
@@ -285,7 +287,8 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         }
     }
     public func secureVaultManagerShouldSaveData(_: SecureVaultManager) -> Bool {
-        return true
+        // While an extension manages autofill, DuckDuckGo saves nothing, not even a private Duck Address.
+        return !AutofillPreferences().isManagedByExtension
     }
 
     public func secureVaultManager(_: SecureVaultManager,

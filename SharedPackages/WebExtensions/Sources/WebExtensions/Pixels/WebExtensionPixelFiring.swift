@@ -67,6 +67,8 @@ public enum WebExtensionPixelEvent {
     /// Intermediate initialization failures, stuck confirmation and reload checks stay local.
     case cpmMessagingEpisode(CPMMessagingEpisodeReport)
     case cpmRecovery(CPMRecoveryFix, outcome: CPMRecoveryOutcome)
+    /// Missing first-document dashboard response after a successful first background startup.
+    case cpmStartupResponseMissing
 }
 
 /// A bounded summary of existing health-monitor evidence, not proof of document initialization or all-tab recovery.
@@ -200,6 +202,10 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
     @available(macOS 15.4, iOS 18.4, *)
     public init?(event: WebExtensionPixelEvent) {
         switch event {
+        case .cpmStartupResponseMissing:
+            name = "web_extension_cpm_startup_response_missing"
+            frequency = .dailyAndCount
+            parameters = [:]
         case .cpmRecovery(let fix, let outcome):
             name = "web_extension_cpm_\(fix.rawValue)"
             frequency = .dailyAndCount

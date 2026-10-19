@@ -623,6 +623,14 @@
             }
         ]
     },
+    "web_extension_cpm_startup_response_missing": {
+        "description": "A document committed during the first monitored background startup for its embedded extension context timed out waiting for a CPM dashboard response, despite that startup succeeding within 30 seconds. Recorded once per document, independently of the late-document recovery flag and GET/form reload eligibility. Ordinary idle wakes and failed background startups are excluded. This is a P4 candidate signature, not proof of a lost initResp or its root cause. Daily estimates affected installations per day; count measures detected documents. No URL, tab ID, field value or raw error is sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "web_extension_cpm_late_document_reload": {
         "description": "CPM late document reload fix observation. Background-ready means a successful public WebKit callback after a slow load (or any error-6 retry), not a document ACK. Reload-started counts one accepted GET document reload after a known unfinished startup and missing dashboard response; response-received counts an unambiguously attributed dashboard response after that reload, not an initResp ACK. No URLs, tab IDs, field values or raw errors are sent.",
         "owners": ["mallexxx"],

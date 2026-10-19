@@ -48,14 +48,6 @@ final class WebExtensionPixelTests: XCTestCase {
         XCTAssertEqual(pixel.namePrefix, .none)
     }
 
-    func testToolbarButtonClickedPixel() {
-        let pixel = WebExtensionPixel.toolbarButtonClicked(extension: .catalog(.bitwarden))
-
-        XCTAssertEqual(pixel.name, "web_extension_toolbar_button_clicked_macos")
-        XCTAssertEqual(pixel.parameters, ["extension": "bitwarden"])
-        XCTAssertEqual(pixel.namePrefix, .none)
-    }
-
     func testAPICompatibilityGapsPixelsAreNamedPerCatalogExtension() {
         let names = ExtensionsCatalogSubfeature.allCases.map {
             WebExtensionPixel.apiCompatibilityGaps(extension: $0, version: "1", missingAPICount: 0, unsupportedURLCount: 0).name

@@ -619,7 +619,6 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }
     @MainActor func clearCachedScriptlets() {}
-    @MainActor func reportToolbarButtonClick(identifier: String) {}
     @MainActor func scriptletDebugInfo() -> [ScriptletDebugInfo] {
         stubbedAdBlockingScriptletsFetched
             ? [ScriptletDebugInfo(extensionType: .adBlockingExtension, cachedVersion: "1.0", installedVersion: nil, scriptletPaths: [])]

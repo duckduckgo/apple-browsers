@@ -964,12 +964,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
     }
 
-    @MainActor
-    public func reportToolbarButtonClick(identifier: String) {
-        let storeIdentity = installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity
-        pixelFiring.fire(.toolbarButtonClicked(extension: pixelExtension(for: storeIdentity)))
-    }
-
     /// The extension pixels report: its Chrome Web Store catalog entry, or `other` for one the catalog
     /// doesn't list.
     @MainActor

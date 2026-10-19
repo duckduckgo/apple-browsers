@@ -282,7 +282,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         webView=\(action?.popupWebView == nil ? "nil" : "non-nil", privacy: .public)
         """)
 
-        webExtensionManagerProvider()?.reportToolbarButtonClick(identifier: identifier)
         context.performAction(for: selectedTab)
     }
 

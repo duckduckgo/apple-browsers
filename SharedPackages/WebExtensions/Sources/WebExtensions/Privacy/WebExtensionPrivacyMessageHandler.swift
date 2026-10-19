@@ -24,7 +24,7 @@ import WebKit
 /// Answers the `chrome.privacy.services` calls the API stub script makes for an extension page.
 ///
 /// The script sends `{action: "get" | "set" | "clear", setting, value}`. `get` answers
-/// `{value, levelOfControl}`; `set` and `clear` answer `null`, and a `set` the extension may not make
+/// `{value, levelOfControl}`; `set` and `clear` answer `null`, and a `set` or `clear` the extension may not make
 /// is rejected. Only pages of a loaded extension are answered, so a website can't reach the settings.
 @available(macOS 15.4, *)
 final class WebExtensionPrivacyMessageHandler: NSObject, WKScriptMessageHandlerWithReply {
@@ -32,7 +32,6 @@ final class WebExtensionPrivacyMessageHandler: NSObject, WKScriptMessageHandlerW
     private static let extensionScheme = "webkit-extension"
     private static let rejectedReason = "Not a loaded extension page"
     private static let invalidReason = "Invalid privacy setting request"
-    private static let notControllableReason = "The extension can't control this setting"
 
     /// The installation identifier of the loaded extension that the page URL belongs to.
     @MainActor var extensionIdentifier: (URL) -> String? = { _ in nil }
@@ -82,10 +81,19 @@ final class WebExtensionPrivacyMessageHandler: NSObject, WKScriptMessageHandlerW
             return (["value": details.value, "levelOfControl": details.levelOfControl.rawValue], nil)
         case "set":
             guard let value = request["value"] as? Bool else { return (nil, Self.invalidReason) }
-            return store.set(value, for: setting, by: identifier) ? (NSNull(), nil) : (nil, Self.notControllableReason)
+            do {
+                try store.set(value, for: setting, by: identifier)
+                return (NSNull(), nil)
+            } catch {
+                return (nil, error.localizedDescription)
+            }
         case "clear":
-            store.clear(setting, for: identifier)
-            return (NSNull(), nil)
+            do {
+                try store.clear(setting, for: identifier)
+                return (NSNull(), nil)
+            } catch {
+                return (nil, error.localizedDescription)
+            }
         default:
             return (nil, Self.invalidReason)
         }

@@ -10,6 +10,39 @@ The independent `webExtensions.cpmNetworkProcessRecovery` flag defaults to disab
 
 ### Testing Steps
 
+#### Manual reproduction: kill the Network process
+
+Use the production worktree `alex/cpm-network-process-recovery`; the integration-test branch is not required for these steps.
+
+1. On macOS 15.4 or later, run the **macOS Browser** scheme in **Debug** on **My Mac** from `DuckDuckGo.xcworkspace`. Enable internal user state if required by **Debug → Feature Flag Overrides**. Under **Web Extensions**, explicitly set:
+
+   | Flag | Reproduce failure | Verify fix |
+   | --- | --- | --- |
+   | `webExtensions` | ON | ON |
+   | `embeddedExtension` | ON | ON |
+   | `webExtensionStateRestorationGate` | ON | ON |
+   | `cpmDiagnosticsRecorder` | ON | ON |
+   | `cpmBackgroundDelegateProxy` | ON | ON |
+   | `cpmNetworkProcessRecovery` | **OFF** | **ON** |
+   | `cpmMessagingHangRecovery` | OFF | OFF |
+   | `cpmBackgroundGraveyardTreatment` | OFF | OFF |
+
+2. Enable Cookie Pop-up Management in Settings and leave **Simulate CPM Breakage** off. Restart this test browser after arranging the initial flags. Open [the autoconsent test page](https://privacy-test-pages.site/features/autoconsent/) in several tabs across two windows. Establish a healthy baseline: the test button changes to **I was clicked!** and the privacy dashboard reports **Cookies Managed**. These are the same visible checks used in `macOS/UITests/AutoconsentUITests.swift`.
+3. In this app run's Xcode console, find the latest `[CPM Diagnostics] Background web view created` line and copy its positive `networkProcessPID`. This is the **Network** PID; the **CPM Background WebContent PID** menu item identifies a different process. Keep the browser running, unpaused. Perform the crash while the background is still loaded, within 15 seconds of the successful baseline navigation; reload the baseline page first if needed and confirm the current PID again.
+4. Replace `NETWORK_PID` in both commands below with that numeric PID. Inspect the first command's output and confirm that it identifies `com.apple.WebKit.Networking` for this test app, then execute the second command to kill that specific process:
+
+   ```sh
+   ps -p NETWORK_PID -o pid=,comm=
+   kill -9 NETWORK_PID
+   ```
+
+5. Immediately navigate/reload the test pages in the existing tabs and load the page in a new tab/window. Do not wait for Network-process replacement before the first navigation: that also exercises the action-to-response race. With recovery **OFF**, expect CPM to stop responding: the freshly loaded page's test button stays unclicked and its fresh **Cookies Managed** result is absent. Continue navigating across tabs within the background's 30-second idle window; a long quiet interval can let WebKit unload/recreate the background and conceal the failure. Do not use Fire, reload the extension or relaunch during this observation.
+6. Enable `cpmNetworkProcessRecovery`, restart the test browser to establish another healthy baseline, and repeat steps 2–5 using the **new current Network PID**. With recovery **ON**, expect the first and subsequent post-crash navigations to manage the test button and show **Cookies Managed**. The console should show `[CPM Recovery] Restarted embedded background after Network process replacement` and a background creation with a changed `networkProcessPID`. Repeat the kill/navigation cycle once more using the latest PID.
+7. Verify runtime toggling in the same app session: switch recovery **OFF**, establish a healthy baseline and kill its current Network process again. Confirm the failure on fresh navigations, then switch recovery **ON** without relaunching, Fire or extension reload. Expect the recovery log without another navigation; reload the test page and confirm CPM works again. Switching recovery OFF also cancels periodic checks, covered directly by the shared unit regressions.
+8. Restore the flag overrides changed for this test when finished. `cpmNetworkProcessRecovery` defaults to OFF; remote rollout is a separate privacy-configuration change.
+
+#### Automated reproduction and regression checks
+
 The production branch contains the shared unit regressions. As in #7379, the app harness, dedicated schemes and DEBUG app hooks live only on the local review branch `codex/cpm-network-process-integration-tests`; that branch must not be merged into main.
 
 1. On the production branch, run the shared package tests:

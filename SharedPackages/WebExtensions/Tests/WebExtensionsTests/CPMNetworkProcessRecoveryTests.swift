@@ -322,7 +322,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         recovery = nil
     }
 
-    func testBackgroundIsNotRetainedByWatch() {
+    func testBackgroundIsNotRetainedByWatch() async throws {
         let recovery = makeRecovery()
         weak var released: WKWebView?
         autoreleasepool {
@@ -330,9 +330,13 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
             released = view
             watch(view, in: recovery)
         }
-        XCTAssertNil(released)
+        // UIKit/WebKit can release initialization references on a later main-run-loop turn.
+        let deadline = Date().addingTimeInterval(5)
+        while released != nil, Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertNil(released, "The live recovery owner must not retain the background")
         process = 200
         XCTAssertFalse(recovery.recoverIfNeeded())
+        withExtendedLifetime(recovery) {}
     }
 
     func testPeriodicCheckRecoversWithoutNavigationAndDoesNotRetainOwner() async throws {

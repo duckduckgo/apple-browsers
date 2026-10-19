@@ -31,8 +31,8 @@ final class CPMBackgroundReadinessObserver {
     typealias BackgroundLoader = @MainActor (WKWebExtensionContext, @escaping @MainActor (Error?) -> Void) -> Void
 
     /// Replaced in tests, where contexts are not loaded into a controller.
-    var loadBackgroundContent: BackgroundLoader = { context, completion in
-        context.loadBackgroundContent { error in
+    var backgroundLoader: BackgroundLoader = { context, completion in
+        context.loadBackgroundContentCopyingErrors { error in
             DispatchQueue.main.asyncOrNow { completion(error) }
         }
     }
@@ -61,7 +61,7 @@ final class CPMBackgroundReadinessObserver {
         let createdAt = now()
         DispatchQueue.main.async { [weak self, weak webView, weak context] in
             guard let self, let webView, let context, self.webView === webView, self.generation == generation, self.isEnabled() else { return }
-            self.loadBackgroundContent(context) { [weak self, weak webView] error in
+            self.backgroundLoader(context) { [weak self, weak webView] error in
                 guard let self, let webView, self.webView === webView, self.generation == generation, self.isEnabled() else { return }
                 let secondsAfterViewCreation = max(0, self.now().timeIntervalSince(createdAt))
                 self.readiness = error == nil ? .loaded(secondsAfterViewCreation: secondsAfterViewCreation) : .failed

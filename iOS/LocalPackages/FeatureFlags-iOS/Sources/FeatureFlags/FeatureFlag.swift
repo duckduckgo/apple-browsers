@@ -361,8 +361,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1218397803938552
     case unifiedToggleInputAttachmentPrivacy
 
-    /// Long pastes in the native Duck.ai inputs become pasted-text attachments.
-    /// https://app.asana.com/0/0/1219207880593588/f
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219661921884283
     case unifiedToggleInputPastedText
 
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.

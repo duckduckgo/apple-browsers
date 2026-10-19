@@ -49,7 +49,7 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
     func testWhenAnExtensionTurnsASettingOff_ThenItControlsItAndOthersSeeThat() {
         let store = makeStore()
 
-        XCTAssertTrue(store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+        XCTAssertNoThrow(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
 
         XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "bitwarden")
         let own = store.details(of: .passwordSavingEnabled, for: "bitwarden")
@@ -60,63 +60,63 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
         XCTAssertEqual(other.levelOfControl, .controlledByOtherExtensions)
     }
 
-    func testWhenAnExtensionTurnsASettingOn_ThenItControlsItButNothingIsTurnedOff() {
+    func testWhenAnExtensionTurnsASettingOn_ThenItControlsItButNothingIsTurnedOff() throws {
         let store = makeStore()
 
-        store.set(true, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(true, for: .passwordSavingEnabled, by: "bitwarden")
 
         XCTAssertEqual(store.controllingIdentifier(for: .passwordSavingEnabled), "bitwarden")
         XCTAssertNil(store.identifierTurningOff(.passwordSavingEnabled))
     }
 
-    func testWhenSettingsAreSetSeparately_ThenEachHasItsOwnController() {
+    func testWhenSettingsAreSetSeparately_ThenEachHasItsOwnController() throws {
         let store = makeStore()
 
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
 
         XCTAssertNil(store.identifierTurningOff(.autofillAddressEnabled))
         XCTAssertNil(store.identifierTurningOff(.autofillCreditCardEnabled))
     }
 
-    func testWhenTwoExtensionsSetTheSameSetting_ThenTheMostRecentControlsIt() {
+    func testWhenTwoExtensionsSetTheSameSetting_ThenTheMostRecentControlsIt() throws {
         let store = makeStore()
 
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
         date += 1
-        store.set(true, for: .passwordSavingEnabled, by: "other")
+        try store.set(true, for: .passwordSavingEnabled, by: "other")
 
         XCTAssertEqual(store.controllingIdentifier(for: .passwordSavingEnabled), "other")
         XCTAssertNil(store.identifierTurningOff(.passwordSavingEnabled))
         XCTAssertEqual(store.details(of: .passwordSavingEnabled, for: "bitwarden").levelOfControl, .controlledByOtherExtensions)
     }
 
-    func testWhenTheControllingExtensionClearsTheSetting_ThenTheNextOneControlsIt() {
+    func testWhenTheControllingExtensionClearsTheSetting_ThenTheNextOneControlsIt() throws {
         let store = makeStore()
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
         date += 1
-        store.set(false, for: .passwordSavingEnabled, by: "other")
+        try store.set(false, for: .passwordSavingEnabled, by: "other")
 
-        store.clear(.passwordSavingEnabled, for: "other")
+        try store.clear(.passwordSavingEnabled, for: "other")
 
         XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "bitwarden")
     }
 
-    func testWhenTheOnlyControllerClearsTheSetting_ThenItGoesBackToItsDefault() {
+    func testWhenTheOnlyControllerClearsTheSetting_ThenItGoesBackToItsDefault() throws {
         let store = makeStore()
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
 
-        store.clear(.passwordSavingEnabled, for: "bitwarden")
+        try store.clear(.passwordSavingEnabled, for: "bitwarden")
 
         XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
         XCTAssertEqual(store.details(of: .passwordSavingEnabled, for: "bitwarden").levelOfControl, .controllableByThisExtension)
     }
 
-    func testWhenEveryValueOfASettingIsCleared_ThenNoExtensionControlsItAndOtherSettingsAreKept() {
+    func testWhenEveryValueOfASettingIsCleared_ThenNoExtensionControlsItAndOtherSettingsAreKept() throws {
         let store = makeStore()
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
         date += 1
-        store.set(false, for: .passwordSavingEnabled, by: "other")
-        store.set(false, for: .autofillAddressEnabled, by: "other")
+        try store.set(false, for: .passwordSavingEnabled, by: "other")
+        try store.set(false, for: .autofillAddressEnabled, by: "other")
 
         store.clearAll(.passwordSavingEnabled)
 
@@ -129,15 +129,15 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
     func testWhenAnExtensionMayNotControlSettings_ThenItsSetIsRefused() {
         let store = makeStore()
 
-        XCTAssertFalse(store.set(false, for: .passwordSavingEnabled, by: "undeclared"))
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "undeclared"))
 
         XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
         XCTAssertEqual(store.details(of: .passwordSavingEnabled, for: "undeclared").levelOfControl, .notControllable)
     }
 
-    func testWhenTheControllingExtensionIsUnloaded_ThenItNoLongerControlsTheSetting() {
+    func testWhenTheControllingExtensionIsUnloaded_ThenItNoLongerControlsTheSetting() throws {
         let store = makeStore()
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
 
         allowed.remove("bitwarden")
 
@@ -150,15 +150,15 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
 
     // MARK: - Persistence
 
-    func testWhenTheStoreIsRecreated_ThenTheSettingsAreKept() {
-        makeStore().set(false, for: .passwordSavingEnabled, by: "bitwarden")
+    func testWhenTheStoreIsRecreated_ThenTheSettingsAreKept() throws {
+        try makeStore().set(false, for: .passwordSavingEnabled, by: "bitwarden")
 
         XCTAssertEqual(makeStore().identifierTurningOff(.passwordSavingEnabled), "bitwarden")
     }
 
-    func testWhenAnInstallationIsUpdated_ThenItsSettingsAreCopiedToTheNewInstallation() {
+    func testWhenAnInstallationIsUpdated_ThenItsSettingsAreCopiedToTheNewInstallation() throws {
         let store = makeStore()
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
         allowed = ["updated"]
 
         store.copySettingsForUpdate(from: "bitwarden", to: "updated")
@@ -166,10 +166,10 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "updated")
     }
 
-    func testWhenAnInstallationIsRemoved_ThenOnlyItsSettingsAreRemoved() {
+    func testWhenAnInstallationIsRemoved_ThenOnlyItsSettingsAreRemoved() throws {
         let store = makeStore()
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
-        store.set(false, for: .autofillAddressEnabled, by: "other")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .autofillAddressEnabled, by: "other")
 
         store.removeSettings(for: "bitwarden")
 
@@ -179,21 +179,21 @@ final class WebExtensionPrivacySettingsStoreTests: XCTestCase {
 
     // MARK: - Notifications
 
-    func testWhenASettingChanges_ThenObserversAreTold() {
+    func testWhenASettingChanges_ThenObserversAreTold() throws {
         let store = makeStore()
         let changed = expectation(forNotification: .webExtensionPrivacySettingsDidChange, object: store)
 
-        store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
 
         wait(for: [changed], timeout: 1)
     }
 
-    func testWhenASetChangesNothing_ThenObserversAreNotTold() {
+    func testWhenASetChangesNothing_ThenObserversAreNotTold() throws {
         let store = makeStore()
         let changed = expectation(forNotification: .webExtensionPrivacySettingsDidChange, object: store)
         changed.isInverted = true
 
-        store.clear(.passwordSavingEnabled, for: "bitwarden")
+        try store.clear(.passwordSavingEnabled, for: "bitwarden")
 
         wait(for: [changed], timeout: 0.2)
     }

@@ -173,7 +173,8 @@ public final class CrashCollection {
                     // `metaData.pid` is intentionally not used: MetricKit fills it with the PID of the app process running
                     // when the report was generated (the launch after the crash), not with the crashed process PID.
                     // The stored data was sanitized to remove any potential filename or email occurrences.
-                    if let diagnostic = try? CrashLogMessageExtractor().crashDiagnostic(for: payload.timeStampBegin, pid: nil)?.diagnosticData(), !diagnostic.isEmpty {
+                    if Self.canBeUncaughtExceptionCrash(signal: diagnosticMetaDataDict["signal"] as? Int),
+                       let diagnostic = try? CrashLogMessageExtractor().crashDiagnostic(for: payload.timeStampBegin, pid: nil)?.diagnosticData(), !diagnostic.isEmpty {
                         // append the loaded crash diagnostics message if the `MXDiagnostic` already contains one
                         if let existingMessage = exceptionMessage, !existingMessage.isEmpty {
                             exceptionMessage = existingMessage + "\n\n---\n\n" + diagnostic.message
@@ -282,6 +283,14 @@ public final class CrashCollection {
     ///   - tree: The call stack tree dictionary to process
     ///   - maxDepth: Maximum depth to preserve (nodes deeper than this will be truncated)
     /// - Returns: A new dictionary with depth limited to maxDepth
+    /// Uncaught NSException/C++ exceptions always terminate the process via `abort()`, i.e. with `SIGABRT`.
+    /// Reports for other signals (e.g. a segfault in a crash loop right after an exception crash) must not get
+    /// the saved exception diagnostics attached. An unknown signal is not used to reject the report.
+    static func canBeUncaughtExceptionCrash(signal: Int?) -> Bool {
+        guard let signal else { return true }
+        return signal == Int(SIGABRT)
+    }
+
     static func limitCallStackTreeDepth(_ tree: [AnyHashable: Any], maxDepth: Int) -> [AnyHashable: Any] {
         guard maxDepth > 0 else { return [:] }
 

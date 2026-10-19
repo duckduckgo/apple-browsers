@@ -200,20 +200,23 @@ public struct CrashLogMessageExtractor {
         try JSONEncoder().encode(diagnosticData).write(to: fileURL)
     }
 
-    /// Maximum distance between the crash time reported by the crash reporter and the diagnostic file timestamp.
+    /// How far the crash time reported by MetricKit may be from the diagnostic file timestamp.
     /// MetricKit reports `timeStampBegin` rounded to the *nearest* minute (a crash at 11:20:39 is reported as 11:21:00,
-    /// a crash at 11:33:10 as 11:33:00), so the diagnostic file written at the moment of the crash is at most 30 seconds
-    /// away from it. Keeping the window this tight avoids attaching the message to a different crash that happened
-    /// later in the same minute (e.g. in a crash loop).
+    /// a crash at 11:33:10 as 11:33:00), so the reported time is at most 30 seconds away from the real crash time.
+    /// Keeping the window this tight avoids attaching the message to a different crash that happened later in the
+    /// same minute (e.g. in a crash loop).
     static let crashTimestampTolerance: TimeInterval = 30
+    /// The diagnostic file is written right *before* the process aborts and its name is truncated to whole seconds,
+    /// so the file timestamp may precede the real crash time by a little more than a second.
+    static let diagnosticFileTimestampSlack: TimeInterval = 2
 
     /// Find saved crash diagnostics message for crash PID/timestamp
     /// - Parameters:
-    ///   - timestamp: crash time as reported by the crash reporter; files within `crashTimestampTolerance` are considered,
-    ///     the closest one wins.
-    ///   - pid: PID of the *crashed* process, if known. Note: `MXCrashDiagnostic.metaData.pid` is the PID of the app
-    ///     process that was running when MetricKit generated the report (i.e. the next launch), not the crashed one,
-    ///     so it must not be passed here.
+    ///   - timestamp: crash time as reported by the crash reporter. When `pid` is unknown only files within
+    ///     `crashTimestampTolerance` (plus `diagnosticFileTimestampSlack` before it) are considered; the closest one wins.
+    ///   - pid: PID of the *crashed* process, if known (macOS crash reports). Note: `MXCrashDiagnostic.metaData.pid`
+    ///     is the PID of the app process that was running when MetricKit generated the report (i.e. the next launch),
+    ///     not the crashed one, so it must not be passed here.
     public func crashDiagnostic(for timestamp: Date?, pid: pid_t?) -> CrashDiagnostic? {
         guard timestamp != nil || pid != nil,
               var crashLogs = try? fileManager.contentsOfDirectory(atPath: diagnosticsDirectory.path).compactMap({
@@ -221,11 +224,14 @@ public struct CrashLogMessageExtractor {
               }) else { return nil }
 
         if let pid {
+            // the pid identifies the crashed process; the timestamp is only used to pick the closest file below
             crashLogs = crashLogs.filter { $0.pid == pid }
-        }
-        if let timestamp {
+        } else if let timestamp {
             crashLogs = crashLogs.filter {
-                abs($0.timestamp.timeIntervalSince(timestamp)) <= Self.crashTimestampTolerance
+                let fileWrittenBeforeCrashBy = timestamp.timeIntervalSince($0.timestamp)
+                let lowerBound = -Self.crashTimestampTolerance
+                let upperBound = Self.crashTimestampTolerance + Self.diagnosticFileTimestampSlack
+                return (lowerBound...upperBound).contains(fileWrittenBeforeCrashBy)
             }
         }
         // closest to the crash time first (when known), latest first otherwise

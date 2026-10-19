@@ -82,15 +82,34 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         XCTAssertEqual(r?.pid, 520)
     }
 
-    func testWhenDiagnosticIsMoreThanHalfAMinuteAway_noCrashDiagnosticReturned() {
+    func testWhenDiagnosticIsOutsideTheToleranceWindow_noCrashDiagnosticReturned() {
         fileManager.contents = [
-            "2026-10-19T11:20:29Z-519.log",
-            "2026-10-19T11:21:31Z-520.log",
+            "2026-10-19T11:20:27Z-519.log", // 33s before the reported minute
+            "2026-10-19T11:21:31Z-520.log", // 31s after the reported minute
         ]
 
         let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:21:00Z"), pid: nil)
 
         XCTAssertNil(r)
+    }
+
+    // The file is written before the abort and its name is truncated to whole seconds: a crash at 11:20:29.9
+    // produces `11:20:29Z` while MetricKit rounds the real crash time (≥ 11:20:30) up to 11:21:00 — 31s apart.
+    func testWhenDiagnosticIsWrittenJustBeforeTheHalfMinute_diagnosticIsChosen() {
+        fileManager.contents = ["2026-10-19T11:20:29Z-519.log"]
+
+        let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:21:00Z"), pid: nil)
+
+        XCTAssertEqual(r?.pid, 519)
+    }
+
+    // macOS crash reports carry the real pid; a delayed report timestamp must not drop the pid-matched diagnostic.
+    func testWhenPidMatches_timestampDistanceDoesNotRejectDiagnostic() {
+        fileManager.contents = ["2026-10-19T11:20:05Z-519.log"]
+
+        let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:24:40Z"), pid: 519)
+
+        XCTAssertEqual(r?.pid, 519)
     }
 
     // Crash loop: an NSException crash at 11:33:10 (reported as 11:33:00) followed by an unrelated crash

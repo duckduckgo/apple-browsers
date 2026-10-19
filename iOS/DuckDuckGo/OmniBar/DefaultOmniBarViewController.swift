@@ -42,6 +42,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let unboundIPadDraft = IPadOmnibarDraft()
     private lazy var iPadDraft = unboundIPadDraft
     private var isBindingIPadDraft = false
+    private let promptLimits = AIChatPromptLimits.current
+    private var promptLengthGate: UTIPromptLengthGate?
+    private var promptOverLimit: UTIFooterPromptOverLimit?
+    private var isPastedTextEnabled: Bool { dependencies.featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) }
 
     override var isExpandedPhone: Bool {
         didSet {
@@ -365,6 +369,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         handleIPadModeToggleTransition(to: mode)
         syncInputOutcomeMeasurement()
+        promptLengthGate?.refresh()
     }
 
     override func endEditing() {
@@ -395,6 +400,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         iPadDraft.text = ""
         modeToggleTextModel.updateText("")
         super.onClearButtonPressed()
+        promptLengthGate?.refresh()
     }
 
     override func consumeAIChatControlValues() -> IPadDuckAIControlValues {
@@ -407,6 +413,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         toolPickerController?.resetSelection()
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
         omniBarView.updateAIChatSendButton(hasText: false)
+        promptLengthGate?.refresh()
         return values
     }
 
@@ -565,8 +572,8 @@ extension DefaultOmniBarViewController {
         let hasValidAttachment = attachmentController?.hasValidAttachment ?? false
         let hasInvalidAttachment = attachmentController?.hasInvalidAttachment ?? false
         // Mirror the iPhone unified toggle rule: submit needs text or a valid attachment, and is
-        // blocked while any attachment is invalid.
-        guard !hasInvalidAttachment, !query.isEmpty || hasValidAttachment else { return }
+        // blocked while any attachment is invalid or the prompt is over its length limit.
+        guard !hasInvalidAttachment, promptLengthGate?.isSubmitBlocked != true, !query.isEmpty || hasValidAttachment else { return }
 
         if selectedTextEntryMode == .aiChat {
             textView.text = ""
@@ -753,6 +760,36 @@ extension DefaultOmniBarViewController {
         attachmentControllerInstance.onExpandRequested = { [weak self] in
             self?.expandAIChatAfterAttachmentPicker()
         }
+        attachmentControllerInstance.onPastedTextSheetDismissed = { [weak self] in
+            self?.restoreInputAfterPastedTextSheet()
+        }
+
+        let gate = UTIPromptLengthGate(
+            limits: promptLimits,
+            inputs: .init(
+                promptText: { [weak self] in self?.omniBarView.aiChatTextView.text ?? "" },
+                attachments: { [weak self] in self?.attachmentController?.pendingAttachments ?? [] },
+                attachmentLimits: { [weak controller] in controller?.modelStore.attachmentLimits },
+                isEnabled: { [weak self] in
+                    guard let self else { return false }
+                    return isPastedTextEnabled && selectedTextEntryMode == .aiChat
+                }
+            ),
+            outputs: .init(
+                onOverLimitChanged: { [weak self] overLimit in
+                    self?.promptOverLimit = overLimit
+                    self?.refreshFooterMessage(animated: true)
+                },
+                onSubmitBlockedChanged: { [weak self] isBlocked in
+                    guard let self else { return }
+                    omniBarView.isAIChatSubmitBlockedByPromptLength = isBlocked
+                    omniBarView.updateAIChatSendButton(hasText: hasSubmittableAIChatText)
+                },
+                onChipErrorChanged: { [weak self] in self?.omniBarView.attachmentsStripView.showsPromptLengthError = $0 }
+            )
+        )
+        promptLengthGate = gate
+        attachmentControllerInstance.pastedTextSheetLimit = { gate.sheetLimit(for: $0) }
 
         controller.onModelsUpdated = { [weak self] in
             guard let self else { return }
@@ -767,6 +804,7 @@ extension DefaultOmniBarViewController {
             self.refreshReasoningPicker()
             self.refreshToolPicker()
             self.refreshAttachButton()
+            self.promptLengthGate?.refresh()
         }
 
         omniBarView.isModelPickerEnabled = true
@@ -804,6 +842,7 @@ extension DefaultOmniBarViewController {
         modeToggleTextModel.updateText(iPadDraft.text)
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
+        promptLengthGate?.refresh()
     }
 
     private func fireAttachmentPrivacyPixel(_ action: AttachmentPrivacyPixel.Action) {
@@ -829,10 +868,16 @@ extension DefaultOmniBarViewController {
         if let notice = toolPickerController?.currentModelSwitchNotice {
             messages.append(.init(id: .modelSwitch, message: UTIFooterMessageMapper().message(for: notice)))
         }
+        if let promptOverLimit {
+            messages.append(.init(id: .promptTooLong, message: UTIFooterMessageMapper().promptTooLongMessage(count: promptOverLimit.count, limit: promptOverLimit.limit)))
+        }
         omniBarView.setFooterMessages(UTIFooterItem.visible(from: messages, isEditing: false), animated: animated)
-        omniBarView.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? sendButton : nil
-        let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        omniBarView.updateAIChatSendButton(hasText: hasText)
+        omniBarView.termsOfServiceSendButton = isTermsOfServiceInEffect ? sendButton : nil
+        omniBarView.updateAIChatSendButton(hasText: hasSubmittableAIChatText)
+    }
+
+    private var hasSubmittableAIChatText: Bool {
+        !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// Only Duck.ai mode expands the search area, which is the Duck.ai input.
@@ -850,6 +895,34 @@ extension DefaultOmniBarViewController {
         return termsOfServiceDisclaimer.isDisclaimer(visibleMessage)
     }
 
+    /// The disclaimer is on screen, or the prompt length error stands in its place. Return and the Ask label
+    /// follow this, so they don't switch to sending while the error hides the disclaimer.
+    private var isTermsOfServiceInEffect: Bool {
+        if isTermsOfServiceDisclaimerShown { return true }
+        let sendButton = DuckAiTermsOfServiceSendButton(selectedTool: toolPickerController?.selectedTool)
+        return termsOfServiceDisclaimer.message(sendButton: sendButton) != nil
+            && omniBarView.visibleFooterMessages.contains { $0.type == .error(.persistent) }
+    }
+
+    /// Return to Duck.ai mode with the keyboard up once the sheet is gone. On iOS 27 the sheet taking focus
+    /// collapses the bar to Search; the draft text comes back through `textViewDidBeginEditing`.
+    private func restoreInputAfterPastedTextSheet() {
+        expandAIChatAfterAttachmentPicker()
+        omniBarView.aiChatTextView.becomeFirstResponder()
+    }
+
+    /// Converts a long insertion into a chip. Keystrokes fail the cheap length check first.
+    private func attachInsertedTextIfLong(_ text: String, in textView: UITextView, range: NSRange) -> Bool {
+        guard text.utf16.count >= promptLimits.pasteConversionThreshold,
+              let attachmentController,
+              isPastedTextEnabled,
+              selectedTextEntryMode == .aiChat,
+              promptLimits.convertsToPastedText(text) else { return false }
+        attachmentController.addPastedText(text)
+        PastedTextInsertion.removeReplacedSelection(in: textView, range: range)
+        return true
+    }
+
     private func refreshModelPicker() {
         guard let controller = modelPickerController else { return }
 
@@ -865,6 +938,7 @@ extension DefaultOmniBarViewController {
             self.refreshReasoningPicker()
             self.refreshToolPicker()
             self.refreshAttachButton()
+            self.promptLengthGate?.refresh()
         }
         let isReadOnly = isUpdatedCreateImageEnabled && toolPickerController?.selectedTool == .imageGeneration
         omniBarView.isAIChatModelPickerReadOnly = isReadOnly
@@ -955,9 +1029,8 @@ extension DefaultOmniBarViewController {
         attachmentController?.handleAttachmentsChanged()
         refreshAttachButton()
         omniBarView.updateAttachmentsLayout(animated: true)
+        promptLengthGate?.refresh()
         refreshFooterMessage(animated: true)
-        let hasText = !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        omniBarView.updateAIChatSendButton(hasText: hasText)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
     }
 }
@@ -976,11 +1049,14 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
             if omniDelegate?.onAIChatSuggestionsActivateHighlight() == true {
                 return false
             }
-            guard !isTermsOfServiceDisclaimerShown else { return true }
+            guard !isTermsOfServiceInEffect else { return true }
             submitIPadDuckAIText(from: textView, sentWithAsk: false)
             return false
         }
-        return true
+        if #available(iOS 18, *), textView.isWritingToolsActive {
+            return true
+        }
+        return !attachInsertedTextIfLong(text, in: textView, range: range)
     }
 
     func textViewDidChange(_ textView: UITextView) {
@@ -1012,6 +1088,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
 
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
+        promptLengthGate?.refresh()
     }
 
     func textViewDidChangeSelection(_ textView: UITextView) {

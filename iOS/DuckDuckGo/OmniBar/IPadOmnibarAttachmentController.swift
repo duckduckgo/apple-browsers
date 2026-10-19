@@ -47,6 +47,7 @@ final class IPadOmnibarAttachmentController {
 
     private let store: UTIModelStore
     private let keepsUnavailableAttachmentButtonVisible: Bool
+    private let pixelFiring: PixelFiring?
     private let presenter = UnifiedToggleInputAttachmentPresenter()
     private let fallbackDraft = IPadOmnibarDraft()
     private weak var boundDraft: IPadOmnibarDraft?
@@ -56,9 +57,16 @@ final class IPadOmnibarAttachmentController {
 
     weak var attachmentsStripView: UnifiedToggleInputAttachmentsStripView? {
         didSet {
-            attachmentsStripView?.onAttachmentRemoved = { _, attachment, isUserInitiated in
+            attachmentsStripView?.onAttachmentRemoved = { [weak self] _, attachment, isUserInitiated in
                 guard isUserInitiated else { return }
-                UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: .addressBar)
+                if attachment.pastedText != nil {
+                    self?.firePastedTextPixel(.removed)
+                } else {
+                    UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: .addressBar)
+                }
+            }
+            attachmentsStripView?.onAttachmentTapped = { [weak self] id in
+                self?.presentPastedTextSheet(id: id)
             }
         }
     }
@@ -69,9 +77,16 @@ final class IPadOmnibarAttachmentController {
     /// Requested after a picker completes, so the omnibar can ensure it stays expanded.
     var onExpandRequested: (() -> Void)?
 
-    init(store: UTIModelStore, keepsUnavailableAttachmentButtonVisible: Bool = false) {
+    /// What a paste may grow to in its sheet with the rest of the draft as it is; the omnibar's length gate answers.
+    var pastedTextSheetLimit: ((AIChatPastedText) -> Int)?
+
+    /// Runs once per sheet however it closed, so the omnibar can bring the input back.
+    var onPastedTextSheetDismissed: (() -> Void)?
+
+    init(store: UTIModelStore, keepsUnavailableAttachmentButtonVisible: Bool = false, pixelFiring: PixelFiring? = PixelKit.shared) {
         self.store = store
         self.keepsUnavailableAttachmentButtonVisible = keepsUnavailableAttachmentButtonVisible
+        self.pixelFiring = pixelFiring
 
         presenter.pickerCallbacksProvider = { [weak self] in
             self?.makePickerCallbacks() ?? .init()
@@ -142,6 +157,45 @@ final class IPadOmnibarAttachmentController {
         isRenderingDraft = true
         defer { isRenderingDraft = false }
         attachmentsStripView?.addAttachment(attachment)
+    }
+
+    // MARK: - Pasted text
+
+    /// A long paste the text view declined becomes a chip in the current draft.
+    func addPastedText(_ text: String) {
+        addAttachment(.pastedText(AIChatPastedText(content: text)), to: currentDraft)
+        firePastedTextPixel(.attached)
+        onExpandRequested?()
+    }
+
+    /// Opens the shared sheet above whatever the omnibar's presenter already shows.
+    func presentPastedTextSheet(id: UUID) {
+        guard let pastedText = currentAttachments.first(where: { $0.id == id })?.pastedText,
+              let host = presenterProvider?() else { return }
+        let draft = currentDraft
+        let limit = pastedTextSheetLimit?(pastedText) ?? 0
+        firePastedTextPixel(.sheetOpened)
+        PastedTextSheetPresenter.present(pastedText, mode: .editable(limit: limit), from: host) { [weak self] outcome in
+            guard let self else { return }
+            if case .saved(let edited) = outcome {
+                replaceAttachment(id: id, with: .pastedText(edited), in: draft)
+                firePastedTextPixel(.edited)
+            }
+            onPastedTextSheetDismissed?()
+        }
+    }
+
+    private func replaceAttachment(id: UUID, with attachment: UnifiedToggleInputAttachment, in draft: IPadOmnibarDraft) {
+        guard draft.isValid, let index = draft.attachments.firstIndex(where: { $0.id == id }) else { return }
+        draft.attachments[index] = attachment
+        guard currentDraft === draft else { return }
+        isRenderingDraft = true
+        defer { isRenderingDraft = false }
+        attachmentsStripView?.replaceAttachment(id: id, with: attachment)
+    }
+
+    private func firePastedTextPixel(_ action: UnifiedToggleInputPastedTextPixel.Action) {
+        pixelFiring?.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: .iPadOmnibar), frequency: .dailyAndCount)
     }
 
     // MARK: - Availability

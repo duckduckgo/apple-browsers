@@ -41,9 +41,8 @@ import Foundation
 ///
 /// Chrome's enum-like constants WebKit lacks (`scripting.ExecutionWorld`, `tabs.TAB_ID_NONE`,
 /// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
-/// are defined where missing. `chrome.permissions` counts `idle` and `offscreen` as granted, since the script
-/// provides them and WebKit rejects the names, and asks the app about `privacy` through `permissionsMessageHandlerName`,
-/// so the user decides whether an extension gets it.
+/// are defined where missing. `chrome.permissions` grants `idle` and `offscreen` itself, since the script
+/// implements them, and asks the app about `privacy`, so the user decides whether an extension gets it.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
@@ -62,15 +61,13 @@ public enum WebExtensionAPIStubScript {
     /// doesn't know (see `WebExtensionAppPermission`). Without it they are never held.
     public static let permissionsMessageHandlerName = "ddgWebExtensionPermissions"
 
-    /// Permissions WebKit rejects that the script grants itself, because it implements their APIs:
-    /// `idle` with makeIdle and `offscreen` with makeOffscreen.
+    /// Permissions WebKit doesn't know that the script implements and grants itself.
     static let localPermissionNames = ["idle", "offscreen"]
 
-    /// Permissions WebKit drops that the script or the app implements, so an extension asking for them
-    /// lacks nothing.
+    /// Permissions WebKit doesn't know that the script or the app implements.
     static let providedPermissionNames = Set(localPermissionNames + WebExtensionAppPermission.allCases.map(\.rawValue))
 
-    /// A JavaScript array literal of permission names, which are plain identifiers.
+    /// `names` as a JavaScript array literal.
     private static func jsArray(_ names: [String]) -> String {
         "[" + names.map { "\"\($0)\"" }.joined(separator: ", ") + "]"
     }

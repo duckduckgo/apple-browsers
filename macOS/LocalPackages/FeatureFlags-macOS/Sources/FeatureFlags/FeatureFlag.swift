@@ -110,9 +110,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
     case webExtensionNativeMessaging
 
-    /// Lets a password manager extension replace DuckDuckGo autofill through `chrome.privacy`, and offers
-    /// the Bitwarden shortcut in the Debug menu. Follows Bitwarden's extensions catalog entry, which also
-    /// decides whether Bitwarden can be installed, so one remote switch controls both.
+    /// Lets a password manager extension replace DuckDuckGo autofill, and shows the Bitwarden item in the
+    /// Debug menu. Follows Bitwarden's extensions catalog entry, which also controls installing Bitwarden.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219519018819111
     case webExtensionBitwarden
 

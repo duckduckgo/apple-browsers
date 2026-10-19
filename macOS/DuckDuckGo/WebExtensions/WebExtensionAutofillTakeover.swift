@@ -34,7 +34,7 @@ struct AutofillManagingExtension: Equatable {
     }
 }
 
-/// What Settings needs from the autofill takeover: which extension manages autofill, and a way to give it back.
+/// Which extension manages autofill, and a way to give autofill back to DuckDuckGo.
 protocol WebExtensionAutofillTakeoverManaging: AnyObject {
     /// The extension that manages autofill instead of DuckDuckGo, if any.
     @MainActor var managingExtension: AutofillManagingExtension? { get }

@@ -22,10 +22,20 @@ import DesignResourcesKitIcons
 import SwiftUI
 
 struct RedesignedFavoritesView: View {
+    @ObservedObject var model: FavoritesViewModel
+    /// Shows the Add Favorite tile and empty state when set.
+    let onAddFavorite: (() -> Void)?
+
+    var body: some View {
+        RedesignedFavoritesSection(model: model, expansionState: model.expansionState, onAddFavorite: onAddFavorite)
+    }
+}
+
+private struct RedesignedFavoritesSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject var model: FavoritesViewModel
-    /// Shows the Add Favorite tile and empty state when set.
+    @ObservedObject var expansionState: FavoritesExpansionState
     let onAddFavorite: (() -> Void)?
     @State private var isDraggingFavorite = false
     @State private var gridHeight: CGFloat = 0
@@ -38,7 +48,7 @@ struct RedesignedFavoritesView: View {
         return Array(repeating: GridItem(.flexible(), spacing: Metrics.columnSpacing, alignment: .top), count: count)
     }
 
-    private var isExpanded: Bool { hasOverflow && model.expansionState.isExpanded }
+    private var isExpanded: Bool { hasOverflow && expansionState.isExpanded }
 
     private var collapsedCapacity: Int { columns.count }
 
@@ -115,7 +125,7 @@ struct RedesignedFavoritesView: View {
     }
 
     private var favoritesGrid: some View {
-        LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
+        favoritesGridLayout {
             favorites
             if onAddFavorite != nil {
                 addFavoriteButton
@@ -139,6 +149,22 @@ struct RedesignedFavoritesView: View {
         }
     }
 
+    /// Lays out the favorites grid, eagerly where the platform allows it.
+    @ViewBuilder
+    private func favoritesGridLayout<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 16.0, *) {
+            // A lazy grid re-places and re-measures its tiles whenever the animated viewport
+            // changes its visible rect, and every tile is realized during expansion regardless.
+            FavoritesGridLayout(columnCount: columns.count, columnSpacing: Metrics.columnSpacing, rowSpacing: Metrics.rowSpacing) {
+                content()
+            }
+        } else {
+            LazyVGrid(columns: columns, alignment: .center, spacing: Metrics.rowSpacing) {
+                content()
+            }
+        }
+    }
+
     private var header: some View {
         HStack(spacing: Metrics.headerSpacing) {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.favorite)
@@ -154,7 +180,7 @@ struct RedesignedFavoritesView: View {
             Spacer()
             Button {
                 guard !isDraggingFavorite else { return }
-                model.expansionState.isExpanded = false
+                expansionState.isExpanded = false
             } label: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size12.chevronUp)
                     .frame(width: Metrics.collapseIconSize, height: Metrics.collapseIconSize)
@@ -183,12 +209,25 @@ struct RedesignedFavoritesView: View {
         let measuredIDs = Set(allFavorites.prefix(collapsedCapacity).map(\.id))
         let overflow = hasOverflow
         let expandButtonID = overflow ? allFavorites[collapsedCapacity - 1].id : nil
+        let expanded = isExpanded
+        let isInRevealedRegion = { (favorite: Favorite) in expanded || !overflow || collapsedIDs.contains(favorite.id) }
+        let modelID = ObjectIdentifier(model)
+        let isEditable = model.canEditFavorites
+        let expansionSlot = FavoriteTileContentKey.ExpansionSlot(expansionStateID: ObjectIdentifier(expansionState),
+                                                                 isExpanded: expanded,
+                                                                 isDragging: isDraggingFavorite,
+                                                                 reduceMotion: reduceMotion)
         return ReorderableForEach(allFavorites, id: \.id, isReorderingEnabled: model.canEditFavorites,
                           onDragActivityChanged: { isDraggingFavorite = $0 },
-                          itemSizeCacheKey: { AnyHashable($0) },
-                          isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) },
+                          itemContentKey: { favorite in
+                              AnyHashable(FavoriteTileContentKey(modelID: modelID, favorite: favorite, isEditable: isEditable,
+                                                                 isMeasured: measuredIDs.contains(favorite.id),
+                                                                 expansionSlot: favorite.id == expandButtonID ? expansionSlot : nil))
+                          },
+                          isItemReorderingEnabled: isInRevealedRegion,
+                          isItemInteractive: { isInRevealedRegion($0) || $0.id == expandButtonID },
                           previewPath: { UIBezierPath(ovalIn: $0) }) { favorite in
-            let isVisible = isExpanded || !overflow || collapsedIDs.contains(favorite.id)
+            let isFavoriteShown = expandButtonID != favorite.id || isExpanded
             ZStack(alignment: .top) {
                 Button {
                     model.favoriteSelected(favorite)
@@ -204,9 +243,9 @@ struct RedesignedFavoritesView: View {
                     })
                 }
                 .buttonStyle(.plain)
-                .opacity(isVisible ? 1 : 0)
-                .allowsHitTesting(isVisible)
-                .accessibilityHidden(!isVisible)
+                .opacity(isFavoriteShown ? 1 : 0)
+                .allowsHitTesting(isFavoriteShown)
+                .accessibilityHidden(!isFavoriteShown)
                 if expandButtonID == favorite.id {
                     // Both tiles participate in sizing so See All fits without a separate measurement.
                     expansionButton(expands: true)
@@ -216,7 +255,7 @@ struct RedesignedFavoritesView: View {
                 }
             }
             // Animate the tile crossfade independently of the viewport.
-            .animation(expansionAnimation, value: isExpanded)
+            .animation(expansionAnimation, value: isFavoriteShown)
             .background {
                 if measuredIDs.contains(favorite.id) {
                     GeometryReader { geometry in
@@ -242,7 +281,7 @@ struct RedesignedFavoritesView: View {
     private func expansionButton(expands: Bool) -> some View {
         Button {
             guard !isDraggingFavorite else { return }
-            model.expansionState.isExpanded = expands
+            expansionState.isExpanded = expands
         } label: {
             RedesignedFavoriteTileView(title: expands ? UserText.newTabPageFavoritesSeeAll : UserText.newTabPageFavoritesSeeLess) {
                 Image(uiImage: expands ? DesignSystemImages.Glyphs.Size24.chevronDownSmall : DesignSystemImages.Glyphs.Size24.chevronUpSmall)
@@ -257,38 +296,32 @@ struct RedesignedFavoritesView: View {
     }
 }
 
-/// Apply intermediate heights explicitly so UIKit resizing the outer host does not
-/// move SwiftUI's grid to its final position before the reveal has finished.
-private struct FavoritesExpansionContainer<Header: View, Grid: View>: View, Animatable {
-    var progress: CGFloat
+private struct FavoritesExpansionContainer<Header: View, Grid: View>: View {
+    let progress: CGFloat
     let collapsedGridHeight: CGFloat
     let expandedGridHeight: CGFloat
     let headerHeight: CGFloat
     let header: Header
     let grid: Grid
 
-    var animatableData: CGFloat {
-        get { progress }
-        set { progress = newValue }
-    }
-
     var body: some View {
-        let revealedGridHeight = collapsedGridHeight + (max(expandedGridHeight, collapsedGridHeight) - collapsedGridHeight) * progress
+        let fullGridHeight = max(expandedGridHeight, collapsedGridHeight)
         VStack(spacing: 0) {
             header
                 .fixedSize(horizontal: false, vertical: true)
+                .modifier(TopEdgeReveal(progress: progress, collapsedHeight: 0, expandedHeight: headerHeight))
                 .opacity(progress)
-                .frame(height: headerHeight * progress, alignment: .top)
-                .clipped()
             grid
                 // Let native lift shadows extend above and beside the grid. Cancel the padding
                 // outside the mask so tile positions and the bottom reveal edge stay unchanged.
                 .padding(.horizontal, Metrics.liftPreviewPadding)
                 .padding(.top, Metrics.liftPreviewPadding)
                 // Keep the grid's layout proposal constant while only its viewport changes.
-                .frame(height: max(expandedGridHeight, collapsedGridHeight) + Metrics.liftPreviewPadding, alignment: .top)
-                .frame(height: revealedGridHeight + Metrics.liftPreviewPadding, alignment: .top)
-                .clipped()
+                .frame(height: fullGridHeight + Metrics.liftPreviewPadding, alignment: .top)
+                .modifier(TopEdgeReveal(progress: progress,
+                                        collapsedHeight: collapsedGridHeight + Metrics.liftPreviewPadding,
+                                        expandedHeight: fullGridHeight + Metrics.liftPreviewPadding,
+                                        edgeFadeHeight: Metrics.revealEdgeFadeHeight))
                 .padding(.top, -Metrics.liftPreviewPadding)
                 .padding(.horizontal, -Metrics.liftPreviewPadding)
         }
@@ -297,7 +330,50 @@ private struct FavoritesExpansionContainer<Header: View, Grid: View>: View, Anim
             RedesignedNewTabPageModuleBackground()
                 .opacity(progress)
         }
-        .animation(nil, value: progress)
+    }
+}
+
+/// Clips content to a height interpolated between its collapsed and expanded values,
+/// optionally fading the moving bottom edge while the reveal is in progress.
+private struct TopEdgeReveal: ViewModifier, Animatable {
+    var progress: CGFloat
+    let collapsedHeight: CGFloat
+    let expandedHeight: CGFloat
+    var edgeFadeHeight: CGFloat = 0
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    private var revealedHeight: CGFloat {
+        collapsedHeight + (expandedHeight - collapsedHeight) * progress
+    }
+
+    private var distanceFromNearestEnd: CGFloat {
+        max(0, min(revealedHeight - collapsedHeight, expandedHeight - revealedHeight))
+    }
+
+    private var currentEdgeFadeHeight: CGFloat {
+        min(edgeFadeHeight, distanceFromNearestEnd)
+    }
+
+    // Only this body runs on each animation frame. `content` is opaque here, so the
+    // header and tiles are not re-evaluated while the height animates.
+    func body(content: Content) -> some View {
+        content
+            // Intermediate heights are applied explicitly so UIKit resizing the outer host does not
+            // move SwiftUI's grid to its final position before the reveal has finished.
+            .frame(height: revealedHeight, alignment: .top)
+            .mask(alignment: .top) {
+                VStack(spacing: 0) {
+                    Rectangle()
+                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                        .frame(height: currentEdgeFadeHeight)
+                }
+            }
+            .clipped()
+            .animation(nil, value: progress)
     }
 }
 
@@ -327,10 +403,71 @@ private struct FavoritesGridHeightKey: PreferenceKey {
     }
 }
 
+/// Inputs of a favorite tile's content.
+private struct FavoriteTileContentKey: Hashable {
+    /// Inputs read only by the tile that also hosts See All.
+    struct ExpansionSlot: Hashable {
+        let expansionStateID: ObjectIdentifier
+        let isExpanded: Bool
+        let isDragging: Bool
+        let reduceMotion: Bool
+    }
+
+    let modelID: ObjectIdentifier
+    let favorite: Favorite
+    let isEditable: Bool
+    let isMeasured: Bool
+    let expansionSlot: ExpansionSlot?
+}
+
+/// Equal flexible columns with top-aligned tiles, matching `LazyVGrid` with `.flexible()` items.
+@available(iOS 16.0, *)
+private struct FavoritesGridLayout: Layout {
+    let columnCount: Int
+    let columnSpacing: CGFloat
+    let rowSpacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.replacingUnspecifiedDimensions().width
+        let rowHeights = rowHeights(for: subviews, columnWidth: columnWidth(for: width))
+        let totalRowSpacing = rowSpacing * CGFloat(max(rowHeights.count - 1, 0))
+        return CGSize(width: width, height: rowHeights.reduce(0, +) + totalRowSpacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let columnWidth = columnWidth(for: bounds.width)
+        let tileProposal = ProposedViewSize(width: columnWidth, height: nil)
+        var rowMinY = bounds.minY
+        for (row, rowHeight) in rowHeights(for: subviews, columnWidth: columnWidth).enumerated() {
+            for column in 0..<columnCount {
+                let index = row * columnCount + column
+                guard index < subviews.count else { break }
+                let tileMidX = bounds.minX + CGFloat(column) * (columnWidth + columnSpacing) + columnWidth / 2
+                subviews[index].place(at: CGPoint(x: tileMidX, y: rowMinY), anchor: .top, proposal: tileProposal)
+            }
+            rowMinY += rowHeight + rowSpacing
+        }
+    }
+
+    private func columnWidth(for width: CGFloat) -> CGFloat {
+        max(0, (width - columnSpacing * CGFloat(columnCount - 1)) / CGFloat(columnCount))
+    }
+
+    private func rowHeights(for subviews: Subviews, columnWidth: CGFloat) -> [CGFloat] {
+        let tileProposal = ProposedViewSize(width: columnWidth, height: nil)
+        return stride(from: 0, to: subviews.count, by: columnCount).map { rowStart in
+            subviews[rowStart..<min(rowStart + columnCount, subviews.count)]
+                .map { $0.sizeThatFits(tileProposal).height }
+                .max() ?? 0
+        }
+    }
+}
+
 private enum Metrics {
     static let expansionDuration: TimeInterval = 0.3
     static let contentPadding: CGFloat = 16
     static let liftPreviewPadding: CGFloat = 32
+    static let revealEdgeFadeHeight: CGFloat = 56
     static let headerSpacing: CGFloat = 8
     static let headerToGridSpacing: CGFloat = 12
     static let headerIconSize: CGFloat = 16

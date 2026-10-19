@@ -34,10 +34,11 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
     private let onMove: (_ from: IndexSet, _ to: Int) -> Void
     private let onMoveFinished: () -> Void
     private let onDragActivityChanged: ((Bool) -> Void)?
-    // Opt in only when this key captures every content change that can affect tile size.
-    // The native host also invalidates its measurement when width or UIKit traits change.
-    private var itemSizeCacheKey: ((Data) -> AnyHashable)?
+    // Opt in only when this key captures every content change. While it stays equal, the native
+    // host keeps its rendered content and measurement, which it still refreshes when width or UIKit traits change.
+    private var itemContentKey: ((Data) -> AnyHashable)?
     private var isItemReorderingEnabled: (Data) -> Bool = { _ in true }
+    private var isItemInteractive: (Data) -> Bool = { _ in true }
     private var previewPath: ((CGRect) -> UIBezierPath)?
 
     @State private var movedItem: Data?
@@ -62,8 +63,9 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
          id: KeyPath<Data, ID>,
          isReorderingEnabled: Bool = true,
          onDragActivityChanged: ((Bool) -> Void)? = nil,
-         itemSizeCacheKey: ((Data) -> AnyHashable)? = nil,
+         itemContentKey: ((Data) -> AnyHashable)? = nil,
          isItemReorderingEnabled: @escaping (Data) -> Bool = { _ in true },
+         isItemInteractive: @escaping (Data) -> Bool = { _ in true },
          previewPath: ((CGRect) -> UIBezierPath)? = nil,
          @ViewBuilder content: @escaping ContentBuilder,
          @ViewBuilder preview: @escaping (Data) -> Preview,
@@ -73,8 +75,9 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         self.id = id
         self.isReorderingEnabled = isReorderingEnabled
         self.onDragActivityChanged = onDragActivityChanged
-        self.itemSizeCacheKey = itemSizeCacheKey
+        self.itemContentKey = itemContentKey
         self.isItemReorderingEnabled = isItemReorderingEnabled
+        self.isItemInteractive = isItemInteractive
         self.previewPath = previewPath
         self.content = content
         self.preview = preview
@@ -84,7 +87,10 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
 
     var body: some View {
         ForEach(data, id: id) { item in
+            let isInteractive = isItemInteractive(item)
             contentForItem(item: item)
+                .allowsHitTesting(isInteractive)
+                .accessibilityHidden(!isInteractive)
         }
     }
 
@@ -95,7 +101,8 @@ struct ReorderableForEach<Data: Reorderable, ID: Hashable, Content: View, Previe
         case .movable(let metadata) where isReorderingEnabled:
             if let onDragActivityChanged, let preview {
                 ReorderDragSource(content: content(item), preview: preview(item), itemProvider: metadata.itemProvider,
-                                  isEnabled: isItemReorderingEnabled(item), sizeCacheKey: itemSizeCacheKey?(item), previewPath: previewPath,
+                                  isEnabled: isItemReorderingEnabled(item),
+                                  contentKey: itemContentKey?(item), previewPath: previewPath,
                                   onBegin: { sessionID in
                     activeDragSessionID = sessionID
                     movedItem = item
@@ -163,7 +170,7 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
     let preview: Preview
     let itemProvider: NSItemProvider
     let isEnabled: Bool
-    let sizeCacheKey: AnyHashable?
+    let contentKey: AnyHashable?
     let previewPath: ((CGRect) -> UIBezierPath)?
     let onBegin: (ObjectIdentifier) -> Void
     let onEnd: (ObjectIdentifier) -> Void
@@ -184,27 +191,27 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
     }
 
     func updateUIViewController(_ controller: UIHostingController<Content>, context: Context) {
-        let sizeMayHaveChanged = sizeCacheKey == nil || context.coordinator.source.sizeCacheKey != sizeCacheKey
+        let contentMayHaveChanged = contentKey == nil || context.coordinator.source.contentKey != contentKey
         context.coordinator.source = self
-        controller.rootView = content
-        controller.view.interactions.compactMap { $0 as? UIDragInteraction }.forEach { $0.isEnabled = isEnabled }
-        if sizeMayHaveChanged {
+        if contentMayHaveChanged {
+            controller.rootView = content
             context.coordinator.measuredSize = nil
             controller.view.invalidateIntrinsicContentSize()
         }
+        controller.view.interactions.compactMap { $0 as? UIDragInteraction }.forEach { $0.isEnabled = isEnabled }
     }
 
     @available(iOS 16.0, *)
     func sizeThatFits(_ proposal: ProposedViewSize, uiViewController: UIHostingController<Content>, context: Context) -> CGSize? {
         let width = proposal.width ?? UIView.layoutFittingExpandedSize.width
         let traits = uiViewController.traitCollection
-        if let sizeCacheKey, let measurement = context.coordinator.measuredSize,
-           measurement.key == sizeCacheKey, measurement.width == width, measurement.traits == traits {
+        if let contentKey, let measurement = context.coordinator.measuredSize,
+           measurement.key == contentKey, measurement.width == width, measurement.traits == traits {
             return measurement.size
         }
         let size = uiViewController.sizeThatFits(in: CGSize(width: width, height: UIView.layoutFittingExpandedSize.height))
-        if let sizeCacheKey {
-            context.coordinator.measuredSize = (sizeCacheKey, width, traits, size)
+        if let contentKey {
+            context.coordinator.measuredSize = (contentKey, width, traits, size)
         }
         return size
     }

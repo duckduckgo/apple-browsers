@@ -96,6 +96,20 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
     }
 
+    func testTogglingExpansionDoesNotNotifyModelObservers() {
+        let sut = createSUT()
+        var modelChangeCount = 0
+        let cancellable = sut.objectWillChange.sink { modelChangeCount += 1 }
+
+        sut.expansionState.isExpanded = true
+        sut.expansionState.isExpanded = false
+        cancellable.cancel()
+
+        // Every view of this model re-renders all its favorites on a model change. Only the
+        // redesigned grid reads the expansion state, and it observes the state directly.
+        XCTAssertEqual(modelChangeCount, 0)
+    }
+
     private func createSUT(isFocussedState: Bool = false) -> FavoritesViewModel {
         FavoritesViewModel(isFocussedState: isFocussedState,
                            favoriteDataSource: favoriteDataSource,

@@ -62,9 +62,7 @@ class FavoritesViewModel: ObservableObject {
 
     @Published private(set) var allFavorites: [Favorite] = []
     @Published var canEditFavorites = true
-    @Published var expansionState = FavoritesExpansionState() {
-        didSet { observeExpansionState() }
-    }
+    @Published var expansionState = FavoritesExpansionState()
 
     // In memory only so that when settings is dismissed we can show the prompt.
     //  Missing icons will trigger the prompt from elsewhere too so we don't need to persist this.
@@ -73,7 +71,6 @@ class FavoritesViewModel: ObservableObject {
     private(set) var faviconLoader: FavoritesFaviconLoading?
 
     private var cancellables = Set<AnyCancellable>()
-    private var expansionStateCancellable: AnyCancellable?
 
     private let isFocussedState: Bool
     private let favoriteDataSource: NewTabPageFavoriteDataSource
@@ -106,14 +103,7 @@ class FavoritesViewModel: ObservableObject {
             self?.updateData()
         }.store(in: &cancellables)
 
-        observeExpansionState()
         updateData()
-    }
-
-    private func observeExpansionState() {
-        expansionStateCancellable = expansionState.objectWillChange.sink { [weak self] in
-            self?.objectWillChange.send()
-        }
     }
 
     // MARK: - External actions

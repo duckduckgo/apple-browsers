@@ -220,10 +220,11 @@ final class AIChatContextualWebViewController: UIViewController {
 
     deinit {
         let request = pendingRichPrompt?.tabAttachmentRequest
+        let contentHandler = aiChatContentHandler
         Task { @MainActor in
             request?.cancel()
+            contentHandler.cancelPendingTabContextSubmission()
         }
-        aiChatContentHandler.cancelPendingTabContextSubmission()
         urlObservation?.invalidate()
     }
 

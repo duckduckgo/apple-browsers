@@ -27,7 +27,7 @@ public enum TokenBackupError: DDGError {
     case unavailable
     /// The backup belongs to another account than the expected one.
     case accountMismatch
-    /// The backup's refresh token was issued before the last explicit sign-out.
+    /// The backup's refresh token was issued at or before the cut-off recorded at the last explicit sign-out.
     case predatesSignOut
     /// The backup's refresh token has expired.
     case expired
@@ -111,11 +111,11 @@ struct TokenBackupStore {
     /// Returns the stored backup when it can be used to restore a session. Expiry is measured with `now`.
     /// - Parameters:
     ///   - expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
-    ///   - notIssuedBefore: A backup whose refresh token was issued before this date is rejected. When nil, no such check is made.
+    ///   - issuedAfter: A backup whose refresh token was issued at or before this date is rejected. When nil, no such check is made.
     /// - Returns: The stored backup token container.
     /// - Throws: `TokenBackupError.unavailable` when no backup is stored or reading it fails, otherwise the reason the backup was rejected.
     ///   A rejected backup is deleted; an unavailable one is left as it is.
-    func usableBackup(expectedExternalID: String?, notIssuedBefore: Date?) throws(TokenBackupError) -> TokenContainer {
+    func usableBackup(expectedExternalID: String?, issuedAfter: Date?) throws(TokenBackupError) -> TokenContainer {
         let stored: TokenContainer?
         do {
             stored = try storage.getTokenContainer()
@@ -128,7 +128,7 @@ struct TokenBackupStore {
         let rejection: TokenBackupError?
         if let expectedExternalID, backup.decodedAccessToken.externalID != expectedExternalID {
             rejection = .accountMismatch
-        } else if let notIssuedBefore, backup.decodedRefreshToken.issuedAtDate < notIssuedBefore {
+        } else if let issuedAfter, backup.decodedRefreshToken.issuedAtDate <= issuedAfter {
             rejection = .predatesSignOut
         } else if backup.decodedRefreshToken.expirationDate <= now() {
             rejection = .expired
@@ -142,6 +142,11 @@ struct TokenBackupStore {
             throw rejection
         }
         return backup
+    }
+
+    /// The stored backup token container, or nil when none is stored or reading it fails.
+    func storedBackup() -> TokenContainer? {
+        try? storage.getTokenContainer()
     }
 
     /// Whether `backup` is still the stored backup.

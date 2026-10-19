@@ -72,7 +72,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             featureFlagger: MockFeatureFlagger()
         )
 
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -143,6 +143,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     voiceSearchHelper: MockVoiceSearchHelper(),
                                     launchSourceManager: MockLaunchSourceManager(),
                                     darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+                                    usageContextProvider: UsageContextProvider(),
                                     adBlockingAvailability: StubAdBlockingAvailability(),
                                     eventHub: StubEventHub()
         )
@@ -223,7 +224,9 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 privacyStats: MockPrivacyStats(),
                 whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
                 darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
-                onboardingManager: OnboardingManagerMock()
+                onboardingManager: OnboardingManagerMock(),
+                usageContextProvider: UsageContextProvider(),
+                promptExposureReporter: MockPromptExposureReporter()
             )
         }
         sut = makeHost(homePageConfiguration)
@@ -254,7 +257,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         let legacyConfiguration = HomePageConfiguration(
             remoteMessagingStore: legacyStore,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
-            isStillOnboarding: { false }
+            isStillOnboarding: { false },
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let legacyHost = makeHost(legacyConfiguration)
         let legacyTray = makeSuggestionTraySpy(for: legacyHost, websiteURL: websiteURL)
@@ -274,7 +278,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: coordinatedStore,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         XCTAssertTrue(coordinatedConfiguration.homeMessages.isEmpty)
         XCTAssertTrue(coordinatedStore.fetchedTriggerFilters.isEmpty)
@@ -311,7 +316,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
         host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
@@ -336,7 +342,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
         host.tabManager.setBrowsingMode(.fire, source: .tabSelection)
@@ -360,7 +367,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
 
@@ -383,7 +391,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
             promoGate: gate,
-            isRMFAdmissionEnabled: false
+            isRMFAdmissionEnabled: false,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
 
@@ -406,7 +415,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
             promoGate: gate,
-            isRMFAdmissionEnabled: false
+            isRMFAdmissionEnabled: false,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
 
@@ -430,7 +440,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let mainHost = makeHost(configuration)
         let conditionalHost = UnifiedInputContentContainerViewController(
@@ -455,7 +466,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: gate
+            promoGate: gate,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
         host.tabManager.currentTabsModel.currentTab?.openedAfterIdle = true
@@ -477,7 +489,8 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
             promoGate: gate,
-            isRMFAdmissionEnabled: false
+            isRMFAdmissionEnabled: false,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let host = makeHost(configuration)
 

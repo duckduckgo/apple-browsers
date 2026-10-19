@@ -106,13 +106,16 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
 
     private let wideEvent: WideEventManaging
     private let dateProvider: () -> Date
+    private let usageContextProvider: UsageContextProviding
     private var activeFlows: [DuckAIWideEventFlowScope: ActiveFlow] = [:]
 
     init(wideEvent: WideEventManaging,
          completeOrphanedFlowsOnInit: Bool = false,
-         dateProvider: @escaping () -> Date = { Date() }) {
+         dateProvider: @escaping () -> Date = { Date() },
+         usageContextProvider: UsageContextProviding = UsageContextProvider()) {
         self.wideEvent = wideEvent
         self.dateProvider = dateProvider
+        self.usageContextProvider = usageContextProvider
 
         if completeOrphanedFlowsOnInit {
             completeOrphanedFlowsFromPreviousAppSession()
@@ -149,6 +152,7 @@ final class DefaultDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentatio
             attachmentsSelected: attachmentsSelected,
             startedAt: dateProvider()
         )
+        data.record(usageContextProvider.currentContext)
         activeFlows[scope] = ActiveFlow(data: data)
         data.lastStep = .submitted
         wideEvent.startFlow(data)

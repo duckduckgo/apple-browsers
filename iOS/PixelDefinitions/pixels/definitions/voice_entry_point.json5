@@ -10,7 +10,7 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "The entry point source where the user tapped the voice button",
+                "description": "The entry point source where the user tapped the voice button. address_bar covers the iPad address bar and Unified Input; duck_ai is New voice chat on a Duck.ai page. Before duck_ai existed, both reported ntp.",
                 "enum": [
                     "ntp",
                     "toolbar",
@@ -19,7 +19,8 @@
                     "widget.lockscreen.complication",
                     "widget.quickactions",
                     "widget.quickactions.medium",
-                    "siri"
+                    "siri",
+                    "duck_ai"
                 ]
             }
         ]

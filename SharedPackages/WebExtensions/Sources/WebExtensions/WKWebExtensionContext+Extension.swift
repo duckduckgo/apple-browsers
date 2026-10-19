@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import ObjectiveC
 import WebKit
 import ZIPFoundation
 
@@ -115,6 +116,21 @@ public extension WKWebExtension {
         !declaresDuckDuckGoSettings(inManifest: manifest)
     }
 
+    /// Whether the manifest asks for `permission`, as a required or an optional permission.
+    ///
+    /// Reads the manifest itself, because WebKit leaves out of `requestedPermissions` and
+    /// `optionalPermissions` the names it doesn't implement, such as `privacy`.
+    func declaresPermission(_ permission: String) -> Bool {
+        ["permissions", "optional_permissions"].contains { key in
+            (manifest[key] as? [Any])?.contains { $0 as? String == permission } ?? false
+        }
+    }
+
+    /// Whether the manifest asks for `permission` as a required permission, which is granted on installation.
+    func requiresPermission(_ permission: String) -> Bool {
+        (manifest["permissions"] as? [Any])?.contains { $0 as? String == permission } ?? false
+    }
+
     /// Returns whether the extension declares a toolbar action in its manifest.
     ///
     /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.
@@ -143,7 +159,7 @@ public extension WKWebExtension {
     /// - Returns: Metadata containing type, version and whether extraction is required
     @MainActor
     static func metadata(from url: URL) async throws -> WebExtensionMetadata {
-        let webExtension = try await WKWebExtension(resourceBaseURL: url)
+        let webExtension = try await WKWebExtension.makeCopyingErrors(at: url)
         return WebExtensionMetadata(manifest: webExtension.manifest)
     }
 }
@@ -165,4 +181,43 @@ public extension WKWebExtensionContext {
     var declaresToolbarAction: Bool {
         webExtension.declaresToolbarAction
     }
+}
+
+// WebKit vends `WKWebExtension.errors` and `WKWebExtensionContext.errors` as
+// `WKNSError` proxies, which crash on x86_64 when bridged to Swift `Error`
+// (see NSError+Copying.swift). Swizzling both getters to return real `NSError`
+// copies makes every reader safe, including app code that receives contexts
+// from WebKit callbacks.
+
+@available(macOS 15.4, iOS 18.4, *)
+enum WebExtensionErrorsSwizzling {
+
+    /// Swizzles `errors` of both classes; runs once, later calls do nothing.
+    static func install() {
+        _ = installation
+    }
+
+    private static let installation: Void = {
+        let extensionErrors = #selector(getter: WKWebExtension.errors)
+        let contextErrors = #selector(getter: WKWebExtensionContext.errors)
+        swizzleErrors(of: WKWebExtension.self, getter: extensionErrors)
+        swizzleErrors(of: WKWebExtensionContext.self, getter: contextErrors)
+    }()
+
+}
+
+private func swizzleErrors(of type: AnyClass, getter selector: Selector) {
+    guard let method = class_getInstanceMethod(type, selector) else {
+        assertionFailure("\(type) has no `errors` getter")
+        return
+    }
+    typealias Getter = @convention(c) (AnyObject, Selector) -> NSArray
+    let implementation = method_getImplementation(method)
+    let originalGetter = unsafeBitCast(implementation, to: Getter.self)
+    let copyingGetter: @convention(block) (AnyObject) -> NSArray = {
+        let errors = originalGetter($0, selector) as [AnyObject]
+        return errors.map(NSError.init(copyingObject:)) as NSArray
+    }
+    let block = imp_implementationWithBlock(copyingGetter)
+    method_setImplementation(method, block)
 }

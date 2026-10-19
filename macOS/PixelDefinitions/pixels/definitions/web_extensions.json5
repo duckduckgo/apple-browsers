@@ -4,21 +4,30 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
     },
     "m_mac_web_extension_install_error": {
         "description": "Fires when a web extension installation fails.",
         "owners": ["tomasstrba"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            "channel",
+            "web_extension"
+        ]
     },
     "m_mac_web_extension_uninstalled": {
         "description": "Fires when a web extension is successfully uninstalled.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
     },
     "m_mac_web_extension_uninstall_error": {
         "description": "Fires when a web extension uninstallation fails.",
@@ -356,35 +365,99 @@
             "channel"
         ]
     },
-    "web_extension_state_checked_macos": {
+    "web_extension_bitwarden_dau_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation, when the Bitwarden extension from the Chrome Web Store is loaded, reporting whether it is the default password manager.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "is_default",
+                "type": "boolean",
+                "description": "Whether Bitwarden is the default password manager, so DuckDuckGo leaves passwords to it"
+            },
+            "channel"
+        ]
+    },
+    "web_extension_default_password_manager_set_macos": {
+        "description": "Fires when an extension turns off the browser's password saving through chrome.privacy, which makes it the default password manager.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_api_gaps_bitwarden_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the Bitwarden extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "web_extension_api_gaps_onepassword_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the 1Password extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "web_extension_api_gaps_lastpass_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the LastPass extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_state_checked_macos": {
         "description": "Fires on each web-extension consistency check (denominator for the not-loaded rate).",
         "owners": ["miasma13"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "web_extension_embedded_not_loaded_macos": {
+    "m_mac_web_extension_embedded_not_loaded_macos": {
         "description": "Fires when the embedded (autoconsent) extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "web_extension_dark_reader_not_loaded_macos": {
+    "m_mac_web_extension_dark_reader_not_loaded_macos": {
         "description": "Fires when the Dark Reader extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "web_extension_ad_blocking_not_loaded_macos": {
+    "m_mac_web_extension_ad_blocking_not_loaded_macos": {
         "description": "Fires when the ad-blocking extension is enabled but not loaded into the controller.",
         "owners": ["miasma13"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "web_extension_ad_blocking_scriptlets_not_fetched_macos": {
+    "m_mac_web_extension_ad_blocking_scriptlets_not_fetched_macos": {
         "description": "Fires when the ad-blocking extension is expected but its scriptlets have not been fetched.",
         "owners": ["miasma13"],
         "triggers": ["exception"],

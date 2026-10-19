@@ -1095,7 +1095,6 @@ private final class Harness {
                                                navigationGeneration: 1)
         systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()

@@ -146,7 +146,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// the native UTI). Set by the host so the chip can flip to its post-submit silent state.
     var onPromptSubmitted: (() -> Void)?
 
-    var inputBoxHandler: AIChatInputBoxHandling? {
+    @MainActor var inputBoxHandler: AIChatInputBoxHandling? {
         didSet { subscribeToInputBoxEvents() }
     }
 
@@ -166,7 +166,9 @@ final class AIChatUserScript: NSObject, Subfeature {
         // Set self as the metric reporting handler
         handler.setMetricReportingHandler(self)
         handler.setSyncStatusChangedHandler { [weak self] status in
-            self?.submitSyncStatusChanged(status)
+            Task { @MainActor [weak self] in
+                self?.submitSyncStatusChanged(status)
+            }
         }
     }
 
@@ -220,7 +222,9 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         switch message {
         case .newChatStarted, .newImageGenerationChatStarted, .closeAIChat:
-            cancelPendingTabContextSubmission()
+            Task { @MainActor [weak self] in
+                self?.cancelPendingTabContextSubmission()
+            }
         default:
             break
         }
@@ -235,7 +239,9 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .getAIChats:
             return handler.getAIChats
         case .getAIChatNativePrompt:
-            return handler.getAIChatNativePrompt
+            return { [weak self] params, message in
+                await self?.handler.getAIChatNativePrompt(params: params, message: message)
+            }
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
         case .getAIChatPageContext:
@@ -363,6 +369,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     // MARK: - Input Box Event Subscription
 
+    @MainActor
     private func subscribeToInputBoxEvents() {
         inputBoxCancellables.removeAll()
 
@@ -396,10 +403,26 @@ final class AIChatUserScript: NSObject, Subfeature {
         webView != nil && broker != nil
     }
 
+    @MainActor
+    func connectInitialPromptSession(_ session: AIChatInitialPromptSession) {
+        handler.connectInitialPromptSession(session)
+    }
+
+    @MainActor
+    func cleanUpForReplacement() {
+        handler.disconnectInitialPromptSession()
+        cancelQueuedTabContextSubmissions()
+        inputBoxHandler = nil
+        delegate = nil
+        webView = nil
+    }
+
+    @MainActor
     func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
         submitPrompt(prompt, pageContext: pageContext, modelId: nil, termsAccepted: termsAccepted)
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String,
                       pageContext: AIChatPageContextData? = nil,
                       modelId: String?,
@@ -413,10 +436,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         }
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]? = nil, modelId: String?, reasoningEffort: AIChatReasoningEffort? = nil) {
         submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: nil, reasoningEffort: reasoningEffort)
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]? = nil,
@@ -429,6 +454,7 @@ final class AIChatUserScript: NSObject, Subfeature {
                      tabAttachmentRequest: attachedTabContextsProvider?())
     }
 
+    @MainActor
     func submitPrompt(_ prompt: String,
                       images: [AIChatNativePrompt.NativePromptImage]?,
                       files: [AIChatNativePrompt.NativePromptFile]? = nil,
@@ -460,11 +486,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         })
     }
 
+    @MainActor
     private func submitWithTabContexts(currentPageContext: AIChatPageContextData?,
                                        request: MultiTabAttachmentRequest?,
                                        didSubmit: (() -> Void)? = nil,
                                        makePayload: @escaping (AIChatPageContextPayload?) -> AIChatNativePrompt) {
-        guard request != nil || pendingTabContextSubmission != nil else {
+        let waitForInitialPrompt = handler.captureInitialPromptWait()
+        guard request != nil || pendingTabContextSubmission != nil || waitForInitialPrompt != nil else {
             guard pushPrompt(makePayload(currentPageContext.map(AIChatPageContextPayload.single))) else { return }
             didSubmit?()
             return
@@ -489,27 +517,34 @@ final class AIChatUserScript: NSObject, Subfeature {
                 Task { @MainActor in request?.cancel() }
             })
             guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
+            if let waitForInitialPrompt {
+                guard await waitForInitialPrompt() else { return }
+            }
+            guard !Task.isCancelled, self?.tabContextSubmissionGeneration == generation else { return }
             let contexts = await withTaskCancellationHandler(operation: {
                 await request?.contexts() ?? []
             }, onCancel: {
                 Task { @MainActor in request?.cancel() }
             })
-            guard !Task.isCancelled, let self, self.tabContextSubmissionGeneration == generation,
-                  self.webView === sourceWebView else { return }
+            do {
+                guard !Task.isCancelled, let self, self.tabContextSubmissionGeneration == generation,
+                      self.webView === sourceWebView else { return }
 
-            let validatedContexts = request?.validate(contexts) ?? []
-            let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: validatedContexts)
-            guard self.pushPrompt(makePayload(context)) else { return }
-            let totalTabCount: Int
-            switch context {
-            case .multiple(let pages): totalTabCount = pages.count
-            case .single: totalTabCount = 1
-            case nil: totalTabCount = 0
+                let validatedContexts = request?.validate(contexts) ?? []
+                let context = self.pageContextPayload(currentPageContext: currentPageContext, tabContexts: validatedContexts)
+                let payload = makePayload(context)
+                guard self.pushPrompt(payload) else { return }
+                let totalTabCount: Int
+                switch context {
+                case .multiple(let pages): totalTabCount = pages.count
+                case .single: totalTabCount = 1
+                case nil: totalTabCount = 0
+                }
+                request?.didDispatch(.init(totalTabCount: totalTabCount,
+                                           deliveredAttachmentCount: validatedContexts.count))
+                request?.didConsume()
+                didSubmit?()
             }
-            request?.didDispatch(.init(totalTabCount: totalTabCount,
-                                       additionalTabCount: validatedContexts.filter { $0.tabId != nil }.count))
-            request?.didConsume()
-            didSubmit?()
         }
     }
 
@@ -525,7 +560,14 @@ final class AIChatUserScript: NSObject, Subfeature {
         return .multiple(tabContexts)
     }
 
+    @MainActor
     func cancelPendingTabContextSubmission() {
+        handler.cancelInitialPrompt()
+        cancelQueuedTabContextSubmissions()
+    }
+
+    @MainActor
+    func cancelQueuedTabContextSubmissions() {
         tabContextSubmissionGeneration += 1
         pendingTabContextSubmission?.cancel()
         pendingTabContextSubmission = nil
@@ -548,6 +590,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// Consumes the payload's selections only once it has been dispatched, so a dropped push does not
     /// destroy them. Dispatch is not acknowledgement — the frontend can still fail to receive it.
     @discardableResult
+    @MainActor
     private func pushPrompt(_ prompt: AIChatNativePrompt) -> Bool {
         let payload = prompt.withTermsAccepted(handler.termsAcceptedMarker(for: prompt))
         guard push(.submitPrompt(payload)) else { return false }
@@ -558,23 +601,27 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
+    @MainActor
     func submitStartChatAction() {
         push(.newChatAction)
     }
 
     /// Submits an open settings action to the web content, opening the AI Chat settings.
+    @MainActor
     func submitOpenSettingsAction() {
         push(.openSettingsAction)
     }
 
     /// Reports that the user opted to spend their weekly allowance after the daily one ran out.
     /// Web owns what that means; native only reports the choice.
+    @MainActor
     func submitStartUsingWeeklyLimitAction() {
         push(.startUsingWeeklyLimitAction)
     }
 
     /// Pushes a model-change action to the web content, switching the active chat's model.
     /// Used when the user picks a supported model in the native picker mid-chat.
+    @MainActor
     func submitChangeModel(_ modelId: String) {
         push(.changeModelAction(modelId: modelId))
     }
@@ -584,15 +631,18 @@ final class AIChatUserScript: NSObject, Subfeature {
         pushPageContextToFrontend(context)
     }
 
+    @MainActor
     func submitToggleSidebarAction() {
         push(.toggleSidebarAction)
     }
 
+    @MainActor
     func submitOpenChatProtectionAction() {
         push(.openChatProtectionAction)
     }
 
     /// Pushes sync status change to the web content when sync state changes (login/logout, availability).
+    @MainActor
     func submitSyncStatusChanged(_ status: AIChatSyncHandler.SyncStatus) {
         // Push only to websites matching origin policy
         guard let host = webView?.url?.host,
@@ -611,6 +661,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     /// - Returns: whether the message was dispatched. It is dropped when the web view or broker has gone.
     @discardableResult
+    @MainActor
     private func push(_ message: AIChatPushMessage) -> Bool {
         switch message {
         case .newChatAction, .fireButtonAction, .promptInterruption:

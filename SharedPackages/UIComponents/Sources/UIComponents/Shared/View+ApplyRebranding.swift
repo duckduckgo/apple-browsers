@@ -25,9 +25,6 @@ public extension View {
     func applyRebranding() -> Self {
         AppRebrand.isAppRebranded = { true }
         DesignSystemRebrand.isAppRebranded = { true }
-        #if os(iOS)
-        DesignSystemPalette.current = .rebranded
-        #endif
         return self
     }
 }

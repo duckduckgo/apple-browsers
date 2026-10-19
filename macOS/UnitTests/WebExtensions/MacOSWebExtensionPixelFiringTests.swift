@@ -29,7 +29,7 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
 
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
-        XCTAssertEqual(call.pixel.name, "web_extension_cpm_network_process_recovery_applied_macos")
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_network_process_recovery_applied")
         XCTAssertEqual(call.frequency, .dailyAndCount)
         XCTAssertEqual(call.pixel.namePrefix, .none)
         XCTAssertNil(call.pixel.parameters)
@@ -58,7 +58,7 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
                 completion(true, nil)
             }
             pixelKit.fire(call.pixel, frequency: call.frequency)
-            XCTAssertEqual(names, ["web_extension_cpm_network_process_recovery_applied_macos_daily", "web_extension_cpm_network_process_recovery_applied_macos_count"])
+            XCTAssertEqual(names, ["web_extension_cpm_network_process_recovery_applied_daily", "web_extension_cpm_network_process_recovery_applied_count"])
         }
     }
 }

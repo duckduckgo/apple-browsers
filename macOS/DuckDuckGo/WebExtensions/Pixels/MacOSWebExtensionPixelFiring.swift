@@ -178,7 +178,7 @@ enum WebExtensionPixel: PixelKit.Event {
         case .debugCPM(let metadata):
             return metadata.name
         case .cpmNetworkProcessRecoveryApplied:
-            return "web_extension_cpm_network_process_recovery_applied_macos"
+            return "web_extension_cpm_network_process_recovery_applied"
         }
     }
 

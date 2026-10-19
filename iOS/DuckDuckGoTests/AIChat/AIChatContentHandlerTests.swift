@@ -327,6 +327,25 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.toolChoiceName })
     }
 
+    func testOpeningQueryPreservesNilAndEmptyURLSemanticsWithAttachments() {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+        let tools: [AIChatRAGTool] = [.webSearch, .newsSearch]
+        var urls: [URL] = []
+        let queries: [String?] = [nil, ""]
+        for query in queries {
+            let opening = AIChatOpeningRequest.Query(query: query, autoSend: true, flowType: .mobileAppOnboarding,
+                                                      tools: tools, modelId: nil, reasoningEffort: nil,
+                                                      images: [.init(data: "image", format: "png")], files: nil, termsAccepted: false)
+            XCTAssertNotNil(opening.sharedPrompt)
+            let url = opening.url(using: handler)
+            XCTAssertEqual(url, handler.buildQueryURL(query: query, autoSend: true, flowType: .mobileAppOnboarding, tools: tools))
+            urls.append(url)
+        }
+        XCTAssertNotEqual(urls[0], urls[1])
+    }
+
     func testBuildQueryURLWithEmptyQueryPreservesAutoSendFlowAndTools() throws {
         mockSettings.aiChatURL = URL(string: "https://duck.ai")!
         mockUnifiedToggleInputFeature.isAvailable = false

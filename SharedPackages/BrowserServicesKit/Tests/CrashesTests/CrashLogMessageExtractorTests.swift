@@ -71,6 +71,17 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         XCTAssertEqual(r?.timestamp, formatter.date(from: "2026-10-19T11:20:39Z"))
     }
 
+    func testWhenTwoDiagnosticsAreEquidistant_latestIsChosen() {
+        fileManager.contents = [
+            "2026-10-19T11:20:50Z-519.log",
+            "2026-10-19T11:21:10Z-520.log", // <- same distance, later
+        ]
+
+        let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:21:00Z"), pid: nil)
+
+        XCTAssertEqual(r?.pid, 520)
+    }
+
     func testWhenDiagnosticIsMoreThanHalfAMinuteAway_noCrashDiagnosticReturned() {
         fileManager.contents = [
             "2026-10-19T11:20:29Z-519.log",

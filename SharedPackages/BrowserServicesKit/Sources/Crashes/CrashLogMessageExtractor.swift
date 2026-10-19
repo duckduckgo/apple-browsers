@@ -227,13 +227,14 @@ public struct CrashLogMessageExtractor {
             crashLogs = crashLogs.filter {
                 abs($0.timestamp.timeIntervalSince(timestamp)) <= Self.crashTimestampTolerance
             }
-            // closest to the crash time first
-            crashLogs = crashLogs.sorted {
-                abs($0.timestamp.timeIntervalSince(timestamp)) < abs($1.timestamp.timeIntervalSince(timestamp))
-            }
-        } else {
-            // latest first
-            crashLogs = crashLogs.sorted { $0.timestamp > $1.timestamp }
+        }
+        // closest to the crash time first (when known), latest first otherwise
+        func distance(_ log: CrashDiagnostic) -> TimeInterval {
+            timestamp.map { abs(log.timestamp.timeIntervalSince($0)) } ?? 0
+        }
+        crashLogs = crashLogs.sorted {
+            let (d0, d1) = (distance($0), distance($1))
+            return d0 != d1 ? d0 < d1 : $0.timestamp > $1.timestamp
         }
 
         let timestampDescription = timestamp.map { ISO8601DateFormatter().string(from: $0) } ?? "<nil>"

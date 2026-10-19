@@ -248,8 +248,9 @@ static void *cxxTerminateProbeThread(void *arg) {
 extern "C" NSException * _Nullable _currentCxxExceptionInTerminateHandler(BOOL viaNoexcept, int *outCallCount) {
     CxxTerminateProbe probe = { viaNoexcept, 0, nil, {} };
     pthread_t thread;
-    pthread_create(&thread, nullptr, cxxTerminateProbeThread, &probe);
-    pthread_join(thread, nullptr);
+    if (pthread_create(&thread, nullptr, cxxTerminateProbeThread, &probe) == 0) {
+        pthread_join(thread, nullptr);
+    }
     *outCallCount = probe.callCount;
     return probe.result;
 }

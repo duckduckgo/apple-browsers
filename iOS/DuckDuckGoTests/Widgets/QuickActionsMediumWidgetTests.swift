@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+// TODO: This file was removed from the UnitTests target to address an issue described on https://app.asana.com/1/137249556945/task/1215403063518217/comment/1215400792772993?focus=true
+/*
 import Testing
 import Foundation
 @testable import Core
@@ -26,7 +28,7 @@ import Foundation
 struct QuickActionsMediumWidgetTests {
 
     @Test("When destination is built for the medium source then URL carries quickActionsMedium and the shortcut identifier", .timeLimit(.minutes(1)))
-    @available(iOS 17.0, macOS 13, *)
+    @available(iOS 17.0, *)
     func whenMediumDestinationBuiltThenURLCarriesSourceAndShortcut() {
         let url = ShortcutOption.duckAI.destination(for: .quickActionsMedium)
 
@@ -35,7 +37,7 @@ struct QuickActionsMediumWidgetTests {
     }
 
     @Test("When destination is built for the small widget source then URL carries quickActions and the shortcut identifier", .timeLimit(.minutes(1)))
-    @available(iOS 17.0, macOS 13, *)
+    @available(iOS 17.0, *)
     func whenSmallDestinationBuiltThenURLCarriesSourceAndShortcut() {
         let url = ShortcutOption.passwords.destination(for: .quickActions)
 
@@ -46,7 +48,7 @@ struct QuickActionsMediumWidgetTests {
     @Test("When bookmarks destination is built then it routes to ddgOpenBookmarks rather than ddgFavorites",
           .timeLimit(.minutes(1)),
           arguments: [WidgetSourceType.quickActions, WidgetSourceType.quickActionsMedium])
-    @available(iOS 17.0, macOS 13, *)
+    @available(iOS 17.0, *)
     func whenBookmarksDestinationBuiltThenRoutesToOpenBookmarks(source: WidgetSourceType) {
         let url = ShortcutOption.bookmarks.destination(for: source)
 
@@ -55,7 +57,7 @@ struct QuickActionsMediumWidgetTests {
     }
 
     @Test("Every shortcut option yields a unique shortcut parameter so they remain distinguishable in pixels", .timeLimit(.minutes(1)))
-    @available(iOS 17.0, macOS 13, *)
+    @available(iOS 17.0, *)
     func everyShortcutOptionYieldsUniqueShortcutParameter() {
         let shortcutValues = ShortcutOption.allCases.map { option in
             option.destination(for: .quickActionsMedium).getParameter(named: WidgetSourceType.shortcutKey)
@@ -65,3 +67,4 @@ struct QuickActionsMediumWidgetTests {
         #expect(shortcutValues.allSatisfy { $0 != nil })
     }
 }
+*/

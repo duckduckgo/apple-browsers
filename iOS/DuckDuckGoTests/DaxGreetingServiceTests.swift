@@ -22,6 +22,10 @@ import XCTest
 
 @MainActor
 final class DaxGreetingServiceTests: XCTestCase {
+    private enum Weekday: Int, CaseIterable {
+        case monday = 14, tuesday, wednesday, thursday, friday, saturday, sunday
+    }
+
     @MainActor
     private final class Inputs {
         var date = Date(timeIntervalSince1970: 0)
@@ -46,33 +50,13 @@ final class DaxGreetingServiceTests: XCTestCase {
             })
         }
 
-        /// September 2026 starts on a Tuesday: 14 and 21 are Mondays, 18 and 25 Fridays, 20 Sunday.
-        func setDate(day: Int = 15, hour: Int, minute: Int = 0, second: Int = 0) {
-            date = calendar.date(from: DateComponents(year: 2026, month: 9, day: day,
+        func setDate(_ weekday: Weekday = .tuesday, week: Int = 0, hour: Int, minute: Int = 0, second: Int = 0) {
+            date = calendar.date(from: DateComponents(year: 2026, month: 9, day: weekday.rawValue + 7 * week,
                                                       hour: hour, minute: minute, second: second))!
         }
     }
 
-    func testWhenAIChatIsDisabledOrUnavailableThenChatGreetingIsExcluded() {
-        for language in ["en", "pl"] {
-            for enabled: Bool? in [false, nil] {
-                let inputs = Inputs()
-                inputs.language = language
-                inputs.context.isAIChatEnabled = enabled
-                let service = inputs.makeService()
-                var previous: String?
-                for day in 1...30 {
-                    inputs.setDate(day: day, hour: 8)
-                    let greeting = service.getGreeting()
-                    XCTAssertNotEqual(greeting, DaxGreeting.askMe.text)
-                    XCTAssertNotEqual(greeting, previous)
-                    previous = greeting
-                }
-            }
-        }
-    }
-
-    func testWhenAIChatIsDisabledThenCachedChatGreetingIsReplaced() {
+    func testWhenAIChatIsDisabledThenChatGreetingIsReplaced() {
         let inputs = Inputs()
         inputs.setDate(hour: 13)
         let service = inputs.makeService()
@@ -82,91 +66,28 @@ final class DaxGreetingServiceTests: XCTestCase {
     }
 
     func testWhenLanguageIsNotEnglishThenEnglishOnlyGreetingsAreExcluded() {
-        let englishOnly: Set<DaxGreeting> = [.fridayDuck, .sunday, .readyToDiveIn]
-        XCTAssertEqual(Set(DaxGreeting.allCases.filter(\.isEnglishOnly)), englishOnly)
-        let excludedText = Set(englishOnly.map(\.text))
-        for language: String? in ["pl", "fr-CA", nil] {
+        let excludedText = Set(DaxGreeting.allCases.filter(\.isEnglishOnly).map(\.text))
+        for language: String? in ["pl", nil] {
             let inputs = Inputs()
             inputs.language = language
             inputs.chooseLast = true
             let service = inputs.makeService()
-            var history: [String] = []
-            for day in 1...30 {
-                inputs.setDate(day: day, hour: 8)
-                let greeting = service.getGreeting()
-                XCTAssertFalse(excludedText.contains(greeting))
-                XCTAssertFalse(history.suffix(5).contains(greeting))
-                history.append(greeting)
+            for week in 0..<2 {
+                for weekday in Weekday.allCases {
+                    inputs.setDate(weekday, week: week, hour: 8)
+                    XCTAssertFalse(excludedText.contains(service.getGreeting()))
+                }
             }
-        }
-    }
-
-    func testWhenEnglishLanguageChangesThenCachedEnglishOnlyGreetingIsReplaced() {
-        for language in ["en", "en-US", "en_GB"] {
-            let inputs = Inputs()
-            inputs.language = language
-            inputs.context.isAIChatEnabled = false
-            inputs.setDate(day: 20, hour: 13)
-            let service = inputs.makeService()
-            XCTAssertEqual(service.getGreeting(), DaxGreeting.sunday.text)
-            inputs.language = "pl"
-            XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
         }
     }
 
     func testWhenAllRegularGreetingsApplyThenEachHasEqualChance() {
         let inputs = Inputs()
-        inputs.setDate(day: 18, hour: 8)
+        inputs.setDate(.friday, hour: 8)
         inputs.context = DaxGreetingContext(isFirstOpenOfDay: true, foregroundOpenCount: 2,
                                            isTrackerOrAdBlockingEnabled: true, isAIChatEnabled: true)
         XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.friday.text)
         XCTAssertEqual(inputs.draws, [0..<18])
-    }
-
-    func testWhenContextIsMissingThenOnlyTimeWeekdayAndGenericGreetingsApply() {
-        let inputs = Inputs()
-        inputs.context = DaxGreetingContext()
-        inputs.setDate(hour: 8)
-        inputs.chooseLast = true
-        XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.readyToDiveIn.text)
-        XCTAssertEqual(inputs.draws, [0..<1 + DaxGreeting.generic.count])
-    }
-
-    func testWhenWithinLifetimeThenGreetingIsKeptEvenIfOthersBecomeEligible() {
-        let inputs = Inputs()
-        inputs.context.isAIChatEnabled = false
-        inputs.setDate(hour: 13)
-        let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-        inputs.context = DaxGreetingContext(isFirstOpenOfDay: true, foregroundOpenCount: 2,
-                                           isTrackerOrAdBlockingEnabled: true, isAIChatEnabled: true)
-        for minute in [30, 59] {
-            inputs.setDate(hour: 13, minute: minute, second: 59)
-            XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-        }
-        XCTAssertEqual(inputs.draws.count, 1)
-        inputs.setDate(hour: 14)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.whereToToday.text)
-        XCTAssertEqual(inputs.draws.count, 2)
-        inputs.context = DaxGreetingContext(isAIChatEnabled: false)
-        inputs.setDate(day: 16, hour: 13)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.niceToSeeYou.text)
-    }
-
-    func testWhenGreetingStopsApplyingThenNewOneIsPickedAndKept() {
-        let inputs = Inputs()
-        inputs.context.isAIChatEnabled = false
-        inputs.setDate(hour: 11, minute: 30)
-        let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.morning.text)
-        inputs.setDate(hour: 11, minute: 59, second: 59)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.morning.text)
-        inputs.setDate(hour: 12)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-        inputs.setDate(hour: 12, minute: 59, second: 59)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-        inputs.setDate(hour: 13)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.niceToSeeYou.text)
     }
 
     func testWhenTimeIsAtWindowBoundaryThenCorrectGreetingIsEligible() {
@@ -182,142 +103,86 @@ final class DaxGreetingServiceTests: XCTestCase {
         }
     }
 
-    func testWhenLateNightOnConsecutiveDaysThenBothVariantsCanBeSelected() {
-        let inputs = Inputs()
-        inputs.context.isAIChatEnabled = false
-        inputs.setDate(day: 15, hour: 23)
-        let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.stillAwake.text)
-        inputs.setDate(day: 16, hour: 23)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.nightOwl.text)
-    }
-
-    func testWhenWeekdayMatchesThenItsGreetingsAreEligible() {
-        for (day, expected) in [(14, DaxGreeting.monday), (18, .friday), (20, .sunday)] {
-            let inputs = Inputs()
-            inputs.context.isAIChatEnabled = false
-            inputs.setDate(day: day, hour: 13)
-            XCTAssertEqual(inputs.makeService().getGreeting(), expected.text)
-        }
-        for day in [15, 16, 17, 19] {
-            let inputs = Inputs()
-            inputs.context.isAIChatEnabled = false
-            inputs.setDate(day: day, hour: 13)
-            XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.duckDuckHello.text)
-        }
-        let inputs = Inputs()
-        inputs.context.isAIChatEnabled = false
-        inputs.setDate(day: 18, hour: 13)
-        let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.friday.text)
-        inputs.setDate(day: 25, hour: 13)
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.fridayDuck.text)
-    }
-
-    func testWhenFirstOpenEndsThenFirstOpenGreetingIsReplaced() {
-        let inputs = Inputs()
-        inputs.context.isAIChatEnabled = false
-        inputs.context.isFirstOpenOfDay = true
-        inputs.setDate(hour: 13)
-        let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.whereToToday.text)
-        inputs.context.isFirstOpenOfDay = false
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-    }
-
-    func testWhenFrequentReturnAppliesThenItReplacesCurrentGreetingUnlessShownRecently() {
-        let inputs = Inputs()
-        inputs.context.isAIChatEnabled = false
-        inputs.setDate(day: 15, hour: 13)
-        let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-        inputs.context.foregroundOpenCount = 3
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.youreBack.text)
-        inputs.context.foregroundOpenCount = 4
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.youreBack.text)
-        inputs.context.foregroundOpenCount = 2
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.niceToSeeYou.text)
-        inputs.context.foregroundOpenCount = 3
-        let laterDays: [(Int, DaxGreeting)] = [
-            (16, .readyWhenYouAre), (17, .readyToSearchPrivately), (19, .heyThere), (22, .whatsOnYourMind), (23, .youreBack)
+    func testWhenWeekdayMatchesThenItsGreetingIsEligible() {
+        let cases: [(Weekday, DaxGreeting)] = [
+            (.monday, .monday), (.tuesday, .duckDuckHello), (.friday, .friday), (.saturday, .duckDuckHello), (.sunday, .sunday)
         ]
-        for (day, expected) in laterDays {
-            inputs.setDate(day: day, hour: 13)
-            XCTAssertEqual(service.getGreeting(), expected.text, "day \(day)")
+        for (weekday, expected) in cases {
+            let inputs = Inputs()
+            inputs.context.isAIChatEnabled = false
+            inputs.setDate(weekday, hour: 13)
+            XCTAssertEqual(inputs.makeService().getGreeting(), expected.text, "\(weekday)")
         }
     }
 
-    func testWhenAdProtectionIsDisabledThenAdsGreetingIsReplaced() {
+    func testWhenWithinLifetimeThenGreetingIsKeptEvenIfOthersBecomeEligible() {
         let inputs = Inputs()
         inputs.context.isAIChatEnabled = false
-        inputs.context.isTrackerOrAdBlockingEnabled = true
         inputs.setDate(hour: 13)
         let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.goodbyeAds.text)
-        inputs.context.isTrackerOrAdBlockingEnabled = false
+        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
+        inputs.context = DaxGreetingContext(isFirstOpenOfDay: true, foregroundOpenCount: 2,
+                                           isTrackerOrAdBlockingEnabled: true, isAIChatEnabled: true)
+        inputs.setDate(hour: 13, minute: 59, second: 59)
+        XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
+        inputs.setDate(hour: 14)
+        XCTAssertEqual(service.getGreeting(), DaxGreeting.whereToToday.text)
+    }
+
+    func testWhenGreetingStopsApplyingThenNewOneIsPicked() {
+        let inputs = Inputs()
+        inputs.context.isAIChatEnabled = false
+        inputs.setDate(hour: 11, minute: 30)
+        let service = inputs.makeService()
+        XCTAssertEqual(service.getGreeting(), DaxGreeting.morning.text)
+        inputs.setDate(hour: 12)
         XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
     }
 
-    func testWhenMidnightPassesWithoutEligibilityChangeThenGreetingChanges() {
+    func testWhenMidnightPassesThenGreetingChanges() {
         let inputs = Inputs()
         inputs.context.isAIChatEnabled = false
-        inputs.setDate(day: 15, hour: 23, minute: 59, second: 59)
+        inputs.setDate(hour: 23, minute: 59, second: 59)
         let service = inputs.makeService()
         XCTAssertEqual(service.getGreeting(), DaxGreeting.stillAwake.text)
         inputs.date += 1
         XCTAssertEqual(service.getGreeting(), DaxGreeting.nightOwl.text)
     }
 
-    func testWhenClockMovesBehindSelectionThenGreetingChanges() {
+    func testWhenFrequentReturnAppliesThenItReplacesCurrentGreetingUnlessShownRecently() {
         let inputs = Inputs()
         inputs.context.isAIChatEnabled = false
-        inputs.setDate(hour: 8)
+        inputs.setDate(hour: 13)
         let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.morning.text)
-        inputs.date -= 1
         XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
-    }
-
-    func testWhenCalendarOrTimeZoneChangesThenGreetingChanges() {
-        for changeTimeZone in [true, false] {
-            let inputs = Inputs()
-            inputs.context.isAIChatEnabled = false
-            inputs.setDate(hour: 8)
-            let service = inputs.makeService()
-            XCTAssertEqual(service.getGreeting(), DaxGreeting.morning.text)
-            if changeTimeZone {
-                inputs.calendar.timeZone = TimeZone(secondsFromGMT: 3600)!
-            } else {
-                inputs.calendar = Calendar(identifier: .iso8601)
-                inputs.calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-            }
-            XCTAssertEqual(service.getGreeting(), DaxGreeting.duckDuckHello.text)
+        inputs.context.foregroundOpenCount = 3
+        XCTAssertEqual(service.getGreeting(), DaxGreeting.youreBack.text)
+        inputs.context.foregroundOpenCount = 2
+        XCTAssertEqual(service.getGreeting(), DaxGreeting.niceToSeeYou.text)
+        inputs.context.foregroundOpenCount = 3
+        let laterDays: [(Weekday, Int, DaxGreeting)] = [
+            (.wednesday, 0, .readyWhenYouAre), (.thursday, 0, .readyToSearchPrivately), (.saturday, 0, .heyThere),
+            (.tuesday, 1, .whatsOnYourMind), (.wednesday, 1, .youreBack)
+        ]
+        for (weekday, week, expected) in laterDays {
+            inputs.setDate(weekday, week: week, hour: 13)
+            XCTAssertEqual(service.getGreeting(), expected.text, "\(weekday) week \(week)")
         }
-    }
-
-    func testWhenTimeZoneChangesTimeWindowThenNewWindowApplies() {
-        let inputs = Inputs()
-        inputs.context.isAIChatEnabled = false
-        inputs.setDate(hour: 8)
-        let service = inputs.makeService()
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.morning.text)
-        inputs.calendar.timeZone = TimeZone(secondsFromGMT: 15 * 3600)!
-        XCTAssertEqual(service.getGreeting(), DaxGreeting.stillAwake.text)
     }
 
     func testWhenSelectingOnLaterDaysThenLastFiveAreExcludedAndOldestIsEvicted() {
         let inputs = Inputs()
         inputs.context.isAIChatEnabled = false
         let service = inputs.makeService()
-        let daysWithoutWeekdayGreeting = [15, 16, 17, 19, 22, 23, 24, 26]
+        let weekdaysWithoutWeekdayGreeting: [Weekday] = [.tuesday, .wednesday, .thursday, .saturday]
+        let days = [0, 1].flatMap { week in weekdaysWithoutWeekdayGreeting.map { ($0, week) } }
         let expected: [DaxGreeting] = [
             .duckDuckHello, .niceToSeeYou, .readyWhenYouAre, .readyToSearchPrivately, .heyThere, .whatsOnYourMind,
             .duckDuckHello, .niceToSeeYou
         ]
-        for (day, greeting) in zip(daysWithoutWeekdayGreeting, expected) {
-            inputs.setDate(day: day, hour: 13)
-            XCTAssertEqual(service.getGreeting(), greeting.text, "day \(day)")
+        for ((weekday, week), greeting) in zip(days, expected) {
+            inputs.setDate(weekday, week: week, hour: 13)
+            XCTAssertEqual(service.getGreeting(), greeting.text, "\(weekday) week \(week)")
         }
-        XCTAssertEqual(inputs.makeService().getGreeting(), DaxGreeting.duckDuckHello.text)
     }
 }

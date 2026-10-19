@@ -138,7 +138,8 @@
                     "widget_lock_screen",
                     "widget_control_center",
                     "siri",
-                    "deep_link_other"
+                    "deep_link_other",
+                    "ddg_homepage"
                 ]
             },
             {

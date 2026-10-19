@@ -358,15 +358,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     let (refreshedTokens, newBackup) = try await refreshPossiblyForking(localTokenContainer, refreshID: refreshID)
 
                     refreshEventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
-                    do {
-                        try tokenStorage.saveTokenContainer(refreshedTokens)
-                    } catch {
-                        Logger.OAuthClient.error("Failed to save the refreshed tokens: \(String(describing: error), privacy: .public)")
-                        throw error
-                    }
-                    if let newBackup {
-                        backupStore?.save(newBackup)
-                    }
+                    try saveRefreshedTokens(refreshedTokens, backup: newBackup)
 
                     refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 
@@ -407,6 +399,23 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
     // MARK: Backup
+
+    /// Stores the refreshed token container, then the new backup when there is one.
+    /// - Parameters:
+    ///   - refreshedTokens: The new current token container.
+    ///   - backup: The new backup token container, or nil when the refresh didn't mint one.
+    /// - Throws: The storage error when saving `refreshedTokens` fails; the backup is then not saved. A failure to save the backup is only logged.
+    private func saveRefreshedTokens(_ refreshedTokens: TokenContainer, backup: TokenContainer?) throws {
+        do {
+            try tokenStorage.saveTokenContainer(refreshedTokens)
+        } catch {
+            Logger.OAuthClient.error("Failed to save the refreshed tokens: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+        if let backup {
+            backupStore?.save(backup)
+        }
+    }
 
     /// Spends the refresh token of `source` once, or twice when the backup needs renewal.
     /// - Parameters:

@@ -118,13 +118,13 @@ public protocol OAuthClient {
     /// - Parameter trigger: What initiated this token request, surfaced on the refresh wide event.
     func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer
 
-    /// Use the TokenContainer provided
+    /// Use the TokenContainer provided. A backup token container of another account is deleted.
     func adopt(tokenContainer: TokenContainer) throws
 
     // Creates a TokenContainer with the provided access token and refresh token, decodes them and returns the container
     func decode(accessToken: String, refreshToken: String, refreshID: String?) async throws -> TokenContainer
 
-    /// Activate the account with a platform signature
+    /// Activate the account with a platform signature. A backup token container of another account is deleted.
     /// - Parameter signature: The platform signature
     /// - Returns: A container of tokens
     func activate(withPlatformSignature signature: String) async throws -> TokenContainer
@@ -147,7 +147,8 @@ public protocol OAuthClient {
     /// - Returns: The new current token container, already stored.
     /// - Throws: `TokenBackupError` when there is no usable backup; `TokenBackupError.sessionChanged`, storing nothing, when while the
     ///   restore was in progress this client signed out, deleted the backup, adopted or activated a token container, or another current token
-    ///   container was stored, or the current one can't be read; otherwise the error of the first refresh call or of storing the new current pair.
+    ///   container was stored, or the current one can't be read; the storage error when reading the current token container before the restore
+    ///   fails (nothing is refreshed then); otherwise the error of the first refresh call or of storing the new current pair.
     ///   A current token container deleted by another process doesn't stop the restore.
     ///   After `OAuthClientError.invalidTokenRequest` or `.unknownAccount` the backup is deleted; after any other refresh error it is kept.
     func restoreFromBackup(expectedExternalID: String?, issuedAfter: Date?) async throws -> TokenContainer
@@ -391,6 +392,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     let tokenContainer = try await createAccount()
                     sessionGeneration.increment()
                     try tokenStorage.saveTokenContainer(tokenContainer)
+                    backupStore?.removeIfForAnotherAccount(than: tokenContainer)
                     return tokenContainer
                 } catch {
                     Logger.OAuthClient.fault("Failed to create account: \(String(describing: error), privacy: .public)")
@@ -404,6 +406,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         Logger.OAuthClient.log("Adopting TokenContainer")
         sessionGeneration.increment()
         try tokenStorage.saveTokenContainer(tokenContainer)
+        backupStore?.removeIfForAnotherAccount(than: tokenContainer)
     }
 
     // MARK: Backup
@@ -476,7 +479,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         guard let backupStore else { throw TokenBackupError.unavailable }
         let backup = try backupStore.usableBackup(expectedExternalID: expectedExternalID, issuedAfter: issuedAfter)
         let generationBeforeRestore = sessionGeneration.current
-        let currentBeforeRestore = try? tokenStorage.getTokenContainer()
+        let currentBeforeRestore = try tokenStorage.getTokenContainer()
         Logger.OAuthClient.log("Restoring tokens from the backup")
 
         do {
@@ -573,6 +576,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         let tokenContainer = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
         sessionGeneration.increment()
         try tokenStorage.saveTokenContainer(tokenContainer)
+        backupStore?.removeIfForAnotherAccount(than: tokenContainer)
         Logger.OAuthClient.log("Activation completed")
         return tokenContainer
     }

@@ -149,6 +149,15 @@ struct TokenBackupStore {
         try? storage.getTokenContainer()
     }
 
+    /// Deletes the stored backup when it belongs to another account than `tokenContainer`. A backup that can't be read is left as it is.
+    /// - Parameter tokenContainer: The new current token container.
+    func removeIfForAnotherAccount(than tokenContainer: TokenContainer) {
+        guard let backup = storedBackup(),
+              backup.decodedAccessToken.externalID != tokenContainer.decodedAccessToken.externalID else { return }
+        Logger.OAuthClient.log("Deleting the backup token of another account")
+        remove()
+    }
+
     /// Whether `backup` is still the stored backup.
     /// - Parameter backup: A backup token container read earlier.
     /// - Returns: `true` when the stored backup has the same refresh token as `backup`; `false` when it differs, is missing or can't be read.

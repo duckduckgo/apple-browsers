@@ -43,7 +43,7 @@ Use the production worktree `alex/cpm-network-process-recovery`; the integration
 
 #### Automated reproduction and regression checks
 
-The production branch contains the shared unit regressions. As in #7379, the app harness, dedicated schemes and DEBUG app hooks live only on the local review branch `codex/cpm-network-process-integration-tests`; that branch must not be merged into main.
+The production branch contains the shared unit regressions. As in #7379, the app harness, dedicated schemes and DEBUG app hooks live only on the [review-only branch `codex/cpm-network-process-integration-tests`](https://github.com/duckduckgo/apple-browsers/tree/codex/cpm-network-process-integration-tests); that branch must not be merged into main.
 
 1. On the production branch, run the shared package tests:
    ```sh
@@ -51,6 +51,7 @@ The production branch contains the shared unit regressions. As in #7379, the app
    ```
 2. Switch to the review branch:
    ```sh
+   git fetch origin codex/cpm-network-process-integration-tests
    git switch codex/cpm-network-process-integration-tests
    ```
 3. On macOS 15.4 or later, open `DuckDuckGo.xcworkspace` in Xcode and select **My Mac**.

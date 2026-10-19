@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BookmarksTestsUtils
 import XCTest
 import Persistence
 import CoreData
@@ -31,21 +30,9 @@ class BrowsingHistoryMigrationTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        ModelAccessHelper.compileModel(from: Bundle(for: BrowsingHistoryMigrationTests.self), named: "BrowsingHistory")
-
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
-        guard let location = Bundle(for: BrowsingHistoryMigrationTests.self).resourceURL else {
-            XCTFail("Failed to find bundle URL")
-            return
-        }
-
-        let resourcesLocation = location.appendingPathComponent("BrowserServicesKit_HistoryTests.bundle/Contents/Resources/")
-        if FileManager.default.fileExists(atPath: resourcesLocation.path) == false {
-            resourceURLDir = Bundle.module.resourceURL
-        } else {
-            resourceURLDir = resourcesLocation
-        }
+        resourceURLDir = Bundle.module.resourceURL
     }
 
     override func tearDown() {

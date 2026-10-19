@@ -389,20 +389,20 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // When
         mockWebView.navigate(to: videoURLAsk)
-        sut.handleReload(webView: mockWebView)
+        let askResult = sut.handleReload(webView: mockWebView)
 
         // Then
         XCTAssertTrue(mockDuckPlayer.dismissPillCalled, "Pill should be dismissed")
         XCTAssertTrue(sut.isDuckPlayerPillPresented, "Pill should be presented")
         XCTAssertFalse(sut.isDuckPlayerPresented, "Player should not be presented")
-        XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
+        XCTAssertEqual(askResult, .reload, "Caller should reload the WebView")
+        XCTAssertFalse(mockWebView.reloadCalled, "Handler should leave the reload to the caller")
         XCTAssertEqual(sut.lastHandledVideoID, "1a2b3c4d5e6")
 
         // Reset state for .auto mode test
         mockDuckPlayer.presentPillCalled = false
         mockDuckPlayer.dismissPillCalled = false
         mockDuckPlayer.loadNativeDuckPlayerVideoCalled = false
-        mockWebView.reloadCalled = false
         sut.lastHandledVideoID = "previousVideoID"
 
         // Test with .auto mode
@@ -410,13 +410,14 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // When
         mockWebView.navigate(to: videoURLAuto)
-        sut.handleReload(webView: mockWebView)
+        let autoResult = sut.handleReload(webView: mockWebView)
 
         // Then
         XCTAssertTrue(mockDuckPlayer.dismissPillCalled, "Pill should be dismissed")
         XCTAssertTrue(sut.isDuckPlayerPillPresented, "Pill should be presented")
         XCTAssertTrue(sut.isDuckPlayerPresented, "Player should be presented")
-        XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
+        XCTAssertEqual(autoResult, .reload, "Caller should reload the WebView")
+        XCTAssertFalse(mockWebView.reloadCalled, "Handler should leave the reload to the caller")
         XCTAssertEqual(sut.lastHandledVideoID, "2b3c4d5e6f7")
     }
 
@@ -431,20 +432,20 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // When
         mockWebView.navigate(to: nonWatchURL)
-        sut.handleReload(webView: mockWebView)
+        let askResult = sut.handleReload(webView: mockWebView)
 
         // Then
         XCTAssertTrue(mockDuckPlayer.dismissPillCalled, "Pill should be dismissed")
         XCTAssertFalse(mockDuckPlayer.presentPillCalled, "Pill should not be presented")
         XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "DuckPlayer should not be loaded")
-        XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
+        XCTAssertEqual(askResult, .reload, "Caller should reload the WebView")
+        XCTAssertFalse(mockWebView.reloadCalled, "Handler should leave the reload to the caller")
         XCTAssertEqual(sut.lastHandledVideoID, nil, "lastHandledVideoID should be reset")
 
         // Reset state for .auto mode test
         mockDuckPlayer.presentPillCalled = false
         mockDuckPlayer.dismissPillCalled = false
         mockDuckPlayer.loadNativeDuckPlayerVideoCalled = false
-        mockWebView.reloadCalled = false
         sut.lastHandledVideoID = "previousVideoID"
 
         // Test with .auto mode
@@ -452,14 +453,26 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // When
         mockWebView.navigate(to: nonWatchURL)
-        sut.handleReload(webView: mockWebView)
+        let autoResult = sut.handleReload(webView: mockWebView)
 
         // Then
         XCTAssertTrue(mockDuckPlayer.dismissPillCalled, "Pill should be dismissed")
         XCTAssertFalse(mockDuckPlayer.presentPillCalled, "Pill should not be presented")
         XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "DuckPlayer should not be loaded")
-        XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
+        XCTAssertEqual(autoResult, .reload, "Caller should reload the WebView")
+        XCTAssertFalse(mockWebView.reloadCalled, "Handler should leave the reload to the caller")
         XCTAssertEqual(sut.lastHandledVideoID, nil, "lastHandledVideoID should be reset")
+    }
+
+    func testWhenReloadingWithFeatureOffThenCallerReloads() {
+        mockFeatureFlagger.enabledFeatures = []
+        mockWebView.navigate(to: URL(string: "https://www.youtube.com/watch?v=1a2b3c4d5e6")!)
+
+        let result = sut.handleReload(webView: mockWebView)
+
+        XCTAssertEqual(result, .reload)
+        XCTAssertFalse(mockWebView.reloadCalled)
+        XCTAssertFalse(mockDuckPlayer.dismissPillCalled)
     }
 
     // MARK: - handleDidFinishLoading Tests

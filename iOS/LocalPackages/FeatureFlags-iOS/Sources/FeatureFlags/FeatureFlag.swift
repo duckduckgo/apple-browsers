@@ -400,6 +400,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
     case tabEvictionOnMemoryWarning
 
+    /// Kill switch for the web content freeze pixels.
+    /// https://app.asana.com/1/137249556945/project/414709148257752/task/1219446662051332
+    case webContentFreezeTelemetry
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759205?focus=true
     case tabLRUEviction
 
@@ -594,6 +598,11 @@ public enum FeatureFlag: String {
     /// Removes tracking parameters without `URLComponents`, which hangs or runs out of memory on very large URLs.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
     case fastTrackingParameterFilter
+
+    /// Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219240727858123?focus=true
+    case aiChatLimitExtensionPromo
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -908,6 +917,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .tabEvictionOnMemoryWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning), supportsLocalOverriding: true)
+        case .webContentFreezeTelemetry:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webContentFreezeTelemetry), supportsLocalOverriding: true)
         case .tabLRUEviction:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabLRUEviction), supportsLocalOverriding: true)
         case .webExtensions:
@@ -1003,7 +1014,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .syncImprovedPairingFlow:
-            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:
@@ -1014,6 +1025,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.alwaysShowKeyboardOnNewTabPage))
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
+        case .aiChatLimitExtensionPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
         }
     }
 

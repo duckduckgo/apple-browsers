@@ -137,7 +137,7 @@ private struct TimingOptionRow: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         .accessibilityLabel(label)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

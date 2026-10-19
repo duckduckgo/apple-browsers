@@ -110,6 +110,12 @@ final class PromoRegistryTests: XCTestCase {
                 notificationCenter: NotificationCenter(),
                 legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
                 recordResult: { _, _ in }
+            ),
+            bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                storage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
             )
         )
         let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)

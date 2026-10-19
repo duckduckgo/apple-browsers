@@ -106,6 +106,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         case deferred(PromoQueueModalLease, provider: any ModalPromptProvider)
     }
 
+    private let promptExposureReporter: PromptExposureReporting
     private let providers: [any ModalPromptProvider]
     private let cooldownManager: PromptCooldownManaging
     private let scheduler: ModalPromptScheduling
@@ -163,8 +164,10 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         onboardingStatusProvider: ContextualDaxDialogStatusProvider,
         modalPromptScheduling: ModalPromptScheduling = ModalPromptScheduler(),
         rootAttachmentChecker: ModalPromptRootAttachmentChecking? = nil,
-        closeCheckScheduling: ModalPromptScheduling = ModalPromptScheduler()
+        closeCheckScheduling: ModalPromptScheduling = ModalPromptScheduler(),
+        promptExposureReporter: PromptExposureReporting
     ) {
+        self.promptExposureReporter = promptExposureReporter
         self.providers = providers
         self.cooldownManager = cooldownManager
         self.onboardingStatusProvider = onboardingStatusProvider
@@ -198,9 +201,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             scheduledAttemptID: scheduledAttemptID
         ) { [weak self] in
             self?.legacyActiveAttemptIDs.remove(scheduledAttemptID)
-            self?.didActuallyPresentModalPromptThisSession = true
-            self?.saveModalPromptLastPresentationDate()
-            provider.didPresentModal()
+            self?.didPresent(provider, exposureID: configuration.exposureID, coordinated: false)
         }
     }
 
@@ -261,9 +262,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         guard case .deferred(let lease, let provider) = attemptState else { return false }
 
         attemptState = .idle
-        didActuallyPresentModalPromptThisSession = true
-        saveModalPromptLastPresentationDate()
-        provider.didPresentModal()
+        didPresent(provider, exposureID: nil, coordinated: true)
         lease.release()
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - Redeemed the slot held by \(type(of: provider)).")
         return true
@@ -357,9 +356,7 @@ private extension ModalPromptCoordinationManager {
                 modalPromptConfiguration: committedAttempt.configuration,
                 from: presenter
             ) { [weak self] in
-                self?.didActuallyPresentModalPromptThisSession = true
-                self?.saveModalPromptLastPresentationDate()
-                committedAttempt.provider.didPresentModal()
+                self?.didPresent(committedAttempt.provider, exposureID: committedAttempt.configuration.exposureID, coordinated: true)
             }
         }
     }
@@ -439,8 +436,16 @@ private extension ModalPromptCoordinationManager {
         }
     }
 
-    func saveModalPromptLastPresentationDate() {
+    func didPresent(_ provider: any ModalPromptProvider, exposureID: PromptExposureID?, coordinated: Bool) {
+        didActuallyPresentModalPromptThisSession = true
         cooldownManager.recordLastPromptPresentationTimestamp()
+        provider.didPresentModal()
+        if let exposureID {
+            promptExposureReporter.reportPromptShown(exposureID)
+        }
+        if coordinated {
+            promptExposureReporter.recordCoordinatedPromptFinished(.modal)
+        }
     }
 
 }

@@ -46,7 +46,7 @@ struct WinBackOfferPromptView: ModalView {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(DesignSystemRebrand.isAppRebranded() ? .subscriptionClock : .subscriptionClockLegacy)
+            Image(.subscriptionClock)
                 .resizable()
                 .scaledToFit()
                 .frame(width: Constants.imageWidth, height: Constants.imageHeight)

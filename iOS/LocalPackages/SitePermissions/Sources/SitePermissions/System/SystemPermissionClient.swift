@@ -27,7 +27,7 @@ public enum SystemPermissionAuthorizationState: Equatable, Sendable {
     case authorized
     case denied
     case restricted
-    /// The service is disabled or the system returned an unsupported authorization state.
+    /// The system returned an unsupported authorization state or authorization could not be completed.
     case unavailable
 }
 
@@ -45,7 +45,6 @@ public final class SystemPermissionClient: NSObject {
     }
 
     private let locationManager: CLLocationManager
-    private let locationServicesEnabled: () -> Bool
     private let avAuthorizationStatus: (AVMediaType) -> AVAuthorizationStatus
     private let avRequestAccess: (AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void
     private let notificationCenter: NotificationCenter
@@ -60,19 +59,16 @@ public final class SystemPermissionClient: NSObject {
 
     public override convenience init() {
         self.init(locationManager: CLLocationManager(),
-                  locationServicesEnabled: CLLocationManager.locationServicesEnabled,
                   avAuthorizationStatus: AVCaptureDevice.authorizationStatus,
                   avRequestAccess: AVCaptureDevice.requestAccess,
                   notificationCenter: .default)
     }
 
     init(locationManager: CLLocationManager,
-         locationServicesEnabled: @escaping () -> Bool,
          avAuthorizationStatus: @escaping (AVMediaType) -> AVAuthorizationStatus,
          avRequestAccess: @escaping (AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void,
          notificationCenter: NotificationCenter) {
         self.locationManager = locationManager
-        self.locationServicesEnabled = locationServicesEnabled
         self.avAuthorizationStatus = avAuthorizationStatus
         self.avRequestAccess = avRequestAccess
         self.notificationCenter = notificationCenter
@@ -162,7 +158,7 @@ public final class SystemPermissionClient: NSObject {
     }
 
     private func refreshLocationAuthorizationState() {
-        locationState = locationServicesEnabled() ? Self.state(from: locationManager.authorizationStatus) : .unavailable
+        locationState = Self.state(from: locationManager.authorizationStatus)
         completePendingLocationAuthorizationRequestsIfNeeded()
     }
 

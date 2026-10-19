@@ -43,21 +43,18 @@ struct DuckAISettingsStatePixel: PixelKit.Event {
     let addressBarToggle: Bool
     let tabBarButton: Bool
     let defaultMode: DefaultOmnibarMode
-    let usageContext: UsageContext
-    let windowMode: UsageContext.WindowMode
     let openDuckAITabs: OpenDuckAITabs
 
     var name: String { "aichat_settings_state" }
 
     var parameters: [String: String]? {
-        usageContext.parameters.merging([
+        [
             "duckai_enabled": String(duckAIEnabled),
             "addressbar_toggle": String(addressBarToggle),
             "tabbar_button": String(tabBarButton),
             "default_mode": defaultMode.rawValue,
-            UsageContext.ParameterName.windowMode: windowMode.rawValue,
             "duckai_tabs_open": openDuckAITabs.rawValue,
-        ]) { $1 }
+        ]
     }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
@@ -70,20 +67,17 @@ struct DuckAISettingsStatePixelReporter {
     private let featureFlagger: FeatureFlagger
     private let isPad: Bool
     private let openDuckAITabCount: () -> Int
-    private let usageContextProvider: UsageContextProviding
     private let pixelFiring: PixelFiring?
 
     init(settings: AIChatSettingsProvider,
          featureFlagger: FeatureFlagger,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          openDuckAITabCount: @escaping () -> Int,
-         usageContextProvider: UsageContextProviding = UsageContextProvider(),
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.isPad = isPad
         self.openDuckAITabCount = openDuckAITabCount
-        self.usageContextProvider = usageContextProvider
         self.pixelFiring = pixelFiring
     }
 
@@ -97,8 +91,6 @@ struct DuckAISettingsStatePixelReporter {
             addressBarToggle: settings.isAIChatSearchInputUserSettingsEnabled,
             tabBarButton: isTabBarDuckAIButtonAvailable,
             defaultMode: settings.defaultOmnibarMode,
-            usageContext: usageContextProvider.currentContext,
-            windowMode: usageContextProvider.currentWindowMode,
             openDuckAITabs: DuckAISettingsStatePixel.OpenDuckAITabs(count: openDuckAITabCount())
         )
     }

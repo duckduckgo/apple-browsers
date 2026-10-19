@@ -78,7 +78,7 @@ struct UsageContextProvider: UsageContextProviding {
         windowWidth < screenWidth - 1 ? .partial : .fullScreen
     }
 
-    /// Any activation state: the settings snapshot reads this as the app enters the background.
+    /// Any activation state: the usage context pixel reads this as the app enters the background.
     @MainActor
     private static func keyWindowWidths() -> (window: CGFloat, screen: CGFloat)? {
         guard let scene = UIApplication.shared.connectedScenes.lazy.compactMap({ $0 as? UIWindowScene }).first,

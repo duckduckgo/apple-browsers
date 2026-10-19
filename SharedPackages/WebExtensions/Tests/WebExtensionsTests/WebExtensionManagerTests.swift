@@ -139,14 +139,23 @@ final class WebExtensionManagerTests: XCTestCase {
         )
     }
 
+    /// A permission controller whose prompts the user always approves.
+    @MainActor
+    private func makePermissionController() -> WebExtensionPermissionController {
+        WebExtensionPermissionController(store: WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore()),
+                                         installationStore: installedExtensionStoringMock,
+                                         prompter: ApprovingPermissionPrompter())
+    }
+
     /// Loads a real (backgroundless) extension context into the controller so that
     /// `unloadAllExtensions()` has something to capture for the lightweight reload tests.
     @MainActor
     @discardableResult
     private func loadRealContext(identifier: String,
                                  into controller: WKWebExtensionController,
-                                 permissions: [String] = []) async throws -> WKWebExtensionContext {
-        let dir = try makeTestExtensionDirectory(permissions: permissions)
+                                 permissions: [String] = [],
+                                 optionalPermissions: [String] = []) async throws -> WKWebExtensionContext {
+        let dir = try makeTestExtensionDirectory(permissions: permissions, optionalPermissions: optionalPermissions)
         let webExtension = try await WKWebExtension(resourceBaseURL: dir)
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = identifier
@@ -154,14 +163,17 @@ final class WebExtensionManagerTests: XCTestCase {
         return context
     }
 
-    private func makeTestExtensionDirectory(permissions: [String] = [], embeddedType: DuckDuckGoWebExtensionType? = nil) throws -> URL {
+    private func makeTestExtensionDirectory(permissions: [String] = [],
+                                            optionalPermissions: [String] = [],
+                                            embeddedType: DuckDuckGoWebExtensionType? = nil) throws -> URL {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ReloadTestExtension-\(UUID().uuidString)")
         var manifest: [String: Any] = [
             "manifest_version": 3,
             "name": "Reload Test Extension",
             "version": "1.0.0",
             "description": "Minimal backgroundless test extension for reload unit tests",
-            "permissions": permissions
+            "permissions": permissions,
+            "optional_permissions": optionalPermissions
         ]
         if let embeddedType {
             manifest["browser_specific_settings"] = ["duckduckgo": ["id": embeddedType.rawValue]]
@@ -774,6 +786,7 @@ final class WebExtensionManagerTests: XCTestCase {
                                           windowTabProvider: windowTabProviderMock,
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
+                                          permissionController: makePermissionController(),
                                           loader: webExtensionLoadingMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           pixelFiring: pixels,
@@ -781,7 +794,8 @@ final class WebExtensionManagerTests: XCTestCase {
                                           now: { date })
         let webStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden])
         manager.chromeWebStore = webStore
-        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        let context = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        try await manager.permissionController?.prepare(context)
         let loadResult = WebExtensionLoadResult(identifier: "bitwarden", filename: "bitwarden", displayName: nil, version: "1")
 
         webExtensionLoadingMock.mockLoadResults = [.success(loadResult)]
@@ -895,11 +909,13 @@ final class WebExtensionManagerTests: XCTestCase {
                                           windowTabProvider: windowTabProviderMock,
                                           storageProvider: storageProvidingMock,
                                           installationStore: installedExtensionStoringMock,
+                                          permissionController: makePermissionController(),
                                           loader: webExtensionLoadingMock,
                                           lifecycleDelegate: lifecycleDelegateMock,
                                           keyValueStore: InMemoryThrowingKeyValueStore(),
                                           isAutofillTakeoverEnabled: { isTakeoverEnabled })
-        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        let context = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        try await manager.permissionController?.prepare(context)
         let store = try XCTUnwrap(manager.privacySettings)
         XCTAssertNoThrow(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
 
@@ -913,6 +929,50 @@ final class WebExtensionManagerTests: XCTestCase {
         isTakeoverEnabled = true
 
         XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "bitwarden")
+    }
+
+    /// `privacy` is a permission the user grants: until then, or once it's taken back, the extension
+    /// can't take over autofill, and taking it back hands autofill back to DuckDuckGo.
+    @MainActor
+    func testWhenTheUserGrantsAndTakesBackPrivacy_ThenTheExtensionsControlFollows() async throws {
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          permissionController: makePermissionController(),
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        let context = try await loadRealContext(identifier: "bitwarden", into: manager.controller, optionalPermissions: ["privacy"])
+        let permissionController = try XCTUnwrap(manager.permissionController)
+        try await permissionController.prepare(context)
+        let store = try XCTUnwrap(manager.privacySettings)
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+
+        let granted = await permissionController.request(.init(appPermissions: [.privacy]), for: context)
+        XCTAssertTrue(granted)
+        XCTAssertNoThrow(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+        XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "bitwarden")
+
+        XCTAssertTrue(permissionController.revoke(.privacy, from: context))
+        XCTAssertNil(store.identifierTurningOff(.passwordSavingEnabled))
+        XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
+    }
+
+    /// Without the permissions system nothing is granted, so no extension can take over autofill.
+    @MainActor
+    func testWhenThereIsNoPermissionController_ThenNoExtensionCanTakeOverAutofill() async throws {
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        let store = try XCTUnwrap(manager.privacySettings)
+
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
     }
 
     @MainActor
@@ -1182,4 +1242,16 @@ private final class CatalogNamingWebStore: ChromeWebStoreManaging {
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { entries[identifier] }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class ApprovingPermissionPrompter: WebExtensionPermissionPrompting {
+    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
+        .granted(privateDataAccess: false)
+    }
+
+    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        .granted
+    }
 }

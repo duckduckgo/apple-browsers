@@ -39,6 +39,7 @@ public enum ManagementDialogKind: Equatable {
     case nowSyncing
     case syncWithServer
     case syncAnotherDevicePrompt
+    case syncThisDeviceFallback
     case syncAuthenticationCancelled
     case enterRecoveryCode(stringForQRCode: String)
     case recoverSyncedData
@@ -140,6 +141,8 @@ public struct ManagementDialog: View {
                 SyncWithServerView()
             case .syncAnotherDevicePrompt:
                 SyncAnotherDevicePromptView()
+            case .syncThisDeviceFallback:
+                SyncThisDeviceFallbackView()
             case .syncAuthenticationCancelled:
                 SyncAuthenticationCancelledView()
             case .enterRecoveryCode(let stringForQRCode):

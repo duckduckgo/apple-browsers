@@ -198,7 +198,8 @@ final class DuckAiChatDecodeTests: XCTestCase {
 
     func testWhenLastMessageHasEmptyContentAndTextPartThenLastMessageContentIsExtractedFromParts() throws {
         // Reasoning models (e.g. `gpt-5-mini`) ship assistant responses with `content == ""`
-        // and the visible text inside `parts[].text` where `type == "text"`.
+        // and the visible text inside `parts[].text` where `type == "text"`. Consecutive text
+        // parts are streaming chunks, which the web app shows as one block.
         let json = """
             {
               "chatId": "c1",
@@ -207,15 +208,15 @@ final class DuckAiChatDecodeTests: XCTestCase {
                 {"role":"user","content":"hello"},
                 {"role":"assistant","content":"","parts":[
                   {"type":"reasoning","encryptedText":"opaque"},
-                  {"type":"text","text":"the actual reply"},
-                  {"type":"text","text":"second line"}
+                  {"type":"text","text":"the actual "},
+                  {"type":"text","text":"reply"}
                 ]}
               ]
             }
             """
 
         let decoded = try DuckAiChat.decode(from: Data(json.utf8))
-        XCTAssertEqual(decoded.lastMessageContent, "the actual reply\n\nsecond line")
+        XCTAssertEqual(decoded.lastMessageContent, "the actual reply")
     }
 
     func testWhenLastMessageHasContentAndTextPartThenContentWins() throws {
@@ -249,6 +250,123 @@ final class DuckAiChatDecodeTests: XCTestCase {
         let json = #"{"chatId":"c1","model":"gpt-5-mini","messages":[]}"#
 
         let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertNil(decoded.lastMessageContent)
+    }
+
+    // MARK: - Canonical format
+
+    func testWhenContentIsCanonicalPartsArrayThenChatDecodesWithTextFromTextParts() throws {
+        let json = """
+            {
+              "version": "1.2",
+              "chatId": "c1",
+              "title": "Capital of France",
+              "model": "gpt-4o-mini",
+              "pinned": true,
+              "lastEdit": "2026-07-08T15:04:03.000Z",
+              "messages": [
+                {"id":"m1","role":"user","createdAt":"2026-07-08T15:04:00.000Z",
+                 "content":[{"type":"text","text":"What's the capital of France?"}]},
+                {"id":"m2","role":"assistant","createdAt":"2026-07-08T15:04:03.000Z",
+                 "content":[{"type":"text","text":"The capital of France is Paris."}]}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.chat.chatId, "c1")
+        XCTAssertEqual(decoded.chat.title, "Capital of France")
+        XCTAssertTrue(decoded.chat.pinned)
+        XCTAssertEqual(decoded.firstUserMessageContent, "What's the capital of France?")
+        XCTAssertEqual(decoded.lastMessageContent, "The capital of France is Paris.")
+    }
+
+    func testWhenCanonicalContentHasNonTextPartsThenOnlyTextPartsAreUsed() throws {
+        // `reasoning-progress` parts carry `text` too, but it's reasoning rather than the reply,
+        // and `text-pasted` parts hold pasted attachments rather than the prompt.
+        let json = """
+            {
+              "chatId": "c1",
+              "messages": [
+                {"id":"m1","role":"user","createdAt":"2026-09-30T12:00:00.000Z","content":[
+                  {"type":"text-pasted","id":"p1","content":"a long pasted log"},
+                  {"type":"text","text":"Summarize this."}
+                ]},
+                {"id":"m2","role":"assistant","createdAt":"2026-09-30T12:00:05.000Z","content":[
+                  {"type":"reasoning-progress","id":"r1","partIndex":0,"text":"thinking it over","complete":true},
+                  {"type":"tool-call","toolCallId":"tc1","toolName":"web_search","toolArguments":"{}"},
+                  {"type":"text","text":"Here's a summary."}
+                ]}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.firstUserMessageContent, "Summarize this.")
+        XCTAssertEqual(decoded.lastMessageContent, "Here's a summary.")
+    }
+
+    func testIsImageGeneration_trueWhenCanonicalAssistantContentHasGenerateImageUiComponent() throws {
+        let json = """
+            {
+              "chatId": "c1",
+              "model": "gpt-5-mini",
+              "messages": [
+                {"id":"m1","role":"user","createdAt":"2026-10-01T10:00:00.000Z",
+                 "content":[{"type":"text","text":"draw a duck"}]},
+                {"id":"m2","role":"assistant","createdAt":"2026-10-01T10:00:05.000Z","content":[
+                  {"type":"ui-component","id":"ui1","name":"generate-image"}
+                ]}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertTrue(decoded.chat.isImageGeneration)
+    }
+
+    func testWhenCanonicalTextPartsAreSplitByToolCallThenEachRunIsOneBlock() throws {
+        // The web app shows consecutive text parts (streaming chunks) as one block, and starts a
+        // new block after a tool call or search results.
+        let json = """
+            {
+              "chatId": "c1",
+              "messages": [
+                {"id":"m1","role":"assistant","createdAt":"2026-10-01T10:00:05.000Z","content":[
+                  {"type":"text","text":"Let me "},
+                  {"type":"text","text":"look that up."},
+                  {"type":"tool-call","toolCallId":"tc1","toolName":"web_search","toolArguments":"{}"},
+                  {"type":"tool-result","toolCallId":"tc1","result":"ok"},
+                  {"type":"text","text":"Here's what "},
+                  {"type":"text","text":"I found."}
+                ]}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.lastMessageContent, "Let me look that up.\n\nHere's what I found.")
+    }
+
+    func testWhenMessageContentHasUnknownShapeThenChatStillDecodesWithoutPreviews() throws {
+        // The chat header always decodes, so the chat stays listed; content in a shape this
+        // build doesn't know only costs the previews.
+        let json = """
+            {
+              "version": "2.0",
+              "chatId": "c1",
+              "title": "From a newer client",
+              "pinned": true,
+              "messages": [
+                {"id":"m1","role":"user","createdAt":"2026-12-01T10:00:00.000Z","content":{"blocks":[]}}
+              ]
+            }
+            """
+
+        let decoded = try DuckAiChat.decode(from: Data(json.utf8))
+        XCTAssertEqual(decoded.chat.title, "From a newer client")
+        XCTAssertTrue(decoded.chat.pinned)
+        XCTAssertNil(decoded.firstUserMessageContent)
         XCTAssertNil(decoded.lastMessageContent)
     }
 }

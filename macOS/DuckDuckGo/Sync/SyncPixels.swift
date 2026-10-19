@@ -71,6 +71,8 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
     case recoveryConfirmedTapped
     case anotherDevicePromptShown
     case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
+    case syncThisDeviceFallbackShown
+    case syncThisDeviceFallbackSyncTapped
     case authenticationCancelledPromptShown
     case authenticationCancelledPromptRetryTapped
     case authenticationCancelledPromptDismissed
@@ -95,6 +97,8 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
         case .recoveryConfirmedTapped: return "sync_settings_recovery_confirmed_tapped_mac"
         case .anotherDevicePromptShown: return "sync_settings_another_device_prompt_shown_mac"
         case .anotherDevicePromptOptionTapped: return "sync_settings_another_device_prompt_option_tapped_mac"
+        case .syncThisDeviceFallbackShown: return "sync_settings_sync_this_device_fallback_shown_mac"
+        case .syncThisDeviceFallbackSyncTapped: return "sync_settings_sync_this_device_fallback_sync_tapped_mac"
         case .authenticationCancelledPromptShown: return "sync_settings_authentication_cancelled_prompt_shown_mac"
         case .authenticationCancelledPromptRetryTapped: return "sync_settings_authentication_cancelled_prompt_retry_tapped_mac"
         case .authenticationCancelledPromptDismissed: return "sync_settings_authentication_cancelled_prompt_dismissed_mac"

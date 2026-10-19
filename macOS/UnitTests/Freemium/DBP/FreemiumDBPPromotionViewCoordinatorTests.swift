@@ -117,7 +117,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         await viewModel.proceedAction()
 
         await fulfillment(of: [expectation], timeout: 2.0)
-        XCTAssertEqual(receivedResult, .actioned)
+        XCTAssertEqual(receivedResult, .actioned())
     }
 
     @MainActor

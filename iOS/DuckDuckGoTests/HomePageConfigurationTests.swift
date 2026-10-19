@@ -33,7 +33,7 @@ struct HomePageConfigurationTests {
         let storeMock = MockRemoteMessagingStore()
 
         // WHEN
-        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
 
         // THEN
         #expect(storeMock.fetchScheduledRemoteMessageCalls == 1)
@@ -58,7 +58,7 @@ struct HomePageConfigurationTests {
         let storeMock = MockRemoteMessagingStore()
         storeMock.scheduledRemoteMessage = RemoteMessageModel(
             id: "idle-msg", surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
-        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
         storeMock.capturedTriggerFilter = nil
 
         // WHEN
@@ -73,7 +73,7 @@ struct HomePageConfigurationTests {
     func refreshAfterIdleFallsBackToNoTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
-        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
         storeMock.capturedTriggerFilter = nil
 
         // WHEN
@@ -88,7 +88,7 @@ struct HomePageConfigurationTests {
     func refreshWithOpenedAfterIdleFalsePassesNoTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
-        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
         storeMock.capturedTriggerFilter = nil
 
         // WHEN
@@ -103,7 +103,7 @@ struct HomePageConfigurationTests {
     func refreshWithoutParameterPassesNoTrigger() {
         // GIVEN
         let storeMock = MockRemoteMessagingStore()
-        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false })
+        let sut = HomePageConfiguration(variantManager: nil, remoteMessagingStore: storeMock, subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
         storeMock.capturedTriggerFilter = nil
 
         // WHEN
@@ -356,7 +356,8 @@ struct HomePageConfigurationTests {
             Issue.record("Expected the test modal lease to acquire")
             return
         }
-        let sut = makeCoordinatedConfiguration(store: store, gate: gate)
+        let reporter = MockPromptExposureReporter()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate, promptExposureReporter: reporter)
 
         sut.prepareForNTP(openedAfterIdle: false)
 
@@ -365,6 +366,8 @@ struct HomePageConfigurationTests {
         #expect(store.updatedShownMessageIDs.isEmpty)
         #expect(gate.arbiter.snapshot.hasModalLease)
         _ = modalLease
+        #expect(reporter.remoteMessageIDs.isEmpty)
+        #expect(reporter.finishedPrompts.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -456,7 +459,8 @@ struct HomePageConfigurationTests {
         let message = makeRemoteMessage(id: "message")
         let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
         let gate = MockPromoGate()
-        let sut = makeCoordinatedConfiguration(store: store, gate: gate)
+        let reporter = MockPromptExposureReporter()
+        let sut = makeCoordinatedConfiguration(store: store, gate: gate, promptExposureReporter: reporter)
         sut.prepareForNTP(openedAfterIdle: false)
         store.isScheduledMessageExpired = true
 
@@ -465,6 +469,8 @@ struct HomePageConfigurationTests {
         #expect(sut.homeMessages.isEmpty)
         #expect(gate.arbiter.snapshot.owner == nil)
         #expect(store.updatedShownMessageIDs.isEmpty)
+        #expect(reporter.remoteMessageIDs.isEmpty)
+        #expect(reporter.finishedPrompts.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -518,7 +524,8 @@ struct HomePageConfigurationTests {
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         var changeNotificationCount = 0
         let observer = notificationCenter.addObserver(
@@ -592,13 +599,15 @@ struct HomePageConfigurationTests {
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: policy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let sut = HomePageConfiguration(
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: service
+            promoGate: service,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         sut.prepareForNTP(openedAfterIdle: false)
@@ -642,7 +651,8 @@ struct HomePageConfigurationTests {
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: service
+            promoGate: service,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         sut.prepareForNTP(openedAfterIdle: false)
@@ -739,13 +749,15 @@ struct HomePageConfigurationTests {
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: cooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let sut = HomePageConfiguration(
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { false },
-            promoGate: service
+            promoGate: service,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         sut.prepareForNTP(openedAfterIdle: false)
 
@@ -792,7 +804,8 @@ struct HomePageConfigurationTests {
         let sut = HomePageConfiguration(
             remoteMessagingStore: store,
             subscriptionDataReporter: MockSubscriptionDataReporter(),
-            isStillOnboarding: { false }
+            isStillOnboarding: { false },
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let homeMessages = sut.homeMessages
 
@@ -989,7 +1002,8 @@ struct HomePageConfigurationTests {
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             isStillOnboarding: { isStillOnboarding },
             promoGate: gate,
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            promptExposureReporter: MockPromptExposureReporter()
         )
         sut.prepareForNTP(openedAfterIdle: false)
         var ownerAtSignal: PromoQueueLeaseOwnerSnapshot?
@@ -1006,11 +1020,83 @@ struct HomePageConfigurationTests {
         withExtendedLifetime(cancellable) {}
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Every valid card appearance reaches exposure deduplication in both modes", .timeLimit(.minutes(1)),
+          arguments: [PromoCoordinationMode.legacy, .coordinated])
+    func cardAppearancesReachExposureReporter(mode: PromoCoordinationMode) async {
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let reporter = MockPromptExposureReporter()
+        let sut = HomePageConfiguration(
+            remoteMessagingStore: store,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            isStillOnboarding: { false },
+            promoGate: mode == .coordinated ? MockPromoGate() : nil,
+            notificationCenter: NotificationCenter(),
+            promptExposureReporter: reporter
+        )
+        sut.prepareForNTP(openedAfterIdle: false)
+
+        #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        #expect(reporter.remoteMessageIDs == [message.id, message.id])
+        #expect(reporter.finishedPrompts.isEmpty)
+
+        let homeMessage = HomeMessage.remoteMessage(remoteMessage: message)
+        await sut.dismissHomeMessage(homeMessage, presentationContext: sut.presentationContext(for: homeMessage))
+        #expect(reporter.finishedPrompts == (mode == .coordinated ? [.ntpCard] : []))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An invalidated lease records a gap only after a confirmed appearance", .timeLimit(.minutes(1)), arguments: [false, true])
+    func invalidatedLeaseRecordsGapOnlyAfterAppearance(didAppear: Bool) {
+        let message = makeRemoteMessage(id: "message")
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let reporter = MockPromptExposureReporter()
+        let sut = makeCoordinatedConfiguration(store: store, gate: MockPromoGate(), promptExposureReporter: reporter)
+        sut.prepareForNTP(openedAfterIdle: false)
+        if didAppear {
+            #expect(sut.reportVisibleRemoteMessage(expectedMessageID: message.id))
+        }
+
+        store.isScheduledMessageExpired = true
+        sut.handleAppForegrounded()
+        sut.handleAppForegrounded()
+
+        #expect(reporter.finishedPrompts == (didAppear ? [.ntpCard] : []))
+        #expect(sut.currentRemoteMessageID == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Stale same-ID and missing appearance contexts do not report exposure", .timeLimit(.minutes(1)))
+    func staleAppearanceDoesNotReportExposure() {
+        let message = makeRemoteMessage(id: "message")
+        let homeMessage = HomeMessage.remoteMessage(remoteMessage: message)
+        let store = FilteredRemoteMessagingStore(noTriggerMessage: message)
+        let reporter = MockPromptExposureReporter()
+        let sut = makeCoordinatedConfiguration(store: store, gate: MockPromoGate(), promptExposureReporter: reporter)
+        sut.prepareForNTP(openedAfterIdle: false)
+        let oldContext = sut.presentationContext(for: homeMessage)
+        store.noTriggerMessage = nil
+        sut.prepareForNTP(openedAfterIdle: false)
+        store.noTriggerMessage = message
+        sut.prepareForNTP(openedAfterIdle: false)
+
+        sut.didAppear(homeMessage, presentationContext: oldContext)
+        sut.didAppear(homeMessage, presentationContext: nil)
+
+        #expect(reporter.remoteMessageIDs.isEmpty)
+        #expect(reporter.finishedPrompts.isEmpty)
+        sut.didAppear(homeMessage, presentationContext: sut.presentationContext(for: homeMessage))
+        #expect(reporter.remoteMessageIDs == [message.id])
+    }
+
     private func makeCoordinatedConfiguration(
         store: RemoteMessagingStoring,
         gate: MockPromoGate,
         isRMFAdmissionEnabled: Bool = true,
-        notificationCenter: NotificationCenter = NotificationCenter()
+        notificationCenter: NotificationCenter = NotificationCenter(),
+        promptExposureReporter: PromptExposureReporting? = nil
     ) -> HomePageConfiguration {
         HomePageConfiguration(
             remoteMessagingStore: store,
@@ -1018,7 +1104,8 @@ struct HomePageConfigurationTests {
             isStillOnboarding: { false },
             promoGate: gate,
             isRMFAdmissionEnabled: isRMFAdmissionEnabled,
-            notificationCenter: notificationCenter
+            notificationCenter: notificationCenter,
+            promptExposureReporter: promptExposureReporter ?? MockPromptExposureReporter()
         )
     }
 
@@ -1075,7 +1162,8 @@ struct HomePageConfigurationTests {
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: cooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
     }
 

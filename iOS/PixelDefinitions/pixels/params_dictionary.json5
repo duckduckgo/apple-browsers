@@ -2,6 +2,24 @@
 // In your pixel definitions, you can reference these params by their key
 // See TEMPLATE.json for an example
 {
+    "promptDaysSinceInstall": {
+        "key": "days_since_install",
+        "type": "string",
+        "description": "Rolling 24-hour periods since install, grouped into install-week buckets.",
+        "enum": ["d0_6", "d7_13", "d14_20", "d21_27", "d28_plus"]
+    },
+    "promptExposureVersion": {
+        "key": "version",
+        "type": "string",
+        "description": "Version of the prompt exposure parameter meanings and session sampling rate.",
+        "enum": ["1"]
+    },
+    "petal": {
+        "key": "petal",
+        "type": "string",
+        "description": "Randomizes the timestamp used when processing the pixel.",
+        "enum": ["randomize"]
+    },
     "appVersion": {
         "key": "appVersion",
         "type": "string",

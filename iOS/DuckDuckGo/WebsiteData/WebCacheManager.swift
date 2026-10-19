@@ -324,13 +324,26 @@ extension WebCacheManager {
         case .all:
             await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, modifiedSince: Date.distantPast)
         case .limited(let dataRecords, _):
-            let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
+            scheduleMemoryCacheRemoval(fromStore: dataStore, inScope: dataRecords)
+            let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes().subtracting(Self.memoryCacheDataTypes))
             let removableRecords = allRecords.filter { record in
                 dataRecords(record.displayName)
             }
-            await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, for: removableRecords)
+            await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes.subtracting(Self.memoryCacheDataTypes), for: removableRecords)
         }
         return .success(())
+    }
+
+    private static let memoryCacheDataTypes: Set<String> = [WKWebsiteDataTypeMemoryCache]
+
+    /// Listing the memory cache waits for every live web view to respond, so it runs after the burn instead of blocking it.
+    @MainActor
+    private func scheduleMemoryCacheRemoval(fromStore dataStore: some DDGWebsiteDataStore,
+                                            inScope dataRecords: @escaping DataRecordInScopeEvaluator) {
+        Task { @MainActor in
+            let records = await dataStore.dataRecords(ofTypes: Self.memoryCacheDataTypes).filter { dataRecords($0.displayName) }
+            await dataStore.removeData(ofTypes: Self.memoryCacheDataTypes, for: records)
+        }
     }
 
     @MainActor

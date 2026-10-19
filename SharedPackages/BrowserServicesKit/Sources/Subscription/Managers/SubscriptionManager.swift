@@ -789,7 +789,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         if let tokenRecoveryCoordinator {
             try await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger,
                                                                             deadPrimary: deadPrimary,
-                                                                            lastSignOutDate: lastSignOutDate))
+                                                                            signOutCutoff: signOutCutoff))
         } else if trigger == .invalidToken, let tokenRecoveryHandler {
             try await tokenRecoveryHandler()
         } else {
@@ -876,23 +876,31 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         updateCachedIsUserAuthenticated(true)
     }
 
-    /// When the user last signed out explicitly, or nil if they never did.
-    var lastSignOutDate: Date? {
-        userDefaults.lastSubscriptionSignOutDate
+    /// The cut-off recorded at the last explicit sign-out, or nil if the user never signed out explicitly.
+    /// A backup token whose refresh token was issued at or before it must not be used.
+    var signOutCutoff: Date? {
+        userDefaults.subscriptionSignOutCutoff
+    }
+
+    /// The sign-out cut-off for an explicit sign-out happening now: the newest issue date among the stored current and backup refresh tokens,
+    /// both measured by the auth server's clock. When neither can be read, the device's current date.
+    private func currentSignOutCutoff() -> Date {
+        let storedTokens = [try? oAuthClient.currentTokenContainer(), oAuthClient.backupTokenContainer()]
+        return storedTokens.compactMap { $0?.decodedRefreshToken.issuedAtDate }.max() ?? Date()
     }
 
     /// Signs the user out by removing the stored tokens, the cached subscription and the cached authentication state.
     /// - Parameters:
     ///   - notifyUI: Whether to publish the authentication state change so the UI updates.
     ///   - userInitiated: Whether the user requested the sign-out. Only used when `notifyUI` is `true`.
-    ///   - revokeOnServer: Whether this is an explicit sign-out. When `true`, records the sign-out time, deletes the backup token,
+    ///   - revokeOnServer: Whether this is an explicit sign-out. When `true`, records the sign-out cut-off, deletes the backup token,
     ///     and calls `/logout`, which revokes every token issued from the same login, including the ones held by other processes.
     ///     When `false`, only the current local token is removed and the backup is kept.
     private func clearSession(notifyUI: Bool, userInitiated: Bool, revokeOnServer: Bool) async {
         Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI, privacy: .public), User Initiated: \(userInitiated, privacy: .public), Revoke on server: \(revokeOnServer, privacy: .public)")
 
         if revokeOnServer {
-            userDefaults.lastSubscriptionSignOutDate = Date()
+            userDefaults.subscriptionSignOutCutoff = currentSignOutCutoff()
             oAuthClient.removeBackup()
             try? await oAuthClient.logout()
         } else {
@@ -995,14 +1003,14 @@ fileprivate extension UserDefaults {
         set { set(newValue, forKey: DefaultSubscriptionManager.hasAppStoreProductsAvailableKey) }
     }
 
-    private static let lastSubscriptionSignOutDateKey = "com.duckduckgo.subscription.lastSignOutDate"
-    /// When the user last signed out explicitly. A backup token issued before this date must not be used.
-    var lastSubscriptionSignOutDate: Date? {
+    private static let subscriptionSignOutCutoffKey = "com.duckduckgo.subscription.signOutCutoff"
+    /// The cut-off recorded at the last explicit sign-out. A backup token whose refresh token was issued at or before it must not be used.
+    var subscriptionSignOutCutoff: Date? {
         get {
-            return object(forKey: Self.lastSubscriptionSignOutDateKey) as? Date
+            return object(forKey: Self.subscriptionSignOutCutoffKey) as? Date
         }
         set {
-            set(newValue, forKey: Self.lastSubscriptionSignOutDateKey)
+            set(newValue, forKey: Self.subscriptionSignOutCutoffKey)
         }
     }
 

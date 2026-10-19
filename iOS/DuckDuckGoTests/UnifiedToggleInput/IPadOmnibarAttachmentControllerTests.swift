@@ -927,6 +927,41 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         XCTAssertTrue(view.aiChatSendButton.isEnabled)
     }
 
+    // MARK: - Submission
+
+    func testURLShapedPromptWithChipSubmitsToDuckAIWithPastedText() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        let pasted = text(length: 4_100)
+        XCTAssertFalse(paste(pasted, into: controller, view))
+        enter("https://example.com/path", in: controller, view)
+
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertTrue(delegate.wasOnPromptSubmittedCalled)
+        XCTAssertFalse(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertEqual(delegate.promptQuery, "https://example.com/path")
+        XCTAssertEqual(delegate.promptControlValues?.selectedAttachments.textPasted?.map(\.content), [pasted])
+    }
+
+    func testURLShapedPromptWithImageSubmitsToDuckAIWithImage() throws {
+        let (controller, view) = try makeController(flags: [])
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2)).image { $0.fill(CGRect(x: 0, y: 0, width: 2, height: 2)) }
+        view.attachmentsStripView.addAttachment(.image(AIChatImageAttachment(image: image, fileName: "photo.jpg")))
+        enter("https://example.com/path", in: controller, view)
+
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertTrue(delegate.wasOnPromptSubmittedCalled)
+        XCTAssertFalse(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertEqual(delegate.promptControlValues?.selectedAttachments.images?.count, 1)
+    }
+
     // MARK: - Sheet
 
     func testSavingInTheSheetReplacesTheChipAndRestoresTheInput() throws {

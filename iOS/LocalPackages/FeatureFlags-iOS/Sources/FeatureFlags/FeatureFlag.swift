@@ -585,6 +585,16 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219175598274067
     case syncImprovedPairingFlow
 
+    // swiftlint:disable todo
+    /// Main kill switch for the login audit log entry point, notification settings, and OS notifications.
+    /// TODO: Add Asana task link.
+    case syncLoginAuditLog
+
+    /// Gates login notification settings and OS notifications.
+    /// TODO: Add Asana task link.
+    case syncLoginNotification
+    // swiftlint:enable todo
+
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
@@ -1054,6 +1064,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .syncImprovedPairingFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
+        case .syncLoginAuditLog:
+            Config(source: .remoteReleasable(SyncSubfeature.loginAuditLog))
+        case .syncLoginNotification:
+            Config(source: .remoteReleasable(SyncSubfeature.loginNotification))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .sitePermissions:

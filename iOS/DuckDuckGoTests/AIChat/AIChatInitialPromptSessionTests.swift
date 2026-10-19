@@ -58,7 +58,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertNil(consume(session))
         XCTAssertEqual(submissions.count, 1)
         XCTAssertEqual(submissions.first?.totalTabCount, 1)
-        XCTAssertEqual(submissions.first?.additionalTabCount, 1)
+        XCTAssertEqual(submissions.first?.deliveredAttachmentCount, 1)
         XCTAssertEqual(reservation.releaseCount, 1)
     }
 

@@ -761,7 +761,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webExtensionNativeMessaging:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
         case .webExtensionBitwarden:
-            Config(source: .remoteReleasable(ExtensionsCatalogSubfeature.bitwarden), category: .webExtensions)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.bitwarden), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:

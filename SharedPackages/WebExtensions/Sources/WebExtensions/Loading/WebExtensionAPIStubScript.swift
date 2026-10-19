@@ -61,7 +61,8 @@ public enum WebExtensionAPIStubScript {
     /// doesn't know (see `WebExtensionAppPermission`). Without it they are never held.
     public static let permissionsMessageHandlerName = "ddgWebExtensionPermissions"
 
-    /// Permissions WebKit doesn't know that the script implements and grants itself.
+    /// Permissions WebKit doesn't know that the script implements itself. They are always granted,
+    /// without asking the user.
     static let localPermissionNames = ["idle", "offscreen"]
 
     /// Permissions WebKit doesn't know that the script or the app implements.
@@ -951,12 +952,14 @@ public enum WebExtensionAPIStubScript {
             { name: "remove", unknownNameFails: false, answerWithoutHost: false }
         ];
 
-        // Permissions WebKit rejects but this script provides itself, so they count as granted. WebKit
-        // does not know these names, so the host would answer `false` (or throw) for them forever.
-        // `permissions.onAdded` is not fired for them: WebKit owns that event.
+        // Permissions WebKit doesn't know, so they never reach it: asking WebKit would always answer
+        // `false` or throw.
+        //
+        // Local permissions are implemented by this script and always granted. `permissions.onAdded`
+        // doesn't fire for them, since WebKit owns that event.
         var localPermissionNames = \(jsArray(Self.localPermissionNames));
-        // Permissions WebKit rejects that the app keeps, asked about through the permissions handler.
-        // `privacy` lets an extension take over DuckDuckGo autofill, so the user grants it, as in Chrome.
+        // App permissions are implemented by the app, which asks the user and remembers the answer.
+        // `privacy` lets an extension take over DuckDuckGo autofill.
         var appPermissionNames = \(jsArray(WebExtensionAppPermission.allCases.map(\.rawValue)));
         var permissionsMessageHandlerName = "\(Self.permissionsMessageHandlerName)";
 

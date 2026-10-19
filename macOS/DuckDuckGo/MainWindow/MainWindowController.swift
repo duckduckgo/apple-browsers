@@ -658,8 +658,12 @@ extension MainWindowController: NSWindowDelegate {
         // WebKit removes the window from openWindows before querying its tabs in didCloseWindow.
         // On opening, it adds the window first, even before our window manager registers it.
         let windowControllersManager = self.windowControllersManager ?? Application.appDelegate.windowControllersManager
+        var isWindowClosing: Bool {
+            // windowWillClose unregisters this controller before notifying WebKit via didCloseWindow.
+            !windowControllersManager.mainWindowControllers.contains(where: { $0 === self })
+        }
         guard (featureFlagger ?? Application.appDelegate.featureFlagger).isFeatureOn(.webExtensionSharedPinnedTabWindowClose),
-              !windowControllersManager.mainWindowControllers.contains(where: { $0 === self }),
+              isWindowClosing,
               !context.openWindows.contains(where: { $0 === self }) else { return nil }
 
         let tabsInRemainingWindows = windowControllersManager.mainWindowControllers

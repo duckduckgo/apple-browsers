@@ -66,6 +66,7 @@ let package = Package(
                 .product(name: "XPCHelper", package: "XPCHelper"),
                 .product(name: "UDSHelper", package: "UDSHelper"),
                 .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -81,6 +82,7 @@ let package = Package(
                 "VPNAppState",
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -141,7 +143,9 @@ let package = Package(
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "LoginItems", package: "LoginItems"),
                 .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
-                .product(name: "Lottie", package: "lottie-spm")
+                .product(name: "Lottie", package: "lottie-spm"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
             ],
             resources: [
                 .process("Resources")

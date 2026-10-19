@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
 import DDGError
 import UserScript
@@ -48,7 +49,7 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
     }
 
     // MARK: - Async Clear Support
-    enum ClearError: Error, DDGError {
+    enum ClearError: Error, DDGError, DataClearingActionSkipping {
         case notReady
         case timeout
         case failedFromScript(ScriptFailure)
@@ -88,10 +89,19 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
             }
         }
 
-        /// Everything but `notReady` (no web view or broker, i.e. misuse) can succeed on a fresh page.
+        /// Whether a fresh page can fix it. Misuse, a script that never starts and a page without IndexedDB fail again.
         var isTransient: Bool {
-            guard case .notReady = self else { return true }
-            return false
+            switch self {
+            case .timeout, .navigationTimeout, .webContentProcessTerminated: return true
+            case .failedFromScript(let failure): return !failure.isIndexedDBDisabled
+            case .notReady, .scriptNeverReady: return false
+            }
+        }
+
+        /// IndexedDB turned off (Lockdown Mode) leaves the page nothing it can clear there, so the clear is reported as skipped.
+        var skipsAction: Bool {
+            guard case .failedFromScript(let failure) = self else { return false }
+            return failure.isIndexedDBDisabled
         }
 
         var underlyingError: Error? {

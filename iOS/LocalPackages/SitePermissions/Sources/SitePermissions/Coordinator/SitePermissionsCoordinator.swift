@@ -287,6 +287,9 @@ public final class SitePermissionsCoordinator {
                 // iOS can return to undetermined (Allow Once, Location Services off at first use, privacy reset).
                 // Ask again so the OS prompt still follows a user choice instead of denying with no way back.
                 if authorizationState(permissionType) == .notDetermined {
+                    if deniedForPage.contains(permissionType) {
+                        return .deny
+                    }
                     disposition = .prompt
                 }
                 continue

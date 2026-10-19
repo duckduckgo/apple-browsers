@@ -1502,6 +1502,26 @@ final class SitePermissionsCoordinatorTests: XCTestCase {
         XCTAssertEqual(harness.store.decision(for: .location, at: harness.site), .allow)
     }
 
+    func testWhenSitePromptForStoredAllowIsDismissedThenItIsNotShownAgainOnThePage() throws {
+        let harness = try Harness()
+        harness.store.setPersistentDecision(.allow, for: .camera, at: harness.site)
+        harness.store.setPersistentDecision(.allow, for: .microphone, at: harness.site)
+        harness.systemStates[.microphone] = .notDetermined
+        var promptCount = 0
+
+        for _ in 0..<2 {
+            var resolution: SitePermissionResolution?
+            harness.coordinator.request(harness.request([.camera, .microphone]), promptHandler: { _, respond in
+                promptCount += 1
+                respond(.denyOnce)
+            }, completion: { resolution = $0 })
+            XCTAssertEqual(resolution, .deny(systemBlocks: []))
+        }
+
+        XCTAssertEqual(promptCount, 1)
+        XCTAssertEqual(harness.coordinator.queryState(for: .microphone, context: harness.context), .denied)
+    }
+
     func testWhenFreshSystemRequestIsDeniedThenRecoveryMarksItAsAfterRequest() async throws {
         let harness = try Harness()
         harness.systemStates[.camera] = .notDetermined

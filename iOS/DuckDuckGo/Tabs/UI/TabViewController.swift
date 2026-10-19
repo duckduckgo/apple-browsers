@@ -2712,7 +2712,7 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
         if #available(iOS 18.4, *), webView === self.webView, navigationResponse.isForMainFrame,
-           let scheme = navigationResponse.response.url?.scheme?.lowercased(), scheme == "http" || scheme == "https" {
+           [.http, .https].contains(navigationResponse.response.url?.navigationalScheme) {
             // The Network process can change after action policy. Repair before document-start scripts run.
             webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
         }

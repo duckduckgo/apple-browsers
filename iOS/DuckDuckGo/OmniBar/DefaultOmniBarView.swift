@@ -1882,6 +1882,10 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
             snapshot.layer.cornerRadius = bounds.height / 2
             snapshot.clipsToBounds = true
             snapshot.isUserInteractionEnabled = false
+            if #available(iOS 27.0, *) {
+                // Window source keeps iOS 27 previews sharp.
+                window.addSubview(snapshot)
+            }
             omniBarLongPressPreviewView = snapshot
             omniBarLongPressOriginalIsHidden = searchAreaContainerView.isHidden
             searchAreaContainerView.isHidden = true
@@ -1898,6 +1902,14 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
                                 willDisplayMenuFor configuration: UIContextMenuConfiguration,
                                 animator: UIContextMenuInteractionAnimating?) {
         onLongPressMenuDisplayed?()
+        guard #available(iOS 27.0, *), interaction === omniBarLongPressInteraction else { return }
+        if let animator {
+            animator.addAnimations { [weak self] in
+                self?.omniBarLongPressPreviewView?.alpha = 0
+            }
+        } else {
+            omniBarLongPressPreviewView?.alpha = 0
+        }
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,

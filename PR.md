@@ -12,18 +12,11 @@ The macOS flag `webExtensionSharedPinnedTabWindowClose` controls the fix and def
 
 #### Manual reproduction and acceptance
 
-1. On macOS 15.4+, open the production worktree's `DuckDuckGo.xcworkspace` and run **macOS Browser**, **Debug**, **My Mac**. Enable internal user state if needed for **Debug → Feature Flag Overrides → Web Extensions**. Set these flags explicitly:
+1. On macOS 15.4+, open the production worktree's `DuckDuckGo.xcworkspace` and run **macOS Browser**, **Debug**, **My Mac**. Web Extensions and embedded CPM are already enabled by production configuration; the telemetry base also enables the restoration gate, delegate proxy and diagnostics by default. Keep those settings without adding overrides.
 
-   | Flag | Reproduce failure | Verify fix |
-   | --- | --- | --- |
-   | `webExtensions` | ON | ON |
-   | `embeddedExtension` | ON | ON |
-   | `webExtensionStateRestorationGate` | ON | ON |
-   | `cpmDiagnosticsRecorder` | ON | ON |
-   | `cpmBackgroundDelegateProxy` | ON | ON |
-   | `webExtensionSharedPinnedTabWindowClose` | **OFF** | **ON** |
-   | `cpmMessagingHangRecovery` | OFF | OFF |
-   | `cpmBackgroundGraveyardTreatment` | OFF | OFF |
+   In **Debug → Feature Flag Overrides → Web Extensions** (enable internal user state if needed), use the new `webExtensionSharedPinnedTabWindowClose` flag: **OFF** to reproduce, **ON** to verify the fix.
+
+   For this isolated comparison, set `cpmMessagingHangRecovery` **OFF** in both runs so automatic extension reload cannot mask the failure. Leave `cpmBackgroundGraveyardTreatment` at its default **OFF**.
 
 2. Enable Cookie Pop-up Management in Settings and leave **Simulate CPM Breakage** off. In **Settings → General → Tabs**, select **Shared across all windows** for pinned tabs. Start with a healthy test setup after relaunching this test browser.
 3. Open two regular browser windows, A and B, each with regular control tabs. In A, open [the autoconsent test page](https://privacy-test-pages.site/features/autoconsent/) and pin it. The same pinned tab must appear in both windows. Select a regular tab in A, then select the shared pinned tab in B. Confirm the test button becomes **I was clicked!** and its privacy dashboard reports **Cookies Managed**.

@@ -84,7 +84,6 @@ public final class PrivacyConfigurationOverrideHandler {
 
     static func logLine(version: String?, etag: String, source: URL) -> String {
         let fields = [
-            "stage=config",
             "version=\(sanitized(version ?? "unknown"))",
             "etag=\(sanitized(etag))",
             "source=\(sanitized(source.absoluteString))",

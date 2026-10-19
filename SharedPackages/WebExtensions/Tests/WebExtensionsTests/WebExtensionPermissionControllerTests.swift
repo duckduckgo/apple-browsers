@@ -33,6 +33,140 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         WebExtensionPermissionController(store: permissionStore ?? store, installationStore: installationStore, prompter: prompter)
     }
 
+    // MARK: - App Permissions
+
+    func testWhenOptionalPrivacyIsApproved_ThenItIsGrantedAndRestoredOnTheNextLoad() async throws {
+        let controller = makeController()
+        var changes: [String] = []
+        controller.appPermissionsDidChange = { changes.append($0) }
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        XCTAssertEqual(prompter.installationRequests.first?.appPermissions, [])
+        XCTAssertFalse(controller.isGranted(.privacy, to: context.uniqueIdentifier))
+
+        let granted = await controller.request(.init(appPermissions: [.privacy]), for: context)
+
+        XCTAssertTrue(granted)
+        XCTAssertEqual(prompter.permissionRequests.last?.appPermissions, [.privacy])
+        XCTAssertEqual(changes, [context.uniqueIdentifier])
+        let restoringController = makeController()
+        let restored = WKWebExtensionContext(for: context.webExtension)
+        restored.uniqueIdentifier = context.uniqueIdentifier
+        try await restoringController.prepare(restored)
+        XCTAssertTrue(restoringController.isGranted(.privacy, to: restored.uniqueIdentifier))
+    }
+
+    func testWhenPrivacyIsDenied_ThenItIsNotGranted() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        prompter.permissionResponse = .denied
+
+        let granted = await controller.request(.init(appPermissions: [.privacy]), for: context)
+
+        XCTAssertFalse(granted)
+        XCTAssertFalse(controller.isGranted(.privacy, to: context.uniqueIdentifier))
+    }
+
+    func testWhenPrivacyIsAlreadyGranted_ThenAskingAgainDoesNotPrompt() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        _ = await controller.request(.init(appPermissions: [.privacy]), for: context)
+
+        let granted = await controller.request(.init(appPermissions: [.privacy]), for: context)
+
+        XCTAssertTrue(granted)
+        XCTAssertEqual(prompter.permissionRequests.count, 1)
+    }
+
+    func testWhenTheManifestDoesNotDeclarePrivacy_ThenItIsRefusedWithoutAPrompt() async throws {
+        let controller = makeController()
+        let context = try await makeContext()
+        try await controller.prepare(context)
+
+        let granted = await controller.request(.init(appPermissions: [.privacy]), for: context)
+
+        XCTAssertFalse(granted)
+        XCTAssertTrue(prompter.permissionRequests.isEmpty)
+    }
+
+    func testWhenPrivacyIsRequired_ThenItIsGrantedOnInstallationAndCannotBeTakenBack() async throws {
+        let controller = makeController()
+        var changes: [String] = []
+        controller.appPermissionsDidChange = { changes.append($0) }
+        let context = try await makeContext(permissions: ["tabs", "privacy"])
+
+        try await controller.prepare(context)
+
+        XCTAssertEqual(prompter.installationRequests.first?.appPermissions, [.privacy])
+        XCTAssertTrue(controller.isGranted(.privacy, to: context.uniqueIdentifier))
+        XCTAssertEqual(changes, [context.uniqueIdentifier])
+        XCTAssertFalse(controller.revoke(.privacy, from: context))
+        XCTAssertTrue(controller.isGranted(.privacy, to: context.uniqueIdentifier))
+    }
+
+    func testWhenOptionalPrivacyIsTakenBack_ThenItIsNoLongerGrantedOrSaved() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        _ = await controller.request(.init(appPermissions: [.privacy]), for: context)
+        var changes: [String] = []
+        controller.appPermissionsDidChange = { changes.append($0) }
+
+        XCTAssertTrue(controller.revoke(.privacy, from: context))
+
+        XCTAssertFalse(controller.isGranted(.privacy, to: context.uniqueIdentifier))
+        XCTAssertEqual(changes, [context.uniqueIdentifier])
+        XCTAssertEqual(try store.settings(for: context.uniqueIdentifier)?.grantedAppPermissions, [:])
+    }
+
+    func testWhenWebKitPermissionsChange_ThenTheAppGrantIsKept() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy", "clipboardWrite"])
+        try await controller.prepare(context)
+        _ = await controller.request(.init(appPermissions: [.privacy]), for: context)
+
+        context.setPermissionStatus(.grantedExplicitly, for: WKWebExtension.Permission.clipboardWrite)
+        NotificationCenter.default.post(name: WKWebExtensionContext.permissionsWereGrantedNotification, object: context)
+
+        let settings = try XCTUnwrap(try store.settings(for: context.uniqueIdentifier))
+        XCTAssertNotNil(settings.grantedPermissions["clipboardWrite"])
+        XCTAssertNotNil(settings.grantedAppPermissions["privacy"])
+    }
+
+    func testWhenAnExtensionIsUpdated_ThenItsAppGrantGoesToTheReplacement() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        _ = await controller.request(.init(appPermissions: [.privacy]), for: context)
+
+        try controller.copyPermissionsForUpdate(from: context.uniqueIdentifier, to: "replacement")
+
+        XCTAssertNotNil(try store.settings(for: "replacement")?.grantedAppPermissions["privacy"])
+    }
+
+    func testWhenTheExtensionUnloadsDuringThePrompt_ThenNothingIsGranted() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        prompter.onPermissionRequest = { controller.didUnload(context.uniqueIdentifier) }
+
+        let granted = await controller.request(.init(appPermissions: [.privacy]), for: context)
+
+        XCTAssertFalse(granted)
+        XCTAssertFalse(controller.isGranted(.privacy, to: context.uniqueIdentifier))
+    }
+
+    func testWhenSettingsWereSavedBeforeAppPermissions_ThenTheyStillLoad() throws {
+        let saved = Data(#"{"hasAccessToPrivateData":true,"grantedPermissions":{},"grantedMatchPatterns":{},"hasRequestedOptionalAccessToAllHosts":false}"#.utf8)
+
+        let settings = try JSONDecoder().decode(WebExtensionPermissionSettings.self, from: saved)
+
+        XCTAssertTrue(settings.hasAccessToPrivateData)
+        XCTAssertEqual(settings.grantedAppPermissions, [:])
+    }
+
     func testRepeatedNotificationsSkipUnchangedSettingsButPersistGrantsAndRevocations() async throws {
         let countingStore = CountingPermissionStore(wrapping: store)
         let controller = makeController(permissionStore: countingStore)
@@ -903,15 +1037,20 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                             bundledExtensionURL: bundledExtensionURL)
     }
 
-    private func makeContext(claimsDDGIdentity: Bool = false) async throws -> WKWebExtensionContext {
-        let directory = try makeExtensionURL(claimsDDGIdentity: claimsDDGIdentity)
+    private func makeContext(claimsDDGIdentity: Bool = false,
+                             permissions: [String] = ["tabs"],
+                             optionalPermissions: [String] = ["clipboardWrite"]) async throws -> WKWebExtensionContext {
+        let directory = try makeExtensionURL(claimsDDGIdentity: claimsDDGIdentity, permissions: permissions,
+                                             optionalPermissions: optionalPermissions)
         let webExtension = try await WKWebExtension(resourceBaseURL: directory)
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = UUID().uuidString
         return context
     }
 
-    private func makeExtensionURL(claimsDDGIdentity: Bool = false, permissions: [String] = ["tabs"]) throws -> URL {
+    private func makeExtensionURL(claimsDDGIdentity: Bool = false,
+                                  permissions: [String] = ["tabs"],
+                                  optionalPermissions: [String] = ["clipboardWrite"]) throws -> URL {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         addTeardownBlock { try FileManager.default.removeItem(at: directory) }
@@ -920,7 +1059,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
             "name": "Permission Test",
             "version": "1.0",
             "permissions": permissions,
-            "optional_permissions": ["clipboardWrite"],
+            "optional_permissions": optionalPermissions,
             "host_permissions": ["https://example.com/*"],
             "optional_host_permissions": ["https://optional.example/*"]
         ]

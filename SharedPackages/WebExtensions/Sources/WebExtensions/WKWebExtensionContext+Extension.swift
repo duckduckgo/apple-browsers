@@ -126,6 +126,11 @@ public extension WKWebExtension {
         }
     }
 
+    /// Whether the manifest asks for `permission` as a required permission, which is granted on installation.
+    func requiresPermission(_ permission: String) -> Bool {
+        (manifest["permissions"] as? [Any])?.contains { $0 as? String == permission } ?? false
+    }
+
     /// Returns whether the extension declares a toolbar action in its manifest.
     ///
     /// Manifest V3 uses `action`; Manifest V2 uses `browser_action` or `page_action`.

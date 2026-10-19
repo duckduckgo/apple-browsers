@@ -67,6 +67,7 @@ struct UserText {
     static let webExtensionNavigationPermission = NotLocalizedString("webExtensions.permissions.navigation", value: "Observe your browsing activity", comment: "Extension webNavigation permission")
     static let webExtensionStoragePermission = NotLocalizedString("webExtensions.permissions.storage", value: "Store extension data on your device", comment: "Extension storage permission")
     static let webExtensionNativeMessagingPermission = NotLocalizedString("webExtensions.permissions.nativeMessaging", value: "Communicate with native applications", comment: "Extension nativeMessaging permission")
+    static let webExtensionPrivacyPermission = NotLocalizedString("webExtensions.permissions.privacy", value: "Change privacy settings, including replacing DuckDuckGo’s password manager", comment: "Extension privacy permission")
 
     // Fire Dialog
     static let fireDialogFireproofSitesManage = NSLocalizedString("fire.dialog.manage", value: "Manage", comment: "Button title to manage Fireproof Sites or related settings")

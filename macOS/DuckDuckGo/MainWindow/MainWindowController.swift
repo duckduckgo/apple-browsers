@@ -24,6 +24,7 @@ import FoundationExtensions
 import os.log
 import PixelKit
 import PrivacyConfig
+import WebKit
 
 @MainActor
 final class MainWindowController: NSWindowController {
@@ -40,8 +41,6 @@ final class MainWindowController: NSWindowController {
     var themeUpdateCancellable: AnyCancellable?
 
     private let featureFlagger: FeatureFlagger?
-    /// Once closing starts, WebKit must see only tabs that actually close with this window.
-    private(set) var webExtensionTabsOnClose: [Tab]?
     private weak var windowControllersManager: WindowControllersManager?
 
     private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
@@ -632,7 +631,6 @@ extension MainWindowController: NSWindowDelegate {
                 retainedByOpenWindows: tabsInRemainingWindows,
                 retainedBySharedPinnedTabs: sharedPinnedTabs
             )
-            prepareWebExtensionTabsForWindowClose(closingTabs)
             for tab in closingTabs {
                 webExtensionManager.eventsListener.didCloseTab(tab, windowIsClosing: true)
             }
@@ -656,12 +654,24 @@ extension MainWindowController: NSWindowDelegate {
         return false
     }
 
-    func prepareWebExtensionTabsForWindowClose(_ closingTabs: [Tab]) {
-        // Latch the flag for the close transaction. WebKit queries tabs again inside didCloseWindow,
-        // after our explicit didCloseTab calls, and otherwise forgets surviving shared pinned tabs.
-        guard webExtensionTabsOnClose == nil,
-              (featureFlagger ?? Application.appDelegate.featureFlagger).isFeatureOn(.webExtensionSharedPinnedTabWindowClose) else { return }
-        webExtensionTabsOnClose = closingTabs
+    @available(macOS 15.4, *)
+    func webExtensionTabsForClosingWindow(in context: WKWebExtensionContext) -> [Tab]? {
+        // WebKit removes the window from openWindows before querying its tabs in didCloseWindow.
+        // On opening, it adds the window first, even before our window manager registers it.
+        guard !context.openWindows.contains(where: { $0 === self }),
+              (featureFlagger ?? Application.appDelegate.featureFlagger).isFeatureOn(.webExtensionSharedPinnedTabWindowClose) else { return nil }
+
+        let windowControllersManager = self.windowControllersManager ?? Application.appDelegate.windowControllersManager
+        let tabsInRemainingWindows = windowControllersManager.mainWindowControllers
+            .filter { $0 !== self }
+            .flatMap { $0.mainViewController.tabCollectionViewModel.loadedPinnedTabs + $0.mainViewController.tabCollectionViewModel.loadedTabs }
+        let sharedPinnedTabs = windowControllersManager.pinnedTabsManagerProvider.pinnedTabsMode == .shared
+            ? windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap(\.tabCollection.loadedTabs)
+            : []
+        return Self.tabsToCloseForWebExtensions(
+            in: mainViewController.tabCollectionViewModel.loadedPinnedTabs + mainViewController.tabCollectionViewModel.loadedTabs,
+            retainedByOpenWindows: tabsInRemainingWindows,
+            retainedBySharedPinnedTabs: sharedPinnedTabs)
     }
 
     static func tabsToCloseForWebExtensions(in closingWindow: [Tab],

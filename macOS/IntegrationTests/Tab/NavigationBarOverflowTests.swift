@@ -43,6 +43,10 @@ final class NavigationBarOverflowTests: XCTestCase {
     @MainActor
     override func tearDown() {
         autoreleasepool {
+            // The focused new tab address bar can open its suggestion window, which outlives the main window if left open
+            if window != nil {
+                navigationBar.addressBarViewController?.addressBarTextField.hideSuggestionWindow()
+            }
             window?.close()
             window = nil
         }
@@ -78,6 +82,57 @@ final class NavigationBarOverflowTests: XCTestCase {
 
         XCTAssertTrue(navigationBar.overflowButton.isHidden, "Pinned buttons stayed in the overflow menu")
         assertRequiredHorizontalSpacingIsSatisfied()
+    }
+
+    @MainActor
+    func testWhenWindowIsWidenedBackToLastWidthWithoutOverflow_ThenAllPinnedButtonsLeaveOverflowMenu() {
+        openWindow()
+
+        // Steps are narrower than the overflow button, so restoring can't rely on its width being freed already
+        var width: CGFloat = 1200
+        var lastWidthWithoutOverflow = width
+        while navigationBar.overflowButton.isHidden && width > MainWindow.minWindowWidth {
+            lastWidthWithoutOverflow = width
+            width -= 4
+            resizeWindow(toWidth: width)
+        }
+        XCTAssertFalse(navigationBar.overflowButton.isHidden, "No pinned buttons moved to the overflow menu")
+
+        resizeWindow(toWidth: lastWidthWithoutOverflow)
+
+        XCTAssertTrue(navigationBar.overflowButton.isHidden, "Pinned buttons stayed in the overflow menu at a width where they all fitted before")
+    }
+
+    @MainActor
+    func testWhenPinnedButtonsFit_ThenAddressBarIsNotSqueezedBelowOverflowWidth() {
+        openWindow()
+
+        for width in stride(from: 1200, through: MainWindow.minWindowWidth, by: -20) {
+            resizeWindow(toWidth: width)
+
+            let addressBarWidth = navigationBar.addressBarViewController!.view.frame.width
+            guard addressBarWidth < 320 - 0.5 else { continue }
+
+            // Below 320 is only acceptable when the address bar is at its proportional width or nothing else can overflow
+            let proportionalWidth = navigationBar.view.bounds.width * navigationBar.addressBarProportionalWidthConstraint.multiplier
+            let isAtProportionalWidth = abs(navigationBar.addressBarStack.frame.width - proportionalWidth) < 0.5
+            let visiblePinnedViewsCount = navigationBar.pinnedViews.filter(navigationBar.isVisibleInNavBar).count
+            XCTAssert(isAtProportionalWidth || visiblePinnedViewsCount <= 1,
+                      "Pinned buttons squeezed the address bar to \(addressBarWidth) at window width \(width)")
+        }
+    }
+
+    @MainActor
+    func testWhenPopoverIsShown_ThenItsButtonStaysInNavigationBar() {
+        openWindow()
+        addExtraToolbarButtons()
+        navigationBar.toggleDownloadsPopover(keepButtonVisible: false)
+        defer { navigationBar.toggleDownloadsPopover(keepButtonVisible: false) }
+
+        resizeWindow(toWidth: MainWindow.minWindowWidth)
+
+        XCTAssertFalse(navigationBar.overflowButton.isHidden, "No pinned buttons moved to the overflow menu")
+        XCTAssertFalse(navigationBar.downloadsButton.isHidden, "The Downloads button moved to the overflow menu while its popover was shown")
     }
 
     // MARK: - Helpers

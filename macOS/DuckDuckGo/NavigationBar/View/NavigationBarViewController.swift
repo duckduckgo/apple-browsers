@@ -485,6 +485,8 @@ final class NavigationBarViewController: NSViewController {
         static let addressBarStackSpacing: CGFloat = 16
         static let addressBarVerticalInset: CGFloat = 6
         static let addressBarMinWidth: CGFloat = 212
+        /// Pinned views move to the overflow menu rather than squeeze the address bar below this width.
+        static let addressBarOverflowWidth: CGFloat = 320
         static let addressBarSideSpacing: CGFloat = 12
         /// The address bar wants to take this share of the window width; it is a low-priority
         /// constraint so the bar keeps contracting with the window while the side gaps stay open,
@@ -1961,16 +1963,26 @@ final class NavigationBarViewController: NSViewController {
 
     private var visiblePinnedViewsRequiredWidth: CGFloat {
         let visiblePinnedViewsWidth = visiblePinnedItems.map(navBarWidth).reduce(0, +)
-        let overflowButtonWidth = overflowButton.isHidden ? 0 : overflowButton.bounds.width + menuButtons.spacing
-        return visiblePinnedViewsWidth + overflowButtonWidth
+        return visiblePinnedViewsWidth + visibleOverflowButtonWidth
+    }
+
+    private var visibleOverflowButtonWidth: CGFloat {
+        overflowButton.isHidden ? 0 : overflowButton.bounds.width + menuButtons.spacing
+    }
+
+    /// Restoring the last item in the overflow menu also hides the overflow button, freeing its width.
+    private func requiredWidth(restoring pinnedView: PinnableView) -> CGFloat {
+        let isLastOverflowItem = overflowItems == [pinnedView] && !isAIChatButtonInOverflowMenu
+        let freedOverflowButtonWidth = isLastOverflowItem ? visibleOverflowButtonWidth : 0
+        return visiblePinnedViewsRequiredWidth + navBarWidth(for: pinnedView) - freedOverflowButtonWidth
     }
 
     private var daxLogoWidth: CGFloat = 0
 
-    private var addressBarMinimumWidth: CGFloat {
+    /// Width the address bar stack keeps before pinned views move to the overflow menu.
+    private var addressBarStackOverflowWidth: CGFloat {
         let logoWidth = daxLogo.isHidden ? 0 : daxLogoWidth
-        let contentMinimumWidth = logoWidth + (addressBarViewController?.minimumWidth ?? 0)
-        return max(addressBarMinWidthConstraint?.constant ?? 0, contentMinimumWidth)
+        return logoWidth + max(LayoutConstants.addressBarOverflowWidth, addressBarViewController?.minimumWidth ?? 0)
     }
 
     /// Width of everything in the button stacks that can't move to the overflow menu (back, forward, reload, options,
@@ -1987,7 +1999,7 @@ final class NavigationBarViewController: NSViewController {
     private var overflowThreshold: CGFloat {
         let horizontalInsets = LayoutConstants.navigationButtonsLeading + LayoutConstants.menuButtonsTrailing
         let addressBarSideSpacing = 2 * LayoutConstants.addressBarSideSpacing
-        return view.bounds.width - horizontalInsets - addressBarSideSpacing - nonOverflowableViewsWidth - addressBarMinimumWidth
+        return view.bounds.width - horizontalInsets - addressBarSideSpacing - nonOverflowableViewsWidth - addressBarStackOverflowWidth
     }
 
     private func setupOverflowMenu() {
@@ -2045,7 +2057,7 @@ final class NavigationBarViewController: NSViewController {
                 toggleAIChatButtonVisibility(isHidden: true)
                 break
             }
-            guard let itemToOverflow = visiblePinnedItems.last else {
+            guard let itemToOverflow = nextItemToOverflow else {
                 break
             }
             updateNavBarViews(with: itemToOverflow, isHidden: true)
@@ -2054,14 +2066,35 @@ final class NavigationBarViewController: NSViewController {
 
     private func removeButtonsFromOverflowMenuIfPossible() {
         while let itemToRestore = overflowItems.first {
-            let restorableButtonWidth = navBarWidth(for: itemToRestore)
-            let newMaximumWidth = visiblePinnedViewsRequiredWidth + restorableButtonWidth
-
-            if newMaximumWidth < overflowThreshold {
+            if requiredWidth(restoring: itemToRestore) < overflowThreshold {
                 updateNavBarViews(with: itemToRestore, isHidden: false)
             } else {
                 break
             }
+        }
+    }
+
+    /// The last visible pinned view that can move to the overflow menu.
+    /// A view anchoring a popover stays in the bar, otherwise the popover would lose its anchor.
+    private var nextItemToOverflow: PinnableView? {
+        visiblePinnedItems.last { !isAnchoringPopover($0) }
+    }
+
+    private func isAnchoringPopover(_ pinnedView: PinnableView) -> Bool {
+        switch pinnedView {
+        case .downloads:
+            return popovers.isDownloadsPopoverShown
+        case .autofill:
+            return popovers.isPasswordManagementPopoverShown
+            || popovers.isAutofillOnboardingPopoverShown
+            || popovers.hasAnySavePopoversVisible()
+            || isAutoFillAutosaveMessageVisible
+        case .bookmarks:
+            return popovers.bookmarkListPopoverShown
+        case .networkProtection:
+            return popovers.isNetworkProtectionPopoverShown
+        case .share, .homeButton, .feedback:
+            return false
         }
     }
 
@@ -2177,11 +2210,11 @@ final class NavigationBarViewController: NSViewController {
     /// Moves the next pinned view into the overflow menu, to make space to show the provided pinned view.
     /// This is used to ensure there is space to show a pinned view in the nav bar when it is selected from the overflow menu.
     private func makeSpaceInNavBarIfNeeded(for view: PinnableView) {
-        guard visiblePinnedViewsRequiredWidth + navBarWidth(for: view) > overflowThreshold else {
+        guard requiredWidth(restoring: view) > overflowThreshold else {
             return
         }
 
-        guard let itemToOverflow = visiblePinnedItems.last else {
+        guard let itemToOverflow = nextItemToOverflow else {
             return
         }
         updateNavBarViews(with: itemToOverflow, isHidden: true)
@@ -2578,6 +2611,8 @@ extension NavigationBarViewController: NSPopoverDelegate {
 
     /// We check references here because these popovers might be on other windows.
     func popoverDidClose(_ notification: Notification) {
+        defer { view.needsLayout = true }
+
         if let popover = popovers.autofillOnboardingPopover, notification.object as AnyObject? === popover {
             popovers.autofillOnboardingPopoverClosed()
             resolveAutofillPinningPromo(with: .ignored())

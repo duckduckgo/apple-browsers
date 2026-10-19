@@ -109,13 +109,13 @@ final class UTIAttachmentController {
         presenter.isFireTabProvider = { [weak self] in
             self?.environment.isFireTab() ?? false
         }
-        presenter.tabPickerPixelSurfaceProvider = { [weak self] in
+        presenter.tabPickerPixelAttributionProvider = { [weak self] in
             guard let self, canUseTabAttachments else { return nil }
-            return environment.pixelSurface()
+            return pixelReporter.currentTabPixelAttribution()
         }
-        presenter.onTabPickerEvent = { [weak self] action, surface in
+        presenter.onTabPickerEvent = { [weak self] action, attribution in
             guard let self, case .available = environment.tabAttachmentFeatureState() else { return }
-            pixelReporter.reportTabAttachment(action, source: .tabPicker, surface: surface)
+            pixelReporter.reportTabAttachment(action, source: .tabPicker, attribution: attribution)
         }
         presenter.pixelSurfaceProvider = { [weak self] in
             self?.environment.pixelSurface() ?? .addressBar

@@ -174,10 +174,14 @@ extension UTIToolsMenu.Item.Identifier {
 final class UnifiedToggleInputCoordinatorPixelHelper {
     private init() {}
 
-    static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
+    static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment,
+                                           surface: UnifiedToggleInputPixelSurface,
+                                           pageType: UnifiedToggleInputPromptPageType = .unknown,
+                                           firing: UTIPixelFiring = .live) {
         switch attachment {
         case .tab(let tab):
-            firing.fire(MultiTabAttachmentPixel(action: .removed, source: tab.source, surface: surface), frequency: .dailyAndCount)
+            firing.fire(MultiTabAttachmentPixel(action: .removed, source: tab.source,
+                                               attribution: .init(surface: surface, pageType: pageType)), frequency: .dailyAndCount)
         case .image:
             firing.fireDailyAndCount(.unifiedToggleInputImageRemoved, surfaceParameters(surface))
         case .file, .invalidFile:
@@ -271,6 +275,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             "reasoning_effort": reasoningEffort,
             "has_image_attachment": hasImageAttachment(in: attachments) ? "true" : "false",
             "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
+            "has_tab_attachment": attachments.contains(where: \.isTab) ? "true" : "false",
             "has_text": hasText ? "true" : "false",
             "surface": surface.rawValue
         ]

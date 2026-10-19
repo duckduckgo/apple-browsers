@@ -119,7 +119,7 @@ final class AIChatInitialPromptPreparation {
                                              selections: prompt.selections, termsAccepted: prompt.termsAccepted)
             let didDispatch = request.didDispatch
             let result = MultiTabAttachmentRequest.SubmissionResult(
-                totalTabCount: validated.count, additionalTabCount: validated.filter { $0.tabId != nil }.count)
+                totalTabCount: validated.count, deliveredAttachmentCount: validated.count)
             let delivery = AIChatInitialPromptDelivery(prompt: payload) { didDispatch(result) }
             request.didConsume()
             self?.finish(delivery)

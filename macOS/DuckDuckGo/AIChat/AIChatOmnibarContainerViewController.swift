@@ -2193,9 +2193,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func clearSurfaceForScreenshot() -> () -> Void {
         switch omnibarController.surface {
         case .addressBar:
-            view.alphaValue = 0
-            return { [weak self] in
-                self?.view.alphaValue = 1
+            // The shadows live in the window's content view, outside `view`.
+            let views = [view, shadowView, usageWarningShadowView]
+            views.forEach { $0.alphaValue = 0 }
+            return {
+                views.forEach { $0.alphaValue = 1 }
             }
         case .promptBar:
             let dimWindows = NSApp.windows.filter { $0.identifier == .promptBarDimWindow && $0.isVisible }

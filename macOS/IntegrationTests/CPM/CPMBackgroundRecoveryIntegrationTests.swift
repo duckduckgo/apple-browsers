@@ -201,7 +201,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         }
         try await harness.pause(1)
         XCTAssertEqual(harness.finishedURLDates[probe.url]?.count, 1)
-        XCTAssertFalse(harness.native.forwardedDashboardURLs.contains(probe.url.absoluteString))
+        // WebKit may deliver the original response after its timeout without any reload.
         XCTAssertTrue(harness.pixels.recoveryOutcomes(.lateDocumentReload).isEmpty)
         XCTAssertTrue(harness.context === context)
         harness.note(["regression": "P4-detection-only", "recoveryEnabled": false,
@@ -287,11 +287,15 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         XCTAssertEqual(harness.pixels.startupResponseMissingCount, 1)
         try await harness.wait("automatic first-document recovery after late background readiness", timeout: 15) {
             harness.native.forwardedDashboardURLs.contains(firstURL.absoluteString)
+                && harness.pixels.recoveryOutcomes(.lateDocumentReload).contains(.reloadStarted)
+        }
+        try await harness.wait("one automatic reload finishes", timeout: 5) {
+            harness.finishedURLDates[firstURL]?.count == 2
         }
         let pageReceived = try await harness.waitForPageInitResponse(in: tab)
         XCTAssertTrue(pageReceived)
-        try await harness.wait("one automatic reload finishes", timeout: 5) {
-            harness.finishedURLDates[firstURL]?.count == 2
+        try await harness.wait("dashboard response attributed to the automatic reload", timeout: 5) {
+            harness.pixels.recoveryOutcomes(.lateDocumentReload).contains(.responseReceived)
         }
         XCTAssertEqual(tab.webView.url, firstURL)
         XCTAssertTrue(harness.context === context)

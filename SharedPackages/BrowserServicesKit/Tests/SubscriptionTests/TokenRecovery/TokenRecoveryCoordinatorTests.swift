@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import FoundationExtensions
 @testable import Subscription
 @_spi(Testing) import Networking
 import SubscriptionTestingUtilities
@@ -180,6 +181,75 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         try? await strategy.recover(invalidTokenContext)
 
         XCTAssertTrue(restoredTriggers.isEmpty)
+    }
+
+    // MARK: - Backup strategy backoff
+
+    private let missingTokenContext = TokenRecoveryContext(trigger: .missingToken, deadPrimary: nil, signOutCutoff: nil)
+
+    private final class Clock {
+        var now = Date()
+    }
+
+    func testBackupStrategy_missingToken_afterATransientFailure_skipsUntilTheRetryInterval() async {
+        let client = MockOAuthClient()
+        client.restoreFromBackupResponse = .failure(URLError(.timedOut))
+        let clock = Clock()
+        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { clock.now }, onRestored: { _ in })
+
+        try? await strategy.recover(missingTokenContext)
+        do {
+            try await strategy.recover(missingTokenContext)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .unavailable)
+        }
+        XCTAssertEqual(client.restoreFromBackupCalls.count, 1)
+
+        clock.now = clock.now.addingTimeInterval(.minutes(6))
+        try? await strategy.recover(missingTokenContext)
+        XCTAssertEqual(client.restoreFromBackupCalls.count, 2)
+    }
+
+    func testBackupStrategy_invalidToken_isNotHeldBackByAMissingTokenFailure() async {
+        let client = MockOAuthClient()
+        client.restoreFromBackupResponse = .failure(URLError(.timedOut))
+        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { Date() }, onRestored: { _ in })
+
+        try? await strategy.recover(missingTokenContext)
+        try? await strategy.recover(invalidTokenContext)
+
+        XCTAssertEqual(client.restoreFromBackupCalls.count, 2)
+    }
+
+    func testBackupStrategy_rejectedOrTerminalFailures_doNotBackOff() async {
+        let client = MockOAuthClient()
+        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { Date() }, onRestored: { _ in })
+
+        client.restoreFromBackupResponse = .failure(TokenBackupError.accountMismatch)
+        try? await strategy.recover(missingTokenContext)
+        client.restoreFromBackupResponse = .failure(OAuthClientError.invalidTokenRequest(.reused))
+        try? await strategy.recover(missingTokenContext)
+        client.restoreFromBackupResponse = .failure(TokenBackupError.unavailable)
+        try? await strategy.recover(missingTokenContext)
+
+        XCTAssertEqual(client.restoreFromBackupCalls.count, 3)
+    }
+
+    func testBackupStrategy_successAfterTheRetryInterval_clearsTheBackoff() async throws {
+        let client = MockOAuthClient()
+        client.restoreFromBackupResponse = .failure(URLError(.timedOut))
+        let clock = Clock()
+        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { clock.now }, onRestored: { _ in })
+        try? await strategy.recover(missingTokenContext)
+
+        clock.now = clock.now.addingTimeInterval(.minutes(6))
+        client.restoreFromBackupResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        try await strategy.recover(missingTokenContext)
+        client.restoreFromBackupResponse = .failure(TokenBackupError.unavailable)
+        try? await strategy.recover(missingTokenContext)
+
+        XCTAssertEqual(client.restoreFromBackupCalls.count, 3)
     }
 
     // MARK: - App Store strategy

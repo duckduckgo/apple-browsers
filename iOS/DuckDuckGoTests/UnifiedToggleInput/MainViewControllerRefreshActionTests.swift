@@ -43,6 +43,35 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .unbindInactiveNonAITab(needsLayoutRefresh: true))
     }
 
+    func test_nonAITab_floatingUI_currentTab_skipsLayoutRefresh() {
+        let inputs = makeInputs(isFloatingUIEnabled: true, isRefreshingCurrentTab: true)
+
+        XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .unbindInactiveNonAITab(needsLayoutRefresh: false))
+    }
+
+    func test_nonAITab_floatingUI_layoutChanges_requireLayoutRefresh() {
+        let cases = [
+            ("tab changed", makeInputs(isFloatingUIEnabled: true, isRefreshingCurrentTab: false)),
+            ("chrome hidden", makeInputs(isNavigationChromeHidden: true, isFloatingUIEnabled: true, isRefreshingCurrentTab: true)),
+            ("address bar moved", makeInputs(isFloatingUIEnabled: true, isRefreshingCurrentTab: true, isAddressBarPositionCurrent: false))
+        ]
+
+        for (scenario, inputs) in cases {
+            XCTAssertEqual(MainViewController.decideRefreshAction(for: inputs), .unbindInactiveNonAITab(needsLayoutRefresh: true), scenario)
+        }
+    }
+
+    func test_nonAITab_floatingUIFlagChanges_preserveLegacyLayoutRefresh() {
+        for isFloatingUIEnabled in [false, true, false] {
+            let inputs = makeInputs(isFloatingUIEnabled: isFloatingUIEnabled, isRefreshingCurrentTab: true)
+
+            XCTAssertEqual(
+                MainViewController.decideRefreshAction(for: inputs),
+                .unbindInactiveNonAITab(needsLayoutRefresh: !isFloatingUIEnabled)
+            )
+        }
+    }
+
     func test_nonAITab_coordinatorActive_notOmnibarSession_refreshesNonAITab() {
         let inputs = makeInputs(
             tabIsAITab: false,
@@ -145,7 +174,10 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         coordinatorIsOmnibarSession: Bool = false,
         coordinatorHasSubmittedPrompt: Bool = false,
         isAITabChatHeaderContainerHidden: Bool = true,
-        isNavigationChromeHidden: Bool = false
+        isNavigationChromeHidden: Bool = false,
+        isFloatingUIEnabled: Bool = false,
+        isRefreshingCurrentTab: Bool = false,
+        isAddressBarPositionCurrent: Bool = true
     ) -> UnifiedToggleInputRefreshActionInputs {
         UnifiedToggleInputRefreshActionInputs(
             tabIsAITab: tabIsAITab,
@@ -159,9 +191,9 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
             coordinatorHasSubmittedPrompt: coordinatorHasSubmittedPrompt,
             isAITabChatHeaderContainerHidden: isAITabChatHeaderContainerHidden,
             isNavigationChromeHidden: isNavigationChromeHidden,
-            isFloatingUIEnabled: false,
-            isRefreshingCurrentTab: false,
-            isAddressBarPositionCurrent: true
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            isRefreshingCurrentTab: isRefreshingCurrentTab,
+            isAddressBarPositionCurrent: isAddressBarPositionCurrent
         )
     }
 }

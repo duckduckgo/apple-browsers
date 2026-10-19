@@ -39,6 +39,11 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidScroll(_ controller: any NewTabPage)
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction)
 
+    /// The user switched the Search / Duck.ai toggle shown on the page at rest.
+    func newTabPage(_ controller: any NewTabPage, didSwitchTextEntryModeTo mode: TextEntryMode)
+    /// The user expanded or collapsed the favorites.
+    func newTabPageDidChangeFavoritesExpansion(_ controller: any NewTabPage)
+
     func newTabPageDidRequestSettings(_ controller: any NewTabPage)
     /// The customization sheet was opened over the page.
     func newTabPageDidOpenCustomization(_ controller: any NewTabPage)
@@ -54,6 +59,8 @@ extension NewTabPageControllerDelegate {
     func newTabPageDidDismissDuckAIFireOnboardingCompletion(_ controller: any NewTabPage) { }
     func newTabPageDidScroll(_ controller: any NewTabPage) { }
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) { }
+    func newTabPage(_ controller: any NewTabPage, didSwitchTextEntryModeTo mode: TextEntryMode) { }
+    func newTabPageDidChangeFavoritesExpansion(_ controller: any NewTabPage) { }
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) { }
     func newTabPageDidOpenCustomization(_ controller: any NewTabPage) { }
     func newTabPageDidCloseCustomization(_ controller: any NewTabPage) { }

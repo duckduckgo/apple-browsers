@@ -31,7 +31,7 @@ struct NewTabPageSearchInputView: View {
     var body: some View {
         VStack(spacing: 0) {
             if model.settings.isModeToggleShown {
-                NewTabPageModeToggle(textEntryMode: $model.textEntryMode)
+                NewTabPageModeToggle(textEntryMode: model.textEntryMode, onModeChanged: { model.switchMode(to: $0) })
                     .frame(height: Metrics.toggleHeight)
                     .padding(.top, Metrics.cardPadding)
                     .padding(.horizontal, Metrics.cardPadding)
@@ -50,7 +50,8 @@ struct NewTabPageSearchInputView: View {
 
 private struct NewTabPageModeToggle: UIViewRepresentable {
 
-    @Binding var textEntryMode: TextEntryMode
+    let textEntryMode: TextEntryMode
+    let onModeChanged: (TextEntryMode) -> Void
 
     func makeUIView(context: Context) -> UnifiedToggleInputToggleView {
         UnifiedToggleInputToggleView()
@@ -58,7 +59,7 @@ private struct NewTabPageModeToggle: UIViewRepresentable {
 
     func updateUIView(_ view: UnifiedToggleInputToggleView, context: Context) {
         view.setMode(textEntryMode, animated: false)
-        view.onModeChanged = { textEntryMode = $0 }
+        view.onModeChanged = onModeChanged
     }
 }
 

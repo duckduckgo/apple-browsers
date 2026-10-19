@@ -116,6 +116,10 @@
                                 "type": "boolean",
                                 "description": "True if the user opened the New Tab Page customization sheet during the visit"
                             },
+                            "toggle_favorites_expansion": {
+                                "type": "boolean",
+                                "description": "True if the user expanded or collapsed the favorites on the redesigned New Tab Page during the visit"
+                            },
                             "tap_fire_button": {
                                 "type": "boolean",
                                 "description": "True if the user tapped the Fire button during the visit"

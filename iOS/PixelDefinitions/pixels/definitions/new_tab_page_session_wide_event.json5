@@ -159,6 +159,11 @@
                 "description": "Whether the user opened the New Tab Page customization sheet during the visit."
             },
             {
+                "key": "feature.data.ext.actions.toggle_favorites_expansion",
+                "type": "boolean",
+                "description": "Whether the user expanded or collapsed the favorites on the redesigned New Tab Page during the visit."
+            },
+            {
                 "key": "feature.data.ext.actions.tap_fire_button",
                 "type": "boolean",
                 "description": "Whether the user tapped the Fire button during the visit."

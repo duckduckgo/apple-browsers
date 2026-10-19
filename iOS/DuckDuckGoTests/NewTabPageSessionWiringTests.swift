@@ -51,6 +51,60 @@ struct NewTabPageSessionWiringTests {
         #expect(delegate.scrollCount == 1)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Switching the resting toggle reports the mode picked", .timeLimit(.minutes(1)))
+    func switchingRestingToggleReportsMode() {
+        let model = makeSearchInputModel()
+        var reportedModes: [TextEntryMode] = []
+        model.onUserSwitchedMode = { reportedModes.append($0) }
+
+        model.switchMode(to: .aiChat)
+
+        #expect(model.textEntryMode == .aiChat)
+        #expect(reportedModes == [.aiChat])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Restoring the mode from settings is not reported as a switch", .timeLimit(.minutes(1)))
+    func refreshingSettingsDoesNotReportSwitch() {
+        let model = makeSearchInputModel()
+        var reportedModes: [TextEntryMode] = []
+        model.onUserSwitchedMode = { reportedModes.append($0) }
+
+        model.refreshSettings()
+
+        #expect(reportedModes.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Expanding or collapsing the favorites reports each change", .timeLimit(.minutes(1)))
+    func changingFavoritesExpansionReportsChange() {
+        let model = makeFavoritesModel()
+        var changeCount = 0
+        model.onUserChangedExpansion = { changeCount += 1 }
+
+        model.changeExpansion(to: true)
+        model.changeExpansion(to: true)
+        model.changeExpansion(to: false)
+
+        #expect(changeCount == 2)
+        #expect(model.expansionState.isExpanded == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Restoring the favorites expansion is not reported", .timeLimit(.minutes(1)))
+    func restoringFavoritesExpansionDoesNotReport() {
+        let model = makeFavoritesModel()
+        var changeCount = 0
+        model.onUserChangedExpansion = { changeCount += 1 }
+
+        let restoredState = FavoritesExpansionState()
+        restoredState.isExpanded = true
+        model.expansionState = restoredState
+
+        #expect(changeCount == 0)
+    }
+
     // MARK: - Sheets
 
     @available(iOS 16, macOS 13, *)
@@ -104,6 +158,23 @@ struct NewTabPageSessionWiringTests {
 
     private func makeCustomizationModel() -> NewTabPageCustomizationModel {
         NewTabPageCustomizationModel(persistor: CustomizationPersistorStub(), pixelFiring: nil)
+    }
+
+    private func makeSearchInputModel() -> NewTabPageSearchInputModel {
+        NewTabPageSearchInputModel(notificationCenter: NotificationCenter()) {
+            NewTabPageSearchInputModel.Settings(isModeToggleShown: true,
+                                                isAIChatEnabled: true,
+                                                isVoiceSearchEnabled: false,
+                                                defaultTextEntryMode: .search)
+        }
+    }
+
+    private func makeFavoritesModel() -> FavoritesViewModel {
+        FavoritesViewModel(isFocussedState: false,
+                           favoriteDataSource: MockNewTabPageFavoriteDataSource(),
+                           faviconLoader: MockFavoritesFaviconLoading(),
+                           faviconsCache: MockFavoritesFaviconCaching(),
+                           pixelFiring: nil)
     }
 }
 

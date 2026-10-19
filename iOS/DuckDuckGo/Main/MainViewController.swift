@@ -7240,6 +7240,14 @@ extension MainViewController: NewTabPageControllerDelegate {
         recordNewTabPageSessionMessageInteraction(interaction)
     }
 
+    func newTabPage(_ controller: any NewTabPage, didSwitchTextEntryModeTo mode: TextEntryMode) {
+        recordNewTabPageSessionToggleSwitch(to: mode)
+    }
+
+    func newTabPageDidChangeFavoritesExpansion(_ controller: any NewTabPage) {
+        recordNewTabPageSessionAction(.toggleFavoritesExpansion)
+    }
+
     func newTabPageDidRequestAddFavorite(_ controller: any NewTabPage) {
         // UIKit drops a presentation while another is on screen or in flight, such as on a double
         // tap, and nothing would then report the sheet closing.

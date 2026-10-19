@@ -68,6 +68,8 @@ final class NewTabPageSessionWideEventData: WideEventData {
         case tapFavorite = "tap_favorite"
         case tapAddFavorite = "tap_add_favorite"
         case tapCustomize = "tap_customize"
+        /// See all, See less or the collapse chevron on the redesigned favorites.
+        case toggleFavoritesExpansion = "toggle_favorites_expansion"
         case tapFireButton = "tap_fire_button"
         case tapReturnToLast = "tap_return_to_last"
         /// Reached through the return-to-tab card rather than the toolbar's tab button.

@@ -169,6 +169,7 @@ class FavoritesViewModel: ObservableObject {
         onFavoriteDeleted?(entity)
     }
 
+    var onUserChangedExpansion: (() -> Void)?
     /// Expands or collapses the favorites at the user's request, as opposed to restoring the tab's state.
     func changeExpansion(to isExpanded: Bool) {
         guard expansionState.isExpanded != isExpanded else { return }
@@ -176,6 +177,7 @@ class FavoritesViewModel: ObservableObject {
         expansionState.isExpanded = isExpanded
         pixelFiring?.fire(NewTabPageFavoritesPixel.expansionChanged(isExpanded: isExpanded, isFocussedState: isFocussedState),
                           frequency: .dailyAndCount)
+        onUserChangedExpansion?()
     }
 
     var onFavoriteEdit: ((BookmarkEntity) -> Void)?

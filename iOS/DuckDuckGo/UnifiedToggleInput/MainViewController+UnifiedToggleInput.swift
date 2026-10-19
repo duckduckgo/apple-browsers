@@ -1596,6 +1596,10 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
         unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
         segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChatPromotion)
     }
+
+    func unifiedInputEditingStateDidInteractWithMessage(_ interaction: NewTabPageMessageInteraction) {
+        recordNewTabPageSessionMessageInteraction(interaction)
+    }
 }
 
 // MARK: - AIChatTabChatHeaderViewDelegate

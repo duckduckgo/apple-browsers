@@ -36,6 +36,7 @@ struct NewTabPageSessionWideEventDataTests {
         "feature.data.ext.actions.tap_favorite",
         "feature.data.ext.actions.tap_add_favorite",
         "feature.data.ext.actions.tap_customize",
+        "feature.data.ext.actions.toggle_favorites_expansion",
         "feature.data.ext.actions.tap_fire_button",
         "feature.data.ext.actions.tap_return_to_last",
         "feature.data.ext.actions.tap_tab_viewer_escape_hatch",
@@ -444,7 +445,8 @@ struct NewTabPageSessionWideEventDataTests {
 
         let decoded = try JSONDecoder().decode(NewTabPageSessionWideEventData.self, from: payload)
 
-        #expect(decoded.actions == Set(NewTabPageSessionWideEventData.Action.allCases))
+        let actionsAddedSince: Set<NewTabPageSessionWideEventData.Action> = [.toggleFavoritesExpansion]
+        #expect(decoded.actions == Set(NewTabPageSessionWideEventData.Action.allCases).subtracting(actionsAddedSince))
     }
 
     @available(iOS 16, macOS 13, *)

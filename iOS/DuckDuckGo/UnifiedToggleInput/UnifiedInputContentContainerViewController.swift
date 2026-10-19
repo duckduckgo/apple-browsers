@@ -47,6 +47,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidRequestTabSwitcher()
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
     func unifiedInputEditingStateDidRequestSyncSetup()
+    func unifiedInputEditingStateDidInteractWithMessage(_ interaction: NewTabPageMessageInteraction)
 }
 
 final class UnifiedInputContentContainerViewController: UIViewController {
@@ -1156,6 +1157,10 @@ extension UnifiedInputContentContainerViewController: NewTabPageControllerDelega
 
     func newTabPageDidRequestTabSwitcher(_ controller: any NewTabPage) {
         delegate?.unifiedInputEditingStateDidRequestTabSwitcher()
+    }
+
+    func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) {
+        delegate?.unifiedInputEditingStateDidInteractWithMessage(interaction)
     }
 
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage) {}

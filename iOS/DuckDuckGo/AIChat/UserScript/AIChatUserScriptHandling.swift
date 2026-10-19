@@ -444,9 +444,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
     }
 
+    private var supportsBrowserTabContexts: Bool {
+        guard displayMode == .fullTab, nativeModeSupport.supportsNativeChatInput else { return false }
+        let feature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, devicePlatform: devicePlatform)
+        guard case .available = feature.state else { return false }
+        return true
+    }
+
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
         let defaults = AIChatNativeConfigValues.defaultValues
         let (supportsFullMode, supportsContextualMode, supportsNativeChatInput) = nativeModeSupport
+        let supportsTabContexts = supportsContextualMode || supportsBrowserTabContexts
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
 
@@ -464,14 +472,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeChatInput: supportsNativeChatInput,
             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-            supportsPageContext: supportsContextualMode,
+            supportsPageContext: supportsTabContexts,
             supportsAIChatFullMode: supportsFullMode,
             supportsAIChatContextualMode: supportsContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
             supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
             supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !fireMode,
-            supportsMultipleContexts: supportsContextualMode,
+            supportsMultipleContexts: supportsTabContexts,
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
             supportsPromoCards: supportsNativeChatInput,

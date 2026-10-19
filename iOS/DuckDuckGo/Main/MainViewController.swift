@@ -623,6 +623,7 @@ class MainViewController: UIViewController {
     var unifiedToggleInputCoordinator: UnifiedToggleInputCoordinator? {
         didSet { remoteMessageImpressionReporter.observeInputVisibility(unifiedToggleInputCoordinator) }
     }
+    var browserTabMentionSuggestionsController: BrowserTabMentionSuggestionsController?
     var unifiedInputStateStore: UnifiedInputStateStore?
     var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
@@ -3475,7 +3476,7 @@ class MainViewController: UIViewController {
             // refreshUnifiedToggleInput(for:) below — otherwise it would fire activateForTab
             // a second time for the same uid, causing redundant attachment teardown.
             if currentTab == nil {
-                unifiedToggleInputCoordinator?.activateForTab(tabModel.uid)
+                activateUnifiedToggleInput(for: tabModel)
             }
         }
         updateBrowsingMenuHeaderDataSource()
@@ -3991,6 +3992,7 @@ class MainViewController: UIViewController {
         ViewHighlighter.updatePositions()
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
+        browserTabMentionSuggestionsController?.updateLayout()
         updateWindowedAddressBarCorners()
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
     }
@@ -4871,6 +4873,28 @@ class MainViewController: UIViewController {
                     fromDeepLink: Bool = false,
                     termsAccepted: Bool = false) {
 
+        openAIChat(source: source, query, autoSend: autoSend, payload: payload, flowType: flowType,
+                   tools: tools, modelId: modelId, reasoningEffort: reasoningEffort,
+                   images: images, files: files, reportsNewTab: reportsNewTab, forcesNewTab: forcesNewTab,
+                   fromDeepLink: fromDeepLink, termsAccepted: termsAccepted, tabAttachmentRequest: nil)
+    }
+
+    func openAIChat(source: AIChatEntryPointSource,
+                    _ query: String? = nil,
+                    autoSend: Bool = false,
+                    payload: Any? = nil,
+                    flowType: AIChatOnboardingFlowType = .default,
+                    tools: [AIChatRAGTool]? = nil,
+                    modelId: String? = nil,
+                    reasoningEffort: AIChatReasoningEffort? = nil,
+                    images: [AIChatNativePrompt.NativePromptImage]? = nil,
+                    files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                    reportsNewTab: Bool? = nil,
+                    forcesNewTab: Bool = false,
+                    fromDeepLink: Bool = false,
+                    termsAccepted: Bool = false,
+                    tabAttachmentRequest: MultiTabAttachmentRequest?) {
+
         // A query means the user asked something and a response is what they are waiting for;
         // without one they are only opening the chat surface.
         newTabPageSessionInstrumentation.visitEnded(terminalAction: query == nil ? .loadDuckai : .loadDuckaiResponse)
@@ -4889,7 +4913,8 @@ class MainViewController: UIViewController {
             reportsNewTab: reportsNewTab,
             forcesNewTab: forcesNewTab,
             fromDeepLink: fromDeepLink,
-            termsAccepted: termsAccepted
+            termsAccepted: termsAccepted,
+            tabAttachmentRequest: tabAttachmentRequest
         )
     }
 
@@ -5005,23 +5030,23 @@ class MainViewController: UIViewController {
                                  reportsNewTab: Bool? = nil,
                                  forcesNewTab: Bool = false,
                                  fromDeepLink: Bool = false,
-                                 termsAccepted: Bool = false) {
+                                 termsAccepted: Bool = false,
+                                 tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
+            tabAttachmentRequest?.cancel()
             return
         }
 
-        // Deep links and callers that force it cross unconditionally; everything else defers to `AIBoundaryNavigationDecision` so the chat→chat-stays-in-place matrix lives in one place. NTP/empty stays in-place via `link != nil`.
-        let shouldOpenInNewTab: Bool = {
-            guard let currentTab, currentTab.tabModel.link != nil else { return false }
-            if fromDeepLink || forcesNewTab { return true }
-            return AIBoundaryNavigationDecision.forProgrammaticNavigation(
-                currentIsAI: currentTab.isAITab,
-                currentHasContent: true,
-                targetIsAI: true,
-                unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
-            ) == .openInNewTab
-        }()
+        let shouldOpenInNewTab = shouldOpenAIChatInNewTab(forcesNewTab: forcesNewTab, fromDeepLink: fromDeepLink)
+        if let tabAttachmentRequest {
+            openAIChatWithTabAttachments(query: query ?? "", autoSend: autoSend, payload: payload,
+                                         flowType: flowType, tools: tools, modelId: modelId,
+                                         reasoningEffort: reasoningEffort, images: images, files: files,
+                                         termsAccepted: termsAccepted, source: source,
+                                         opensNewTab: shouldOpenInNewTab, request: tabAttachmentRequest)
+            return
+        }
         // `reportsNewTab` only overrides what is reported: callers that created the tab themselves
         // land here with a blank current tab, which would otherwise read as no new tab.
         fireAIChatEntryPointPixel(source: source,
@@ -5074,6 +5099,119 @@ class MainViewController: UIViewController {
              termsAccepted: termsAccepted, source: source)
         if let modelId {
             unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+        }
+    }
+
+    private func shouldOpenAIChatInNewTab(forcesNewTab: Bool, fromDeepLink: Bool) -> Bool {
+        guard let currentTab, currentTab.tabModel.link != nil else { return false }
+        if fromDeepLink || forcesNewTab { return true }
+        return AIBoundaryNavigationDecision.forProgrammaticNavigation(
+            currentIsAI: currentTab.isAITab,
+            currentHasContent: true,
+            targetIsAI: true,
+            unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
+        ) == .openInNewTab
+    }
+
+    private func openAIChatWithTabAttachments(query: String,
+                                              autoSend: Bool,
+                                              payload: Any?,
+                                              flowType: AIChatOnboardingFlowType,
+                                              tools: [AIChatRAGTool]?,
+                                              modelId: String?,
+                                              reasoningEffort: AIChatReasoningEffort?,
+                                              images: [AIChatNativePrompt.NativePromptImage]?,
+                                              files: [AIChatNativePrompt.NativePromptFile]?,
+                                              termsAccepted: Bool,
+                                              source: AIChatEntryPointSource,
+                                              opensNewTab: Bool,
+                                              request: MultiTabAttachmentRequest) {
+        let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: autoSend,
+                                                    toolChoice: tools?.map(\.rawValue), images: images, files: files,
+                                                    modelId: modelId, reasoningEffort: reasoningEffort)
+            .withTermsAccepted(termsAccepted)
+        prepareAIChatWithTabAttachments(prompt, payload: payload, flowType: flowType, source: source,
+                                       opensNewTab: opensNewTab, request: request, completion: { _ in })
+    }
+
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void) {
+        guard tabManager.current(createIfNeeded: true) != nil else {
+            request.cancel()
+            completion(false)
+            return
+        }
+        recordNewTabPageSessionAction { $0.hitSubmit() }
+        newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadDuckaiResponse)
+        let opensNewTab = shouldOpenAIChatInNewTab(forcesNewTab: false, fromDeepLink: false)
+        prepareAIChatWithTabAttachments(prompt, payload: nil, flowType: .default, source: .addressBarPrompt,
+                                       opensNewTab: opensNewTab, request: request, completion: completion)
+    }
+
+    private func prepareAIChatWithTabAttachments(_ prompt: AIChatNativePrompt,
+                                                 payload: Any?, flowType: AIChatOnboardingFlowType,
+                                                 source: AIChatEntryPointSource, opensNewTab: Bool,
+                                                 request: MultiTabAttachmentRequest,
+                                                 completion: @escaping (Bool) -> Void) {
+        guard !clearInProgress, let originatingTab = currentTab else {
+            request.cancel()
+            completion(false)
+            return
+        }
+        let tabsModel = tabManager.tabsModel(for: originatingTab.tabModel.mode)
+        let selectedModelID = unifiedInputStateStore?.state(for: originatingTab.tabModel.uid).selectedModelID
+        let selectedReasoningMode = unifiedInputStateStore?.state(for: originatingTab.tabModel.uid).selectedReasoningMode
+        let chatURL = originatingTab.aiChatContentHandler.buildQueryURL(query: nil, autoSend: false,
+                                                                       flowType: flowType, tools: nil)
+        originatingTab.prepareInitialAIChatPrompt(prompt, request: request) { [weak self, weak originatingTab] delivery in
+            guard let self, let originatingTab, let delivery, !self.clearInProgress,
+                  tabsModel.tabs.contains(where: { $0 === originatingTab.tabModel }) else {
+                delivery?.cancel()
+                completion(false)
+                return
+            }
+            let shouldPresent = self.currentTab === originatingTab
+            completion(true)
+            self.fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: true)
+            if shouldPresent {
+                self.postIdleSessionInstrumentation.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: source)
+            }
+            let recipient: TabViewController
+            if opensNewTab {
+                originatingTab.contextualOnboardingPresenter.dismissContextualOnboardingIfNeeded(from: originatingTab)
+                // The prompt goes in before caching, or capacity enforcement could evict the recipient without it.
+                recipient = self.tabManager.add(url: chatURL, inBackground: true, inheritedAttribution: nil, in: tabsModel) {
+                    $0.setInitialAIChatTabAttachmentPrompt(delivery)
+                }
+                recipient.inferredOpenerContext = .external
+                if var state = self.unifiedInputStateStore?.state(for: recipient.tabModel.uid) {
+                    state.selectedModelID = selectedModelID
+                    state.selectedReasoningMode = selectedReasoningMode
+                    self.unifiedInputStateStore?.update(state, for: recipient.tabModel.uid)
+                }
+            } else {
+                recipient = originatingTab
+                if recipient.tabModel.link == nil {
+                    self.ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: recipient.tabModel.openedAfterIdle)
+                }
+            }
+            recipient.tabModel.duckAIEntrySource = source
+            recipient.isVoiceModeRequested = false
+            recipient.aiChatContentHandler.setPayload(payload: payload)
+            if !opensNewTab {
+                recipient.load(url: chatURL)
+                recipient.setInitialAIChatTabAttachmentPrompt(delivery)
+            }
+            if shouldPresent {
+                if opensNewTab {
+                    self.selectTab(recipient.tabModel)
+                } else {
+                    self.prepareTabForRequest {}
+                }
+                if case .query(let query)? = prompt.tool, let modelId = query.modelId {
+                    self.unifiedToggleInputCoordinator?.updateSelectedModel(modelId)
+                }
+            }
         }
     }
 

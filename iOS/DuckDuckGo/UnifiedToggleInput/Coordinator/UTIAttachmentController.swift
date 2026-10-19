@@ -67,6 +67,8 @@ final class UTIAttachmentController {
         var tabAttachmentFeatureState: () -> AIChatContextualAttachMoreTabsState = { .unavailable }
         var pageContextRemoveHandler: () -> (() -> Void)? = { nil }
         var isFireTab: () -> Bool = { false }
+        var isEditing: () -> Bool = { false }
+        var isVoiceSessionActive: () -> Bool = { false }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -401,6 +403,7 @@ final class UTIAttachmentController {
         // Disable "Ask about page" for non-attachable pages (blocklisted media / special page).
         let canAttachPageContext = environment.isContextualChatState() && (environment.isPageContextAttachable() ?? true)
         let policy = environment.policy()
+        let tabSelectionContextIdentity = pasteContextIdentity
         var pageContextActionHandler = canAttachPageContext ? environment.pageContextAttachHandler() : nil
 
         if canUseTabAttachments {
@@ -431,16 +434,19 @@ final class UTIAttachmentController {
             tabAttachmentLimit: policy.maximumTabAttachmentCount ?? 0,
             isTabSelectionAvailable: { [weak self] in
                 guard let self else { return false }
-                return self.canUseTabAttachments && !self.view.isGenerating()
+                return self.pasteContextIdentity == tabSelectionContextIdentity
+                    && self.canUseTabAttachments && !self.view.isGenerating()
             },
             tabActionHandler: { [weak self] candidate, isAttached, source in
-                self?.setTabAttachment(candidate, isAttached: isAttached, attachmentSource: source) ?? .rejected
+                guard let self, self.pasteContextIdentity == tabSelectionContextIdentity else { return .rejected }
+                return self.setTabAttachment(candidate, isAttached: isAttached, attachmentSource: source)
             }
         )
     }
 
     var canUseTabAttachments: Bool {
-        guard environment.isContextualChatState(),
+        guard environment.inputMode() == .aiChat,
+              !environment.isEditing(), !environment.isVoiceSessionActive(),
               environment.tabAttachmentSource() != nil,
               case .available = environment.tabAttachmentFeatureState() else { return false }
         return true
@@ -449,7 +455,7 @@ final class UTIAttachmentController {
     var tabAttachmentCandidates: [MultiTabAttachmentCandidate] {
         guard canUseTabAttachments, let source = environment.tabAttachmentSource() else { return [] }
         return source.candidates().filter {
-            $0.tabId != source.currentTabID || environment.isPageContextAttachable() != false
+            !environment.isContextualChatState() || $0.tabId != source.currentTabID || environment.isPageContextAttachable() != false
         }
     }
 
@@ -481,7 +487,7 @@ final class UTIAttachmentController {
         if isAttached {
             guard policy.canAttachTab(withID: candidate.tabId),
                   let currentCandidate = tabAttachmentCandidates.first(where: { $0.tabId == candidate.tabId }) else { return .rejected }
-            if candidate.tabId == source.currentTabID {
+            if environment.isContextualChatState(), candidate.tabId == source.currentTabID {
                 guard let attach = environment.pageContextAttachHandler() else { return .rejected }
                 attach()
             } else {
@@ -496,7 +502,7 @@ final class UTIAttachmentController {
                 pixelReporter.reportTabAttachment(.attached, source: attachmentSource)
                 callbacks.onTabAttached()
             }
-        } else if candidate.tabId == source.currentTabID {
+        } else if environment.isContextualChatState(), candidate.tabId == source.currentTabID {
             guard let remove = environment.pageContextRemoveHandler() else { return .rejected }
             remove()
         } else {

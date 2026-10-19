@@ -361,6 +361,11 @@ class TabViewController: UIViewController {
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
                                    unifiedToggleInputFeature: unifiedToggleInputFeature)
+    private lazy var aiChatContextualAttachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(
+        featureFlagger: featureFlagger,
+        aiChatSettings: aiChatSettings,
+        devicePlatform: devicePlatform
+    )
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -1535,6 +1540,9 @@ class TabViewController: UIViewController {
         pageContextRestoredPageNeedsLoad = false
         pageContextProcessTerminated = false
         let isReplacingWebView = webView != nil
+        if isReplacingWebView {
+            cancelPendingAIChatTabAttachmentPrompt()
+        }
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
         let userContentController = UserContentController(
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
@@ -1703,6 +1711,18 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: true)
+    }
+
+    private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
+        if case .available = aiChatContextualAttachMoreTabsFeature.state {
+            if !shouldCancelPendingAIChatTabAttachmentPrompt,
+               initialAIChatTabAttachmentPrompt?.hasPendingPrompt == true {
+                awaitsInitialAIChatTabAttachmentNavigation = true
+            } else {
+                cancelPendingAIChatTabAttachmentPrompt()
+            }
+        }
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
@@ -1716,6 +1736,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
@@ -1761,6 +1782,7 @@ class TabViewController: UIViewController {
 
     func prepareForDataClearing() {
         freezeMonitor.end(.fire)
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
@@ -1936,7 +1958,7 @@ class TabViewController: UIViewController {
     }
     
     private func reissueNavigationWithSearchHeaderParams(for url: URL) {
-        load(url: url.applyingSearchHeaderParams())
+        load(url: url.applyingSearchHeaderParams(), shouldCancelPendingAIChatTabAttachmentPrompt: false)
     }
     
     private func shouldReissueSearch(for url: URL) -> Bool {
@@ -2556,6 +2578,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
@@ -2580,6 +2603,9 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        if let preparation = initialAIChatPromptPreparation {
+            Task { @MainActor in preparation.cancel() }
+        }
         webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
@@ -2596,6 +2622,54 @@ class TabViewController: UIViewController {
         removeObservers()
         temporaryDownloadForPreviewedFile?.cancel()
         cleanUpBeforeClosing()
+    }
+
+    private var initialAIChatTabAttachmentPrompt: AIChatInitialPromptDelivery?
+    private var initialAIChatPromptPreparation: AIChatInitialPromptPreparation?
+    private weak var initialAIChatTabAttachmentUserScript: AIChatUserScript?
+    private var awaitsInitialAIChatTabAttachmentNavigation = false
+    private var aiChatTabAttachmentNavigation: WKNavigation?
+
+    var isProtectedFromCacheEviction: Bool {
+        initialAIChatPromptPreparation != nil || initialAIChatTabAttachmentPrompt?.protectsRecipientFromEviction == true
+    }
+
+    func prepareInitialAIChatPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                    completion: @escaping (AIChatInitialPromptDelivery?) -> Void) {
+        guard initialAIChatPromptPreparation == nil else {
+            request.cancel()
+            completion(nil)
+            return
+        }
+        initialAIChatPromptPreparation = AIChatInitialPromptPreparation(prompt: prompt, request: request) { [weak self] delivery in
+            self?.initialAIChatPromptPreparation = nil
+            completion(delivery)
+        }
+    }
+
+    func setInitialAIChatTabAttachmentPrompt(_ delivery: AIChatInitialPromptDelivery) {
+        cancelPendingAIChatTabAttachmentPrompt()
+        awaitsInitialAIChatTabAttachmentNavigation = true
+        initialAIChatTabAttachmentPrompt = delivery
+        if let userScript = userScripts?.aiChatUserScript {
+            configureInitialAIChatTabAttachmentPrompt(with: userScript)
+        }
+    }
+
+    private func configureInitialAIChatTabAttachmentPrompt(with userScript: AIChatUserScript) {
+        guard let initial = initialAIChatTabAttachmentPrompt else { return }
+        initialAIChatTabAttachmentUserScript = userScript
+        userScript.setInitialTabAttachmentPrompt(initial)
+    }
+
+    func cancelPendingAIChatTabAttachmentPrompt() {
+        initialAIChatPromptPreparation?.cancel()
+        initialAIChatPromptPreparation = nil
+        initialAIChatTabAttachmentPrompt?.cancel()
+        initialAIChatTabAttachmentPrompt = nil
+        initialAIChatTabAttachmentUserScript = nil
+        awaitsInitialAIChatTabAttachmentNavigation = false
+        userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -2857,6 +2931,15 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
+            if awaitsInitialAIChatTabAttachmentNavigation {
+                awaitsInitialAIChatTabAttachmentNavigation = false
+            } else {
+                cancelPendingAIChatTabAttachmentPrompt()
+                userScripts?.aiChatUserScript.resetTabAttachmentPromptForNavigation()
+            }
+            aiChatTabAttachmentNavigation = navigation
+        }
         if floatingUIManager.isFloatingUIEnabled {
             floatingPageBackgroundColor = nil
         }
@@ -3395,6 +3478,10 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         terminationReloadMonitor.didFail(with: error)
+        if webView === self.webView, let navigation,
+           aiChatTabAttachmentNavigation === navigation, !awaitsInitialAIChatTabAttachmentNavigation {
+            cancelPendingAIChatTabAttachmentPrompt()
+        }
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -3450,6 +3537,10 @@ extension TabViewController: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         terminationReloadMonitor.didFail(with: error)
+        if webView === self.webView, let navigation,
+           aiChatTabAttachmentNavigation === navigation, !awaitsInitialAIChatTabAttachmentNavigation {
+            cancelPendingAIChatTabAttachmentPrompt()
+        }
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -4696,6 +4787,7 @@ extension TabViewController: WKUIDelegate {
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
             freezeMonitor.end(.terminated)
         }
@@ -4913,7 +5005,7 @@ extension TabViewController: UIGestureRecognizerDelegate {
         
         requeryLogic.onRefresh()
         if isError || webView.url == nil, let url = url {
-            load(url: url)
+            load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: webView.url != nil)
         } else {
             reload()
         }
@@ -5001,7 +5093,9 @@ extension TabViewController: UserContentControllerDelegate {
             return .resolve(isFireMode: self.tabModel.fireTab,
                             handler: self.duckAiFireModeStorageHandler)
         }
+        initialAIChatTabAttachmentUserScript?.detachInitialTabAttachmentPromptForUserScriptReplacement()
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
+        configureInitialAIChatTabAttachmentPrompt(with: userScripts.aiChatUserScript)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages

@@ -80,12 +80,21 @@ final class CPMAppFailureRecorder: CPMMessagingDiagnosticsProviding {
 
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics {
         let diagnostics = autoreleasepool { recorder.collectDiagnostics(tabIdentifier: tabIdentifier) }
-        failures.append(diagnostics.pixelParameters)
+        failures.append(diagnostics.appIntegrationParameters)
         return diagnostics
     }
+}
 
-    func consumeBackgroundGraveyardTreatmentState() -> Bool? {
-        recorder.consumeBackgroundGraveyardTreatmentState()
+@available(macOS 15.4, *)
+extension CPMMessagingDiagnostics {
+    /// Local fixture evidence follows the current episode allowlist; the view count is test-only.
+    var appIntegrationParameters: [String: String] {
+        let report = CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .failedMeasurementResponse,
+                                              reloadState: .none, secondsToResponse: 0, diagnostics: self)
+        var parameters = CPMWebExtensionPixelMetadata(event: .cpmMessagingEpisode(report))?.parameters ?? [:]
+        for key in ["reason", "was_stuck", "outcome", "reload_state", "response_after"] { parameters[key] = nil }
+        parameters["bg_view_creations"] = backgroundWebViewCreateCount.map(String.init)
+        return parameters
     }
 }
 

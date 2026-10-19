@@ -268,7 +268,7 @@ final class CPMAppIntegrationHarness {
         observations.append(["label": label, "pageMarks": marks, "nativeMethods": native.arrivals.map(\.method)])
         print("CPM APP MARKS \(marks) NATIVE \(native.arrivals.map(\.method))")
         let diagnostics = autoreleasepool {
-            manager.cpmDiagnosticsRecorder?.collectDiagnostics(tabIdentifier: tab.uuid).pixelParameters ?? [:]
+            manager.cpmDiagnosticsRecorder?.collectDiagnostics(tabIdentifier: tab.uuid).appIntegrationParameters ?? [:]
         }
         let probe = Probe(label: label, url: target, responded: responded, pageReceivedInitResponse: pageReceived,
                           elapsed: Date().timeIntervalSince(started),
@@ -318,7 +318,7 @@ final class CPMAppIntegrationHarness {
                           }) else { return }
                     self?.backgroundLoadErrorContexts.insert(ObjectIdentifier(context))
                     self?.note(["actualBackgroundLoadError": context.errors.map { ($0 as NSError).code },
-                                "diagnosticsAtError": self?.manager.cpmDiagnosticsRecorder?.snapshot().pixelParameters ?? [:]])
+                                "diagnosticsAtError": self?.manager.cpmDiagnosticsRecorder?.snapshot().appIntegrationParameters ?? [:]])
                 }
             }.store(in: &cancellables)
     }

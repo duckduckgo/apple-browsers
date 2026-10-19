@@ -204,6 +204,7 @@ class MainViewController: UIViewController {
                                                            remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                            appSettings: appSettings,
                                                            aiChatSettings: aiChatSettings,
+                                                           aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                            subscriptionManager: subscriptionManager,
                                                            internalUserCommands: internalUserCommands,
                                                            floatingUIManager: floatingUIManager,

@@ -66,6 +66,10 @@ public enum WebExtensionPixelEvent {
     /// One terminal report for a failure episode, on a valid dashboard response or the observation deadline.
     /// Intermediate initialization failures, stuck confirmation and reload checks stay local.
     case cpmMessagingEpisode(CPMMessagingEpisodeReport)
+
+    /// A stale background was restarted after an observed Network process replacement.
+    /// This records applying the mitigation, not confirmed messaging recovery.
+    case cpmNetworkProcessRecoveryApplied
 }
 
 /// A bounded summary of existing health-monitor evidence, not proof of document initialization or all-tab recovery.
@@ -203,6 +207,10 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_episode"
             frequency = .dailyAndCount
             parameters = report.pixelParameters
+        case .cpmNetworkProcessRecoveryApplied:
+            name = "web_extension_cpm_network_process_recovery_applied"
+            frequency = .dailyAndCount
+            parameters = [:]
         case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,

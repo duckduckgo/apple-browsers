@@ -233,7 +233,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
         self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
             isEnabled: isCPMNetworkProcessRecoveryEnabled,
-            featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates
+            featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates,
+            pixelFiring: pixelFiring
         )
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider

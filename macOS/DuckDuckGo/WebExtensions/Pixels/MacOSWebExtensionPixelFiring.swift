@@ -87,6 +87,8 @@ enum WebExtensionPixel: PixelKit.Event {
 
     case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
 
+    case cpmNetworkProcessRecoveryApplied
+
     // MARK: - Debug
 
     case debugCPM(CPMWebExtensionPixelMetadata)
@@ -175,6 +177,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
         case .debugCPM(let metadata):
             return metadata.name
+        case .cpmNetworkProcessRecoveryApplied:
+            return "web_extension_cpm_network_process_recovery_applied_macos"
         }
     }
 
@@ -217,7 +221,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .debugCPM, .reloadError:
+        case .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied:
             return .none
         default:
             return .platformDefault
@@ -273,6 +277,12 @@ private extension DuckDuckGoWebExtensionType {
 
 @available(macOS 15.4, *)
 struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
+
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
 
     func fire(_ event: WebExtensionPixelEvent) {
         let pixel: WebExtensionPixel
@@ -331,6 +341,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         case .cpmMessagingEpisode:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
+        case .cpmNetworkProcessRecoveryApplied:
+            pixel = .cpmNetworkProcessRecoveryApplied
         }
         if case .reloadError = event {
             frequency = .dailyAndCount
@@ -339,7 +351,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         } else {
             frequency = .dailyAndStandard
         }
-        PixelKit.fire(pixel, frequency: frequency)
+        pixelFiring?.fire(pixel, frequency: frequency)
     }
 }
 

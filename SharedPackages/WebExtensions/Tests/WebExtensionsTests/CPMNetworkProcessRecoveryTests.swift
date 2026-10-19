@@ -33,12 +33,13 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
     private var current = true
     private var canRestart = true
     private var restarted: [WKWebView] = []
+    private let pixels = RecoveryPixelFiringSpy()
 
     private func makeRecovery(interval: TimeInterval = 60) -> CPMNetworkProcessRecovery {
         CPMNetworkProcessRecovery(isEnabled: { [unowned self] in
             self.flagReads += 1
             return self.enabled
-        }, featureFlagUpdates: flagUpdates.eraseToAnyPublisher(), checkInterval: interval,
+        }, featureFlagUpdates: flagUpdates.eraseToAnyPublisher(), pixelFiring: pixels, checkInterval: interval,
                                   processIdentifier: { [unowned self] _ in
             self.processReads += 1
             return self.process
@@ -63,6 +64,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         watch(view, in: recovery)
         XCTAssertFalse(recovery.recoverIfNeeded())
         XCTAssertTrue(restarted.isEmpty)
+        XCTAssertEqual(pixels.recoveryCount, 0)
     }
 
     func testReplacedNetworkProcessRestartsOnlyOnce() {
@@ -73,6 +75,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         XCTAssertTrue(recovery.recoverIfNeeded())
         XCTAssertFalse(recovery.recoverIfNeeded())
         XCTAssertEqual(restarted, [view])
+        XCTAssertEqual(pixels.recoveryCount, 1)
     }
 
     func testUnknownOriginalProcessIsRecordedBeforeDetectingReplacement() {
@@ -120,6 +123,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         enabled = false
         XCTAssertFalse(recovery.recoverIfNeeded())
         XCTAssertTrue(restarted.isEmpty)
+        XCTAssertEqual(pixels.recoveryCount, 0)
     }
 
     func testInitiallyDisabledFlagDoesNotStartPolling() async throws {
@@ -207,6 +211,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         current = true
         XCTAssertFalse(recovery.recoverIfNeeded(), "A discarded watch must stay discarded")
         XCTAssertTrue(restarted.isEmpty)
+        XCTAssertEqual(pixels.recoveryCount, 0)
     }
 
     func testUnloadingOldIdentifierDoesNotStopReplacementWatch() {
@@ -251,6 +256,7 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         XCTAssertTrue(recovery.recoverIfNeeded())
         XCTAssertEqual(restarted, [old, replacement])
         XCTAssertFalse(recovery.recoverIfNeeded())
+        XCTAssertEqual(pixels.recoveryCount, 2)
     }
 
     func testDiscardingStaleContextDoesNotDiscardAnotherContextWatch() {
@@ -296,9 +302,18 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         process = 200
         canRestart = false
         XCTAssertFalse(recovery.recoverIfNeeded())
+        XCTAssertEqual(pixels.recoveryCount, 0)
         canRestart = true
         XCTAssertTrue(recovery.recoverIfNeeded())
         XCTAssertEqual(restarted, [view])
+        XCTAssertEqual(pixels.recoveryCount, 1)
+    }
+
+    func testRecoveryPixelHasNoCustomParametersAndUsesDailyAndCount() throws {
+        let metadata = try XCTUnwrap(CPMWebExtensionPixelMetadata(event: .cpmNetworkProcessRecoveryApplied))
+        XCTAssertEqual(metadata.name, "web_extension_cpm_network_process_recovery_applied")
+        XCTAssertEqual(metadata.frequency, .dailyAndCount)
+        XCTAssertTrue(metadata.parameters.isEmpty)
     }
 
     func testSynchronousReplacementDuringRestartKeepsItsNewWatch() throws {
@@ -350,5 +365,18 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         XCTAssertEqual(restarted, [view])
         recovery = nil
         XCTAssertNil(released)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class RecoveryPixelFiringSpy: WebExtensionPixelFiring {
+    private(set) var recoveryCount = 0
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        guard case .cpmNetworkProcessRecoveryApplied = event else {
+            XCTFail("Network process recovery must only emit its application event")
+            return
+        }
+        recoveryCount += 1
     }
 }

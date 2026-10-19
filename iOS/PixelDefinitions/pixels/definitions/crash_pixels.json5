@@ -1,4 +1,45 @@
 {
+    "m_d_crash": {
+        "description": "Fires once per crash of the main app, reported by MetricKit on a later launch. Crashes older than 7 days are not reported. App extension crashes fire m_d_crash_<extension> instead.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "first",
+                "type": "boolean",
+                "description": "Set when this is the first crash ever reported for this install"
+            },
+            {
+                "key": "code",
+                "type": "string",
+                "description": "MXCrashDiagnostic exception code; '-1' when unavailable"
+            },
+            {
+                "key": "type",
+                "type": "string",
+                "description": "MXCrashDiagnostic Mach exception type; '-1' when unavailable"
+            },
+            {
+                "key": "signal",
+                "type": "string",
+                "description": "MXCrashDiagnostic POSIX signal number; '-1' when unavailable"
+            },
+            {
+                "key": "terminationReason",
+                "type": "string",
+                "description": "MXCrashDiagnostic termination reason reduced to '<namespace>_<code>', e.g. 'springboard_0x8badf00d' for a watchdog kill; '-1' when the crash has none, 'unknown' when it can't be parsed"
+            }
+        ]
+    },
+    "m_d_crash_daily": {
+        "description": "Fires at most once per day when MetricKit reports a crash of the main app. App extension crashes fire m_d_crash_<extension>_daily instead.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_d_bookmarks_could_not_load_database": {
         "description": "Fires when bookmarks database failed to load.",
         "owners": ["jaceklyp", "bwaresiak"],

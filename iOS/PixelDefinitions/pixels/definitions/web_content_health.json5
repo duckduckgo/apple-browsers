@@ -18,8 +18,8 @@
             }
         ]
     },
-    "web-content_unresponsive": {
-        "description": "Fires when WebKit reports that a tab's web content process stopped responding (private WKNavigationDelegate callback _webViewWebProcessDidBecomeUnresponsive:), e.g. a JavaScript busy loop or a long layout. Detects pages that are alive but hung.",
+    "web-content_unresponsive-2": {
+        "description": "Fires when WebKit reports that a tab's web content process stopped responding. WebKit runs this check after a reload, navigation or preview snapshot, so this counts freezes the user tried to get out of. The parameters describe the page at that moment. Gated by the webContentFreezeTelemetry subfeature.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
@@ -29,6 +29,90 @@
                 "key": "app_state",
                 "description": "App state when WebKit reported the hang",
                 "enum": ["foreground", "background"]
+            },
+            {
+                "key": "surface",
+                "description": "search: DuckDuckGo search results. duckai: Duck.ai. other: any other page",
+                "enum": ["search", "duckai", "other"]
+            },
+            {
+                "key": "loading",
+                "description": "Whether the page was still loading",
+                "type": "boolean"
+            },
+            {
+                "key": "desktop_mode",
+                "description": "Whether the tab requested the desktop site",
+                "type": "boolean"
+            },
+            {
+                "key": "protections",
+                "description": "Whether privacy protections were enabled for the site",
+                "type": "boolean"
+            },
+            {
+                "key": "web_extension",
+                "description": "Whether a web extension was loaded (iOS 18.4 and later)",
+                "type": "boolean"
+            }
+        ]
+    },
+    "web-content_unresponsive-result": {
+        "description": "Fires once per web-content_unresponsive-2 when the freeze ends. Duration is measured from the reload or navigation the user made just before WebKit reported the hang, or from the report when there was none; for app-ended it runs until the app went to the background, or is unknown if it never did. Attempts counts reloads and navigations the user tried while frozen. The page parameters are those recorded when the hang was reported.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "outcome",
+                "description": "How the freeze ended: the page answered again, the tab was closed or evicted, the user pressed Fire, the web process died, or the app exited during the freeze and the next launch reported it",
+                "enum": ["recovered", "closed", "fire", "terminated", "app-ended"]
+            },
+            {
+                "key": "duration",
+                "description": "Seconds from the user getting stuck (their reload or navigation, else WebKit's report) to the freeze ending",
+                "enum": ["0-2", "2-5", "5-15", "15-30", "30-60", "60-plus", "unknown"]
+            },
+            {
+                "key": "attempts",
+                "description": "Reloads and navigations the user tried while the page was frozen",
+                "enum": ["0", "1", "2", "3-5", "6-plus"]
+            },
+            {
+                "key": "app_state",
+                "description": "App state when the freeze ended",
+                "enum": ["foreground", "background"]
+            },
+            {
+                "key": "left_tab",
+                "description": "Whether the user left the frozen tab or the app during the freeze: WebKit stopped waiting on the page without the page answering, well before the freeze ended",
+                "type": "boolean"
+            },
+            {
+                "key": "surface",
+                "description": "search: DuckDuckGo search results. duckai: Duck.ai. other: any other page",
+                "enum": ["search", "duckai", "other"]
+            },
+            {
+                "key": "loading",
+                "description": "Whether the page was still loading",
+                "type": "boolean"
+            },
+            {
+                "key": "desktop_mode",
+                "description": "Whether the tab requested the desktop site",
+                "type": "boolean"
+            },
+            {
+                "key": "protections",
+                "description": "Whether privacy protections were enabled for the site",
+                "type": "boolean"
+            },
+            {
+                "key": "web_extension",
+                "description": "Whether a web extension was loaded (iOS 18.4 and later)",
+                "type": "boolean"
             }
         ]
     }

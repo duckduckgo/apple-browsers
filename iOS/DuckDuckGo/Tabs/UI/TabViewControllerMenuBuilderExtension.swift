@@ -493,6 +493,7 @@ extension TabViewController {
                                          action: { [weak self] in
             guard let self = self else { return }
             PixelKit.fire(Pixel.Event.browsingMenuRefreshPage)
+            self.userDidRequestNavigation()
             self.reload()
         })
     }

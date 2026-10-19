@@ -991,9 +991,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient) { trigger in
-            Logger.subscription.log("Subscription token restored from backup, trigger: \(trigger.rawValue, privacy: .public)")
-        }
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient)
         let appStoreRecovery = AppStoreTokenRecovery(recoverer: Self.deadTokenRecoverer,
                                                      purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
                                                      restoreFlow: restoreFlow)

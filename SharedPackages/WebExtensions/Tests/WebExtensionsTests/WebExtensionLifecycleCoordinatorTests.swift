@@ -614,6 +614,9 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? { nil }
     func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? { nil }
     @MainActor func reloadExtension(identifier: String) async throws {}
+    @MainActor func unloadExtension(identifier: String) async throws {}
+    @MainActor func loadExtension(identifier: String) async throws {}
+    func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }

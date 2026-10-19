@@ -681,6 +681,69 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         notifyUpdate()
     }
 
+    @MainActor
+    public func unloadExtension(identifier: String) async throws {
+        guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
+            throw WebExtensionError.extensionNotInstalled
+        }
+        guard !installedExtension.isEmbedded else {
+            throw WebExtensionError.embeddedExtensionCannotBeUnloaded
+        }
+        guard !installedExtension.isUnloaded else { return }
+
+        Logger.webExtensions.debug("🔄 Unloading extension '\(identifier)'")
+        await unloadGuard.awaitSettled(context(for: identifier))
+
+        // An extension whose consent could not be read at launch is installed but has no context.
+        if context(for: identifier) != nil {
+            do {
+                // The loader saves the extension's permissions before it forgets the context.
+                try loader.unloadExtension(identifier: identifier, from: controller)
+            } catch {
+                Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
+                throw WebExtensionError.failedToUnloadWebExtension(error)
+            }
+        }
+        unregisterHandlers(for: identifier)
+        // Keep a pending data-clearing reload from loading the extension again.
+        unloadedExtensionsCache.removeValue(forKey: identifier)
+        dataClearingReloadIdentifiers.remove(identifier)
+
+        var unloadedExtension = installedExtension
+        unloadedExtension.isUnloaded = true
+        installationStore.update(unloadedExtension)
+
+        Logger.webExtensions.info("✅ Unloaded extension '\(identifier)'")
+        notifyUpdate()
+    }
+
+    @MainActor
+    public func loadExtension(identifier: String) async throws {
+        guard let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier) else {
+            throw WebExtensionError.extensionNotInstalled
+        }
+        guard installedExtension.isUnloaded else { return }
+
+        Logger.webExtensions.debug("🔄 Loading extension '\(identifier)'")
+        do {
+            _ = try await loader.loadWebExtension(identifier: identifier, into: controller)
+            unloadGuard.recordLoad(of: identifier)
+        } catch {
+            // A partially completed load can leave handlers behind for a context that never became active.
+            unregisterHandlers(for: identifier)
+            Logger.webExtensions.error("❌ Failed to load extension '\(identifier)': \(error.localizedDescription)")
+            throw WebExtensionError.failedToLoadWebExtension(error)
+        }
+
+        var loadedExtension = installedExtension
+        loadedExtension.isUnloaded = false
+        installationStore.update(loadedExtension)
+        reportLifecycleEvent(.loaded(identifier: identifier, type: nil))
+
+        Logger.webExtensions.info("✅ Loaded extension '\(identifier)'")
+        notifyUpdate()
+    }
+
     // MARK: - Loading
 
     @MainActor
@@ -718,7 +781,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         lifecycleDelegate?.webExtensionManagerWillLoadExtensions(self)
 
-        let extensions = installationStore.installedExtensions
+        // Unloaded extensions stay installed, so orphan cleanup below keeps their files.
+        let extensions = installationStore.installedExtensions.filter { !$0.isUnloaded }
         Logger.webExtensions.debug("🔄 Loading installed extensions (count: \(extensions.count))")
 
         let identifiers = extensions.map(\.uniqueIdentifier)
@@ -890,7 +954,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     // MARK: - Lookups
 
     public func extensionName(for identifier: String) -> String? {
+        // An unloaded extension has no context, so fall back to the name saved at installation.
         contexts.first { $0.uniqueIdentifier == identifier }?.webExtension.displayName
+            ?? installationStore.installedExtension(withUniqueIdentifier: identifier)?.name
+    }
+
+    public func installedExtension(identifier: String) -> InstalledWebExtension? {
+        installationStore.installedExtension(withUniqueIdentifier: identifier)
     }
 
     public func extensionVersion(for identifier: String) -> String? {

@@ -80,6 +80,9 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public func unloadAllExtensions() {}
 
     public func reloadExtension(identifier: String) async throws {}
+    public func unloadExtension(identifier: String) async throws {}
+    public func loadExtension(identifier: String) async throws {}
+    public func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
 
     public func extensionName(for identifier: String) -> String? { nil }
     public func extensionVersion(for identifier: String) -> String? { nil }

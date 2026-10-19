@@ -179,4 +179,46 @@ final class InstalledWebExtensionStoreTests: XCTestCase {
 
         XCTAssertEqual(customStore.installedExtensions, [ext])
     }
+
+    // MARK: - Update Tests
+
+    func testWhenExtensionIsUpdated_ThenStoredRecordIsReplaced() {
+        let ext = makeExtension()
+        storage.extensions = [ext, makeExtension(uniqueIdentifier: "other")]
+        var unloaded = ext
+        unloaded.isUnloaded = true
+
+        store.update(unloaded)
+
+        XCTAssertEqual(InstalledWebExtensionStore(storage: storage).installedExtensions, [unloaded, makeExtension(uniqueIdentifier: "other")])
+    }
+
+    func testWhenUnknownExtensionIsUpdated_ThenStorageIsUnchanged() {
+        let ext = makeExtension()
+        storage.extensions = [ext]
+
+        store.update(makeExtension(uniqueIdentifier: "unknown"))
+
+        XCTAssertEqual(storage.extensions, [ext])
+    }
+
+    // MARK: - Decoding Tests
+
+    func testWhenRecordWithoutUnloadedStateIsDecoded_ThenExtensionIsLoaded() throws {
+        let json = #"{"uniqueIdentifier":"test-extension","filename":"extension.zip","name":"Test Extension","version":"1.0.0"}"#
+
+        let ext = try JSONDecoder().decode(InstalledWebExtension.self, from: Data(json.utf8))
+
+        XCTAssertEqual(ext, makeExtension())
+        XCTAssertFalse(ext.isUnloaded)
+    }
+
+    func testWhenUnloadedRecordIsEncoded_ThenDecodedRecordIsUnloaded() throws {
+        var ext = makeExtension()
+        ext.isUnloaded = true
+
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(ext))
+
+        XCTAssertEqual(decoded, ext)
+    }
 }

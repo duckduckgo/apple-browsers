@@ -41,6 +41,11 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// Nil for bundled extensions, manual installations, and records saved before this field existed.
     public let storeIdentity: WebExtensionStoreIdentity?
 
+    /// Whether the user unloaded the extension. An unloaded extension stays on disk and keeps its
+    /// permissions, but it is not loaded until the user loads it again.
+    /// False for records saved before this field existed.
+    public var isUnloaded: Bool
+
     public var id: String { uniqueIdentifier }
 
     /// Whether this extension was installed from the app bundle (embedded).
@@ -54,7 +59,8 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         name: String?,
         version: String?,
         embeddedType: DuckDuckGoWebExtensionType? = nil,
-        storeIdentity: WebExtensionStoreIdentity? = nil
+        storeIdentity: WebExtensionStoreIdentity? = nil,
+        isUnloaded: Bool = false
     ) {
         self.uniqueIdentifier = uniqueIdentifier
         self.filename = filename
@@ -62,6 +68,18 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         self.version = version
         self.embeddedType = embeddedType
         self.storeIdentity = storeIdentity
+        self.isUnloaded = isUnloaded
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        uniqueIdentifier = try container.decode(String.self, forKey: .uniqueIdentifier)
+        filename = try container.decode(String.self, forKey: .filename)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        version = try container.decodeIfPresent(String.self, forKey: .version)
+        embeddedType = try container.decodeIfPresent(DuckDuckGoWebExtensionType.self, forKey: .embeddedType)
+        storeIdentity = try container.decodeIfPresent(WebExtensionStoreIdentity.self, forKey: .storeIdentity)
+        isUnloaded = try container.decodeIfPresent(Bool.self, forKey: .isUnloaded) ?? false
     }
 }
 

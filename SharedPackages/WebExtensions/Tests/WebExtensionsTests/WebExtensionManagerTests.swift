@@ -434,6 +434,113 @@ final class WebExtensionManagerTests: XCTestCase {
         }
     }
 
+    // MARK: - Unload/Load Extension Tests
+
+    @MainActor
+    func testWhenExtensionIsUnloaded_ThenLoaderUnloadsItAndStoreMarksItUnloaded() async throws {
+        let manager = makeManager()
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
+        try await loadRealContext(identifier: identifier, into: manager.controller)
+
+        try await manager.unloadExtension(identifier: identifier)
+
+        XCTAssertEqual(webExtensionLoadingMock.unloadedIdentifier, identifier)
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isUnloaded, true)
+        XCTAssertFalse(storageProvidingMock.removeExtensionCalled)
+        XCTAssertTrue(lifecycleDelegateMock.didUpdateExtensionsCalled)
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsUnloaded_ThenUnloadFailsAndExtensionStaysLoaded() async {
+        let manager = makeManager()
+        let identifier = "embedded"
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier, embeddedType: .embedded)]
+
+        do {
+            try await manager.unloadExtension(identifier: identifier)
+            XCTFail("Expected an error")
+        } catch WebExtensionError.embeddedExtensionCannotBeUnloaded {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isUnloaded, false)
+    }
+
+    @MainActor
+    func testWhenUnloadFails_ThenExtensionIsNotMarkedUnloaded() async throws {
+        let manager = makeManager()
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
+        try await loadRealContext(identifier: identifier, into: manager.controller)
+        webExtensionLoadingMock.mockUnloadError = NSError(domain: "test", code: 1)
+
+        do {
+            try await manager.unloadExtension(identifier: identifier)
+            XCTFail("Expected an error")
+        } catch {}
+
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isUnloaded, false)
+    }
+
+    @MainActor
+    func testWhenLoadInstalledExtensions_ThenUnloadedExtensionsAreSkipped() async {
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1"),
+            InstalledWebExtension(uniqueIdentifier: "extension2", filename: "extension.zip", name: nil, version: nil, isUnloaded: true)
+        ]
+        let manager = makeManager()
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, ["extension1"])
+        XCTAssertEqual(storageProvidingMock.cleanupOrphanedExtensionsKnownIdentifiers, ["extension1", "extension2"])
+    }
+
+    @MainActor
+    func testWhenUnloadedExtensionIsLoaded_ThenLoaderLoadsItAndStoreMarksItLoaded() async throws {
+        let manager = makeManager()
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: identifier, filename: "extension.zip", name: nil, version: nil, isUnloaded: true)
+        ]
+
+        try await manager.loadExtension(identifier: identifier)
+
+        XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, [identifier])
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isUnloaded, false)
+        XCTAssertTrue(lifecycleDelegateMock.didUpdateExtensionsCalled)
+    }
+
+    @MainActor
+    func testWhenLoadFails_ThenExtensionStaysUnloaded() async {
+        let manager = makeManager()
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: identifier, filename: "extension.zip", name: nil, version: nil, isUnloaded: true)
+        ]
+        webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
+
+        do {
+            try await manager.loadExtension(identifier: identifier)
+            XCTFail("Expected an error")
+        } catch {}
+
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isUnloaded, true)
+    }
+
+    @MainActor
+    func testWhenUnloadedExtensionNameIsRequested_ThenReturnsNameFromStore() {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "extension1", filename: "extension.zip", name: "Stored Name", version: nil, isUnloaded: true)
+        ]
+
+        XCTAssertEqual(manager.extensionName(for: "extension1"), "Stored Name")
+    }
+
     // MARK: - Load Installed Extensions Tests
 
     @MainActor

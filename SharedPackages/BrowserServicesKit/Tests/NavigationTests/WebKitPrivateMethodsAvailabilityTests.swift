@@ -31,6 +31,16 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         XCTAssertTrue(WKWebsiteDataStore.instancesRespond(to: NSSelectorFromString("_networkProcessIdentifier")))
     }
 
+    @available(macOS 15.4, iOS 18.4, *)
+    func testWebExtensionContextRespondsTo_backgroundWebView() {
+        XCTAssertTrue(WKWebExtensionContext.instancesRespond(to: NSSelectorFromString("_backgroundWebView")))
+    }
+
+    @available(macOS 15.4, iOS 18.4, *)
+    func testWebViewRespondsTo_killWebContentProcessAndResetState() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_killWebContentProcessAndResetState")))
+    }
+
     func testWebViewRespondsTo_webProcessIdentifier() {
         XCTAssertTrue(WKWebView.instancesRespond(to: NSSelectorFromString("_webProcessIdentifier")))
     }

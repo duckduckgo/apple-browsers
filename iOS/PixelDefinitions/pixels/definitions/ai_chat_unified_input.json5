@@ -144,6 +144,66 @@
             }
         ]
     },
+    "aichat_unified_input_pasted_text_attached": {
+        "description": "Fires when a long paste (or Paste & Go) in Duck.ai mode becomes a pasted-text attachment chip instead of inline text.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "surface",
+                "description": "The input the pixel was fired from. Includes the iPad address bar, which the shared unified_input_surface parameter does not.",
+                "type": "string",
+                "enum": ["address_bar", "duck_ai", "contextual_chat", "ipad_omnibar"]
+            }
+        ]
+    },
+    "aichat_unified_input_pasted_text_removed": {
+        "description": "Fires when the user removes a pasted-text chip (its close button or the VoiceOver Remove action). Not fired when the draft is cleared by a submission or a new chat.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "surface",
+                "description": "The input the pixel was fired from. Includes the iPad address bar, which the shared unified_input_surface parameter does not.",
+                "type": "string",
+                "enum": ["address_bar", "duck_ai", "contextual_chat", "ipad_omnibar"]
+            }
+        ]
+    },
+    "aichat_unified_input_pasted_text_edited": {
+        "description": "Fires when the user saves changed text in the pasted-text sheet. Saving identical text does not fire it.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "surface",
+                "description": "The input the pixel was fired from. Includes the iPad address bar, which the shared unified_input_surface parameter does not.",
+                "type": "string",
+                "enum": ["address_bar", "duck_ai", "contextual_chat", "ipad_omnibar"]
+            }
+        ]
+    },
+    "aichat_unified_input_pasted_text_sheet_opened": {
+        "description": "Fires when the user opens the pasted-text sheet from a chip, in edit or view-only mode.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "surface",
+                "description": "The input the pixel was fired from. Includes the iPad address bar, which the shared unified_input_surface parameter does not.",
+                "type": "string",
+                "enum": ["address_bar", "duck_ai", "contextual_chat", "ipad_omnibar"]
+            }
+        ]
+    },
     "m_aichat_unified_input_image_removed": {
         "description": "Fires when the user removes an attached image from the Unified Toggle Input (tap on thumbnail close button).",
         "owners": ["pikorddg", "aataraxiaa"],
@@ -492,6 +552,11 @@
             {
                 "key": "has_tab_attachment",
                 "description": "Whether an explicitly selected tab attachment was present at submission time.",
+                "type": "boolean"
+            },
+            {
+                "key": "has_pasted_text",
+                "description": "Whether at least one pasted-text attachment was present at submission time.",
                 "type": "boolean"
             },
             {

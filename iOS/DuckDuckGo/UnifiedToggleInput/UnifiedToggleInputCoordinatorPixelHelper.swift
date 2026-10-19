@@ -187,7 +187,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         case .file, .invalidFile:
             firing.fireDailyAndCount(.unifiedToggleInputFileRemoved, surfaceParameters(surface))
         case .pastedText:
-            break
+            firing.fire(UnifiedToggleInputPastedTextPixel(action: .removed, surface: .init(surface)), frequency: .dailyAndCount)
         }
     }
 
@@ -280,6 +280,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             "has_image_attachment": hasImageAttachment(in: attachments) ? "true" : "false",
             "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
             "has_tab_attachment": attachments.contains(where: \.isTab) ? "true" : "false",
+            "has_pasted_text": attachments.contains { $0.pastedText != nil } ? "true" : "false",
             "has_text": hasText ? "true" : "false",
             "surface": surface.rawValue
         ]

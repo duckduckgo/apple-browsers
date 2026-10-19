@@ -710,6 +710,7 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
     func addPastedText(_ text: String) {
         callbacks.onExpandIfNeeded()
         view.addAttachment(.pastedText(AIChatPastedText(content: text)))
+        pixelReporter.reportPastedText(.attached)
         callbacks.onDraftChanged()
         clearValidationErrorIfPossible()
         updateAttachButtonPresentation()
@@ -723,6 +724,7 @@ extension UTIAttachmentController {
         guard let pastedText = view.currentAttachments().first(where: { $0.id == id })?.pastedText,
               let host = environment.presenterViewController() else { return }
         let mode: PastedTextSheetMode = environment.isEditing() ? .viewOnly : .editable(limit: environment.pastedTextSheetLimit(pastedText))
+        pixelReporter.reportPastedText(.sheetOpened)
         PastedTextSheetPresenter.present(pastedText, mode: mode, from: host) { [weak self] outcome in
             guard let self else { return }
             if case .saved(let edited) = outcome {
@@ -735,6 +737,7 @@ extension UTIAttachmentController {
     private func replacePastedText(id: UUID, with pastedText: AIChatPastedText) {
         guard view.currentAttachments().contains(where: { $0.id == id }) else { return }
         view.replaceAttachment(id, .pastedText(pastedText))
+        pixelReporter.reportPastedText(.edited)
         callbacks.onDraftChanged()
     }
 }

@@ -135,11 +135,12 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    func testWhenAnExtensionManagesAutofill_ThenTheMenuDoesNotOpenOnAnyField() {
+    func testWhenAnExtensionManagesAutofill_ThenTheMenuOpensOnlyOnEmailFieldsForDuckAddress() {
         importState.isAutofillManagedByExtension = true
 
+        XCTAssertTrue(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"identities.emailAddress\",\"credentialsImport\":false}", for: "fill.dev"))
         XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.username\",\"credentialsImport\":false}", for: "fill.dev"))
-        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"identities.emailAddress\",\"credentialsImport\":false}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"identities.addressStreet\",\"credentialsImport\":false}", for: "fill.dev"))
         XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"creditCards.cardNumber\",\"credentialsImport\":false}", for: "fill.dev"))
         XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("", for: "fill.dev"))
     }

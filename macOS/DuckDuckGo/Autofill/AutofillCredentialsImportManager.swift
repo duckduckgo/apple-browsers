@@ -80,16 +80,16 @@ extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
     }
 
     public func autofillUserScriptShouldDisplayOverlay(_ serializedInputContext: String, for domain: String) -> Bool {
-        // While an extension manages autofill, DuckDuckGo's menu doesn't open on any field, Duck Address
-        // included. A page that loaded before the extension took over still asks for it.
-        guard !loginImportStateProvider.isAutofillManagedByExtension else {
-            return false
+        let decoded = serializedInputContext.data(using: .utf8).flatMap {
+            try? JSONDecoder().decode(CredentialsImportInputContext.self, from: $0)
         }
-        if let data = serializedInputContext.data(using: .utf8),
-           let decoded = try? JSONDecoder().decode(CredentialsImportInputContext.self, from: data) {
-            if decoded.credentialsImport {
-                return !loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed
-            }
+        // While an extension manages autofill, DuckDuckGo's menu only opens on email fields, for Email
+        // Protection's Duck Address. A page that loaded before the extension took over still asks for it.
+        if loginImportStateProvider.isAutofillManagedByExtension {
+            return decoded?.inputType.hasSuffix(".emailAddress") == true
+        }
+        if let decoded, decoded.credentialsImport {
+            return !loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed
         }
         return true
     }

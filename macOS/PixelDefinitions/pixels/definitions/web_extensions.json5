@@ -387,13 +387,6 @@
         "triggers": ["feature_lifecycle"],
         "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
-    "web_extension_toolbar_button_clicked_macos": {
-        "description": "Fires when the user clicks a third-party extension's button in the navigation bar, which usually opens its popup.",
-        "owners": ["diegoreymendez"],
-        "triggers": ["user_interaction"],
-        "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
-    },
     "web_extension_api_gaps_bitwarden_macos": {
         "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the Bitwarden extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
         "owners": ["diegoreymendez"],

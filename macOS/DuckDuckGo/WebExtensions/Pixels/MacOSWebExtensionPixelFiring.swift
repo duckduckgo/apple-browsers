@@ -92,7 +92,6 @@ enum WebExtensionPixel: PixelKit.Event {
     // MARK: - Default Password Manager
 
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
-    case toolbarButtonClicked(extension: WebExtensionPixelExtension)
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 
     // MARK: - Debug
@@ -175,8 +174,6 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_bitwarden_dau_macos"
         case .defaultPasswordManagerSet:
             return "web_extension_default_password_manager_set_macos"
-        case .toolbarButtonClicked:
-            return "web_extension_toolbar_button_clicked_macos"
         case .apiCompatibilityGaps(let catalogEntry, _, _, _):
             // One pixel per catalog extension, so each gets its own once-a-day report.
             return "web_extension_api_gaps_\(catalogEntry.rawValue.lowercased())_macos"
@@ -226,8 +223,7 @@ enum WebExtensionPixel: PixelKit.Event {
         case .installed(let pixelExtension),
              .installError(let pixelExtension, _),
              .uninstalled(let pixelExtension),
-             .defaultPasswordManagerSet(let pixelExtension),
-             .toolbarButtonClicked(let pixelExtension):
+             .defaultPasswordManagerSet(let pixelExtension):
             return ["extension": pixelExtension.parameterValue]
         case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
             return ["extension_version": version,
@@ -246,8 +242,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .debugCPM, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet,
-             .toolbarButtonClicked, .apiCompatibilityGaps:
+        case .debugCPM, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
             return .none
         default:
             return .platformDefault
@@ -369,8 +364,6 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .defaultPasswordManagerSet(extension: pixelExtension)
         case .bitwardenDailyActive(let isDefault):
             pixel = .bitwardenDailyActive(isDefault: isDefault)
-        case .toolbarButtonClicked(let pixelExtension):
-            pixel = .toolbarButtonClicked(extension: pixelExtension)
         case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
             pixel = .apiCompatibilityGaps(extension: catalogEntry, version: version,
                                           missingAPICount: missingAPICount, unsupportedURLCount: unsupportedURLCount)

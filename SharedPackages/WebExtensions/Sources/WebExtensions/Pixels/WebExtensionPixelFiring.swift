@@ -109,8 +109,6 @@ public enum WebExtensionPixelEvent {
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     /// Bitwarden is installed and loaded. Fired once a day.
     case bitwardenDailyActive(isDefault: Bool)
-    /// The user clicked an extension's toolbar button.
-    case toolbarButtonClicked(extension: WebExtensionPixelExtension)
     /// How many distinct missing APIs a catalog extension used, and Chrome pages it tried to open,
     /// since launch, with its version. Fired once a day.
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
@@ -201,8 +199,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
              .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
-             .defaultPasswordManagerSet, .bitwardenDailyActive,
-             .toolbarButtonClicked, .apiCompatibilityGaps:
+             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
             return nil
         }
     }

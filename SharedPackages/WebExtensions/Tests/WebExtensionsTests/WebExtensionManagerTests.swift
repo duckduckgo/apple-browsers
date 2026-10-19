@@ -884,32 +884,6 @@ final class WebExtensionManagerTests: XCTestCase {
                        ["gaps bitwarden 1.0.0: 2 apis, 1 urls", "gaps lastPass 1.0.0: 0 apis, 0 urls"])
     }
 
-    @MainActor
-    func testWhenAToolbarButtonIsClicked_ThenThePixelNamesTheExtensionsCatalogEntry() {
-        let bitwardenStoreID = String(repeating: "n", count: 32)
-        let pixels = EventCapturingPixelFiring()
-        installedExtensionStoringMock.installedExtensions = [
-            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
-                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID)),
-            InstalledWebExtension(uniqueIdentifier: "sideloaded", filename: "sideloaded", name: nil, version: "1",
-                                  embeddedType: nil, storeIdentity: nil)
-        ]
-        let manager = WebExtensionManager(configuration: configurationMock,
-                                          windowTabProvider: windowTabProviderMock,
-                                          storageProvider: storageProvidingMock,
-                                          installationStore: installedExtensionStoringMock,
-                                          loader: webExtensionLoadingMock,
-                                          lifecycleDelegate: lifecycleDelegateMock,
-                                          pixelFiring: pixels,
-                                          keyValueStore: InMemoryThrowingKeyValueStore())
-        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden])
-
-        manager.reportToolbarButtonClick(identifier: "bitwarden")
-        manager.reportToolbarButtonClick(identifier: "sideloaded")
-
-        XCTAssertEqual(pixels.events, ["toolbar click: bitwarden", "toolbar click: other"])
-    }
-
     // MARK: - Autofill Takeover Flag
 
     /// The app's flag decides whether any extension may take over autofill, read each time, so turning it
@@ -1186,8 +1160,6 @@ private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
             events.append("bitwarden dau, default: \(isDefault)")
         case .defaultPasswordManagerSet(let pixelExtension):
             events.append("default set: \(pixelExtension.parameterValue)")
-        case .toolbarButtonClicked(let pixelExtension):
-            events.append("toolbar click: \(pixelExtension.parameterValue)")
         case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
             events.append("gaps \(catalogEntry.rawValue) \(version): \(missingAPICount) apis, \(unsupportedURLCount) urls")
         default:

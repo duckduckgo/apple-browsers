@@ -173,8 +173,9 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
              .cpmMessagingExtensionReloadFailed:
             fireCPMPixel(event)
         case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
-            // Chrome extensions, and so password manager extensions, are only supported on macOS.
-            return
+            // Chrome extensions, and so password manager extensions, are only supported on macOS, so
+            // these are only sent there.
+            assertionFailure("\(event) is only sent on macOS")
         }
     }
 

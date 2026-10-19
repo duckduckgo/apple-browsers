@@ -2347,6 +2347,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.webExtensionLifecycleCoordinator = coordinator
         await coordinator.loadAndSync().value
+
+        // Start after the initial load, so an enforcement pass can't race it.
+        guard self.webExtensionManager === webExtensionManager else { return }
+        let remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(
+            manager: webExtensionManager,
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager
+        )
+        webExtensionManager.remoteDisableEnforcer = remoteDisableEnforcer
+        remoteDisableEnforcer.start()
     }
 
     @available(macOS 15.4, *)

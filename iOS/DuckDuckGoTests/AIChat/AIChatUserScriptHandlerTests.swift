@@ -1695,6 +1695,8 @@ extension AIChatUserScriptHandlerTests {
     func testOrdinaryPromptUsesSharedHandlerWithAttachmentFeatureOffAndOn() {
         let prompts: [(name: String, prompt: AIChatNativePrompt)] = [
             ("text", .queryPrompt("ordinary", autoSubmit: true)),
+            ("draft with model and reasoning", .queryPrompt("Review before sending", autoSubmit: false,
+                                                           modelId: "gpt-5.2", reasoningEffort: .medium)),
             ("image", .queryPrompt("Describe this image", autoSubmit: true,
                                    images: [.init(data: "image-data", format: "png")])),
             ("file", .queryPrompt("Summarize this file", autoSubmit: true,
@@ -1708,6 +1710,7 @@ extension AIChatUserScriptHandlerTests {
             let session = AIChatInitialPromptSession()
             aiChatUserScriptHandler.connectInitialPromptSession(session)
             for (name, prompt) in prompts {
+                AIChatPromptHandler.shared.reset()
                 AIChatPromptHandler.shared.setData(prompt)
 
                 XCTAssertEqual(pullPrompt(), prompt, "\(name) prompt must preserve its payload with flags: \(flags)")

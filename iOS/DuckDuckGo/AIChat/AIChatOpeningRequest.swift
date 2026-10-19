@@ -23,12 +23,15 @@ import Foundation
 struct AIChatOpeningPromptInfo: Equatable {
     let hasContent: Bool
     let autoSubmit: Bool
+    // Address-bar attribution counts query content, excluding page contexts and selections.
+    let hasAutoSubmittedQuery: Bool
 
     var hasAutoSubmittedPrompt: Bool { hasContent && autoSubmit }
 
     init(query: String?, autoSubmit: Bool, hasAttachments: Bool) {
         hasContent = query?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false || hasAttachments
         self.autoSubmit = autoSubmit
+        hasAutoSubmittedQuery = hasContent && autoSubmit
     }
 
     init(prompt: AIChatNativePrompt) {
@@ -41,18 +44,21 @@ struct AIChatOpeningPromptInfo: Equatable {
         case nil:
             hasPageContext = false
         }
-        let hasAttachments = hasPageContext || prompt.selections?.isEmpty == false
+        let queryInfo: AIChatOpeningPromptInfo
         switch prompt.tool {
         case .query(let query):
-            self.init(query: query.prompt, autoSubmit: query.autoSubmit,
-                      hasAttachments: hasAttachments || query.images?.isEmpty == false || query.files?.isEmpty == false)
+            queryInfo = Self(query: query.prompt, autoSubmit: query.autoSubmit,
+                             hasAttachments: query.images?.isEmpty == false || query.files?.isEmpty == false)
         case .summary(let summary):
-            self.init(query: summary.text, autoSubmit: false, hasAttachments: hasAttachments)
+            queryInfo = Self(query: summary.text, autoSubmit: false, hasAttachments: false)
         case .translation(let translation):
-            self.init(query: translation.text, autoSubmit: false, hasAttachments: hasAttachments)
+            queryInfo = Self(query: translation.text, autoSubmit: false, hasAttachments: false)
         case nil:
-            self.init(query: nil, autoSubmit: false, hasAttachments: hasAttachments)
+            queryInfo = Self(query: nil, autoSubmit: false, hasAttachments: false)
         }
+        hasContent = queryInfo.hasContent || hasPageContext || prompt.selections?.isEmpty == false
+        autoSubmit = queryInfo.autoSubmit
+        hasAutoSubmittedQuery = queryInfo.hasAutoSubmittedPrompt
     }
 }
 
@@ -65,15 +71,17 @@ struct AIChatOpeningRequest {
         let flowType: AIChatOnboardingFlowType
         let tools: [AIChatRAGTool]?
         let nativePrompt: AIChatNativePrompt
+        let nativePromptFlow: DuckAIPromptFlowStart?
 
         init(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?,
              modelId: String?, reasoningEffort: AIChatReasoningEffort?,
              images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?,
-             termsAccepted: Bool) {
+             termsAccepted: Bool, nativePromptFlow: DuckAIPromptFlowStart? = nil) {
             self.query = query
             self.autoSend = autoSend
             self.flowType = flowType
             self.tools = tools
+            self.nativePromptFlow = nativePromptFlow
             nativePrompt = .queryPrompt(query ?? "", autoSubmit: autoSend, toolChoice: tools?.map(\.rawValue),
                                         images: images, files: files, modelId: modelId, reasoningEffort: reasoningEffort)
                 .withTermsAccepted(termsAccepted)

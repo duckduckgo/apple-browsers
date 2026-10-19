@@ -42,6 +42,58 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
                                               listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
         XCTAssertEqual(sut.content, .list(.search))
     }
+
+    // MARK: - Duck.ai suggestions shown
+
+    private func makeDuckAISUT(mode: TextEntryMode, sections: [SuggestionSection])
+        -> (UnifiedSuggestionsViewModel, CurrentValueSubject<UnifiedSuggestionsInputs, Never>, StubSuggestionsSource, () -> Int) {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: mode, isTyping: true, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        let duckAISource = StubSuggestionsSource(sections: sections)
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+        var shownCount = 0
+        sut.onDuckAISuggestionsShown = { shownCount += 1 }
+        sut.setDuckAIListViewModel(SuggestionsListViewModel(source: duckAISource))
+        inputs.send(inputs.value)
+        return (sut, inputs, duckAISource, { shownCount })
+    }
+
+    func test_duckAIListWithRows_reportsShownOncePerFocus() {
+        let (sut, inputs, duckAISource, shownCount) = makeDuckAISUT(mode: .aiChat, sections: [Self.section])
+        duckAISource.subject.send([Self.section, Self.section])
+        XCTAssertEqual(shownCount(), 1)
+
+        sut.prepareForActivation()
+        inputs.send(inputs.value)
+        XCTAssertEqual(shownCount(), 2)
+    }
+
+    func test_duckAIRowsArrivingAfterTheListShows_reportShown() {
+        let (sut, _, duckAISource, shownCount) = makeDuckAISUT(mode: .aiChat, sections: [])
+        XCTAssertEqual(shownCount(), 0)
+
+        duckAISource.subject.send([Self.section])
+        XCTAssertEqual(shownCount(), 1)
+        withExtendedLifetime(sut) {}
+    }
+
+    func test_searchList_neverReportsDuckAIShown() {
+        let (sut, _, duckAISource, shownCount) = makeDuckAISUT(mode: .search, sections: [Self.section])
+        duckAISource.subject.send([Self.section])
+        XCTAssertEqual(shownCount(), 0)
+        withExtendedLifetime(sut) {}
+    }
+
+    private static let section = SuggestionSection(id: "chats", rows: [])
+}
+
+private final class StubSuggestionsSource: SuggestionsSource {
+    let subject: CurrentValueSubject<[SuggestionSection], Never>
+    var sectionsPublisher: AnyPublisher<[SuggestionSection], Never> { subject.eraseToAnyPublisher() }
+    init(sections: [SuggestionSection]) { subject = CurrentValueSubject(sections) }
+    func start(textPublisher: AnyPublisher<String, Never>) {}
+    func tearDown() {}
 }
 
 private final class EmptySuggestionsSource: SuggestionsSource {

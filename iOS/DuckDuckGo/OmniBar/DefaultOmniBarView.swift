@@ -860,6 +860,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             self.searchAreaShadowView = shadowView
         }
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
+        notificationContainer.fieldView = searchAreaContainerView
 
         setUpSubviews()
         setUpConstraints()
@@ -2172,7 +2173,7 @@ extension DefaultOmniBarView {
         bottomGTE.isActive = false
         searchFieldBottomGTEConstraint = bottomGTE
 
-        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
+        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: chromeContentContainerView.centerYAnchor)
         centerY.isActive = true
         searchAreaCenterYConstraint = centerY
 

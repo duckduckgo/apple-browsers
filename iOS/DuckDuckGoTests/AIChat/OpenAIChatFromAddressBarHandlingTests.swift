@@ -162,6 +162,31 @@ final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
         }
     }
 
+    func testAddressBarHandoverRequiresQueryContentWhileOpeningCountsContextsAndSelections() {
+        let context = AIChatPageContextData(title: "Page", favicon: [], url: "https://example.com", content: "content",
+                                            truncated: false, fullContentLength: 7, tabId: "tab")
+        let selection = AIChatSelectionContextData(id: "selection", title: "Page", url: "https://example.com",
+                                                  content: "selected", truncated: false, fullContentLength: 8, wordCount: 1)
+        let cases: [(prompt: AIChatNativePrompt, handsOverQuery: Bool)] = [
+            (.queryPrompt("", autoSubmit: true, pageContext: .multiple([context])), false),
+            (.queryPrompt(" \n ", autoSubmit: true, selections: [selection]), false),
+            (.queryPrompt("text", autoSubmit: true, pageContext: .multiple([context])), true),
+            (.queryPrompt("", autoSubmit: true, images: [.init(data: "image", format: "png")], pageContext: .multiple([context])), true),
+            (.queryPrompt("", autoSubmit: true, files: [.init(data: "file", fileName: "file.txt", mimeType: "text/plain")]), true)
+        ]
+        for (prompt, handsOverQuery) in cases {
+            let info = AIChatOpeningPromptInfo(prompt: prompt)
+            XCTAssertTrue(info.hasAutoSubmittedPrompt)
+            XCTAssertEqual(info.hasAutoSubmittedQuery, handsOverQuery)
+        }
+        let draft = AIChatOpeningPromptInfo(prompt: .queryPrompt("text", autoSubmit: false, pageContext: .multiple([context])))
+        XCTAssertFalse(draft.hasAutoSubmittedPrompt)
+        XCTAssertFalse(draft.hasAutoSubmittedQuery)
+        let empty = AIChatOpeningPromptInfo(prompt: .queryPrompt("", autoSubmit: true))
+        XCTAssertFalse(empty.hasAutoSubmittedPrompt)
+        XCTAssertFalse(empty.hasAutoSubmittedQuery)
+    }
+
     @MainActor
     func testOrdinaryOpeningKeepsEntryPixelAndDeepLinkMeasurementRules() {
         let query = AIChatOpeningRequest.Query(query: "   ", autoSend: true, flowType: .default, tools: nil,

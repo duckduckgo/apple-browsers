@@ -44,35 +44,74 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         XCTAssertNil(r)
     }
 
-    func testWhenMultipleDiagnosticsWithSameMinuteTimestamp_latestIsChosen() {
+    func testWhenMultipleDiagnosticsNearTimestamp_closestIsChosen() {
         fileManager.contents = [
             "2024-07-05T09:36:15Z-101.log",
-            "2024-07-05T09:36:56Z-102.log", // <-
-            "2024-07-05T09:36:11Z-103.log",
+            "2024-07-05T09:36:56Z-102.log",
+            "2024-07-05T09:36:11Z-103.log", // <- closest to the crash timestamp
             "2024-07-05T08:36:15Z-104.log",
             "2024-07-05T010:36:15Z-105.log",
         ]
 
         let r = extractor.crashDiagnostic(for: formatter.date(from: "2024-07-05T09:36:00Z"), pid: nil)
 
-        XCTAssertEqual(r?.url, fileManager.diagnosticsDirectory.appendingPathComponent(fileManager.contents[1]))
-        XCTAssertEqual(r?.timestamp, formatter.date(from: "2024-07-05T09:36:56Z"))
-        XCTAssertEqual(r?.pid, 102)
+        XCTAssertEqual(r?.url, fileManager.diagnosticsDirectory.appendingPathComponent(fileManager.contents[2]))
+        XCTAssertEqual(r?.timestamp, formatter.date(from: "2024-07-05T09:36:11Z"))
+        XCTAssertEqual(r?.pid, 103)
     }
 
-    func testWhenMultipleDiagnosticsWithSameMinuteTimestampAndPid_latestWithMatchingPidIsChosen() {
+    // MetricKit rounds `timeStampBegin` to the *nearest* minute (a crash at 11:20:39 is reported
+    // as 11:21:00), so a diagnostic written a few seconds before the reported minute must match.
+    func testWhenCrashTimestampIsRoundedUpToNextMinute_diagnosticIsChosen() {
+        fileManager.contents = ["2026-10-19T11:20:39Z-519.log"]
+
+        let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:21:00Z"), pid: nil)
+
+        XCTAssertEqual(r?.pid, 519)
+        XCTAssertEqual(r?.timestamp, formatter.date(from: "2026-10-19T11:20:39Z"))
+    }
+
+    func testWhenDiagnosticIsMoreThanHalfAMinuteAway_noCrashDiagnosticReturned() {
         fileManager.contents = [
-            "2024-07-05T09:36:15Z-101.log",
-            "2024-07-05T09:36:56Z-102.log",
-            "2024-07-05T09:36:21Z-101.log", // <-
+            "2026-10-19T11:20:29Z-519.log",
+            "2026-10-19T11:21:31Z-520.log",
+        ]
+
+        let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:21:00Z"), pid: nil)
+
+        XCTAssertNil(r)
+    }
+
+    // Crash loop: an NSException crash at 11:33:10 (reported as 11:33:00) followed by an unrelated crash
+    // at 11:33:46 (reported as 11:34:00). The second report must not pick up the first crash's message.
+    func testWhenAnotherCrashHappensLaterInTheSameMinute_itsReportDoesNotGetTheEarlierDiagnostic() {
+        fileManager.contents = ["2026-10-19T11:33:10Z-659.log"]
+
+        XCTAssertEqual(extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:33:00Z"), pid: nil)?.pid, 659)
+        XCTAssertNil(extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:34:00Z"), pid: nil))
+    }
+
+    func testWhenPidDoesNotMatch_noCrashDiagnosticReturned() {
+        fileManager.contents = ["2026-10-19T11:20:39Z-519.log"]
+
+        let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:21:00Z"), pid: 546)
+
+        XCTAssertNil(r)
+    }
+
+    func testWhenMultipleDiagnosticsNearTimestampAndPid_closestWithMatchingPidIsChosen() {
+        fileManager.contents = [
+            "2024-07-05T09:36:15Z-101.log", // <- closest to the crash timestamp with matching pid
+            "2024-07-05T09:36:11Z-102.log",
+            "2024-07-05T09:36:21Z-101.log",
             "2024-07-05T08:36:15Z-101.log",
             "2024-07-05T010:36:15Z-101.log",
         ]
 
         let r = extractor.crashDiagnostic(for: formatter.date(from: "2024-07-05T09:36:00Z"), pid: 101)
 
-        XCTAssertEqual(r?.url, fileManager.diagnosticsDirectory.appendingPathComponent(fileManager.contents[2]))
-        XCTAssertEqual(r?.timestamp, formatter.date(from: "2024-07-05T09:36:21Z"))
+        XCTAssertEqual(r?.url, fileManager.diagnosticsDirectory.appendingPathComponent(fileManager.contents[0]))
+        XCTAssertEqual(r?.timestamp, formatter.date(from: "2024-07-05T09:36:15Z"))
         XCTAssertEqual(r?.pid, 101)
     }
 
@@ -228,6 +267,23 @@ final class CrashLogMessageExtractorTests: XCTestCase {
                        "callCount > 1 means the guard is broken")
         // Flag remains set — we are still logically inside the outer crash handler.
         XCTAssertTrue(CrashLogMessageExtractor.isHandlingTermination)
+    }
+
+    // Real std::terminate context with a real C++ exception.
+    //
+    // Verifies the production path end to end on the current libc++abi: an uncaught
+    // `std::runtime_error` reaches `std::terminate`, the handler calls
+    // `currentCxxException()` (which executes `throw;`), and that `throw;` is caught
+    // inside `currentCxxException` instead of re-triggering `std::terminate`.
+    // Both ways of reaching terminate are covered: a `noexcept` frame and a throw with
+    // no handler anywhere on the thread's stack (`__cxa_throw` → `failed_throw`).
+    func testCurrentCxxException_inRealTerminateHandler_rethrowIsCaughtAndHandlerFiresOnce() {
+        for viaNoexcept in [true, false] {
+            var callCount: Int32 = 0
+            let exception = _currentCxxExceptionInTerminateHandler(viaNoexcept, &callCount)
+            XCTAssertEqual(callCount, 1, "viaNoexcept=\(viaNoexcept): terminate handler must fire exactly once")
+            XCTAssertEqual(exception?.reason, "terminate probe exception", "viaNoexcept=\(viaNoexcept)")
+        }
     }
 
     // ── Integration tests: exception → writeDiagnostic → readable file ───────────

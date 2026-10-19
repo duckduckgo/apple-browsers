@@ -113,8 +113,8 @@ public struct CrashLogMessageExtractor {
     fileprivate static var nextUncaughtExceptionHandler: NSUncaughtExceptionHandler?
     internal static var nextCppTerminateHandler: (() -> Void)!
     fileprivate static var diagnosticsDirectory: URL!
-    // Guards against re-entrant calls to the terminate handler (e.g. when `throw;`
-    // inside `currentCxxException` triggers another `std::terminate` on Apple's libc++abi).
+    // Defensive guard against re-entrant calls to the terminate handler, e.g. if a
+    // `std::terminate` is raised while we are already recording a crash.
     internal static var isHandlingTermination = false
 
     /// Install uncaught NSException and C++ exception handlers.
@@ -200,36 +200,48 @@ public struct CrashLogMessageExtractor {
         try JSONEncoder().encode(diagnosticData).write(to: fileURL)
     }
 
+    /// Maximum distance between the crash time reported by the crash reporter and the diagnostic file timestamp.
+    /// MetricKit reports `timeStampBegin` rounded to the *nearest* minute (a crash at 11:20:39 is reported as 11:21:00,
+    /// a crash at 11:33:10 as 11:33:00), so the diagnostic file written at the moment of the crash is at most 30 seconds
+    /// away from it. Keeping the window this tight avoids attaching the message to a different crash that happened
+    /// later in the same minute (e.g. in a crash loop).
+    static let crashTimestampTolerance: TimeInterval = 30
+
     /// Find saved crash diagnostics message for crash PID/timestamp
+    /// - Parameters:
+    ///   - timestamp: crash time as reported by the crash reporter; files within `crashTimestampTolerance` are considered,
+    ///     the closest one wins.
+    ///   - pid: PID of the *crashed* process, if known. Note: `MXCrashDiagnostic.metaData.pid` is the PID of the app
+    ///     process that was running when MetricKit generated the report (i.e. the next launch), not the crashed one,
+    ///     so it must not be passed here.
     public func crashDiagnostic(for timestamp: Date?, pid: pid_t?) -> CrashDiagnostic? {
         guard timestamp != nil || pid != nil,
               var crashLogs = try? fileManager.contentsOfDirectory(atPath: diagnosticsDirectory.path).compactMap({
                   CrashDiagnostic(url: diagnosticsDirectory.appending($0))
               }) else { return nil }
 
-        let calendar = Calendar.current
-        let roundedTimestamp = calendar.roundedToMinutes(timestamp)
-
         if let pid {
+            crashLogs = crashLogs.filter { $0.pid == pid }
+        }
+        if let timestamp {
             crashLogs = crashLogs.filter {
-                // filter by matching timestamp and Process Identifier if it‘s known
-                $0.pid == pid && (roundedTimestamp == nil || calendar.roundedToMinutes($0.timestamp) == roundedTimestamp)
+                abs($0.timestamp.timeIntervalSince(timestamp)) <= Self.crashTimestampTolerance
+            }
+            // closest to the crash time first
+            crashLogs = crashLogs.sorted {
+                abs($0.timestamp.timeIntervalSince(timestamp)) < abs($1.timestamp.timeIntervalSince(timestamp))
             }
         } else {
-            crashLogs = crashLogs.filter {
-                // filter by matching timestamp
-                calendar.roundedToMinutes($0.timestamp) == roundedTimestamp
-            }
+            // latest first
+            crashLogs = crashLogs.sorted { $0.timestamp > $1.timestamp }
         }
-        crashLogs = crashLogs.sorted {
-            // sort by timestamp
-            $0.timestamp > $1.timestamp
-        }
-        // take latest
+
+        let timestampDescription = timestamp.map { ISO8601DateFormatter().string(from: $0) } ?? "<nil>"
         guard let crashLog = crashLogs.first else {
-            Logger.general.log("😵 no crash logs found for \(timestamp.map { ISO8601DateFormatter().string(from: $0) } ?? "<nil>", privacy: .public)/\(pid ?? 0)")
+            Logger.general.log("😵 no crash logs found for \(timestampDescription, privacy: .public)/\(pid ?? 0)")
             return nil
         }
+        Logger.general.log("😵 found crash log \(crashLog.url.lastPathComponent, privacy: .public) for \(timestampDescription, privacy: .public)/\(pid ?? 0)")
         return crashLog
     }
 
@@ -243,11 +255,18 @@ private func handleTerminateOnCxxException() {
 extension CrashLogMessageExtractor {
     /// Body of the `std::terminate` handler, separated so it can be exercised in tests.
     ///
-    /// Re-entrant calls happen because `throw;` inside `currentCxxException` runs `__cxa_rethrow`.
-    /// On Apple's libc++abi (Darwin 25+) that requires an active *catch* context; when called
-    /// from a terminate handler (no catch context), it calls `std::terminate` again, recursing
-    /// until stack overflow.  The flag breaks the loop: on re-entry skip crash recording and
-    /// jump directly to the next handler.
+    /// - Note: libc++abi calls `__cxa_begin_catch` on the uncaught exception before invoking the
+    ///   terminate handler, so `throw;` inside `currentCxxException` is a regular rethrow that is
+    ///   caught there (verified by `CrashLogMessageExtractorTests` on macOS and iOS).
+    ///   The `isHandlingTermination` flag is purely defensive: if anything in this handler
+    ///   raises `std::terminate` again, the re-entrant call skips crash recording and goes
+    ///   straight to the next handler instead of recursing.
+    ///
+    /// - Important: This handler is also on the stack for every uncaught *NSException*, because
+    ///   libobjc's `_objc_terminate` runs as our `nextCppTerminateHandler`. In those crash reports
+    ///   `handleCxxTerminate` is merely the topmost in-app frame, not the cause; the real culprit is
+    ///   below `__cxa_rethrow`/`objc_exception_rethrow` and the exception reason is attached by
+    ///   `handleException` via the `NSUncaughtExceptionHandler` path.
     internal static func handleCxxTerminate() {
         guard !isHandlingTermination else {
             nextCppTerminateHandler()
@@ -277,11 +296,4 @@ private func handleException(_ exception: NSException) {
 /// Throw test C++ exception – used for debug purpose
 public func throwTestCppException() {
     _throwTestCppException("This a test C++ exception")
-}
-
-private extension Calendar {
-    func roundedToMinutes(_ date: Date?) -> Date? {
-        let components = date.map { self.dateComponents([.year, .month, .day, .hour, .minute], from: $0) }
-        return components.flatMap { self.date(from: $0) }
-    }
 }

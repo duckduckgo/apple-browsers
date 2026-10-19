@@ -89,6 +89,14 @@ NSException * _Nullable _currentCxxExceptionForObjCExceptionSubclass(void);
 ///     and simulates the recursive call itself, giving the same >1 result.
 int _measureTerminateRecursionDepth(void);
 
+/// Calls `+[NSException currentCxxException]` from inside a real `std::terminate` handler
+/// with a real C++ `std::runtime_error` active, on a dedicated thread.
+/// - Parameters:
+///   - viaNoexcept: `YES` throws through a `noexcept` frame; `NO` throws with no handler on the stack.
+///   - outCallCount: receives the number of times the terminate handler fired (1 = no recursion).
+NSException * _Nullable _currentCxxExceptionInTerminateHandler(BOOL viaNoexcept, int * _Nonnull outCallCount);
+
+
 #ifdef __cplusplus
 }
 #endif

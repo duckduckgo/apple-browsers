@@ -152,10 +152,6 @@ public final class CrashCollection {
             payloads.compactMap { payload in
                 var dict = payload.dictionaryRepresentation()
 
-                var pid: pid_t?
-                if #available(macOS 14.0, iOS 17.0, *) {
-                    pid = payload.crashDiagnostics?.first?.metaData.pid
-                }
                 // The `MXDiagnostic` payload may not include `crashDiagnostics`, but may instead contain `cpuExceptionDiagnostics`,
                 // `diskWriteExceptionDiagnostics`, or `hangDiagnostics`.
                 // For now, we are ignoring these.
@@ -173,9 +169,11 @@ public final class CrashCollection {
                     var stackTrace: [String]?
 
                     // Look up for NSException/C++ exception diagnostics data (name, reason, `userInfo` dictionary, stack trace)
-                    // by searching for the related crash diagnostics file using the provided crash event timestamp and/or the crashed process PID.
+                    // by searching for the related crash diagnostics file using the crash timestamp reported by MetricKit.
+                    // `metaData.pid` is intentionally not used: MetricKit fills it with the PID of the app process running
+                    // when the report was generated (the launch after the crash), not with the crashed process PID.
                     // The stored data was sanitized to remove any potential filename or email occurrences.
-                    if let diagnostic = try? CrashLogMessageExtractor().crashDiagnostic(for: payload.timeStampBegin, pid: pid)?.diagnosticData(), !diagnostic.isEmpty {
+                    if let diagnostic = try? CrashLogMessageExtractor().crashDiagnostic(for: payload.timeStampBegin, pid: nil)?.diagnosticData(), !diagnostic.isEmpty {
                         // append the loaded crash diagnostics message if the `MXDiagnostic` already contains one
                         if let existingMessage = exceptionMessage, !existingMessage.isEmpty {
                             exceptionMessage = existingMessage + "\n\n---\n\n" + diagnostic.message

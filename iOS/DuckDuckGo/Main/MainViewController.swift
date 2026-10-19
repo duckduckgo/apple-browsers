@@ -178,17 +178,12 @@ class MainViewController: UIViewController {
     var isPerformingOnboardingInputHandoff = false
     var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
-    private var daxGreetingAppearance: DaxGreetingContext.Appearance?
     private let daxGreetingActivity: DaxGreetingActivityStore?
     private lazy var daxGreetingService = DaxGreetingServiceFactory.makeService(
         activityStore: daxGreetingActivity,
         privacyConfigurationManager: privacyConfigurationManager,
-        appSettings: appSettings,
         aiChatSettings: aiChatSettings,
-        adBlockingAvailability: adBlockingAvailability,
-        maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-        featureFlagger: featureFlagger,
-        appearanceProvider: { [weak self] in self?.daxGreetingAppearance })
+        adBlockingAvailability: adBlockingAvailability)
 
     private lazy var newTabPageControllerStore = NewTabPageControllerStore(builder: newTabPageBuilder)
 
@@ -211,8 +206,7 @@ class MainViewController: UIViewController {
                                                            toggleModeStorage: toggleModeStorage,
                                                            voiceSearchHelper: voiceSearchHelper,
                                                            daxGreetingProvider: daxGreetingService,
-                                                           daxGreetingChanges: daxGreetingActivity?.changes ?? Empty().eraseToAnyPublisher(),
-                                                           updateDaxGreetingAppearance: { [weak self] in self?.daxGreetingAppearance = $0 })
+                                                           daxGreetingChanges: daxGreetingActivity?.changes ?? Empty().eraseToAnyPublisher())
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?

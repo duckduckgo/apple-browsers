@@ -173,6 +173,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public init(configuration: WebExtensionConfigurationProviding,
+                controllerConfiguration: WKWebExtensionController.Configuration? = nil,
                 windowTabProvider: WebExtensionWindowTabProviding,
                 storageProvider: WebExtensionStorageProviding,
                 installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
@@ -190,7 +191,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL }) {
-        let controllerConfiguration = WKWebExtensionController.Configuration.default()
+        let controllerConfiguration = controllerConfiguration ?? WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
         // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,

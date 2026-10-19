@@ -32,12 +32,16 @@ extension MainWindowController: WKWebExtensionWindow {
         // Only loaded tabs are returned — WKWebExtensionTab requires a WKWebView,
         // which unloaded tabs don't have. They become visible as the lazy loader materializes them.
         // Pinned tabs are included so the extension can see and message them like any other tab.
+        if let webExtensionTabsOnClose { return webExtensionTabsOnClose }
         return mainViewController.tabCollectionViewModel.loadedPinnedTabs
             + mainViewController.tabCollectionViewModel.loadedTabs
     }
 
     func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
-        return mainViewController.tabCollectionViewModel.selectedTab
+        let selectedTab = mainViewController.tabCollectionViewModel.selectedTab
+        if let webExtensionTabsOnClose, let selectedTab,
+           !webExtensionTabsOnClose.contains(where: { $0 === selectedTab }) { return nil }
+        return selectedTab
     }
 
     func windowType(for context: WKWebExtensionContext) -> WKWebExtension.WindowType {

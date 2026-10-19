@@ -40,6 +40,8 @@ final class MainWindowController: NSWindowController {
     var themeUpdateCancellable: AnyCancellable?
 
     private let featureFlagger: FeatureFlagger?
+    /// Once closing starts, WebKit must see only tabs that actually close with this window.
+    private(set) var webExtensionTabsOnClose: [Tab]?
     private weak var windowControllersManager: WindowControllersManager?
 
     private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
@@ -625,11 +627,13 @@ extension MainWindowController: NSWindowDelegate {
             let tabsInClosingWindow = mainViewController.tabCollectionViewModel.loadedPinnedTabs
                 + mainViewController.tabCollectionViewModel.loadedTabs
 
-            for tab in Self.tabsToCloseForWebExtensions(
+            let closingTabs = Self.tabsToCloseForWebExtensions(
                 in: tabsInClosingWindow,
                 retainedByOpenWindows: tabsInRemainingWindows,
                 retainedBySharedPinnedTabs: sharedPinnedTabs
-            ) {
+            )
+            prepareWebExtensionTabsForWindowClose(closingTabs)
+            for tab in closingTabs {
                 webExtensionManager.eventsListener.didCloseTab(tab, windowIsClosing: true)
             }
         }
@@ -650,6 +654,14 @@ extension MainWindowController: NSWindowDelegate {
 
         burnAndClose(window)
         return false
+    }
+
+    func prepareWebExtensionTabsForWindowClose(_ closingTabs: [Tab]) {
+        // Latch the flag for the close transaction. WebKit queries tabs again inside didCloseWindow,
+        // after our explicit didCloseTab calls, and otherwise forgets surviving shared pinned tabs.
+        guard webExtensionTabsOnClose == nil,
+              (featureFlagger ?? Application.appDelegate.featureFlagger).isFeatureOn(.webExtensionSharedPinnedTabWindowClose) else { return }
+        webExtensionTabsOnClose = closingTabs
     }
 
     static func tabsToCloseForWebExtensions(in closingWindow: [Tab],

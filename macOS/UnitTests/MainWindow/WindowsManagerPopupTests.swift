@@ -19,6 +19,7 @@
 import Cocoa
 import PrivacyConfig
 import SharedTestUtilities
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -88,6 +89,142 @@ final class WindowsManagerPopupTests: XCTestCase {
         destinationViewModel.tabCollection.clearAfterMerge()
     }
 
+    // MARK: - WebKit window-close enumeration
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testClosingWindowExposesOnlyGenuinelyClosingTabsToWebKit() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let closing = Tab(content: .newtab)
+        let flags = MockFeatureFlagger()
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        let (controller, model) = makeWindowController(tabs: [retained, closing], featureFlagger: flags)
+        model.select(tab: retained)
+        XCTAssertEqual(controller.tabs(for: context).count, 2)
+        XCTAssertTrue(controller.activeTab(for: context) === retained)
+
+        controller.prepareWebExtensionTabsForWindowClose([closing])
+
+        XCTAssertEqual(controller.tabs(for: context).count, 1)
+        XCTAssertTrue(controller.tabs(for: context).first === closing)
+        XCTAssertNil(controller.activeTab(for: context), "A surviving tab is not active in the closed window")
+        XCTAssertEqual(model.loadedTabs.count, 2, "The fix must not remove the surviving tab from its model")
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testClosingLastWindowCanExposeAnEmptyTabListWithoutLosingSurvivors() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let flags = MockFeatureFlagger()
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        let (controller, model) = makeWindowController(tabs: [retained], featureFlagger: flags)
+        model.select(tab: retained)
+
+        controller.prepareWebExtensionTabsForWindowClose([])
+
+        XCTAssertTrue(controller.tabs(for: context).isEmpty)
+        XCTAssertNil(controller.activeTab(for: context))
+        XCTAssertIdentical(model.loadedTabs.first, retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testDisabledWindowCloseFlagPreservesExistingEnumeration() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let flags = MockFeatureFlagger()
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = false
+        let (controller, model) = makeWindowController(tabs: [retained], featureFlagger: flags)
+        model.select(tab: retained)
+
+        controller.prepareWebExtensionTabsForWindowClose([])
+
+        XCTAssertTrue(controller.tabs(for: context).first === retained)
+        XCTAssertTrue(controller.activeTab(for: context) === retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWindowCloseReadsRuntimeEnableOnAnExistingWindow() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let flags = MockFeatureFlagger()
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = false
+        let (controller, _) = makeWindowController(tabs: [retained], featureFlagger: flags)
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+
+        controller.prepareWebExtensionTabsForWindowClose([])
+
+        XCTAssertTrue(controller.tabs(for: context).isEmpty)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWindowCloseReadsRuntimeDisableOnAnExistingWindow() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let flags = MockFeatureFlagger()
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        let (controller, _) = makeWindowController(tabs: [retained], featureFlagger: flags)
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = false
+
+        controller.prepareWebExtensionTabsForWindowClose([])
+
+        XCTAssertTrue(controller.tabs(for: context).first === retained)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testRuntimeDisableDoesNotChangeAnAlreadyStartedCloseTransaction() async throws {
+        let context = try await makeWindowCloseContext()
+        let retained = Tab(content: .newtab)
+        let flags = MockFeatureFlagger()
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        let (controller, _) = makeWindowController(tabs: [retained], featureFlagger: flags)
+        controller.prepareWebExtensionTabsForWindowClose([])
+
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = false
+        controller.prepareWebExtensionTabsForWindowClose([retained])
+
+        XCTAssertTrue(controller.tabs(for: context).isEmpty, "Closing-window queries must use one stable snapshot")
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testGenuinelyClosingActiveTabRemainsVisibleToWebKit() async throws {
+        let context = try await makeWindowCloseContext()
+        let first = Tab(content: .newtab)
+        let second = Tab(content: .newtab)
+        let flags = MockFeatureFlagger()
+        flags.featuresStub["webExtensionSharedPinnedTabWindowClose"] = true
+        let (controller, model) = makeWindowController(tabs: [first, second], featureFlagger: flags)
+        model.select(tab: second)
+
+        controller.prepareWebExtensionTabsForWindowClose([first, second])
+
+        XCTAssertEqual(controller.tabs(for: context).count, 2)
+        XCTAssertTrue(controller.tabs(for: context)[0] === first)
+        XCTAssertTrue(controller.tabs(for: context)[1] === second)
+        XCTAssertTrue(controller.activeTab(for: context) === second)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    private func makeWindowCloseContext() async throws -> WKWebExtensionContext {
+        let directory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .appendingPathComponent("WindowCloseTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let manifest = """
+        { "manifest_version": 3, "name": "Window Close Tests", "version": "1.0.0" }
+        """
+        try manifest.write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        return WKWebExtensionContext(for: webExtension)
+    }
+
     // MARK: - Content Size Tests
 
     @MainActor
@@ -105,7 +242,7 @@ final class WindowsManagerPopupTests: XCTestCase {
     }
 
     @MainActor
-    private func makeWindowController(tabs: [Tab]) -> (MainWindowController, TabCollectionViewModel) {
+    private func makeWindowController(tabs: [Tab], featureFlagger: MockFeatureFlagger? = nil) -> (MainWindowController, TabCollectionViewModel) {
         let tabCollectionViewModel = TabCollectionViewModel(
             tabCollection: TabCollection(tabs: tabs),
             windowControllersManager: WindowControllersManagerMock()
@@ -120,7 +257,8 @@ final class WindowsManagerPopupTests: XCTestCase {
             window: window,
             mainViewController: mainViewController,
             fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
-            themeManager: MockThemeManager()
+            themeManager: MockThemeManager(),
+            featureFlagger: featureFlagger
         )
         windowController.window = window
         return (windowController, tabCollectionViewModel)

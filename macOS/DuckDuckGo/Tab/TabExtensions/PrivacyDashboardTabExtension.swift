@@ -256,7 +256,7 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
     @MainActor
     func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
         if #available(macOS 15.4, *), navigationResponse.isForMainFrame,
-           let scheme = navigationResponse.url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
+           [.http, .https].contains(navigationResponse.url.navigationalScheme) {
             // The Network process can change after action policy. Repair before document-start scripts run.
             webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
         }

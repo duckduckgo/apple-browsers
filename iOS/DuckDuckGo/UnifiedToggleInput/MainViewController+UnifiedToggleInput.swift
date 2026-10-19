@@ -1600,6 +1600,10 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     func unifiedInputEditingStateDidInteractWithMessage(_ interaction: NewTabPageMessageInteraction) {
         recordNewTabPageSessionMessageInteraction(interaction)
     }
+
+    func unifiedInputEditingStateDidChangeFavoritesExpansion() {
+        recordNewTabPageSessionAction(.toggleFavoritesExpansion)
+    }
 }
 
 // MARK: - AIChatTabChatHeaderViewDelegate

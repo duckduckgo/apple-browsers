@@ -51,11 +51,24 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
         XCTAssertEqual(delegate.messageInteractions, [.callToAction])
     }
+
+    func testEmbeddedPageFavoritesExpansionChange_ForwardsToDelegate() {
+        let delegate = MockUnifiedInputContentContainerDelegate()
+        let viewController = UnifiedInputContentContainerViewController(
+            switchBarHandler: MockUnifiedInputSwitchBarHandler()
+        )
+        viewController.delegate = delegate
+
+        viewController.newTabPageDidChangeFavoritesExpansion(RedesignedNewTabPageViewController(blocks: []))
+
+        XCTAssertEqual(delegate.favoritesExpansionChangeCount, 1)
+    }
 }
 
 private final class MockUnifiedInputContentContainerDelegate: UnifiedInputContentContainerViewControllerDelegate {
     private(set) var syncSetupRequestCount = 0
     private(set) var messageInteractions: [NewTabPageMessageInteraction] = []
+    private(set) var favoritesExpansionChangeCount = 0
 
     func unifiedInputEditingStateDidSubmitQuery(_ query: String) {}
     func unifiedInputEditingStateDidSubmitPrompt(_ query: String, tools: [AIChatRAGTool]?) {}
@@ -75,6 +88,10 @@ private final class MockUnifiedInputContentContainerDelegate: UnifiedInputConten
 
     func unifiedInputEditingStateDidInteractWithMessage(_ interaction: NewTabPageMessageInteraction) {
         messageInteractions.append(interaction)
+    }
+
+    func unifiedInputEditingStateDidChangeFavoritesExpansion() {
+        favoritesExpansionChangeCount += 1
     }
 }
 

@@ -48,6 +48,7 @@ protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidChangeMode(_ mode: TextEntryMode)
     func unifiedInputEditingStateDidRequestSyncSetup()
     func unifiedInputEditingStateDidInteractWithMessage(_ interaction: NewTabPageMessageInteraction)
+    func unifiedInputEditingStateDidChangeFavoritesExpansion()
 }
 
 final class UnifiedInputContentContainerViewController: UIViewController {
@@ -832,6 +833,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
         // standalone NTP (the embedded controller has no owner to set this otherwise).
         controller.delegate = self
+        controller.favoritesModel.onUserChangedExpansion = { [weak self, weak controller] in
+            guard let self, let controller else { return }
+            self.newTabPageDidChangeFavoritesExpansion(controller)
+        }
         // The escape hatch and the empty-state logo are UTI chrome (bar-pinned hatch + the host's
         // `FocusedDaxLogoView`), not the NTP's — leave the NTP's own hatch unset so we never get two.
         controller.setLogoHidden(true)
@@ -1161,6 +1166,10 @@ extension UnifiedInputContentContainerViewController: NewTabPageControllerDelega
 
     func newTabPage(_ controller: any NewTabPage, didInteractWithMessage interaction: NewTabPageMessageInteraction) {
         delegate?.unifiedInputEditingStateDidInteractWithMessage(interaction)
+    }
+
+    func newTabPageDidChangeFavoritesExpansion(_ controller: any NewTabPage) {
+        delegate?.unifiedInputEditingStateDidChangeFavoritesExpansion()
     }
 
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: any NewTabPage) {}

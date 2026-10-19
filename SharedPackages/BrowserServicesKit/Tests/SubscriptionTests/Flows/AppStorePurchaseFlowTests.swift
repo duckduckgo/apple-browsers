@@ -74,6 +74,51 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         }
     }
 
+    func test_purchaseSubscription_withActiveStripeSubscription_returnsActiveSubscriptionAlreadyPresentWithoutPurchasing() async {
+        subscriptionManagerMock.resultSubscription = .success(Self.activeSubscription(platform: .stripe))
+        storePurchaseManagerMock.purchaseSubscriptionResult = .success("transactionJWS")
+
+        let result = await sut.purchaseSubscription(with: "testSubscriptionID", includeProTier: false)
+
+        XCTAssertFalse(appStoreRestoreFlowMock.restoreAccountFromPastPurchaseCalled)
+        XCTAssertFalse(storePurchaseManagerMock.purchaseSubscriptionCalled)
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .activeSubscriptionAlreadyPresent)
+        case .success:
+            XCTFail("Unexpected success")
+        }
+    }
+
+    func test_purchaseSubscription_withActiveAppleSubscription_returnsActiveSubscriptionAlreadyPresentWithoutRestoring() async {
+        subscriptionManagerMock.resultSubscription = .success(Self.activeSubscription(platform: .apple))
+
+        let result = await sut.purchaseSubscription(with: "testSubscriptionID", includeProTier: false)
+
+        XCTAssertFalse(appStoreRestoreFlowMock.restoreAccountFromPastPurchaseCalled)
+        XCTAssertFalse(storePurchaseManagerMock.purchaseSubscriptionCalled)
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .activeSubscriptionAlreadyPresent)
+        case .success:
+            XCTFail("Unexpected success")
+        }
+    }
+
+    private static func activeSubscription(platform: DuckDuckGoSubscription.Platform) -> DuckDuckGoSubscription {
+        DuckDuckGoSubscription(productId: UUID().uuidString,
+                               name: "Active subscription",
+                               billingPeriod: .monthly,
+                               startedAt: Date(),
+                               expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(30)),
+                               platform: platform,
+                               status: .autoRenewable,
+                               activeOffers: [],
+                               tier: nil,
+                               availableChanges: nil,
+                               pendingPlans: nil)
+    }
+
     func test_purchaseSubscription_withNoProductsFound_returnsError() async {
         appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowError.missingAccountOrTransactions)
 
@@ -108,7 +153,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         appStoreRestoreFlowMock.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowError.missingAccountOrTransactions)
         storePurchaseManagerMock.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseCancelledByUser)
         subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.expiredSubscription)
 
         let result = await sut.purchaseSubscription(with: "testSubscriptionID", includeProTier: false)
 
@@ -125,7 +170,7 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         let underlyingError = NSError(domain: "test", code: 1)
         storePurchaseManagerMock.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseFailed(underlyingError))
         subscriptionManagerMock.resultCreateAccountTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
-        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.expiredSubscription)
 
         let result = await sut.purchaseSubscription(with: "testSubscriptionID", includeProTier: false)
 

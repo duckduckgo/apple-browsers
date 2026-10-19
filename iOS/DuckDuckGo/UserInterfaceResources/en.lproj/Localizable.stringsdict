@@ -18,22 +18,6 @@
 			<string>%d chats downloaded</string>
 		</dict>
 	</dict>
-	<key>aichat.pasted.text.character.count</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@characters@</string>
-		<key>characters</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d character</string>
-			<key>other</key>
-			<string>%d characters</string>
-		</dict>
-	</dict>
 	<key>aiChat.history.deleteAll.confirmation.title</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

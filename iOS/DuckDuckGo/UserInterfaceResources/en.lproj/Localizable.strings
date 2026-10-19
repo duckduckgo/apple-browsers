@@ -436,27 +436,6 @@
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "attachment";
 
-/* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
-"aichat.pasted.text.accessibility.label" = "Pasted text";
-
-/* Subtitle of the sheet that shows a long block of text the user pasted into Duck.ai */
-"aichat.pasted.text.formatting.note" = "Formatting may be inconsistent from source.";
-
-/* Count line in the Duck.ai pasted-text sheet while the message is over the length limit, e.g. 16800/16000 characters. %1$d is the current character count, %2$d is the most this pasted text may hold */
-"aichat.pasted.text.over.limit.count" = "%1$d/%2$d characters";
-
-/* VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message */
-"aichat.pasted.text.remove" = "Remove";
-
-/* Title of the sheet that shows and edits a long block of text the user pasted into Duck.ai */
-"aichat.pasted.text.sheet.title" = "Pasted Text";
-
-/* Character count below the Duck.ai too-long message error, e.g. 16800/16000. %1$d is the message's character count, %2$d is the maximum allowed */
-"aichat.prompt.too.long.count" = "%1$d/%2$d";
-
-/* Error shown below the Duck.ai input while the message is longer than the allowed number of characters */
-"aichat.prompt.too.long.title" = "Please try a shorter message.";
-
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "For analytical tasks";
 

@@ -34,6 +34,9 @@ protocol IPadDuckAIControlValues {
     var selectedTools: [AIChatRAGTool]? { get }
 
     var selectedAttachments: AIChatPromptAttachments { get }
+
+    /// The user's Duck.ai tier as the model picker last resolved it.
+    var userTier: AIChatUserTier { get }
 }
 
 /// A concrete snapshot of `IPadDuckAIControlValues`. Every value defaults to `nil`, so callers
@@ -43,4 +46,5 @@ struct IPadDuckAIControlValuesSnapshot: IPadDuckAIControlValues {
     var selectedReasoningEffort: AIChatReasoningEffort?
     var selectedTools: [AIChatRAGTool]?
     var selectedAttachments: AIChatPromptAttachments = .none
+    var userTier: AIChatUserTier = .free
 }

@@ -27,6 +27,10 @@ import WebKit
 @available(macOS 15.4, iOS 18.4, *)
 open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInstallationPathResolving {
 
+    private enum Selector {
+        static let backgroundWebView = NSSelectorFromString("_backgroundWebView")
+    }
+
     private enum InstalledExtensionsLoadLifecycle {
         case initial
         case reloadAll(trigger: WebExtensionReloadTrigger, identifiers: Set<String>)
@@ -940,8 +944,8 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
             cpmNetworkProcessRecovery.watch(webView, identifier: extensionContext.uniqueIdentifier) { [weak controller, weak extensionContext, weak webView] in
                 guard let extensionContext, let webView,
                       controller?.extensionContexts.contains(extensionContext) == true,
-                      extensionContext.responds(to: NSSelectorFromString("_backgroundWebView")) else { return false }
-                return extensionContext.value(forKey: "_backgroundWebView") as? WKWebView === webView
+                      extensionContext.responds(to: Selector.backgroundWebView) else { return false }
+                return extensionContext.value(forKey: NSStringFromSelector(Selector.backgroundWebView)) as? WKWebView === webView
             }
             cpmDiagnosticsRecorder?.didCreateBackgroundWebView(webView, for: extensionContext)
         }

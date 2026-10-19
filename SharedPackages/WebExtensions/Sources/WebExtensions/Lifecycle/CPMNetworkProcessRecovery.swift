@@ -26,6 +26,11 @@ import WebKit
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 final class CPMNetworkProcessRecovery {
+    private enum Selector {
+        static let networkProcessIdentifier = NSSelectorFromString("_networkProcessIdentifier")
+        static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
+    }
+
     typealias ProcessIdentifier = @MainActor (WKWebView) -> Int32?
     typealias Restart = @MainActor (WKWebView) -> Bool
 
@@ -125,14 +130,13 @@ final class CPMNetworkProcessRecovery {
 
     private static func networkProcessIdentifier(_ webView: WKWebView) -> Int32? {
         let store = webView.configuration.websiteDataStore
-        guard store.responds(to: NSSelectorFromString("_networkProcessIdentifier")) else { return nil }
-        return (store.value(forKey: "_networkProcessIdentifier") as? NSNumber)?.int32Value
+        guard store.responds(to: Selector.networkProcessIdentifier) else { return nil }
+        return (store.value(forKey: NSStringFromSelector(Selector.networkProcessIdentifier)) as? NSNumber)?.int32Value
     }
 
     private static func restartBackground(_ webView: WKWebView) -> Bool {
-        let selector = NSSelectorFromString("_killWebContentProcessAndResetState")
-        guard webView.responds(to: selector) else { return false }
-        webView.perform(selector)
+        guard webView.responds(to: Selector.killWebContentProcessAndResetState) else { return false }
+        webView.perform(Selector.killWebContentProcessAndResetState)
         return true
     }
 }

@@ -943,7 +943,9 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     func sidebarHost(for presentingVC: UIViewController) -> AIChatContextualSidebarHosting? {
-        guard let host = presentingVC as? AIChatContextualSidebarHosting, host.canPresentContextualSidebar else { return nil }
+        guard featureFlagger.isFeatureOn(.ipadAIChatContextSidebar),
+              let host = presentingVC as? AIChatContextualSidebarHosting,
+              host.canPresentContextualSidebar else { return nil }
         return host
     }
 

@@ -539,6 +539,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Single Duck.ai menu button in the iPad tabs bar.
     case iPadChromeMenuButton
 
+    /// Contextual Duck.ai chat shown as a sidebar beside the page on iPad, instead of a sheet.
+    case iPadContextualSidebar
+
     /// Enables moving the AI Chat native-storage container from the shared App
     /// Group into the app's Application Support directory on iOS. Off keeps the
     /// legacy App Group path.

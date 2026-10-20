@@ -534,6 +534,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
     case aiChatChromeMenuButtonIPad
 
+    /// Shows the contextual Duck.ai chat as a sidebar beside the page on iPad, instead of a sheet.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1218164998657024
+    case ipadAIChatContextSidebar
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511214?focus=true
     case utiDuckAIWarnings
 
@@ -1009,6 +1013,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .aiChatChromeMenuButtonIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
+        case .ipadAIChatContextSidebar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadContextualSidebar))
         case .floatingUIiOS26:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
         case .floatingUIiOS27:

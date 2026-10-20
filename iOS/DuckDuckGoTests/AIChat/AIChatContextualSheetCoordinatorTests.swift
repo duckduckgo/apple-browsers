@@ -1236,7 +1236,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenPresenterHasRoomForASidebarThenTheSheetOpensThereInsteadOfModally() async {
-        let host = RecordingSidebarHost()
+        let host = makeSidebarHost()
 
         await sut.presentSheet(from: host)
 
@@ -1248,8 +1248,20 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenPresenterHasNoRoomForASidebarThenTheSheetIsPresentedModally() async {
+    func testWhenSidebarFlagIsOffThenTheSheetIsPresentedModallyEvenWithRoomForASidebar() async {
         let host = RecordingSidebarHost()
+
+        await sut.presentSheet(from: host)
+
+        XCTAssertTrue(host.sidebarPresentations.isEmpty)
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertFalse(sut.isSheetInSidebar)
+        XCTAssertEqual(sut.sheetViewController?.surfaceStyle, .sheet)
+    }
+
+    @MainActor
+    func testWhenPresenterHasNoRoomForASidebarThenTheSheetIsPresentedModally() async {
+        let host = makeSidebarHost()
         host.canPresentContextualSidebar = false
 
         await sut.presentSheet(from: host)
@@ -1262,7 +1274,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenSheetInTheSidebarIsDismissedThenItLeavesTheSidebarAndIsKeptForReopening() async {
-        let host = RecordingSidebarHost()
+        let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = sut.sheetViewController
         var didComplete = false
@@ -1278,7 +1290,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenCloseIsTappedInTheSidebarThenTheSidebarDismissesTheSheet() async throws {
-        let host = RecordingSidebarHost()
+        let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = try XCTUnwrap(sut.sheetViewController)
 
@@ -1291,7 +1303,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenChatIsClearedWhileInTheSidebarThenTheSidebarClosesAndTheSheetIsDiscarded() async {
-        let host = RecordingSidebarHost()
+        let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = sut.sheetViewController
 
@@ -1304,7 +1316,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenChatIsClearedWhileInTheSidebarThenLeavingTheSidebarDoesNotWindDownASessionThatIsGone() async {
-        let host = RecordingSidebarHost()
+        let host = makeSidebarHost()
         await sut.presentSheet(from: host)
 
         sut.clearActiveChat()
@@ -1316,7 +1328,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenReopenedAfterLeavingTheSidebarThenTheSameSheetReturnsToIt() async {
-        let host = RecordingSidebarHost()
+        let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = sut.sheetViewController
         sut.dismissSheet()
@@ -1330,7 +1342,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenWindowNarrowsBetweenOpeningsThenTheSameSheetIsPresentedModally() async {
-        let host = RecordingSidebarHost()
+        let host = makeSidebarHost()
         await sut.presentSheet(from: host)
         let sheet = sut.sheetViewController
         sut.dismissSheet()
@@ -1733,6 +1745,11 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    private func makeSidebarHost() -> RecordingSidebarHost {
+        mockFeatureFlagger.enabledFeatureFlags.append(.ipadAIChatContextSidebar)
+        return RecordingSidebarHost()
+    }
 
     /// Yields the main actor until `condition` holds (or the timeout elapses), letting
     /// main-queue context deliveries run between checks.

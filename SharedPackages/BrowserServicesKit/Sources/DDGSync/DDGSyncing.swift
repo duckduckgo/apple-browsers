@@ -296,18 +296,6 @@ public protocol DDGSyncingDebuggingSupport {
     func resetDeviceInfoMigrationForDebug()
 }
 
-public struct AuditLogDebugSummary: Sendable {
-    public let entryCount: Int
-    public let hasAfterCursor: Bool
-    public let hasBeforeCursor: Bool
-
-    public init(entryCount: Int, hasAfterCursor: Bool, hasBeforeCursor: Bool) {
-        self.entryCount = entryCount
-        self.hasAfterCursor = hasAfterCursor
-        self.hasBeforeCursor = hasBeforeCursor
-    }
-}
-
 public extension DDGSyncingDebuggingSupport {
     func ensureAccountInfoKeyForDebug() async throws -> Int {
         throw SyncError.accountNotFound
@@ -343,6 +331,18 @@ public struct RegisteredDeviceDebugInfo: Sendable {
     public let device: RegisteredDevice
     public let source: Source
     public let deviceInfoIssue: String?
+}
+
+public struct AuditLogDebugSummary: Sendable {
+    public let entryCount: Int
+    public let hasAfterCursor: Bool
+    public let hasBeforeCursor: Bool
+
+    public init(entryCount: Int, hasAfterCursor: Bool, hasBeforeCursor: Bool) {
+        self.entryCount = entryCount
+        self.hasAfterCursor = hasAfterCursor
+        self.hasBeforeCursor = hasBeforeCursor
+    }
 }
 
 public enum ServerEnvironment: LosslessStringConvertible {

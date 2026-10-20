@@ -28,7 +28,7 @@ struct SyncAnotherDevicePromptView: View {
     }
 
     var body: some View {
-        SyncSetupDialog(spacing: 20.0) {
+        SyncSetupDialog(spacing: 20.0, width: 500) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPairFeature128)
                 VStack(alignment: .center, spacing: 8) {
@@ -37,6 +37,13 @@ struct SyncAnotherDevicePromptView: View {
                 }
             }
         } buttons: {
+            Button(UserText.cancel) {
+                model.cancelPressed()
+            }
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+            .keyboardShortcut(.cancelAction)
+            .disabled(isBusy)
+
             Spacer()
             Button {
                 Task {

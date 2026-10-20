@@ -938,7 +938,7 @@
 		C18390CA2F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */; };
 		C18390CC2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */; };
 		C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */; };
-		C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */; };
+		C18390D72F50A004001939B9 /* UnifiedToggleInputAttachmentEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390D62F50A004001939B9 /* UnifiedToggleInputAttachmentEncoderTests.swift */; };
 		C18390E12F5099D8001939B9 /* MultiTabAttachmentCandidateFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390E02F5099D8001939B9 /* MultiTabAttachmentCandidateFilterTests.swift */; };
 		C18390E32F5099D8001939B9 /* MultiTabMentionControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390E22F5099D8001939B9 /* MultiTabMentionControllerTests.swift */; };
 		C18390E52F5099D8001939B9 /* MultiTabMentionTokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18390E42F5099D8001939B9 /* MultiTabMentionTokenTests.swift */; };
@@ -1796,7 +1796,7 @@
 		C18390C92F5099D8001939B9 /* UnifiedToggleInputHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputHandlerTests.swift; sourceTree = "<group>"; };
 		C18390CB2F5099D8001939B9 /* UnifiedToggleInputCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputCoordinatorTests.swift; sourceTree = "<group>"; };
 		C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputFeatureTests.swift; sourceTree = "<group>"; };
-		C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputImageEncoderTests.swift; sourceTree = "<group>"; };
+		C18390D62F50A004001939B9 /* UnifiedToggleInputAttachmentEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedToggleInputAttachmentEncoderTests.swift; sourceTree = "<group>"; };
 		C18390E02F5099D8001939B9 /* MultiTabAttachmentCandidateFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabAttachmentCandidateFilterTests.swift; sourceTree = "<group>"; };
 		C18390E22F5099D8001939B9 /* MultiTabMentionControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabMentionControllerTests.swift; sourceTree = "<group>"; };
 		C18390E42F5099D8001939B9 /* MultiTabMentionTokenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTabMentionTokenTests.swift; sourceTree = "<group>"; };
@@ -3726,7 +3726,7 @@
 				AABB00010001000100010004 /* UTIRenderStateTests.swift */,
 				33CC9145E578E99B3052757F /* UnifiedToggleInputModelMenuTests.swift */,
 				C18390CD2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift */,
-				C18390D62F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift */,
+				C18390D62F50A004001939B9 /* UnifiedToggleInputAttachmentEncoderTests.swift */,
 				FA57E0010001000100010001 /* PasteboardAttachmentReaderTests.swift */,
 				FA57E0050005000500050005 /* UnifiedToggleInputPasteHandlerTests.swift */,
 				CB6D178A2FA2109C00ECD5AE /* DuckAIURLSuggestionsLoaderTests.swift */,
@@ -5711,7 +5711,7 @@
 				9FA8A629300EFDA3000DF5DE /* OnboardingPersonalizationAdBlockingTests.swift in Sources */,
 				C18390CE2F5099D8001939B9 /* UnifiedToggleInputFeatureTests.swift in Sources */,
 				CB15F6EE2FE4000300EDEB50 /* FocusedLogoModelTests.swift in Sources */,
-				C18390D72F50A004001939B9 /* UnifiedToggleInputImageEncoderTests.swift in Sources */,
+				C18390D72F50A004001939B9 /* UnifiedToggleInputAttachmentEncoderTests.swift in Sources */,
 				FA57E0020002000200020002 /* PasteboardAttachmentReaderTests.swift in Sources */,
 				806FB3D0304A7A43004EA754 /* AppRatingPromptCoordinatorTests.swift in Sources */,
 				FA57E0060006000600060006 /* UnifiedToggleInputPasteHandlerTests.swift in Sources */,

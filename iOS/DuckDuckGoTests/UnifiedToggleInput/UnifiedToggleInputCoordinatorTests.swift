@@ -597,7 +597,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     @MainActor
     func test_editPrompt_holdsUntilSubmit_thenResolvesWithEditedContent() async {
-        let request = EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)
+        let request = EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)
 
         let editTask = Task { await sut.editPrompt(request) }
         await Task.yield() // let editPrompt reach its suspension
@@ -605,7 +605,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
 
         let reply = await editTask.value
-        guard case let .submit(prompt, _, _) = reply else {
+        guard case let .submit(prompt, _) = reply else {
             return XCTFail("Expected .submit, got \(reply)")
         }
         XCTAssertEqual(prompt, "edited", "Submitting during an edit resolves the held reply with the edited content")
@@ -614,7 +614,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     @MainActor
     func test_editPrompt_tabSwitch_cancelsEdit_andNextPromptIsNotAnEdit() async {
         sut.activateForTab("tab-A")
-        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: true)) }
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: true)) }
         await Task.yield()
         guard sut.isEditing else { return XCTFail("The edit started before the tab switch") }
 
@@ -633,7 +633,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     @MainActor
     func test_editPrompt_hide_cancelsEdit() async {
-        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)) }
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)) }
         await Task.yield()
         guard sut.isEditing else { return XCTFail("The edit started before hiding") }
 
@@ -649,7 +649,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     @MainActor
     func test_editPrompt_bindingAnotherChat_cancelsEdit() async {
         sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
-        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)) }
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)) }
         await Task.yield()
         guard sut.isEditing else { return XCTFail("The edit started before rebinding") }
 
@@ -659,6 +659,72 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             return XCTFail("Binding another chat's script resolves the held edit as cancelled")
         }
         XCTAssertFalse(sut.isEditing)
+    }
+
+    @MainActor
+    func test_editPrompt_modelSupportsImagesAndFiles_repliesWithEmptyArraysWhenNothingIsAttached() async throws {
+        selectAttachmentModel(supportsImages: true, supportsFiles: true)
+
+        let json = try await submitEditAndEncodeReply()
+
+        XCTAssertEqual(json, #"{"files":[],"images":[],"prompt":"edited"}"#)
+    }
+
+    @MainActor
+    func test_editPrompt_modelSupportsNeither_omitsAttachmentKeys() async throws {
+        selectAttachmentModel(supportsImages: false, supportsFiles: false)
+
+        let json = try await submitEditAndEncodeReply()
+
+        XCTAssertEqual(json, #"{"prompt":"edited"}"#)
+    }
+
+    @MainActor
+    func test_editPrompt_modelSupportsFilesOnly_sendsAttachedFileAndOmitsImages() async throws {
+        selectAttachmentModel(supportsImages: false, supportsFiles: true)
+
+        let json = try await submitEditAndEncodeReply(attaching: makeFileAttachment())
+
+        let expectedData = Data(repeating: 0, count: 1_000).base64EncodedString()
+        XCTAssertEqual(json, #"{"files":[{"data":"\#(expectedData)","fileName":"test.pdf","mimeType":"application\/pdf"}],"prompt":"edited"}"#)
+    }
+
+    func test_submitAIChat_modelSupportsImagesAndFiles_nothingAttached_sendsNoAttachmentArrays() {
+        selectAttachmentModel(supportsImages: true, supportsFiles: true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(mockDelegate.submittedPrompt, "hello")
+        XCTAssertNil(mockDelegate.submittedAttachments?.images)
+        XCTAssertNil(mockDelegate.submittedAttachments?.files)
+    }
+
+    private func selectAttachmentModel(supportsImages: Bool, supportsFiles: Bool) {
+        mockPreferences.selectedModelId = "attachment-model"
+        sut.modelStore.models = [
+            AIChatModel(id: "attachment-model", name: "Attachment model", provider: .unknown,
+                        supportsImageUpload: supportsImages,
+                        supportedFileTypes: supportsFiles ? ["application/pdf"] : [],
+                        entityHasAccess: true)
+        ]
+        sut.modelStore.attachmentLimits = makeLimits()
+    }
+
+    @MainActor
+    private func submitEditAndEncodeReply(attaching file: AIChatFileAttachment? = nil) async throws -> String {
+        let request = EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield()
+        if let file {
+            sut.addFileAttachment(file)
+        }
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
+
+        let reply = await editTask.value
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return try XCTUnwrap(String(bytes: try encoder.encode(reply), encoding: .utf8))
     }
 
     // MARK: - Recovery-Card Submit Block
@@ -1167,8 +1233,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.submitProgrammatic(text: "Summarize This Page")
 
         XCTAssertEqual(mockDelegate.submittedPrompt, "Summarize This Page")
-        XCTAssertEqual(mockDelegate.submittedFiles?.count, 1)
-        XCTAssertEqual(mockDelegate.submittedFiles?.first?.fileName, "test.pdf")
+        XCTAssertEqual(mockDelegate.submittedAttachments?.files?.count, 1)
+        XCTAssertEqual(mockDelegate.submittedAttachments?.files?.first?.fileName, "test.pdf")
         XCTAssertEqual(attachmentCountAtSubmit, 1)
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
     }
@@ -4225,8 +4291,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedModelId: String?
     var submittedTools: [AIChatRAGTool]?
     var submittedReasoningEffort: AIChatReasoningEffort?
-    var submittedImages: [AIChatNativePrompt.NativePromptImage]?
-    var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
+    var submittedAttachments: AIChatPromptAttachments?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
     var onPromptSubmit: (() -> Void)?
@@ -4236,13 +4301,12 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var didRequestAppMenuCount = 0
     var didRequestAppMenuLongPressCount = 0
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedTools = tools
         submittedReasoningEffort = reasoningEffort
-        submittedImages = images
-        submittedFiles = files
+        submittedAttachments = attachments
         onPromptSubmit?()
     }
     func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,

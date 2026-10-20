@@ -21,11 +21,13 @@ import SwiftUI
 struct SyncSetupDialog<Content, Buttons>: View where Content: View, Buttons: View {
 
     let spacing: CGFloat
+    let width: CGFloat
     @ViewBuilder let content: () -> Content
     @ViewBuilder let buttons: () -> Buttons
 
-    init(spacing: CGFloat = 16.0, @ViewBuilder content: @escaping () -> Content, @ViewBuilder buttons: @escaping () -> Buttons) {
+    init(spacing: CGFloat = 16.0, width: CGFloat = 420, @ViewBuilder content: @escaping () -> Content, @ViewBuilder buttons: @escaping () -> Buttons) {
         self.spacing = spacing
+        self.width = width
         self.content = content
         self.buttons = buttons
     }
@@ -40,7 +42,7 @@ struct SyncSetupDialog<Content, Buttons>: View where Content: View, Buttons: Vie
             }
         }
         .padding(20.0)
-        .frame(width: 420)
+        .frame(width: width)
         .background(
             Color(designSystemColor: .surfaceSecondary)
         )

@@ -47,8 +47,7 @@ final class MultiTabAttachmentTests: XCTestCase {
         XCTAssertNil(tab.mimeType)
         XCTAssertFalse(tab.isImage)
         XCTAssertFalse(tab.isFile)
-        XCTAssertNil(UnifiedToggleInputImageEncoder.encode([tab]))
-        XCTAssertNil(UnifiedToggleInputFileEncoder.encode([tab]))
+        XCTAssertEqual(UnifiedToggleInputAttachmentEncoder.encode([tab], imagesSupported: true, filesSupported: true), .none)
     }
 
     func test_policyCountsDistinctSourceTabsIncludingPendingCurrentPage() {

@@ -776,7 +776,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     /// Restores the missing current token from the backup before an account is created, ignoring the missing-token retry pause.
-    /// - Throws: `SubscriptionManagerError.errorRetrievingTokenContainer` when the restore failed for a reason that may not last,
+    /// - Throws: `SubscriptionManagerError.errorRetrievingTokenContainer` when the restore failed for a temporary reason,
     ///   so no account is created while a backup that could still restore the session is stored. Otherwise nothing is thrown.
     private func restoreBeforeAccountCreation() async throws {
         do {
@@ -784,7 +784,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             Logger.subscriptionTokensManagement.log("Restored the missing token before creating an account")
         } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
             return
-        } catch let error where BackupTokenRecovery.isTransient(error) {
+        } catch let error where BackupTokenRecovery.isTemporary(error) {
             Logger.subscriptionTokensManagement.error("Backup restore failed before creating an account, not creating one: \(String(describing: error), privacy: .public)")
             throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
         } catch {

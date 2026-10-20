@@ -62,6 +62,26 @@ class TabSwitcherStaticButtonTests: XCTestCase {
         XCTAssertEqual("99", button.text)
     }
 
+    func testWhenResizedDuringCountAnimationThenIconRemainsCentered() throws {
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+        let icon = try XCTUnwrap(button.subviews.first { $0 is TabSwitcherStaticView })
+        button.layoutIfNeeded()
+
+        for _ in 0..<3 {
+            icon.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)
+            button.bounds.size = CGSize(width: 44, height: 0)
+            button.layoutIfNeeded()
+            button.bounds.size = CGSize(width: 34, height: 44)
+            button.layoutIfNeeded()
+            icon.transform = .identity
+            button.layoutIfNeeded()
+
+            XCTAssertEqual(icon.center.x, button.bounds.midX, accuracy: 0.001)
+            XCTAssertEqual(icon.center.y, button.bounds.midY, accuracy: 0.001)
+            XCTAssertEqual(icon.bounds.size, button.bounds.size)
+        }
+    }
+
     func testWhenNewChatAvailableThenLongPressMenuStartsWithNewChat() {
         XCTAssertEqual(newTabLongPressMenuTitles(isNewChatAvailable: true),
                        [UserText.actionNewAIChat, UserText.actionNewFireTab, UserText.actionNewTab])

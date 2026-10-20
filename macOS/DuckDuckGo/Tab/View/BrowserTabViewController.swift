@@ -1026,6 +1026,9 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             return newTabPageWebViewModel.webView
         case .webExtensionUrl(let url):
+            if let webView = tabViewModel.tab.webExtensionPageWebView {
+                return webView
+            }
             if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
                let context = webExtensionManager.extensionContext(for: url),
                let configuration = context.webViewConfiguration {
@@ -1036,8 +1039,11 @@ final class BrowserTabViewController: NSViewController {
                                       featureFlagger: featureFlagger,
                                       privacyConfig: privacyConfigurationManager.privacyConfig,
                                       sharesUserScripts: true)
+                // The tab handles the page's `window.close()`, alerts and new windows, as for its own web view.
+                webView.uiDelegate = tabViewModel.tab
                 let request = URLRequest(url: url)
                 webView.load(request)
+                tabViewModel.tab.webExtensionPageWebView = webView
                 return webView
             }
             return tabViewModel.tab.webView

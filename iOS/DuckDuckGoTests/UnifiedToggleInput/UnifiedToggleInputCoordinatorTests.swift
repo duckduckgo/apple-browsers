@@ -611,6 +611,53 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(prompt, "edited", "Submitting during an edit resolves the held reply with the edited content")
     }
 
+    @MainActor
+    func test_editPrompt_tabSwitch_cancelsEdit_andNextPromptIsNotAnEdit() async {
+        sut.activateForTab("tab-A")
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: true)) }
+        await Task.yield()
+
+        sut.activateForTab("tab-B")
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Switching tabs resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "new chat", mode: .aiChat, trigger: .sendButton)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "new chat", "A prompt sent after the switch starts a chat instead of replacing the edited message")
+
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.currentText, "", "The edited prompt isn't kept as the outgoing tab's draft")
+    }
+
+    @MainActor
+    func test_editPrompt_hide_cancelsEdit() async {
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)) }
+        await Task.yield()
+
+        sut.hide()
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Hiding the input resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+        XCTAssertEqual(sut.displayState, .hidden, "Ending the edit doesn't override the hidden state")
+    }
+
+    @MainActor
+    func test_editPrompt_bindingAnotherChat_cancelsEdit() async {
+        sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)) }
+        await Task.yield()
+
+        sut.bindToTab(makeTestUserScript(), hasExistingChat: true)
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Binding another chat's script resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+    }
+
     // MARK: - Recovery-Card Submit Block
 
     func test_recoveryCardBlock_propagatesToViewController() {

@@ -48,7 +48,7 @@ public final class CoreData {
     }
 
     public static func createPersistentContainer(at url: URL, modelName: String, bundle: Bundle, keyStore: EncryptionKeyStoring) -> NSPersistentContainer {
-        guard let modelURL = bundle.url(forResource: modelName, withExtension: "momd") ?? bundle.url(forResource: modelName, withExtension: "xcdatamodeld") else {
+        guard let modelURL = bundle.url(forResource: modelName, withExtension: "momd") else {
             fatalError("Error loading model \(modelName) from \(bundle)\n\(Thread.callStackSymbols.joined(separator: "\n"))")
         }
 

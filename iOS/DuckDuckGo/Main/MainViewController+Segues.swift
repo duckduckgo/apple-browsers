@@ -509,6 +509,7 @@ extension MainViewController {
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
                                                             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                                                            daxGreetingDebugging: daxGreetingService,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
                                                             promoCoordinationCooldownResetter: promoCoordinationService)
@@ -644,7 +645,8 @@ extension MainViewController {
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
-            promoCoordinationCooldownResetter: self.promoCoordinationService))
+            promoCoordinationCooldownResetter: self.promoCoordinationService,
+            daxGreetingDebugging: self.daxGreetingService))
 
         debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 

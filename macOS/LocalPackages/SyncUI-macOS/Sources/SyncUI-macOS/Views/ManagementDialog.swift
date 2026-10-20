@@ -18,26 +18,16 @@
 
 import SwiftUI
 
-public enum PreparingToSyncMode: Equatable {
-    case singleDeviceOrRecovery
-    case twoDevicePairing
-}
-
 public enum ManagementDialogKind: Equatable {
     case deleteAccount(_ devices: [SyncDevice])
-    case deleteAccountV2(_ devices: [SyncDevice])
     case turnOffSync
     case deviceDetails(_ device: SyncDevice)
-    case deviceDetailsV2(_ device: SyncDevice)
     case removeDevice(_ device: SyncDevice)
-    case removeDeviceV2(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
-    case prepareToSync(PreparingToSyncMode)
+    case prepareToSync
     case waitForOtherDevice
     case saveRecoveryCode(_ code: String)
     case pairingSuccess
-    case nowSyncing
-    case syncWithServer
     case syncAnotherDevicePrompt
     case syncThisDeviceFallback
     case syncAuthenticationCancelled
@@ -97,48 +87,22 @@ public struct ManagementDialog: View {
                 TurnOffSyncView()
             case .deviceDetails(let device):
                 DeviceDetailsView(device: device)
-            case .deviceDetailsV2(let device):
-                DeviceDetailsViewV2(device: device)
             case .removeDevice(let device):
                 RemoveDeviceView(device: device)
-            case .removeDeviceV2(let device):
-                RemoveDeviceViewV2(device: device)
             case .deleteAccount(let devices):
                 DeleteAccountView(devices: devices)
-            case .deleteAccountV2(let devices):
-                DeleteAccountViewV2(devices: devices)
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
-                if model.isSimplifiedSyncSetupV2Enabled {
-                    SyncWithAnotherDeviceViewV2(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
-                } else {
-                    SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
-                }
-            case .prepareToSync(let mode):
-                if model.isSimplifiedSyncSetupV2Enabled {
-                    PreparingToSyncViewV2(state: .connecting, isAnimationPaused: model.isPreparingToSyncAnimationPaused) {
-                        model.preparingToSyncAnimationDidFinish()
-                    }
-                } else {
-                    PreparingToSyncView(mode: mode)
+                SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
+            case .prepareToSync:
+                PreparingToSyncView(state: .connecting, isAnimationPaused: model.isPreparingToSyncAnimationPaused) {
+                    model.preparingToSyncAnimationDidFinish()
                 }
             case .waitForOtherDevice:
-                if model.isSimplifiedSyncSetupV2Enabled {
-                    PreparingToSyncViewV2(state: .waitingForOtherDevice)
-                } else {
-                    PreparingToSyncView(mode: .twoDevicePairing)
-                }
+                PreparingToSyncView(state: .waitingForOtherDevice)
             case .saveRecoveryCode(let code):
-                if model.isSimplifiedSyncSetupV2Enabled {
-                    SyncSuccessViewV2(code: code)
-                } else {
-                    SaveRecoveryPDFView(code: code)
-                }
+                SyncSuccessView(code: code)
             case .pairingSuccess:
-                SyncSuccessViewV2(code: nil)
-            case .nowSyncing:
-                DeviceSyncedView()
-            case .syncWithServer:
-                SyncWithServerView()
+                SyncSuccessView(code: nil)
             case .syncAnotherDevicePrompt:
                 SyncAnotherDevicePromptView()
             case .syncThisDeviceFallback:

@@ -1,5 +1,5 @@
 //
-//  SyncDialogV2.swift
+//  SyncSetupDialog.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import SwiftUI
 
-struct SyncDialogV2<Content, Buttons>: View where Content: View, Buttons: View {
+struct SyncSetupDialog<Content, Buttons>: View where Content: View, Buttons: View {
 
     let spacing: CGFloat
     @ViewBuilder let content: () -> Content

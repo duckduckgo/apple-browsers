@@ -73,6 +73,7 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
     case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
     case syncThisDeviceFallbackShown
     case syncThisDeviceFallbackSyncTapped
+    case syncThisDeviceFallbackCancelTapped
     case authenticationCancelledPromptShown
     case authenticationCancelledPromptRetryTapped
     case authenticationCancelledPromptDismissed
@@ -99,6 +100,7 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
         case .anotherDevicePromptOptionTapped: return "sync_settings_another_device_prompt_option_tapped_mac"
         case .syncThisDeviceFallbackShown: return "sync_settings_sync_this_device_fallback_shown_mac"
         case .syncThisDeviceFallbackSyncTapped: return "sync_settings_sync_this_device_fallback_sync_tapped_mac"
+        case .syncThisDeviceFallbackCancelTapped: return "sync_settings_sync_this_device_fallback_cancel_tapped_mac"
         case .authenticationCancelledPromptShown: return "sync_settings_authentication_cancelled_prompt_shown_mac"
         case .authenticationCancelledPromptRetryTapped: return "sync_settings_authentication_cancelled_prompt_retry_tapped_mac"
         case .authenticationCancelledPromptDismissed: return "sync_settings_authentication_cancelled_prompt_dismissed_mac"
@@ -125,6 +127,95 @@ enum SyncSettingsPixelKitEvent: PixelKit.Event {
             return [ParameterKey.syncPromptOption: option.rawValue]
         default:
             return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+}
+
+enum SyncTurnOffPixelKitEvent: PixelKit.Event {
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    enum ParameterKey {
+        static let option = "option"
+    }
+
+    enum Option: String {
+        case thisDevice = "this_device"
+        case allDevicesAndServerData = "all_devices_and_server_data"
+    }
+
+    case dialogShown
+    case optionSelected(Option)
+    case deleteServerDataConfirmationConfirmed
+    case deleteServerDataConfirmationDismissed
+
+    var name: String {
+        switch self {
+        case .dialogShown: return "sync_turn_off_sheet_shown_mac"
+        case .optionSelected: return "sync_turn_off_option_selected_mac"
+        case .deleteServerDataConfirmationConfirmed: return "sync_delete_server_data_confirmation_confirmed_mac"
+        case .deleteServerDataConfirmationDismissed: return "sync_delete_server_data_confirmation_dismissed_mac"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .optionSelected(let option):
+            return [ParameterKey.option: option.rawValue]
+        case .dialogShown, .deleteServerDataConfirmationConfirmed, .deleteServerDataConfirmationDismissed:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+}
+
+enum SyncSetupAuthenticationPixelKitEvent: PixelKit.Event {
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    enum ParameterKey {
+        static let result = "result"
+        static let source = "source"
+    }
+
+    enum Result: String {
+        case succeeded
+        case failed
+        case unconfigured
+
+        init(_ deviceAuthenticationResult: DeviceAuthenticationResult) {
+            switch deviceAuthenticationResult {
+            case .success: self = .succeeded
+            case .failure: self = .failed
+            case .noAuthAvailable: self = .unconfigured
+            }
+        }
+    }
+
+    enum Source: String {
+        case settingsNotSynced = "settings_not_synced"
+        case settingsSynced = "settings_synced"
+        case thisDevice = "this_device"
+        case recover
+    }
+
+    case result(Result, source: Source)
+
+    var name: String {
+        switch self {
+        case .result: return "sync_setup_authentication_result_mac"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .result(let result, let source):
+            return [ParameterKey.result: result.rawValue, ParameterKey.source: source.rawValue]
         }
     }
 
@@ -215,6 +306,7 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
         static let syncConfirmationDenied = "sync_confirmation_denied"
         static let host = "host"
         static let joiner = "joiner"
+        static let fallback = "fallback"
     }
 
     case syncSetupBarcodeScreenShown(SyncSetupSource, flowVersion: String?)
@@ -231,6 +323,7 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
                               timeoutStage: String?,
                               pairingV2FailureContext: PairingV2FailureContext?)
     case syncSetupEndedSuccessful(SyncSetupSource, flowVersion: String?, peerKind: String?, myRole: String?)
+    case syncSetupEndedSuccessfulFromFallback(flowVersion: String?)
 
     var name: String {
         switch self {
@@ -241,13 +334,13 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
         case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed_mac"
         case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned_mac"
         case .syncSetupEndedFailed: return "sync_setup_ended_failed_mac"
-        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful_mac"
+        case .syncSetupEndedSuccessful, .syncSetupEndedSuccessfulFromFallback: return "sync_setup_ended_successful_mac"
         }
     }
 
     var parameters: [String: String]? {
         var parameters = [ParameterKey.myKind: ParameterValue.ddg]
-        parameters[ParameterKey.source] = source?.rawValue
+        parameters[ParameterKey.source] = source
         parameters[ParameterKey.flowVersion] = flowVersion
         parameters[ParameterKey.codeType] = codeType
         parameters[ParameterKey.codeVersion] = codeVersion
@@ -261,7 +354,7 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
         return parameters
     }
 
-    private var source: SyncSetupSource? {
+    private var source: String? {
         switch self {
         case
             .syncSetupBarcodeScreenShown(let source, _),
@@ -269,11 +362,14 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
             .syncSetupManualCodeEnteredSuccess(let source, _, _),
             .syncSetupEndedAbandoned(let source, _, _),
             .syncSetupEndedSuccessful(let source, _, _, _):
-            return source
+            return source.rawValue
         case
             .syncSetupManualCodeEnteredFailed(let source, _, _),
             .syncSetupEndedFailed(let source, _, _, _, _, _, _):
-            return source
+            return source?.rawValue
+        case
+            .syncSetupEndedSuccessfulFromFallback:
+            return ParameterValue.fallback
         case
             .syncSetupManualCodeEntryScreenShown:
             return nil
@@ -289,7 +385,8 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
                 .syncSetupManualCodeEnteredFailed(_, let flowVersion, _),
                 .syncSetupEndedAbandoned(_, let flowVersion, _),
                 .syncSetupEndedFailed(_, let flowVersion, _, _, _, _, _),
-                .syncSetupEndedSuccessful(_, let flowVersion, _, _):
+                .syncSetupEndedSuccessful(_, let flowVersion, _, _),
+                .syncSetupEndedSuccessfulFromFallback(let flowVersion):
             return flowVersion
         }
     }
@@ -381,7 +478,8 @@ enum SyncSetupPixelKitEvent: PixelKit.Event {
                 .syncSetupManualCodeEnteredFailed,
                 .syncSetupEndedAbandoned,
                 .syncSetupEndedFailed,
-                .syncSetupEndedSuccessful:
+                .syncSetupEndedSuccessful,
+                .syncSetupEndedSuccessfulFromFallback:
             return [.pixelSource]
         }
     }

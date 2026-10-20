@@ -23,7 +23,7 @@ import FoundationExtensions
 
 /// Why a backup token container can't be used to restore a session.
 public enum TokenBackupError: DDGError {
-    /// No backup storage is configured, no backup is stored, or reading it failed.
+    /// No backup storage is configured, no backup is stored, or a restore was skipped because a recent one failed.
     case unavailable
     /// The backup belongs to another account than the expected one.
     case accountMismatch
@@ -34,6 +34,8 @@ public enum TokenBackupError: DDGError {
     /// The session changed while the restore was in progress: the backup was deleted or another current token was stored.
     /// Nothing was stored.
     case sessionChanged
+    /// Reading the backup token container from its storage failed with `underlying`.
+    case readFailed(underlying: Error)
 
     public var description: String {
         switch self {
@@ -47,6 +49,8 @@ public enum TokenBackupError: DDGError {
             return "The backup token has expired"
         case .sessionChanged:
             return "The session changed during the backup restore"
+        case .readFailed(let underlying):
+            return "Failed to read the backup token: \(underlying)"
         }
     }
 
@@ -64,10 +68,34 @@ public enum TokenBackupError: DDGError {
             return 11103
         case .sessionChanged:
             return 11104
+        case .readFailed:
+            return 11105
         }
     }
 
-    public var underlyingError: (any Error)? { nil }
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .readFailed(let underlying):
+            return underlying
+        default:
+            return nil
+        }
+    }
+
+    /// Cases are equal when they match; `.readFailed` also compares its underlying errors' domain and code.
+    public static func == (lhs: TokenBackupError, rhs: TokenBackupError) -> Bool {
+        switch (lhs, rhs) {
+        case (.unavailable, .unavailable), (.accountMismatch, .accountMismatch), (.predatesSignOut, .predatesSignOut),
+             (.expired, .expired), (.sessionChanged, .sessionChanged):
+            return true
+        case let (.readFailed(lhsUnderlying), .readFailed(rhsUnderlying)):
+            let lhsError = lhsUnderlying as NSError
+            let rhsError = rhsUnderlying as NSError
+            return lhsError.domain == rhsError.domain && lhsError.code == rhsError.code
+        default:
+            return false
+        }
+    }
 }
 
 /// Keeps the backup token container, an independent token pair forked from the current one, and decides when it must be renewed.
@@ -113,15 +141,15 @@ struct TokenBackupStore {
     ///   - expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
     ///   - issuedAfter: A backup whose refresh token was issued at or before this date is rejected. When nil, no such check is made.
     /// - Returns: The stored backup token container.
-    /// - Throws: `TokenBackupError.unavailable` when no backup is stored or reading it fails, otherwise the reason the backup was rejected.
-    ///   A rejected backup is deleted; an unavailable one is left as it is.
+    /// - Throws: `TokenBackupError.unavailable` when no backup is stored, `TokenBackupError.readFailed` when reading it fails,
+    ///   otherwise the reason the backup was rejected. A rejected backup is deleted; one that is missing or can't be read is left as it is.
     func usableBackup(expectedExternalID: String?, issuedAfter: Date?) throws(TokenBackupError) -> TokenContainer {
         let stored: TokenContainer?
         do {
             stored = try storage.getTokenContainer()
         } catch {
             Logger.OAuthClient.error("Failed to read the backup token: \(String(describing: error), privacy: .public)")
-            throw .unavailable
+            throw .readFailed(underlying: error)
         }
         guard let backup = stored else { throw .unavailable }
 

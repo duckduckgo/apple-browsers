@@ -64,6 +64,21 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         XCTAssertEqual(second.calls, 1)
     }
 
+    func testRecover_backupReadFailed_triesTheNextStrategyAndThrowsTheReadFailure() async {
+        let readFailed = TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1))
+        let next = StubStrategy(.failure(SubscriptionManagerError.tokenRecoveryNotAttempted))
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.failure(readFailed)), next],
+                                                   missingTokenStrategies: [])
+
+        do {
+            try await coordinator.recover(invalidTokenContext)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, readFailed)
+        }
+        XCTAssertEqual(next.calls, 1)
+    }
+
     func testRecover_everyStrategyNotApplicable_throwsNotAttempted() async {
         let coordinator = TokenRecoveryCoordinator(
             invalidTokenStrategies: [StubStrategy(.failure(TokenBackupError.unavailable)),
@@ -209,6 +224,17 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         clock.now = clock.now.addingTimeInterval(.minutes(6))
         try? await strategy.recover(missingTokenContext)
         XCTAssertEqual(client.restoreFromBackupCalls.count, 2)
+    }
+
+    func testBackupStrategy_missingToken_afterABackupReadFailure_skipsUntilTheRetryInterval() async {
+        let client = MockOAuthClient()
+        client.restoreFromBackupResponse = .failure(TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1)))
+        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { Date() }, onRestored: { _ in })
+
+        try? await strategy.recover(missingTokenContext)
+        try? await strategy.recover(missingTokenContext)
+
+        XCTAssertEqual(client.restoreFromBackupCalls.count, 1)
     }
 
     func testBackupStrategy_invalidToken_isNotHeldBackByAMissingTokenFailure() async {

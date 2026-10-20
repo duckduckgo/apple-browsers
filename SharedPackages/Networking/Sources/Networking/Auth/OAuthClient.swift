@@ -145,10 +145,11 @@ public protocol OAuthClient {
     ///   - expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
     ///   - issuedAfter: A backup whose refresh token was issued at or before this date is rejected. When nil, no such check is made.
     /// - Returns: The new current token container, already stored.
-    /// - Throws: `TokenBackupError` when there is no usable backup; `TokenBackupError.sessionChanged`, storing nothing, when while the
-    ///   restore was in progress this client signed out, deleted the backup, adopted or activated a token container, or another current token
-    ///   container was stored, or the current one can't be read; the storage error when reading the current token container before the restore
-    ///   fails (nothing is refreshed then); otherwise the error of the first refresh call or of storing the new current pair.
+    /// - Throws: `TokenBackupError` when there is no usable backup, `.readFailed` when it can't be read; `TokenBackupError.sessionChanged`,
+    ///   storing nothing, when while the restore was in progress this client signed out, deleted the backup, adopted or activated a token
+    ///   container, or another current token container was stored, or the current one can't be read; the storage error when reading the
+    ///   current token container before the restore fails (nothing is refreshed then); otherwise the error of the first refresh call or of
+    ///   storing the new current pair.
     ///   A current token container deleted by another process doesn't stop the restore.
     ///   After `OAuthClientError.invalidTokenRequest` or `.unknownAccount` the backup is deleted; after any other refresh error it is kept.
     func restoreFromBackup(expectedExternalID: String?, issuedAfter: Date?) async throws -> TokenContainer

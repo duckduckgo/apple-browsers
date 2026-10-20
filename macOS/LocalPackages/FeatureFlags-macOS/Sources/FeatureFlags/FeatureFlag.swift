@@ -623,19 +623,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
     case syncImprovedPairingFlow
 
-    // swiftlint:disable todo
-    /// Main kill switch for the login audit log entry point, notification settings, and OS notifications.
-    /// TODO: Add Asana task link.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219707519182266?focus=true
     case syncLoginAuditLog
 
-    /// Gates login notification settings and OS notifications.
-    /// TODO: Add Asana task link.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219707245498821?focus=true
     case syncLoginNotification
-    // swiftlint:enable todo
-
-    /// Gates the Simplified Sync Setup follow-up screens.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
-    case simplifiedSyncSetupV2
 
     /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
     /// a Duck.ai input.
@@ -1111,8 +1103,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.loginAuditLog), category: .sync)
         case .syncLoginNotification:
             Config(source: .remoteReleasable(SyncSubfeature.loginNotification), category: .sync)
-        case .simplifiedSyncSetupV2:
-            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:

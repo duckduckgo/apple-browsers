@@ -19,43 +19,8 @@
 import Foundation
 import FoundationExtensions
 
-public struct HistoryImportVisit: Equatable, Sendable {
-    public let url: URL
-    public let title: String?
-    public let date: Date
-
-    public init(url: URL, title: String?, date: Date) {
-        self.url = url
-        self.title = title
-        self.date = date
-    }
-}
-
-public struct HistoryImportParseResult: Equatable, Sendable {
-    public let visits: [HistoryImportVisit]
-    /// Rows the browser reader could not turn into a visit, such as redirects, failed loads and non-web URLs.
-    public let skipped: Int
-
-    public init(visits: [HistoryImportVisit], skipped: Int) {
-        self.visits = visits
-        self.skipped = skipped
-    }
-}
-
-public struct HistoryImportSummary: Equatable, Sendable {
-    public var imported = 0
-    public var alreadyInHistory = 0
-    /// Older than the history retention window, so they would be deleted on the next cleanup.
-    public var tooOld = 0
-    public var skipped = 0
-}
-
-public enum HistoryImportError: Error {
-    case historyNotLoaded
-}
-
 public protocol HistoryImporterProtocol {
-    @MainActor func importVisits(_ parseResult: HistoryImportParseResult) throws -> HistoryImportSummary
+    @MainActor func importVisits(_ parseResult: HistoryImport.ParseResult) throws -> HistoryImport.Summary
 }
 
 /// Adds visits read from another browser's history to the local history.
@@ -72,12 +37,12 @@ public final class HistoryImporter: HistoryImporterProtocol {
 
     /// Adds visits to history, skipping ones older than the cutoff or already present.
     @MainActor
-    public func importVisits(_ parseResult: HistoryImportParseResult) throws -> HistoryImportSummary {
+    public func importVisits(_ parseResult: HistoryImport.ParseResult) throws -> HistoryImport.Summary {
         guard let historyDictionary = historyCoordinator.historyDictionary else {
-            throw HistoryImportError.historyNotLoaded
+            throw HistoryImport.Error.historyNotLoaded
         }
 
-        var summary = HistoryImportSummary(skipped: parseResult.skipped)
+        var summary = HistoryImport.Summary(skipped: parseResult.skipped)
         var knownVisits = Set<VisitKey>()
         for (url, entry) in historyDictionary {
             for visit in entry.visits {

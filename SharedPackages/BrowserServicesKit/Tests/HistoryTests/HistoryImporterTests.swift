@@ -26,11 +26,11 @@ final class HistoryImporterTests: XCTestCase {
     @MainActor
     func testWhenVisitsAreImported_ThenTheyAreAddedWithTitlesAndSaved() async throws {
         let (storingMock, coordinator, importer) = await makeLoadedImporter()
-        let parseResult = HistoryImportParseResult(visits: [visit(url, title: "Example", hoursAgo: 2)], skipped: 3)
+        let parseResult = HistoryImport.ParseResult(visits: [visit(url, title: "Example", hoursAgo: 2)], skipped: 3)
 
         let summary = try importer.importVisits(parseResult)
 
-        XCTAssertEqual(summary, HistoryImportSummary(imported: 1, skipped: 3))
+        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1, skipped: 3))
         let entry = try XCTUnwrap(coordinator.historyDictionary?[url])
         XCTAssertEqual(entry.title, "Example")
         XCTAssertEqual(entry.visits.count, 1)
@@ -44,7 +44,7 @@ final class HistoryImporterTests: XCTestCase {
 
         let summary = try importer.importVisits(parseResult([visit(url, hoursAgo: 48)]))
 
-        XCTAssertEqual(summary, HistoryImportSummary(tooOld: 1))
+        XCTAssertEqual(summary, HistoryImport.Summary(tooOld: 1))
         XCTAssertNil(coordinator.historyDictionary?[url])
     }
 
@@ -56,7 +56,7 @@ final class HistoryImporterTests: XCTestCase {
 
         let summary = try importer.importVisits(parseResult)
 
-        XCTAssertEqual(summary, HistoryImportSummary(alreadyInHistory: 1))
+        XCTAssertEqual(summary, HistoryImport.Summary(alreadyInHistory: 1))
         XCTAssertEqual(coordinator.historyDictionary?[url]?.visits.count, 1)
     }
 
@@ -66,7 +66,7 @@ final class HistoryImporterTests: XCTestCase {
 
         let summary = try importer.importVisits(parseResult([visit(url, hoursAgo: 2), visit(url, hoursAgo: 2)]))
 
-        XCTAssertEqual(summary, HistoryImportSummary(imported: 1, alreadyInHistory: 1))
+        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1, alreadyInHistory: 1))
         XCTAssertEqual(coordinator.historyDictionary?[url]?.visits.count, 1)
     }
 
@@ -88,7 +88,7 @@ final class HistoryImporterTests: XCTestCase {
         do {
             _ = try importer.importVisits(parseResult([visit(url, hoursAgo: 1)]))
             XCTFail("Expected import to throw")
-        } catch HistoryImportError.historyNotLoaded {
+        } catch HistoryImport.Error.historyNotLoaded {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -102,12 +102,12 @@ final class HistoryImporterTests: XCTestCase {
         now.addingTimeInterval(-hoursAgo * 3600)
     }
 
-    private func visit(_ url: URL, title: String? = nil, hoursAgo: Double) -> HistoryImportVisit {
-        HistoryImportVisit(url: url, title: title, date: date(hoursAgo: hoursAgo))
+    private func visit(_ url: URL, title: String? = nil, hoursAgo: Double) -> HistoryImport.Visit {
+        HistoryImport.Visit(url: url, title: title, date: date(hoursAgo: hoursAgo))
     }
 
-    private func parseResult(_ visits: [HistoryImportVisit]) -> HistoryImportParseResult {
-        HistoryImportParseResult(visits: visits, skipped: 0)
+    private func parseResult(_ visits: [HistoryImport.Visit]) -> HistoryImport.ParseResult {
+        HistoryImport.ParseResult(visits: visits, skipped: 0)
     }
 
     @MainActor

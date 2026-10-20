@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 import Networking
 
 /// Runs the recovery strategies that apply to a recovery trigger, in order, until one succeeds.
@@ -40,20 +41,30 @@ public final class TokenRecoveryCoordinator {
     ///   otherwise the error of the last strategy that applied and failed.
     public func recover(_ context: TokenRecoveryContext) async throws {
         let strategies = context.trigger == .invalidToken ? invalidTokenStrategies : missingTokenStrategies
+        let trigger = context.trigger.rawValue
         var lastFailure: Error?
         for strategy in strategies {
+            let name = String(describing: type(of: strategy))
             do {
                 try await strategy.recover(context)
+                Logger.subscriptionTokensManagement.log("Token recovered by \(name, privacy: .public), trigger: \(trigger, privacy: .public)")
                 return
             } catch TokenBackupError.sessionChanged {
+                Logger.subscriptionTokensManagement.log("\(name, privacy: .public) stopped the recovery, the session changed, trigger: \(trigger, privacy: .public)")
                 throw TokenBackupError.sessionChanged
             } catch TokenBackupError.unavailable {
+                Logger.subscriptionTokensManagement.log("\(name, privacy: .public) doesn't apply, trigger: \(trigger, privacy: .public)")
                 continue
             } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
+                Logger.subscriptionTokensManagement.log("\(name, privacy: .public) doesn't apply, trigger: \(trigger, privacy: .public)")
                 continue
             } catch {
+                Logger.subscriptionTokensManagement.error("\(name, privacy: .public) failed, trigger: \(trigger, privacy: .public): \(String(describing: error), privacy: .public)")
                 lastFailure = error
             }
+        }
+        if lastFailure == nil {
+            Logger.subscriptionTokensManagement.log("No token recovery applies, trigger: \(trigger, privacy: .public)")
         }
         throw lastFailure ?? SubscriptionManagerError.tokenRecoveryNotAttempted
     }

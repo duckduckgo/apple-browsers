@@ -36,25 +36,6 @@ public enum CPMRecoveryOutcome: String, Sendable {
     case responseReceived = "response_received"
 }
 
-@available(macOS 15.4, iOS 18.4, *)
-protocol CPMRecoveryInstrumentation {
-    func record(_ fix: CPMRecoveryFix, outcome: CPMRecoveryOutcome)
-    func recordStartupResponseMissing()
-}
-
-@available(macOS 15.4, iOS 18.4, *)
-struct WebExtensionCPMRecoveryInstrumentation: CPMRecoveryInstrumentation {
-    let pixels: WebExtensionPixelFiring
-
-    func record(_ fix: CPMRecoveryFix, outcome: CPMRecoveryOutcome) {
-        pixels.fire(.cpmRecovery(fix, outcome: outcome))
-    }
-
-    func recordStartupResponseMissing() {
-        pixels.fire(WebExtensionPixelEvent.cpmStartupResponseMissing)
-    }
-}
-
 /// Counts first-startup response failures independently of the repair flag. Repairs only a
 /// document committed during a known, unfinished background startup. The normal
 /// navigation deadline remains unchanged. A missing dashboard response and a successful background
@@ -90,7 +71,7 @@ final class CPMBackgroundReadinessRecovery {
 
     private let isEnabled: @MainActor () -> Bool
     private let isApplicationInBackground: @MainActor () -> Bool
-    private let instrumentation: CPMRecoveryInstrumentation
+    private let pixelFiring: WebExtensionPixelFiring
     private let now: () -> Date
     private var startups: [UUID: Startup] = [:]
     private var activeStartup: UUID?
@@ -101,11 +82,11 @@ final class CPMBackgroundReadinessRecovery {
 
     init(isEnabled: @escaping @MainActor () -> Bool,
          isApplicationInBackground: @escaping @MainActor () -> Bool,
-         instrumentation: CPMRecoveryInstrumentation,
+         pixelFiring: WebExtensionPixelFiring,
          now: @escaping () -> Date = Date.init) {
         self.isEnabled = isEnabled
         self.isApplicationInBackground = isApplicationInBackground
-        self.instrumentation = instrumentation
+        self.pixelFiring = pixelFiring
         self.now = now
     }
 
@@ -176,7 +157,7 @@ final class CPMBackgroundReadinessRecovery {
     func responseReceived(in tab: String) {
         documents[tab] = nil
         if awaitingReloadResponse.removeValue(forKey: tab)?.hasStarted == true {
-            instrumentation.record(.lateDocumentReload, outcome: .responseReceived)
+            pixelFiring.fire(.cpmRecovery(.lateDocumentReload, outcome: .responseReceived))
         }
     }
 
@@ -199,7 +180,7 @@ final class CPMBackgroundReadinessRecovery {
               let startup = startups[document.startup], startup.isFirstLoad, startup.isReady,
               now().timeIntervalSince(startup.beganAt) < 30 else { return }
         documents[tab]?.didReportMissingResponse = true
-        instrumentation.recordStartupResponseMissing()
+        pixelFiring.fire(.cpmStartupResponseMissing)
     }
 
     private func attemptRecovery(in tab: String) {
@@ -225,7 +206,7 @@ final class CPMBackgroundReadinessRecovery {
             if let navigation {
                 self.awaitingReloadResponse[tab] = ReloadResponse(url: document.url, navigation: navigation,
                                                                 hasStarted: synchronousMatch?(navigation) == true)
-                self.instrumentation.record(.lateDocumentReload, outcome: .reloadStarted)
+                self.pixelFiring.fire(.cpmRecovery(.lateDocumentReload, outcome: .reloadStarted))
             }
         }
     }
@@ -245,8 +226,8 @@ extension CPMBackgroundReadinessRecovery {
             Logger.webExtensions.debug("[CPM Recovery] Checking unchanged GET document")
             let documentID = self.documents[tab]?.identifier
             let pristine = try? await webView.evaluateJavaScript("""
-                !document.querySelector('[contenteditable]:not([contenteditable="false"])') &&
-                !document.activeElement?.matches('input,textarea,select') &&
+                !document.querySelector('iframe,[contenteditable]:not([contenteditable="false"])') &&
+                (!document.activeElement || document.activeElement === document.body) &&
                 !Array.from(document.querySelectorAll('input,textarea,select')).some(e =>
                     e.tagName === 'SELECT' ? Array.from(e.options).some(o => o.selected !== o.defaultSelected) :
                     (e.type === 'checkbox' || e.type === 'radio') ? e.checked !== e.defaultChecked : e.value !== e.defaultValue)

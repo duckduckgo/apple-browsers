@@ -264,7 +264,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
             let calls = Array(pixelKitMock.actualFireCalls.dropFirst(fireCount))
             XCTAssertEqual(calls.map(\.pixel.name), ["aichat_unified_input_tab_picker_canceled"])
-            XCTAssertEqual(calls.first?.pixel.parameters, ["surface": "contextual_chat", "source": "tab_picker"])
+            XCTAssertEqual(calls.first?.pixel.parameters,
+                           ["surface": "contextual_chat", "page_type": "unknown", "source": "tab_picker"])
             XCTAssertEqual(calls.first?.frequency, .dailyAndCount)
             XCTAssertEqual(Set(view.attachments.compactMap { $0.tabAttachment?.tabId }), selectedTabIds)
             XCTAssertEqual(callbackSpy.onDraftChangedCount, draftChangeCount)
@@ -479,15 +480,35 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertTrue(view.attachments.isEmpty)
     }
 
-    func test_tabSelection_ignoresNonContextualSurfacesAndGeneratingState() {
+    func test_tabSelection_allowsNonContextualDuckAISurfaces() {
         enableTabAttachments()
-        let controller = makeController()
         config.isContextualChatState = false
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
-        config.isContextualChatState = true
-        view.isGenerating = true
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
-        XCTAssertTrue(view.attachments.isEmpty)
+        let controller = makeController()
+
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
+        XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, ["first"])
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, 1)
+    }
+
+    func test_tabSelection_rejectsSearchGeneratingEditingAndVoiceStates() {
+        for isContextual in [false, true] {
+            for blockedState in ["search", "generating", "editing", "voice"] {
+                enableTabAttachments()
+                config.isContextualChatState = isContextual
+                config.inputMode = blockedState == "search" ? .search : .aiChat
+                view.isGenerating = blockedState == "generating"
+                config.isEditing = blockedState == "editing"
+                config.isVoiceSessionActive = blockedState == "voice"
+                config.candidateReadCount = 0
+                let controller = makeController()
+                let scenario = "\(blockedState), contextual: \(isContextual)"
+
+                XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs), scenario)
+                XCTAssertTrue(view.attachments.isEmpty, scenario)
+                XCTAssertEqual(config.candidateReadCount, 0, scenario)
+                XCTAssertEqual(callbackSpy.onDraftChangedCount, 0, scenario)
+            }
+        }
     }
 
     func test_tabSelection_rejectsOtherModeAndClosedCandidates() {
@@ -583,8 +604,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
             firing: UTIPixelFiring(pixelKit: { [unowned self] in pixelKitMock }),
             context: { UTIPixelContext(surface: .contextualChat, isDuckAISurfaceForAttribution: true,
                                       inputMode: .aiChat, isToggleVisible: false, pageType: .unknown, duckAIEntrySource: nil) })
-        return MultiTabPickerPixelSession(surfaceProvider: { .contextualChat }) {
-            reporter.reportTabAttachment($0, source: .tabPicker, surface: $1)
+        return MultiTabPickerPixelSession(attributionProvider: { reporter.currentTabPixelAttribution() }) {
+            reporter.reportTabAttachment($0, source: .tabPicker, attribution: $1)
         }
     }
 
@@ -640,7 +661,9 @@ final class UTIAttachmentControllerTests: XCTestCase {
                 presenterViewController: { nil },
                 tabAttachmentSource: { config.tabSource },
                 tabAttachmentFeatureState: { config.tabFeatureState },
-                pageContextRemoveHandler: { config.pageContextRemoveHandler }
+                pageContextRemoveHandler: { config.pageContextRemoveHandler },
+                isEditing: { config.isEditing },
+                isVoiceSessionActive: { config.isVoiceSessionActive }
             ),
             callbacks: callbackSpy.callbacks
         )
@@ -699,6 +722,8 @@ private final class FakeEnvironmentConfig {
     var usage: AIChatAttachmentUsage?
     var inputMode: TextEntryMode = .aiChat
     var isContextualChatState = false
+    var isEditing = false
+    var isVoiceSessionActive = false
     var keepsUnavailableAttachmentButtonVisible = false
     var tabSource: MultiTabAttachmentSource?
     var tabs: [Tab] = []

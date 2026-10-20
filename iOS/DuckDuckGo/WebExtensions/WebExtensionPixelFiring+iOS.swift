@@ -84,14 +84,12 @@ private extension DuckDuckGoWebExtensionType {
 
 @available(iOS 18.4, *)
 struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
-    var pixelFiring: PixelKitFiring? = PixelKit.shared
-
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
         case .installed:
             PixelKit.fire(Pixel.Event.webExtensionInstalled,
                           frequency: .dailyAndStandard)
-        case .installError(let error):
+        case .installError(_, let error):
             PixelKit.fire(Pixel.Event.webExtensionInstallError.withError(error),
                           frequency: .dailyAndStandard)
         case .uninstalled:
@@ -169,12 +167,16 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
         case .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
             fireCPMPixel(event)
+        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
+            // Chrome extensions, and so password manager extensions, are only supported on macOS, so
+            // these are only sent there.
+            assertionFailure("\(event) is only sent on macOS")
         }
     }
 
     private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
         guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
-        pixelFiring?.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
+        PixelKit.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
     }
 }
 

@@ -2,6 +2,8 @@
 
 **Review-only branch:** `codex/cpm-fix-init-loss-integration-tests` is based on `alex/cpm-fix-init-loss` and adds only this app test harness. This branch will not be merged into main; the production fixes and shared unit regressions are reviewed in [PR #7379](https://github.com/duckduckgo/apple-browsers/pull/7379).
 
+Updated to production head `9effd97877` after the PR review fixes and merge of the current #7376 base. Pixel-adapter injection and internal access to `MacOSCPMDiagnosticsFeatureFlags` exist only on this harness branch. The production PR resolves `PixelKit.shared` at fire time and keeps the flag adapter private. Five real-WKWebView regressions in the normal shared-package test target cover edited input, an edited iframe after focus leaves it, a focused Shadow DOM input, the non-GET veto, and an actual pristine-GET reload. Pages containing an iframe or with focus outside `body` now veto automatic recovery; P4 detection remains independent.
+
 To run the app regressions:
 
 1. From the repository root, fetch and check out this branch:
@@ -57,7 +59,7 @@ cd SharedPackages/WebExtensions
 swift test --filter 'WebExtensionManagerTests|WebExtensionLifecycleCoordinatorTests|CPMBackgroundLoadDiagnosticsTests|CPMMessagingHealthMonitorTests|CPMBackgroundReadinessRecoveryTests'
 ```
 
-The previous 22-method research suite remains in the original investigation worktree. The nine app methods and their app hooks live only on this branch; the thirty-eight new shared unit regressions remain in the production PR and are inherited here. These injected macOS timing/process conditions validate the fixes; they do not establish the natural trigger in every production session or reproduce real iOS suspension/resume.
+The previous 22-method research suite remains in the original investigation worktree. The nine app methods and their app hooks live only on this branch; the forty-three new shared unit regressions remain in the production PR and are inherited here. These injected macOS timing/process conditions validate the fixes; they do not establish the natural trigger in every production session or reproduce real iOS suspension/resume.
 
 The install/upgrade delay can be overridden with `CPM_APP_INTEGRATION_INSTALL_DELAY_MS`. A value of `5000` deliberately crosses the 5-second gate budget once WebKit startup overhead is included: measured callbacks arrived after 5.15–5.18 seconds, and upgrade sometimes lost its first document's response. The checkpoint commit `dff29dfb1e` documents this failure. The new opt-in document recovery targets it after gate release; increasing this value still does not extend the production timeout. The default 4500 ms leaves startup headroom while preserving the strict first-document assertions. Timeout/cancellation unit tests separately require releasing navigation when readiness never completes.
 

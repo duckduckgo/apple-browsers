@@ -42,6 +42,9 @@ final class MultiTabMentionSuggestionsView: UIView {
     var onSelect: ((MultiTabAttachmentCandidate) -> Void)?
     var onDismiss: (() -> Void)?
 
+    var preferredContentHeight: CGFloat { CGFloat(suggestions.count) * tableView.rowHeight }
+    var minimumVisibleHeight: CGFloat { tableView.rowHeight }
+
     private let showsGlassShadow: Bool
     private let shadowView = CompositeShadowView()
     private let outerShadowMask = CAShapeLayer()

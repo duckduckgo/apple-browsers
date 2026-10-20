@@ -26,6 +26,7 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 @MainActor
+// Review-only access from the app-hosted CPM fixture; private in the production PR.
 final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
     private let featureFlagger: FeatureFlagger
 
@@ -127,6 +128,10 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
+            // Bitwarden's catalog entry decides whether a password manager extension may replace DuckDuckGo autofill.
+            isAutofillTakeoverEnabled: {
+                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
+            },
             scriptletConfiguration: scriptletConfiguration
         )
 

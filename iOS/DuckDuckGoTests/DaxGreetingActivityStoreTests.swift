@@ -39,29 +39,28 @@ final class DaxGreetingActivityStoreTests: XCTestCase {
                                              calendarProvider: { self.calendar }, isEnabled: { true })
         lastActiveDate = now
         store.recordForegroundOpen()
-        var context = store.context(at: now, calendar: calendar, appearance: .dark)
+        var context = store.context(at: now, calendar: calendar)
         XCTAssertEqual(context.foregroundOpenCount, 1)
         XCTAssertEqual(context.isFirstOpenOfDay, true)
-        XCTAssertEqual(context.appearance, .dark)
 
         store.recordForegroundOpen()
         store.recordForegroundOpen()
-        context = store.context(at: now, calendar: calendar, appearance: nil)
+        context = store.context(at: now, calendar: calendar)
         XCTAssertEqual(context.foregroundOpenCount, 3)
         XCTAssertEqual(context.isFirstOpenOfDay, false)
 
         let nextLaunch = DaxGreetingActivityStore(readLastActiveDate: { lastActiveDate }, now: { now },
                                                   calendarProvider: { self.calendar }, isEnabled: { true })
         nextLaunch.recordForegroundOpen()
-        context = nextLaunch.context(at: now, calendar: calendar, appearance: nil)
+        context = nextLaunch.context(at: now, calendar: calendar)
         XCTAssertEqual(context.foregroundOpenCount, 1)
         XCTAssertEqual(context.isFirstOpenOfDay, false)
 
         now = date(day: 16)
         lastActiveDate = now
-        XCTAssertEqual(nextLaunch.context(at: now, calendar: calendar, appearance: nil).foregroundOpenCount, 0)
+        XCTAssertEqual(nextLaunch.context(at: now, calendar: calendar).foregroundOpenCount, 0)
         nextLaunch.recordForegroundOpen()
-        context = nextLaunch.context(at: now, calendar: calendar, appearance: nil)
+        context = nextLaunch.context(at: now, calendar: calendar)
         XCTAssertEqual(context.foregroundOpenCount, 1)
         XCTAssertEqual(context.isFirstOpenOfDay, true)
     }
@@ -69,7 +68,7 @@ final class DaxGreetingActivityStoreTests: XCTestCase {
     func testWhenReadingContextRepeatedlyThenNoAppOpenIsRecorded() {
         let store = DaxGreetingActivityStore(isEnabled: { true })
         for _ in 0..<5 {
-            XCTAssertEqual(store.context(at: date(), calendar: calendar, appearance: nil).foregroundOpenCount, 0)
+            XCTAssertEqual(store.context(at: date(), calendar: calendar).foregroundOpenCount, 0)
         }
     }
 
@@ -77,9 +76,9 @@ final class DaxGreetingActivityStoreTests: XCTestCase {
         var enabled = false
         let store = DaxGreetingActivityStore(now: { self.date() }, isEnabled: { enabled })
         store.recordForegroundOpen()
-        XCTAssertEqual(store.context(at: date(), calendar: calendar, appearance: nil).foregroundOpenCount, 0)
+        XCTAssertEqual(store.context(at: date(), calendar: calendar).foregroundOpenCount, 0)
         enabled = true
         store.recordForegroundOpen()
-        XCTAssertEqual(store.context(at: date(), calendar: calendar, appearance: nil).foregroundOpenCount, 1)
+        XCTAssertEqual(store.context(at: date(), calendar: calendar).foregroundOpenCount, 1)
     }
 }

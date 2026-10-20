@@ -25,6 +25,7 @@ import DesignResourcesKit
 struct OmniBarNotification: View {
 
     @ObservedObject var viewModel: OmniBarNotificationViewModel
+    var lozengeHeight: CGFloat = OmniBarMetrics.notificationLozengeHeight
 
     @State var isAnimatingCookie: Bool = false
 
@@ -37,7 +38,7 @@ struct OmniBarNotification: View {
                 icon
                 text
             }
-            .frame(height: OmniBarMetrics.notificationLozengeHeight)
+            .frame(height: lozengeHeight)
             .background(background)
             .padding(.leading, OmniBarMetrics.notificationLozengeInset)
 

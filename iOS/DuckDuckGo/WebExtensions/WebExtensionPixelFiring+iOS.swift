@@ -96,7 +96,7 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         case .installed:
             pixelFiring?.fire(Pixel.Event.webExtensionInstalled,
                           frequency: .dailyAndStandard)
-        case .installError(let error):
+        case .installError(_, let error):
             pixelFiring?.fire(Pixel.Event.webExtensionInstallError.withError(error),
                           frequency: .dailyAndStandard)
         case .uninstalled:
@@ -174,6 +174,10 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
         case .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied:
             fireCPMPixel(event)
+        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
+            // Chrome extensions, and so password manager extensions, are only supported on macOS, so
+            // these are only sent there.
+            assertionFailure("\(event) is only sent on macOS")
         }
     }
 

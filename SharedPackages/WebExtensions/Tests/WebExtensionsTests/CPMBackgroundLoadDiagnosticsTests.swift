@@ -30,7 +30,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         var date = Date(timeIntervalSince1970: 1000)
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, now: { date })
         var completions: [@MainActor (Error?) -> Void] = []
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, completion in completions.append(completion) }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
         XCTAssertEqual(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter], "none")
@@ -52,7 +52,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
     func testFailedBackgroundLoadIsReportedAsFailed() async throws {
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
         var completions: [@MainActor (Error?) -> Void] = []
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, completion in completions.append(completion) }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
         let webView = WKWebView(frame: .zero)
@@ -68,7 +68,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
     func testLoadOfAReplacedBackgroundViewDoesNotMarkTheNewOneReady() async throws {
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false)
         var completions: [@MainActor (Error?) -> Void] = []
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, completion in completions.append(completion) }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
         let firstView = WKWebView(frame: .zero)
@@ -86,7 +86,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundDelegateProxyEnabled: false)
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, featureFlags: flags)
         var loadRequests = 0
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, _ in loadRequests += 1 }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, _ in loadRequests += 1 }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
         XCTAssertNil(recorder.snapshot().backgroundLoadParameters[Name.backgroundReadyAfter])
@@ -102,7 +102,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
     func testRepeatedSnapshotsDoNotRequestBackgroundLoads() async throws {
         let recorder = makeRecorder()
         var requests = 0
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, _ in requests += 1 }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, _ in requests += 1 }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
         let view = WKWebView(frame: .zero)
@@ -117,7 +117,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundDelegateProxyEnabled: false)
         let recorder = makeRecorder(flags: flags)
         var completions: [@MainActor (Error?) -> Void] = []
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, completion in completions.append(completion) }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
         let first = WKWebView(frame: .zero)
@@ -149,7 +149,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         let flags = CPMDiagnosticsStaticFeatureFlags(isBackgroundDelegateProxyEnabled: true)
         let recorder = makeRecorder(flags: flags)
         var requests = 0
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, _ in requests += 1 }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, _ in requests += 1 }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
         let view = WKWebView(frame: .zero)
@@ -165,7 +165,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         for stopsFirst in [false, true] {
             let observer = CPMBackgroundReadinessObserver(now: Date.init)
             var completions: [@MainActor (Error?) -> Void] = []
-            observer.loadBackgroundContent = { _, completion in completions.append(completion) }
+            observer.backgroundLoader = { _, completion in completions.append(completion) }
             let context = try await makeContext()
             let view = WKWebView(frame: .zero)
             observer.observe(view, in: context)
@@ -184,7 +184,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
     func testContextReplacementAndUnloadInvalidatePendingCallbacks() async throws {
         let recorder = makeRecorder()
         var completions: [@MainActor (Error?) -> Void] = []
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, completion in completions.append(completion) }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, completion in completions.append(completion) }
         let first = try await makeContext()
         let replacement = try await makeContext()
         recorder.contextWillLoad(first)
@@ -209,7 +209,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         let session = CPMAppSessionDiagnostics(appVersionChange: nil, launchDate: date) { stateReads += 1; return state }
         let recorder = makeRecorder(now: { date }, appSession: session)
         var completion: (@MainActor (Error?) -> Void)?
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, callback in completion = callback }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, callback in completion = callback }
         let context = try await makeContext()
         recorder.contextWillLoad(context)
         let view = WKWebView(frame: .zero)
@@ -251,6 +251,35 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         XCTAssertNil(recorder.snapshot().backgroundLoadParameters[Name.backgroundLoadErrorAppState])
         recorder.contextWillLoad(try await makeContext())
         XCTAssertEqual(recorder.snapshot().hasBackgroundLoadError, false)
+    }
+
+    func testCopiedHistoricalErrorsDoNotFailTheReplacementLoadButAnAdditionalErrorDoes() async throws {
+        var date = Date(timeIntervalSince1970: 1000)
+        let recorder = makeRecorder(now: { date })
+        let context = try await makeContext()
+        recorder.contextWillLoad(context)
+        let first = WKWebView(frame: .zero)
+        recorder.didCreateBackgroundWebView(first, for: context)
+        let historical = loadError()
+        date += 30
+        recorder.recordContextErrors([historical])
+        let replacement = WKWebView(frame: .zero)
+        recorder.didCreateBackgroundWebView(replacement, for: context)
+        date += 6
+
+        // The release branch's safe errors getter returns fresh NSError copies on every read.
+        recorder.recordContextErrors([NSError(copyingObject: historical)])
+        XCTAssertEqual(recorder.snapshot().hasBackgroundLoadError, false)
+        XCTAssertNil(recorder.snapshot().secondsFromBackgroundViewToLoadError)
+        XCTAssertEqual(recorder.snapshot().backgroundReadiness, .pending)
+
+        // WebKit can append a genuinely new failure with the same domain, code and userInfo.
+        recorder.recordContextErrors([NSError(copyingObject: historical), NSError(copyingObject: historical)])
+        XCTAssertEqual(recorder.snapshot().backgroundReadiness, .failed)
+        XCTAssertEqual(try XCTUnwrap(recorder.snapshot().secondsFromBackgroundViewToLoadError), 6, accuracy: 0.001)
+        date += 60
+        recorder.recordContextErrors([NSError(copyingObject: historical), NSError(copyingObject: historical)])
+        XCTAssertEqual(try XCTUnwrap(recorder.snapshot().secondsFromBackgroundViewToLoadError), 6, accuracy: 0.001)
     }
 
     func testErrorsWithoutAnObservedLoadOrWithOtherCodesAreOmitted() async throws {
@@ -316,7 +345,7 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
                               flags: CPMDiagnosticsStaticFeatureFlags? = nil) -> CPMMessagingDiagnosticsRecorder {
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false,
                                                        featureFlags: flags, now: now, appSession: appSession)
-        recorder.backgroundReadinessObserver.loadBackgroundContent = { _, _ in }
+        recorder.backgroundReadinessObserver.backgroundLoader = { _, _ in }
         return recorder
     }
 

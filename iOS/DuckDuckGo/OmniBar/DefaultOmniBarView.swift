@@ -860,6 +860,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             self.searchAreaShadowView = shadowView
         }
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
+        notificationContainer.fieldView = searchAreaContainerView
 
         setUpSubviews()
         setUpConstraints()
@@ -990,6 +991,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         } else {
             removeMinimalChromeButtonGlass()
         }
+        applyButtonContainersInterfaceStyle()
         makeGlass()
         applyPageGlassInterfaceStyle()
         setNeedsLayout()
@@ -1372,15 +1374,24 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
-        // Stack siblings of searchAreaContainerView, so the loop above misses them — same override needed.
-        leadingButtonsContainer.overrideUserInterfaceStyle = style
-        trailingButtonsContainer.overrideUserInterfaceStyle = style
+        // Keep the system style so the fire tint matches the button glass.
+        if shouldUseFloatingTopGlass, glassEffect.superview === searchAreaContainerView {
+            glassEffect.overrideUserInterfaceStyle = .unspecified
+        }
+        applyButtonContainersInterfaceStyle()
         if isFloatingUIEnabled {
             floatingGlassContentHostView.overrideUserInterfaceStyle = style
         }
         refreshMinimalChromeGlassTint()
         applyPageGlassInterfaceStyle()
         progressView?.updateFireModeAppearance(fireMode: fireMode)
+    }
+
+    /// Dark only on the minimal-chrome bar's fire-tinted glass; elsewhere (e.g. iPad) the buttons sit on the light toolbar.
+    private func applyButtonContainersInterfaceStyle() {
+        let style: UIUserInterfaceStyle = fireMode && isFloatingMinimalChromeBar ? .dark : .unspecified
+        leadingButtonsContainer.overrideUserInterfaceStyle = style
+        trailingButtonsContainer.overrideUserInterfaceStyle = style
     }
 
     private func applyPageGlassInterfaceStyle() {
@@ -2172,7 +2183,7 @@ extension DefaultOmniBarView {
         bottomGTE.isActive = false
         searchFieldBottomGTEConstraint = bottomGTE
 
-        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
+        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: chromeContentContainerView.centerYAnchor)
         centerY.isActive = true
         searchAreaCenterYConstraint = centerY
 

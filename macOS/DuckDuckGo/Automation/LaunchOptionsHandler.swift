@@ -216,14 +216,20 @@ extension LaunchOptionsHandler {
         }
     }
 
-    func pirDebugLaunchOptions() throws -> PIRDebugLaunchOptions? {
-        let startServer = try pirDebugBoolean(argument: "pirDebugServer", environmentKey: "PIR_DEBUG_SERVER")
-        let reset = try pirDebugBoolean(argument: "pirResetBeforeSeeding", environmentKey: "PIR_RESET_BEFORE_SEEDING")
-        let profileValue = pirDebugValue(argument: "pirProfileJSON", environmentKey: "PIR_PROFILE_JSON")
+    func pirDebugLaunchOptions(arguments: [String] = ProcessInfo.processInfo.arguments) throws -> PIRDebugLaunchOptions? {
+        let arguments = arguments.dropFirst()
+        func value(argument: String, environmentKey: String) -> String? {
+            guard let index = arguments.lastIndex(of: "-\(argument)") else { return environment[environmentKey] }
+            let valueIndex = arguments.index(after: index)
+            return valueIndex < arguments.endIndex ? arguments[valueIndex] : ""
+        }
+
+        let startServer = try pirDebugBoolean(value(argument: "pirDebugServer", environmentKey: "PIR_DEBUG_SERVER"), argument: "pirDebugServer")
+        let reset = try pirDebugBoolean(value(argument: "pirResetBeforeSeeding", environmentKey: "PIR_RESET_BEFORE_SEEDING"), argument: "pirResetBeforeSeeding")
+        let profileValue = value(argument: "pirProfileJSON", environmentKey: "PIR_PROFILE_JSON")
         let profileSetup: PIRDebugLaunchOptions.ProfileSetup?
         if let profileValue {
-            guard let data = pirDebugProfileData(profileValue),
-                  let profile = try? JSONDecoder().decode(DataBrokerProtectionProfile.self, from: data),
+            guard let profile = try? JSONDecoder().decode(DataBrokerProtectionProfile.self, from: Data(profileValue.utf8)),
                   !profile.names.isEmpty, !profile.addresses.isEmpty,
                   profile.names.allSatisfy({ !$0.firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                       && !$0.lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
@@ -242,30 +248,13 @@ extension LaunchOptionsHandler {
         return PIRDebugLaunchOptions(profileSetup: profileSetup, startServer: startServer)
     }
 
-    private func pirDebugValue(argument: String, environmentKey: String) -> Any? {
-        if let value = argumentDomain[argument] { return value }
-        return environment[environmentKey]
-    }
-
-    private func pirDebugProfileData(_ value: Any) -> Data? {
-        if let json = value as? String { return Data(json.utf8) }
-        guard let json = value as? [String: Any] else { return nil }
-        return try? JSONSerialization.data(withJSONObject: json)
-    }
-
-    private func pirDebugBoolean(argument: String, environmentKey: String) throws -> Bool {
-        guard let value = pirDebugValue(argument: argument, environmentKey: environmentKey) else { return false }
-        if let string = value as? String {
-            switch string.lowercased() {
-            case "1", "true", "yes": return true
-            case "0", "false", "no": return false
-            default: throw PIRDebugLaunchError.invalidBooleanArgument(name: argument)
-            }
+    private func pirDebugBoolean(_ value: String?, argument: String) throws -> Bool {
+        guard let value else { return false }
+        switch value.lowercased() {
+        case "1", "true", "yes": return true
+        case "0", "false", "no": return false
+        default: throw PIRDebugLaunchError.invalidBooleanArgument(name: argument)
         }
-        if let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() {
-            return number.boolValue
-        }
-        throw PIRDebugLaunchError.invalidBooleanArgument(name: argument)
     }
 }
 #endif

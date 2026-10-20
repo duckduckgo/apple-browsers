@@ -523,29 +523,6 @@ struct AuditLogEntry: Decodable {
     let id: String
     let version: String
     let payload: String
-
-    init(id: String, version: String, payload: String) {
-        self.id = id
-        self.version = version
-        self.payload = payload
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case version
-        case payload
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(String.self, forKey: .id)
-        payload = try container.decode(String.self, forKey: .payload)
-        if let stringVersion = try? container.decode(String.self, forKey: .version) {
-            version = stringVersion
-        } else {
-            version = String(try container.decode(Int.self, forKey: .version))
-        }
-    }
 }
 
 struct UpdateDevices {

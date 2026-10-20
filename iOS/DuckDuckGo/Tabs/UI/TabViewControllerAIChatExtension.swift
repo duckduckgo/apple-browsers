@@ -25,7 +25,7 @@ import WebKit
 /// Protocol for tab controllers that support full mode AIChat content loading.
 protocol AITabController {
     /// Loads AIChat with optional query, auto-submit, payload, and RAG tools.
-    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool)
+    func load(_ query: String?, autoSend: Bool, payload: Any?, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?, modelId: String?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool)
 
     /// Loads AIChat in voice mode.
     func loadVoiceMode()
@@ -54,12 +54,11 @@ extension TabViewController: AITabController {
               tools: [AIChatRAGTool]? = nil,
               modelId: String? = nil,
               reasoningEffort: AIChatReasoningEffort? = nil,
-              images: [AIChatNativePrompt.NativePromptImage]? = nil,
-              files: [AIChatNativePrompt.NativePromptFile]? = nil,
+              attachments: AIChatPromptAttachments = .none,
               termsAccepted: Bool = false) {
         let openingQuery = AIChatOpeningRequest.Query(query: query, autoSend: autoSend, flowType: flowType, tools: tools,
                                                      modelId: modelId, reasoningEffort: reasoningEffort,
-                                                     images: images, files: files, termsAccepted: termsAccepted)
+                                                     attachments: attachments, termsAccepted: termsAccepted)
         configureAIChatOpening(payload: payload)
         if let prompt = openingQuery.sharedPrompt { AIChatPromptHandler.shared.setData(prompt) }
         let queryURL = openingQuery.url(using: aiChatContentHandler)

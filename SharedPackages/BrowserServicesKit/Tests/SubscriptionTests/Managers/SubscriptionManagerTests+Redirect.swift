@@ -60,12 +60,7 @@ extension SubscriptionManagerTests {
             userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
-            pixelHandler: MockPixelHandler(),
-            tokenRecoveryHandler: {
-                if let overrideTokenResponse = self.overrideTokenResponseInRecoveryHandler {
-                    self.mockOAuthClient.getTokensResponse = overrideTokenResponse
-                }
-            }
+            pixelHandler: MockPixelHandler()
         )
 
         // WHEN

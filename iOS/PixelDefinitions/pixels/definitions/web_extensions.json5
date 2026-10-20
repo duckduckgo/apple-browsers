@@ -1,4 +1,12 @@
 {
+    "web_extension_cpm_network_process_recovery_applied": {
+        "description": "Fires after restarting the embedded CPM background because its Network process PID changed. Measures application of the mitigation, not confirmed messaging recovery. Daily counts affected installations; count counts applications. No URL, process ID or extension identifier is sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_web_extension_installed": {
         "description": "Fires when a web extension is successfully installed.",
         "owners": ["tomasstrba"],
@@ -572,6 +580,23 @@
                 "key": "was_stuck",
                 "type": "boolean",
                 "description": "Whether, after the first failure, a regular (non-restoration) navigation also timed out in a different tab than the one that opened the episode. Repeated timeouts in the same tab do not set it, although they still trigger the recovery reload. False does not distinguish a transient or page-specific failure from a persistent one in a single-tab session; reload_state helps to tell them apart. True does not prove all tabs failed."
+            },
+            {
+                "key": "tabs_affected",
+                "type": "string",
+                "enum": ["1", "2", "3+"],
+                "description": "Distinct tabs that timed out during the episode, including concurrent and restoration timeouts. One does not prove other tabs healthy. No tab identifiers are sent."
+            },
+            {
+                "key": "repeat_failures",
+                "type": "string",
+                "enum": ["0", "1", "2+"],
+                "description": "Timeouts beyond the first in tabs that had already timed out during the episode. Repeats in one tab confirm the hang and start the recovery reload without making was_stuck true."
+            },
+            {
+                "key": "interrupted",
+                "type": "boolean",
+                "description": "Whether the measurement that opened the episode waited across an app suspension (iOS background, macOS sleep), so its wait was restarted on resume."
             },
             {
                 "key": "outcome",

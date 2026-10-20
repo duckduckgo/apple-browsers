@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import PrivacyConfig
 import os.log
@@ -26,6 +27,10 @@ import WebKit
 /// Platform-specific behavior is delegated to the windowTabProvider and lifecycleDelegate.
 @available(macOS 15.4, iOS 18.4, *)
 open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInstallationPathResolving {
+
+    private enum Selector {
+        static let backgroundWebView = NSSelectorFromString("_backgroundWebView")
+    }
 
     private enum InstalledExtensionsLoadLifecycle {
         case initial
@@ -171,6 +176,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Keeps the health monitor informed of app suspension for as long as the manager lives.
     private var cpmInterruptionObserver: CPMInterruptionObserver?
 
+    private let cpmNetworkProcessRecovery: CPMNetworkProcessRecovery
+
     // MARK: - AsyncStream
 
     private var continuation: AsyncStream<Void>.Continuation?
@@ -198,6 +205,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
+                cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
@@ -243,6 +252,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
+        self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
+            isEnabled: isCPMNetworkProcessRecoveryEnabled,
+            featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates,
+            pixelFiring: pixelFiring
+        )
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
@@ -484,6 +498,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
+            cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
             Logger.webExtensions.debug("✅ Unloaded extension '\(identifier)' from memory")
         } catch {
@@ -581,6 +596,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             do {
                 try controller.unloadCopyingErrors(context)
                 permissionController?.didUnload(identifier)
+                cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
                 cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
                 // Capture the parsed extension only after a confirmed unload, so the cache never
                 // holds an extension still loaded in the controller. reloadInstalledExtensions()
@@ -648,6 +664,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
+            cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         } catch {
             // The extension and its native handlers are still active when unload fails.
@@ -1077,6 +1094,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
     }
 
+    @MainActor
+    public func recoverEmbeddedBackgroundAfterNetworkProcessReplacement() {
+        cpmNetworkProcessRecovery.recoverIfNeeded()
+    }
+
     /// The extension pixels report: its Chrome Web Store catalog entry, or `other` for one the catalog
     /// doesn't list.
     @MainActor
@@ -1201,6 +1223,12 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        forExtensionContext extensionContext: WKWebExtensionContext) {
         guard extensionContext.webExtension.duckDuckGoWebExtensionType == .embedded else { return }
         MainActor.assumeIsolated {
+            cpmNetworkProcessRecovery.watch(webView, identifier: extensionContext.uniqueIdentifier) { [weak controller, weak extensionContext, weak webView] in
+                guard let extensionContext, let webView,
+                      controller?.extensionContexts.contains(extensionContext) == true,
+                      extensionContext.responds(to: Selector.backgroundWebView) else { return false }
+                return extensionContext.value(forKey: NSStringFromSelector(Selector.backgroundWebView)) as? WKWebView === webView
+            }
             cpmDiagnosticsRecorder?.didCreateBackgroundWebView(webView, for: extensionContext)
         }
     }

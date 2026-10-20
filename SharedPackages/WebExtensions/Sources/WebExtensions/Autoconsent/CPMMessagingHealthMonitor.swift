@@ -133,6 +133,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         let measurement: CPMMessagingMeasurement
         let startedAt: Date
         var state: MeasurementState
+        /// The wait for this measurement's response was restarted because the app was suspended.
+        var wasInterrupted = false
     }
 
     /// State retained from the first failure until a later, relevant CPM response closes the episode.
@@ -150,6 +152,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         var failedTabIdentifiers: Set<String>
         /// Timed-out measurements stay known while the episode is open, so a late response can still close it.
         var failedMeasurementIdentifiers: Set<UInt>
+        /// Every timeout in the episode; repeats are those beyond one per tab.
+        var failureCount: Int
+        /// The first failed measurement waited across a suspension, so its timeout is weaker evidence.
+        let wasInterrupted: Bool
         /// A later regular navigation timed out in any tab: the extension is reloaded.
         var isHangConfirmed = false
         /// Reported as `was_stuck`: a regular navigation timed out in a tab other than the first failed one.
@@ -309,6 +315,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         guard let interruptionStartedAt else { return }
         totalInterruptedDuration += max(0, clock().timeIntervalSince(interruptionStartedAt))
         self.interruptionStartedAt = nil
+        diagnosticsProvider?.recordInterruption()
         for (tabIdentifier, state) in tabs {
             guard let measurement = state.measurement,
                   let outcome = state.timeoutOutcome,
@@ -316,6 +323,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
                   measurements[measurement.identifier]?.state == .pending else {
                 continue
             }
+            measurements[measurement.identifier]?.wasInterrupted = true
             scheduleTimeout(
                 tabIdentifier: tabIdentifier,
                 generation: state.generation,
@@ -747,6 +755,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
                 diagnostics: captureDiagnostics(tabIdentifier: measurement.tabIdentifier),
                 failedTabIdentifiers: [measurement.tabIdentifier],
                 failedMeasurementIdentifiers: [measurement.identifier],
+                failureCount: 1,
+                wasInterrupted: record.wasInterrupted,
                 reloadGeneration: isPostExtensionReload ? measurement.extensionReloadGeneration : nil,
                 reloadState: isPostExtensionReload ? .responseTimedOut : .none
             )
@@ -756,6 +766,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
 
         episode.failedTabIdentifiers.insert(measurement.tabIdentifier)
         episode.failedMeasurementIdentifiers.insert(measurement.identifier)
+        episode.failureCount += 1
         var didConfirmHang = false
         // Require a non-restoration measurement begun after the first failure. Restored tabs may
         // finish serially, so they cannot confirm one another even when they were not concurrent.
@@ -818,7 +829,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             outcome: outcome,
             reloadState: episode.reloadState,
             secondsToResponse: outcome == .noResponseBeforeDeadline ? nil : now().timeIntervalSince(episode.startedAt),
-            diagnostics: episode.diagnostics
+            diagnostics: episode.diagnostics,
+            failedTabCount: episode.failedTabIdentifiers.count,
+            repeatedFailureCount: episode.failureCount - episode.failedTabIdentifiers.count,
+            wasInterrupted: episode.wasInterrupted
         )))
     }
 

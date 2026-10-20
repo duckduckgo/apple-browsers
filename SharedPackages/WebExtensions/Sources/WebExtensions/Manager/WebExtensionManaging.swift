@@ -80,6 +80,11 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func loadEmbeddedExtensionBackgroundContent() async
 
+    /// Repairs a background whose service worker belonged to a replaced Network process.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
+
     /// Reloads the extensions removed by the most recent `unloadAllExtensions()` using the parsed
     /// extensions captured at unload time, skipping the disk re-parsing, installed-store reads and
     /// orphaned-file cleanup performed by `loadInstalledExtensions()`. Falls back to
@@ -199,6 +204,9 @@ public extension WebExtensionManaging {
     // Preserve lightweight test and platform-specific conformers that do not own embedded content.
     @MainActor
     func loadEmbeddedExtensionBackgroundContent() async {}
+
+    @MainActor
+    func recoverEmbeddedBackgroundAfterNetworkProcessReplacement() {}
 }
 
 @available(macOS 15.4, iOS 18.4, *)

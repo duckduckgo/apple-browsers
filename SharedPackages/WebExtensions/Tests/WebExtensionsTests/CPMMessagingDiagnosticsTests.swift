@@ -460,5 +460,5 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
 
 private func episodeParameters(_ diagnostics: CPMMessagingDiagnostics) -> [String: String] {
     CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .failedMeasurementResponse,
-                              reloadState: .none, secondsToResponse: 0, diagnostics: diagnostics).pixelParameters
+                              reloadState: .none, secondsToResponse: 0, diagnostics: diagnostics, failedTabCount: 1, repeatedFailureCount: 0, wasInterrupted: false).pixelParameters
 }

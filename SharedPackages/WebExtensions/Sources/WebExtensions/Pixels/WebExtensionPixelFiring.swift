@@ -98,6 +98,10 @@ public enum WebExtensionPixelEvent {
     /// Intermediate initialization failures, stuck confirmation and reload checks stay local.
     case cpmMessagingEpisode(CPMMessagingEpisodeReport)
 
+    /// A stale background was restarted after an observed Network process replacement.
+    /// This records applying the mitigation, not confirmed messaging recovery.
+    case cpmNetworkProcessRecoveryApplied
+
     /// An extension turned password saving off, which makes it the default password manager.
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     /// Bitwarden is installed and loaded. Fired once a day.
@@ -139,15 +143,30 @@ public struct CPMMessagingEpisodeReport: Equatable, Sendable {
     public let reloadState: ReloadState
     public let secondsToResponse: TimeInterval?
     public let diagnostics: CPMMessagingDiagnostics?
+    /// Distinct tabs that timed out during the episode; tab identifiers stay local.
+    public let failedTabCount: Int
+    /// Timeouts beyond the first in a tab that had already timed out.
+    public let repeatedFailureCount: Int
+    /// The first failed measurement waited across an app suspension.
+    public let wasInterrupted: Bool
 
     public init(reason: CPMMessagingFailureReason, wasStuck: Bool, outcome: Outcome,
-                reloadState: ReloadState, secondsToResponse: TimeInterval?, diagnostics: CPMMessagingDiagnostics?) {
+                reloadState: ReloadState, secondsToResponse: TimeInterval?, diagnostics: CPMMessagingDiagnostics?,
+                failedTabCount: Int, repeatedFailureCount: Int, wasInterrupted: Bool) {
         self.reason = reason
         self.wasStuck = wasStuck
         self.outcome = outcome
         self.reloadState = reloadState
         self.secondsToResponse = secondsToResponse
         self.diagnostics = diagnostics
+        self.failedTabCount = failedTabCount
+        self.repeatedFailureCount = repeatedFailureCount
+        self.wasInterrupted = wasInterrupted
+    }
+
+    /// `count` as itself up to `cap - 1`, then `"<cap>+"`, so exact tab and failure counts are never sent.
+    private static func bucket(_ count: Int, cap: Int) -> String {
+        count >= cap ? "\(cap)+" : "\(max(0, count))"
     }
 
     var pixelParameters: [String: String] {
@@ -170,6 +189,9 @@ public struct CPMMessagingEpisodeReport: Equatable, Sendable {
         parameters.merge(diagnostics?.backgroundLoadParameters ?? [:]) { _, value in value }
         parameters["reason"] = reason.rawValue
         parameters["was_stuck"] = String(wasStuck)
+        parameters["tabs_affected"] = Self.bucket(failedTabCount, cap: 3)
+        parameters["repeat_failures"] = Self.bucket(repeatedFailureCount, cap: 2)
+        parameters["interrupted"] = String(wasInterrupted)
         parameters["outcome"] = outcome.rawValue
         parameters["reload_state"] = reloadState.rawValue
         if outcome != .noResponseBeforeDeadline, let secondsToResponse {
@@ -242,6 +264,10 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_episode"
             frequency = .dailyAndCount
             parameters = report.pixelParameters
+        case .cpmNetworkProcessRecoveryApplied:
+            name = "web_extension_cpm_network_process_recovery_applied"
+            frequency = .dailyAndCount
+            parameters = [:]
         case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,

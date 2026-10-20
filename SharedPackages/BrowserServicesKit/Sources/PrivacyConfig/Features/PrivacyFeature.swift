@@ -877,7 +877,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case protectedDataLoadGate
     /// Failsafe for waiting on embedded background content before restoring web pages.
     case stateRestorationGate
-    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health, and for the
+    /// background-load readiness observation, which asks the context to join the load already in progress to learn how it ended.
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder

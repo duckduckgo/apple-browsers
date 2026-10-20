@@ -564,7 +564,7 @@
         ]
     },
     "web_extension_cpm_episode": {
-        "description": "One terminal CPM failure-episode report: a qualifying dashboard response or the five-minute observation deadline. Time while the app is suspended (iOS background, macOS sleep) does not count: waits and the deadline stop, pending response waits restart with an 8 s window on resume, and the deadline keeps at least 30 s after resume. First failure and later stuck/reload transitions emit nothing. Response attribution does not prove initResp delivery or recovery of every failed tab. No response by the deadline is not proof of permanent failure. Unfinished in-memory episodes may be lost on process termination. Includes allowlisted first-failure facts, background readiness/view age and conditional attributed error-6 timing/app state, and the existing bounded bg_events timeline, which may contain error descriptors; no tab/document identifiers, diagnostic counts or app/memory ages. Load facts are frozen at the first failure: pending can later fail, and errors observed later are not included. One logical report uses dailyAndCount: the first completed episode of the day sends the same summary in daily and count requests; subsequent episodes send count only. Daily estimates affected installations per day; count measures completed episodes.",
+        "description": "One terminal CPM failure-episode report: a qualifying dashboard response or the five-minute observation deadline. Time while the app is suspended (iOS background, macOS sleep) does not count: waits and the deadline stop, pending waits restart in full on resume (8 s for a response wait, 30 s for an extension-load wait), and the deadline keeps at least 30 s after resume. First failure and later stuck/reload transitions emit nothing. Response attribution does not prove initResp delivery or recovery of every failed tab. No response by the deadline is not proof of permanent failure. Unfinished in-memory episodes may be lost on process termination. Includes allowlisted first-failure facts, background readiness/view age and conditional attributed error-6 timing/app state, and the existing bounded bg_events timeline, which may contain error descriptors; no tab/document identifiers, diagnostic counts or app/memory ages. Load facts are frozen at the first failure: pending can later fail, and errors observed later are not included. One logical report uses dailyAndCount: the first completed episode of the day sends the same summary in daily and count requests; subsequent episodes send count only. Daily estimates affected installations per day; count measures completed episodes.",
         "owners": ["mallexxx"],
         "triggers": ["feature_lifecycle", "exception"],
         "expires": "2027-01-15",
@@ -603,7 +603,7 @@
                 "key": "response_after",
                 "type": "string",
                 "enum": ["under_30s", "30s_to_1m", "1m_to_deadline"],
-                "description": "Elapsed time from first failure to qualifying dashboard response: under 30 seconds, 30 to under 60 seconds, or at least 60 seconds before the deadline. Omitted when no response was observed."
+                "description": "Elapsed time from first failure to qualifying dashboard response: under 30 seconds, 30 to under 60 seconds, or at least 60 seconds before the deadline. Measured on the monitor's own time, which excludes time the app was suspended. Omitted when no response was observed."
             },
             "extension_context_loaded",
             "background_view_alive",

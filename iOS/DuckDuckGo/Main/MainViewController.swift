@@ -3478,7 +3478,12 @@ class MainViewController: UIViewController {
         if tab.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
-            viewCoordinator.omniBar.startBrowsing()
+            if isFloatingUIEnabled {
+                // The loading-state refresh above already rendered live settings and customization.
+                viewCoordinator.omniBar.startBrowsingIfNeeded()
+            } else {
+                viewCoordinator.omniBar.startBrowsing()
+            }
             viewCoordinator.omniBar.setSelectedTextEntryMode(initialOmnibarToggleMode(for: tab.tabModel))
         }
 

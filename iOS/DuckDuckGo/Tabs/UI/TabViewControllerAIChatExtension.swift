@@ -57,32 +57,19 @@ extension TabViewController: AITabController {
               images: [AIChatNativePrompt.NativePromptImage]? = nil,
               files: [AIChatNativePrompt.NativePromptFile]? = nil,
               termsAccepted: Bool = false) {
-        isVoiceModeRequested = false
-
-        aiChatContentHandler.setPayload(payload: payload)
-        let hasText = query?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-        let hasAttachments = images?.isEmpty == false || files?.isEmpty == false
-        if hasText || hasAttachments {
-            let prompt = AIChatNativePrompt.queryPrompt(
-                query ?? "",
-                autoSubmit: autoSend,
-                toolChoice: tools?.map(\.rawValue),
-                images: images,
-                files: files,
-                modelId: modelId,
-                reasoningEffort: reasoningEffort
-            ).withTermsAccepted(termsAccepted)
-            AIChatPromptHandler.shared.setData(prompt)
-        }
-
-        let queryURL = aiChatContentHandler.buildQueryURL(
-            query: query,
-            autoSend: autoSend,
-            flowType: flowType,
-            tools: tools
-        )
+        let openingQuery = AIChatOpeningRequest.Query(query: query, autoSend: autoSend, flowType: flowType, tools: tools,
+                                                     modelId: modelId, reasoningEffort: reasoningEffort,
+                                                     images: images, files: files, termsAccepted: termsAccepted)
+        configureAIChatOpening(payload: payload)
+        if let prompt = openingQuery.sharedPrompt { AIChatPromptHandler.shared.setData(prompt) }
+        let queryURL = openingQuery.url(using: aiChatContentHandler)
 
         load(url: queryURL)
+    }
+
+    func configureAIChatOpening(payload: Any?) {
+        isVoiceModeRequested = false
+        aiChatContentHandler.setPayload(payload: payload)
     }
     
     /// Loads AIChat in voice mode.

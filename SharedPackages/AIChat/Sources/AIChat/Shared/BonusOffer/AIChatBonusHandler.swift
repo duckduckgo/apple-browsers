@@ -46,8 +46,10 @@ public protocol AIChatBonusHandling {
     /// - Parameter params: The message params, as the bridge received them. Dropped when invalid.
     func aiChatBonusRedeemOutcome(params: Any)
 
-    /// Handles `aiChatBonusDismiss`, which Duck.ai sends when the activation modal is closed without claiming.
-    func aiChatBonusDismiss()
+    /// Handles `aiChatBonusDismiss { campaignName }`, which Duck.ai sends when the activation modal is closed without claiming.
+    ///
+    /// - Parameter params: The message params, as the bridge received them. Dropped when invalid.
+    func aiChatBonusDismiss(params: Any)
 
     /// Handles `aiChatBonusEnd`, which Duck.ai sends when the boost expired, was opted out of or was replaced by a subscription.
     func aiChatBonusEnd()
@@ -84,7 +86,7 @@ extension AIChatBonusHandler: AIChatBonusHandling {
     }
 
     public func getAIChatNewBonusRecord(params: Any) -> AIChatBonusRecordPayload? {
-        guard let request: NewBonusRecordParams = decode(params) else { return nil }
+        guard let request: CampaignNameParams = decode(params) else { return nil }
         guard let record = try? service.claim(campaignName: request.campaignName) else { return nil }
         return payload(for: record)
     }
@@ -95,9 +97,10 @@ extension AIChatBonusHandler: AIChatBonusHandling {
         try? service.applyRedeemOutcome(request.outcome)
     }
 
-    public func aiChatBonusDismiss() {
+    public func aiChatBonusDismiss(params: Any) {
+        guard let request: CampaignNameParams = decode(params) else { return }
         // The service already logs and reports store errors; there's no reply to send.
-        try? service.dismiss()
+        try? service.dismiss(campaignName: request.campaignName)
     }
 
     public func aiChatBonusEnd() {
@@ -136,14 +139,14 @@ private extension AIChatBonusHandler {
 
 // MARK: - Params
 
-/// `getAIChatNewBonusRecord` params: `{ campaignName }`.
-private struct NewBonusRecordParams: Decodable {
+/// `getAIChatNewBonusRecord` and `aiChatBonusDismiss` params: `{ campaignName }`.
+private struct CampaignNameParams: Decodable {
     let campaignName: String
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         campaignName = try container.decode(String.self, forKey: .campaignName)
-        // An empty name breaks the record invariant, so the store would refuse to write it.
+        // No campaign has an empty name, and a claim with one would break the record invariant.
         guard !campaignName.isEmpty else {
             throw DecodingError.dataCorruptedError(forKey: .campaignName, in: container, debugDescription: "Empty campaign name")
         }

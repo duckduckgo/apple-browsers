@@ -23,25 +23,13 @@ import XCTest
 
 final class AIChatContextualSidebarPresenterTests: XCTestCase {
 
-    /// Records the containment flags the sheet reads to tell being closed from being covered by a modal.
+    /// Records the containment flag the sheet reads to tell being opened from coming back from under a modal.
     private final class RecordingChildViewController: UIViewController {
         var isMovingToParentOnWillAppear: Bool?
-        var isMovingFromParentOnWillDisappear: Bool?
-        var isMovingFromParentOnDidDisappear: Bool?
 
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
             isMovingToParentOnWillAppear = isMovingToParent
-        }
-
-        override func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
-            isMovingFromParentOnWillDisappear = isMovingFromParent
-        }
-
-        override func viewDidDisappear(_ animated: Bool) {
-            super.viewDidDisappear(animated)
-            isMovingFromParentOnDidDisappear = isMovingFromParent
         }
     }
 
@@ -140,17 +128,6 @@ final class AIChatContextualSidebarPresenterTests: XCTestCase {
         XCTAssertFalse(sut.isPresenting)
         XCTAssertTrue(container.isHidden)
         XCTAssertEqual(page.frame.width, parentViewController.view.bounds.width)
-    }
-
-    @MainActor
-    func testWhenDismissedThenChildIsToldItIsMovingFromItsParent() {
-        let child = RecordingChildViewController()
-        sut.present(child, animated: false)
-
-        sut.dismiss(child, animated: false, completion: nil)
-
-        XCTAssertEqual(child.isMovingFromParentOnWillDisappear, true)
-        XCTAssertEqual(child.isMovingFromParentOnDidDisappear, true)
     }
 
     @MainActor

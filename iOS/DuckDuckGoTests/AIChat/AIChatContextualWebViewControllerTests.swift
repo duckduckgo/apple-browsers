@@ -86,6 +86,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
                                           contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
                                           featureDiscovery: MockFeatureDiscovery(), featureFlagger: MockFeatureFlagger(),
                                           unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: utiHost != nil),
+                                          usageContextProvider: UsageContextProvider(),
                                           downloadHandler: StubDownloadHandler(), getPageContext: nil,
                                           pixelHandler: StubContextualModePixelHandler(),
                                           onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
@@ -265,6 +266,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: MockFeatureFlagger(),
+            usageContextProvider: UsageContextProvider(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
@@ -289,6 +291,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: MockFeatureFlagger(),
+            usageContextProvider: UsageContextProvider(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
@@ -312,6 +315,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: MockFeatureFlagger(),
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false),
+            usageContextProvider: UsageContextProvider(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
@@ -333,6 +337,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: MockFeatureFlagger(),
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true),
+            usageContextProvider: UsageContextProvider(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
@@ -432,11 +437,11 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}
     func fireFireButtonConfirmed() {}
-    func fireAddressBarMenuShown() {}
-    func fireAddressBarMenuNewChatSelected() {}
-    func fireAddressBarMenuAskAboutPageSelected() {}
-    func fireAddressBarMenuAskAboutSearchSelected() {}
-    func fireAddressBarMenuRecentChatsSelected() {}
+    func fireAddressBarMenuShown(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuNewChatSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuAskAboutPageSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuAskAboutSearchSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuRecentChatsSelected(source: DuckAIMenuSource) {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() {}

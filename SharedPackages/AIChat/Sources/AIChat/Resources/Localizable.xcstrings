@@ -608,7 +608,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Najlepszy do codziennego użytku"
+            "value" : "Najlepsze do codziennego użytku"
           }
         },
         "pt" : {
@@ -770,7 +770,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Solidny, ale szybciej osiąga limity"
+            "value" : "Solidny, ale szybciej zużywa limity"
           }
         },
         "pt" : {

@@ -274,6 +274,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
 
+    /// Imports browsing history from third-party browsers.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219685718776840
+    case dataImportHistory
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
 
@@ -858,6 +862,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncIdentities))
         case .dataImportNewSafariFilePicker:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
+        case .dataImportHistory:
+            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:

@@ -99,6 +99,61 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = nil
     }
 
+    func testWhenPageResizesThenHostedContentFillsContainerAndInheritsSafeArea() throws {
+        let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
+        XCTAssertTrue(page.parent === hvc)
+        XCTAssertTrue(page.view.superview === hvc.view)
+
+        hvc.additionalSafeAreaInsets = UIEdgeInsets(top: 24, left: 0, bottom: 16, right: 0)
+        for size in [CGSize(width: 390, height: 844), CGSize(width: 844, height: 390)] {
+            hvc.view.frame = CGRect(origin: .zero, size: size)
+            hvc.view.setNeedsLayout()
+            hvc.view.layoutIfNeeded()
+
+            XCTAssertEqual(page.view.frame, hvc.view.bounds)
+            XCTAssertEqual(page.view.safeAreaInsets, hvc.view.safeAreaInsets)
+            XCTAssertFalse(page.view.hasAmbiguousLayout)
+        }
+    }
+
+    func testWhenDialogIsReplacedThenItRemainsAboveHostedPageInContainer() throws {
+        let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
+        specProvider.specToReturn = .initial
+        hvc.showNextDaxDialogNew(dialogProvider: specProvider, factory: dialogFactory)
+        let firstDialog = try XCTUnwrap(hvc.children.first { $0 !== page })
+
+        hvc.showNextDaxDialogNew(dialogProvider: specProvider, factory: dialogFactory)
+        let replacement = try XCTUnwrap(hvc.children.first { $0 !== page })
+        hvc.view.layoutIfNeeded()
+
+        XCTAssertNil(firstDialog.parent)
+        XCTAssertNil(firstDialog.view.superview)
+        XCTAssertEqual(hvc.children.count, 2)
+        XCTAssertTrue(replacement.view.superview === page.view.superview)
+        let pageIndex = try XCTUnwrap(hvc.view.subviews.firstIndex(of: page.view))
+        let dialogIndex = try XCTUnwrap(hvc.view.subviews.firstIndex(of: replacement.view))
+        XCTAssertGreaterThan(dialogIndex, pageIndex)
+        XCTAssertEqual(replacement.view.frame, hvc.view.bounds)
+        XCTAssertFalse(replacement.view.hasAmbiguousLayout)
+    }
+
+    func testWhenDialogIsDismissedThenHostedPageRemainsAttached() throws {
+        let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
+        specProvider.specToReturn = .initial
+        hvc.showNextDaxDialogNew(dialogProvider: specProvider, factory: dialogFactory)
+        let dialog = try XCTUnwrap(hvc.children.first { $0 !== page })
+
+        specProvider.specToReturn = nil
+        let dismiss = try XCTUnwrap(dialogFactory.onDismiss)
+        dismiss(false)
+
+        XCTAssertNil(dialog.parent)
+        XCTAssertNil(dialog.view.superview)
+        XCTAssertEqual(hvc.children.count, 1)
+        XCTAssertTrue(page.parent === hvc)
+        XCTAssertTrue(page.view.superview === hvc.view)
+    }
+
     // MARK: - After-idle remote message signal
 
     /// Builds an NTP the way the focused UTI embedded surface does: a shared messages config and the

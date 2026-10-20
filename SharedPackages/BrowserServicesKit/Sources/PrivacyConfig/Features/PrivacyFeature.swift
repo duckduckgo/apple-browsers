@@ -159,6 +159,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Skip the automatic update check triggered when the release notes page loads
     case skipReleaseNotesUpdateCheck
 
+    /// Makes updates more prominent, such as in the address bar and browser menu
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219579052808597?focus=true
+    case moreProminentUpdates
+
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit

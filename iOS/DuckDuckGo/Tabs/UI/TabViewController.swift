@@ -267,6 +267,7 @@ class TabViewController: UIViewController {
     let tabInteractionStateSource: TabInteractionStateSource?
 
     var isLinkPreview = false
+    var linkPreviewNavigationCancellable: AnyCancellable?
 
     // A workaround for an issue when in some cases webview reports `isLoading == true` when it was stoppped.
     var isLoading: Bool {

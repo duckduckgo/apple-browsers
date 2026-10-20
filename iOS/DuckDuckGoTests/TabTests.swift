@@ -45,6 +45,40 @@ class TabTests: XCTestCase {
 
     }
 
+    func testLinkPreviewDomainsTrackUniqueHostsAndNotifyObservers() {
+        let tab = Tab()
+        let observer = MockTabObserver()
+        tab.addObserver(observer)
+
+        tab.recordLinkPreviewDomain(for: URL(string: "https://preview.example/first"))
+        tab.recordLinkPreviewDomain(for: URL(string: "https://preview.example/second"))
+        tab.recordLinkPreviewDomain(for: URL(string: "https://redirect.example"))
+        tab.recordLinkPreviewDomain(for: URL(string: "about:blank"))
+        tab.recordLinkPreviewDomain(for: nil)
+
+        XCTAssertEqual(tab.linkPreviewDomains, ["preview.example", "redirect.example"])
+        XCTAssertIdentical(observer.didChangeTab, tab)
+    }
+
+    func testLinkPreviewDomainsSurviveArchivalSnapshotAndRestoration() throws {
+        let tab = Tab()
+        tab.recordLinkPreviewDomain(for: URL(string: "https://preview.example"))
+        let snapshot = tab.archivalSnapshot()
+        tab.recordLinkPreviewDomain(for: URL(string: "https://later.example"))
+
+        let data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
+        let restoredTab = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
+
+        XCTAssertEqual(restoredTab.linkPreviewDomains, ["preview.example"])
+        XCTAssertEqual(tab.linkPreviewDomains, ["preview.example", "later.example"])
+    }
+
+    func testTabsArchivedWithoutLinkPreviewDomainsRestoreWithEmptySet() throws {
+        let tab = try XCTUnwrap(Tab(coder: CoderStub(properties: ["link": link()])))
+
+        XCTAssertTrue(tab.linkPreviewDomains.isEmpty)
+    }
+
     func testWhenDesktopModeToggledThenPropertyIsUpdated() {
         _ = AppWidthObserver.shared.willResize(toWidth: UIScreen.main.bounds.width)
 

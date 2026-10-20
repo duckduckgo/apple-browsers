@@ -46,6 +46,7 @@ final class PasswordAutofillUITests: UITestCase {
                 app.descendants(matching: .any)["Autofill.PasswordGeneration.Prompt"]
                     .waitForExistence(timeout: UITestTimeouts.navigation),
                 "Password-generation prompt did not appear.")
+            assertWebInputDismissed()
             app.buttons["Autofill.PasswordGeneration.UseGeneratedPassword"].tapWhenHittable()
             app.submitWebForm(buttonNamed: "Sign up")
             app.assertPageContains("Success")
@@ -84,4 +85,68 @@ final class PasswordAutofillUITests: UITestCase {
             app.assertPageContains("Submitted!")
         }
     }
+
+    func testChoosingOwnPasswordAllowsEditingThePasswordOnTheNextTap() {
+        app.openURL(TestPage.signup, expecting: "Password generation during signup")
+        app.enterWebFormText(username, inFieldNamed: "Email")
+        app.focusSecureWebFormField(named: "Password")
+
+        let prompt = app.descendants(matching: .any)["Autofill.PasswordGeneration.Prompt"]
+        XCTAssertTrue(prompt.waitForExistence(timeout: UITestTimeouts.navigation), "Password-generation prompt did not appear.")
+        assertWebInputDismissed()
+        app.buttons["Autofill.PasswordGeneration.UseOwnPassword"].tapWhenHittable()
+        XCTAssertTrue(prompt.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Password-generation prompt did not dismiss.")
+
+        assertWebInputDismissed()
+        let password = app.webViews.secureTextFields["Password"]
+        password.tapWhenHittable()
+        XCTAssertTrue(
+            app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Tapping Password after dismissing the prompt did not open the web form keyboard.")
+        password.typeText("Own-password-2026!")
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = "Own-password editing after native prompt dismissal"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.enterWebFormText("Own-password-2026!", inFieldNamed: "Password Confirmation", secure: true)
+        app.submitWebForm(buttonNamed: "Sign up")
+        app.assertPageContains("Success")
+    }
+
+    func testChoosingOwnPasswordAllowsEditingADifferentFieldOnTheNextTap() {
+        app.openURL(TestPage.signup, expecting: "Password generation during signup")
+        app.enterWebFormText(username, inFieldNamed: "Email")
+        app.focusSecureWebFormField(named: "Password")
+
+        let prompt = app.descendants(matching: .any)["Autofill.PasswordGeneration.Prompt"]
+        XCTAssertTrue(prompt.waitForExistence(timeout: UITestTimeouts.navigation), "Password-generation prompt did not appear.")
+        assertWebInputDismissed()
+        app.buttons["Autofill.PasswordGeneration.UseOwnPassword"].tapWhenHittable()
+        XCTAssertTrue(prompt.waitForNonExistence(timeout: UITestTimeouts.elementExistence), "Password-generation prompt did not dismiss.")
+        assertWebInputDismissed()
+
+        let email = app.webViews.textFields["Email"]
+        email.tapWhenHittable()
+        XCTAssertTrue(
+            app.keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence),
+            "Tapping Email after dismissing the prompt did not open the web form keyboard.")
+        email.typeText(".edited")
+        XCTAssertTrue(
+            email.wait(for: NSPredicate(format: "value CONTAINS %@", ".edited"), timeout: UITestTimeouts.elementExistence),
+            "Typing after the first Email tap did not update the field.")
+    }
+
+    private func assertWebInputDismissed(file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(
+            app.keyboards.firstMatch.waitForNonExistence(timeout: UITestTimeouts.elementExistence),
+            "Web form keyboard remained above the native prompt.", file: file, line: line)
+        XCTAssertTrue(
+            app.toolbars["Toolbar"].waitForNonExistence(timeout: UITestTimeouts.elementExistence),
+            "Web form input accessory remained above the native prompt.", file: file, line: line)
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = "Password-generation prompt with web input dismissed"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
 }

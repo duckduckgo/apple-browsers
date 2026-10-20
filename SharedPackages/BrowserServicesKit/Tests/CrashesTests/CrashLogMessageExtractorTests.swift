@@ -328,6 +328,62 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         }
     }
 
+    // ── MetricKit report lookup ──────────────────────────────────────────────────
+
+    // iOS: `timeStampBegin` is the crash time rounded to the nearest minute → the window lookup wins.
+    func testMetricKitLookup_whenDiagnosticIsWithinWindow_closestIsChosen() {
+        fileManager.contents = [
+            "2026-10-20T13:58:19Z-69367.log",
+            "2026-10-20T14:00:26Z-78270.log", // <-
+        ]
+
+        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:00:00Z")!)
+
+        XCTAssertEqual(r?.pid, 78270)
+    }
+
+    // macOS: `timeStampBegin` was observed to be the next launch time, minutes after the crashes → oldest file first,
+    // consumed one by one so that each report gets the next crash's diagnostics.
+    func testMetricKitLookup_whenNoDiagnosticIsWithinWindow_oldestUnconsumedIsChosen() {
+        fileManager.contents = [
+            "2026-10-20T13:58:19Z-69367.log",
+            "2026-10-20T14:00:26Z-78270.log",
+            "2026-10-20T13:59:09Z-74951.log",
+        ]
+        let reportTimestamp = formatter.date(from: "2026-10-20T14:04:00Z")!
+
+        let first = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp)
+        XCTAssertEqual(first?.pid, 69367)
+        extractor.consume(first!)
+
+        let second = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp)
+        XCTAssertEqual(second?.pid, 74951)
+        extractor.consume(second!)
+
+        let third = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp)
+        XCTAssertEqual(third?.pid, 78270)
+        extractor.consume(third!)
+
+        XCTAssertNil(extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp))
+        XCTAssertEqual(fileManager.removedFileNames.count, 3)
+    }
+
+    func testMetricKitLookup_whenDiagnosticIsNewerThanTheReport_itIsNotChosen() {
+        fileManager.contents = ["2026-10-20T14:05:30Z-80000.log"] // 90s after the reported minute
+
+        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:04:00Z")!)
+
+        XCTAssertNil(r)
+    }
+
+    func testMetricKitLookup_whenDiagnosticIsWrittenInTheReportedMinute_itIsChosenByFallback() {
+        fileManager.contents = ["2026-10-20T14:04:45Z-80000.log"] // report minute 14:04, file 45s into it
+
+        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:04:00Z")!)
+
+        XCTAssertEqual(r?.pid, 80000)
+    }
+
     // ── Integration tests: exception → writeDiagnostic → readable file ───────────
     //
     // These verify that the extractor serves its end-to-end purpose for the three
@@ -455,12 +511,18 @@ private class FileManagerMock: FileManager {
     var error: Error?
     var contents = [String]()
 
+    var removedFileNames = [String]()
+
     override func contentsOfDirectory(atPath path: String) throws -> [String] {
         XCTAssertEqual(path, self.diagnosticsDirectory.path)
         if let error {
             throw error
         }
-        return contents
+        return contents.filter { !removedFileNames.contains($0) }
+    }
+
+    override func removeItem(at URL: URL) throws {
+        removedFileNames.append(URL.lastPathComponent)
     }
 
 }

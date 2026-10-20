@@ -201,27 +201,27 @@ public struct CrashLogMessageExtractor {
     }
 
     /// How far the crash time reported by MetricKit may be from the diagnostic file timestamp.
-    /// MetricKit reports `timeStampBegin` rounded to the *nearest* minute (a crash at 11:20:39 is reported as 11:21:00,
-    /// a crash at 11:33:10 as 11:33:00), so the reported time is at most 30 seconds away from the real crash time.
-    /// Keeping the window this tight avoids attaching the message to a different crash that happened later in the
-    /// same minute (e.g. in a crash loop).
+    /// On iOS MetricKit reports `timeStampBegin` as the crash time rounded to the *nearest* minute (a crash at 11:20:39
+    /// is reported as 11:21:00, a crash at 11:33:10 as 11:33:00), so the reported time is at most 30 seconds away from
+    /// the real crash time. Keeping the window this tight avoids attaching the message to a different crash that
+    /// happened later in the same minute (e.g. in a crash loop).
     static let crashTimestampTolerance: TimeInterval = 30
     /// The diagnostic file is written right *before* the process aborts and its name is truncated to whole seconds,
     /// so the file timestamp may precede the real crash time by a little more than a second.
     static let diagnosticFileTimestampSlack: TimeInterval = 2
+    /// `timeStampBegin` is truncated to a minute, so a file written in that minute may still be older than the moment
+    /// the report describes.
+    static let reportTimestampSlack: TimeInterval = 60
+
     /// Find saved crash diagnostics message for crash PID/timestamp
     /// - Parameters:
     ///   - timestamp: crash time as reported by the crash reporter.
     ///   - pid: PID of the *crashed* process, if known (macOS crash reports). Note: `MXCrashDiagnostic.metaData.pid`
-    ///     is the PID of the app process that was running when MetricKit generated the report (i.e. the next launch),
-    ///     not the crashed one, so it must not be passed here.
+    ///     is not reliable for that, see `crashDiagnostic(forMetricKitReportAt:)`.
     /// - Returns: the diagnostic written by the process with the matching `pid`; when there is none, the diagnostic
     ///   closest to `timestamp` within `crashTimestampTolerance` (plus `diagnosticFileTimestampSlack` before it).
     public func crashDiagnostic(for timestamp: Date?, pid: pid_t?) -> CrashDiagnostic? {
-        guard timestamp != nil || pid != nil,
-              let crashLogs = try? fileManager.contentsOfDirectory(atPath: diagnosticsDirectory.path).compactMap({
-                  CrashDiagnostic(url: diagnosticsDirectory.appending($0))
-              }) else { return nil }
+        guard timestamp != nil || pid != nil, let crashLogs = loadCrashDiagnostics() else { return nil }
 
         // the pid identifies the crashed process; fall back to the time window only when nothing matches it
         var candidates = crashLogs.filter { $0.pid == pid }
@@ -238,8 +238,41 @@ public struct CrashLogMessageExtractor {
             return d0 != d1 ? d0 < d1 : $0.timestamp > $1.timestamp
         }
 
+        return logLookupResult(candidates.first, timestamp: timestamp, pid: pid)
+    }
+
+    /// Find saved crash diagnostics for an `MXCrashDiagnostic` report.
+    ///
+    /// `MXDiagnosticPayload.timeStampBegin` is the crash time rounded to the nearest minute on iOS, but it has been
+    /// observed to be the time of the *next launch* instead, so when nothing is found around `timestamp` the oldest
+    /// not yet consumed diagnostic that is not newer than the report is used. Call `consume(_:)` once the diagnostic
+    /// has been attached so that it is not matched against the next report.
+    /// - Note: `MXCrashDiagnostic.metaData.pid` is not used: when the app is running while MetricKit generates the
+    ///   report it holds the running (not the crashed) process PID.
+    public func crashDiagnostic(forMetricKitReportAt timestamp: Date) -> CrashDiagnostic? {
+        if let crashLog = crashDiagnostic(for: timestamp, pid: nil) {
+            return crashLog
+        }
+        guard let crashLogs = loadCrashDiagnostics() else { return nil }
+        let candidates = crashLogs
+            .filter { $0.timestamp.timeIntervalSince(timestamp) <= Self.reportTimestampSlack }
+            .sorted { $0.timestamp < $1.timestamp }
+        return logLookupResult(candidates.first, timestamp: timestamp, pid: nil)
+    }
+
+    /// Remove the diagnostics file once its contents have been attached to a crash report.
+    public func consume(_ crashLog: CrashDiagnostic) {
+        try? fileManager.removeItem(at: crashLog.url)
+    }
+
+    private func loadCrashDiagnostics() -> [CrashDiagnostic]? {
+        let fileNames = try? fileManager.contentsOfDirectory(atPath: diagnosticsDirectory.path)
+        return fileNames?.compactMap { CrashDiagnostic(url: diagnosticsDirectory.appending($0)) }
+    }
+
+    private func logLookupResult(_ crashLog: CrashDiagnostic?, timestamp: Date?, pid: pid_t?) -> CrashDiagnostic? {
         let timestampDescription = timestamp.map { ISO8601DateFormatter().string(from: $0) } ?? "<nil>"
-        guard let crashLog = candidates.first else {
+        guard let crashLog else {
             Logger.general.log("😵 no crash logs found for \(timestampDescription, privacy: .public)/\(pid ?? 0)")
             return nil
         }

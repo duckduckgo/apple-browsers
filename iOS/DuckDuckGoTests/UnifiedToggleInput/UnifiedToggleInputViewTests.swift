@@ -388,6 +388,13 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(stack.arrangedSubviews.map { $0.bounds.width }, [240, 240, 196, 82])
     }
 
+    func testPastedTextChipCapsTheVoiceOverValueForALongSingleLine() throws {
+        let paste = AIChatPastedText(content: String(repeating: "a", count: 5_000))
+        let sut = UnifiedToggleInputAttachmentThumbnailView(attachment: .pastedText(paste), usesCompactLayout: true)
+
+        XCTAssertEqual(sut.accessibilityValue, String(repeating: "a", count: 100) + "…")
+    }
+
     func testPastedTextChipIsOneVoiceOverButtonThatOpensTheSheetAndOffersRemove() throws {
         let paste = AIChatPastedText(content: "\n  First line of the paste \nsecond line")
         let sut = UnifiedToggleInputAttachmentThumbnailView(attachment: .pastedText(paste), usesCompactLayout: true)

@@ -27,9 +27,8 @@ final class HistoryCoordinatingMock: HistoryCoordinating {
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { $historyDictionary }
 
     var addImportedVisitsCalls: [[HistoryImport.Visit]] = []
-    func addImportedVisits(_ visits: [HistoryImport.Visit]) -> [Visit]? {
+    func addImportedVisits(_ visits: [HistoryImport.Visit]) {
         addImportedVisitsCalls.append(visits)
-        return []
     }
 
     func loadHistory(onCleanFinished: @escaping () -> Void) {}

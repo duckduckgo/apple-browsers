@@ -48,6 +48,13 @@ public enum HistoryImport {
         /// Older than the history retention window, so they would be deleted on the next cleanup.
         public var tooOld = 0
         public var skipped = 0
+
+        public init(imported: Int = 0, alreadyInHistory: Int = 0, tooOld: Int = 0, skipped: Int = 0) {
+            self.imported = imported
+            self.alreadyInHistory = alreadyInHistory
+            self.tooOld = tooOld
+            self.skipped = skipped
+        }
     }
 
     public enum Error: Swift.Error {

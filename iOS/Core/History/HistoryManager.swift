@@ -200,8 +200,7 @@ class NullHistoryCoordinator: HistoryCoordinating {
     func commitChanges(url: URL) {
     }
 
-    func addImportedVisits(_ visits: [HistoryImport.Visit]) -> [History.Visit]? {
-        return nil
+    func addImportedVisits(_ visits: [HistoryImport.Visit]) {
     }
 
     func title(for url: URL) -> String? {

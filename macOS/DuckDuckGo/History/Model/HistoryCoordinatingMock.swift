@@ -62,9 +62,8 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
     }
 
     public var addImportedVisitsCalled = false
-    public func addImportedVisits(_ visits: [HistoryImport.Visit]) -> [Visit]? {
+    public func addImportedVisits(_ visits: [HistoryImport.Visit]) {
         addImportedVisitsCalled = true
-        return []
     }
 
     public var burnAllCalled = false

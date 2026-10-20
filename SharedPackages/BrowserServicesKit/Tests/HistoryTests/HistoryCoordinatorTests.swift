@@ -165,6 +165,18 @@ class HistoryCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenImportedVisitIsOlderThanLocalVisit_ThenLocalTitleIsKept() async {
+        let (_, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        historyCoordinator.addVisit(of: .duckDuckGo)
+        historyCoordinator.updateTitleIfNeeded(title: "Local", url: .duckDuckGo)
+
+        historyCoordinator.addImportedVisits([importedVisit(title: "Imported", hoursAgo: 1)])
+
+        XCTAssertEqual(historyCoordinator.historyDictionary?[.duckDuckGo]?.visits.count, 2)
+        XCTAssertEqual(historyCoordinator.historyDictionary?[.duckDuckGo]?.title, "Local")
+    }
+
+    @MainActor
     func testWhenHistoryIsBurning_ThenHistoryIsCleanedIncludingFireproofDomains() async {
         let burnAllFinished = expectation(description: "Burn All Finished")
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()

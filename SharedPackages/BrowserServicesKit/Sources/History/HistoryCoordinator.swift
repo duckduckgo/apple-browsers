@@ -61,7 +61,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func markFailedToLoadUrl(_ url: URL)
     @MainActor func commitChanges(url: URL)
-    @discardableResult @MainActor func addImportedVisits(_ visits: [HistoryImport.Visit]) -> [Visit]?
+    @MainActor func addImportedVisits(_ visits: [HistoryImport.Visit])
 
     @MainActor func title(for url: URL) -> String?
 
@@ -155,29 +155,28 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     /// Adds visits imported from another browser, publishing history and saving each changed entry once.
     ///
-    /// Returns `nil` if history isn't loaded.
+    /// An imported title replaces the entry's title only when its visit is the entry's newest, or the entry has no title.
     @MainActor
-    @discardableResult public func addImportedVisits(_ visits: [HistoryImport.Visit]) -> [Visit]? {
+    public func addImportedVisits(_ visits: [HistoryImport.Visit]) {
         guard var historyDictionary else {
             Logger.history.debug("Import of \(visits.count) visits ignored")
-            return nil
+            return
         }
 
         var changedEntries = [URL: HistoryEntry]()
-        let addedVisits = visits.sorted { $0.date < $1.date }.map { importedVisit in
+        for importedVisit in visits.sorted(by: { $0.date < $1.date }) {
             let entry = historyDictionary[importedVisit.url] ?? HistoryEntry(url: importedVisit.url)
-            let visit = entry.addVisit(at: importedVisit.date, tabID: nil)
-            if let title = importedVisit.title, !title.isEmpty {
+            _ = entry.addVisit(at: importedVisit.date, tabID: nil)
+            if let title = importedVisit.title, !title.isEmpty,
+               importedVisit.date >= entry.lastVisit || entry.title?.isEmpty ?? true {
                 entry.title = title
             }
             historyDictionary[importedVisit.url] = entry
             changedEntries[importedVisit.url] = entry
-            return visit
         }
 
         self.historyDictionary = historyDictionary
         changedEntries.values.forEach(save(entry:))
-        return addedVisits
     }
 
     public func addBlockedTracker(entityName: String, on url: URL) {
@@ -511,10 +510,9 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 let result = try await historyStoring.save(entry: entryCopy)
                 Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.shortDescription), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no"), cookie popup blocked: \(entry.cookiePopupBlocked ? "yes" : "no")")
                 await MainActor.run {
+                    let visitsByDate = Dictionary(entry.visits.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
                     for (id, date) in result {
-                        if let visit = entry.visits.first(where: { $0.date == date }) {
-                            visit.identifier = id
-                        }
+                        visitsByDate[date]?.identifier = id
                     }
                 }
             } catch {

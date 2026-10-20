@@ -6345,8 +6345,21 @@ extension MainViewController: OmniBarDelegate {
                 } else {
                     sheet.detents = [.medium()]
                 }
-            } else if let initialDetentHeight, #available(iOS 16.0, *) {
-                sheet.detents = [.custom { _ in initialDetentHeight }, .large()]
+            } else if let openBookmarksVisibleHeight = initialDetentHeight, #available(iOS 16.0, *) {
+                func mediumHeight(in context: UISheetPresentationControllerDetentResolutionContext) -> CGFloat {
+                    UISheetPresentationController.Detent.medium().resolvedValue(in: context) ?? openBookmarksVisibleHeight
+                }
+                func fitsWithinMediumHeight(in context: UISheetPresentationControllerDetentResolutionContext) -> Bool {
+                    contentHeight <= mediumHeight(in: context)
+                }
+                sheet.detents = [
+                    .custom { context in
+                        fitsWithinMediumHeight(in: context) ? contentHeight : max(openBookmarksVisibleHeight, mediumHeight(in: context))
+                    },
+                    .custom { context in
+                        fitsWithinMediumHeight(in: context) ? contentHeight : context.maximumDetentValue
+                    }
+                ]
             } else {
                 sheet.detents = [.medium(), .large()]
             }

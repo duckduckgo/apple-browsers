@@ -34,6 +34,7 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
         onCleanFinished()
     }
 
+    public var isHistoryLoaded = true
     public var history: BrowsingHistory?
     public var allHistoryVisits: [Visit]?
     @Published public private(set) var historyDictionary: [URL: HistoryEntry]?
@@ -62,7 +63,7 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
     }
 
     public var addImportedVisitsCalled = false
-    public func addImportedVisits(_ visits: [HistoryImport.Visit]) {
+    public func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
         addImportedVisitsCalled = true
     }
 

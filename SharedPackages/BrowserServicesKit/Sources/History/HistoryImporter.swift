@@ -20,7 +20,7 @@ import Foundation
 import FoundationExtensions
 
 public protocol HistoryImporterProtocol {
-    @MainActor func importVisits(_ parseResult: HistoryImport.ParseResult) throws -> HistoryImport.Summary
+    @MainActor func importVisits(_ parseResult: HistoryImport.ParseResult) async throws -> HistoryImport.Summary
 }
 
 public final class HistoryImporter: HistoryImporterProtocol {
@@ -39,8 +39,8 @@ public final class HistoryImporter: HistoryImporterProtocol {
     }
 
     @MainActor
-    public func importVisits(_ parseResult: HistoryImport.ParseResult) throws -> HistoryImport.Summary {
-        guard let historyDictionary = historyCoordinator.historyDictionary else {
+    public func importVisits(_ parseResult: HistoryImport.ParseResult) async throws -> HistoryImport.Summary {
+        guard historyCoordinator.isHistoryLoaded, let historyDictionary = historyCoordinator.historyDictionary else {
             throw HistoryImport.Error.historyNotLoaded
         }
 
@@ -65,7 +65,7 @@ public final class HistoryImporter: HistoryImporterProtocol {
             return true
         }
 
-        historyCoordinator.addImportedVisits(newVisits)
+        try await historyCoordinator.addImportedVisits(newVisits)
         summary.imported = newVisits.count
         return summary
     }

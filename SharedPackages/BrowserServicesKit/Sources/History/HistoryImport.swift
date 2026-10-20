@@ -59,5 +59,6 @@ public enum HistoryImport {
 
     public enum Error: Swift.Error {
         case historyNotLoaded
+        case importInProgress
     }
 }

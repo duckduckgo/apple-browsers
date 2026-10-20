@@ -50,6 +50,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 
     @MainActor func loadHistory(onCleanFinished: @escaping () -> Void)
 
+    @MainActor var isHistoryLoaded: Bool { get }
     @MainActor var history: BrowsingHistory? { get }
     @MainActor var allHistoryVisits: [Visit]? { get }
     @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
@@ -61,7 +62,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func markFailedToLoadUrl(_ url: URL)
     @MainActor func commitChanges(url: URL)
-    @MainActor func addImportedVisits(_ visits: [HistoryImport.Visit])
+    @MainActor func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws
 
     @MainActor func title(for url: URL) -> String?
 
@@ -109,6 +110,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     @MainActor
     public func loadHistory(onCleanFinished: @escaping () -> Void) {
+        isHistoryLoaded = false
         historyDictionary = [:]
         cleanOldAndLoad(onCleanFinished: onCleanFinished)
         scheduleRegularCleaning()
@@ -118,6 +120,26 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return historyStoringProvider()
     }()
     private var regularCleaningTimer: Timer?
+
+    @MainActor private(set) public var isHistoryLoaded = false
+    @MainActor private var entriesBeingImported = Set<HistoryEntry>()
+    @MainActor private var deferredSaves = Set<HistoryEntry>()
+
+    private final class ImportedEntryChange {
+        let entry: HistoryEntry
+        let wasInHistory: Bool
+        let previousTitle: String?
+        let previousLastVisit: Date
+        var visits = Set<Visit>()
+        var importedTitle: String?
+
+        init(entry: HistoryEntry, wasInHistory: Bool) {
+            self.entry = entry
+            self.wasInHistory = wasInHistory
+            previousTitle = entry.title
+            previousLastVisit = entry.lastVisit
+        }
+    }
 
     // Source of truth
     @Published private(set) public var historyDictionary: [URL: HistoryEntry]?
@@ -153,30 +175,83 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return visit
     }
 
-    /// Adds visits imported from another browser, publishing history and saving each changed entry once.
-    ///
+    /// Adds imported visits in a batch and returns after all changed entries have been saved.
+    /// Successfully saved entries are kept if a later save fails; unsaved imported visits are removed so they can be retried.
     /// An imported title replaces the entry's title only when its visit is the entry's newest, or the entry has no title.
     @MainActor
-    public func addImportedVisits(_ visits: [HistoryImport.Visit]) {
-        guard var historyDictionary else {
-            Logger.history.debug("Import of \(visits.count) visits ignored")
-            return
+    public func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
+        guard isHistoryLoaded, var historyDictionary else {
+            throw HistoryImport.Error.historyNotLoaded
         }
+        guard entriesBeingImported.isEmpty else {
+            throw HistoryImport.Error.importInProgress
+        }
+        guard !visits.isEmpty else { return }
 
-        var changedEntries = [URL: HistoryEntry]()
+        var changes = [URL: ImportedEntryChange]()
         for importedVisit in visits.sorted(by: { $0.date < $1.date }) {
             let entry = historyDictionary[importedVisit.url] ?? HistoryEntry(url: importedVisit.url)
-            _ = entry.addVisit(at: importedVisit.date, tabID: nil)
+            let change = changes[entry.url] ?? ImportedEntryChange(entry: entry, wasInHistory: historyDictionary[entry.url] != nil)
+            change.visits.insert(entry.addVisit(at: importedVisit.date, tabID: nil))
             if let title = importedVisit.title, !title.isEmpty,
                importedVisit.date >= entry.lastVisit || entry.title?.isEmpty ?? true {
                 entry.title = title
             }
-            historyDictionary[importedVisit.url] = entry
-            changedEntries[importedVisit.url] = entry
+            change.importedTitle = entry.title
+            historyDictionary[entry.url] = entry
+            changes[entry.url] = change
         }
 
+        entriesBeingImported = Set(changes.values.map(\.entry))
         self.historyDictionary = historyDictionary
-        changedEntries.values.forEach(save(entry:))
+        defer {
+            rollBackImportedChanges(changes)
+            entriesBeingImported.removeAll()
+            let entriesToSave = deferredSaves
+            deferredSaves.removeAll()
+            for entry in entriesToSave where self.historyDictionary?[entry.url] === entry {
+                save(entry: entry)
+            }
+        }
+
+        for change in Array(changes.values) {
+            try Task.checkCancellation()
+            let entry = change.entry
+            // An entry burned while another save was pending must not be inserted again.
+            guard self.historyDictionary?[entry.url] === entry else {
+                changes.removeValue(forKey: entry.url)
+                continue
+            }
+            guard let entryCopy = entry.copy() as? HistoryEntry else {
+                throw HistoryCoordinatorError(description: "Copying imported HistoryEntry failed")
+            }
+            let unsavedVisits = entry.visits.filter { $0.savingState == .initialized }
+            unsavedVisits.forEach { $0.savingState = .saved }
+            do {
+                let result = try await historyStoring.save(entry: entryCopy)
+                updateVisitIdentifiers(result, in: entry)
+                changes.removeValue(forKey: entry.url)
+            } catch {
+                unsavedVisits.forEach { $0.savingState = .initialized }
+                throw error
+            }
+        }
+    }
+
+    @MainActor
+    private func rollBackImportedChanges(_ changes: [URL: ImportedEntryChange]) {
+        guard !changes.isEmpty, var historyDictionary else { return }
+        // Roll back only this import's visits, preserving browsing that happened during a save.
+        for change in changes.values where historyDictionary[change.entry.url] === change.entry {
+            change.entry.removeImportedVisits(change.visits, previousLastVisit: change.previousLastVisit)
+            if change.entry.title == change.importedTitle {
+                change.entry.title = change.previousTitle
+            }
+            if !change.wasInHistory && change.entry.visits.isEmpty {
+                historyDictionary.removeValue(forKey: change.entry.url)
+            }
+        }
+        self.historyDictionary = historyDictionary
     }
 
     public func addBlockedTracker(entityName: String, on url: URL) {
@@ -386,6 +461,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 Logger.history.debug("History cleaned successfully")
                 await MainActor.run { [weak self] in
                     self?.historyDictionary = self?.makeHistoryDictionary(from: history)
+                    self?.isHistoryLoaded = true
                     onCleanFinished?(.success(()))
                 }
             } catch {
@@ -498,7 +574,13 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     /// Public for some custom macOS migration
+    @MainActor
     public func save(entry: HistoryEntry) {
+        // A normal browsing save must not persist imported visits before their import succeeds.
+        if entriesBeingImported.contains(entry) {
+            deferredSaves.insert(entry)
+            return
+        }
         guard let entryCopy = entry.copy() as? HistoryEntry else {
             assertionFailure("Copying HistoryEntry failed")
             return
@@ -510,14 +592,19 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 let result = try await historyStoring.save(entry: entryCopy)
                 Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.shortDescription), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no"), cookie popup blocked: \(entry.cookiePopupBlocked ? "yes" : "no")")
                 await MainActor.run {
-                    let visitsByDate = Dictionary(entry.visits.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
-                    for (id, date) in result {
-                        visitsByDate[date]?.identifier = id
-                    }
+                    self.updateVisitIdentifiers(result, in: entry)
                 }
             } catch {
                 Logger.history.error("Saving of history entry failed: \(error.localizedDescription)")
             }
+        }
+    }
+
+    @MainActor
+    private func updateVisitIdentifiers(_ result: [(id: Visit.ID, date: Date)], in entry: HistoryEntry) {
+        let visitsByDate = Dictionary(entry.visits.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
+        for (id, date) in result {
+            visitsByDate[date]?.identifier = id
         }
     }
 

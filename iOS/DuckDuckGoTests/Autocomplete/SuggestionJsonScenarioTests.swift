@@ -351,6 +351,8 @@ extension SuggestionJsonScenarioTests {
     
     class MockHistoryCoordinator: HistoryCoordinating {
 
+        var isHistoryLoaded = true
+
         // Store test history entries
         var testHistoryEntries: [SuggestionJsonScenarioTests.HistoryEntry]? {
             didSet {
@@ -418,7 +420,7 @@ extension SuggestionJsonScenarioTests {
         func commitChanges(url: URL) {
         }
         
-        func addImportedVisits(_ visits: [HistoryImport.Visit]) {
+        func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
         }
         
         func title(for url: URL) -> String? {

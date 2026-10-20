@@ -16,19 +16,23 @@
 //  limitations under the License.
 //
 
+import Combine
 import Common
 import Foundation
 import History
 
 final class HistoryCoordinatingMock: HistoryCoordinating {
+    var isHistoryLoaded = false
     var history: BrowsingHistory?
     var allHistoryVisits: [Visit]?
     @Published var historyDictionary: [URL: HistoryEntry]?
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { $historyDictionary }
 
+    var addImportedVisitsHandler: (@MainActor () async throws -> Void)?
     var addImportedVisitsCalls: [[HistoryImport.Visit]] = []
-    func addImportedVisits(_ visits: [HistoryImport.Visit]) {
+    func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
         addImportedVisitsCalls.append(visits)
+        try await addImportedVisitsHandler?()
     }
 
     func loadHistory(onCleanFinished: @escaping () -> Void) {}

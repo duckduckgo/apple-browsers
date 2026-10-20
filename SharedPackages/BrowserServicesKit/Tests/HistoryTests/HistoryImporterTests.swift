@@ -26,7 +26,7 @@ final class HistoryImporterTests: XCTestCase {
     private let knownURL = URL(string: "https://known.example/")!
 
     @MainActor
-    func testWhenVisitsAreImported_ThenOnlyNewVisitsWithinCutoffAreAddedAndEveryVisitIsCounted() throws {
+    func testWhenVisitsAreImported_ThenOnlyNewVisitsWithinCutoffAreAddedAndEveryVisitIsCounted() async throws {
         let coordinator = makeCoordinator(historyWithVisitOf: knownURL, hoursAgo: 1)
         let importer = HistoryImporter(historyCoordinator: coordinator, cutoff: { self.date(hoursAgo: 24) })
         let parseResult = HistoryImport.ParseResult(visits: [visit(newURL, title: "New", hoursAgo: 2),
@@ -36,34 +36,90 @@ final class HistoryImporterTests: XCTestCase {
                                                              visit(oldURL, hoursAgo: 48)],
                                                     skipped: 3)
 
-        let summary = try importer.importVisits(parseResult)
+        let summary = try await importer.importVisits(parseResult)
 
         XCTAssertEqual(summary, HistoryImport.Summary(imported: 2, alreadyInHistory: 2, tooOld: 1, skipped: 3))
         XCTAssertEqual(coordinator.addImportedVisitsCalls, [[visit(newURL, title: "New", hoursAgo: 2), visit(knownURL, hoursAgo: 3)]])
     }
 
     @MainActor
-    func testWhenCutoffMovesAfterImporterIsCreated_ThenImportUsesTheCurrentCutoff() throws {
+    func testWhenCutoffMovesAfterImporterIsCreated_ThenImportUsesTheCurrentCutoff() async throws {
         var cutoff = date(hoursAgo: 24)
         let importer = HistoryImporter(historyCoordinator: makeCoordinator(historyWithVisitOf: knownURL, hoursAgo: 1), cutoff: { cutoff })
         cutoff = date(hoursAgo: 72)
 
-        let summary = try importer.importVisits(HistoryImport.ParseResult(visits: [visit(oldURL, hoursAgo: 48)], skipped: 0))
+        let summary = try await importer.importVisits(HistoryImport.ParseResult(visits: [visit(oldURL, hoursAgo: 48)], skipped: 0))
 
         XCTAssertEqual(summary, HistoryImport.Summary(imported: 1))
     }
 
     @MainActor
-    func testWhenHistoryIsNotLoaded_ThenImportThrows() {
-        let coordinator = HistoryCoordinatingMock()
-        let importer = HistoryImporter(historyCoordinator: coordinator)
+    func testWhenHistoryIsNotLoaded_ThenImportThrows() async {
+        await assertImportIsRejected(coordinator: HistoryCoordinatingMock())
+    }
 
-        XCTAssertThrowsError(try importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))) { error in
-            guard case HistoryImport.Error.historyNotLoaded = error else {
-                return XCTFail("Unexpected error: \(error)")
+    @MainActor
+    func testWhenDictionaryExistsButLoadingHasNotFinished_ThenImportThrows() async {
+        let coordinator = HistoryCoordinatingMock()
+        coordinator.historyDictionary = [:]
+
+        await assertImportIsRejected(coordinator: coordinator)
+    }
+
+    @MainActor
+    func testWhenSavingIsPending_ThenImportDoesNotReturnASummary() async throws {
+        let coordinator = makeCoordinator(historyWithVisitOf: knownURL, hoursAgo: 1)
+        let saveStarted = expectation(description: "Save started")
+        var saveContinuation: CheckedContinuation<Void, Never>?
+        coordinator.addImportedVisitsHandler = {
+            await withCheckedContinuation {
+                saveContinuation = $0
+                saveStarted.fulfill()
             }
         }
-        XCTAssertTrue(coordinator.addImportedVisitsCalls.isEmpty)
+        let importer = HistoryImporter(historyCoordinator: coordinator)
+        var didReturnSummary = false
+        let task = Task {
+            let summary = try await importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))
+            didReturnSummary = true
+            return summary
+        }
+
+        await fulfillment(of: [saveStarted], timeout: 1)
+        XCTAssertFalse(didReturnSummary)
+        try XCTUnwrap(saveContinuation).resume()
+        let summary = try await task.value
+        XCTAssertEqual(summary.imported, 1)
+    }
+
+    @MainActor
+    func testWhenSavingFails_ThenImportPropagatesTheError() async {
+        let coordinator = makeCoordinator(historyWithVisitOf: knownURL, hoursAgo: 1)
+        coordinator.addImportedVisitsHandler = { throw HistoryStoringMock.HistoryStoringMockError.defaultError }
+        let importer = HistoryImporter(historyCoordinator: coordinator)
+
+        do {
+            _ = try await importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))
+            XCTFail("Import should propagate the save failure")
+        } catch HistoryStoringMock.HistoryStoringMockError.defaultError {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    @MainActor
+    private func assertImportIsRejected(coordinator: HistoryCoordinatingMock, file: StaticString = #filePath, line: UInt = #line) async {
+        let importer = HistoryImporter(historyCoordinator: coordinator)
+        do {
+            _ = try await importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))
+            XCTFail("Import should be rejected before history finishes loading", file: file, line: line)
+        } catch HistoryImport.Error.historyNotLoaded {
+            // Expected.
+        } catch {
+            XCTFail("Unexpected error: \(error)", file: file, line: line)
+        }
+        XCTAssertTrue(coordinator.addImportedVisitsCalls.isEmpty, file: file, line: line)
     }
 
     // MARK: - Helpers
@@ -79,9 +135,10 @@ final class HistoryImporterTests: XCTestCase {
     @MainActor
     private func makeCoordinator(historyWithVisitOf url: URL, hoursAgo: Double) -> HistoryCoordinatingMock {
         let entry = HistoryEntry(url: url)
-        entry.addVisit(at: date(hoursAgo: hoursAgo), tabID: nil)
+        _ = entry.addVisit(at: date(hoursAgo: hoursAgo), tabID: nil)
         let coordinator = HistoryCoordinatingMock()
         coordinator.historyDictionary = [url: entry]
+        coordinator.isHistoryLoaded = true
         return coordinator
     }
 }

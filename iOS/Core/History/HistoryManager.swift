@@ -166,6 +166,8 @@ public class HistoryManager: HistoryManaging {
 
 class NullHistoryCoordinator: HistoryCoordinating {
 
+    let isHistoryLoaded = false
+
     func loadHistory(onCleanFinished: @escaping () -> Void) {
     }
 
@@ -200,8 +202,8 @@ class NullHistoryCoordinator: HistoryCoordinating {
     func commitChanges(url: URL) {
     }
 
-    func addImportedVisits(_ visits: [HistoryImport.Visit]) {
-        assertionFailure("History is off, so imported visits are dropped")
+    func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
+        throw HistoryImport.Error.historyNotLoaded
     }
 
     func title(for url: URL) -> String? {

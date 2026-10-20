@@ -110,6 +110,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
     case webExtensionNativeMessaging
 
+    /// Turns Bitwarden on or off. While off, an installed Bitwarden is disabled but kept with its data, and the
+    /// Debug menu hides Install Bitwarden. Turning the flag back on doesn't re-enable Bitwarden; the user does.
+    /// Follows Bitwarden's extensions catalog entry, which also controls installing Bitwarden.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219519018819111
+    case webExtensionBitwarden
+
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
@@ -117,6 +123,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     /// https://app.asana.com/0/0/1218855001685906
     case cpmMessagingHangRecovery
+
+    /// Preserve surviving shared pinned tabs when WebKit processes a window close.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
+    case webExtensionSharedPinnedTabWindowClose
 
     /// Remotely activated Web Extension background Web View graveyard treatment.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860893478440
@@ -486,6 +496,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
     case promoQueueBookmarkAddedSyncPromo
 
+    /// Enables the import/sync promo on the "No bookmarks yet" empty state in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570477?focus=true
+    case promoQueueBookmarksEmptyStatePromo
+
+    /// Enables the import/sync promo on the Passwords panel empty states in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
+    case promoQueueAutofillEmptyStatePromo
+
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
 
@@ -749,12 +767,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery), category: .webExtensions)
+        case .webExtensionSharedPinnedTabWindowClose:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.sharedPinnedTabWindowClose), category: .webExtensions)
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
                    category: .webExtensions)
         case .webExtensionNativeMessaging:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
+        case .webExtensionBitwarden:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.bitwarden), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
@@ -971,6 +993,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
         case .promoQueueBookmarkAddedSyncPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
+        case .promoQueueBookmarksEmptyStatePromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksEmptyStatePromo))
+        case .promoQueueAutofillEmptyStatePromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:

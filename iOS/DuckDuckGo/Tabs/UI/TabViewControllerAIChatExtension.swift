@@ -56,31 +56,19 @@ extension TabViewController: AITabController {
               reasoningEffort: AIChatReasoningEffort? = nil,
               attachments: AIChatPromptAttachments = .none,
               termsAccepted: Bool = false) {
-        isVoiceModeRequested = false
-
-        aiChatContentHandler.setPayload(payload: payload)
-        let hasText = query?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-        let hasAttachments = !attachments.isEmpty
-        if hasText || hasAttachments {
-            let prompt = AIChatNativePrompt.queryPrompt(
-                query ?? "",
-                autoSubmit: autoSend,
-                toolChoice: tools?.map(\.rawValue),
-                attachments: attachments,
-                modelId: modelId,
-                reasoningEffort: reasoningEffort
-            ).withTermsAccepted(termsAccepted)
-            AIChatPromptHandler.shared.setData(prompt)
-        }
-
-        let queryURL = aiChatContentHandler.buildQueryURL(
-            query: query,
-            autoSend: autoSend,
-            flowType: flowType,
-            tools: tools
-        )
+        let openingQuery = AIChatOpeningRequest.Query(query: query, autoSend: autoSend, flowType: flowType, tools: tools,
+                                                     modelId: modelId, reasoningEffort: reasoningEffort,
+                                                     attachments: attachments, termsAccepted: termsAccepted)
+        configureAIChatOpening(payload: payload)
+        if let prompt = openingQuery.sharedPrompt { AIChatPromptHandler.shared.setData(prompt) }
+        let queryURL = openingQuery.url(using: aiChatContentHandler)
 
         load(url: queryURL)
+    }
+
+    func configureAIChatOpening(payload: Any?) {
+        isVoiceModeRequested = false
+        aiChatContentHandler.setPayload(payload: payload)
     }
     
     /// Loads AIChat in voice mode.

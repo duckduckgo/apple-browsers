@@ -3118,11 +3118,10 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            // A page WebKit already reported frozen won't draw, so go straight to the fallback.
             previewSnapshotCapturer.capture(webView: webView,
                                             rect: visibleRect,
                                             timeout: WebViewPreviewSnapshotPolicy.timeout,
-                                            waitForScreenUpdates: !freezeMonitor.isFrozen,
+                                            waitForScreenUpdates: true,
                                             completion: completion)
         }
     }

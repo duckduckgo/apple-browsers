@@ -19,7 +19,7 @@
         ]
     },
     "web-content_unresponsive-2": {
-        "description": "Fires when WebKit reports that a tab's web content process stopped responding. WebKit runs this check after a reload, navigation or preview snapshot, so this counts freezes the user tried to get out of. The parameters describe the page at that moment. Gated by the webContentFreezeTelemetry subfeature.",
+        "description": "Fires when WebKit reports that a tab's web content process stopped responding. WebKit runs this check after a reload, navigation, stop or key press, so this counts freezes the user tried to get out of. The parameters describe the page at that moment. Gated by the webContentFreezeTelemetry subfeature.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
@@ -117,7 +117,7 @@
         ]
     },
     "web-content_preview-snapshot-timeout": {
-        "description": "Fires when opening the tab switcher waited more than a second for the current page's preview snapshot. Any page that does not draw within that time counts, so this includes short stalls and heavy pages as well as frozen ones; on its own it is an upper bound on users stuck on a page. unresponsive marks the pages WebKit had already reported as hung. Use web-content_unresponsive-result to size freezes. On a page WebKit has already reported, the first snapshot is skipped and the fallback runs at once; the pixel still fires, with unresponsive=true.",
+        "description": "Fires when opening the tab switcher waited more than a second for the current page's preview snapshot. Any page that does not draw within that time counts, so this includes short stalls and heavy pages as well as frozen ones; on its own it is an upper bound on users stuck on a page. unresponsive marks the pages WebKit had already reported as hung. Use web-content_unresponsive-result to size freezes.",
         "owners": ["hassaanelgarem"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

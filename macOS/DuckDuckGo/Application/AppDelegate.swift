@@ -406,6 +406,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let subscriptionManager: any SubscriptionManager
+    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
 
@@ -941,16 +942,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
             guard let tokenContainer = try? tokenStorage.getTokenContainer() else {
-                Logger.subscriptionTokensManagement.error("Unauthorized response, but no current token can be read to refresh")
                 throw OAuthClientError.internalError("Missing refresh token")
             }
 
             if tokenContainer.decodedAccessToken.isExpired() {
-                Logger.subscriptionTokensManagement.log("Unauthorized response with an expired access token, refreshing it")
+                Logger.OAuth.debug("Refreshing tokens")
                 let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
-                Logger.subscriptionTokensManagement.log("Unauthorized response with an unexpired access token, retrying with it")
+                Logger.general.debug("Trying to refresh valid token, using the old one")
                 return tokenContainer.accessToken
             }
         }
@@ -992,7 +992,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
                                                      pendingTransactionHandler: pendingTransactionHandler)
         let backupRecovery = BackupTokenRecovery(oAuthClient: authClient)
-        let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
+        let appStoreRecovery = AppStoreTokenRecovery(recoverer: Self.deadTokenRecoverer,
+                                                     purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
                                                      restoreFlow: restoreFlow)
         defaultSubscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
                                                                                        missingTokenStrategies: [backupRecovery])

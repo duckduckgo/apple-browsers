@@ -140,6 +140,11 @@ extension WebExtensionManager {
         let displayName = extensionContext.webExtension.displayName ?? "(unknown)"
         Logger.webExtensions.debug("📬 Received native message from extension: \(displayName)")
 
+        if applicationIdentifier == WebExtensionAPICompatibilityScript.nativeMessagingApplicationIdentifier {
+            handleWorkerAPICompatibilityMessage(message, context: extensionContext)
+            return nil
+        }
+
 //        Logger.webExtensions.debug("🔎 Full message received: \(String(describing: message))")
 
         let extensionMessage: WebExtensionMessage

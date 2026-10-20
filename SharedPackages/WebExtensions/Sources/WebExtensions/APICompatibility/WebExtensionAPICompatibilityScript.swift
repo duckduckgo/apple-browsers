@@ -18,18 +18,21 @@
 
 import Foundation
 
-/// Reports which unsupported `chrome.*` APIs a third-party extension's pages run into, for the API
+/// Reports which unsupported `chrome.*` APIs a third-party extension's pages and workers run into, for the API
 /// compatibility log (see `WebExtensionAPICompatibilityLog`). It returns early in our own extensions.
 ///
 /// It watches the errors a page raises or logs (`error`, `unhandledrejection`, `console.error`,
 /// `console.warn`) and posts the ones shaped like a missing or rejected API to
 /// `messageHandlerName`; the browser classifies their text and never keeps it. Other scripts report
 /// through `reportFunctionName`, a function the script leaves on `globalThis`.
+/// Workers use a reserved native message when already permitted; otherwise reports are buffered
+/// until a same-origin extension page can relay them. Reporting never grants additional permissions.
 public enum WebExtensionAPICompatibilityScript {
 
     /// Name of the script message handler the page reports to. It is optional: a page with no
     /// handler of this name reports nothing.
     public static let messageHandlerName = "ddgWebExtensionAPICompatibility"
+    static let nativeMessagingApplicationIdentifier = "com.duckduckgo.api-compatibility"
 
     /// Function on `globalThis` that other scripts call with a kind and an API path to report it.
     static let reportFunctionName = "__ddgReportAPICompatibility"
@@ -41,6 +44,9 @@ public enum WebExtensionAPICompatibilityScript {
 
         var api = globalThis.chrome || globalThis.browser;
         if (!api) {
+            return;
+        }
+        if (typeof globalThis["\(Self.reportFunctionName)"] === "function") {
             return;
         }
 
@@ -80,6 +86,39 @@ public enum WebExtensionAPICompatibilityScript {
         var maximumErrorReports = 50;
         var maximumErrorMessageLength = 300;
         var isReporting = false;
+        var isWorker = typeof globalThis.document === "undefined";
+        var pendingWorkerReports = Object.create(null);
+        var reportChannel;
+        var canSendNativeReport = false;
+        try {
+            var manifest = api.runtime.getManifest();
+            canSendNativeReport = isWorker && (manifest.permissions || []).indexOf("nativeMessaging") !== -1
+                && typeof api.runtime.sendNativeMessage === "function";
+            if (manifest.background && manifest.background.service_worker && typeof globalThis.BroadcastChannel === "function") {
+                // Same-origin extension pages relay reports for workers without nativeMessaging.
+                // Retain reports until acknowledged, including errors before the first popup opens.
+                reportChannel = new BroadcastChannel("ddg-api-compatibility");
+                globalThis.__ddgAPICompatibilityChannel = reportChannel;
+                reportChannel.onmessage = function(event) {
+                    var message = event.data;
+                    if (!message || typeof message !== "object") { return; }
+                    if (isWorker && message.type === "ready") {
+                        Object.keys(pendingWorkerReports).forEach(function(key) {
+                            reportChannel.postMessage({ type: "report", key: key, payload: pendingWorkerReports[key] });
+                        });
+                    } else if (isWorker && message.type === "ack" && typeof message.key === "string") {
+                        delete pendingWorkerReports[message.key];
+                    } else if (!isWorker && message.type === "report" && typeof message.key === "string"
+                        && message.payload && typeof message.payload === "object"
+                        && postCompatibilityReport(message.payload, "worker " + message.key)) {
+                        reportChannel.postMessage({ type: "ack", key: message.key });
+                    }
+                };
+                if (!isWorker) { reportChannel.postMessage({ type: "ready" }); }
+            }
+        } catch (error) {
+            // Reporting never adds permissions or affects extension startup.
+        }
 
         // Only text shaped like an error about an API leaves the page; everything else stays here.
         // The browser classifies these further (and is the one place that decides what is logged).
@@ -94,25 +133,36 @@ public enum WebExtensionAPICompatibilityScript {
 
         function postCompatibilityReport(payload, dedupeKey) {
             var isError = payload.kind === "error";
-            if (isReporting || compatibilityReports[dedupeKey]
+            if (compatibilityReports[dedupeKey]) { return true; }
+            if (isReporting
                 || (isError ? errorReportCount >= maximumErrorReports : apiReportCount >= maximumAPIReports)) {
-                return;
+                return false;
             }
             isReporting = true;
             try {
                 var handlers = globalThis.webkit && globalThis.webkit.messageHandlers;
                 var handler = handlers && handlers[compatibilityHandlerName];
                 if (handler && typeof handler.postMessage === "function") {
-                    compatibilityReports[dedupeKey] = true;
-                    if (isError) {
-                        errorReportCount += 1;
-                    } else {
-                        apiReportCount += 1;
-                    }
                     handler.postMessage(payload);
+                } else if (isWorker) {
+                    pendingWorkerReports[dedupeKey] = payload;
+                    if (canSendNativeReport) {
+                        try {
+                            Promise.resolve(api.runtime.sendNativeMessage("\(Self.nativeMessagingApplicationIdentifier)", payload))
+                                .then(function() { delete pendingWorkerReports[dedupeKey]; })
+                                .catch(function() { canSendNativeReport = false; });
+                        } catch (error) { canSendNativeReport = false; }
+                    }
+                    if (reportChannel) { reportChannel.postMessage({ type: "report", key: dedupeKey, payload: payload }); }
+                } else {
+                    return false;
                 }
+                compatibilityReports[dedupeKey] = true;
+                if (isError) { errorReportCount += 1; } else { apiReportCount += 1; }
+                return true;
             } catch (error) {
                 // Reporting must never disturb the page.
+                return false;
             } finally {
                 isReporting = false;
             }
@@ -204,6 +254,15 @@ public enum WebExtensionAPICompatibilityScript {
             });
         } catch (error) {
             // Another copy of the script got there first.
+        }
+
+        if (isWorker && canSendNativeReport && manifest && manifest.background && manifest.background.service_worker) {
+            try {
+                Promise.resolve(api.runtime.sendNativeMessage("\(Self.nativeMessagingApplicationIdentifier)", { kind: "workerStarted" }))
+                    .catch(function() {});
+            } catch (error) {
+                // Startup diagnostics must not affect the worker.
+            }
         }
     })();
     """

@@ -1237,6 +1237,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         apiCompatibilityHandler.handle(message)
     }
 
+    @MainActor
+    func handleWorkerAPICompatibilityMessage(_ message: Any, context: WKWebExtensionContext) {
+        guard contexts.contains(where: { $0 === context }),
+              !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest),
+              let host = context.baseURL.host else { return }
+        if (message as? [String: Any])?["kind"] as? String == "workerStarted" {
+            Logger.webExtensions.info("[ExtensionWorker] wrapper-executing id=\(context.uniqueIdentifier, privacy: .public)")
+            return
+        }
+        apiCompatibilityHandler.handle(body: message, originProtocol: context.baseURL.scheme ?? "", originHost: host)
+    }
+
 #if os(macOS)
     /// Answers an idle state request from an extension page in a tab, where the controller's own
     /// message handlers are not installed.

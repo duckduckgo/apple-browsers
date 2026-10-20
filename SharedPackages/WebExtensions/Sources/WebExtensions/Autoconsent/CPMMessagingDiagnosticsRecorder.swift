@@ -28,6 +28,13 @@ import WebKit
 public protocol CPMMessagingDiagnosticsProviding: AnyObject {
     /// Captures native state synchronously at the failed handshake, before the context or tab can change.
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics
+    /// The app resumed from background or system sleep; recorded as one event in the lifecycle timeline.
+    func recordInterruption()
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension CPMMessagingDiagnosticsProviding {
+    func recordInterruption() {}
 }
 
 /// Collects CPM lifecycle events and WebKit state for the first-failure snapshot in an episode report.
@@ -69,6 +76,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             case graveyardRelease
             case proxyInstalled
             case proxyRemoved
+            case interruption
         }
 
         let kind: Kind
@@ -389,6 +397,10 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     // MARK: - CPMMessagingDiagnosticsProviding
 
+    public func recordInterruption() {
+        record(.interruption)
+    }
+
     public func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics {
         var diagnostics = snapshot()
         let resolvedTab = tabResolver(tabIdentifier)
@@ -604,6 +616,7 @@ extension CPMMessagingDiagnosticsRecorder.BackgroundEvent.Kind: CustomStringConv
         case .graveyardRelease: return "release"
         case .proxyInstalled: return "proxy_on"
         case .proxyRemoved: return "proxy_off"
+        case .interruption: return "interruption"
         }
     }
 }

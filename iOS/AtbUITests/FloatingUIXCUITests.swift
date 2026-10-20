@@ -367,6 +367,61 @@ class FloatingUIXCUITestCase: XCTestCase {
         verifyUnifiedToggleInputKeyboardGeometry()
     }
 
+    func verifyWebInputChromeAfterAddressBarRelocation() {
+        openPage(path: "/bottom-pinned-chat", heading: "Bottom pinned chat")
+        let input = app.webViews.textViews["Message"]
+        var currentPosition = barPosition
+
+        for position in [barPosition, barPosition.opposite, barPosition] {
+            if currentPosition != position {
+                moveAddressBar(to: position)
+                currentPosition = position
+            }
+            for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+                XCUIDevice.shared.orientation = orientation
+                XCTAssertTrue(waitUntil(timeout: timeout) {
+                    (self.app.frame.width > self.app.frame.height) == (orientation == .landscapeLeft)
+                })
+                XCTAssertTrue(input.waitForHittable(timeout: timeout))
+                input.tap()
+                input.typeText("Editing ")
+                XCTAssertTrue(input.frame.intersects(app.frame))
+
+                XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarFire).waitForNonExistence(timeout: timeout))
+                if position == .bottom {
+                    XCTAssertTrue(searchField.waitForNonExistence(timeout: timeout))
+                    XCTAssertFalse(domainCapsule.exists)
+                }
+
+                let keyboardControls = app.toolbars["Toolbar"]
+                XCTAssertTrue(keyboardControls.waitForExistence(timeout: timeout))
+                let typedText = input.staticTexts.firstMatch
+                XCTAssertTrue(typedText.waitForExistence(timeout: timeout))
+                XCTAssertTrue(typedText.label.contains("Editing"))
+
+                let screenshot = XCTAttachment(screenshot: app.screenshot())
+                screenshot.name = "Web input \(position.rawValue) \(orientation.rawValue)"
+                screenshot.lifetime = .keepAlways
+                add(screenshot)
+
+                let pageDismissButton = app.webViews.buttons["Dismiss keyboard"]
+                if pageDismissButton.isHittable {
+                    pageDismissButton.tap()
+                } else {
+                    keyboardControls.buttons.element(boundBy: 2).tap()
+                }
+                XCTAssertTrue(keyboardControls.waitForNonExistence(timeout: timeout))
+                XCTAssertTrue(input.waitForHittable(timeout: timeout))
+                XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+                assertBarPosition(position)
+            }
+        }
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(waitUntil(timeout: timeout) { self.app.frame.height > self.app.frame.width })
+        assertChromeButtonsAreUsable()
+        verifyUnifiedToggleInputTransitions()
+    }
+
     func verifyScrollingPerformance() {
         let environment = ProcessInfo.processInfo.environment
         if let url = environment["FLOATING_UI_PERFORMANCE_URL"],
@@ -611,6 +666,7 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-ff.floatingUIiOS27", "true",
             "-ff.omniBarLongPressMenu", "true",
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+            "-ff.newTabPageRedesign", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",
         ]
@@ -1028,6 +1084,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testBottomPinnedInputSurvivesKeyboardDismissal() { verifyBottomPinnedInputSurvivesKeyboardDismissal() }
+    func testWebInputChromeAfterAddressBarRelocation() { verifyWebInputChromeAfterAddressBarRelocation() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
     func testScrollingPerformance() { verifyScrollingPerformance() }
     func testUnifiedToggleInputRotation() { verifyUnifiedToggleInputRotation() }
@@ -1062,6 +1119,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testBottomPinnedInputSurvivesKeyboardDismissal() { verifyBottomPinnedInputSurvivesKeyboardDismissal() }
+    func testWebInputChromeAfterAddressBarRelocation() { verifyWebInputChromeAfterAddressBarRelocation() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
     func testScrollingPerformance() { verifyScrollingPerformance() }
     func testUnifiedToggleInputRotation() { verifyUnifiedToggleInputRotation() }

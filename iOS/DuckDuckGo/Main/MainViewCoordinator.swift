@@ -96,6 +96,7 @@ class MainViewCoordinator {
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
+    private(set) var isWebInputEditing = false
     private(set) var isInMinimalChromeLayout = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
@@ -108,6 +109,18 @@ class MainViewCoordinator {
 
     func setFloatingUIEnabled(_ enabled: Bool) {
         isFloatingUIEnabled = enabled
+        if !enabled {
+            setWebInputEditing(false)
+        }
+    }
+
+    @discardableResult
+    func setWebInputEditing(_ editing: Bool) -> Bool {
+        let editing = editing && isFloatingUIEnabled
+        guard isWebInputEditing != editing else { return false }
+        isWebInputEditing = editing
+        applyNavigationBarContainerVisibility(updatesInteraction: false)
+        return true
     }
 
     func setMinimalChromeLayout(_ enabled: Bool) {
@@ -154,7 +167,9 @@ class MainViewCoordinator {
     }
 
     private func applyNavigationBarContainerVisibility(updatesInteraction: Bool) {
-        navigationBarContainer.isHidden = isNavigationBarContainerHiddenByLayout || newTabPageInputPresentation.hidesNavigationContainer
+        navigationBarContainer.isHidden = isNavigationBarContainerHiddenByLayout
+            || newTabPageInputPresentation.hidesNavigationContainer
+            || (isWebInputEditing && addressBarPosition.isBottom)
         if newTabPageInputPresentation.hidesNavigationContainer {
             navigationBarContainer.isUserInteractionEnabled = false
         } else if updatesInteraction {
@@ -170,7 +185,13 @@ class MainViewCoordinator {
     }
 
     // The default after creating the hiearchy is top
-    var addressBarPosition: AddressBarPosition = .top
+    var addressBarPosition: AddressBarPosition = .top {
+        didSet {
+            if navigationBarContainer != nil {
+                applyNavigationBarContainerVisibility(updatesInteraction: false)
+            }
+        }
+    }
 
     var standardNavigationBarContainerHeight: CGFloat {
         omniBar.barView.expectedHeight

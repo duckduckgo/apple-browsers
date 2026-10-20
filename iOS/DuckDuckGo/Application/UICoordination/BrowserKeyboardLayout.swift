@@ -33,6 +33,15 @@ struct BrowserKeyboardLayout {
         animationCurve = UIView.AnimationOptions(rawValue: curve ?? UIView.AnimationOptions.curveEaseInOut.rawValue)
     }
 
+    static func webInputFrame(notificationFrame: CGRect, layoutGuideFrame: CGRect, viewBounds: CGRect, safeAreaFrame: CGRect) -> CGRect {
+        [notificationFrame, layoutGuideFrame]
+            .filter {
+                let overlap = $0.intersection(safeAreaFrame)
+                return !overlap.isEmpty && $0.maxY >= viewBounds.maxY
+            }
+            .min { $0.minY < $1.minY } ?? .zero
+    }
+
     static func obscuredInsets(chromeInsets: UIEdgeInsets, keyboardFrame: CGRect, viewBounds: CGRect) -> UIEdgeInsets {
         let overlap = viewBounds.intersection(keyboardFrame)
         guard !overlap.isNull, !overlap.isEmpty, overlap.maxY >= viewBounds.maxY else { return chromeInsets }

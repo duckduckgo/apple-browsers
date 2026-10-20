@@ -78,7 +78,8 @@ class SubscriptionManagerTests: XCTestCase {
                 }
             }
             self.recoveryHandlerSideEffect?()
-            try await DeadTokenRecoverer().attemptRecoveryFromPastPurchase(purchasePlatform: self.subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: self.mockAppStoreRestoreFlowV2)
+            try await AppStoreTokenRecovery(purchasePlatform: self.subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: self.mockAppStoreRestoreFlowV2)
+                .recover(TokenRecoveryContext(trigger: .invalidToken, deadPrimary: nil, signOutCutoff: nil))
         }
     }
 
@@ -298,8 +299,7 @@ class SubscriptionManagerTests: XCTestCase {
     private func installCoordinator(backupResult: Result<TokenContainer, Error>?, appStoreSucceeds: Bool) {
         mockOAuthClient.restoreFromBackupResponse = backupResult
         let backup = BackupTokenRecovery(oAuthClient: mockOAuthClient, onRestored: { _ in })
-        let appStore = AppStoreTokenRecovery(recoverer: DeadTokenRecoverer(),
-                                             purchasePlatform: .appStore,
+        let appStore = AppStoreTokenRecovery(purchasePlatform: .appStore,
                                              restoreFlow: mockAppStoreRestoreFlowV2)
         if !appStoreSucceeds {
             mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "AppStore", code: 1)

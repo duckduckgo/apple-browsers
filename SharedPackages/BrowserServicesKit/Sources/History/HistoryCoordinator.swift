@@ -156,7 +156,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     ///
     /// Returns `nil` if history isn't loaded.
     @MainActor
-    @discardableResult public func addImportedVisits(_ visits: [HistoryImporter.ImportedVisit]) -> [Visit]? {
+    @discardableResult public func addImportedVisits(_ visits: [HistoryImportVisit]) -> [Visit]? {
         guard var historyDictionary else {
             Logger.history.debug("Import of \(visits.count) visits ignored")
             return nil

@@ -19,56 +19,65 @@
 import Foundation
 import FoundationExtensions
 
+public struct HistoryImportVisit: Equatable, Sendable {
+    public let url: URL
+    public let title: String?
+    public let date: Date
+
+    public init(url: URL, title: String?, date: Date) {
+        self.url = url
+        self.title = title
+        self.date = date
+    }
+}
+
+public struct HistoryImportParseResult: Equatable, Sendable {
+    public let visits: [HistoryImportVisit]
+    /// Rows the browser reader could not turn into a visit, such as redirects, failed loads and non-web URLs.
+    public let skipped: Int
+
+    public init(visits: [HistoryImportVisit], skipped: Int) {
+        self.visits = visits
+        self.skipped = skipped
+    }
+}
+
+public struct HistoryImportSummary: Equatable, Sendable {
+    public var imported = 0
+    public var alreadyInHistory = 0
+    /// Older than the history retention window, so they would be deleted on the next cleanup.
+    public var tooOld = 0
+    public var skipped = 0
+}
+
+public enum HistoryImportError: Error {
+    case historyNotLoaded
+}
+
+public protocol HistoryImporterProtocol {
+    @MainActor func importVisits(_ parseResult: HistoryImportParseResult) throws -> HistoryImportSummary
+}
+
 /// Adds visits read from another browser's history to the local history.
-public enum HistoryImporter {
+public final class HistoryImporter: HistoryImporterProtocol {
 
-    public struct ImportedVisit: Equatable, Sendable {
-        public let url: URL
-        public let title: String?
-        public let date: Date
+    private let historyCoordinator: HistoryCoordinator
+    private let cutoff: () -> Date
 
-        public init(url: URL, title: String?, date: Date) {
-            self.url = url
-            self.title = title
-            self.date = date
-        }
+    /// - Parameter cutoff: Visits older than this are skipped. Read on every import, so a long-lived importer keeps up with the date.
+    public init(historyCoordinator: HistoryCoordinator, cutoff: @escaping () -> Date = { .monthAgo }) {
+        self.historyCoordinator = historyCoordinator
+        self.cutoff = cutoff
     }
 
-    public struct ParseResult: Equatable, Sendable {
-        public let visits: [ImportedVisit]
-        /// Rows the browser reader could not turn into a visit, such as redirects, failed loads and non-web URLs.
-        public let skipped: Int
-
-        public init(visits: [ImportedVisit], skipped: Int) {
-            self.visits = visits
-            self.skipped = skipped
-        }
-    }
-
-    public struct Summary: Equatable, Sendable {
-        public var imported = 0
-        public var alreadyInHistory = 0
-        /// Older than the history retention window, so they would be deleted on the next cleanup.
-        public var tooOld = 0
-        public var skipped = 0
-    }
-
-    public enum ImportError: Error {
-        case historyNotLoaded
-    }
-
-    /// Adds visits to history, skipping ones older than `cutoff` or already present.
+    /// Adds visits to history, skipping ones older than the cutoff or already present.
     @MainActor
-    public static func importVisits(
-        _ parseResult: ParseResult,
-        into historyCoordinator: HistoryCoordinator,
-        cutoff: Date = .monthAgo
-    ) throws -> Summary {
+    public func importVisits(_ parseResult: HistoryImportParseResult) throws -> HistoryImportSummary {
         guard let historyDictionary = historyCoordinator.historyDictionary else {
-            throw ImportError.historyNotLoaded
+            throw HistoryImportError.historyNotLoaded
         }
 
-        var summary = Summary(skipped: parseResult.skipped)
+        var summary = HistoryImportSummary(skipped: parseResult.skipped)
         var knownVisits = Set<VisitKey>()
         for (url, entry) in historyDictionary {
             for visit in entry.visits {
@@ -76,6 +85,7 @@ public enum HistoryImporter {
             }
         }
 
+        let cutoff = cutoff()
         let newVisits = parseResult.visits.filter { visit in
             guard visit.date >= cutoff else {
                 summary.tooOld += 1

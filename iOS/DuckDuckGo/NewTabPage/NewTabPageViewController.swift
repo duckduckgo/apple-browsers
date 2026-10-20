@@ -512,8 +512,6 @@ extension NewTabPageViewController {
     //   • setUnifiedInputContentOverlaySuppressed(true) hides unifiedInputContentContainer so
     //     the NTP (contentContainer) shows through, keeping the dialog visible while the address
     //     bar is active.  dismissHostingController re-enables the overlay on teardown.
-    //   • A single copy in self.view.superview (contentContainer's plain UIView) avoids the
-    //     nested-UIHostingController warning from adding _UIHostingView into another HC's view.
     // viewWillDisappear ensures cleanup on any navigation or tab switch.
     // The onDismiss closure mirrors the legacy path's subscription-promo check.
     private func showDuckAIOnboardingCompletionDialogInUTI(
@@ -596,9 +594,8 @@ extension NewTabPageViewController {
         ntpHC.view.backgroundColor = .clear
         ntpHC.view.translatesAutoresizingMaskIntoConstraints = false
         self.hostingController = ntpHC
-        let ntpContainer: UIView = view.superview ?? mainVC.view
-        mainVC.addChild(ntpHC)
-        ntpContainer.addSubview(ntpHC.view)
+        addChild(ntpHC)
+        view.addSubview(ntpHC.view)
         // Also shown with the input card focused, so it needs the same offset.
         let ntpTopConstraint = ntpHC.view.topAnchor.constraint(equalTo: view.topAnchor,
                                                               constant: floatingDaxDialogTopInset)
@@ -609,7 +606,7 @@ extension NewTabPageViewController {
             ntpHC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             ntpHC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-        ntpHC.didMove(toParent: mainVC)
+        ntpHC.didMove(toParent: self)
     }
 
     func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {

@@ -150,20 +150,18 @@ class HistoryCoordinatorTests: XCTestCase {
     @MainActor
     func testWhenImportedVisitsAreAdded_ThenEachEntryGetsItsNewestTitleAndIsSavedOnce() async throws {
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
-        let url = URL.duckDuckGo
-        let newestDate = Date()
-        let saved = expectation(description: "Entry saved")
-        historyStoringMock.saveCompletion = { saved.fulfill() }
+        let newest = importedVisit(title: "Newest", hoursAgo: 0)
+        let older = importedVisit(title: "Older", hoursAgo: 1)
+        let saved = expectSave(in: historyStoringMock)
 
-        historyCoordinator.addImportedVisits([HistoryImport.Visit(url: url, title: "Newest", date: newestDate),
-                                              HistoryImport.Visit(url: url, title: "Older", date: newestDate.addingTimeInterval(-3600))])
+        historyCoordinator.addImportedVisits([newest, older])
 
-        let entry = try XCTUnwrap(historyCoordinator.historyDictionary?[url])
+        let entry = try XCTUnwrap(historyCoordinator.historyDictionary?[newest.url])
         XCTAssertEqual(entry.visits.count, 2)
-        XCTAssertEqual(entry.lastVisit, newestDate)
+        XCTAssertEqual(entry.lastVisit, newest.date)
         XCTAssertEqual(entry.title, "Newest")
         await fulfillment(of: [saved], timeout: 1.0)
-        XCTAssertEqual(historyStoringMock.savedHistoryEntries.map(\.url), [url])
+        XCTAssertEqual(historyStoringMock.savedHistoryEntries.map(\.url), [newest.url])
     }
 
     @MainActor
@@ -783,6 +781,19 @@ class HistoryCoordinatorTests: XCTestCase {
 
         // Then - No visits should be removed
         XCTAssertTrue(historyStoringMock.removeVisitsArray.isEmpty)
+    }
+
+    // MARK: - Imported Visits Helpers
+
+    private func importedVisit(title: String, hoursAgo: Double) -> HistoryImport.Visit {
+        HistoryImport.Visit(url: .duckDuckGo, title: title, date: Date().addingTimeInterval(-hoursAgo * 3600))
+    }
+
+    @MainActor
+    private func expectSave(in historyStoringMock: HistoryStoringMock) -> XCTestExpectation {
+        let saved = expectation(description: "Entry saved")
+        historyStoringMock.saveCompletion = { saved.fulfill() }
+        return saved
     }
 
 }

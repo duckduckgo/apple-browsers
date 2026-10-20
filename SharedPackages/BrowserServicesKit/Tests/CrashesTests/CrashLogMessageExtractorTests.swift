@@ -337,7 +337,7 @@ final class CrashLogMessageExtractorTests: XCTestCase {
             "2026-10-20T14:00:26Z-78270.log", // <-
         ]
 
-        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:00:00Z")!)
+        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:00:00Z")!, pid: nil)
 
         XCTAssertEqual(r?.pid, 78270)
     }
@@ -352,26 +352,55 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         ]
         let reportTimestamp = formatter.date(from: "2026-10-20T14:04:00Z")!
 
-        let first = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp)
+        let first = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp, pid: nil)
         XCTAssertEqual(first?.pid, 69367)
         extractor.consume(first!)
 
-        let second = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp)
+        let second = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp, pid: nil)
         XCTAssertEqual(second?.pid, 74951)
         extractor.consume(second!)
 
-        let third = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp)
+        let third = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp, pid: nil)
         XCTAssertEqual(third?.pid, 78270)
         extractor.consume(third!)
 
-        XCTAssertNil(extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp))
+        XCTAssertNil(extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp, pid: nil))
         XCTAssertEqual(fileManager.removedFileNames.count, 3)
+    }
+
+    // macOS App Store build, real data: ReportCrash wrote both reports at 20:03:40/43 local (reported as 14:04:00Z),
+    // minutes after the crashes at 13:59:09Z (pid 74951) and 14:00:26Z (pid 78270). The third crash (pid 69367) never
+    // got a report. The MetricKit pid identifies the right file where the time window cannot.
+    func testMetricKitLookup_whenReportIsWrittenLate_pidIdentifiesTheDiagnostic() {
+        fileManager.contents = [
+            "2026-10-20T13:58:19Z-69367.log",
+            "2026-10-20T14:00:26Z-78270.log",
+            "2026-10-20T13:59:09Z-74951.log",
+        ]
+        let reportTimestamp = formatter.date(from: "2026-10-20T14:04:00Z")!
+
+        XCTAssertEqual(extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp, pid: 74951)?.pid, 74951)
+        XCTAssertEqual(extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp, pid: 78270)?.pid, 78270)
+    }
+
+    // iOS crash loop: launch A (pid 519) crashes at 11:20:39, relaunch B (pid 546) is running while MetricKit generates
+    // A's report, so the report carries pid 546; B then crashes at 11:21:26 itself. The time window must win over the
+    // (misleading) pid so that A's report gets A's diagnostic.
+    func testMetricKitLookup_whenDiagnosticIsWithinWindow_windowBeatsPid() {
+        fileManager.contents = [
+            "2026-10-19T11:20:39Z-519.log",
+            "2026-10-19T11:21:26Z-546.log",
+        ]
+
+        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-19T11:21:00Z")!, pid: 546)
+
+        XCTAssertEqual(r?.pid, 519)
     }
 
     func testMetricKitLookup_whenDiagnosticIsNewerThanTheReport_itIsNotChosen() {
         fileManager.contents = ["2026-10-20T14:05:30Z-80000.log"] // 90s after the reported minute
 
-        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:04:00Z")!)
+        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:04:00Z")!, pid: nil)
 
         XCTAssertNil(r)
     }
@@ -379,7 +408,7 @@ final class CrashLogMessageExtractorTests: XCTestCase {
     func testMetricKitLookup_whenDiagnosticIsWrittenInTheReportedMinute_itIsChosenByFallback() {
         fileManager.contents = ["2026-10-20T14:04:45Z-80000.log"] // report minute 14:04, file 45s into it
 
-        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:04:00Z")!)
+        let r = extractor.crashDiagnostic(forMetricKitReportAt: formatter.date(from: "2026-10-20T14:04:00Z")!, pid: nil)
 
         XCTAssertEqual(r?.pid, 80000)
     }

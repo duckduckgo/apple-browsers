@@ -217,7 +217,7 @@ public struct CrashLogMessageExtractor {
     /// - Parameters:
     ///   - timestamp: crash time as reported by the crash reporter.
     ///   - pid: PID of the *crashed* process, if known (macOS crash reports). Note: `MXCrashDiagnostic.metaData.pid`
-    ///     is not reliable for that, see `crashDiagnostic(forMetricKitReportAt:)`.
+    ///     is not reliable for that, see `crashDiagnostic(forMetricKitReportAt:pid:)`.
     /// - Returns: the diagnostic written by the process with the matching `pid`; when there is none, the diagnostic
     ///   closest to `timestamp` within `crashTimestampTolerance` (plus `diagnosticFileTimestampSlack` before it).
     public func crashDiagnostic(for timestamp: Date?, pid: pid_t?) -> CrashDiagnostic? {
@@ -243,21 +243,26 @@ public struct CrashLogMessageExtractor {
 
     /// Find saved crash diagnostics for an `MXCrashDiagnostic` report.
     ///
-    /// `MXDiagnosticPayload.timeStampBegin` is the crash time rounded to the nearest minute on iOS, but it has been
-    /// observed to be the time of the *next launch* instead, so when nothing is found around `timestamp` the oldest
-    /// not yet consumed diagnostic that is not newer than the report is used. Call `consume(_:)` once the diagnostic
-    /// has been attached so that it is not matched against the next report.
-    /// - Note: `MXCrashDiagnostic.metaData.pid` is not used: when the app is running while MetricKit generates the
-    ///   report it holds the running (not the crashed) process PID.
-    public func crashDiagnostic(forMetricKitReportAt timestamp: Date) -> CrashDiagnostic? {
+    /// `MXDiagnosticPayload.timeStampBegin` is the time ReportCrash wrote the crash report, rounded to the nearest
+    /// minute. On iOS that is the crash time; on macOS the report has been observed to be written minutes after the
+    /// crash, in which case `MXCrashDiagnostic.metaData.pid` (the crashed pid when no app process was running while
+    /// the report was generated, the running pid otherwise) is the next best key. Lookup order:
+    /// 1. the diagnostic closest to `timestamp` within `crashTimestampTolerance`,
+    /// 2. the diagnostic written by `pid`,
+    /// 3. the oldest not yet consumed diagnostic that is not newer than the report.
+    /// Call `consume(_:)` once the diagnostic has been attached so that it is not matched against the next report.
+    public func crashDiagnostic(forMetricKitReportAt timestamp: Date, pid: pid_t?) -> CrashDiagnostic? {
         if let crashLog = crashDiagnostic(for: timestamp, pid: nil) {
+            return crashLog
+        }
+        if let pid, let crashLog = crashDiagnostic(for: nil, pid: pid) {
             return crashLog
         }
         guard let crashLogs = loadCrashDiagnostics() else { return nil }
         let candidates = crashLogs
             .filter { $0.timestamp.timeIntervalSince(timestamp) <= Self.reportTimestampSlack }
             .sorted { $0.timestamp < $1.timestamp }
-        return logLookupResult(candidates.first, timestamp: timestamp, pid: nil)
+        return logLookupResult(candidates.first, timestamp: timestamp, pid: pid)
     }
 
     /// Remove the diagnostics file once its contents have been attached to a crash report.

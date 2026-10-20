@@ -159,8 +159,13 @@ public final class CrashCollection {
                 // For now, we are ignoring these.
                 if var crashDiagnostics = dict["crashDiagnostics"] as? [[AnyHashable: Any]], !crashDiagnostics.isEmpty {
                     for index in crashDiagnostics.indices {
+                        var pid: pid_t?
+                        if #available(macOS 14.0, iOS 17.0, *), let diagnostic = payload.crashDiagnostics?[safe: index] {
+                            pid = diagnostic.metaData.pid
+                        }
                         crashDiagnostics[index] = Self.attachCrashLogMessage(to: crashDiagnostics[index],
                                                                               reportedAt: payload.timeStampBegin,
+                                                                              pid: pid,
                                                                               extractor: extractor,
                                                                               callStackDepthLimit: callStackDepthLimit)
                     }
@@ -199,12 +204,12 @@ public final class CrashCollection {
        }
      }
     ```
-     - Note: `diagnosticMetaData.pid` is intentionally not used to find the diagnostics file: MetricKit fills it with the PID
-       of the app process running when the report was generated (if any), not necessarily with the crashed process PID.
+     - Note: see `CrashLogMessageExtractor.crashDiagnostic(forMetricKitReportAt:pid:)` for how the file is found.
        The stored data was sanitized to remove any potential filename or email occurrences.
      */
     static func attachCrashLogMessage(to crashDiagnosticDict: [AnyHashable: Any],
                                       reportedAt reportTimestamp: Date,
+                                      pid: pid_t?,
                                       extractor: CrashLogMessageExtractor,
                                       callStackDepthLimit: Int?) -> [AnyHashable: Any] {
         var crashDiagnosticDict = crashDiagnosticDict
@@ -219,7 +224,7 @@ public final class CrashCollection {
         var stackTrace: [String]?
 
         if Self.canBeUncaughtExceptionCrash(signal: diagnosticMetaDataDict["signal"] as? Int),
-           let crashLog = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp),
+           let crashLog = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp, pid: pid),
            let diagnostic = try? crashLog.diagnosticData(), !diagnostic.isEmpty {
             // append the loaded crash diagnostics message if the `MXDiagnostic` already contains one
             if let existingMessage = exceptionMessage, !existingMessage.isEmpty {

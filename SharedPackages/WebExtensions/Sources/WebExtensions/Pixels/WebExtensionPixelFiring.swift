@@ -148,7 +148,7 @@ public struct CPMMessagingEpisodeReport: Equatable, Sendable {
 
     public init(reason: CPMMessagingFailureReason, wasStuck: Bool, outcome: Outcome,
                 reloadState: ReloadState, secondsToResponse: TimeInterval?, diagnostics: CPMMessagingDiagnostics?,
-                failedTabCount: Int = 1, repeatedFailureCount: Int = 0, wasInterrupted: Bool = false) {
+                failedTabCount: Int, repeatedFailureCount: Int, wasInterrupted: Bool) {
         self.reason = reason
         self.wasStuck = wasStuck
         self.outcome = outcome

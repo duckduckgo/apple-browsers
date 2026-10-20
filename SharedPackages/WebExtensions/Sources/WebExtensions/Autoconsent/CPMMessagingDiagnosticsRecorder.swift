@@ -32,11 +32,6 @@ public protocol CPMMessagingDiagnosticsProviding: AnyObject {
     func recordInterruption()
 }
 
-@available(macOS 15.4, iOS 18.4, *)
-public extension CPMMessagingDiagnosticsProviding {
-    func recordInterruption() {}
-}
-
 /// Collects CPM lifecycle events and WebKit state for the first-failure snapshot in an episode report.
 /// Snapshots use native state without JavaScript probes.
 @available(macOS 15.4, iOS 18.4, *)
@@ -397,7 +392,12 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     // MARK: - CPMMessagingDiagnosticsProviding
 
+    /// Back-to-back resumes collapse into one entry that keeps the latest time, so repeated app switches
+    /// cannot push the events this timeline exists for out of its twelve slots.
     public func recordInterruption() {
+        if backgroundEvents.last?.kind == .interruption {
+            backgroundEvents.removeLast()
+        }
         record(.interruption)
     }
 

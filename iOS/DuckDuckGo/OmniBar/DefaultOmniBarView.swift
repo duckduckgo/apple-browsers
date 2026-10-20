@@ -1792,7 +1792,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func applyOmnibarCornerStyle() {
         let cornerRadius: CGFloat
-        if isFloatingUIEnabled && isUsingSmallTopSpacing {
+        if isBottomFloatingField {
+            cornerRadius = Metrics.floatingEmbeddedHeight / 2
+        } else if isFloatingUIEnabled && isUsingSmallTopSpacing {
             cornerRadius = max(searchAreaContainerView.bounds.height / 2, Metrics.cornerRadius)
         } else {
             cornerRadius = Metrics.cornerRadius

@@ -1364,6 +1364,30 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertGreaterThan(barView.searchContainer.layer.cornerRadius, 0)
     }
 
+    func testWhenFloatingAddressBarMovesToBottomThenFirstLayoutUsesCapsuleRadius() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        barView.isUsingSmallTopSpacing = true
+        barView.frame.size.height = barView.expectedHeight
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.searchContainer.bounds.height, 48)
+        XCTAssertEqual(barView.searchContainer.layer.cornerRadius, 24)
+    }
+
+    func testWhenBottomFloatingSwipeFieldIsFirstLaidOutThenItUsesCapsuleRadius() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.searchContainer.bounds.height, 48)
+        XCTAssertEqual(barView.searchContainer.layer.cornerRadius, 24)
+    }
+
     func testWhenBottomFloatingFieldThenExpectedHeightIsTheFortyEightPointPill() {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = true

@@ -111,9 +111,6 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// Confirm a purchase with a platform signature
     func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription
 
-    /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
-    typealias TokenRecoveryHandler = () async throws -> Void
-
     var currentStorefrontRegion: SubscriptionRegion { get }
 
     // MARK: - Features
@@ -253,8 +250,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let subscriptionEndpointService: SubscriptionEndpointService
     private let subscriptionCachingService: SubscriptionCachingService
     private let pixelHandler: SubscriptionPixelHandling
-    public var tokenRecoveryHandler: TokenRecoveryHandler?
-    /// Recovers the current token after a rejected refresh or when none is stored. When set, it is used instead of `tokenRecoveryHandler`.
+    /// Recovers the current token after a rejected refresh or when none is stored. When nil, no recovery is attempted.
     public var tokenRecoveryCoordinator: TokenRecoveryCoordinator?
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
@@ -275,7 +271,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 subscriptionCachingService: SubscriptionCachingService = DefaultSubscriptionCachingService(),
                 subscriptionEnvironment: SubscriptionEnvironment,
                 pixelHandler: SubscriptionPixelHandling,
-                tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
                 isInternalUserEnabled: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging? = nil,
@@ -289,7 +284,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.subscriptionCachingService = subscriptionCachingService
         self.currentEnvironment = subscriptionEnvironment
         self.pixelHandler = pixelHandler
-        self.tokenRecoveryHandler = tokenRecoveryHandler
         self.isInternalUserEnabled = isInternalUserEnabled
         self.wideEvent = wideEvent
         self.isAuthV2WideEventEnabled = isAuthV2WideEventEnabled
@@ -710,7 +704,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .failed, error: TokenBackupError.sessionChanged, signedOut: false)
                     throw SubscriptionManagerError.noTokenAvailable
                 } catch let recoveryError {
-                    // `tokenRecoveryNotAttempted` means no restore ran (no handler, or the platform
+                    // `tokenRecoveryNotAttempted` means no restore ran (no coordinator, or the platform
                     // can't restore), which is a different finding from a restore that ran and
                     // failed to yield a valid token. Either way the refresh is a failure.
                     let notAttempted = (recoveryError as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
@@ -778,27 +772,23 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         try await recoverToken(trigger: .invalidToken, deadPrimary: deadPrimary)
     }
 
-    /// Runs the configured recovery for `trigger` and returns the token it stored.
-    /// Uses `tokenRecoveryCoordinator` when set; otherwise `tokenRecoveryHandler`, for `.invalidToken` only.
+    /// Runs `tokenRecoveryCoordinator` for `trigger` and returns the token it stored.
     /// - Parameters:
     ///   - trigger: What made the recovery necessary.
     ///   - deadPrimary: The token container whose refresh was rejected, or nil when none is stored.
     /// - Returns: The recovered token container.
-    /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` when no recovery applies,
+    /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` when no coordinator is set or no recovery applies,
     ///   `SubscriptionManagerError.noTokenAvailable` when the recovery left no usable token, otherwise the recovery failure.
     private func recoverToken(trigger: TokenRecoveryTrigger, deadPrimary: TokenContainer?) async throws -> TokenContainer {
         Logger.subscriptionTokensManagement.log("Attempting token recovery, trigger: \(trigger.rawValue, privacy: .public)")
 
-        if let tokenRecoveryCoordinator {
-            try await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger,
-                                                                            deadPrimary: deadPrimary,
-                                                                            signOutCutoff: signOutCutoff))
-        } else if trigger == .invalidToken, let tokenRecoveryHandler {
-            try await tokenRecoveryHandler()
-        } else {
-            Logger.subscriptionTokensManagement.log("Token recovery not possible, no handler configured, trigger: \(trigger.rawValue, privacy: .public)")
+        guard let tokenRecoveryCoordinator else {
+            Logger.subscriptionTokensManagement.log("Token recovery not possible, no coordinator configured, trigger: \(trigger.rawValue, privacy: .public)")
             throw SubscriptionManagerError.tokenRecoveryNotAttempted
         }
+        try await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger,
+                                                                        deadPrimary: deadPrimary,
+                                                                        signOutCutoff: signOutCutoff))
 
         guard let currentTokenContainer = try oAuthClient.currentTokenContainer(),
               !currentTokenContainer.decodedRefreshToken.isExpired() else {

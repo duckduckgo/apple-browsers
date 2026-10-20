@@ -32,13 +32,25 @@ final class HistoryImporterTests: XCTestCase {
         let parseResult = HistoryImport.ParseResult(visits: [visit(newURL, title: "New", hoursAgo: 2),
                                                              visit(newURL, title: "New", hoursAgo: 2),
                                                              visit(knownURL, hoursAgo: 1),
+                                                             visit(knownURL, hoursAgo: 3),
                                                              visit(oldURL, hoursAgo: 48)],
                                                     skipped: 3)
 
         let summary = try importer.importVisits(parseResult)
 
-        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1, alreadyInHistory: 2, tooOld: 1, skipped: 3))
-        XCTAssertEqual(coordinator.addImportedVisitsCalls, [[visit(newURL, title: "New", hoursAgo: 2)]])
+        XCTAssertEqual(summary, HistoryImport.Summary(imported: 2, alreadyInHistory: 2, tooOld: 1, skipped: 3))
+        XCTAssertEqual(coordinator.addImportedVisitsCalls, [[visit(newURL, title: "New", hoursAgo: 2), visit(knownURL, hoursAgo: 3)]])
+    }
+
+    @MainActor
+    func testWhenCutoffMovesAfterImporterIsCreated_ThenImportUsesTheCurrentCutoff() throws {
+        var cutoff = date(hoursAgo: 24)
+        let importer = HistoryImporter(historyCoordinator: makeCoordinator(historyWithVisitOf: knownURL, hoursAgo: 1), cutoff: { cutoff })
+        cutoff = date(hoursAgo: 72)
+
+        let summary = try importer.importVisits(HistoryImport.ParseResult(visits: [visit(oldURL, hoursAgo: 48)], skipped: 0))
+
+        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1))
     }
 
     @MainActor

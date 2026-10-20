@@ -583,6 +583,28 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertFalse(script.send(delegate.positionResult, toWatchWithID: requestID))
     }
 
+    func testWatchClearedDuringRegistrationNeverStartsNatively() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let started = expectation(description: "Native watch started")
+        started.isInverted = true
+        delegate.watchStarted = started
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
+        defer { server.stop() }
+        try await harness.load(try XCTUnwrap(server.url))
+
+        _ = try await harness.webView.callAsyncJavaScript("""
+        navigator.geolocation.clearWatch(navigator.geolocation.watchPosition(() => {}));
+        await navigator.permissions.query({ name: "geolocation" });
+        """, arguments: [:], in: nil, contentWorld: .page)
+        await fulfillment(of: [started], timeout: 0.5)
+
+        XCTAssertEqual(delegate.watchIDs, [], "A watch the page already cleared must not start location updates or a prompt")
+        XCTAssertEqual(delegate.permissionQueryCount, 1)
+    }
+
     func testIframeNavigationCancelsStaleWatchAndPermissionStatus() async throws {
         try await assertIframeNavigationCancelsCallbacks(removeShim: false)
     }

@@ -61,6 +61,11 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
         commitChangesCalled = true
     }
 
+    public var addImportedVisitsCalled = false
+    public func addImportedVisits(_ visits: [HistoryImport.Visit]) {
+        addImportedVisitsCalled = true
+    }
+
     public var burnAllCalled = false
     public var onBurnAll: (() -> Void)?
     public func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {

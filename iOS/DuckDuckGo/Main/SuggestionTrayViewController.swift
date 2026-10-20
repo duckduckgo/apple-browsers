@@ -148,6 +148,8 @@ class SuggestionTrayViewController: UIViewController {
     private let featureDiscovery: FeatureDiscovery
     private let hideBorder: Bool
     private let autocompletePixels = AutocompleteSuggestionsPixels()
+    /// Reset with each Duck.ai list, so `autocomplete_duckai_shown` fires once per focus.
+    private var hasReportedPopoverDuckAIShown = false
 
     var coversFullScreen: Bool = false
 
@@ -324,6 +326,7 @@ class SuggestionTrayViewController: UIViewController {
         case .duckAISuggestions:
             removeNewTabPage(animated: false)
             setPopoverMode(.duckAI)
+            reportDuckAISuggestionsShown()
         case .favorites:
             if isPad {
                 removeAutocomplete(animated: animated)
@@ -347,6 +350,7 @@ class SuggestionTrayViewController: UIViewController {
     }
 
     func didHide(animated: Bool) {
+        hasReportedPopoverDuckAIShown = false
         removeAutocomplete(animated: animated)
         removeNewTabPage(animated: animated)
         teardownPopoverDuckAIController()
@@ -669,6 +673,13 @@ class SuggestionTrayViewController: UIViewController {
         if let height = popoverContentHeights[mode] {
             autocompleteDidChangeContentHeight(height: height)
         }
+    }
+
+    /// The host reveals the Duck.ai list only with rows in it; counted once per focus session, which `didHide` ends.
+    private func reportDuckAISuggestionsShown() {
+        guard popoverDuckAIHasContent, !hasReportedPopoverDuckAIShown else { return }
+        hasReportedPopoverDuckAIShown = true
+        autocompletePixels.fireDuckAIShownPixel()
     }
 
     private func applyPopoverContentHeight(_ height: CGFloat, from mode: PopoverSuggestionsMode) {

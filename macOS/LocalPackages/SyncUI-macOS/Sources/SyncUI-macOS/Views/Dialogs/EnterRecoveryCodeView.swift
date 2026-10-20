@@ -27,8 +27,8 @@ public struct EnterRecoveryCodeView: View {
     public var body: some View {
         SyncDialog(spacing: 20.0) {
             Image(.lockUnlockCompleteAlt96)
-            SyncUIViews.TextHeader(text: UserText.enterRecoveryCodeDialogTitle)
-            SyncUIViews.TextDetailMultiline(text: UserText.enterRecoveryCodeDialogSubtitle)
+            SyncUIViews.DialogTitle(text: UserText.enterRecoveryCodeDialogTitle)
+            SyncUIViews.DialogMessage(text: UserText.enterRecoveryCodeDialogSubtitle)
             VStack(spacing: 16) {
                 Text(UserText.enterRecoveryCodeDialogAction1)
                     .foregroundColor(.secondary)

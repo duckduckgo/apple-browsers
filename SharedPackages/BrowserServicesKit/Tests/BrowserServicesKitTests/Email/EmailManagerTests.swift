@@ -376,6 +376,44 @@ class EmailManagerTests: XCTestCase {
         XCTAssertEqual(requestDelegate.keychainAccessError, .keychainLookupFailure(errSecInternalError))
     }
 
+    // Mirrors the iOS EmailManagerRequestDelegate which force-signs-out when the keychain reports errSecNotAvailable.
+    private final class ForceSignOutOnKeychainUnavailableDelegate: EmailManagerRequestDelegate {
+        var activeTask: URLSessionTask?
+        var keychainAccessFailures: [EmailKeychainAccessType] = []
+
+        func emailManager(_ emailManager: EmailManager, requested url: URL, method: String, headers: [String: String], parameters: [String: String]?, httpBody: Data?, timeoutInterval: TimeInterval) async throws -> Data {
+            fatalError("Not expected to be called")
+        }
+
+        func emailManagerKeychainAccessFailed(_ emailManager: EmailManager,
+                                              accessType: EmailKeychainAccessType,
+                                              error: EmailKeychainAccessError) {
+            keychainAccessFailures.append(accessType)
+            switch error {
+            case .keychainLookupFailure(errSecNotAvailable), .keychainDeleteFailure(errSecNotAvailable):
+                emailManager.forceSignOut()
+            default:
+                break
+            }
+        }
+    }
+
+    func testWhenKeychainIsUnavailable_AndDelegateForcesSignOut_ThenSignOutIsNotReentered() {
+        let storage = MockEmailManagerStorage()
+        storage.mockError = .keychainLookupFailure(errSecNotAvailable)
+        storage.mockDeleteAuthenticationStateError = .keychainDeleteFailure(errSecNotAvailable)
+        var deleteAuthenticationStateCallCount = 0
+        storage.deleteAuthenticationStateCallback = { deleteAuthenticationStateCallCount += 1 }
+        let emailManager = EmailManager(storage: storage)
+        let requestDelegate = ForceSignOutOnKeychainUnavailableDelegate()
+        emailManager.requestDelegate = requestDelegate
+
+        XCTAssertNil(emailManager.cohort)
+
+        XCTAssertEqual(deleteAuthenticationStateCallCount, 1)
+        XCTAssertEqual(requestDelegate.keychainAccessFailures, [.getCohort, .deleteAuthenticationState])
+    }
+
     private func makeMockRequestDelegate() -> MockEmailManagerRequestDelegate {
         .init {
             events.append(.aliasRequestMade)

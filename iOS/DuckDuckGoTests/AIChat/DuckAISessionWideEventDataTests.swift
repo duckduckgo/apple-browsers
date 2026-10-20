@@ -26,12 +26,12 @@ import Testing
 struct DuckAISessionWideEventDataTests {
 
     @available(iOS 16, *)
-    @Test("Metadata exposes the shared names and 1.0.0", .timeLimit(.minutes(1)))
+    @Test("Metadata exposes the shared names and 1.1.0", .timeLimit(.minutes(1)))
     func metadataExposesSharedNames() {
         #expect(DuckAISessionWideEventData.metadata.pixelName == "duckai_session")
         #expect(DuckAISessionWideEventData.metadata.featureName == "duckai_session")
         #expect(DuckAISessionWideEventData.metadata.type == "ios-duckai-session")
-        #expect(DuckAISessionWideEventData.metadata.version == "1.0.0")
+        #expect(DuckAISessionWideEventData.metadata.version == "1.1.0")
         #expect(DuckAISessionWideEventData.appTerminatedReason == "app_terminated")
     }
 
@@ -73,7 +73,8 @@ struct DuckAISessionWideEventDataTests {
     @available(iOS 16, *)
     @Test("Every exit trigger raw value matches the shared naming", .timeLimit(.minutes(1)))
     func exitTriggerRawValuesMatchSharedNaming() {
-        let expected: Set<String> = ["back_or_close", "tab_switched", "new_tab_opened", "fire_tab_opened", "search_started", "other_navigation"]
+        let expected: Set<String> = ["back_or_close", "tab_switched", "new_tab_opened", "fire_tab_opened", "search_started", "other_navigation",
+                                     "chat_deleted"]
         #expect(Set(DuckAISessionWideEventData.ExitTrigger.allCases.map(\.rawValue)) == expected)
     }
 

@@ -98,6 +98,7 @@ extension PostIdleSessionInstrumentation {
 final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentation {
 
     private let wideEvent: WideEventManaging
+    private let usageContextProvider: UsageContextProviding
     private let dateProvider: () -> Date
     private var returnSessionID: String?
     private var postIdleSessionID: String?
@@ -106,8 +107,10 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     private var pendingTimeAwayMs: Int?
 
     init(wideEvent: WideEventManaging,
+         usageContextProvider: UsageContextProviding = UsageContextProvider(),
          dateProvider: @escaping () -> Date = { Date() }) {
         self.wideEvent = wideEvent
+        self.usageContextProvider = usageContextProvider
         self.dateProvider = dateProvider
     }
 
@@ -137,6 +140,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
                                                     startedAt: startedAt,
                                                     timeAwayMs: pendingTimeAwayMs,
                                                     focused: focused)
+        returnData.record(usageContextProvider.currentContext)
         pendingTimeAwayMs = nil
         returnSessionID = returnData.globalData.id
         pageEngagedSent = false
@@ -144,6 +148,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
         guard let afterIdleSurface else { return }
         let postIdleData = PostIdleSessionWideEventData(surface: afterIdleSurface, startedAt: startedAt)
+        postIdleData.record(usageContextProvider.currentContext)
         postIdleSessionID = postIdleData.globalData.id
         wideEvent.startFlow(postIdleData)
     }
@@ -205,6 +210,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
            let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID) {
             data.statusReason = .appBackgrounded
             data.sessionInterval.end = now
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
         }
         returnSessionID = nil
@@ -213,6 +219,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
            let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) {
             data.statusReason = .appBackgrounded
             data.sessionInterval.end = now
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
         }
         postIdleSessionID = nil
@@ -229,6 +236,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
             data.promptOrigin = reason == .aiPromptSubmitted ? promptOrigin?.rawValue : nil
             data.sessionInterval.end = now
             markFirstInteractionIfNeeded(on: data, at: now)
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })
         }
         returnSessionID = nil
@@ -241,6 +249,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
             data.statusReason = postIdleReason
             data.sessionInterval.end = now
             markFirstInteractionIfNeeded(on: data, at: now)
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .success(reason: postIdleReason.rawValue), onComplete: { _, _ in })
         }
         postIdleSessionID = nil

@@ -98,7 +98,7 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                     await model.presentDeleteAccount()
                 }
             } label: {
-                Text(UserText.turnOffAndDeleteServerData)
+                Text(model.isImprovedPairingFlowEnabled ? UserText.turnOffSyncButtonImproved : UserText.turnOffAndDeleteServerData)
                     .foregroundColor(Color(designSystemColor: .destructivePrimary))
             }
         }

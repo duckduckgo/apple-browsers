@@ -58,35 +58,29 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("globalThis.origin !== \"null\""))
         XCTAssertTrue(source.contains("globalThis.location.protocol === \"https:\" || globalThis.location.protocol === \"http:\""),
                       "Only network documents may use the shim")
-        XCTAssertTrue(source.contains("return globalThis.top === globalThis;\n        } catch (_)"),
-                      "Missing Permissions Policy introspection must deny subframes")
-        XCTAssertTrue(policySource.contains("isPolicyAllowed: requestedDocumentID !== null && isFramePolicyEligible && policyAllowsGeolocation()"),
+        XCTAssertTrue(policySource.contains("return verdict.isPolicyAllowed;"),
+                      "Without Permissions Policy introspection, subframes must follow their embedding frames' allow attributes")
+        XCTAssertTrue(policySource.contains("isPolicyAllowed: documentID !== null && isFramePolicyEligible && policyAllowsGeolocation(verdict)"),
                       "Every request and permission query must share the same policy constraint")
         XCTAssertTrue(source.contains("const nativePermissionsPolicy = document.permissionsPolicy ?? document.featurePolicy"))
         XCTAssertTrue(source.contains("apply(nativePolicyAllowsFeature, nativePermissionsPolicy, [\"geolocation\"])"),
                       "Page code must not replace the captured policy API before a later resample")
-        XCTAssertTrue(policySource.contains("embeddingFrameForSource(source)"),
-                      "The parent must map each authenticated child to its direct embedding element")
+        XCTAssertTrue(policySource.contains("parentPolicy.embeddedFrameVerdict(element, documentOrigin)"),
+                      "A child must get its sandbox and policy verdict from its parent's isolated script")
+        XCTAssertTrue(policySource.contains("isSandboxed: ownVerdict.isSandboxed || isSandboxed"),
+                      "A child must inherit the sandbox verdict from every ancestor")
+        XCTAssertFalse(policySource.contains("postMessage"), "Policy checks must not post messages the page can observe")
         XCTAssertTrue(policySource.contains("attributeOldValue: true"),
                       "Sandbox removal must retain the prior attribute value")
         XCTAssertTrue(policySource.contains("sandboxedEmbeddingFrames"),
                       "An embedding frame that was ever sandboxed must stay fail-closed for its surviving document")
-        XCTAssertTrue(policySource.contains("apply(weakSetHas, sandboxedEmbeddingFrames, [embeddingFrame])"))
-        XCTAssertTrue(policySource.contains("callThen(sandboxVerdict(), (ancestorSandboxed) => {"),
-                      "A child must inherit the sandbox verdict from every ancestor")
-        XCTAssertTrue(policySource.contains("signHMAC(\"HMAC\""),
-                      "The page-visible probe must authenticate without exposing the native capability")
-        XCTAssertTrue(policySource.contains("sandboxProbeTimeout = scheduleTask(() => finishSandboxProbe(true)"),
-                      "An unanswered parent probe must fail closed")
-        XCTAssertTrue(source.contains("const registration = registerFrame(false)"),
-                      "Document-load registration must not probe the sandbox")
-        XCTAssertTrue(source.contains("message(\"registerFrame\", { probeSandbox })"), "Each frame must authenticate before sending requests")
+        XCTAssertTrue(policySource.contains("apply(weakSetHas, sandboxedEmbeddingFrames, [element])"))
+        XCTAssertTrue(source.contains("const registration = registerFrame()"),
+                      "Every operation must register with native policy enforcement")
+        XCTAssertTrue(source.contains("message(\"registerFrame\")"), "Each frame must authenticate before sending requests")
         XCTAssertTrue(source.contains("const capability ="), "Every message must carry the native bridge capability")
         XCTAssertTrue(source.contains("documentID: frameNonce"), "Requests must identify the exact page document")
-        XCTAssertFalse(source.contains("signHMAC"), "Signing must be absent from the page world")
-        XCTAssertFalse(source.contains("signingToken"))
-        XCTAssertFalse(policySource.contains(GeolocationUserScript.capabilityToken), "The signing token must differ from the page capability")
-        XCTAssertFalse(policySource.contains("${SIGNING_TOKEN}"))
+        XCTAssertFalse(policySource.contains(GeolocationUserScript.capabilityToken), "The native bridge capability must stay out of the isolated script")
         XCTAssertTrue(source.contains("configurable: false"), "The installed API must not reveal native methods after deletion")
         XCTAssertTrue(source.contains("Object.getPrototypeOf(nativeGeolocation)"), "Direct native-prototype calls must route through the shim")
         XCTAssertTrue(source.contains("Object.getPrototypeOf(nativePermissions)"), "Direct Permissions prototype calls must route through the shim")
@@ -125,7 +119,7 @@ final class GeolocationUserScriptTests: XCTestCase {
     func testEachOperationRefreshesNativeFrameRegistration() {
         let source = GeolocationUserScript().source
 
-        XCTAssertTrue(source.contains("const registerFrame = (probeSandbox = true) => callThen(postOneShot(message(\"registerFrame\", { probeSandbox }))"))
+        XCTAssertTrue(source.contains("const registerFrame = () => callThen(postOneShot(message(\"registerFrame\"))"))
         XCTAssertEqual(source.components(separatedBy: "callThen(registerFrame(), (enabled)").count - 1, 4,
                        "Position requests, permission queries, watch starts, and watch cancellation must recover after native registration resets")
     }
@@ -136,8 +130,8 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("isPolicyAllowed: result.constraints?.isPolicyAllowed === true"))
         XCTAssertTrue(source.contains("constraints.isPolicyAllowed && policyAllowsGeolocation() && !constraints.isSandboxed"))
         let policySource = GeolocationUserScript().policyScript.source
-        XCTAssertTrue(policySource.contains("const getConstraints = (probeSandbox) => {"))
-        XCTAssertTrue(policySource.contains("isFramePolicyEligible && policyAllowsGeolocation()"))
+        XCTAssertTrue(policySource.contains("const getConstraints = () => {"))
+        XCTAssertTrue(policySource.contains("isFramePolicyEligible && policyAllowsGeolocation(verdict)"))
         XCTAssertTrue(source.contains("const receiveWatchResult = (requestID, result) => {"))
         XCTAssertTrue(source.contains("if (!isAllowedByPlatform()) {\n                apply(mapDelete, activeWatches, [requestID]);"),
                       "A restrictive policy change must stop later watch deliveries")

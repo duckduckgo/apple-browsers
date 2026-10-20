@@ -99,9 +99,9 @@
             if (typeof nativePolicyAllowsFeature === "function") {
                 return apply(nativePolicyAllowsFeature, nativePermissionsPolicy, ["geolocation"]);
             }
-            // Native code checks the top-level response policy. Without this API,
-            // subframe response policies cannot be verified, so deny subframes.
-            return globalThis.top === globalThis;
+            // Without this API, the isolated policy script checks each embedding
+            // frame's allow attribute and native code checks the top-level response policy.
+            return true;
         } catch (_) {
             return false;
         }
@@ -118,29 +118,22 @@
     const message = (kind, values = {}) => ({ capability, nonce, documentID: frameNonce, kind, ...values });
 
     // Native registration obtains policy in the isolated world and rechecks activation.
-    // Only operations probe the sandbox, so only their replies update constraints.
-    const registerFrame = (probeSandbox = true) => callThen(postOneShot(message("registerFrame", { probeSandbox })), (result) => {
+    const registerFrame = () => callThen(postOneShot(message("registerFrame")), (result) => {
         if (result?.status === "error" && result.code === 1) {
-            if (probeSandbox) {
-                constraints = freeze({ isSecureContext: false, isPolicyAllowed: false, isSandboxed: true });
-            }
+            constraints = freeze({ isSecureContext: false, isPolicyAllowed: false, isSandboxed: true });
             return false;
         }
         if (result?.status !== "registered") {
             throw new Error("Unable to register geolocation frame");
         }
-        if (probeSandbox) {
-            constraints = freeze({
-                isSecureContext: result.constraints?.isSecureContext === true,
-                isPolicyAllowed: result.constraints?.isPolicyAllowed === true,
-                isSandboxed: result.constraints?.isSandboxed !== false
-            });
-        }
+        constraints = freeze({
+            isSecureContext: result.constraints?.isSecureContext === true,
+            isPolicyAllowed: result.constraints?.isPolicyAllowed === true,
+            isSandboxed: result.constraints?.isSandboxed !== false
+        });
         return result.enabled === true;
     });
-    // The sandbox probe posts a message the embedding page can observe, so
-    // registering every loaded frame must not start it.
-    const registration = registerFrame(false);
+    const registration = registerFrame();
 
     const optionsPayload = (options = {}) => {
         options = options ?? {};

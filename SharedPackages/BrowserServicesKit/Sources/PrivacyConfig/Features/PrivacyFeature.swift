@@ -852,8 +852,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219685718776840
     case historyImport
 }
 

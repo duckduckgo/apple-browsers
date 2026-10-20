@@ -41,8 +41,6 @@ final class AIChatService: NSObject {
 
     @MainActor
     func resume() {
-        // Removes an expired boost's Bonus ID even when Duck.ai isn't opened.
-        // A failure is already logged and reported by the service, and there's nothing else to do with it here.
         try? aiChatBonusService.endBoostIfExpired()
     }
 

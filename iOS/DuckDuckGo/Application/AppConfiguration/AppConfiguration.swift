@@ -82,15 +82,14 @@ struct AppConfiguration {
         })
     }
 
-    /// Deletes the Duck.ai bonus record a previous install left behind: the Keychain keeps it after the app is deleted.
-    /// Runs before anything reads the record, and before the first ATB request saves the install date.
+    /// Deletes the Duck.ai bonus record a previous install left in the Keychain, which outlives the app.
     ///
-    /// A missing install date means a new install: the first successful ATB request saves it, and deleting the app
-    /// removes it but not the Keychain. Until it's saved this deletes on every launch, which is harmless:
-    /// no offer can be claimed without an install date.
+    /// No install date means a new install: the first ATB request saves it, and deleting the app removes it.
+    /// Must run before that request and before anything reads the record. Until then it deletes on every launch,
+    /// which is harmless: no offer can be claimed without an install date.
     private func deleteAIChatBonusRecordIfNewInstall() {
         guard StatisticsUserDefaults().installDate == nil else { return }
-        // A failed delete is logged and reported by the service, which retries it on the next access.
+        // The service reports a failed delete and retries it on the next access.
         try? aiChatBonusService.permanentlyDeleteRecord()
     }
 

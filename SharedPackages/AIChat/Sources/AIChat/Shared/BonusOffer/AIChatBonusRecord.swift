@@ -98,11 +98,8 @@ extension AIChatBonusRecord {
         return terms.expiresAt > date.timeIntervalSince1970
     }
 
-    /// Returns `true` once a granted boost has passed its expiry, so it should be ended.
-    ///
-    /// Not the same as `!isBoostActive(at:)`: a pending claim has no terms yet and isn't expired.
-    ///
-    /// - Parameter date: The moment to check against, usually now.
+    /// Whether a granted boost has passed its expiry and should be ended.
+    /// Not the same as `!isBoostActive(at:)`: a pending claim has no terms yet, so it isn't expired.
     func hasBoostExpired(at date: Date) -> Bool {
         guard bonusId != nil, let terms else { return false }
         return terms.expiresAt <= date.timeIntervalSince1970

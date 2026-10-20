@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import Networking
+@_spi(Testing) @testable import Networking
 
 final class AuthServiceTests: XCTestCase {
 
@@ -107,5 +107,62 @@ final class AuthServiceTests: XCTestCase {
 
         XCTAssertEqual(bodyError.errorCode, .invalidAuthorizationRequest)
         XCTAssertNil(bodyError.tokenStatus)
+    }
+
+    // MARK: - Error status codes
+
+    private func makeService(status: Int, body: String?) -> DefaultOAuthService {
+        let apiService = MockAPIService { request in
+            let httpResponse = HTTPURLResponse(url: request.urlRequest.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+            return .success(APIResponseV2(data: body?.data(using: .utf8), httpResponse: httpResponse))
+        }
+        return DefaultOAuthService(baseURL: baseURL, apiService: apiService)
+    }
+
+    func testRefreshAccessToken_serverErrorWithBodyError_throwsTheStatus() async {
+        let service = makeService(status: 500, body: #"{"error":"invalid_request"}"#)
+
+        do {
+            _ = try await service.refreshAccessToken(clientID: "client", refreshToken: "refresh")
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(.internalServerError))
+        }
+    }
+
+    func testRefreshAccessToken_serverErrorWithoutBody_throwsTheStatus() async {
+        let service = makeService(status: 500, body: nil)
+
+        do {
+            _ = try await service.refreshAccessToken(clientID: "client", refreshToken: "refresh")
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(.internalServerError))
+        }
+    }
+
+    func testRefreshAccessToken_badRequestWithBodyError_throwsTheAuthAPIError() async {
+        let service = makeService(status: 400, body: #"{"error":"invalid_token_request"}"#)
+
+        do {
+            _ = try await service.refreshAccessToken(clientID: "client", refreshToken: "refresh")
+            XCTFail("Expected error")
+        } catch {
+            guard case OAuthServiceError.authAPIError(let apiError) = error else {
+                return XCTFail("Unexpected error \(error)")
+            }
+            XCTAssertEqual(apiError.bodyError.errorCode, .invalidTokenRequest)
+        }
+    }
+
+    func testGetJWTSigners_serverError_throwsTheStatus() async {
+        let service = makeService(status: 500, body: #"{"error":"invalid_request"}"#)
+
+        do {
+            _ = try await service.getJWTSigners()
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(.internalServerError))
+        }
     }
 }

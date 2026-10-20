@@ -1751,6 +1751,19 @@ final class WebViewPreviewSnapshotCapturerTests: XCTestCase {
         XCTAssertEqual(results.map(\.1), [.retryImage])
     }
 
+    func testWhenFirstSnapshotNeverAnswersThenItsPendingCallbackDoesNotKeepTheWebViewAlive() {
+        var webView: FakeSnapshottingWebView? = FakeSnapshottingWebView()
+        weak var releasedWebView = webView
+        WebViewPreviewSnapshotCapturer().capture(webView: webView!,
+                                                 rect: CGRect(x: 0, y: 0, width: 100, height: 100),
+                                                 timeout: 60,
+                                                 waitForScreenUpdates: true) { _, _ in }
+        // The fake keeps the callback, as WebKit does for a frozen page that never answers.
+        webView = nil
+
+        XCTAssertNil(releasedWebView)
+    }
+
     private func capture(waitForScreenUpdates: Bool) {
         WebViewPreviewSnapshotCapturer().capture(webView: webView,
                                                  rect: CGRect(x: 0, y: 0, width: 100, height: 100),

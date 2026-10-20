@@ -43,15 +43,29 @@ struct WebViewPreviewSnapshotCapturer {
                  timeout: TimeInterval,
                  waitForScreenUpdates: Bool,
                  completion: @escaping (UIImage?, WebContentHealthPixel.SnapshotResult) -> Void) {
-        func snapshotWithoutWaiting() {
-            snapshot(webView, rect: rect, afterScreenUpdates: false, timeout: timeout) { image, timedOut in
-                let result: WebContentHealthPixel.SnapshotResult = timedOut ? .retryTimeout : image == nil ? .retryNoImage : .retryImage
-                completion(image, result)
-            }
+        guard waitForScreenUpdates else { return snapshotWithoutWaiting(webView,
+                                                                        rect: rect,
+                                                                        timeout: timeout,
+                                                                        completion: completion) }
+        // A frozen page never answers, so WebKit keeps this callback for as long as the web view lives.
+        // Holding the web view weakly lets it go when its tab closes.
+        snapshot(webView, rect: rect, afterScreenUpdates: true, timeout: timeout) { [weak webView] image, timedOut in
+            guard timedOut else { return completion(image, .success) }
+            guard let webView else { return completion(nil, .retryTimeout) }
+            snapshotWithoutWaiting(webView,
+                                   rect: rect,
+                                   timeout: timeout,
+                                   completion: completion)
         }
-        guard waitForScreenUpdates else { return snapshotWithoutWaiting() }
-        snapshot(webView, rect: rect, afterScreenUpdates: true, timeout: timeout) { image, timedOut in
-            timedOut ? snapshotWithoutWaiting() : completion(image, .success)
+    }
+    
+    private func snapshotWithoutWaiting(_ webView: WebViewSnapshotting,
+                                        rect: CGRect,
+                                        timeout: TimeInterval,
+                                        completion: @escaping (UIImage?, WebContentHealthPixel.SnapshotResult) -> Void) {
+        snapshot(webView, rect: rect, afterScreenUpdates: false, timeout: timeout) { image, timedOut in
+            let result: WebContentHealthPixel.SnapshotResult = timedOut ? .retryTimeout : image == nil ? .retryNoImage : .retryImage
+            completion(image, result)
         }
     }
 

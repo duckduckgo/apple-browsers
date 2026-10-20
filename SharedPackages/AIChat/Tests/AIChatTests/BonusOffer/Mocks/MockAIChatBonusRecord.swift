@@ -26,7 +26,7 @@ enum AIChatBonusRecordMock {
     static let terms = AIChatBonusRecord.Terms(multiplier: 2, expiresAt: 1_790_000_000)
 
     /// Never claimed, but the activation modal was closed.
-    static let dismissedOnly = AIChatBonusRecord(dismissed: true)
+    static let dismissedOnly = AIChatBonusRecord(dismissedCampaignName: campaignName)
     /// Claimed, waiting for the redeem outcome.
     static let pending = AIChatBonusRecord(campaignName: campaignName, bonusId: bonusId)
     /// Redeemed: the boost is on until `terms.expiresAt`.

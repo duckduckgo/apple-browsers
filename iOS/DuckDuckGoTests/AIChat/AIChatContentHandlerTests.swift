@@ -312,6 +312,85 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(url, mockSettings.aiChatURL)
     }
 
+    func testBuildQueryURLWithNilQueryOmitsAutoSendFlowAndTools() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+
+        let url = handler.buildQueryURL(query: nil, autoSend: true, flowType: .mobileAppOnboarding, tools: [.webSearch, .newsSearch])
+
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let queryItems = components.queryItems ?? []
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.promptQueryName })
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.flowQueryName })
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.toolChoiceName })
+    }
+
+    func testOpeningQueryPreservesNilAndEmptyURLSemanticsWithAttachments() {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+        let tools: [AIChatRAGTool] = [.webSearch, .newsSearch]
+        var urls: [URL] = []
+        let queries: [String?] = [nil, ""]
+        for query in queries {
+            let opening = AIChatOpeningRequest.Query(query: query, autoSend: true, flowType: .mobileAppOnboarding,
+                                                      tools: tools, modelId: nil, reasoningEffort: nil,
+                                                      images: [.init(data: "image", format: "png")], files: nil, termsAccepted: false)
+            XCTAssertNotNil(opening.sharedPrompt)
+            let url = opening.url(using: handler)
+            XCTAssertEqual(url, handler.buildQueryURL(query: query, autoSend: true, flowType: .mobileAppOnboarding, tools: tools))
+            urls.append(url)
+        }
+        XCTAssertNotEqual(urls[0], urls[1])
+    }
+
+    func testBuildQueryURLWithEmptyQueryPreservesAutoSendFlowAndTools() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+        let tools: [AIChatRAGTool] = [.webSearch, .newsSearch]
+
+        let url = handler.buildQueryURL(query: "", autoSend: true, flowType: .mobileAppOnboarding, tools: tools)
+
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let queryItems = components.queryItems ?? []
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.promptQueryName })
+        XCTAssertEqual(queryItems.filter { $0.name == AIChatURLParameters.autoSubmitPromptQueryName }, [
+            URLQueryItem(name: AIChatURLParameters.autoSubmitPromptQueryName, value: AIChatURLParameters.autoSubmitPromptQueryValue)
+        ])
+        XCTAssertEqual(queryItems.filter { $0.name == AIChatURLParameters.flowQueryName }, [
+            URLQueryItem(name: AIChatURLParameters.flowQueryName, value: AIChatURLParameters.mobileAppOnboardingFlowQueryValue)
+        ])
+        let toolItems = queryItems.filter { $0.name == AIChatURLParameters.toolChoiceName }
+        XCTAssertEqual(toolItems.count, tools.count)
+        XCTAssertEqual(toolItems.compactMap(\.value).sorted(), tools.map(\.rawValue).sorted())
+    }
+
+    func testBuildQueryURLWithoutAutoSendPreservesQueryFlowAndTools() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+        let query = "hello world"
+        let tools: [AIChatRAGTool] = [.webSearch, .newsSearch]
+
+        let url = handler.buildQueryURL(query: query, autoSend: false, flowType: .mobileAppOnboarding, tools: tools)
+
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let queryItems = components.queryItems ?? []
+        XCTAssertEqual(queryItems.filter { $0.name == AIChatURLParameters.promptQueryName }, [
+            URLQueryItem(name: AIChatURLParameters.promptQueryName, value: query)
+        ])
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })
+        XCTAssertEqual(queryItems.filter { $0.name == AIChatURLParameters.flowQueryName }, [
+            URLQueryItem(name: AIChatURLParameters.flowQueryName, value: AIChatURLParameters.mobileAppOnboardingFlowQueryValue)
+        ])
+        let toolItems = queryItems.filter { $0.name == AIChatURLParameters.toolChoiceName }
+        XCTAssertEqual(toolItems.count, tools.count)
+        XCTAssertEqual(toolItems.compactMap(\.value).sorted(), tools.map(\.rawValue).sorted())
+    }
+
     func testBuildQueryURLWithNativeInputAvailableAddsNativeInputParameter() throws {
         mockSettings.aiChatURL = URL(string: "https://duck.ai")!
         mockUnifiedToggleInputFeature.isAvailable = true

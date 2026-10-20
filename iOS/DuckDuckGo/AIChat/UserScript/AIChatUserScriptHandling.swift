@@ -156,7 +156,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
-    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func connectInitialPromptSession(_ session: AIChatInitialPromptSession)
     @MainActor func disconnectInitialPromptSession()
@@ -457,6 +457,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return true
     }
 
+    @MainActor
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
         let defaults = AIChatNativeConfigValues.defaultValues
         let (supportsFullMode, supportsContextualMode, supportsNativeChatInput) = nativeModeSupport
@@ -469,7 +470,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             && devicePlatform.isIphone
             && supportsNativeChatInput
             && isNativeStorageBridgeAvailable
-        let config = AIChatNativeConfigValues(
+        var config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
             supportsClosingAIChat: defaults.supportsClosingAIChat,
             supportsOpeningSettings: defaults.supportsOpeningSettings,
@@ -498,6 +499,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message),
             supportsCanonicalChatFormat: true
         )
+        config.supportsResponseStateReporting = true
         return config
     }
 
@@ -553,10 +555,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? {
         guard !Task.isCancelled else { return nil }
         let prompt: AIChatNativePrompt?
-        switch initialPromptConnection?.consumeInitialPrompt() ?? .shared {
-        case .shared:
+        switch initialPromptConnection?.consumeInitialPrompt() ?? .sharedHandler {
+        case .sharedHandler:
             prompt = promptHandler.consumeData() as? AIChatNativePrompt
-        case .recipient(let initialPrompt):
+        case .tabSession(let initialPrompt):
             prompt = initialPrompt
         }
         return prompt.map { $0.withTermsAccepted(termsAcceptedMarker(for: $0)) }

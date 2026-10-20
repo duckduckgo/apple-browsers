@@ -33,6 +33,7 @@ import WebKit
 @_spi(Testing) import PixelKit
 
 // swiftlint:disable inclusive_language
+@MainActor
 class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
@@ -318,6 +319,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
         XCTAssertEqual(configValues?.supportsAIChatSync, false)
         XCTAssertEqual(configValues?.supportsCanonicalChatFormat, true)
+        // Native prompt flows on iPad complete from `responseState`, which the page sends only on request.
+        XCTAssertEqual(configValues?.supportsResponseStateReporting, true)
     }
     
     func testWhenNativeStorageFeatureIsOnAndBridgeIsAvailableAndNotInFireModeThenSupportsNativeStorageIsTrue() {
@@ -1693,17 +1696,29 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
 @MainActor
 extension AIChatUserScriptHandlerTests {
     func testOrdinaryPromptUsesSharedHandlerWithAttachmentFeatureOffAndOn() {
+        let prompts: [(name: String, prompt: AIChatNativePrompt)] = [
+            ("text", .queryPrompt("ordinary", autoSubmit: true)),
+            ("draft with model and reasoning", .queryPrompt("Review before sending", autoSubmit: false,
+                                                           modelId: "gpt-5.2", reasoningEffort: .medium)),
+            ("image", .queryPrompt("Describe this image", autoSubmit: true,
+                                   images: [.init(data: "image-data", format: "png")])),
+            ("file", .queryPrompt("Summarize this file", autoSubmit: true,
+                                  files: [.init(data: "file-data", fileName: "document.pdf", mimeType: "application/pdf")]))
+        ]
+        defer { AIChatPromptHandler.shared.reset() }
         let flagStates: [[FeatureFlag]] = [[], [.aiChatContextualAttachMoreTabs]]
         for flags in flagStates {
             mockFeatureFlagger.enabledFeatureFlags = flags
             aiChatUserScriptHandler = makeAIChatUserScriptHandler()
             let session = AIChatInitialPromptSession()
             aiChatUserScriptHandler.connectInitialPromptSession(session)
-            let prompt = AIChatNativePrompt.queryPrompt("ordinary", autoSubmit: true)
-            AIChatPromptHandler.shared.setData(prompt)
+            for (name, prompt) in prompts {
+                AIChatPromptHandler.shared.reset()
+                AIChatPromptHandler.shared.setData(prompt)
 
-            XCTAssertEqual(pullPrompt(), prompt)
-            XCTAssertNil(pullPrompt())
+                XCTAssertEqual(pullPrompt(), prompt, "\(name) prompt must preserve its payload with flags: \(flags)")
+                XCTAssertNil(pullPrompt(), "\(name) prompt must be consumed once with flags: \(flags)")
+            }
         }
     }
 

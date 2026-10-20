@@ -22,6 +22,7 @@ import Foundation
 public class MockEmailManagerStorage: EmailManagerStorage {
 
     public var mockError: EmailKeychainAccessError?
+    public var mockDeleteAuthenticationStateError: EmailKeychainAccessError?
 
     public var mockUsername: String?
     public var mockToken: String?
@@ -79,8 +80,9 @@ public class MockEmailManagerStorage: EmailManagerStorage {
         deleteAliasCallback?()
     }
 
-    public func deleteAuthenticationState() {
+    public func deleteAuthenticationState() throws {
         deleteAuthenticationStateCallback?()
+        if let mockDeleteAuthenticationStateError { throw mockDeleteAuthenticationStateError }
     }
 
     public func deleteWaitlistState() {

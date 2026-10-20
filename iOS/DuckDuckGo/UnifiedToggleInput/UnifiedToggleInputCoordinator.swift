@@ -2211,7 +2211,8 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 switchBarSubmissionMetrics.process(text, for: .search)
             }
             sessionMonitor.recordActivity(mode: .search)
-            pixelReporter.reportQuerySubmitted(defaultOmnibarMode: aiChatSettings.defaultOmnibarMode)
+            pixelReporter.reportQuerySubmitted(defaultOmnibarMode: aiChatSettings.defaultOmnibarMode,
+                                               queryType: UnifiedToggleInputQueryType(query: text))
             clearStoreEntryAfterSubmission()
             if isAITabState {
                 hide()

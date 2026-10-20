@@ -94,6 +94,8 @@ enum WebExtensionPixel: PixelKit.Event {
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 
+    case cpmNetworkProcessRecoveryApplied
+
     // MARK: - Debug
 
     case debugCPM(CPMWebExtensionPixelMetadata)
@@ -190,6 +192,8 @@ enum WebExtensionPixel: PixelKit.Event {
         case .debugCPM(let metadata):
             // Preserve the shared canonical CPM names on both platforms.
             return metadata.name
+        case .cpmNetworkProcessRecoveryApplied:
+            return "web_extension_cpm_network_process_recovery_applied"
         }
     }
 
@@ -243,7 +247,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .debugCPM, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
+        case .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
             return .none
         default:
             return .platformDefault
@@ -299,6 +303,13 @@ private extension DuckDuckGoWebExtensionType {
 
 @available(macOS 15.4, *)
 struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
+
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
     func fire(_ event: WebExtensionPixelEvent) {
         let pixel: WebExtensionPixel
         let frequency: PixelKit.Frequency
@@ -356,6 +367,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         case .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
+        case .cpmNetworkProcessRecoveryApplied:
+            pixel = .cpmNetworkProcessRecoveryApplied
         case .defaultPasswordManagerSet(let pixelExtension):
             pixel = .defaultPasswordManagerSet(extension: pixelExtension)
         case .bitwardenDailyActive(let isDefault):
@@ -372,7 +385,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         default:
             frequency = Self.frequency(of: event)
         }
-        PixelKit.fire(pixel, frequency: frequency)
+        pixelFiring?.fire(pixel, frequency: frequency)
     }
 
     private static func frequency(of event: WebExtensionPixelEvent) -> PixelKit.Frequency {

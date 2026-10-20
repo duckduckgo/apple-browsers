@@ -260,6 +260,16 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
     }
 
     @MainActor
+    func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
+        if #available(macOS 15.4, *), navigationResponse.isForMainFrame,
+           [.http, .https].contains(navigationResponse.url.navigationalScheme) {
+            // The Network process can change after action policy. Repair before document-start scripts run.
+            webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
+        }
+        return .next
+    }
+
+    @MainActor
     func didCommit(_ navigation: Navigation) {
         resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
         guard #available(macOS 15.4, *) else { return }

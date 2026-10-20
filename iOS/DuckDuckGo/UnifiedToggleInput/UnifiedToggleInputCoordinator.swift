@@ -754,8 +754,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: already active, skipping re-apply")
             return
         }
-        // An edit belongs to the outgoing tab's chat; ending it before the snapshot keeps the
-        // edited prompt out of that tab's draft.
+        // Before the snapshot, so the edited prompt isn't saved as the outgoing tab's draft.
         endEditMode(collapses: false)
         if let previous {
             let snapshot = snapshotCurrentState()
@@ -1011,8 +1010,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         synchronizeTabAttachmentPreparations()
     }
 
-    /// Pass `collapses: false` when the caller sets the display state itself, e.g. on a tab change:
-    /// collapsing onto a web tab's omnibar would leave its address bar hidden.
+    /// `collapses: false` when the caller sets the display state itself, e.g. on a tab change.
     func endEditMode(collapses: Bool = true) {
         guard isEditing else { return }
         exitEditMode(reply: .cancelled, collapses: collapses)

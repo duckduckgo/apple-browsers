@@ -247,7 +247,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         if let glassCenterContainer { return glassCenterContainer }
 
-        let effectView = UIVisualEffectView(effect: UIGlassEffect())
+        let effectView = UIVisualEffectView(effect: nil)
         effectView.cornerConfiguration = .capsule()
         centerView.translatesAutoresizingMaskIntoConstraints = false
         effectView.contentView.addSubview(centerView)

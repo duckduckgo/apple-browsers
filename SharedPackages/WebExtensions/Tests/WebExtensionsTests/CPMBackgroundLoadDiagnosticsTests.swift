@@ -99,6 +99,40 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         XCTAssertEqual(loadRequests, 0)
     }
 
+    func testResumeAppearsAsOneInterruptionEventInTheTimeline() {
+        let recorder = makeRecorder()
+
+        recorder.recordInterruption()
+
+        XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["interruption"])
+    }
+
+    func testBackToBackResumesCollapseIntoOneInterruptionEvent() {
+        let recorder = makeRecorder()
+
+        recorder.recordInterruption()
+        recorder.recordInterruption()
+        recorder.recordInterruption()
+
+        XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["interruption"])
+    }
+
+    func testInterruptionsAroundAnotherEventAreKeptSeparate() {
+        let recorder = makeRecorder()
+        let loadError = NSError(domain: WKWebExtensionContext.errorDomain,
+                                code: WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue)
+
+        recorder.recordInterruption()
+        recorder.recordContextErrors([loadError])
+        recorder.recordInterruption()
+
+        let tokens = recorder.snapshot().backgroundEvents.map(\.token)
+        XCTAssertEqual(tokens.count, 3)
+        XCTAssertEqual(tokens.first, "interruption")
+        XCTAssertTrue(tokens[1].hasPrefix("error_"))
+        XCTAssertEqual(tokens.last, "interruption")
+    }
+
     func testRepeatedSnapshotsDoNotRequestBackgroundLoads() async throws {
         let recorder = makeRecorder()
         var requests = 0

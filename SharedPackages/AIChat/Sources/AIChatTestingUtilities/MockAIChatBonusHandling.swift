@@ -29,6 +29,7 @@ public final class MockAIChatBonusHandling: AIChatBonusHandling {
     public private(set) var claimParams: [Any] = []
     public private(set) var redeemOutcomeCallCount = 0
     public private(set) var dismissCallCount = 0
+    public private(set) var dismissParams: [Any] = []
     public private(set) var endCallCount = 0
 
     public init() {}
@@ -52,8 +53,9 @@ public final class MockAIChatBonusHandling: AIChatBonusHandling {
         redeemOutcomeCallCount += 1
     }
 
-    public func aiChatBonusDismiss() {
+    public func aiChatBonusDismiss(params: Any) {
         dismissCallCount += 1
+        dismissParams.append(params)
     }
 
     public func aiChatBonusEnd() {

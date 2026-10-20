@@ -842,7 +842,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable? {
         guard isBonusOfferEnabled else { return nil }
-        bonusHandler.aiChatBonusDismiss()
+        bonusHandler.aiChatBonusDismiss(params: params)
         return nil
     }
 

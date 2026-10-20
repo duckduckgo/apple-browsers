@@ -198,13 +198,30 @@ struct AIChatBonusHandlerTests {
 
     // MARK: - aiChatBonusDismiss
 
-    @Test("Check aiChatBonusDismiss dismisses the offer")
-    func dismissDismissesTheOffer() {
+    @Test("Check aiChatBonusDismiss dismisses the offer for the campaign")
+    func dismissDismissesTheOfferForTheCampaign() throws {
         // WHEN
-        sut.aiChatBonusDismiss()
+        sut.aiChatBonusDismiss(params: try Self.params(#"{ "campaignName": "launch" }"#))
 
         // THEN
-        #expect(service.dismissCallCount == 1)
+        #expect(service.dismissedCampaignNames == ["launch"])
+    }
+
+    @Test(
+        "Check aiChatBonusDismiss drops invalid params without dismissing",
+        arguments: [
+            #"{}"#,
+            #"{ "campaignName": 1 }"#,
+            #"{ "campaignName": null }"#,
+            #"{ "campaignName": "" }"#
+        ]
+    )
+    func dismissDropsInvalidParams(json: String) throws {
+        // WHEN
+        sut.aiChatBonusDismiss(params: try Self.params(json))
+
+        // THEN
+        #expect(service.dismissedCampaignNames.isEmpty)
     }
 
     // MARK: - aiChatBonusEnd

@@ -28,11 +28,6 @@ protocol UTIFooterPresenting: AnyObject {
     func clearPendingFooterMessage()
 }
 
-struct UTIFooterPromptOverLimit: Equatable {
-    let count: Int
-    let limit: Int
-}
-
 @MainActor
 final class UTIFooterController {
     typealias Animator = (_ changes: @escaping () -> Void) -> Void
@@ -61,7 +56,7 @@ final class UTIFooterController {
     private var actedOnMessage: UTIFooterMessage?
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
     private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton = .ask
-    private var promptOverLimit: UTIFooterPromptOverLimit?
+    private var promptOverLimit: AIChatPromptLength?
     private var visibleIDs: Set<UTIFooterItem.ID> = []
     private var reportedTermsOfServiceState = (isVisible: false, isInEffect: false)
     private var retainedMessageIDs: Set<UTIFooterItem.ID>?
@@ -172,7 +167,7 @@ final class UTIFooterController {
     }
 
 
-    func setPromptTooLong(_ overLimit: UTIFooterPromptOverLimit?) {
+    func setPromptTooLong(_ overLimit: AIChatPromptLength?) {
         guard promptOverLimit != overLimit else { return }
         if (promptOverLimit == nil) != (overLimit == nil) { releaseWaitingMessages() }
         promptOverLimit = overLimit

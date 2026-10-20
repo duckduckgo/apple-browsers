@@ -43,7 +43,7 @@ final class UTIPromptLengthGate {
     }
 
     struct Outputs {
-        let onOverLimitChanged: (UTIFooterPromptOverLimit?) -> Void
+        let onOverLimitChanged: (AIChatPromptLength?) -> Void
         let onSubmitBlockedChanged: (Bool) -> Void
         let onChipErrorChanged: (Bool) -> Void
     }
@@ -53,7 +53,7 @@ final class UTIPromptLengthGate {
     private let outputs: Outputs
 
     private(set) var promptLength: AIChatPromptLength?
-    private var reportedOverLimit: UTIFooterPromptOverLimit?
+    private var reportedOverLimit: AIChatPromptLength?
     private var reportedSubmitBlocked = false
 
     init(limits: AIChatPromptLimits = .current, inputs: Inputs, outputs: Outputs) {
@@ -81,7 +81,7 @@ final class UTIPromptLengthGate {
         promptLength = inputs.isEnabled()
             ? limits.evaluate(prompt: inputs.promptText(), attachments: inputs.attachments(), attachmentLimits: inputs.attachmentLimits())
             : nil
-        let overLimit = promptLength.flatMap { $0.isOverLimit ? UTIFooterPromptOverLimit(count: $0.count, limit: $0.limit) : nil }
+        let overLimit = promptLength.flatMap { $0.isOverLimit ? $0 : nil }
         if overLimit != reportedOverLimit {
             reportedOverLimit = overLimit
             outputs.onOverLimitChanged(overLimit)

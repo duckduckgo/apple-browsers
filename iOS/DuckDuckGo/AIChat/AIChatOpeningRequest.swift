@@ -48,7 +48,7 @@ struct AIChatOpeningPromptInfo: Equatable {
         switch prompt.tool {
         case .query(let query):
             queryInfo = Self(query: query.prompt, autoSubmit: query.autoSubmit,
-                             hasAttachments: query.images?.isEmpty == false || query.files?.isEmpty == false)
+                             hasAttachments: !query.attachments.isEmpty)
         case .summary(let summary):
             queryInfo = Self(query: summary.text, autoSubmit: false, hasAttachments: false)
         case .translation(let translation):
@@ -75,15 +75,14 @@ struct AIChatOpeningRequest {
 
         init(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType, tools: [AIChatRAGTool]?,
              modelId: String?, reasoningEffort: AIChatReasoningEffort?,
-             images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?,
-             termsAccepted: Bool, nativePromptFlow: DuckAIPromptFlowStart? = nil) {
+             attachments: AIChatPromptAttachments, termsAccepted: Bool, nativePromptFlow: DuckAIPromptFlowStart? = nil) {
             self.query = query
             self.autoSend = autoSend
             self.flowType = flowType
             self.tools = tools
             self.nativePromptFlow = nativePromptFlow
             nativePrompt = .queryPrompt(query ?? "", autoSubmit: autoSend, toolChoice: tools?.map(\.rawValue),
-                                        images: images, files: files, modelId: modelId, reasoningEffort: reasoningEffort)
+                                        attachments: attachments, modelId: modelId, reasoningEffort: reasoningEffort)
                 .withTermsAccepted(termsAccepted)
         }
 

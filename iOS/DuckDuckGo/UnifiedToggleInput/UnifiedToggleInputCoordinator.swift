@@ -1034,7 +1034,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func makeAttachments(from request: EditPromptRequest) -> [UnifiedToggleInputAttachment] {
         var attachments: [UnifiedToggleInputAttachment] = []
-        for image in request.images ?? [] {
+        for image in request.attachments.images ?? [] {
             guard let data = Data(base64Encoded: image.data), let uiImage = UIImage(data: data) else { continue }
             let fileName = "image.\(image.format == "png" ? "png" : "jpg")"
             attachments.append(.image(AIChatImageAttachment(image: uiImage,
@@ -1042,7 +1042,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                                             originalEncodedData: data,
                                                             originalFormat: image.format)))
         }
-        for file in request.files ?? [] {
+        for file in request.attachments.files ?? [] {
             guard let data = Data(base64Encoded: file.data) else { continue }
             attachments.append(.file(UnifiedToggleInputAttachmentPresenter.makeFileAttachment(data: data,
                                                                                               fileName: file.fileName,
@@ -1636,7 +1636,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         clearStoreEntryAfterSubmission()
         showCollapsed()
         let didSendBridgeMessage = userScript.canDispatchBridgeMessages
-        userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
+        userScript.submitPrompt(text, attachments: .none, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
         recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         featureDiscovery.markDuckAIPromptSubmitted()
     }
@@ -2253,16 +2253,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
 
         if isEditing {
-            let images = selectedModelSupportsImageUpload
-                ? (UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments) ?? [])
-                : nil
-            let files = selectedModelSupportsFileUpload
-                ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
-                : nil
+            let attachments = UnifiedToggleInputAttachmentEncoder.encodeForEdit(viewController.currentAttachments,
+                                                                                imagesSupported: selectedModelSupportsImageUpload,
+                                                                                filesSupported: selectedModelSupportsFileUpload)
             _ = acceptTermsOfServiceIfAskTapped(trigger)
             footerController?.recordPromptSubmitted()
             pixelReporter.reportEditSubmitted()
-            exitEditMode(reply: .submit(prompt: text, images: images, files: files))
+            exitEditMode(reply: .submit(prompt: text, attachments: attachments))
             return
         }
 
@@ -2295,19 +2292,16 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             attachmentsSelected: !viewController.currentAttachments.isEmpty
         )
 
-        let images = selectedModelSupportsImageUpload
-            ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
-            : nil
-        let files = selectedModelSupportsFileUpload
-            ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
-            : nil
+        let attachments = UnifiedToggleInputAttachmentEncoder.encode(viewController.currentAttachments,
+                                                                     imagesSupported: selectedModelSupportsImageUpload,
+                                                                     filesSupported: selectedModelSupportsFileUpload)
 
         let tabAttachmentRequest = isContextualChatState
             ? userScript?.attachedTabContextsProvider?()
             : takeTabAttachmentRequest()
         if !isContextualChatState, userScript == nil, let tabAttachmentRequest {
             let prompt = AIChatNativePrompt.queryPrompt(text, autoSubmit: true, toolChoice: tools?.map(\.rawValue),
-                                                       images: images, files: files, modelId: configuration.modelId,
+                                                       attachments: attachments, modelId: configuration.modelId,
                                                        reasoningEffort: configuration.reasoningEffort)
                 .withTermsAccepted(termsAccepted)
             prepareInitialPrompt(prompt, request: tabAttachmentRequest)
@@ -2315,7 +2309,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
-        deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools,
+        deliverAIChatPrompt(text: text, attachments: attachments, configuration: configuration, tools: tools,
                             termsAccepted: termsAccepted, userScript: userScript, tabAttachmentRequest: tabAttachmentRequest)
         // After delivery, so every pixel this submission fires (including the contextual
         // ones fired during delivery) still reads the pre-submission first-prompt state.
@@ -2375,8 +2369,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     private func deliverAIChatPrompt(text: String,
-                                     images: [AIChatNativePrompt.NativePromptImage]?,
-                                     files: [AIChatNativePrompt.NativePromptFile]?,
+                                     attachments: AIChatPromptAttachments,
                                      configuration: PromptSubmissionConfiguration,
                                      tools: [AIChatRAGTool]?,
                                      termsAccepted: Bool,
@@ -2389,8 +2382,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 modelId: configuration.modelId,
                 tools: tools,
                 reasoningEffort: configuration.reasoningEffort,
-                images: images,
-                files: files,
+                attachments: attachments,
                 termsAccepted: termsAccepted
             )
             delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
@@ -2419,7 +2411,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
         if let userScript {
             let origin = pixelReporter.currentPromptOrigin()
-            userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools,
+            userScript.submitPrompt(text, attachments: attachments, modelId: configuration.modelId, tools: tools,
                                     reasoningEffort: configuration.reasoningEffort, tabAttachmentRequest: tabAttachmentRequest,
                                     termsAccepted: termsAccepted,
                                     onPromptDispatched: { [weak self] in
@@ -2428,7 +2420,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             })
         } else {
             delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort,
-                                                        images: images, files: files, termsAccepted: termsAccepted,
+                                                        attachments: attachments, termsAccepted: termsAccepted,
                                                         tabAttachmentRequest: tabAttachmentRequest)
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
         }

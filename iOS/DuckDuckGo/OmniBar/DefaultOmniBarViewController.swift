@@ -86,8 +86,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             selectedModelId: modelPickerController?.currentModelId,
             selectedReasoningEffort: reasoningPickerController?.selectedReasoningEffort,
             selectedTools: toolPickerController?.selectedToolsForSubmission,
-            selectedImages: attachmentController?.encodedImages,
-            selectedFiles: attachmentController?.encodedFiles,
+            selectedAttachments: attachmentController?.encodedAttachments ?? .none,
             userTier: modelPickerController?.modelStore.subscriptionState.userTier ?? .free
         )
     }

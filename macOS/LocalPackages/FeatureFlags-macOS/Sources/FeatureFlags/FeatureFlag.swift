@@ -1052,7 +1052,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .syncImprovedPairingFlow:
-            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:

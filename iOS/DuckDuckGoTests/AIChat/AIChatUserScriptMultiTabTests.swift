@@ -153,7 +153,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Legacy prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
 
         XCTAssertTrue(submitted, "Legacy submission remains synchronous")
         await fulfillment(of: [delivered], timeout: 1)
@@ -171,7 +171,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
         featureFlagger.enabledFeatureFlags = []
         gate.resume([context(tabId: "other")])
@@ -195,7 +195,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Prompt dispatched without additional contexts")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
         featureFlagger.enabledFeatureFlags = []
         await fulfillment(of: [delivered], timeout: 1)
 
@@ -223,7 +223,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Rich prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("hello", images: images, files: files, modelId: "model", tools: [.webSearch], reasoningEffort: .high)
+        script.submitPrompt("hello", attachments: AIChatPromptAttachments(images: images, files: files), modelId: "model", tools: [.webSearch], reasoningEffort: .high)
         await fulfillment(of: [gate.started], timeout: 1)
         XCTAssertFalse(consumed)
         XCTAssertFalse(submitted)
@@ -234,7 +234,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         await fulfillment(of: [delivered], timeout: 1)
 
         XCTAssertEqual(webView.prompts.last, .queryPrompt(
-            "hello", autoSubmit: true, toolChoice: [AIChatRAGTool.webSearch.rawValue], images: images, files: files,
+            "hello", autoSubmit: true, toolChoice: [AIChatRAGTool.webSearch.rawValue], attachments: AIChatPromptAttachments(images: images, files: files),
             modelId: "model", pageContext: .multiple([page, tab]), selections: [selection], reasoningEffort: .high))
         XCTAssertEqual(consumedSelections, [selection.id])
         XCTAssertTrue(consumed)
@@ -268,9 +268,9 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         delivered.expectedFulfillmentCount = 2
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("first", images: nil, modelId: nil)
+        script.submitPrompt("first", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
-        script.submitPrompt("second", images: nil, modelId: nil)
+        script.submitPrompt("second", attachments: .none, modelId: nil)
         XCTAssertTrue(webView.prompts.isEmpty)
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
         gate.resume([])
@@ -307,9 +307,9 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
                 return []
             }, didConsume: { XCTFail("Queued request consumed") })
         }
-        script.submitPrompt("old", images: nil, modelId: nil)
+        script.submitPrompt("old", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
-        script.submitPrompt("queued", images: nil, modelId: nil)
+        script.submitPrompt("queued", attachments: .none, modelId: nil)
 
         script.submitStartChatAction()
         requestProvider = nil
@@ -334,7 +334,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         requestProvider = {
             MultiTabAttachmentRequest(contexts: { await gate.wait() }, didConsume: { unexpected.fulfill() })
         }
-        script?.submitPrompt("old", images: nil, modelId: nil)
+        script?.submitPrompt("old", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
 
         script = nil
@@ -368,7 +368,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
             }, didConsume: { unexpected.fulfill() })
         }
 
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
         await fulfillment(of: [provided], timeout: 1)
         await fulfillment(of: [unexpected], timeout: 0.1)
 
@@ -553,7 +553,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         webView.onPrompt = { _ in unexpected.fulfill() }
         let collected = expectation(description: "Subsequent prompt collects contexts after initial pull")
 
-        script.submitPrompt("second", images: nil, modelId: nil, tools: nil, tabAttachmentRequest: .init(contexts: {
+        script.submitPrompt("second", attachments: .none, modelId: nil, tools: nil, tabAttachmentRequest: .init(contexts: {
             XCTAssertTrue(initialWasConsumed)
             collected.fulfill()
             return []
@@ -584,8 +584,8 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         pushed.expectedFulfillmentCount = 2
         webView.onPrompt = { _ in pushed.fulfill() }
 
-        script.submitPrompt("second", images: nil, modelId: nil, tools: nil, tabAttachmentRequest: nil)
-        script.submitPrompt("third", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("second", attachments: .none, modelId: nil, tools: nil, tabAttachmentRequest: nil)
+        script.submitPrompt("third", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [] }, didConsume: {}))
 
         await fulfillment(of: [pushed], timeout: 1)
@@ -608,7 +608,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let unexpected = expectation(description: "Cancelled ordinary submission does not dispatch or consume")
         unexpected.isInverted = true
         webView.onPrompt = { _ in unexpected.fulfill() }
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { await gate.wait() }, didConsume: { unexpected.fulfill() },
                                                         cancel: { released.fulfill() }))
         await fulfillment(of: [gate.started], timeout: 1)
@@ -627,7 +627,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         requestProvider = { XCTFail("Submitted request must not read a later draft"); return nil }
         let delivered = expectation(description: "Captured prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [attached] }, didConsume: {}))
         await fulfillment(of: [delivered], timeout: 1)
         XCTAssertEqual(webView.prompts.last?.pageContext, .multiple([attached]))
@@ -643,7 +643,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Current tab prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [currentTab] }, didConsume: {},
                                                         didDispatch: reporter.makeTabSubmissionReporter(requestedTabCount: 1)))
         await fulfillment(of: [delivered], timeout: 1)
@@ -659,7 +659,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let attached = context(tabId: "submitted")
         let delivered = expectation(description: "Prompt dispatched without invalidated context")
         webView.onPrompt = { _ in delivered.fulfill() }
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [attached] }, didConsume: {}, validate: { _ in [] }))
         await fulfillment(of: [delivered], timeout: 1)
         XCTAssertNil(webView.prompts.last?.pageContext)
@@ -669,7 +669,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let script = makeScript()
         script.broker = nil
         let released = expectation(description: "Unavailable dispatch releases request")
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [self.context(tabId: "other")] },
                                                         didConsume: { XCTFail("Missing broker must not consume") },
                                                         cancel: { released.fulfill() }))
@@ -681,7 +681,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let gate = ContextGate(started: expectation(description: "Provider started"))
         let released = expectation(description: "Provider cancelled")
         released.assertForOverFulfill = false
-        script.submitPrompt("cancelled", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("cancelled", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { await gate.wait() },
                                                         didConsume: { XCTFail("Cancelled request must not consume") },
                                                         cancel: { released.fulfill() }))
@@ -773,7 +773,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let unexpected = expectation(description: "Old queued message is dropped")
         unexpected.isInverted = true
         webView.onPrompt = { _ in unexpected.fulfill() }
-        old.submitPrompt("cancelled follow-up", images: nil, modelId: nil)
+        old.submitPrompt("cancelled follow-up", attachments: .none, modelId: nil)
         old.cleanUpForReplacement()
 
         let replacement = makeScript()
@@ -802,7 +802,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         initialPromptSession.install(delivery)
         let navigation = DummyWKNavigation()
         initialPromptSession.didStartNavigation(navigation)
-        script.submitPrompt("cancelled follow-up", images: nil, modelId: nil)
+        script.submitPrompt("cancelled follow-up", attachments: .none, modelId: nil)
         await fulfillment(of: [waitStarted], timeout: 1)
 
         XCTAssertTrue(initialPromptSession.didFailNavigation(navigation))
@@ -856,7 +856,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
             old.cancelPendingTabContextSubmission()
             oldResultGate.open()
         }
-        old.submitPrompt("old follow-up", images: nil, modelId: nil, tools: nil, tabAttachmentRequest: .init(contexts: {
+        old.submitPrompt("old follow-up", attachments: .none, modelId: nil, tools: nil, tabAttachmentRequest: .init(contexts: {
             XCTFail("Cancelled old submission must not collect contexts")
             return []
         }, didConsume: { XCTFail("Cancelled old submission must not consume attachments") }, cancel: {
@@ -872,7 +872,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let unexpected = expectation(description: "Replacement does not dispatch before initial pull")
         unexpected.isInverted = true
         webView.onPrompt = { _ in unexpected.fulfill() }
-        replacement.submitPrompt("replacement follow-up", images: nil, modelId: nil)
+        replacement.submitPrompt("replacement follow-up", attachments: .none, modelId: nil)
         await fulfillment(of: [replacementWaitStarted, oldResultGate.started], timeout: 1)
         XCTAssertFalse(didFinishOldSubmission)
         XCTAssertEqual(waitsStarted, 2)
@@ -903,11 +903,11 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let gate = ContextGate(started: expectation(description: "Earlier send collecting context"))
         let pushed = expectation(description: "Earlier send dispatched")
         webView.onPrompt = { _ in pushed.fulfill() }
-        script.submitPrompt("earlier", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("earlier", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { await gate.wait() }, didConsume: {}))
         await fulfillment(of: [gate.started], timeout: 1)
         initialPromptSession.install(AIChatInitialPromptDelivery(prompt: .queryPrompt("old initial", autoSubmit: true)) {})
-        script.submitPrompt("must stay with old initial", images: nil, modelId: nil)
+        script.submitPrompt("must stay with old initial", attachments: .none, modelId: nil)
         initialPromptSession.install(AIChatInitialPromptDelivery(prompt: .queryPrompt("new initial", autoSubmit: true)) {})
         gate.resume([])
         await fulfillment(of: [pushed], timeout: 1)
@@ -915,7 +915,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let actual = try await pull([:], .mock()) as? AIChatNativePrompt
         let drained = expectation(description: "Queue drained")
         webView.onPrompt = { _ in drained.fulfill() }
-        script.submitPrompt("last", images: nil, modelId: nil)
+        script.submitPrompt("last", attachments: .none, modelId: nil)
         await fulfillment(of: [drained], timeout: 1)
 
         XCTAssertEqual(actual, .queryPrompt("new initial", autoSubmit: true))
@@ -984,7 +984,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
     private func dispatch(_ script: AIChatUserScript) async -> AIChatNativePrompt? {
         let delivered = expectation(description: "Prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
         await fulfillment(of: [delivered], timeout: 1)
         return webView.prompts.last
     }
@@ -1012,7 +1012,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
             MultiTabAttachmentRequest(contexts: { await gate.wait() }, didConsume: { unexpected.fulfill() },
                                       cancel: { cancelled?.fulfill() })
         }
-        script.submitPrompt("cancelled", images: nil, modelId: nil)
+        script.submitPrompt("cancelled", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
 
         try await invalidate(script)

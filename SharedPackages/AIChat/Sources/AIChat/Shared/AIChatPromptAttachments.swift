@@ -19,7 +19,8 @@
 import Foundation
 
 /// Everything a prompt carries besides its text, in wire form. A nil kind omits its key; an empty array sends `[]`.
-public struct AIChatPromptAttachments: Equatable {
+/// Codes its keys flat into the enclosing message, so `Query`, `EditPromptRequest` and `EditPromptReply` share one coding.
+public struct AIChatPromptAttachments: Codable, Equatable {
     public var images: [AIChatNativePrompt.NativePromptImage]?
     public var files: [AIChatNativePrompt.NativePromptFile]?
 

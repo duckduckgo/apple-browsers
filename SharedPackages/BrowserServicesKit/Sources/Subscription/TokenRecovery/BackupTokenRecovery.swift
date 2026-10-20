@@ -53,7 +53,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
     public func recover(_ context: TokenRecoveryContext) async throws {
         let isMissingToken = context.trigger == .missingToken
         if isMissingToken, let retryAfter = currentRetryAfter(), now() < retryAfter {
-            Logger.subscriptionTokensManagement.debug("Skipping the backup restore until \(retryAfter, privacy: .public) after a transient failure")
+            Logger.subscriptionTokensManagement.log("Skipping the backup restore until \(retryAfter, privacy: .public) after a transient failure")
             throw TokenBackupError.unavailable
         }
 
@@ -62,13 +62,14 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
                                                         issuedAfter: context.signOutCutoff)
         } catch {
             if isMissingToken, Self.isTransient(error) {
-                setRetryAfter(now().addingTimeInterval(retryInterval))
+                let retryAfter = now().addingTimeInterval(retryInterval)
+                Logger.subscriptionTokensManagement.log("Backup restore failed for a transient reason, skipping missing-token restores until \(retryAfter, privacy: .public)")
+                setRetryAfter(retryAfter)
             }
             throw error
         }
 
         setRetryAfter(nil)
-        Logger.subscriptionTokensManagement.log("Token restored from backup, trigger: \(context.trigger.rawValue, privacy: .public)")
         onRestored?(context.trigger)
     }
 

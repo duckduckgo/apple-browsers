@@ -27,15 +27,23 @@ enum UnifiedToggleInputAttachmentEncoder {
                        filesSupported: Bool) -> AIChatPromptAttachments {
         let images = imagesSupported ? encodedImages(in: attachments) : []
         let files = filesSupported ? encodedFiles(in: attachments) : []
+        let textPasted = encodedPastedText(in: attachments)
         return AIChatPromptAttachments(images: images.isEmpty ? nil : images,
-                                       files: files.isEmpty ? nil : files)
+                                       files: files.isEmpty ? nil : files,
+                                       textPasted: textPasted.isEmpty ? nil : textPasted)
     }
 
     static func encodeForEdit(_ attachments: [UnifiedToggleInputAttachment],
                               imagesSupported: Bool,
-                              filesSupported: Bool) -> AIChatPromptAttachments {
+                              filesSupported: Bool,
+                              carriesPastedText: Bool) -> AIChatPromptAttachments {
         AIChatPromptAttachments(images: imagesSupported ? encodedImages(in: attachments) : nil,
-                                files: filesSupported ? encodedFiles(in: attachments) : nil)
+                                files: filesSupported ? encodedFiles(in: attachments) : nil,
+                                textPasted: carriesPastedText ? encodedPastedText(in: attachments) : nil)
+    }
+
+    private static func encodedPastedText(in attachments: [UnifiedToggleInputAttachment]) -> [AIChatNativePrompt.NativePromptPastedText] {
+        attachments.compactMap { $0.pastedText?.payload }
     }
 
     private static func encodedImages(in attachments: [UnifiedToggleInputAttachment]) -> [AIChatNativePrompt.NativePromptImage] {

@@ -385,6 +385,14 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
     }
 
+    public struct NativePromptPastedText: Codable, Equatable {
+        public let content: String
+
+        public init(content: String) {
+            self.content = content
+        }
+    }
+
     public struct Query: Codable, Equatable {
         public static let tool = "query"
 

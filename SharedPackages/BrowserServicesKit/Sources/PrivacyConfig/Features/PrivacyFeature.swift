@@ -414,6 +414,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
 
+    /// Turns long pastes in the native Duck.ai inputs into pasted-text attachments.
+    /// https://app.asana.com/0/0/1219207880593588/f
+    case unifiedToggleInputPastedText
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
 

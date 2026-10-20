@@ -23,16 +23,27 @@ import Foundation
 public struct AIChatPromptAttachments: Codable, Equatable {
     public var images: [AIChatNativePrompt.NativePromptImage]?
     public var files: [AIChatNativePrompt.NativePromptFile]?
+    public var textPasted: [AIChatNativePrompt.NativePromptPastedText]?
 
     public static var none: AIChatPromptAttachments { AIChatPromptAttachments() }
 
     public init(images: [AIChatNativePrompt.NativePromptImage]? = nil,
-                files: [AIChatNativePrompt.NativePromptFile]? = nil) {
+                files: [AIChatNativePrompt.NativePromptFile]? = nil,
+                textPasted: [AIChatNativePrompt.NativePromptPastedText]? = nil) {
         self.images = images
         self.files = files
+        self.textPasted = textPasted
     }
 
     public var isEmpty: Bool {
-        (images?.isEmpty ?? true) && (files?.isEmpty ?? true)
+        (images?.isEmpty ?? true) && (files?.isEmpty ?? true) && (textPasted?.isEmpty ?? true)
+    }
+
+    /// A malformed `textPasted` drops only the pastes; failing the whole message would cancel the user's edit.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        images = try container.decodeIfPresent([AIChatNativePrompt.NativePromptImage].self, forKey: .images)
+        files = try container.decodeIfPresent([AIChatNativePrompt.NativePromptFile].self, forKey: .files)
+        textPasted = (try? container.decodeIfPresent([AIChatNativePrompt.NativePromptPastedText].self, forKey: .textPasted)) ?? nil
     }
 }

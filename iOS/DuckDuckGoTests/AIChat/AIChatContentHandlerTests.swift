@@ -863,6 +863,24 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.url, "https://example.com/queued")
     }
 
+    func testSubmitPasteOnlyRichPromptForwardsThePasteWithEmptyText() {
+        let mockUserScript = MockAIChatUserScript()
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .contextual)
+        let paste = AIChatNativePrompt.NativePromptPastedText(content: String(repeating: "a", count: 4_000))
+
+        handler.submitPrompt("", attachments: AIChatPromptAttachments(textPasted: [paste]), modelId: nil, tools: nil, pageContext: nil, reasoningEffort: nil)
+
+        XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "")
+        XCTAssertEqual(mockUserScript.lastSubmittedAttachments?.textPasted, [paste])
+    }
+
+    func testBuildQueryURLWithEmptyQueryCarriesNoPromptParameter() throws {
+        let url = handler.buildQueryURL(query: "", autoSend: true, flowType: .default, tools: nil)
+
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertNil(components.queryItems?.first { $0.name == AIChatURLParameters.promptQueryName }, "A paste-only prompt travels in the payload, never in the URL")
+    }
+
     func testSubmitRichPromptForwardsAttachmentsUnchanged() {
         let mockUserScript = MockAIChatUserScript()
         handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .contextual)

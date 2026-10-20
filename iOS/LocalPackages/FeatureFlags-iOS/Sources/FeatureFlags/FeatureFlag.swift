@@ -204,10 +204,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
     case iPhoneDuoLaunchReporting
 
-    /// Local inactivity provisional notifications delivered to Notification Center.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471590692
-    case inactivityNotification
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469585479
     case daxEasterEggLogos
 
@@ -785,8 +781,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.widgetReporting), supportsLocalOverriding: false)
         case .iPhoneDuoLaunchReporting:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.iPhoneDuoLaunchReporting))
-        case .inactivityNotification:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
             Config(defaultValue: .enabled, source: .remoteReleasable(DaxEasterEggLogosSubfeature.featureEnabled))
         case .daxEasterEggPermanentLogo:

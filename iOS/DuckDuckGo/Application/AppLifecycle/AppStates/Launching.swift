@@ -416,7 +416,6 @@ struct Launching: LaunchingHandling {
             return shortcutItems.filter { $0.type != ShortcutKey.openVPNSettings }
         })
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
-            featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             stateStore: inactivityStateStore

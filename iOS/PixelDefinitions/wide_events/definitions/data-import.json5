@@ -1,10 +1,10 @@
 {
     "ios-data-import": {
-        "description": "Sent at the end of a data import flow, capturing the import source plus per-type (bookmarks, passwords, credit cards) status, timing, and errors. The journey resolves to SUCCESS when all selected types import cleanly, FAILURE when every type fails, or UNKNOWN when the user cancels the document picker or the flow is orphaned and resolved on a later launch (partial data or timeout).",
+        "description": "Sent at the end of a data import flow, capturing the import source plus per-type (bookmarks, passwords, credit cards, history) status, timing, and errors. The journey resolves to SUCCESS when all selected types import cleanly, FAILURE when every type fails, or UNKNOWN when the user cancels the document picker or the flow is orphaned and resolved on a later launch (partial data or timeout).",
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "ios-data-import",
-            "version": "2.0"
+            "version": "2.1"
         },
         "feature": {
             "name": "data-import",
@@ -70,7 +70,22 @@
                         "type": "integer",
                         "description": "Duration of the credit cards importer, in milliseconds."
                     },
-                    "creditCards_error": "dataImportTypeError"
+                    "creditCards_error": "dataImportTypeError",
+                    "history_status": {
+                        "type": "string",
+                        "description": "Final status of the browsing history import.",
+                        "enum": ["SUCCESS", "FAILURE"]
+                    },
+                    "history_status_reason": {
+                        "type": "string",
+                        "description": "Reason accompanying the history import status. `partial_data` = only some history visits were saved; visits that were already in history don't count.",
+                        "enum": ["partial_data"]
+                    },
+                    "history_importer_latency_ms": {
+                        "type": "integer",
+                        "description": "Duration of the history importer, in milliseconds."
+                    },
+                    "history_error": "dataImportTypeError"
                 }
             }
         },

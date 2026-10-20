@@ -22,8 +22,6 @@ import WideEvent
 
 final class DataImportWideEventDataTests: XCTestCase {
 
-    private let reportedTypes = DataImport.DataType.allCases.filter { $0 != .history }
-
     func testPixelParameters_setupWithCompleteSuccessfulFlow() {
         let eventData = DataImportWideEventData(
             source: .safari,
@@ -60,18 +58,15 @@ final class DataImportWideEventDataTests: XCTestCase {
         let parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.source"], "safari")
 
-        // History isn't in the wide event schema yet
-        XCTAssertFalse(parameters.keys.contains { $0.hasPrefix("feature.data.ext.history") })
-
         // Have all per type status
-        for type in reportedTypes {
+        for type in DataImport.DataType.allCases {
             XCTAssertEqual(parameters["feature.data.ext.\(type.description)_status"], "SUCCESS")
             XCTAssertNil(parameters["feature.data.ext.passwords_status_reason"])
         }
 
         // Have all per type durations
         XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "1500")
-        for type in reportedTypes {
+        for type in DataImport.DataType.allCases {
             XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "1000")
         }
 
@@ -106,6 +101,10 @@ final class DataImportWideEventDataTests: XCTestCase {
             start: base,
             end: base.addingTimeInterval(1.0)
         )
+        eventData.historyImporterDuration = WideEvent.MeasuredInterval(
+            start: base,
+            end: base.addingTimeInterval(1.0)
+        )
 
         eventData.bookmarkImportStatus = .success(reason: DataImportWideEventData.StatusReason.partialData.rawValue)
         eventData.passwordImportStatus = .failure
@@ -129,7 +128,7 @@ final class DataImportWideEventDataTests: XCTestCase {
 
         // Have all per type durations
         XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "1500")
-        for type in reportedTypes {
+        for type in DataImport.DataType.allCases {
             XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "1000")
         }
 
@@ -280,10 +279,14 @@ final class DataImportWideEventDataTests: XCTestCase {
             start: base,
             end: base.addingTimeInterval(1.0)
         )
+        eventData.historyImporterDuration = WideEvent.MeasuredInterval(
+            start: base,
+            end: base.addingTimeInterval(1.0)
+        )
 
         let parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "1500")
-        for type in reportedTypes {
+        for type in DataImport.DataType.allCases {
             XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "1000")
         }
     }

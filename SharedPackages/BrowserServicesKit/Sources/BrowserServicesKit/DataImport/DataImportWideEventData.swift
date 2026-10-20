@@ -28,7 +28,7 @@ public class DataImportWideEventData: WideEventData {
         featureName: "data-import",
         mobileMetaType: "ios-data-import",
         desktopMetaType: "macos-data-import",
-        version: "1.2.0"
+        version: "1.2.1"
     )
     public static let importTimeout: TimeInterval = .minutes(15)
 
@@ -134,8 +134,7 @@ extension DataImportWideEventData {
             (WideEventParameter.DataImportFeature.latency, overallDuration?.intValue(.noBucketing)),
         ])
 
-        // History isn't in the data-import wide event schema yet.
-        for type in DataImport.DataType.allCases where type != .history {
+        for type in DataImport.DataType.allCases {
             addTypeStatusAndReason(self[keyPath: type.statusPath], type: type, to: &params)
             addTypeImporterLatency(self[keyPath: type.importerDurationPath], type: type, to: &params)
             addTypeError(self[keyPath: type.errorPath], type: type, to: &params)

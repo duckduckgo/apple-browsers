@@ -635,9 +635,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
         // Before creating a new account, try to restore the missing token from the backup
         if policy == .createIfNeeded, tokenBeforeAttempt == .missing, tokenRecoveryCoordinator != nil {
-            if (try? await recoverToken(trigger: .missingToken, deadPrimary: nil)) != nil {
-                Logger.subscriptionTokensManagement.log("Restored the missing token before creating an account")
-            }
+            try await restoreBeforeAccountCreation()
         }
 
         do {
@@ -699,7 +697,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 } catch TokenBackupError.sessionChanged {
                     // The user signed out, signed in or switched account during the recovery: keep that session, don't sign out
                     Logger.subscriptionTokensManagement.log("The session changed during token recovery, keeping the current session")
-                    if case .present(let current) = localTokenSnapshot(), !current.decodedRefreshToken.isExpired() {
+                    if case .present(let current) = localTokenSnapshot(),
+                       current.refreshToken != failedRequest.tokenAfterAttempt.tokenContainer?.refreshToken,
+                       !current.decodedRefreshToken.isExpired() {
                         authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil, signedOut: false)
                         updateCachedUserEntitlements(current.decodedAccessToken.subscriptionEntitlements)
                         updateCachedIsUserAuthenticated(true)
@@ -767,6 +767,23 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                                          localTokenStateAfterSignOut: localTokenState(),
                                                          now: failedRequest.capturedAt)
         pixelHandler.handle(pixel: .automaticSignOut(data, triggeringError))
+    }
+
+    /// Restores the missing current token from the backup before an account is created, ignoring the missing-token retry pause.
+    /// - Throws: `SubscriptionManagerError.errorRetrievingTokenContainer` when the restore failed for a reason that may not last,
+    ///   so no account is created while a backup that could still restore the session is stored. Otherwise nothing is thrown.
+    private func restoreBeforeAccountCreation() async throws {
+        do {
+            _ = try await recoverToken(trigger: .accountCreation, deadPrimary: nil)
+            Logger.subscriptionTokensManagement.log("Restored the missing token before creating an account")
+        } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
+            return
+        } catch let error where BackupTokenRecovery.isTransient(error) {
+            Logger.subscriptionTokensManagement.error("Backup restore failed before creating an account, not creating one: \(String(describing: error), privacy: .public)")
+            throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
+        } catch {
+            return
+        }
     }
 
     /// Recovers the current token after its refresh was rejected.
@@ -889,26 +906,40 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     /// The sign-out cut-off for an explicit sign-out happening now: the newest issue date among the stored current and backup refresh tokens,
-    /// both measured by the auth server's clock. When neither can be read, the device's current date.
-    private func currentSignOutCutoff() -> Date {
-        let storedTokens = [try? oAuthClient.currentTokenContainer(), oAuthClient.backupTokenContainer()]
-        return storedTokens.compactMap { $0?.decodedRefreshToken.issuedAtDate }.max() ?? Date()
+    /// both measured by the auth server's clock.
+    /// - Returns: That date; the device's current date when the current token container can't be read and no backup is stored;
+    ///   nil when neither is stored, so the previous cut-off is kept.
+    private func currentSignOutCutoff() -> Date? {
+        let current: TokenContainer?
+        let currentReadFailed: Bool
+        do {
+            current = try oAuthClient.currentTokenContainer()
+            currentReadFailed = false
+        } catch {
+            current = nil
+            currentReadFailed = true
+        }
+        let newestIssueDate = [current, oAuthClient.backupTokenContainer()].compactMap { $0?.decodedRefreshToken.issuedAtDate }.max()
+        return newestIssueDate ?? (currentReadFailed ? Date() : nil)
     }
 
     /// Signs the user out by removing the stored tokens, the cached subscription and the cached authentication state.
     /// - Parameters:
     ///   - notifyUI: Whether to publish the authentication state change so the UI updates.
     ///   - userInitiated: Whether the user requested the sign-out. Only used when `notifyUI` is `true`.
-    ///   - revokeOnServer: Whether this is an explicit sign-out. When `true`, records the sign-out cut-off, deletes the backup token,
+    ///   - revokeOnServer: Whether this is an explicit sign-out. When `true`, records the sign-out cut-off if a token is stored, deletes the backup token,
     ///     and calls `/logout`, which revokes every token issued from the same login, including the ones held by other processes.
     ///     When `false`, only the current local token is removed and the backup is kept.
     private func clearSession(notifyUI: Bool, userInitiated: Bool, revokeOnServer: Bool) async {
         Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI, privacy: .public), User Initiated: \(userInitiated, privacy: .public), Revoke on server: \(revokeOnServer, privacy: .public)")
 
         if revokeOnServer {
-            let signOutCutoff = currentSignOutCutoff()
-            Logger.subscriptionTokensManagement.log("SignOut: Recording the sign-out cut-off: \(signOutCutoff, privacy: .public)")
-            userDefaults.subscriptionSignOutCutoff = signOutCutoff
+            if let signOutCutoff = currentSignOutCutoff() {
+                Logger.subscriptionTokensManagement.log("SignOut: Recording the sign-out cut-off: \(signOutCutoff, privacy: .public)")
+                userDefaults.subscriptionSignOutCutoff = signOutCutoff
+            } else {
+                Logger.subscriptionTokensManagement.log("SignOut: No token stored, keeping the previous sign-out cut-off")
+            }
             oAuthClient.removeBackup()
             do {
                 try await oAuthClient.logout()

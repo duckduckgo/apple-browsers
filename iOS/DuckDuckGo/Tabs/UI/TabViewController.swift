@@ -341,7 +341,7 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
-    private weak var autofillPromptViewController: UIViewController?
+    private let autofillPromptKeyboardHandler = AutofillPromptKeyboardHandler()
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
                                                                   isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) },
                                                                   eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
@@ -4266,8 +4266,7 @@ extension TabViewController: WKNavigationDelegate {
 
     /// A pending field tap can restore focus after blur, so observe keyboard appearances while the prompt is presented.
     func prepareForAutofillPrompt(_ promptViewController: UIViewController) {
-        autofillPromptViewController = promptViewController
-        registerForAutofillPromptKeyboardNotifications()
+        autofillPromptKeyboardHandler.startObserving(for: promptViewController, webView: webView)
         dismissKeyboardIfPresent()
     }
 
@@ -4313,52 +4312,13 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func unregisterFromKeyboardNotifications() {
-        NotificationCenter.default.removeObserver(
-            self,
-            name: UIResponder.keyboardWillShowNotification,
-            object: nil
-        )
+        autofillPromptKeyboardHandler.stopObserving()
 
         NotificationCenter.default.removeObserver(
             self,
             name: UIResponder.keyboardDidHideNotification,
             object: nil
         )
-    }
-
-    private func registerForAutofillPromptKeyboardNotifications() {
-        // Avoid duplicate registrations if another prompt opens before the previous one is cleaned up.
-        NotificationCenter.default.removeObserver(
-            self,
-            name: UIResponder.keyboardWillShowNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(autofillPromptKeyboardWillShow),
-                                               name: UIResponder.keyboardWillShowNotification,
-                                               object: nil)
-    }
-
-    @objc private func autofillPromptKeyboardWillShow(_ notification: Notification) {
-        guard let promptViewController = autofillPromptViewController,
-              promptViewController.presentingViewController != nil else {
-            // Stop observing after dismissal without interrupting the keyboard the user just opened.
-            NotificationCenter.default.removeObserver(
-                self,
-                name: UIResponder.keyboardWillShowNotification,
-                object: nil
-            )
-            return
-        }
-
-        guard webView.window?.isKeyWindow == true,
-              let firstResponder = UIResponder.currentFirstResponder(),
-              firstResponder.isInViewHierarchy(of: webView) else {
-            return
-        }
-
-        webView.endEditing(true)
-        webView.resignFirstResponder()
     }
 
     @objc private func autofillBreakageReport(_ notification: Notification) {

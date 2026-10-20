@@ -616,6 +616,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.activateForTab("tab-A")
         let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: true)) }
         await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before the tab switch") }
 
         sut.activateForTab("tab-B")
 
@@ -634,6 +635,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func test_editPrompt_hide_cancelsEdit() async {
         let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)) }
         await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before hiding") }
 
         sut.hide()
 
@@ -649,6 +651,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
         let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)) }
         await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before rebinding") }
 
         sut.bindToTab(makeTestUserScript(), hasExistingChat: true)
 

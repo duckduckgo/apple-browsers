@@ -165,6 +165,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Hit Testing
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if isInputFrozenForInitialPromptPreparation && cardView.frame.contains(point) { return self }
         let result = super.hitTest(point, with: event)
         return result == self ? nil : result
     }
@@ -238,6 +239,29 @@ final class UnifiedToggleInputView: UIView {
 
     var isToolbarSubmitBlockedByRecoveryCard: Bool = false {
         didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
+    }
+
+    var tabAttachmentsRequirePromptText = false {
+        didSet { updateSubmitButtonAvailability() }
+    }
+
+    var isPreparingInitialPrompt: Bool = false {
+        didSet { toolsToolbar.isPreparingInitialPrompt = isPreparingInitialPrompt }
+    }
+
+    var isInputFrozenForInitialPromptPreparation = false {
+        didSet {
+            guard oldValue != isInputFrozenForInitialPromptPreparation else { return }
+            textEntryView.isInputFrozen = isInputFrozenForInitialPromptPreparation
+            for view in [toggleView, textEntryView, attachmentsStrip, toolsToolbar, inlineDismissButton] {
+                view.accessibilityElementsHidden = isInputFrozenForInitialPromptPreparation
+            }
+            cardView.isAccessibilityElement = isInputFrozenForInitialPromptPreparation
+            cardView.accessibilityLabel = isInputFrozenForInitialPromptPreparation
+                ? UserText.aiChatToolbarSubmitButtonAccessibilityLabel : nil
+            cardView.accessibilityTraits = isInputFrozenForInitialPromptPreparation ? [.notEnabled] : []
+            frozenInputOverlay.isHidden = !isInputFrozenForInitialPromptPreparation
+        }
     }
 
     var isInputBlockedByUsageLimit: Bool = false {
@@ -617,6 +641,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - UI
 
     private let cardView = UIView()
+    private let frozenInputOverlay = UIView()
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
@@ -838,6 +863,8 @@ final class UnifiedToggleInputView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         syncOmnibarMaterialTransitionCorners()
+        frozenInputOverlay.layer.cornerRadius = cardView.layer.cornerRadius
+        frozenInputOverlay.layer.maskedCorners = cardView.layer.maskedCorners
         guard !expandedShadowView.isHidden else { return }
         // Runs inside UIView.animate via layoutIfNeeded so the shadow corners animate with cardView.
         expandedShadowView.layer.cornerRadius = cardView.layer.cornerRadius
@@ -1644,6 +1671,8 @@ final class UnifiedToggleInputView: UIView {
         let hasValidAttachment = isAIChatMode && attachmentsStrip.attachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
 
+        toolsToolbar.isSubmitBlockedByMissingPromptText = tabAttachmentsRequirePromptText && isAIChatMode
+            && !hasText && hasValidAttachment && attachmentsStrip.attachments.allSatisfy(\.isTab)
         toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasText || hasValidAttachment)
         updateSubmitButtonStyle()
     }
@@ -1904,6 +1933,19 @@ private extension UnifiedToggleInputView {
         }
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)
+
+        frozenInputOverlay.translatesAutoresizingMaskIntoConstraints = false
+        frozenInputOverlay.backgroundColor = UIColor.systemGray.withAlphaComponent(0.3)
+        frozenInputOverlay.isUserInteractionEnabled = false
+        frozenInputOverlay.isHidden = true
+        frozenInputOverlay.clipsToBounds = true
+        addSubview(frozenInputOverlay)
+        NSLayoutConstraint.activate([
+            frozenInputOverlay.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            frozenInputOverlay.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            frozenInputOverlay.topAnchor.constraint(equalTo: cardView.topAnchor),
+            frozenInputOverlay.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
+        ])
 
         textEntryView.onTextInputActivated = { [weak self] in
             guard let self, !self.isExpanded else { return }

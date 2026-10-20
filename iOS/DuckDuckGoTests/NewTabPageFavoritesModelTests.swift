@@ -26,6 +26,7 @@ import Persistence
 @testable import Core
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
+import Testing
 
 final class NewTabPageFavoritesModelTests: XCTestCase {
     private let favoriteDataSource = MockNewTabPageFavoriteDataSource()
@@ -165,6 +166,70 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
                                      pixelFiring: pixelKitMock)
         // `adapter` retains `model`, keeping the Core Data stack alive for the test's lifetime.
         return (sut, adapter, db, recorder)
+    }
+}
+
+@Suite("Favorites expansion pixel")
+struct NewTabPageFavoritesExpansionPixelTests {
+
+    private let pixelKitMock = PixelKitMock()
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Expanding on the page reports it is not autocomplete", .timeLimit(.minutes(1)))
+    func expandingOnPageReportsNotAutocomplete() {
+        let sut = makeSUT(isFocussedState: false)
+
+        sut.changeExpansion(to: true)
+
+        #expect(sut.expansionState.isExpanded)
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.name) == ["new-tab-page_favorites_expansion_changed"])
+        #expect(pixelKitMock.actualFireCalls.first?.frequency == .dailyAndCount)
+        #expect(pixelKitMock.actualFireCalls.first?.pixel.parameters == ["expanded": "true", "is_autocomplete": "false"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Collapsing in autocomplete reports autocomplete", .timeLimit(.minutes(1)))
+    func collapsingInAutocompleteReportsAutocomplete() {
+        let sut = makeSUT(isFocussedState: true)
+        sut.expansionState.isExpanded = true
+
+        sut.changeExpansion(to: false)
+
+        #expect(!sut.expansionState.isExpanded)
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.name) == ["new-tab-page_favorites_expansion_changed"])
+        #expect(pixelKitMock.actualFireCalls.first?.pixel.parameters == ["expanded": "false", "is_autocomplete": "true"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Requesting the current state fires nothing", .timeLimit(.minutes(1)), arguments: [false, true])
+    func requestingCurrentStateFiresNothing(isExpanded: Bool) {
+        let sut = makeSUT(isFocussedState: false)
+        sut.expansionState.isExpanded = isExpanded
+
+        sut.changeExpansion(to: isExpanded)
+
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Restoring the tab's expansion state fires nothing", .timeLimit(.minutes(1)))
+    func restoringExpansionStateFiresNothing() {
+        let sut = makeSUT(isFocussedState: false)
+        let restoredState = FavoritesExpansionState()
+        restoredState.isExpanded = true
+
+        sut.expansionState = restoredState
+
+        #expect(sut.expansionState.isExpanded)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
+    }
+
+    private func makeSUT(isFocussedState: Bool) -> FavoritesViewModel {
+        FavoritesViewModel(isFocussedState: isFocussedState,
+                           favoriteDataSource: MockNewTabPageFavoriteDataSource(),
+                           faviconLoader: MockFavoritesFaviconLoading(),
+                           faviconsCache: MockFavoritesFaviconCaching(),
+                           pixelFiring: pixelKitMock)
     }
 }
 

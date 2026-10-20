@@ -1,7 +1,7 @@
 //
 //  DeleteAccountView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct DeleteAccountView: View {
 
@@ -25,36 +26,69 @@ struct DeleteAccountView: View {
 
     let devices: [SyncDevice]
 
-    var body: some View {
-        SyncDialog {
-            VStack(spacing: 20.0) {
-                Image(.syncRemoveDeviceDesktop)
-                SyncUIViews.TextHeader(text: UserText.deleteAccountTitle)
-                SyncUIViews.TextDetailMultiline(text: UserText.deleteAccountMessage)
-            }
+    @State private var isDeleting = false
 
-            ScrollView {
+    var body: some View {
+        SyncSetupDialog(spacing: 20.0) {
+            VStack(alignment: .center, spacing: 20) {
+                Image(.syncWarnFeature128)
+                    .accessibilityHidden(true)
+                SyncUIViews.DialogTitle(text: UserText.deleteAccountConfirmTitle)
+                SyncUIViews.CenteredBody(text: UserText.deleteAccountConfirmMessage)
+
                 SyncedDevicesList(devices: devices)
                     .roundedBorder()
             }
-
         } buttons: {
+            Spacer()
+
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
             .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
-            Button(UserText.deleteAccountButton) {
-                model.delegate?.deleteAccount()
+            .disabled(isDeleting)
+
+            Button {
+                deleteAccount()
+            } label: {
+                HStack(spacing: 6) {
+                    if isDeleting {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    Text(UserText.deleteAccountConfirmButton)
+                }
             }
-            .buttonStyle(DestructiveActionButtonStyle(
-                enabled: true,
-                backgroundColor: Color(designSystemColor: .destructivePrimary),
-                backgroundPressedColor: Color(designSystemColor: .destructiveSecondary)
-            ))
+            .buttonStyle(DismissActionButtonStyle(textColor: Color(designSystemColor: .destructivePrimary),
+                                                  stateColors: .themedDismissButton))
+            .disabled(isDeleting)
         }
-        .frame(width: 360,
-               // Grow with the number of devices, up to a point
-               height: min(410, 272 + (CGFloat(devices.count) * 44)))
     }
 
+    private func deleteAccount() {
+        guard !isDeleting else { return }
+        isDeleting = true
+        model.delegate?.deleteAccount()
+    }
 }
+
+#if DEBUG
+#Preview("Two Devices") {
+    DeleteAccountView(devices: [
+        SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"),
+        SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device")
+    ])
+    .environmentObject(ManagementDialogModel())
+}
+
+#Preview("Many Devices") {
+    DeleteAccountView(devices: [
+        SyncDevice(kind: .current, name: "Work Laptop", id: "current-device"),
+        SyncDevice(kind: .mobile, name: "Androidz", id: "mobile-device"),
+        SyncDevice(kind: .desktop, name: "Home iMac", id: "desktop-device"),
+        SyncDevice(kind: .mobile, name: "iPad", id: "tablet-device"),
+        SyncDevice(kind: .desktop, name: "Old Laptop", id: "old-device")
+    ])
+    .environmentObject(ManagementDialogModel())
+}
+#endif

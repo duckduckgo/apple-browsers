@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 
 /// Identifies the reload operation that failed before a replacement extension context became active.
 @available(macOS 15.4, iOS 18.4, *)
@@ -28,12 +29,42 @@ public enum WebExtensionReloadFailurePhase: String, Equatable, Sendable {
     case fallbackLoad = "fallback_load"
 }
 
+/// The extension a pixel reports: its entry in the Chrome Web Store catalog, or `other` for one the
+/// catalog doesn't list. Pixels take this instead of a string, so an extension's own identifier or
+/// name can't reach a pixel.
+public enum WebExtensionPixelExtension: Equatable, CaseIterable {
+    case catalog(ExtensionsCatalogSubfeature)
+    case other
+
+    public static var allCases: [WebExtensionPixelExtension] {
+        ExtensionsCatalogSubfeature.allCases.map(Self.catalog) + [.other]
+    }
+
+    /// The version pixels send for an extension: its manifest version when it has Chrome's format,
+    /// one to four numbers separated by dots, or `other`, so no other text from the manifest is sent.
+    public static func version(_ manifestVersion: String?) -> String {
+        guard let manifestVersion,
+              manifestVersion.range(of: #"^[0-9]{1,9}(\.[0-9]{1,9}){0,3}$"#, options: .regularExpression) != nil else {
+            return "other"
+        }
+        return manifestVersion
+    }
+
+    /// The value pixels send, matching the `extension` parameter in the pixel definitions.
+    public var parameterValue: String {
+        switch self {
+        case .catalog(let entry): entry.rawValue
+        case .other: "other"
+        }
+    }
+}
+
 /// Events that can be fired for web extension management.
 @available(macOS 15.4, iOS 18.4, *)
 public enum WebExtensionPixelEvent {
-    case installed
-    case installError(error: Error)
-    case uninstalled
+    case installed(extension: WebExtensionPixelExtension)
+    case installError(extension: WebExtensionPixelExtension, error: Error)
+    case uninstalled(extension: WebExtensionPixelExtension)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -73,6 +104,14 @@ public enum WebExtensionPixelEvent {
     case cpmMessagingRecoveredAfterExtensionReload(from: CPMMessagingRecoverySource)
     /// The first CPM measurement using a successful extension-reload generation also failed.
     case cpmMessagingExtensionReloadFailed
+
+    /// An extension turned password saving off, which makes it the default password manager.
+    case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
+    /// Bitwarden is installed and loaded. Fired once a day.
+    case bitwardenDailyActive(isDefault: Bool)
+    /// How many distinct missing APIs a catalog extension used, and Chrome pages it tried to open,
+    /// since launch, with its version. Fired once a day.
+    case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 }
 
 /// Failure state of the episode immediately before recovery.
@@ -159,7 +198,8 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,
              .embeddedInstallError, .scriptletFetchSuccess, .scriptletFetchError,
-             .scriptletValidationError, .scriptletInstalled, .scriptletInstallError:
+             .scriptletValidationError, .scriptletInstalled, .scriptletInstallError,
+             .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
             return nil
         }
     }

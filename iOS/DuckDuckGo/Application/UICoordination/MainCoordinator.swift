@@ -146,6 +146,7 @@ final class MainCoordinator {
          wideEvent: WideEventManaging,
          onboardingManager: OnboardingManaging,
          eventHub: EventHubManaging,
+         usageContextProvider: UsageContextProviding,
          promptExposureReporter: PromptExposureReporting
     ) throws {
         self.subscriptionManager = subscriptionManager
@@ -243,6 +244,7 @@ final class MainCoordinator {
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
+                                usageContextProvider: usageContextProvider,
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
@@ -347,6 +349,7 @@ final class MainCoordinator {
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
                                         promoCoordinationService: promoCoordinationService,
+                                        usageContextProvider: usageContextProvider,
                                         promptExposureReporter: promptExposureReporter)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
@@ -783,7 +786,7 @@ extension MainCoordinator: URLHandling {
 
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
-        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
+        controller.loadExternalLinkInNewTab(url)
     }
 
     private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {

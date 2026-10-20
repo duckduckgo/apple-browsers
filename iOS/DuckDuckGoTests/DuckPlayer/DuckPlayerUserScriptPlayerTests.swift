@@ -38,7 +38,11 @@ final class DuckPlayerUserScriptPlayerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockWebView = MockWebView()
-        viewModel = DuckPlayerViewModel(videoID: "testVideo")
+        let settings = MockDuckPlayerSettings(appSettings: AppSettingsMock(),
+                                             privacyConfigManager: MockPrivacyConfigurationManager(),
+                                             featureFlagger: MockDuckPlayerFeatureFlagger(),
+                                             internalUserDecider: MockDuckPlayerInternalUserDecider())
+        viewModel = DuckPlayerViewModel(videoID: "testVideo", duckPlayerSettings: settings)
         userScriptPlayer = DuckPlayerUserScriptPlayer(viewModel: viewModel)
         userScriptPlayer.webView = mockWebView
         mockScriptMessage = WKScriptMessage.mock()

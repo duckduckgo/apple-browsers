@@ -739,11 +739,21 @@ final class TabViewControllerInPageDuckAIEntryTests: XCTestCase {
         XCTAssertNil(source)
     }
 
-    func testWhenCurrentPageIsNotHomepageThenNoSource() {
+    func testWhenSERPLinkNavigatesToDuckAIThenSourceIsSERP() {
         let serp = URL(string: "https://duckduckgo.com/?q=test&ia=web")!
 
         let source = TabViewController.inPageDuckAIEntrySource(currentURL: serp,
                                                                navigationAction: mainFrameNavigation(to: duckAIChat),
+                                                               pendingNativeLoadURL: nil)
+
+        XCTAssertEqual(source, .serp)
+    }
+
+    func testWhenNonHomepageScriptNavigatesToDuckAIThenNoSource() {
+        let serp = URL(string: "https://duckduckgo.com/?q=test&ia=web")!
+
+        let source = TabViewController.inPageDuckAIEntrySource(currentURL: serp,
+                                                               navigationAction: mainFrameNavigation(to: duckAIChat, type: .other),
                                                                pendingNativeLoadURL: nil)
 
         XCTAssertNil(source)

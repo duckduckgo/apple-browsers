@@ -68,6 +68,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // -
 
     let dependencies: OmnibarDependencyProvider
+    var pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     weak var omniDelegate: OmniBarDelegate? {
         didSet {
             guard isViewLoaded else { return }
@@ -295,14 +296,10 @@ class OmniBarViewController: UIViewController, OmniBar {
             self?.onDismissPressed()
         }
         expandableBarView?.onSearchModePressed = { [weak self] in
-            guard let self else { return }
-            self.setSelectedTextEntryMode(.search)
-            self.omniDelegate?.onTextEntryModeDidChange(.search)
+            self?.selectTextEntryModeFromUser(.search)
         }
         expandableBarView?.onAIChatModePressed = { [weak self] in
-            guard let self else { return }
-            self.setSelectedTextEntryMode(.aiChat)
-            self.omniDelegate?.onTextEntryModeDidChange(.aiChat)
+            self?.selectTextEntryModeFromUser(.aiChat)
         }
         expandableBarView?.onAIChatSendPressed = { [weak self] in
             self?.onAIChatSendPressed()
@@ -844,7 +841,7 @@ class OmniBarViewController: UIViewController, OmniBar {
             }
 
             if selectedTextEntryMode == .aiChat {
-                omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: consumeAIChatControlValues(), termsAccepted: false)
+                submitAIChatQuery(query)
                 return
             }
 
@@ -870,6 +867,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         assert(Thread.isMainThread)
         state = state.onReloadState
         refreshState(state)
+    }
+
+    /// Text submitted from the search field while in Duck.ai mode, e.g. Paste & Go.
+    func submitAIChatQuery(_ query: String) {
+        omniDelegate?.onPromptSubmitted(query, tools: nil, controlValues: consumeAIChatControlValues(), termsAccepted: false)
     }
 
     @objc private func pasteURLAndGo(sender: UIMenuItem) {
@@ -1025,6 +1027,17 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onAIChatPressed()
     }
 
+    /// A mode change the user asked for (toggle tap or keyboard), reported to the delegate.
+    func selectTextEntryModeFromUser(_ mode: TextEntryMode) {
+        setSelectedTextEntryMode(mode)
+        omniDelegate?.onTextEntryModeDidChange(mode)
+    }
+
+    func endEditingInSearchMode() {
+        setSelectedTextEntryMode(.search)
+        endEditing()
+    }
+
     func setSelectedTextEntryMode(_ mode: TextEntryMode) {
         guard selectedTextEntryMode != mode else { return }
         selectedTextEntryMode = mode
@@ -1082,7 +1095,9 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        PixelKit.fire(Pixel.Event.aiChatLegacyOmnibarShown, frequency: .dailyAndCount)
+        pixelFiring?.fire(Pixel.Event.aiChatLegacyOmnibarShown, frequency: .dailyAndCount, options: .parameters([
+            "toggle_visible": String(dependencies.aiChatAddressBarExperience.shouldShowModeToggle)
+        ]))
         
         DispatchQueue.main.async {
             let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView) ?? true

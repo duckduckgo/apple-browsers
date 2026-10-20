@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 import WebKit
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -27,6 +28,16 @@ public protocol ChromeWebStoreManaging: AnyObject {
     func status(for identifier: String) -> ChromeWebStoreStatus
     func install(identifier: String, downloadURL: URL) async -> Bool
     func remove(identifier: String) async -> Bool
+    /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
+    /// or `nil` for an extension the catalog doesn't list.
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension ChromeWebStoreManaging {
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
+        nil
+    }
 }
 
 @MainActor
@@ -64,6 +75,10 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     public var catalogExtensionIDs: [String] {
         catalog.extensionIDs
+    }
+
+    public func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
+        catalog.catalogEntry(of: identifier)
     }
 
     public func status(for identifier: String) -> ChromeWebStoreStatus {

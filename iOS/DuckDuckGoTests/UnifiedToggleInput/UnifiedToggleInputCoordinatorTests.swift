@@ -612,6 +612,56 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func test_editPrompt_tabSwitch_cancelsEdit_andNextPromptIsNotAnEdit() async {
+        sut.activateForTab("tab-A")
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: true)) }
+        await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before the tab switch") }
+
+        sut.activateForTab("tab-B")
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Switching tabs resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "new chat", mode: .aiChat, trigger: .sendButton)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "new chat", "A prompt sent after the switch starts a chat instead of replacing the edited message")
+
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.currentText, "", "The edited prompt isn't kept as the outgoing tab's draft")
+    }
+
+    @MainActor
+    func test_editPrompt_hide_cancelsEdit() async {
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)) }
+        await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before hiding") }
+
+        sut.hide()
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Hiding the input resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+        XCTAssertEqual(sut.displayState, .hidden, "Ending the edit doesn't override the hidden state")
+    }
+
+    @MainActor
+    func test_editPrompt_bindingAnotherChat_cancelsEdit() async {
+        sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)) }
+        await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before rebinding") }
+
+        sut.bindToTab(makeTestUserScript(), hasExistingChat: true)
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Binding another chat's script resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+    }
+
+    @MainActor
     func test_editPrompt_modelSupportsImagesAndFiles_repliesWithEmptyArraysWhenNothingIsAttached() async throws {
         selectAttachmentModel(supportsImages: true, supportsFiles: true)
 

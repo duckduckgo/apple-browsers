@@ -55,7 +55,7 @@ final class HistoryImporterTests: XCTestCase {
 
     @MainActor
     func testWhenHistoryIsNotLoaded_ThenImportThrows() {
-        let coordinator = HistoryCoordinatingMock()
+        let coordinator = HistoryImportCoordinatorMock()
         let importer = HistoryImporter(historyCoordinator: coordinator)
 
         XCTAssertThrowsError(try importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))) { error in
@@ -77,10 +77,10 @@ final class HistoryImporterTests: XCTestCase {
     }
 
     @MainActor
-    private func makeCoordinator(historyWithVisitOf url: URL, hoursAgo: Double) -> HistoryCoordinatingMock {
+    private func makeCoordinator(historyWithVisitOf url: URL, hoursAgo: Double) -> HistoryImportCoordinatorMock {
         let entry = HistoryEntry(url: url)
         entry.addVisit(at: date(hoursAgo: hoursAgo), tabID: nil)
-        let coordinator = HistoryCoordinatingMock()
+        let coordinator = HistoryImportCoordinatorMock()
         coordinator.historyDictionary = [url: entry]
         return coordinator
     }

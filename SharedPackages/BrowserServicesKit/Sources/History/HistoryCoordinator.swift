@@ -61,7 +61,6 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func markFailedToLoadUrl(_ url: URL)
     @MainActor func commitChanges(url: URL)
-    @MainActor func addImportedVisits(_ visits: [HistoryImport.Visit])
 
     @MainActor func title(for url: URL) -> String?
 
@@ -73,6 +72,12 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func resetCookiePopupBlocked(for domains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
 
     @MainActor func removeUrlEntry(_ url: URL, completion: (@MainActor (Error?) -> Void)?)
+}
+
+/// What `HistoryImporter` needs from history, kept apart from `HistoryCoordinating` so only `HistoryCoordinator` implements it.
+public protocol HistoryImportCoordinatorProtocol: AnyObject {
+    @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
+    @MainActor func addImportedVisits(_ visits: [HistoryImport.Visit])
 }
 
 extension HistoryCoordinating {
@@ -99,7 +104,7 @@ extension HistoryCoordinating {
 }
 
 /// Coordinates access to History. Uses its own queue with high qos for all operations.
-final public class HistoryCoordinator: HistoryCoordinating {
+final public class HistoryCoordinator: HistoryCoordinating, HistoryImportCoordinatorProtocol {
 
     let historyStoringProvider: () -> HistoryStoring
 

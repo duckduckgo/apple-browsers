@@ -1066,6 +1066,26 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertNil(sut.makeGeolocationSitePermissionContext(for: frame))
     }
 
+    func testContentSecurityPolicySandboxBlocksGeolocationOnlyForMainFrameResponse() {
+        let pageURL = URL(string: "https://www.example.com/page")!
+        let sut = makeSUT(committedURL: pageURL)
+        let frame = geolocationFrame(on: sut.webView, originURL: pageURL)
+        let sandboxedResponse = HTTPURLResponse(url: pageURL,
+                                                statusCode: 200,
+                                                httpVersion: nil,
+                                                headerFields: ["Content-Security-Policy": "sandbox allow-scripts allow-same-origin"])!
+
+        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+        sut.captureSitePermissionsGeolocationPolicy(from: sandboxedResponse, isForMainFrame: false)
+        sut.webView(sut.webView, didCommit: nil)
+        XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
+
+        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+        sut.captureSitePermissionsGeolocationPolicy(from: sandboxedResponse, isForMainFrame: true)
+        sut.webView(sut.webView, didCommit: nil)
+        XCTAssertNil(sut.makeGeolocationSitePermissionContext(for: frame))
+    }
+
     func testNativePolicyDenialsOverrideStoredAllowAndKeepQueryAndRequestInAgreementWithoutPromptOrPixel() async throws {
         let deniedConstraints = GeolocationRequestConstraints(isSecureContext: true,
                                                               isSandboxed: false,

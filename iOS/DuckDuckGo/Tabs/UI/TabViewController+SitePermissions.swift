@@ -945,8 +945,12 @@ extension TabViewController {
         guard isForMainFrame,
               sitePermissionsState.isMainFrameNavigationProvisional else { return }
 
-        let header = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Permissions-Policy")
+        let httpResponse = response as? HTTPURLResponse
+        let header = httpResponse?.value(forHTTPHeaderField: "Permissions-Policy")
+        let cspHeader = httpResponse?.value(forHTTPHeaderField: "Content-Security-Policy")
+        // A CSP sandbox with allow-same-origin keeps the page's origin, so page scripts can't detect it.
         sitePermissionsState.isProvisionalGeolocationPolicyBlocked = PermissionsPolicy(header: header).blocksGeolocation(for: response.url)
+            || ContentSecurityPolicy.declaresSandbox(cspHeader)
     }
 
     private func currentSitePermissionContext(tabID: String, requestingFrameID: UInt64) -> SitePermissionRequestContext? {

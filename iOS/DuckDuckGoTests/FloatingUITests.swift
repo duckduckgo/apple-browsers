@@ -1321,6 +1321,39 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertFalse(firstGlassView(in: barView.searchContainer) === glassView)
     }
 
+    func testWhenFireModeWithoutMinimalChromeBarThenButtonContainersKeepSystemStyle() {
+        let barView = makeBarView(isFloatingUIEnabled: false)
+
+        barView.refreshFireMode(fireMode: true)
+
+        XCTAssertEqual(barView.leadingButtonsContainer.overrideUserInterfaceStyle, .unspecified)
+        XCTAssertEqual(barView.trailingButtonsContainer.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenFireModeOnMinimalChromeBarThenFieldGlassKeepsSystemStyle() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: DefaultOmniBarView.expectedHeight)
+        barView.setFloatingMinimalChromeBar(true)
+
+        barView.refreshFireMode(fireMode: true)
+
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenFireModeOnMinimalChromeBarThenButtonContainersAreDarkUntilBarIsRemoved() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.setFloatingMinimalChromeBar(true)
+
+        barView.refreshFireMode(fireMode: true)
+        XCTAssertEqual(barView.leadingButtonsContainer.overrideUserInterfaceStyle, .dark)
+        XCTAssertEqual(barView.trailingButtonsContainer.overrideUserInterfaceStyle, .dark)
+
+        barView.setFloatingMinimalChromeBar(false)
+        XCTAssertEqual(barView.leadingButtonsContainer.overrideUserInterfaceStyle, .unspecified)
+        XCTAssertEqual(barView.trailingButtonsContainer.overrideUserInterfaceStyle, .unspecified)
+    }
+
     func testWhenBottomFloatingBarTemporarilyHasZeroHeightThenCornerRadiusRemainsRounded() {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: 0)
@@ -1329,6 +1362,30 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.layoutIfNeeded()
 
         XCTAssertGreaterThan(barView.searchContainer.layer.cornerRadius, 0)
+    }
+
+    func testWhenFloatingAddressBarMovesToBottomThenFirstLayoutUsesCapsuleRadius() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        barView.isUsingSmallTopSpacing = true
+        barView.frame.size.height = barView.expectedHeight
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.searchContainer.bounds.height, 48)
+        XCTAssertEqual(barView.searchContainer.layer.cornerRadius, 24)
+    }
+
+    func testWhenBottomFloatingSwipeFieldIsFirstLaidOutThenItUsesCapsuleRadius() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.searchContainer.bounds.height, 48)
+        XCTAssertEqual(barView.searchContainer.layer.cornerRadius, 24)
     }
 
     func testWhenBottomFloatingFieldThenExpectedHeightIsTheFortyEightPointPill() {

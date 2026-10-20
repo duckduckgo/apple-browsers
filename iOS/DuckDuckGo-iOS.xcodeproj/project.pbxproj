@@ -884,6 +884,7 @@
 		9FFDA83D2DFA8F6F007923F7 /* MockAudioSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFDA83C2DFA8F6A007923F7 /* MockAudioSessionManager.swift */; };
 		9FFDA83F2DFA907A007923F7 /* MockPictureInPictureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFDA83E2DFA9073007923F7 /* MockPictureInPictureController.swift */; };
 		A11F1F0030B1000000000001 /* FireButtonAnimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11F1F0130B1000000000001 /* FireButtonAnimatorTests.swift */; };
+		DA9E3D0C172D4355CFF339B6 /* FireAnimationInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7573BBA8D913DF7BD85DB311 /* FireAnimationInstrumentationTests.swift */; };
 		A17C00032F9A000100000003 /* ApplicationShortcutItemsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17C00042F9A000100000004 /* ApplicationShortcutItemsServiceTests.swift */; };
 		A17C00052F9A000100000005 /* ApplicationShortcutItemsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17C00062F9A000100000006 /* ApplicationShortcutItemsUITests.swift */; };
 		A1B2C3D40E1F202122232402 /* TabViewControllerGestureArbitrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40E1F202122232401 /* TabViewControllerGestureArbitrationTests.swift */; };
@@ -1873,6 +1874,7 @@
 		9FFDA83C2DFA8F6A007923F7 /* MockAudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAudioSessionManager.swift; sourceTree = "<group>"; };
 		9FFDA83E2DFA9073007923F7 /* MockPictureInPictureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPictureInPictureController.swift; sourceTree = "<group>"; };
 		A11F1F0130B1000000000001 /* FireButtonAnimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonAnimatorTests.swift; sourceTree = "<group>"; };
+		7573BBA8D913DF7BD85DB311 /* FireAnimationInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireAnimationInstrumentationTests.swift; sourceTree = "<group>"; };
 		A17C00042F9A000100000004 /* ApplicationShortcutItemsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationShortcutItemsServiceTests.swift; sourceTree = "<group>"; };
 		A17C00062F9A000100000006 /* ApplicationShortcutItemsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationShortcutItemsUITests.swift; sourceTree = "<group>"; };
 		A1B2C3D40E1F202122232401 /* TabViewControllerGestureArbitrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerGestureArbitrationTests.swift; sourceTree = "<group>"; };
@@ -3209,6 +3211,7 @@
 			children = (
 				5D2CD0727DF6499698C2C9B6 /* AppSwitcherSnapshotCleanerTests.swift */,
 				A11F1F0130B1000000000001 /* FireButtonAnimatorTests.swift */,
+				7573BBA8D913DF7BD85DB311 /* FireAnimationInstrumentationTests.swift */,
 				36F6195F2F686F3300CBF121 /* DataClearingWideEventServiceTests.swift */,
 				36F6195B2F68657100CBF121 /* DataClearingPixelsReporterTests.swift */,
 				80437D6C2EFB3BD600D3E896 /* AutoClearSettingsViewModelTests.swift */,
@@ -6153,6 +6156,7 @@
 				80E8D5D32EEA655900820EB0 /* FireExecutorTests.swift in Sources */,
 				05F1108C822949F08BF3A2D6 /* AppSwitcherSnapshotCleanerTests.swift in Sources */,
 				A11F1F0030B1000000000001 /* FireButtonAnimatorTests.swift in Sources */,
+				DA9E3D0C172D4355CFF339B6 /* FireAnimationInstrumentationTests.swift in Sources */,
 				8582D7282E58A11D00A356FD /* AutocompleteViewModelTests.swift in Sources */,
 				981FED7422046017008488D7 /* AutoClearTests.swift in Sources */,
 				319BE1092D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift in Sources */,

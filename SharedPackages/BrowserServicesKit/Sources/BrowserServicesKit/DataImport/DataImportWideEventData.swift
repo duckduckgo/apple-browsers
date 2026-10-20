@@ -46,16 +46,19 @@ public class DataImportWideEventData: WideEventData {
     public var bookmarkImporterDuration: WideEvent.MeasuredInterval?
     public var passwordImporterDuration: WideEvent.MeasuredInterval?
     public var creditCardImporterDuration: WideEvent.MeasuredInterval?
+    public var historyImporterDuration: WideEvent.MeasuredInterval?
 
     // Per-type status
     public var bookmarkImportStatus: WideEventStatus?
     public var passwordImportStatus: WideEventStatus?
     public var creditCardImportStatus: WideEventStatus?
+    public var historyImportStatus: WideEventStatus?
 
     // Per-type errors
     public var bookmarkImportError: WideEventErrorData?
     public var passwordImportError: WideEventErrorData?
     public var creditCardImportError: WideEventErrorData?
+    public var historyImportError: WideEventErrorData?
 
     public init(source: DataImport.Source,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
@@ -131,7 +134,8 @@ extension DataImportWideEventData {
             (WideEventParameter.DataImportFeature.latency, overallDuration?.intValue(.noBucketing)),
         ])
 
-        for type in DataImport.DataType.allCases {
+        // History isn't in the data-import wide event schema yet.
+        for type in DataImport.DataType.allCases where type != .history {
             addTypeStatusAndReason(self[keyPath: type.statusPath], type: type, to: &params)
             addTypeImporterLatency(self[keyPath: type.importerDurationPath], type: type, to: &params)
             addTypeError(self[keyPath: type.errorPath], type: type, to: &params)
@@ -244,6 +248,7 @@ public extension DataImport.DataType {
         case .bookmarks: return \.bookmarkImportStatus
         case .passwords: return \.passwordImportStatus
         case .creditCards: return \.creditCardImportStatus
+        case .history: return \.historyImportStatus
         }
     }
 
@@ -252,6 +257,7 @@ public extension DataImport.DataType {
         case .bookmarks: return \.bookmarkImporterDuration
         case .passwords: return \.passwordImporterDuration
         case .creditCards: return \.creditCardImporterDuration
+        case .history: return \.historyImporterDuration
         }
     }
 
@@ -260,6 +266,7 @@ public extension DataImport.DataType {
         case .bookmarks: return \.bookmarkImportError
         case .passwords: return \.passwordImportError
         case .creditCards: return \.creditCardImportError
+        case .history: return \.historyImportError
         }
     }
 }

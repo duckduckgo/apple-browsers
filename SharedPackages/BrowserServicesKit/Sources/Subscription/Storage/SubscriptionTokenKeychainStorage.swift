@@ -83,13 +83,12 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
     public func getTokenContainer() throws -> TokenContainer? {
         do {
             guard let data = try keychainManager.retrieveData(forKey: field.keyValue) else {
-                Logger.subscriptionKeychain.log("Token container not found: \(self.field.rawValue, privacy: .public)")
+                Logger.subscriptionKeychain.debug("TokenContainer not found")
                 verifyTokenNotFoundExpectation()
                 return nil
             }
             let result: TokenContainer? = CodableHelper.decode(jsonData: data)
             if result == nil {
-                Logger.subscriptionKeychain.error("Failed to decode the token container: \(self.field.rawValue, privacy: .public)")
                 verifyTokenNotFoundExpectation()
             }
             return result
@@ -99,23 +98,22 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
                 errorEventsHandler(AccountKeychainAccessType.getAuthToken, error)
             } else {
                 assertionFailure("Unexpected error: \(error)")
-                Logger.subscriptionKeychain.fault("Unexpected error reading the token container \(self.field.rawValue, privacy: .public): \(error, privacy: .public)")
+                Logger.subscriptionKeychain.fault("Unexpected error: \(error, privacy: .public)")
             }
             throw error
         }
     }
 
     public func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        Logger.subscriptionKeychain.log("Saving TokenContainer")
         tokenExpected = tokenContainer != nil
 
         do {
             guard let tokenContainer else {
-                Logger.subscriptionKeychain.log("Deleting the token container: \(self.field.rawValue, privacy: .public)")
+                Logger.subscriptionKeychain.log("Remove TokenContainer")
                 try keychainManager.deleteItem(forKey: field.keyValue)
                 return
             }
-
-            Logger.subscriptionKeychain.log("Saving the token container: \(self.field.rawValue, privacy: .public)")
 
             guard let data = CodableHelper.encode(tokenContainer) else {
                 throw AccountKeychainAccessError.failedToEncodeKeychainData // Fixed error name
@@ -123,11 +121,12 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
 
             try keychainManager.store(data: data, forKey: field.keyValue)
         } catch {
-            Logger.subscriptionKeychain.error("Failed to update the token container \(self.field.rawValue, privacy: .public): \(error, privacy: .public)")
+            Logger.subscriptionKeychain.error("Failed to set TokenContainer: \(error, privacy: .public)")
             if let error = error as? AccountKeychainAccessError {
                 errorEventsHandler(AccountKeychainAccessType.storeAuthToken, error)
             } else {
                 assertionFailure("Unexpected error: \(error)")
+                Logger.subscriptionKeychain.error("Unexpected error: \(error, privacy: .public)")
             }
             throw error
         }
@@ -135,7 +134,7 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
 
     private func verifyTokenNotFoundExpectation() {
         if tokenExpected {
-            Logger.subscriptionKeychain.error("Expected token container not found: \(self.field.rawValue, privacy: .public)")
+            Logger.subscriptionKeychain.fault("Expected token not found")
             errorEventsHandler(AccountKeychainAccessType.getAuthToken, AccountKeychainAccessError.expectedTokenNotFound)
             tokenExpected = false
         }

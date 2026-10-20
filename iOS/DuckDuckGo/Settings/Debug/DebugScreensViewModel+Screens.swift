@@ -65,6 +65,9 @@ extension DebugScreensViewModel {
             .action(title: "Reset Sync Prompt On Launch", { d in
                 try? d.keyValueStore.set(nil, forKey: SyncRecoveryPromptService.Key.hasPerformedSyncRecoveryCheck)
             }),
+            .view(title: "NTP Greeting", { d in
+                DaxGreetingDebugView(greeting: d.daxGreetingDebugging)
+            }),
             .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),

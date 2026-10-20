@@ -49,6 +49,56 @@ final class FaviconUserScriptTests: XCTestCase {
 
     // MARK: - Data Model Tests
 
+    func testFaviconLinkDecodingFromJSON() throws {
+        let json = """
+        {
+            "href": "https://example.com/favicon.ico",
+            "rel": "icon",
+            "type": "image/x-icon"
+        }
+        """
+
+        let link = try JSONDecoder().decode(FaviconUserScript.FaviconLink.self, from: Data(json.utf8))
+
+        XCTAssertEqual(link.href.absoluteString, "https://example.com/favicon.ico")
+        XCTAssertEqual(link.rel, "icon")
+        XCTAssertEqual(link.type, "image/x-icon")
+    }
+
+    func testFaviconLinkDecodingWithoutType() throws {
+        let json = """
+        {
+            "href": "https://example.com/favicon.ico",
+            "rel": "shortcut icon"
+        }
+        """
+
+        let link = try JSONDecoder().decode(FaviconUserScript.FaviconLink.self, from: Data(json.utf8))
+
+        XCTAssertEqual(link.href.absoluteString, "https://example.com/favicon.ico")
+        XCTAssertEqual(link.rel, "shortcut icon")
+        XCTAssertNil(link.type)
+    }
+
+    func testFaviconsFoundPayloadDecoding() throws {
+        let json = """
+        {
+            "documentUrl": "https://example.com/page",
+            "favicons": [
+                {"href": "https://example.com/favicon.ico", "rel": "icon", "type": "image/x-icon"},
+                {"href": "https://example.com/apple-touch-icon.png", "rel": "apple-touch-icon"}
+            ]
+        }
+        """
+
+        let payload = try JSONDecoder().decode(FaviconUserScript.FaviconsFoundPayload.self, from: Data(json.utf8))
+
+        XCTAssertEqual(payload.documentUrl.absoluteString, "https://example.com/page")
+        XCTAssertEqual(payload.favicons.count, 2)
+        XCTAssertEqual(payload.favicons[0].rel, "icon")
+        XCTAssertEqual(payload.favicons[1].rel, "apple-touch-icon")
+    }
+
     func testFaviconLinkEquatable() {
         let url = URL(string: "https://example.com/favicon.ico")!
         let link1 = FaviconUserScript.FaviconLink(href: url, rel: "icon", type: "image/x-icon")

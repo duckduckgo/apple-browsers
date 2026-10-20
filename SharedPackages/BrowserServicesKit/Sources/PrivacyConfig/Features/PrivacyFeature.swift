@@ -805,6 +805,8 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
+    case loginAuditLog
+    case loginNotification
 
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
     case improvedPairingFlow
@@ -812,13 +814,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1220380918806338
     case sendSyncSetupWideEvent
 
-    // swiftlint:disable todo
-    /// TODO: Add Asana task link.
-    case loginAuditLog
-
-    /// TODO: Add Asana task link.
-    case loginNotification
-    // swiftlint:enable todo
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {

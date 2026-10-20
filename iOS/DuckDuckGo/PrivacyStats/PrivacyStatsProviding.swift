@@ -28,3 +28,11 @@ protocol PrivacyStatsProviding {
 }
 
 extension PrivacyStats: PrivacyStatsProviding { }
+
+/// Stands in for `PrivacyStats` when its store cannot be opened: nothing is recorded and counts read as zero.
+final class UnavailablePrivacyStats: PrivacyStatsProviding {
+    func recordBlockedTracker(_ name: String) async {}
+    func fetchPrivacyStatsTotalCount() async -> Int64 { 0 }
+    func clearPrivacyStats() async -> Result<Void, Error> { .success(()) }
+    func handleAppTermination() async {}
+}

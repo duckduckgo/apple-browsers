@@ -24,20 +24,53 @@ import Persistence
 import PixelKit
 import Common
 import FoundationExtensions
+import os.log
 
 /// iOS-specific wrapper to provide the PrivacyStats Core Data stack.
 final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
 
+    private static let name = "PrivacyStats"
+
+    private let location: URL
     private let database: CoreDataDatabase
     private let pixelFiring: (any PixelKitFiring)?
 
-    init(database: CoreDataDatabase = PrivacyStatsDatabase.makeDatabase(location: PrivacyStatsDatabase.defaultLocation),
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
-        self.database = database
+    /// Stats are rebuildable, so a store that cannot be opened is deleted and recreated.
+    /// Returns `nil` if that fails too.
+    init?(location: URL = PrivacyStatsDatabase.defaultLocation,
+          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.location = location
+        self.database = PrivacyStatsDatabase.makeDatabase(location: location)
         self.pixelFiring = pixelFiring
+        guard prepareStore() else { return nil }
     }
 
+    /// The store is already loaded by `init`.
     func initializeDatabase() -> CoreDataDatabase {
+        database
+    }
+
+    private func prepareStore() -> Bool {
+        do {
+            try loadStore()
+            return true
+        } catch {
+            Logger.general.error("Could not load Privacy Stats database, recreating it: \(error.localizedDescription, privacy: .public)")
+            pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(error, stage: .initial), frequency: .dailyAndCount)
+            deleteStoreFiles()
+        }
+
+        do {
+            try loadStore()
+            return true
+        } catch {
+            Logger.general.error("Could not recreate Privacy Stats database: \(error.localizedDescription, privacy: .public)")
+            pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(error, stage: .retry), frequency: .dailyAndCount)
+            return false
+        }
+    }
+
+    private func loadStore() throws {
         let semaphore = DispatchSemaphore(value: 0)
         var loadError: Error?
         database.loadStore { _, error in
@@ -45,14 +78,13 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
             semaphore.signal()
         }
         semaphore.wait()
-        if let loadError {
-            // `PrivacyStats` would otherwise wait in `CoreDataDatabase.makeContext` forever and freeze the launch.
-            // Give the pixel a moment to send before terminating, as `Terminating` does.
-            pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(loadError), frequency: .dailyAndCount)
-            Thread.sleep(forTimeInterval: 1)
-            fatalError("Could not create Privacy Stats database stack: \(loadError.localizedDescription)")
+        if let loadError { throw loadError }
+    }
+
+    private func deleteStoreFiles() {
+        for suffix in ["", "-wal", "-shm"] {
+            try? FileManager.default.removeItem(at: location.appendingPathComponent("\(Self.name).sqlite\(suffix)"))
         }
-        return database
     }
 
     private static var defaultLocation: URL {
@@ -67,24 +99,36 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
 
     private static func makeDatabase(location: URL) -> CoreDataDatabase {
         let bundle = PrivacyStats.bundle
-        guard let model = CoreDataDatabase.loadModel(from: bundle, named: "PrivacyStats") else {
+        guard let model = CoreDataDatabase.loadModel(from: bundle, named: name) else {
             fatalError("Failed to load PrivacyStats model")
         }
-        return CoreDataDatabase(name: "PrivacyStats", containerLocation: location, model: model)
+        return CoreDataDatabase(name: name, containerLocation: location, model: model)
     }
 }
 
 enum PrivacyStatsDatabasePixel: PixelKit.Event {
 
-    case loadFailed(Error)
+    enum Stage: String {
+        /// The store failed to load at launch.
+        case initial
+        /// The store failed to load again after it was deleted. Privacy Stats is unavailable for this session.
+        case retry
+    }
+
+    case loadFailed(Error, stage: Stage)
 
     var name: String { "privacy-stats_database_load_failed" }
 
-    var parameters: [String: String]? { nil }
+    var parameters: [String: String]? {
+        switch self {
+        case .loadFailed(_, let stage):
+            return ["stage": stage.rawValue]
+        }
+    }
 
     var error: NSError? {
         switch self {
-        case .loadFailed(let error):
+        case .loadFailed(let error, _):
             return error as NSError
         }
     }

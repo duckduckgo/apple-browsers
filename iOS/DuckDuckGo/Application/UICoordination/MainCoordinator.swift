@@ -201,7 +201,7 @@ final class MainCoordinator {
             readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
             isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
         self.daxGreetingActivity = daxGreetingActivity
-        self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
+        self.privacyStats = Self.makePrivacyStats()
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
@@ -686,6 +686,11 @@ final class MainCoordinator {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
                         dataStoreIDManager: dataStoreIDManager)
+    }
+
+    private static func makePrivacyStats() -> PrivacyStatsProviding {
+        guard let database = PrivacyStatsDatabase() else { return UnavailablePrivacyStats() }
+        return PrivacyStats(databaseProvider: database)
     }
 
     // MARK: - Public API

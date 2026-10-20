@@ -247,13 +247,14 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func applyLayoutMode(_ newMode: OmniBarLayoutMode) {
         layoutMode = newMode
-        if newMode != .compact {
-            NSLayoutConstraint.deactivate(compactSearchAreaAlignmentConstraints)
-        }
         let showButtons = newMode != .compact
-        leadingButtonsContainer.isHidden = !showButtons
-        trailingButtonsContainer.isHidden = !showButtons
-        if newMode == .compact {
+        if showButtons {
+            NSLayoutConstraint.deactivate(compactSearchAreaAlignmentConstraints)
+            leadingButtonsContainer.isHidden = false
+            trailingButtonsContainer.isHidden = false
+        } else {
+            leadingButtonsContainer.isHidden = true
+            trailingButtonsContainer.isHidden = true
             NSLayoutConstraint.activate(compactSearchAreaAlignmentConstraints)
         }
         readableSearchAreaWidthConstraint?.isActive = showButtons && newMode == .expandedPad

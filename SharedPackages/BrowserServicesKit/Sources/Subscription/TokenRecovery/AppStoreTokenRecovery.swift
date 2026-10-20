@@ -19,38 +19,24 @@
 import Foundation
 
 /// Recovers the current token container by restoring the subscription from the last App Store purchase.
-public actor AppStoreTokenRecovery: TokenRecoveryStrategy {
+public struct AppStoreTokenRecovery: TokenRecoveryStrategy {
 
+    private let recoverer: DeadTokenRecoverer
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
     private let restoreFlow: any AppStoreRestoreFlow
-    private var restoreTask: Task<Void, Error>?
 
     /// - Parameters:
+    ///   - recoverer: Runs the restore, sharing it between concurrent callers.
     ///   - purchasePlatform: The platform the subscription was bought on. Only `.appStore` can be restored.
     ///   - restoreFlow: The App Store restore flow.
-    public init(purchasePlatform: SubscriptionEnvironment.PurchasePlatform, restoreFlow: any AppStoreRestoreFlow) {
+    public init(recoverer: DeadTokenRecoverer, purchasePlatform: SubscriptionEnvironment.PurchasePlatform, restoreFlow: any AppStoreRestoreFlow) {
+        self.recoverer = recoverer
         self.purchasePlatform = purchasePlatform
         self.restoreFlow = restoreFlow
     }
 
-    /// Restores from the last App Store purchase. A call made while a restore is running waits for that restore and gets its result.
-    /// Throws `SubscriptionManagerError.tokenRecoveryNotAttempted` for other purchase platforms.
+    /// Restores from the last App Store purchase. Throws `SubscriptionManagerError.tokenRecoveryNotAttempted` for other purchase platforms.
     public func recover(_ context: TokenRecoveryContext) async throws {
-        guard purchasePlatform == .appStore else {
-            throw SubscriptionManagerError.tokenRecoveryNotAttempted
-        }
-
-        if let restoreTask {
-            try await restoreTask.value
-            return
-        }
-
-        let restoreFlow = restoreFlow
-        let task = Task {
-            try await restoreFlow.restoreSubscriptionAfterExpiredRefreshToken()
-        }
-        restoreTask = task
-        defer { restoreTask = nil }
-        try await task.value
+        try await recoverer.attemptRecoveryFromPastPurchase(purchasePlatform: purchasePlatform, restoreFlow: restoreFlow)
     }
 }

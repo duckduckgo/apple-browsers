@@ -25,7 +25,7 @@ public struct EditPromptRequest: Decodable {
     public let hasResponsesToLose: Bool
 
     private enum CodingKeys: String, CodingKey {
-        case prompt, images, files, textPasted, hasResponsesToLose
+        case prompt, hasResponsesToLose
     }
 
     public init(prompt: String, attachments: AIChatPromptAttachments, hasResponsesToLose: Bool) {
@@ -37,11 +37,7 @@ public struct EditPromptRequest: Decodable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         prompt = try container.decode(String.self, forKey: .prompt)
-        attachments = AIChatPromptAttachments(
-            images: try container.decodeIfPresent([AIChatNativePrompt.NativePromptImage].self, forKey: .images),
-            files: try container.decodeIfPresent([AIChatNativePrompt.NativePromptFile].self, forKey: .files),
-            textPasted: (try? container.decodeIfPresent([AIChatNativePrompt.NativePromptPastedText].self, forKey: .textPasted)) ?? nil
-        )
+        attachments = try AIChatPromptAttachments(from: decoder)
         hasResponsesToLose = try container.decode(Bool.self, forKey: .hasResponsesToLose)
     }
 }

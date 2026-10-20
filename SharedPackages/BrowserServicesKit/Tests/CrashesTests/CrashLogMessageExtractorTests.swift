@@ -121,12 +121,24 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         XCTAssertNil(extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:34:00Z"), pid: nil))
     }
 
-    func testWhenPidDoesNotMatch_noCrashDiagnosticReturned() {
+    // pid is the primary key; when no file matches it, fall back to the time window.
+    func testWhenPidDoesNotMatch_fallsBackToDiagnosticWithinTimeWindow() {
         fileManager.contents = ["2026-10-19T11:20:39Z-519.log"]
 
         let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:21:00Z"), pid: 546)
 
-        XCTAssertNil(r)
+        XCTAssertEqual(r?.pid, 519)
+    }
+
+    func testWhenPidMatchesAndOtherFilesAreCloserInTime_pidMatchWins() {
+        fileManager.contents = [
+            "2026-10-19T11:20:59Z-700.log", // closest in time, different pid
+            "2026-10-19T11:18:30Z-519.log", // <- matching pid
+        ]
+
+        let r = extractor.crashDiagnostic(for: formatter.date(from: "2026-10-19T11:21:00Z"), pid: 519)
+
+        XCTAssertEqual(r?.pid, 519)
     }
 
     func testWhenMultipleDiagnosticsNearTimestampAndPid_closestWithMatchingPidIsChosen() {

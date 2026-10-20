@@ -209,42 +209,37 @@ public struct CrashLogMessageExtractor {
     /// The diagnostic file is written right *before* the process aborts and its name is truncated to whole seconds,
     /// so the file timestamp may precede the real crash time by a little more than a second.
     static let diagnosticFileTimestampSlack: TimeInterval = 2
-
     /// Find saved crash diagnostics message for crash PID/timestamp
     /// - Parameters:
-    ///   - timestamp: crash time as reported by the crash reporter. When `pid` is unknown only files within
-    ///     `crashTimestampTolerance` (plus `diagnosticFileTimestampSlack` before it) are considered; the closest one wins.
+    ///   - timestamp: crash time as reported by the crash reporter.
     ///   - pid: PID of the *crashed* process, if known (macOS crash reports). Note: `MXCrashDiagnostic.metaData.pid`
     ///     is the PID of the app process that was running when MetricKit generated the report (i.e. the next launch),
     ///     not the crashed one, so it must not be passed here.
+    /// - Returns: the diagnostic written by the process with the matching `pid`; when there is none, the diagnostic
+    ///   closest to `timestamp` within `crashTimestampTolerance` (plus `diagnosticFileTimestampSlack` before it).
     public func crashDiagnostic(for timestamp: Date?, pid: pid_t?) -> CrashDiagnostic? {
         guard timestamp != nil || pid != nil,
-              var crashLogs = try? fileManager.contentsOfDirectory(atPath: diagnosticsDirectory.path).compactMap({
+              let crashLogs = try? fileManager.contentsOfDirectory(atPath: diagnosticsDirectory.path).compactMap({
                   CrashDiagnostic(url: diagnosticsDirectory.appending($0))
               }) else { return nil }
 
-        if let pid {
-            // the pid identifies the crashed process; the timestamp is only used to pick the closest file below
-            crashLogs = crashLogs.filter { $0.pid == pid }
-        } else if let timestamp {
-            crashLogs = crashLogs.filter {
-                let fileWrittenBeforeCrashBy = timestamp.timeIntervalSince($0.timestamp)
-                let lowerBound = -Self.crashTimestampTolerance
-                let upperBound = Self.crashTimestampTolerance + Self.diagnosticFileTimestampSlack
-                return (lowerBound...upperBound).contains(fileWrittenBeforeCrashBy)
-            }
+        // the pid identifies the crashed process; fall back to the time window only when nothing matches it
+        var candidates = crashLogs.filter { $0.pid == pid }
+        if candidates.isEmpty, let timestamp {
+            let window = -(Self.crashTimestampTolerance + Self.diagnosticFileTimestampSlack)...Self.crashTimestampTolerance
+            candidates = crashLogs.filter { window.contains($0.timestamp.timeIntervalSince(timestamp)) }
         }
         // closest to the crash time first (when known), latest first otherwise
         func distance(_ log: CrashDiagnostic) -> TimeInterval {
             timestamp.map { abs(log.timestamp.timeIntervalSince($0)) } ?? 0
         }
-        crashLogs = crashLogs.sorted {
+        candidates = candidates.sorted {
             let (d0, d1) = (distance($0), distance($1))
             return d0 != d1 ? d0 < d1 : $0.timestamp > $1.timestamp
         }
 
         let timestampDescription = timestamp.map { ISO8601DateFormatter().string(from: $0) } ?? "<nil>"
-        guard let crashLog = crashLogs.first else {
+        guard let crashLog = candidates.first else {
             Logger.general.log("😵 no crash logs found for \(timestampDescription, privacy: .public)/\(pid ?? 0)")
             return nil
         }

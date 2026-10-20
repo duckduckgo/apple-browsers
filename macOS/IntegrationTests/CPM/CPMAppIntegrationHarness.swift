@@ -125,6 +125,7 @@ final class CPMAppIntegrationHarness {
             FeatureFlag.cpmDiagnosticsRecorder.rawValue: true,
             FeatureFlag.cpmBackgroundDelegateProxy.rawValue: true,
             FeatureFlag.cpmBackgroundGraveyardTreatment.rawValue: false,
+            FeatureFlag.cpmBackgroundLoadRecovery.rawValue: false,
             FeatureFlag.cpmLateBackgroundDocumentRecovery.rawValue: ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION_DISABLE_LATE_RECOVERY"] != "1",
             FeatureFlag.cpmMessagingHangRecovery.rawValue: false
         ]
@@ -183,6 +184,7 @@ final class CPMAppIntegrationHarness {
             cpmMessagingHealthMonitor: monitor,
             cpmDiagnosticsRecorder: diagnostics,
             isCPMMessagingHangRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmMessagingHangRecovery) == true },
+            isCPMBackgroundLoadRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmBackgroundLoadRecovery) == true },
             isCPMLateBackgroundDocumentRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmLateBackgroundDocumentRecovery) == true },
             handlerProvider: CPMAppHandlerProvider(production: handler, native: native)
         )

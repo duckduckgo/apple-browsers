@@ -123,7 +123,7 @@ final class CPMBackgroundRecoveryIntegrationTests: CPMAppIntegrationTestCase {
         for tab in tabs { assertHealthy(try await harness.navigate(tab, label: "frozen-recovery-baseline")) }
         // P2 recovery is independent of P1's navigation gate; keep the original WebKit timing.
         harness.setFlag(.webExtensionStateRestorationGate, enabled: false)
-        harness.setFlag(.cpmMessagingHangRecovery,
+        harness.setFlag(.cpmBackgroundLoadRecovery,
                         enabled: ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION_DISABLE_P1_P2_FIXES"] != "1")
         let originalContext = try XCTUnwrap(harness.context)
         harness.observeBackgroundLoadErrors(in: originalContext)

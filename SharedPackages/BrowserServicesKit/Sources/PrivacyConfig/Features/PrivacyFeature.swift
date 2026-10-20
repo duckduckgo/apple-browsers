@@ -883,6 +883,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmDiagnosticsRecorder
     /// Controls reloading an unchanged GET document after a late background startup loses its first response.
     case cpmLateBackgroundDocumentRecovery
+    /// Controls retrying failed embedded background content without replacing its context (P2).
+    /// https://app.asana.com/0/0/1219531810004072
+    case cpmBackgroundLoadRecovery
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
     /// Failsafe kill switch for the CPM background-view graveyard treatment.

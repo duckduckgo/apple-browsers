@@ -2,7 +2,9 @@
 
 **Review-only branch:** `codex/cpm-fix-init-loss-integration-tests` is based on `alex/cpm-fix-init-loss` and adds only this app test harness. This branch will not be merged into main; the production fixes and shared unit regressions are reviewed in [PR #7379](https://github.com/duckduckgo/apple-browsers/pull/7379).
 
-Updated to production head `9effd97877` after the PR review fixes and merge of the current #7376 base. Pixel-adapter injection and internal access to `MacOSCPMDiagnosticsFeatureFlags` exist only on this harness branch. The production PR resolves `PixelKit.shared` at fire time and keeps the flag adapter private. Five real-WKWebView regressions in the normal shared-package test target cover edited input, an edited iframe after focus leaves it, a focused Shadow DOM input, the non-GET veto, and an actual pristine-GET reload. Pages containing an iframe or with focus outside `body` now veto automatic recovery; P4 detection remains independent.
+Updated to production head `55a42802a6` after the PR review fixes, merge of the current #7376 base, and independent P2 retry flag. Pixel-adapter injection and internal access to `MacOSCPMDiagnosticsFeatureFlags` exist only on this harness branch. The production PR resolves `PixelKit.shared` at fire time and keeps the flag adapter private. Five real-WKWebView regressions in the normal shared-package test target cover edited input, an edited iframe after focus leaves it, a focused Shadow DOM input, the non-GET veto, and an actual pristine-GET reload. Pages containing an iframe or with focus outside `body` now veto automatic recovery; P4 detection remains independent.
+
+The P2 background-only retry uses its own **default-enabled** remote flag, `webExtensions.cpmBackgroundLoadRecovery`, on both platforms. Full-context restart remains controlled by `webExtensions.cpmMessagingHangRecovery`. The app fixture keeps restart disabled in all cases; the P2 method enables only the new retry flag, and the disabled-fixes scheme switches that flag off. Shared regressions also require that restart works with retry disabled, retry works with restart disabled, runtime disable vetoes a queued retry, and an error-6 notification respects the new flag.
 
 To run the app regressions:
 
@@ -44,7 +46,7 @@ The **CPM Integration Tests - Fixes Disabled** scheme sets `CPM_APP_INTEGRATION_
 | `testInstallDuringSessionInitIsDelivered` | `webExtensions.stateRestorationGate` | First document misses native dashboard/page `initResp` |
 | `testUpgradeDuringSessionInitIsDelivered` | `webExtensions.stateRestorationGate` | First replacement-context document misses its response |
 | `testSlowBackgroundWakeKeepsFirstNavigationHealthy` | `webExtensions.stateRestorationGate` | First navigation records a CPM response timeout |
-| `testBackgroundLoadFailureRecoversOriginalDocument` | `webExtensions.cpmMessagingHangRecovery` | Times out waiting for same-document recovery after real WebKit error 6 |
+| `testBackgroundLoadFailureRecoversOriginalDocument` | `webExtensions.cpmBackgroundLoadRecovery` | Times out waiting for same-document recovery after real WebKit error 6 |
 | `testOverBudgetInstallRecoversFirstDocumentWithoutExtendingNavigationWait` | `webExtensions.cpmLateBackgroundDocumentRecovery` | Times out waiting for automatic first-document recovery |
 | `testOverBudgetUpgradeRecoversFirstDocumentWithoutExtendingNavigationWait` | `webExtensions.cpmLateBackgroundDocumentRecovery` | Times out waiting for automatic first-document recovery |
 
@@ -59,7 +61,7 @@ cd SharedPackages/WebExtensions
 swift test --filter 'WebExtensionManagerTests|WebExtensionLifecycleCoordinatorTests|CPMBackgroundLoadDiagnosticsTests|CPMMessagingHealthMonitorTests|CPMBackgroundReadinessRecoveryTests'
 ```
 
-The previous 22-method research suite remains in the original investigation worktree. The nine app methods and their app hooks live only on this branch; the forty-three new shared unit regressions remain in the production PR and are inherited here. These injected macOS timing/process conditions validate the fixes; they do not establish the natural trigger in every production session or reproduce real iOS suspension/resume.
+The previous 22-method research suite remains in the original investigation worktree. The nine app methods and their app hooks live only on this branch; the forty-seven new shared unit regressions remain in the production PR and are inherited here. These injected macOS timing/process conditions validate the fixes; they do not establish the natural trigger in every production session or reproduce real iOS suspension/resume.
 
 The install/upgrade delay can be overridden with `CPM_APP_INTEGRATION_INSTALL_DELAY_MS`. A value of `5000` deliberately crosses the 5-second gate budget once WebKit startup overhead is included: measured callbacks arrived after 5.15–5.18 seconds, and upgrade sometimes lost its first document's response. The checkpoint commit `dff29dfb1e` documents this failure. The new opt-in document recovery targets it after gate release; increasing this value still does not extend the production timeout. The default 4500 ms leaves startup headroom while preserving the strict first-document assertions. Timeout/cancellation unit tests separately require releasing navigation when readiness never completes.
 

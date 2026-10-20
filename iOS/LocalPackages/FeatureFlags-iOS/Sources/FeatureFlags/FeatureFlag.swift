@@ -427,6 +427,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219588320073672
     case cpmLateBackgroundDocumentRecovery
 
+    /// Retries a failed embedded background load in the same context, independently of hang recovery.
+    /// https://app.asana.com/0/0/1219531810004072
+    case cpmBackgroundLoadRecovery
+
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     /// https://app.asana.com/0/0/1218855001659655
     case cpmMessagingHangRecovery
@@ -935,6 +939,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder))
         case .cpmLateBackgroundDocumentRecovery:
             Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmLateBackgroundDocumentRecovery))
+        case .cpmBackgroundLoadRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRecovery))
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
         case .cpmBackgroundGraveyardTreatment:

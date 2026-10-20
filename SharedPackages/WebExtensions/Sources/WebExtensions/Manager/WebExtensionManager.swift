@@ -165,6 +165,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
+    /// Independent kill switch for retrying a failed background load in its current context.
+    private let isCPMBackgroundLoadRecoveryEnabled: @MainActor () -> Bool
     /// Platform lifecycle state must remain available when diagnostics are disabled.
     private let isApplicationInBackground: @MainActor () -> Bool
 
@@ -214,6 +216,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
                 cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                 isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 messageRouter: WebExtensionMessageRouting? = nil,
@@ -266,6 +269,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         )
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
+        self.isCPMBackgroundLoadRecoveryEnabled = isCPMBackgroundLoadRecoveryEnabled
         self.isApplicationInBackground = isApplicationInBackground
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
@@ -878,7 +882,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
               context.webExtension.duckDuckGoWebExtensionType == .embedded,
               self.context(for: context.uniqueIdentifier) === context,
               embeddedBackgroundContextForNavigation === context,
-              isCPMMessagingHangRecoveryEnabled(),
+              isCPMBackgroundLoadRecoveryEnabled(),
               !isApplicationInBackground(),
               !isCPMMessagingRecoveryInProgress,
               lastBackgroundLoadRecoveryAt.map({ Date().timeIntervalSince($0) >= 60 }) ?? true else { return false }
@@ -887,7 +891,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // in-flight content-script replies; keeping it preserves the failed document's init.
         // The existing confirmed-hang recovery remains the fallback if messaging stays stuck.
         Task { @MainActor [weak self] in
-            guard let self, self.isCPMMessagingHangRecoveryEnabled(), !self.isApplicationInBackground() else { return }
+            guard let self, self.isCPMBackgroundLoadRecoveryEnabled(), !self.isApplicationInBackground() else { return }
             self.backgroundStartupFix[context.uniqueIdentifier] = .backgroundLoadRetry
             await self.loadEmbeddedExtensionBackgroundContent(in: context)
         }

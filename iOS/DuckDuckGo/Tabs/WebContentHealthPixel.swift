@@ -61,8 +61,6 @@ enum WebContentHealthPixel: PixelKit.Event {
 
     /// How a preview snapshot ended.
     enum SnapshotResult: String {
-        /// No timed snapshot was taken.
-        case skipped
         /// The first attempt (`afterScreenUpdates = true`) answered in time.
         case success
         /// The first attempt timed out; the fallback (`afterScreenUpdates = false`) returned an image.
@@ -74,7 +72,7 @@ enum WebContentHealthPixel: PixelKit.Event {
 
         var isTimeout: Bool {
             switch self {
-            case .skipped, .success: return false
+            case .success: return false
             case .retryImage, .retryNoImage, .retryTimeout: return true
             }
         }

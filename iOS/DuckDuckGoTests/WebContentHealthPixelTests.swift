@@ -429,8 +429,8 @@ final class WebContentHealthPixelTests: XCTestCase {
     }
 
     func testOnlyRetryResultsCountAsSnapshotTimeouts() {
-        XCTAssertEqual([WebContentHealthPixel.SnapshotResult.skipped, .success, .retryImage, .retryNoImage, .retryTimeout].map(\.isTimeout),
-                       [false, false, true, true, true])
+        XCTAssertEqual([WebContentHealthPixel.SnapshotResult.success, .retryImage, .retryNoImage, .retryTimeout].map(\.isTimeout),
+                       [false, true, true, true])
     }
 
     func testFreezeDurationBuckets() {

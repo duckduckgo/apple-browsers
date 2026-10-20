@@ -165,7 +165,7 @@ struct SettingsAppearanceView: View {
             }
 
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
     }
 
@@ -185,7 +185,7 @@ struct SettingsAppearanceView: View {
                 SettingsCellView(label: UserText.mobileCustomizationToolbarTitle, accessory: .rightDetail(UserText.mobileCustomizationNoneOptionShort))
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
     }
 

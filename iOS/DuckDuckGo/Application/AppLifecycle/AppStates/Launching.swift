@@ -79,10 +79,14 @@ struct Launching: LaunchingHandling {
         launchBreadcrumb.mark(.keyValueStore)
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
+        // The app's single owner of the Duck.ai bonus record, shared by every consumer.
+        let aiChatBonusService = AIChatBonusService()
+
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
             appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatBonusService: aiChatBonusService
         )
 
         var isBookmarksDBFilePresent: Bool?
@@ -212,7 +216,7 @@ struct Launching: LaunchingHandling {
         let freemiumPIREligibilityChecker = DefaultFreemiumPIREligibilityChecker(
             featureFlagger: featureFlagger,
             runPrerequisitesDelegate: dbpService.dbpIOSPublicInterface,
-            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             freemiumPIRDebugSettings: freemiumPIRDebugSettings
         )
 
@@ -241,6 +245,7 @@ struct Launching: LaunchingHandling {
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                                            aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
@@ -287,6 +292,13 @@ struct Launching: LaunchingHandling {
         // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
         let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        let backgroundDateStorage = lastBackgroundDateStorage
+        let promptExposureReporter = PromptExposureReporter(
+            storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),
+            installDateProvider: { StatisticsUserDefaults().installDate },
+            onboardingCompletedProvider: { daxDialogs.hasSeenOnboarding },
+            lastBackgroundDateProvider: { (try? backgroundDateStorage.lastBackgroundDate) ?? nil }
+        )
         let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -310,7 +322,8 @@ struct Launching: LaunchingHandling {
                 subscriptionPromoExistingUserPresenter: subscriptionPromoExistingUserPresenter,
                 subscriptionPromoExistingUserCoordinator: subscriptionPromoExistingUserCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies,
-                omniBarFocuser: omniBarFocuser
+                omniBarFocuser: omniBarFocuser,
+                promptExposureReporter: promptExposureReporter
             )
         )
 
@@ -323,6 +336,7 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
+        let usageContextProvider = UsageContextProvider()
         mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,
@@ -359,7 +373,9 @@ struct Launching: LaunchingHandling {
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
                                               onboardingManager: onboardingManager,
-                                              eventHub: eventHubService.eventHub
+                                              eventHub: eventHubService.eventHub,
+                                              usageContextProvider: usageContextProvider,
+                                              promptExposureReporter: promptExposureReporter
         )
         launchBreadcrumb.mark(.mainCoordinator)
 
@@ -386,6 +402,7 @@ struct Launching: LaunchingHandling {
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let aiChatService = AIChatService(
             aiChatSettings: aiChatSettings,
+            aiChatBonusService: aiChatBonusService,
             termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver(
                 storageHandler: duckAiNativeStorageHandler,
                 feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)

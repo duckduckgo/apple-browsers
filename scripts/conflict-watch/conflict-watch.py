@@ -202,7 +202,7 @@ DEFAULT_ALWAYS_IGNORE = (
     "iOS/Core/FeatureFlag.swift,"
     # Localized strings and localization bundles
     "iOS/DuckDuckGo/UserInterface/UserText.swift,"
-    "iOS/DuckDuckGo/en.lproj/Localizable.strings,"
+    "iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.strings,"
     # Design system asset catalog
     "SharedPackages/Infrastructure/DesignResourcesKitIcons/**,"
     # Maestro flow scripts and JS lockfile

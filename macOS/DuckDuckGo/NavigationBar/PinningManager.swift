@@ -19,7 +19,7 @@
 import Foundation
 import VPN
 
-enum PinnableView: String {
+enum PinnableView: String, CaseIterable {
     case autofill
     case bookmarks
     case downloads

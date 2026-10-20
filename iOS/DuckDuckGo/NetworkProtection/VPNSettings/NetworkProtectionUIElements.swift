@@ -82,7 +82,7 @@ struct NetworkProtectionUIElements {
                     .daxFootnoteRegular()
                     .padding(.top, 6)
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
     }
 

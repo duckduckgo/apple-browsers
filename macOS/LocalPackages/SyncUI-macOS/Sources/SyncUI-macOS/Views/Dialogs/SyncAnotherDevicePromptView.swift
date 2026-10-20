@@ -24,16 +24,16 @@ struct SyncAnotherDevicePromptView: View {
     @EnvironmentObject var model: ManagementDialogModel
 
     private var isBusy: Bool {
-        model.isConnecting
+        model.isBusy
     }
 
     var body: some View {
-        SyncDialogV2(spacing: 20.0) {
+        SyncSetupDialog(spacing: 20.0) {
             VStack(alignment: .center, spacing: 20) {
                 Image(.syncPairFeature128)
                 VStack(alignment: .center, spacing: 8) {
-                    SyncUIViewsV2.TextHeader(text: UserText.syncAnotherDevicePromptTitleV2)
-                    SyncUIViewsV2.TextDetailSecondary(text: UserText.syncAnotherDevicePromptSubtitleV2)
+                    SyncUIViews.CenteredTitle(text: model.isImprovedPairingFlowEnabled ? UserText.syncAnotherDevicePromptTitleImproved : UserText.syncAnotherDevicePromptTitle)
+                    SyncUIViews.CenteredSecondaryBody(text: model.isImprovedPairingFlowEnabled ? UserText.syncAnotherDevicePromptSubtitleImproved : UserText.syncAnotherDevicePromptSubtitle)
                 }
             }
         } buttons: {
@@ -48,21 +48,23 @@ struct SyncAnotherDevicePromptView: View {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(UserText.syncThisDeviceOnlyButtonV2)
+                    Text(UserText.syncThisDeviceOnlyButton)
                 }
             }
             .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             .disabled(isBusy)
 
             Button {
-                model.delegate?.syncWithAnotherDeviceFromPrompt()
+                Task {
+                    await model.delegate?.syncWithAnotherDeviceFromPrompt()
+                }
             } label: {
                 HStack(spacing: 6) {
                     if model.isConnectingAnotherDevice {
                         ProgressView()
                             .controlSize(.small)
                     }
-                    Text(UserText.syncWithAnotherDeviceButtonV2)
+                    Text(UserText.syncWithAnotherDeviceButton)
                 }
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: !isBusy, stateColors: .themedActionButton))
@@ -78,6 +80,15 @@ struct SyncAnotherDevicePromptView: View {
 #Preview("Default") {
     SyncAnotherDevicePromptView()
         .environmentObject(ManagementDialogModel())
+}
+
+#Preview("Improved Pairing Flow") {
+    SyncAnotherDevicePromptView()
+        .environmentObject({
+            let model = ManagementDialogModel()
+            model.isImprovedPairingFlowEnabled = true
+            return model
+        }())
 }
 
 #Preview("Connecting") {

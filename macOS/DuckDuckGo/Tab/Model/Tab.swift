@@ -601,6 +601,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     let webView: WebView
 
+    /// The web view showing the tab's `webkit-extension:` page. The page needs its extension's
+    /// configuration, so it can't load in `webView`. WebKit finds the page's tab through this web
+    /// view, which extensions read as `sender.tab`.
+    var webExtensionPageWebView: WebView?
+
     var audioState: WebView.AudioState {
         webView.audioState
     }
@@ -628,6 +633,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         didSet {
             if !content.displaysContentInWebView && oldValue.displaysContentInWebView {
                 webView.stopAllMedia(shouldStopLoading: false)
+            }
+            if content != oldValue {
+                webExtensionPageWebView = nil
             }
             Task { @MainActor in
                 extensions.favicons?.loadCachedFavicon(oldValue: oldValue, isBurner: burnerMode.isBurner, error: error)

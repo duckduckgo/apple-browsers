@@ -86,6 +86,29 @@ public struct AIChatBonusRecord: Codable, Equatable, Sendable {
     }
 }
 
+// MARK: - Boost state
+
+extension AIChatBonusRecord {
+
+    /// Returns `true` while the boost is on: claimed, confirmed by the server and not yet expired.
+    ///
+    /// - Parameter date: The moment to check against, usually now.
+    func isBoostActive(at date: Date) -> Bool {
+        guard campaignName != nil, bonusId != nil, let terms else { return false }
+        return terms.expiresAt > date.timeIntervalSince1970
+    }
+
+    /// Whether a granted boost has passed its expiry and should be ended.
+    /// Not the same as `!isBoostActive(at:)`: a pending claim has no terms yet, so it isn't expired.
+    func hasBoostExpired(at date: Date) -> Bool {
+        guard bonusId != nil, let terms else { return false }
+        return terms.expiresAt <= date.timeIntervalSince1970
+    }
+
+}
+
+// MARK: - Terms
+
 public extension AIChatBonusRecord {
 
     /// Represents The boost terms confirmed by the server on a successful redeem.
@@ -115,6 +138,8 @@ public extension AIChatBonusRecord {
 
 }
 
+// MARK: - Payload
+
 /// Represents the Bonus payload for every request and every push sends to Duck.ai
 public struct AIChatBonusRecordPayload: Encodable, Equatable, Sendable {
     /// `nil` when the device has no record yet.
@@ -131,8 +156,6 @@ public struct AIChatBonusRecordPayload: Encodable, Equatable, Sendable {
         self.isNewInstall = isNewInstall
         self.aiChatEnabled = aiChatEnabled
     }
-
-    // MARK: - Encodable
 
     private enum CodingKeys: String, CodingKey {
         case record

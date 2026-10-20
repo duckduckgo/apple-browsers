@@ -152,7 +152,7 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
         sut.buttonClicked()
 
         let result = await task.value
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
         XCTAssertFalse(isShowing)
     }
 
@@ -189,7 +189,7 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
         XCTAssertTrue(isShowing)
         sut.buttonClicked()
         let result = await task.value
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
         XCTAssertFalse(isShowing)
     }
 }

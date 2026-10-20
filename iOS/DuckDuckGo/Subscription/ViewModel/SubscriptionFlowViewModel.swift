@@ -287,7 +287,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                      self.state.selectedFeature = .itr
                  case .paidAIChat:
                      PixelKit.fire(Pixel.Event.subscriptionWelcomeAIChat, frequency: .uniqueByName)
-                     self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
+                     self.urlOpener.open(AIChatEntryPointSource.paidSettingsDeepLink)
                  case .unknown:
                      break
                  }

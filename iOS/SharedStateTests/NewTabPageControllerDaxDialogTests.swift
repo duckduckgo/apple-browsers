@@ -55,7 +55,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         flowProvider = MockOnboardingFlowProvider()
         tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
 
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true }, promptExposureReporter: MockPromptExposureReporter())
         hvc = NewTabPageViewController(
             isFocussedState: false,
             dismissKeyboardOnScroll: false,
@@ -119,10 +119,10 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     func testWhenDialogIsReplacedThenItRemainsAboveHostedPageInContainer() throws {
         let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
         specProvider.specToReturn = .initial
-        hvc.showNextDaxDialogNew(dialogProvider: specProvider, factory: dialogFactory)
+        hvc.showNextDaxDialog()
         let firstDialog = try XCTUnwrap(hvc.children.first { $0 !== page })
 
-        hvc.showNextDaxDialogNew(dialogProvider: specProvider, factory: dialogFactory)
+        hvc.showNextDaxDialog()
         let replacement = try XCTUnwrap(hvc.children.first { $0 !== page })
         hvc.view.layoutIfNeeded()
 
@@ -140,7 +140,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     func testWhenDialogIsDismissedThenHostedPageRemainsAttached() throws {
         let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
         specProvider.specToReturn = .initial
-        hvc.showNextDaxDialogNew(dialogProvider: specProvider, factory: dialogFactory)
+        hvc.showNextDaxDialog()
         let dialog = try XCTUnwrap(hvc.children.first { $0 !== page })
 
         specProvider.specToReturn = nil
@@ -189,7 +189,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         }
         let config = HomePageConfiguration(remoteMessagingStore: store,
                                            subscriptionDataReporter: MockSubscriptionDataReporter(),
-                                           isStillOnboarding: { false })
+                                           isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
         return (config, store)
     }
 

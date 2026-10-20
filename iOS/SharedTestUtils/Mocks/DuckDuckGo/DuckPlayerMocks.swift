@@ -614,8 +614,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
         receivedMessages.append(.setRefreshControlEnabled(isEnabled))
     }
 
+    var isUnifiedInputContentOverlaySuppressed = false
+
     func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
-        // no-op
+        isUnifiedInputContentOverlaySuppressed = suppressed
     }
 
     var canHideBars: Bool = false

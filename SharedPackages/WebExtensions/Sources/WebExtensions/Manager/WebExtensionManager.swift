@@ -166,6 +166,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
     private let now: () -> Date
+    /// Keeps the health monitor informed of app suspension for as long as the manager lives.
+    private var cpmInterruptionObserver: CPMInterruptionObserver?
 
     // MARK: - AsyncStream
 
@@ -336,6 +338,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                     await self?.reloadEmbeddedExtensionAfterCPMMessagingHang()
                 }
             }
+            self.cpmInterruptionObserver = CPMInterruptionObserver(monitor: healthMonitor)
         }
     }
 

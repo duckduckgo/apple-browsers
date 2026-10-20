@@ -78,7 +78,7 @@ final class AIChatInitialPromptSession {
     private var preparation: AIChatInitialPromptPreparation?
     private var preparationID: UUID?
     private var delivery: AIChatInitialPromptDelivery?
-    private var usesRecipientBoundInitialPrompt = false
+    private var usesTabSessionInitialPrompt = false
     private var awaitsNavigation = false
     private var hasFailedNavigation = false
     private var navigation: (any WebViewNavigation & AnyObject)?
@@ -117,7 +117,7 @@ final class AIChatInitialPromptSession {
 
     func install(_ delivery: AIChatInitialPromptDelivery) {
         cancel()
-        usesRecipientBoundInitialPrompt = true
+        usesTabSessionInitialPrompt = true
         awaitsNavigation = true
         self.delivery = delivery
     }
@@ -129,7 +129,7 @@ final class AIChatInitialPromptSession {
     }
 
     func consumeInitialPrompt() -> PromptSource {
-        guard usesRecipientBoundInitialPrompt else { return .sharedHandler }
+        guard usesTabSessionInitialPrompt else { return .sharedHandler }
         let delivery = delivery
         self.delivery = nil
         hasFailedNavigation = false
@@ -170,7 +170,7 @@ final class AIChatInitialPromptSession {
         let shouldCancel = !awaitsNavigation
         if shouldCancel {
             cancel()
-            usesRecipientBoundInitialPrompt = false
+            usesTabSessionInitialPrompt = false
         }
         awaitsNavigation = false
         hasFailedNavigation = false

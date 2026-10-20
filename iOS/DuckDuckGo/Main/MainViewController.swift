@@ -5058,8 +5058,8 @@ class MainViewController: UIViewController {
 
     private func openAIChat(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
         fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
-        // In-place ordinary navigation records NTP use before ending the idle session.
-        if !request.opensNewTab, case .sharedHandler = request.prompt {
+        // Record NTP use before ending the idle session.
+        if !request.opensNewTab {
             measureAIChatUseFromNewTabPage(originatingTab)
         }
         if request.shouldMeasureOpening {
@@ -5110,7 +5110,6 @@ class MainViewController: UIViewController {
 
     private func aiChatRecipient(for request: AIChatOpeningRequest, from originatingTab: TabViewController) -> TabViewController {
         guard request.opensNewTab, case .tabSession(let delivery, let context) = request.prompt else {
-            if case .tabSession = request.prompt { measureAIChatUseFromNewTabPage(originatingTab) }
             return originatingTab
         }
         // Install before caching, so capacity enforcement cannot evict the recipient without its prompt.

@@ -1356,7 +1356,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         diagnostics.secondsFromBackgroundViewToLoadError = 30.4
         diagnostics.backgroundLoadErrorAppState = .background
         let report = CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .failedMeasurementResponse,
-                                               reloadState: .none, secondsToResponse: 12.345, diagnostics: diagnostics)
+                                               reloadState: .none, secondsToResponse: 12.345, diagnostics: diagnostics, failedTabCount: 1, repeatedFailureCount: 0, wasInterrupted: false)
         XCTAssertEqual(report.pixelParameters, [
             "reason": "other", "was_stuck": "false", "outcome": "failed_measurement_response",
             "tabs_affected": "1", "repeat_failures": "0", "interrupted": "false",
@@ -1372,17 +1372,17 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         for (seconds, bucket) in [(0.0, "under_30s"), (29.9, "under_30s"), (30, "30s_to_1m"),
                                   (59.9, "30s_to_1m"), (60, "1m_to_deadline"), (299, "1m_to_deadline")] {
             let report = CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .otherTabResponse,
-                                                   reloadState: .none, secondsToResponse: seconds, diagnostics: nil)
+                                                   reloadState: .none, secondsToResponse: seconds, diagnostics: nil, failedTabCount: 1, repeatedFailureCount: 0, wasInterrupted: false)
             XCTAssertEqual(report.pixelParameters["response_after"], bucket)
         }
         let report = CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .noResponseBeforeDeadline,
-                                               reloadState: .none, secondsToResponse: 300, diagnostics: nil)
+                                               reloadState: .none, secondsToResponse: 300, diagnostics: nil, failedTabCount: 1, repeatedFailureCount: 0, wasInterrupted: false)
         XCTAssertNil(report.pixelParameters["response_after"])
     }
 
     func testCPMPixelMetadataUsesDailyAndCountForOneEpisodeReport() throws {
         let report = CPMMessagingEpisodeReport(reason: .tabCrash, wasStuck: true, outcome: .failedTabResponse,
-                                               reloadState: .loaded, secondsToResponse: 45, diagnostics: nil)
+                                               reloadState: .loaded, secondsToResponse: 45, diagnostics: nil, failedTabCount: 1, repeatedFailureCount: 0, wasInterrupted: false)
         let metadata = try XCTUnwrap(CPMWebExtensionPixelMetadata(event: .cpmMessagingEpisode(report)))
         XCTAssertEqual(metadata.name, "web_extension_cpm_episode")
         XCTAssertEqual(metadata.frequency, .dailyAndCount)
@@ -1400,7 +1400,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         for testCase in cases {
             let report = CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .otherTabResponse,
                                                    reloadState: .none, secondsToResponse: 1, diagnostics: nil,
-                                                   failedTabCount: testCase.tabs, repeatedFailureCount: testCase.repeats)
+                                                   failedTabCount: testCase.tabs, repeatedFailureCount: testCase.repeats, wasInterrupted: false)
             XCTAssertEqual(report.pixelParameters["tabs_affected"], testCase.tabsBucket)
             XCTAssertEqual(report.pixelParameters["repeat_failures"], testCase.repeatsBucket)
         }

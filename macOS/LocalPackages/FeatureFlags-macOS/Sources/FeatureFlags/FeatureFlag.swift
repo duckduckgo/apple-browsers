@@ -119,7 +119,7 @@ public enum FeatureFlag: String, CaseIterable {
     case cpmMessagingHangRecovery
 
     /// Restarts the embedded background after a confirmed Network process replacement.
-    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219531810004073
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
     case cpmNetworkProcessRecovery
 
     /// Remotely activated Web Extension background Web View graveyard treatment.

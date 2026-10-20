@@ -31,16 +31,18 @@ final class CPMNetworkProcessRecovery {
         static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
     }
 
-    typealias ProcessIdentifier = @MainActor (WKWebView) -> Int32?
+    typealias ProcessIdentifier = @MainActor (WKWebsiteDataStore) -> Int32?
     typealias Restart = @MainActor (WKWebView) -> Bool
 
     private final class Watch {
         weak var background: WKWebView?
+        let dataStore: WKWebsiteDataStore
         var originalProcess: Int32?
         let isCurrent: @MainActor () -> Bool
 
-        init(background: WKWebView, originalProcess: Int32?, isCurrent: @escaping @MainActor () -> Bool) {
+        init(background: WKWebView, dataStore: WKWebsiteDataStore, originalProcess: Int32?, isCurrent: @escaping @MainActor () -> Bool) {
             self.background = background
+            self.dataStore = dataStore
             self.originalProcess = originalProcess
             self.isCurrent = isCurrent
         }
@@ -59,7 +61,7 @@ final class CPMNetworkProcessRecovery {
     init(isEnabled: @escaping @MainActor () -> Bool,
          featureFlagUpdates: AnyPublisher<Void, Never>? = nil,
          pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
-         checkInterval: TimeInterval = 1,
+         checkInterval: TimeInterval = 5,
          processIdentifier: @escaping ProcessIdentifier = CPMNetworkProcessRecovery.networkProcessIdentifier,
          restart: @escaping Restart = CPMNetworkProcessRecovery.restartBackground) {
         self.isEnabled = isEnabled
@@ -79,7 +81,8 @@ final class CPMNetworkProcessRecovery {
     deinit { periodicCheck?.cancel() }
 
     func watch(_ webView: WKWebView, identifier: String, isCurrent: @escaping @MainActor () -> Bool) {
-        watches[identifier] = Watch(background: webView, originalProcess: processIdentifier(webView), isCurrent: isCurrent)
+        let dataStore = webView.configuration.websiteDataStore
+        watches[identifier] = Watch(background: webView, dataStore: dataStore, originalProcess: processIdentifier(dataStore), isCurrent: isCurrent)
         startPeriodicCheckIfNeeded()
     }
 
@@ -95,7 +98,7 @@ final class CPMNetworkProcessRecovery {
         }
     }
 
-    /// Also checked before navigation, without depending on the startup gate or diagnostics flags.
+    /// Also checked at main-frame HTTP(S) response policy, independently of the startup gate and diagnostics.
     @discardableResult
     func recoverIfNeeded() -> Bool {
         guard isEnabled() else {
@@ -112,7 +115,7 @@ final class CPMNetworkProcessRecovery {
                 removeWatch(identifier: identifier, matching: watch)
                 continue
             }
-            guard let current = processIdentifier(background), current > 0 else { continue }
+            guard let current = processIdentifier(watch.dataStore), current > 0 else { continue }
             guard let originalProcess = watch.originalProcess, originalProcess > 0 else {
                 watch.originalProcess = current
                 continue
@@ -146,8 +149,7 @@ final class CPMNetworkProcessRecovery {
         periodicCheck = nil
     }
 
-    private static func networkProcessIdentifier(_ webView: WKWebView) -> Int32? {
-        let store = webView.configuration.websiteDataStore
+    private static func networkProcessIdentifier(_ store: WKWebsiteDataStore) -> Int32? {
         guard store.responds(to: Selector.networkProcessIdentifier) else { return nil }
         return (store.value(forKey: NSStringFromSelector(Selector.networkProcessIdentifier)) as? NSNumber)?.int32Value
     }

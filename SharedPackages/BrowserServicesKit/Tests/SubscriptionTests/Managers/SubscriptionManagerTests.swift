@@ -549,6 +549,17 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertTrue(mockOAuthClient.getTokensPolicies.isEmpty)
     }
 
+    func testCreateIfNeeded_MissingPrimary_BackupPermanentlyRejected_CreatesAnAccount() async throws {
+        let suspended = OAuthRequestError(from: OAuthRequest.BodyError(errorCode: .suspendedAccount, tokenStatus: nil))
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        installCoordinator(backupResult: .failure(OAuthServiceError.authAPIError(suspended)), appStoreSucceeds: true)
+
+        _ = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
+
+        XCTAssertEqual(mockOAuthClient.getTokensPolicies, [.createIfNeeded])
+    }
+
     func testCreateIfNeeded_MissingPrimary_NoUsableBackup_CreatesAnAccount() async throws {
         mockOAuthClient.internalCurrentTokenContainer = nil
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())

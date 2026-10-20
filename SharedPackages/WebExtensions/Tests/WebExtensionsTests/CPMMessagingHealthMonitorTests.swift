@@ -307,7 +307,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
             url: url,
             extensionIsLoaded: true
         ))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -325,7 +325,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
             url: url,
             extensionIsLoaded: true
         ))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .tabCrash,
                              wasStuck: false, reloadState: .none)
@@ -340,7 +340,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: url))
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 17, url: url))
         monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -351,13 +351,13 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "tab-1", path: "one", on: monitor)
         finishNavigation(tabIdentifier: "tab-2", path: "two", on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         XCTAssertTrue(pixelFiring.reports.isEmpty)
         XCTAssertEqual(pixelFiring.confirmedHangCount, 0)
 
         finishNavigation(tabIdentifier: "tab-3", path: "three", on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: true, reloadState: .none)
@@ -369,7 +369,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "tab-1", path: "old", on: monitor)
         monitor.handle(.navigationStarted(tabIdentifier: "tab-1", navigationKind: .other))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -380,7 +380,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "tab-1", path: "failed", on: monitor)
         monitor.handle(.navigationFailed(tabIdentifier: "tab-1"))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -391,7 +391,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "tab-1", path: "closed", on: monitor)
         monitor.handle(.tabClosed(tabIdentifier: "tab-1"))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -404,7 +404,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         startAndCommitNavigation(tabIdentifier: "tab-1", url: committedURL, navigationKind: .other, on: monitor)
         monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: finishedURL, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -416,7 +416,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: url))
         monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: false, reloadState: .none)
@@ -428,7 +428,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         let url = URL(string: "https://example.com/late-observer")!
 
         monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: false, reloadState: .none)
@@ -441,7 +441,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "tab-1", url: url, on: monitor)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -451,7 +451,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
 
         finishNavigation(tabIdentifier: "tab-1", path: "waiting", extensionIsLoaded: false, on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -462,7 +462,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "tab-1", path: "waiting", extensionIsLoaded: false, on: monitor)
         monitor.handle(.extensionLifecycle(.loaded(identifier: "embedded", type: .embedded)))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: false, reloadState: .none)
@@ -476,7 +476,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         finishNavigation(tabIdentifier: "tab-1", url: url, extensionIsLoaded: false, on: monitor)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url))
         monitor.handle(.extensionLifecycle(.loaded(identifier: "embedded", type: .embedded)))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -488,7 +488,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         finishNavigation(tabIdentifier: "tab-1", path: "one", on: monitor)
         finishNavigation(tabIdentifier: "tab-2", path: "two", on: monitor)
         monitor.handle(.extensionLifecycle(.willReload(identifier: "embedded", type: .embedded, trigger: .explicit)))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -503,7 +503,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .explicit))
         monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .explicit))
         finishNavigation(tabIdentifier: "post-reload", url: preReloadURL, on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: true, reloadState: .responseTimedOut)
@@ -520,7 +520,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.willReload(identifier: "embedded", type: .embedded, trigger: .explicit))
         monitor.handle(.reloaded(identifier: "embedded", type: .embedded, trigger: .explicit))
         monitor.handle(.navigationFinished(tabIdentifier: "spanning", url: spanningURL, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: true, reloadState: .responseTimedOut)
@@ -531,20 +531,20 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
 
         finishNavigation(tabIdentifier: "regular-1", path: "regular-1", on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
         finishNavigation(
             tabIdentifier: "restored-1",
             path: "restored-1",
             navigationKind: .sessionRestoration,
             on: monitor
         )
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         XCTAssertTrue(pixelFiring.reports.isEmpty)
         XCTAssertEqual(pixelFiring.confirmedHangCount, 0)
 
         finishNavigation(tabIdentifier: "regular-2", path: "regular-2", on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: true, reloadState: .none)
@@ -562,9 +562,9 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
             on: monitor
         )
         finishNavigation(tabIdentifier: "regular", path: "regular", on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
         monitor.handle(.navigationFinished(tabIdentifier: "restored", url: restorationURL, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: false, reloadState: .none)
@@ -639,14 +639,14 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "tab-1", url: url, on: monitor)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 21, url: url))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
         XCTAssertTrue(pixelFiring.reports.isEmpty, "Expected the first navigation to establish the mapping cleanly")
 
         monitor.handle(.navigationStarted(tabIdentifier: "tab-1", navigationKind: .other))
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 21, url: url))
         monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: url))
         monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -708,14 +708,14 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         // Establish the mapping 3 -> tab-1 with a healthy navigation.
         finishNavigation(tabIdentifier: "tab-1", url: url, on: monitor)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 3, url: url))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
         XCTAssertTrue(pixelFiring.reports.isEmpty)
 
         // Drive an episode to stuck on unrelated tabs.
         finishNavigation(tabIdentifier: "tab-2", path: "one", on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
         finishNavigation(tabIdentifier: "tab-3", path: "two", on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
         XCTAssertTrue(pixelFiring.reports.isEmpty)
         XCTAssertEqual(pixelFiring.confirmedHangCount, 1)
 
@@ -726,7 +726,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: url))
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 3, url: url))
         monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertReport(pixelFiring, reason: .other, wasStuck: true,
                      outcome: .otherTabResponse, reloadState: .none)
@@ -741,9 +741,9 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         let sharedURL = URL(string: "https://example.com/shared")!
 
         finishNavigation(tabIdentifier: "tab-1", url: sharedURL, on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
         finishNavigation(tabIdentifier: "tab-2", url: sharedURL, on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         XCTAssertTrue(pixelFiring.reports.isEmpty)
         XCTAssertEqual(pixelFiring.confirmedHangCount, 1)
@@ -768,7 +768,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.navigationCommitted(tabIdentifier: "tab-2", url: sharedURL))
         startAndCommitNavigation(tabIdentifier: "tab-2", url: replacementURL, navigationKind: .other, on: monitor)
         monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: sharedURL, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -784,7 +784,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 340, url: sharedURL))
         monitor.handle(.navigationFinished(tabIdentifier: "restored-1", url: sharedURL, extensionIsLoaded: true))
         monitor.handle(.navigationFinished(tabIdentifier: "restored-2", url: sharedURL, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -802,7 +802,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "restored-1", url: sharedURL, on: monitor)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: sharedURL))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -820,7 +820,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 8, url: url))
         monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         XCTAssertTrue(pixelFiring.reports.isEmpty)
         XCTAssertEqual(pixelFiring.confirmedHangCount, 1)
@@ -848,7 +848,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 8, url: url))
         currentDate.addTimeInterval(1)
         finishNavigation(tabIdentifier: "tab-1", url: url, on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: false, reloadState: .none)
@@ -865,7 +865,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.tabClosed(tabIdentifier: "tab-1"))
         finishNavigation(tabIdentifier: "tab-2", url: secondURL, on: monitor)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 4, url: secondURL))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -881,7 +881,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         finishNavigation(tabIdentifier: "tab-2", url: sharedURL, on: monitor)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: sharedURL))
         monitor.handle(.tabClosed(tabIdentifier: "tab-2"))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -895,7 +895,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         startAndCommitNavigation(tabIdentifier: "tab-1", url: failedURL, navigationKind: .other, on: monitor)
         monitor.handle(.navigationFailed(tabIdentifier: "tab-1"))
         finishNavigation(tabIdentifier: "tab-1", path: "retry", on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .tabCrash,
                              wasStuck: false, reloadState: .none)
@@ -915,7 +915,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         finishNavigation(tabIdentifier: "tab-1", path: "expired", on: monitor)
         currentDate.addTimeInterval(1)
         monitor.handle(.tabClosed(tabIdentifier: "unknown"))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -958,7 +958,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         finishNavigation(tabIdentifier: "tab-1", url: sharedURL, on: monitor)
         finishNavigation(tabIdentifier: "tab-2", url: sharedURL, on: monitor)
         monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: sharedURL))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other,
                              wasStuck: false, reloadState: .none)
@@ -980,7 +980,9 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
     func testResponseCancelsDeadlineAndDoesNotSendASecondReport() async {
         let pixelFiring = CapturingWebExtensionPixelFiring()
-        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, episodeLifetime: 0.02, now: Date.init)
+        // A fixed clock keeps `reportSuccess` from expiring the 20 ms episode on a stalled runner;
+        // only the deadline task, which the response must cancel, uses real time.
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, episodeLifetime: 0.02, now: { Date(timeIntervalSince1970: 0) })
         let measurement = monitor.beginMeasurement(tabIdentifier: "tab-1", navigationKind: .other)
         monitor.reportFailure(measurement)
         monitor.reportSuccess(measurement)
@@ -1150,7 +1152,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)
 
         finishNavigation(tabIdentifier: "tab-1", url: URL(string: "file:///tmp/page.html")!, on: monitor)
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -1161,7 +1163,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
 
         finishNavigation(tabIdentifier: "tab-1", path: "first", on: monitor)
         monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: URL(string: "file:///tmp/page.html")!))
-        await waitForEventTimeout()
+        await waitForEventTimeout(on: monitor)
 
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
@@ -1285,8 +1287,9 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         monitor.handle(.navigationCommitted(tabIdentifier: tabIdentifier, url: url))
     }
 
-    private func waitForEventTimeout() async {
-        try? await Task.sleep(nanoseconds: 30_000_000)
+    /// Waits for the monitor's own scheduled timeouts instead of a fixed sleep, which raced slow CI runners.
+    private func waitForEventTimeout(on monitor: CPMMessagingHealthMonitor) async {
+        await monitor.waitForScheduledTimeouts()
     }
 }
 

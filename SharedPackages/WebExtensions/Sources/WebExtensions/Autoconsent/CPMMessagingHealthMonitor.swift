@@ -368,6 +368,15 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
     }
 
+    /// Test support: returns once every navigation timeout scheduled so far has fired or been cancelled,
+    /// so tests assert on settled state instead of sleeping for a guessed interval.
+    func waitForScheduledTimeouts() async {
+        let timeoutTasks = tabs.values.compactMap(\.timeoutTask)
+        for task in timeoutTasks {
+            await task.value
+        }
+    }
+
     /// Applies a deadline only when its tab generation and measurement are still current.
     /// - Parameters identify the scheduled navigation and whether expiry reports or cancels it.
     private func timeoutElapsed(

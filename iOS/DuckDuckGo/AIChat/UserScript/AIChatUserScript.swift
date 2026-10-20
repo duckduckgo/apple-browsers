@@ -176,7 +176,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         }
         handler.setBonusRecordChangedHandler { [weak self] payload in
-            self?.submitBonusRecord(payload)
+            Task { @MainActor [weak self] in
+                self?.submitBonusRecord(payload)
+            }
         }
     }
 
@@ -670,6 +672,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     /// Pushes the bonus record to this tab after it changes, so Duck.ai re-derives the offer state.
+    @MainActor
     func submitBonusRecord(_ payload: AIChatBonusRecordPayload) {
         // Push only to websites matching origin policy
         guard let host = webView?.url?.host,

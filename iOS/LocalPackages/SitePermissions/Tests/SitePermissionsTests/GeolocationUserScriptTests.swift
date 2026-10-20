@@ -58,23 +58,19 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("globalThis.origin !== \"null\""))
         XCTAssertTrue(source.contains("globalThis.location.protocol === \"https:\" || globalThis.location.protocol === \"http:\""),
                       "Only network documents may use the shim")
-        XCTAssertTrue(policySource.contains("return verdict.isPolicyAllowed;"),
+        XCTAssertTrue(policySource.contains("return documentPolicyAllowed();"),
                       "Without Permissions Policy introspection, subframes must follow their embedding frames' allow attributes")
-        XCTAssertTrue(policySource.contains("isPolicyAllowed: documentID !== null && isFramePolicyEligible && policyAllowsGeolocation(verdict)"),
+        XCTAssertTrue(policySource.contains("isPolicyAllowed: documentID !== null && isFramePolicyEligible && policyAllowsGeolocation()"),
                       "Every request and permission query must share the same policy constraint")
         XCTAssertTrue(source.contains("const nativePermissionsPolicy = document.permissionsPolicy ?? document.featurePolicy"))
         XCTAssertTrue(source.contains("apply(nativePolicyAllowsFeature, nativePermissionsPolicy, [\"geolocation\"])"),
                       "Page code must not replace the captured policy API before a later resample")
-        XCTAssertTrue(policySource.contains("parentPolicy.embeddedFrameVerdict(element, documentOrigin)"),
-                      "A child must get its sandbox and policy verdict from its parent's isolated script")
-        XCTAssertTrue(policySource.contains("isSandboxed: ownVerdict.isSandboxed || isSandboxed"),
-                      "A child must inherit the sandbox verdict from every ancestor")
+        XCTAssertTrue(policySource.contains("parentPolicy.embeddedFrameAllowed(element, documentOrigin)"),
+                      "A child must get its policy verdict from its parent's isolated script")
+        XCTAssertTrue(policySource.contains("const isSandboxed = documentOrigin === \"null\""),
+                      "Like WebKit, only a sandbox that makes the origin opaque blocks geolocation")
+        XCTAssertFalse(policySource.contains("MutationObserver"), "Sandbox attributes do not restrict a document that keeps its origin")
         XCTAssertFalse(policySource.contains("postMessage"), "Policy checks must not post messages the page can observe")
-        XCTAssertTrue(policySource.contains("attributeOldValue: true"),
-                      "Sandbox removal must retain the prior attribute value")
-        XCTAssertTrue(policySource.contains("sandboxedEmbeddingFrames"),
-                      "An embedding frame that was ever sandboxed must stay fail-closed for its surviving document")
-        XCTAssertTrue(policySource.contains("apply(weakSetHas, sandboxedEmbeddingFrames, [element])"))
         XCTAssertTrue(source.contains("const registration = registerFrame()"),
                       "Every operation must register with native policy enforcement")
         XCTAssertTrue(source.contains("message(\"registerFrame\")"), "Each frame must authenticate before sending requests")
@@ -130,8 +126,8 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains("isPolicyAllowed: result.constraints?.isPolicyAllowed === true"))
         XCTAssertTrue(source.contains("constraints.isPolicyAllowed && policyAllowsGeolocation() && !constraints.isSandboxed"))
         let policySource = GeolocationUserScript().policyScript.source
-        XCTAssertTrue(policySource.contains("const getConstraints = () => {"))
-        XCTAssertTrue(policySource.contains("isFramePolicyEligible && policyAllowsGeolocation(verdict)"))
+        XCTAssertTrue(policySource.contains("const getConstraints = () => freeze({"))
+        XCTAssertTrue(policySource.contains("isFramePolicyEligible && policyAllowsGeolocation()"))
         XCTAssertTrue(source.contains("const receiveWatchResult = (requestID, result) => {"))
         XCTAssertTrue(source.contains("if (!isAllowedByPlatform()) {\n                apply(mapDelete, activeWatches, [requestID]);"),
                       "A restrictive policy change must stop later watch deliveries")

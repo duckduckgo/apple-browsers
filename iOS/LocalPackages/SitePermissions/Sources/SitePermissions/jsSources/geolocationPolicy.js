@@ -24,25 +24,10 @@
         return;
     }
     const apply = globalThis.Reflect.apply;
-    const querySelectorAll = globalThis.Document?.prototype?.querySelectorAll;
-    const elementQuerySelectorAll = globalThis.Element?.prototype?.querySelectorAll;
     const elementMatches = globalThis.Element?.prototype?.matches;
-    const hasAttribute = globalThis.Element?.prototype?.hasAttribute;
     const getAttribute = globalThis.Element?.prototype?.getAttribute;
     const baseURI = Object.getOwnPropertyDescriptor(globalThis.Node?.prototype ?? {}, "baseURI")?.get;
-    const nodeListLength = Object.getOwnPropertyDescriptor(globalThis.NodeList?.prototype ?? {}, "length")?.get;
-    const nodeListItem = globalThis.NodeList?.prototype?.item;
-    const weakSetAdd = globalThis.WeakSet.prototype.add;
-    const weakSetHas = globalThis.WeakSet.prototype.has;
     const NativeURL = globalThis.URL;
-    const NativeMutationObserver = globalThis.MutationObserver;
-    const observeMutations = NativeMutationObserver?.prototype?.observe;
-    const mutationRecordPrototype = globalThis.MutationRecord?.prototype ?? {};
-    const mutationRecordType = Object.getOwnPropertyDescriptor(mutationRecordPrototype, "type")?.get;
-    const mutationRecordTarget = Object.getOwnPropertyDescriptor(mutationRecordPrototype, "target")?.get;
-    const mutationRecordAttributeName = Object.getOwnPropertyDescriptor(mutationRecordPrototype, "attributeName")?.get;
-    const mutationRecordOldValue = Object.getOwnPropertyDescriptor(mutationRecordPrototype, "oldValue")?.get;
-    const mutationRecordAddedNodes = Object.getOwnPropertyDescriptor(mutationRecordPrototype, "addedNodes")?.get;
     const freeze = globalThis.Object.freeze;
     const randomToken = () => {
         if (typeof globalThis.crypto?.getRandomValues !== "function") {
@@ -75,73 +60,9 @@
 
     const parentWindow = globalThis.parent;
     const documentOrigin = globalThis.origin;
-    const hasOpaqueOrigin = documentOrigin === "null";
-    const sandboxedEmbeddingFrames = new WeakSet();
-
-    const rememberSandboxedFrame = (element, force = false) => {
-        try {
-            if (apply(elementMatches, element, ["iframe,frame"]) &&
-                (force || apply(hasAttribute, element, ["sandbox"]))) {
-                apply(weakSetAdd, sandboxedEmbeddingFrames, [element]);
-            }
-        } catch (_) {}
-    };
-
-    const rememberSandboxedFrames = (root) => {
-        rememberSandboxedFrame(root);
-        if (!elementQuerySelectorAll || !nodeListLength || !nodeListItem) {
-            return;
-        }
-        try {
-            const elements = apply(elementQuerySelectorAll, root, ["iframe[sandbox],frame[sandbox]"]);
-            const elementCount = apply(nodeListLength, elements, []);
-            for (let index = 0; index < elementCount; index++) {
-                rememberSandboxedFrame(apply(nodeListItem, elements, [index]), true);
-            }
-        } catch (_) {}
-    };
-
-    // Removing a sandbox attribute does not unsandbox the current document.
-    // Remember observed restrictions so a later check cannot overlook them.
-    let sandboxHistoryAvailable = false;
-    let sandboxHistoryObserver;
-    if (NativeMutationObserver && observeMutations && elementMatches && hasAttribute &&
-        mutationRecordType && mutationRecordTarget && mutationRecordAttributeName &&
-        mutationRecordOldValue && mutationRecordAddedNodes) {
-        try {
-            sandboxHistoryObserver = new NativeMutationObserver((records) => {
-                for (let recordIndex = 0; recordIndex < records.length; recordIndex++) {
-                    const record = records[recordIndex];
-                    const recordType = apply(mutationRecordType, record, []);
-                    if (recordType === "attributes" && apply(mutationRecordAttributeName, record, []) === "sandbox") {
-                        const target = apply(mutationRecordTarget, record, []);
-                        if (apply(mutationRecordOldValue, record, []) !== null || apply(hasAttribute, target, ["sandbox"])) {
-                            rememberSandboxedFrame(target, true);
-                        }
-                    } else if (recordType === "childList") {
-                        const addedNodes = apply(mutationRecordAddedNodes, record, []);
-                        const addedNodeCount = apply(nodeListLength, addedNodes, []);
-                        for (let nodeIndex = 0; nodeIndex < addedNodeCount; nodeIndex++) {
-                            rememberSandboxedFrames(apply(nodeListItem, addedNodes, [nodeIndex]));
-                        }
-                    }
-                }
-            });
-            apply(observeMutations, sandboxHistoryObserver, [document, {
-                attributes: true,
-                attributeFilter: ["sandbox"],
-                attributeOldValue: true,
-                childList: true,
-                subtree: true
-            }]);
-            sandboxHistoryAvailable = true;
-            const existingFrames = apply(querySelectorAll, document, ["iframe[sandbox],frame[sandbox]"]);
-            const existingFrameCount = apply(nodeListLength, existingFrames, []);
-            for (let index = 0; index < existingFrameCount; index++) {
-                rememberSandboxedFrame(apply(nodeListItem, existingFrames, [index]), true);
-            }
-        } catch (_) {}
-    }
+    // Like WebKit, only a sandbox that makes the origin opaque blocks geolocation.
+    // Sandbox flags are inherited, so documents nested in such a frame are opaque too.
+    const isSandboxed = documentOrigin === "null";
 
     const sourceOrigin = (element, childOrigin) => {
         const source = apply(getAttribute, element, ["src"]);
@@ -199,49 +120,37 @@
     // A cross-origin parent hides frameElement, so its descendants fail closed, as
     // do frames whose parent lacks this script. Native code checks the top-level
     // response policy.
-    const documentVerdict = () => {
+    const documentPolicyAllowed = () => {
         if (parentWindow === globalThis) {
-            return freeze({ isSandboxed: hasOpaqueOrigin, isPolicyAllowed: true });
+            return true;
         }
         try {
             const element = globalThis.frameElement;
             const parentPolicy = parentWindow.__ddgSitePermissionsGeolocationPolicy;
-            if (element && typeof parentPolicy?.embeddedFrameVerdict === "function") {
-                const verdict = parentPolicy.embeddedFrameVerdict(element, documentOrigin);
-                return freeze({
-                    isSandboxed: hasOpaqueOrigin || verdict.isSandboxed !== false,
-                    isPolicyAllowed: verdict.isPolicyAllowed === true
-                });
+            if (element && typeof parentPolicy?.embeddedFrameAllowed === "function") {
+                return parentPolicy.embeddedFrameAllowed(element, documentOrigin) === true;
             }
         } catch (_) {}
-        return freeze({ isSandboxed: true, isPolicyAllowed: false });
+        return false;
     };
 
     // Called by a child frame's copy of this script, with the child's frameElement.
-    const embeddedFrameVerdict = (element, childOrigin) => {
-        const ownVerdict = documentVerdict();
-        let isSandboxed = true;
-        let isPolicyAllowed = false;
+    const embeddedFrameAllowed = (element, childOrigin) => {
         try {
-            if (apply(elementMatches, element, ["iframe,frame"])) {
-                isSandboxed = !sandboxHistoryAvailable ||
-                    apply(weakSetHas, sandboxedEmbeddingFrames, [element]) ||
-                    apply(hasAttribute, element, ["sandbox"]);
-                isPolicyAllowed = allowAttributeAllowsGeolocation(element, childOrigin);
-            }
-        } catch (_) {}
-        return freeze({
-            isSandboxed: ownVerdict.isSandboxed || isSandboxed,
-            isPolicyAllowed: ownVerdict.isPolicyAllowed && isPolicyAllowed
-        });
+            return documentPolicyAllowed() &&
+                apply(elementMatches, element, ["iframe,frame"]) &&
+                allowAttributeAllowsGeolocation(element, childOrigin);
+        } catch (_) {
+            return false;
+        }
     };
 
-    const policyAllowsGeolocation = (verdict) => {
+    const policyAllowsGeolocation = () => {
         try {
             if (typeof nativePolicyAllowsFeature === "function") {
                 return apply(nativePolicyAllowsFeature, nativePermissionsPolicy, ["geolocation"]);
             }
-            return verdict.isPolicyAllowed;
+            return documentPolicyAllowed();
         } catch (_) {
             return false;
         }
@@ -249,18 +158,15 @@
 
     const isSecureContext = globalThis.isSecureContext === true;
     const isFramePolicyEligible = hasNetworkOrigin && isSameOriginAsTopLevel;
-    const getConstraints = () => {
-        const verdict = documentVerdict();
-        return freeze({
-            documentID,
-            isSecureContext,
-            isPolicyAllowed: documentID !== null && isFramePolicyEligible && policyAllowsGeolocation(verdict),
-            isSandboxed: verdict.isSandboxed
-        });
-    };
+    const getConstraints = () => freeze({
+        documentID,
+        isSecureContext,
+        isPolicyAllowed: documentID !== null && isFramePolicyEligible && policyAllowsGeolocation(),
+        isSandboxed
+    });
 
     Object.defineProperty(globalThis, "__ddgSitePermissionsGeolocationPolicy", {
         configurable: false,
-        value: freeze({ documentID, getConstraints, embeddedFrameVerdict })
+        value: freeze({ documentID, getConstraints, embeddedFrameAllowed })
     });
 })();

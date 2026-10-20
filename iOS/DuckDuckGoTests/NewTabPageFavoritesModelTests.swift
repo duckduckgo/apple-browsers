@@ -237,7 +237,7 @@ private final class BookmarksModelErrorRecorder {
     var events: [BookmarksModelError] = []
 }
 
-private final class MockNewTabPageFavoriteDataSource: NewTabPageFavoriteDataSource {
+final class MockNewTabPageFavoriteDataSource: NewTabPageFavoriteDataSource {
     var externalUpdates: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
     var favorites: [DuckDuckGo.Favorite] = []
 
@@ -262,7 +262,7 @@ private extension Favorite {
     }
 }
 
-private final class MockFavoritesFaviconLoading: FavoritesFaviconLoading {
+final class MockFavoritesFaviconLoading: FavoritesFaviconLoading {
     func loadFavicon(for favorite: Favorite, size: CGFloat) async -> Favicon? {
         nil
     }
@@ -276,7 +276,7 @@ private final class MockFavoritesFaviconLoading: FavoritesFaviconLoading {
     }
 }
 
-private final class MockFavoritesFaviconCaching: FavoritesFaviconCaching {
+final class MockFavoritesFaviconCaching: FavoritesFaviconCaching {
     func populateFavicon(for domain: String, intoCache: FaviconsCacheType, fromCache: FaviconsCacheType?) {
 
     }

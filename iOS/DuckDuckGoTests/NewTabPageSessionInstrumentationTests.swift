@@ -65,7 +65,7 @@ struct NewTabPageSessionInstrumentationTests {
         let wideEvent = WideEventMock()
         let sut = DefaultNewTabPageSessionInstrumentation(wideEvent: wideEvent, sampleRate: { 0.25 })
 
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         let visit = wideEvent.started.last as? NewTabPageSessionWideEventData
         #expect(visit?.globalData.sampleRate == 0.25)
@@ -76,9 +76,9 @@ struct NewTabPageSessionInstrumentationTests {
     func disabledByFeatureFlagRecordsNothing() {
         let (sut, wideEvent, _) = makeSUT(isEnabled: false)
 
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
-        sut.tapInputBar()
-        sut.hitSubmit()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
+        sut.record(.tapInputBar)
+        sut.record(.hitSubmit)
         sut.visitEnded(terminalAction: .loadSerp)
         sut.visitBackgrounded()
 
@@ -100,48 +100,6 @@ struct NewTabPageSessionInstrumentationTests {
         return (data, last.1)
     }
 
-    private struct ActionCase {
-        let name: String
-        let invoke: (NewTabPageSessionInstrumentation) -> Void
-        let flag: KeyPath<NewTabPageSessionWideEventData, Bool>
-    }
-
-    private func actionCases() -> [ActionCase] {
-        [
-            ActionCase(name: "tapInputBar", invoke: { $0.tapInputBar() }, flag: \.tapInputBar),
-            ActionCase(name: "typeInInput", invoke: { $0.typeInInput() }, flag: \.typeInInput),
-            ActionCase(name: "switchToggleToSearch", invoke: { $0.switchToggleToSearch() }, flag: \.switchToggleToSearch),
-            ActionCase(name: "switchToggleToAiChat", invoke: { $0.switchToggleToAiChat() }, flag: \.switchToggleToAiChat),
-            ActionCase(name: "tapDuckaiButton", invoke: { $0.tapDuckaiButton() }, flag: \.tapDuckaiButton),
-            ActionCase(name: "hitSubmit", invoke: { $0.hitSubmit() }, flag: \.hitSubmit),
-            ActionCase(name: "chooseSuggestion", invoke: { $0.chooseSuggestion() }, flag: \.chooseSuggestion),
-            ActionCase(name: "tapFavorite", invoke: { $0.tapFavorite() }, flag: \.tapFavorite),
-            ActionCase(name: "tapFireButton", invoke: { $0.tapFireButton() }, flag: \.tapFireButton),
-            ActionCase(name: "tapReturnToLast", invoke: { $0.tapReturnToLast() }, flag: \.tapReturnToLast),
-            ActionCase(name: "tapTabViewerEscapeHatch", invoke: { $0.tapTabViewerEscapeHatch() }, flag: \.tapTabViewerEscapeHatch),
-            ActionCase(name: "tapTabViewerToolbar", invoke: { $0.tapTabViewerToolbar() }, flag: \.tapTabViewerToolbar),
-            ActionCase(name: "tapBookmarksToolbarItem", invoke: { $0.tapBookmarksToolbarItem() }, flag: \.tapBookmarksToolbarItem),
-            ActionCase(name: "tapPasswordsToolbarItem", invoke: { $0.tapPasswordsToolbarItem() }, flag: \.tapPasswordsToolbarItem),
-            ActionCase(name: "openMenu", invoke: { $0.openMenu() }, flag: \.openMenu),
-            ActionCase(name: "menuBookmarks", invoke: { $0.menuBookmarks() }, flag: \.menuBookmarks),
-            ActionCase(name: "menuPasswords", invoke: { $0.menuPasswords() }, flag: \.menuPasswords),
-            ActionCase(name: "menuChats", invoke: { $0.menuChats() }, flag: \.menuChats),
-            ActionCase(name: "menuDownloads", invoke: { $0.menuDownloads() }, flag: \.menuDownloads),
-            ActionCase(name: "menuVpn", invoke: { $0.menuVpn() }, flag: \.menuVpn),
-            ActionCase(name: "clickMessageCta", invoke: { $0.clickMessageCta() }, flag: \.clickMessageCta),
-            ActionCase(name: "clickMessageDismiss", invoke: { $0.clickMessageDismiss() }, flag: \.clickMessageDismiss),
-            ActionCase(name: "dismissKeyboard", invoke: { $0.dismissKeyboard() }, flag: \.dismissKeyboard),
-            ActionCase(name: "scrollView", invoke: { $0.scrollView() }, flag: \.scrollView),
-            ActionCase(name: "utiBackArrow", invoke: { $0.utiBackArrow() }, flag: \.utiBackArrow),
-            ActionCase(name: "selectBookmark", invoke: { $0.selectBookmark() }, flag: \.selectBookmark),
-            ActionCase(name: "selectPassword", invoke: { $0.selectPassword() }, flag: \.selectPassword),
-            ActionCase(name: "selectDownload", invoke: { $0.selectDownload() }, flag: \.selectDownload),
-            ActionCase(name: "emailCopied", invoke: { $0.emailCopied() }, flag: \.emailCopied),
-            ActionCase(name: "vpnOn", invoke: { $0.vpnOn() }, flag: \.vpnOn),
-            ActionCase(name: "vpnOff", invoke: { $0.vpnOff() }, flag: \.vpnOff),
-        ]
-    }
-
     // MARK: - No active visit
 
     @available(iOS 16, *)
@@ -150,8 +108,8 @@ struct NewTabPageSessionInstrumentationTests {
         let (sut, wideEvent, _) = makeSUT()
 
         sut.keyboardRaisedOnArrival()
-        for action in actionCases() {
-            action.invoke(sut)
+        for action in NewTabPageSessionWideEventData.Action.allCases {
+            sut.record(action)
         }
 
         #expect(wideEvent.started.isEmpty)
@@ -181,16 +139,17 @@ struct NewTabPageSessionInstrumentationTests {
     // MARK: - visitStarted
 
     @available(iOS 16, *)
-    @Test("visitStarted starts one flow carrying trigger, keyboard mode and toggle state", .timeLimit(.minutes(1)))
+    @Test("visitStarted starts one flow carrying trigger, keyboard mode, toggle state and page design", .timeLimit(.minutes(1)))
     func visitStartedStartsFlowWithContext() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .up, toggleEnabled: true)
+        sut.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .up, toggleEnabled: true, pageDesign: .redesign)
 
         #expect(wideEvent.started.count == 1)
         let started = activeVisit(wideEvent)
         #expect(started?.trigger == .newTabOpened)
         #expect(started?.launchKeyboardMode == .up)
         #expect(started?.toggleEnabled == true)
+        #expect(started?.pageDesign == .redesign)
         #expect(started?.sessionInterval.start == clock.now)
         #expect(started?.lastActionAt == clock.now)
         #expect(started?.actionCount == 0)
@@ -202,7 +161,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("visitStarted with app_open and keyboard down carries those values", .timeLimit(.minutes(1)))
     func visitStartedAppOpenKeyboardDown() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
         let started = activeVisit(wideEvent)
         #expect(started?.trigger == .appOpen)
@@ -213,33 +172,28 @@ struct NewTabPageSessionInstrumentationTests {
     // MARK: - Actions
 
     @available(iOS 16, *)
-    @Test("Each action sets its own flag and counts once", .timeLimit(.minutes(1)))
-    func eachActionSetsItsOwnFlag() {
-        for action in actionCases() {
-            let (sut, wideEvent, _) = makeSUT()
-            sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+    @Test("Each action is recorded alone and counts once",
+          .timeLimit(.minutes(1)),
+          arguments: NewTabPageSessionWideEventData.Action.allCases)
+    func eachActionIsRecorded(action: NewTabPageSessionWideEventData.Action) {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
-            action.invoke(sut)
+        sut.record(action)
 
-            guard let visit = activeVisit(wideEvent) else {
-                Issue.record("Expected an active visit for \(action.name)")
-                continue
-            }
-            if !visit[keyPath: action.flag] {
-                Issue.record("\(action.name) did not set its flag")
-            }
-            #expect(visit.actionCount == 1)
-        }
+        let visit = activeVisit(wideEvent)
+        #expect(visit?.actions == [action])
+        #expect(visit?.actionCount == 1)
     }
 
     @available(iOS 16, *)
     @Test("An action marks first interaction and refreshes lastActionAt", .timeLimit(.minutes(1)))
     func actionMarksFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 1.5)
-        sut.tapInputBar()
+        sut.record(.tapInputBar)
 
         let visit = activeVisit(wideEvent)
         #expect(visit?.firstInteractionInterval.end == clock.now)
@@ -250,14 +204,14 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("First interaction is marked only once across several actions", .timeLimit(.minutes(1)))
     func firstInteractionMarkedOnlyOnce() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 0.5)
         let firstStamp = clock.now
-        sut.tapInputBar()
+        sut.record(.tapInputBar)
 
         clock.advance(by: 2)
-        sut.typeInInput()
+        sut.record(.typeInInput)
 
         let visit = activeVisit(wideEvent)
         #expect(visit?.firstInteractionInterval.end == firstStamp)
@@ -269,12 +223,12 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Actions do not write to storage", .timeLimit(.minutes(1)))
     func actionsDoNotWriteToStorage() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 1)
-        sut.scrollView()
+        sut.record(.scrollView)
         clock.advance(by: 1)
-        sut.scrollView()
+        sut.record(.scrollView)
 
         #expect(wideEvent.updates.isEmpty)
         #expect(wideEvent.started.count == 1)
@@ -286,7 +240,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Arrival focus reports keyboard up without an interaction or resetting the timeout", .timeLimit(.minutes(1)))
     func whenKeyboardRaisedOnArrivalThenVisitReportsKeyboardUp() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout - 5)
         sut.keyboardRaisedOnArrival()
@@ -305,10 +259,10 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("When the user acted first then a raised keyboard leaves the starting mode", .timeLimit(.minutes(1)))
     func whenUserActedFirstThenRaisedKeyboardLeavesStartingMode() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 0.1)
-        sut.scrollView()
+        sut.record(.scrollView)
         sut.keyboardRaisedOnArrival()
         sut.visitBackgrounded()
 
@@ -319,7 +273,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("When the visit already timed out then a raised keyboard still records up", .timeLimit(.minutes(1)))
     func whenVisitTimedOutThenRaisedKeyboardStillRecordsUp() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout)
         sut.keyboardRaisedOnArrival()
@@ -336,10 +290,10 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("visitEnded with a loading action completes as SUCCESS and records the terminal", .timeLimit(.minutes(1)))
     func visitEndedCompletesAsSuccess() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 3)
-        sut.hitSubmit()
+        sut.record(.hitSubmit)
         clock.advance(by: 1)
         sut.visitEnded(terminalAction: .loadSerp)
 
@@ -357,7 +311,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("visitEnded marks first interaction when no action preceded it", .timeLimit(.minutes(1)))
     func visitEndedMarksFirstInteractionIfNotSet() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 2)
         // Not a tab change, which with no action would be dropped as a pass-through.
@@ -374,11 +328,11 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("visitEnded preserves an earlier first-interaction timestamp", .timeLimit(.minutes(1)))
     func visitEndedPreservesEarlierFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 0.5)
         let firstStamp = clock.now
-        sut.tapFavorite()
+        sut.record(.tapFavorite)
         clock.advance(by: 2)
         sut.visitEnded(terminalAction: .loadWebsite)
 
@@ -394,12 +348,12 @@ struct NewTabPageSessionInstrumentationTests {
           arguments: [NewTabPageSessionWideEventData.TerminalAction.loadDuckai, .selectOtherTab, .swipeToOtherTab, .lastTabLoaded])
     func visitEndedClearsActiveVisit(terminal: NewTabPageSessionWideEventData.TerminalAction) {
         let (sut, wideEvent, _) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
-        sut.tapInputBar()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
+        sut.record(.tapInputBar)
         sut.visitEnded(terminalAction: terminal)
 
         sut.keyboardRaisedOnArrival()
-        sut.typeInInput()
+        sut.record(.typeInInput)
         sut.visitEnded(terminalAction: .loadSerp)
         sut.visitBackgrounded()
 
@@ -408,14 +362,14 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(lastCompletion(wideEvent)?.0.terminalAction == terminal)
         #expect(lastCompletion(wideEvent)?.0.launchKeyboardMode == .down)
         #expect(lastCompletion(wideEvent)?.0.actionCount == 1)
-        #expect(lastCompletion(wideEvent)?.0.typeInInput == false)
+        #expect(lastCompletion(wideEvent)?.0.actions.contains(.typeInInput) == false)
     }
 
     @available(iOS 16, *)
     @Test("visitBackgrounded completes as CANCELLED with app_backgrounded", .timeLimit(.minutes(1)))
     func visitBackgroundedCompletesAsCancelled() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 4)
         sut.visitBackgrounded()
@@ -436,10 +390,10 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("An action after the inactivity timeout is dropped without ending the visit", .timeLimit(.minutes(1)))
     func inactivityTimeoutDropsActionWithoutEndingVisit() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: NewTabPageSessionWideEventData.noActionTimeout)
-        sut.tapInputBar()
+        sut.record(.tapInputBar)
 
         // The visit is classed as abandoned but is still on screen, so nothing is sent yet.
         #expect(wideEvent.completions.isEmpty)
@@ -454,7 +408,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(completion.0.terminalAction == .noActionTimeout)
         #expect(completion.1 == .failure)
         // The action that revealed the timeout belongs to no visit.
-        #expect(completion.0.tapInputBar == false)
+        #expect(completion.0.actions.contains(.tapInputBar) == false)
         #expect(completion.0.actionCount == 0)
         #expect(wideEvent.started.count == 1)
     }
@@ -463,7 +417,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("A terminal after the inactivity timeout does not resurrect the visit", .timeLimit(.minutes(1)))
     func terminalAfterInactivityTimeoutDoesNotResurrectVisit() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 45)
         sut.visitEnded(terminalAction: .loadSerp)
@@ -477,10 +431,10 @@ struct NewTabPageSessionInstrumentationTests {
     func timeoutFixesOutcomeAndRealExitFixesDuration() {
         let (sut, wideEvent, clock) = makeSUT()
         let startStamp = clock.now
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 5)
-        sut.tapInputBar()
+        sut.record(.tapInputBar)
 
         // Well past the inactivity threshold. The visit is now classed as abandoned, but it
         // is still on screen, so nothing is reported yet.
@@ -488,7 +442,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(wideEvent.completions.isEmpty)
 
         // Actions after the timeout are ignored, and do not end the visit either.
-        sut.tapFavorite()
+        sut.record(.tapFavorite)
         #expect(wideEvent.completions.isEmpty)
 
         clock.advance(by: 55)
@@ -499,7 +453,7 @@ struct NewTabPageSessionInstrumentationTests {
             return
         }
         #expect(completion.0.terminalAction == .noActionTimeout)
-        #expect(completion.0.tapFavorite == false)
+        #expect(!completion.0.actions.contains(.tapFavorite))
         // The full time the surface was on screen, not the 30 seconds to the threshold.
         #expect(completion.0.sessionInterval.end == startStamp.addingTimeInterval(360))
         #expect(completion.0.sessionInterval.durationMilliseconds == 360_000)
@@ -510,7 +464,7 @@ struct NewTabPageSessionInstrumentationTests {
     func abandonedVisitReportsDuration() {
         let (sut, wideEvent, clock) = makeSUT()
         let startStamp = clock.now
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 90)
         sut.visitBackgrounded()
@@ -528,12 +482,12 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Repeated actions keep refreshing lastActionAt so no inactivity timeout fires", .timeLimit(.minutes(1)))
     func repeatedActionsKeepVisitAlive() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         // 5 x 20s stays under the 30s inactivity gap and under the 120s cap.
         for _ in 1...5 {
             clock.advance(by: 20)
-            sut.typeInInput()
+            sut.record(.typeInInput)
         }
 
         #expect(wideEvent.completions.isEmpty)
@@ -541,22 +495,22 @@ struct NewTabPageSessionInstrumentationTests {
         // An uninterrupted run of the same action is one step.
         #expect(visit?.actionCount == 1)
         #expect(visit?.lastActionAt == clock.now)
-        #expect(visit?.typeInInput == true)
+        #expect(visit?.actions.contains(.typeInInput) == true)
     }
 
     @available(iOS 16, *)
     @Test("Returning to an earlier action after another one counts as a new step", .timeLimit(.minutes(1)))
     func returningToAnActionCountsAgain() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
-        sut.tapInputBar()
-        sut.typeInInput()
-        sut.typeInInput()
-        sut.typeInInput()
-        sut.tapDuckaiButton()
-        sut.typeInInput()
-        sut.typeInInput()
+        sut.record(.tapInputBar)
+        sut.record(.typeInInput)
+        sut.record(.typeInInput)
+        sut.record(.typeInInput)
+        sut.record(.tapDuckaiButton)
+        sut.record(.typeInInput)
+        sut.record(.typeInInput)
 
         #expect(activeVisit(wideEvent)?.actionCount == 4)
     }
@@ -565,18 +519,18 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Time on a screen the app opened is not counted as inactivity", .timeLimit(.minutes(1)))
     func timeOnAnotherScreenDoesNotTimeOut() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
-        sut.openMenu()
+        sut.record(.openMenu)
         sut.noteUserLeftForAnotherScreen()
 
         // Longer than the inactivity timeout, spent reading the screen rather than doing nothing.
         clock.advance(by: 90)
         // Picking a login happens on the Passwords screen, so the user has not returned yet.
-        sut.selectPassword()
+        sut.record(.selectPassword)
 
         #expect(wideEvent.completions.isEmpty)
-        #expect(activeVisit(wideEvent)?.selectPassword == true)
+        #expect(activeVisit(wideEvent)?.actions.contains(.selectPassword) == true)
 
         sut.noteUserReturnedFromAnotherScreen()
         sut.visitEnded(terminalAction: .loadWebsite)
@@ -588,12 +542,12 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Only the departure is forgiven, so going quiet afterwards still times out", .timeLimit(.minutes(1)))
     func inactivityAfterReturningStillTimesOut() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
-        sut.openMenu()
+        sut.record(.openMenu)
         sut.noteUserLeftForAnotherScreen()
         clock.advance(by: 90)
-        sut.selectPassword()
+        sut.record(.selectPassword)
         sut.noteUserReturnedFromAnotherScreen()
 
         clock.advance(by: 45)
@@ -606,15 +560,15 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Acting on the other screen does not end the excluded time", .timeLimit(.minutes(1)))
     func actingOnAnotherScreenKeepsTimeExcluded() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
-        sut.openMenu()
+        sut.record(.openMenu)
         sut.noteUserLeftForAnotherScreen()
 
         // Picking a login, then reading the details screen for longer than the inactivity
         // timeout before coming back.
         clock.advance(by: 10)
-        sut.selectPassword()
+        sut.record(.selectPassword)
         clock.advance(by: 90)
         sut.noteUserReturnedFromAnotherScreen()
 
@@ -628,11 +582,11 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Repeated taps each count, so an unresponsive control is visible in the total", .timeLimit(.minutes(1)))
     func repeatedTapsEachCount() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
-        sut.tapFavorite()
-        sut.tapFavorite()
-        sut.tapFavorite()
+        sut.record(.tapFavorite)
+        sut.record(.tapFavorite)
+        sut.record(.tapFavorite)
 
         #expect(activeVisit(wideEvent)?.actionCount == 3)
     }
@@ -644,12 +598,12 @@ struct NewTabPageSessionInstrumentationTests {
     func activeVisitPastMaxDurationCompletes() {
         let (sut, wideEvent, clock) = makeSUT()
         let startStamp = clock.now
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         // Active every 10s: the inactivity gap never elapses, so only the cap can fire.
         for _ in 1...13 {
             clock.advance(by: 10)
-            sut.scrollView()
+            sut.record(.scrollView)
         }
 
         // The cap elapses on the 12th tick, but locking the terminal does not end the visit.
@@ -672,10 +626,10 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Inactivity is checked before the max duration when both are exceeded", .timeLimit(.minutes(1)))
     func inactivityWinsOverMaxDuration() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 300)
-        sut.scrollView()
+        sut.record(.scrollView)
         sut.visitBackgrounded()
 
         #expect(wideEvent.completions.count == 1)
@@ -690,10 +644,11 @@ struct NewTabPageSessionInstrumentationTests {
         let (sut, wideEvent, _) = makeSUT()
         let orphan = NewTabPageSessionWideEventData(trigger: .newTabOpened,
                                                    launchKeyboardMode: .down,
-                                                   toggleEnabled: false)
+                                                   toggleEnabled: false,
+                                                   pageDesign: .legacy)
         wideEvent.startFlow(orphan)
 
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: true, pageDesign: .legacy)
 
         guard let orphanCompletion = wideEvent.completions.first(where: {
             ($0.0 as? NewTabPageSessionWideEventData)?.globalData.id == orphan.globalData.id
@@ -713,7 +668,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("visitStarted without orphans produces no completions", .timeLimit(.minutes(1)))
     func visitStartedWithoutOrphansProducesNoCompletions() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
         #expect(wideEvent.completions.isEmpty)
         #expect(wideEvent.discarded.isEmpty)
     }
@@ -723,7 +678,7 @@ struct NewTabPageSessionInstrumentationTests {
           arguments: [NewTabPageSessionWideEventData.TerminalAction.selectOtherTab, .swipeToOtherTab])
     func tabChangeWithoutActionIsDiscarded(terminalAction: NewTabPageSessionWideEventData.TerminalAction) {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         clock.advance(by: 1)
         sut.visitEnded(terminalAction: terminalAction)
@@ -736,10 +691,10 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("A tab change after an action is reported", .timeLimit(.minutes(1)))
     func tabChangeAfterActionIsCompleted() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         clock.advance(by: 1)
-        sut.tapTabViewerToolbar()
+        sut.record(.tapTabViewerToolbar)
         sut.visitEnded(terminalAction: .selectOtherTab)
 
         #expect(wideEvent.discarded.isEmpty)
@@ -750,10 +705,10 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Closing the page drops the visit, actions and all", .timeLimit(.minutes(1)))
     func visitDiscardedDropsTheVisit() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         clock.advance(by: 1)
-        sut.tapTabViewerToolbar()
+        sut.record(.tapTabViewerToolbar)
         sut.visitDiscarded()
 
         #expect(wideEvent.completions.isEmpty)
@@ -768,7 +723,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("An already abandoned visit reports its timeout even if its page is closed", .timeLimit(.minutes(1)))
     func visitDiscardedAfterTimeoutStillReports() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         clock.advance(by: 31)
         sut.visitDiscarded()
@@ -781,7 +736,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("An inactive visit still reports its timeout rather than being dropped", .timeLimit(.minutes(1)))
     func timedOutVisitWithoutActionIsNotDiscarded() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         // The no-action failure the success rate exists to capture, so the pass-through rule
         // must not swallow it even though the tab changed afterwards.
@@ -796,14 +751,14 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("A superseded visit is discarded rather than completed", .timeLimit(.minutes(1)))
     func supersededVisitIsDiscarded() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
         guard let firstVisit = activeVisit(wideEvent) else {
             Issue.record("Expected an active visit")
             return
         }
 
         clock.advance(by: 1)
-        sut.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         #expect(wideEvent.completions.isEmpty)
         #expect(wideEvent.discarded.count == 1)
@@ -816,7 +771,7 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("Burning drops the visit it interrupted and opens an after-fire one", .timeLimit(.minutes(1)))
     func burnDiscardsInterruptedVisitAndOpensAfterFireVisit() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
         guard let interruptedVisit = activeVisit(wideEvent) else {
             Issue.record("Expected an active visit")
             return
@@ -825,7 +780,7 @@ struct NewTabPageSessionInstrumentationTests {
         // A visit replaced while still active has no terminal to report, and counting it either
         // way would skew the success rate, so it is dropped.
         clock.advance(by: 3)
-        sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         #expect(wideEvent.completions.isEmpty)
         #expect(wideEvent.discarded.count == 1)
@@ -844,14 +799,14 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("A burn reported before the after-fire visit keeps the interrupted visit", .timeLimit(.minutes(1)))
     func burnReportedBeforeReattachCompletesInterruptedVisit() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
-        sut.tapFireButton()
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
+        sut.record(.tapFireButton)
 
         // Ordering the real wiring depends on: the burn ends the visit, and only then does
         // clearing land on a fresh New Tab Page.
         clock.advance(by: 4)
         sut.visitEnded(terminalAction: .deleteData)
-        sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
+        sut.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
 
         #expect(wideEvent.discarded.isEmpty)
         guard let completion = lastCompletion(wideEvent) else {
@@ -861,7 +816,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(completion.0.trigger == .appOpen)
         #expect(completion.0.terminalAction == .deleteData)
         #expect(completion.1 == .success)
-        #expect(completion.0.tapFireButton)
+        #expect(completion.0.actions.contains(.tapFireButton))
         #expect(completion.0.sessionInterval.durationMilliseconds == 4_000)
         #expect(activeVisit(wideEvent)?.trigger == .newTabOpenedAfterFire)
     }
@@ -870,10 +825,10 @@ struct NewTabPageSessionInstrumentationTests {
     @Test("A stale visit is completed as a timeout at the next visitStarted, not discarded", .timeLimit(.minutes(1)))
     func staleVisitIsCompletedAtNextVisitStarted() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false)
+        sut.visitStarted(trigger: .appOpen, launchKeyboardMode: .up, toggleEnabled: false, pageDesign: .legacy)
 
         clock.advance(by: 60)
-        sut.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: false)
+        sut.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: false, pageDesign: .legacy)
 
         #expect(wideEvent.discarded.isEmpty)
         #expect(wideEvent.completions.count == 1)
@@ -896,7 +851,7 @@ struct NewTabPageSessionInstrumentationTests {
         var callbacks: [String] = []
         coordinator.schedule(for: page, visit: {
             callbacks.append("visit")
-            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
         }, shown: {
             callbacks.append("shown")
         }, focus: {
@@ -960,10 +915,10 @@ struct NewTabPageSessionInstrumentationTests {
         let oldPage = NSObject()
         let newPage = NSObject()
         coordinator.schedule(for: oldPage, visit: {
-            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
         }, shown: { oldPageShown = true }, focus: { oldPageFocused = true })
         coordinator.schedule(for: newPage, visit: {
-            instrumentation.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true)
+            instrumentation.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
         })
 
         visible = true
@@ -985,7 +940,7 @@ struct NewTabPageSessionInstrumentationTests {
         let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { visible })
         let page = NSObject()
         coordinator.schedule(for: page, visit: {
-            instrumentation.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true)
+            instrumentation.visitStarted(trigger: .newTabOpened, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
         }, shown: { shownCount += 1 }, focus: { oldRequestFocused = true })
         coordinator.backgrounded()
         instrumentation.visitBackgrounded()
@@ -995,7 +950,7 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(!coordinator.hasPresentedPage)
 
         coordinator.schedule(for: page, visit: {
-            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true, pageDesign: .legacy)
         })
         visible = true
         coordinator.recordIfVisible()

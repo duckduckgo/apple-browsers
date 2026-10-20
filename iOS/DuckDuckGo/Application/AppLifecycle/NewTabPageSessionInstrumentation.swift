@@ -36,7 +36,8 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     /// The New Tab Page was displayed. Supersedes any visit still open.
     func visitStarted(trigger: NewTabPageSessionWideEventData.Trigger,
                       launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode,
-                      toggleEnabled: Bool)
+                      toggleEnabled: Bool,
+                      pageDesign: NewTabPageSessionWideEventData.PageDesign)
 
     /// Updates the New Tab page's recorded starting keyboard state to `.up`.
     /// Use when the app shows the keyboard after the page appears, such as when the app opens.
@@ -44,50 +45,11 @@ protocol NewTabPageSessionInstrumentation: AnyObject {
     func keyboardRaisedOnArrival()
 
     // MARK: - Actions
-    //
-    // Repeat calls are cheap, and each one holds off the inactivity timeout. Each also adds a
-    // step, except for typing and scrolling, where an uninterrupted run counts once.
 
-    func tapInputBar()
-    func typeInInput()
-    func switchToggleToSearch()
-    func switchToggleToAiChat()
-    func tapDuckaiButton()
-    func hitSubmit()
-    func chooseSuggestion()
-    func tapFavorite()
-    func tapFireButton()
-
-    func tapReturnToLast()
-
-    /// Reached through the return-to-tab card rather than the toolbar's tab button.
-    func tapTabViewerEscapeHatch()
-
-    func tapTabViewerToolbar()
-    func tapBookmarksToolbarItem()
-    func tapPasswordsToolbarItem()
-    func openMenu()
-    func menuBookmarks()
-    func menuPasswords()
-    func menuChats()
-    func menuDownloads()
-    func menuVpn()
-
-    func clickMessageCta()
-    func clickMessageDismiss()
-    func dismissKeyboard()
-    func scrollView()
-
-    /// The back arrow that leaves search mode, in the omnibar's unified text input.
-    func utiBackArrow()
-
-    func selectBookmark()
-    func selectPassword()
-    func selectDownload()
-    func emailCopied()
-
-    func vpnOn()
-    func vpnOff()
+    /// Records a user action. Repeat calls are cheap, and each one holds off the inactivity
+    /// timeout. Each also adds a step, except that an uninterrupted run of an action arriving as
+    /// a stream counts once.
+    func record(_ action: NewTabPageSessionWideEventData.Action)
 
     /// The user was handed to another screen inside the app, such as Bookmarks or the VPN
     /// settings. The time they spend there does not count as inactivity.
@@ -155,7 +117,7 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     private var lockedTerminal: NewTabPageSessionWideEventData.TerminalAction?
 
     /// The action recorded last, so that a run of the same one counts as a single step.
-    private var lastRecordedAction: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>?
+    private var lastRecordedAction: NewTabPageSessionWideEventData.Action?
 
     /// Set while the user is on another screen the app sent them to, so their next appearance is
     /// read as a return rather than as a visit that went quiet.
@@ -177,7 +139,8 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
 
     func visitStarted(trigger: NewTabPageSessionWideEventData.Trigger,
                       launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode,
-                      toggleEnabled: Bool) {
+                      toggleEnabled: Bool,
+                      pageDesign: NewTabPageSessionWideEventData.PageDesign) {
         // The only gate needed: with no visit open, every action and terminal already
         // no-ops on its `activeVisit` guard.
         guard isEnabled() else { return }
@@ -211,6 +174,7 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
         let visit = NewTabPageSessionWideEventData(trigger: trigger,
                                                   launchKeyboardMode: launchKeyboardMode,
                                                   toggleEnabled: toggleEnabled,
+                                                  pageDesign: pageDesign,
                                                   startedAt: dateProvider(),
                                                   globalData: WideEventGlobalData(sampleRate: sampleRate()))
         activeVisit = visit
@@ -230,37 +194,27 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
 
     // MARK: - Actions
 
-    func tapInputBar() { recordAction(\.tapInputBar) }
-    func typeInInput() { recordStreamedAction(\.typeInInput) }
-    func switchToggleToSearch() { recordAction(\.switchToggleToSearch) }
-    func switchToggleToAiChat() { recordAction(\.switchToggleToAiChat) }
-    func tapDuckaiButton() { recordAction(\.tapDuckaiButton) }
-    func hitSubmit() { recordAction(\.hitSubmit) }
-    func chooseSuggestion() { recordAction(\.chooseSuggestion) }
-    func tapFavorite() { recordAction(\.tapFavorite) }
-    func tapFireButton() { recordAction(\.tapFireButton) }
-    func tapReturnToLast() { recordAction(\.tapReturnToLast) }
-    func tapTabViewerEscapeHatch() { recordAction(\.tapTabViewerEscapeHatch) }
-    func tapTabViewerToolbar() { recordAction(\.tapTabViewerToolbar) }
-    func tapBookmarksToolbarItem() { recordAction(\.tapBookmarksToolbarItem) }
-    func tapPasswordsToolbarItem() { recordAction(\.tapPasswordsToolbarItem) }
-    func openMenu() { recordAction(\.openMenu) }
-    func menuBookmarks() { recordAction(\.menuBookmarks) }
-    func menuPasswords() { recordAction(\.menuPasswords) }
-    func menuChats() { recordAction(\.menuChats) }
-    func menuDownloads() { recordAction(\.menuDownloads) }
-    func menuVpn() { recordAction(\.menuVpn) }
-    func clickMessageCta() { recordAction(\.clickMessageCta) }
-    func clickMessageDismiss() { recordAction(\.clickMessageDismiss) }
-    func dismissKeyboard() { recordAction(\.dismissKeyboard) }
-    func scrollView() { recordStreamedAction(\.scrollView) }
-    func utiBackArrow() { recordAction(\.utiBackArrow) }
-    func selectBookmark() { recordAction(\.selectBookmark) }
-    func selectPassword() { recordAction(\.selectPassword) }
-    func selectDownload() { recordAction(\.selectDownload) }
-    func emailCopied() { recordAction(\.emailCopied) }
-    func vpnOn() { recordAction(\.vpnOn) }
-    func vpnOff() { recordAction(\.vpnOff) }
+    func record(_ action: NewTabPageSessionWideEventData.Action) {
+        lockTerminalIfTimedOut()
+        // Actions after a timeout are dropped: the visit is already classed as abandoned and
+        // only a fresh trigger opens another one.
+        guard let visit = activeVisit, lockedTerminal == nil else { return }
+
+        let now = dateProvider()
+
+        // Compared against the previous action rather than the set, so that returning to an
+        // earlier action after doing something else still counts as a new step. Repeats of a
+        // discrete action each count: a burst of them suggests the control was not responding.
+        if !action.arrivesAsStream || action != lastRecordedAction {
+            visit.actionCount += 1
+        }
+        lastRecordedAction = action
+        visit.actions.insert(action)
+
+        // Outside the collapse, so that a burst of typing keeps holding off the inactivity timeout.
+        visit.lastActionAt = now
+        markFirstInteractionIfNeeded(on: visit, at: now)
+    }
 
     func noteUserLeftForAnotherScreen() {
         guard activeVisit != nil, lockedTerminal == nil else { return }
@@ -324,40 +278,6 @@ final class DefaultNewTabPageSessionInstrumentation: NewTabPageSessionInstrument
     }
 
     // MARK: - Helpers
-
-    /// Records a discrete action. Repeats each add a step: a burst of them suggests the control
-    /// was not responding.
-    private func recordAction(_ action: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>) {
-        record(action, collapsingRun: false)
-    }
-
-    /// Records an action arriving as a stream of calls, one per keystroke or scroll tick. An
-    /// uninterrupted run of it is a single step.
-    private func recordStreamedAction(_ action: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>) {
-        record(action, collapsingRun: true)
-    }
-
-    private func record(_ action: ReferenceWritableKeyPath<NewTabPageSessionWideEventData, Bool>,
-                        collapsingRun: Bool) {
-        lockTerminalIfTimedOut()
-        // Actions after a timeout are dropped: the visit is already classed as abandoned and
-        // only a fresh trigger opens another one.
-        guard let visit = activeVisit, lockedTerminal == nil else { return }
-
-        let now = dateProvider()
-
-        // Compared against the previous action rather than the flag, so that returning to an
-        // earlier action after doing something else still counts as a new step.
-        if !collapsingRun || action != lastRecordedAction {
-            visit.actionCount += 1
-        }
-        lastRecordedAction = action
-        visit[keyPath: action] = true
-
-        // Outside the collapse, so that a burst of typing keeps holding off the inactivity timeout.
-        visit.lastActionAt = now
-        markFirstInteractionIfNeeded(on: visit, at: now)
-    }
 
     /// Fixes the outcome of a stale visit without ending it, standing in for the timers this
     /// instrumentation deliberately does not run.

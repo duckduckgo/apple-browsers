@@ -57,12 +57,18 @@
                 "type": "boolean",
                 "description": "Whether the user has the Search / Duck.ai input toggle enabled in settings."
             },
+            {
+                "key": "feature.data.ext.page_design",
+                "type": "string",
+                "description": "Which New Tab Page design the visit was shown, read from the page actually built rather than from the feature flag.",
+                "enum": ["legacy", "redesign"]
+            },
 
             // Outcome
             {
                 "key": "feature.data.ext.terminal_action",
                 "type": "string",
-                "description": "The single action that ended the visit, meaning the user left the New Tab Page. The first twelve values map to SUCCESS, including menu_item_selected for a top level menu entry with no terminal of its own, such as New Tab or Settings; no_action_timeout (30 seconds of inactivity) and max_duration_exceeded (2 minute overall limit) map to FAILURE; app_backgrounded maps to CANCELLED; app_terminated maps to UNKNOWN. Steps that leave the user on the New Tab Page are recorded under actions instead.",
+                "description": "The single action that ended the visit, meaning the user left the New Tab Page. The first twelve values map to SUCCESS, including menu_item_selected for a top level menu entry with no terminal of its own, such as New Tab or Settings, or All Settings picked from the New Tab Page customization sheet; no_action_timeout (30 seconds of inactivity) and max_duration_exceeded (2 minute overall limit) map to FAILURE; app_backgrounded maps to CANCELLED; app_terminated maps to UNKNOWN. Steps that leave the user on the New Tab Page are recorded under actions instead.",
                 "enum": [
                     "load_serp",
                     "load_search_suggestion",
@@ -141,6 +147,21 @@
                 "key": "feature.data.ext.actions.tap_favorite",
                 "type": "boolean",
                 "description": "Whether the user tapped a favorite during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_add_favorite",
+                "type": "boolean",
+                "description": "Whether the user opened the Add Favorite sheet from the New Tab Page during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.tap_customize",
+                "type": "boolean",
+                "description": "Whether the user opened the New Tab Page customization sheet during the visit."
+            },
+            {
+                "key": "feature.data.ext.actions.toggle_favorites_expansion",
+                "type": "boolean",
+                "description": "Whether the user expanded or collapsed the favorites on the redesigned New Tab Page during the visit."
             },
             {
                 "key": "feature.data.ext.actions.tap_fire_button",

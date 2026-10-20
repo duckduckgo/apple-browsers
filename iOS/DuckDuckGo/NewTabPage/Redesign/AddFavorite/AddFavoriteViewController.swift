@@ -22,6 +22,9 @@ import SwiftUI
 import UIKit
 
 final class AddFavoriteViewController: UIHostingController<AddFavoriteView> {
+    /// Called once the sheet is gone, however it was dismissed.
+    var onDismissed: (() -> Void)?
+
     private var measuredLayout: (width: CGFloat, contentSize: UIContentSizeCategory)?
 
     init(model: AddFavoriteViewModel) {
@@ -55,6 +58,13 @@ final class AddFavoriteViewController: UIHostingController<AddFavoriteView> {
             }
             sheet.prefersEdgeAttachedInCompactHeight = true
             sheet.preferredCornerRadius = Metrics.sheetCornerRadius
+        }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isBeingDismissed {
+            onDismissed?()
         }
     }
 

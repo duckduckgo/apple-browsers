@@ -83,6 +83,10 @@ struct NewTabPageBuilder {
                 // Must match the address bar's home-tab mode resolution.
                 defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
         })
+        searchInputModel.onUserSwitchedMode = { mode in
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPage(newTabPage, didSwitchTextEntryModeTo: mode)
+        }
         let searchInputView = NewTabPageSearchInputView(
             model: searchInputModel,
             onActivate: { textEntryMode in
@@ -126,6 +130,10 @@ struct NewTabPageBuilder {
         favoritesModel.onFaviconMissing = {
             guard let newTabPage else { return }
             newTabPage.delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(newTabPage)
+        }
+        favoritesModel.onUserChangedExpansion = {
+            guard let newTabPage else { return }
+            newTabPage.delegate?.newTabPageDidChangeFavoritesExpansion(newTabPage)
         }
 
         let page = RedesignedNewTabPageViewController(blocks: [

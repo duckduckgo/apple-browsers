@@ -24,6 +24,9 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
 
     var onAllSettingsSelected: (() -> Void)?
 
+    /// Called once the sheet is gone, however it was dismissed.
+    var onDismissed: (() -> Void)?
+
     private let model: NewTabPageCustomizationModel
 
     init(model: NewTabPageCustomizationModel = NewTabPageCustomizationModel()) {
@@ -56,6 +59,13 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
         if let sheet = sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
+        }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isBeingDismissed {
+            onDismissed?()
         }
     }
 }

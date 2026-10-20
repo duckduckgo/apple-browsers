@@ -59,6 +59,14 @@ final class NewTabPageSearchInputModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    var onUserSwitchedMode: ((TextEntryMode) -> Void)?
+
+    /// Applies a mode the user picked on the toggle, as opposed to one restored from settings.
+    func switchMode(to mode: TextEntryMode) {
+        textEntryMode = mode
+        onUserSwitchedMode?(mode)
+    }
+
     func refreshSettings() {
         settings = readSettings()
         textEntryMode = settings.defaultTextEntryMode.displayed(isAIChatSearchInputEnabled: settings.isModeToggleShown)

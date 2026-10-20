@@ -1038,7 +1038,7 @@ extension MainViewController {
                     self.ntpAfterIdleInstrumentation.backButtonUsedFromNTP(afterIdle: tab.openedAfterIdle)
                 }
                 self.postIdleSessionInstrumentation.backPressed()
-                self.recordNewTabPageSessionAction { $0.utiBackArrow() }
+                self.recordNewTabPageSessionAction(.utiBackArrow)
                 self.dismissUnifiedToggleInputOmnibarSession(coordinator: coordinator)
             } else if coordinator.isAITabExpanded {
                 coordinator.showCollapsed()
@@ -1047,7 +1047,7 @@ extension MainViewController {
         contentVC.onSwipeDownRequested = { [weak self] in
             guard let self, let coordinator = self.unifiedToggleInputCoordinator else { return }
             self.cancelPendingAppOpenKeyboard()
-            self.recordNewTabPageSessionAction { $0.dismissKeyboard() }
+            self.recordNewTabPageSessionAction(.dismissKeyboard)
             coordinator.dismissOmnibarKeyboard()
         }
 
@@ -1282,7 +1282,7 @@ extension MainViewController {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.sessionEnded(reason: postIdleSubmissionReason(for: query))
-        recordNewTabPageSessionAction { $0.hitSubmit() }
+        recordNewTabPageSessionAction(.hitSubmit)
         if postIdleSubmissionReason(for: query) == .searchSubmitted {
             recordDuckAISessionPendingExit(.searchStarted)
         }
@@ -1400,7 +1400,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?) {
         // Recorded before the branches below, which end the visit on their own terminals.
-        recordNewTabPageSessionAction { $0.hitSubmit() }
+        recordNewTabPageSessionAction(.hitSubmit)
 
         // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
         // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
@@ -1557,7 +1557,7 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     }
 
     func unifiedInputEditingStateDidRequestTabSwitcher() {
-        recordNewTabPageSessionAction { $0.tapTabViewerEscapeHatch() }
+        recordNewTabPageSessionAction(.tapTabViewerEscapeHatch)
         requestTabSwitcher()
     }
 
@@ -1570,6 +1570,14 @@ extension MainViewController: UnifiedInputContentContainerViewControllerDelegate
     func unifiedInputEditingStateDidRequestSyncSetup() {
         unifiedToggleInputCoordinator?.contentViewController.dismissAnimated()
         segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChatPromotion)
+    }
+
+    func unifiedInputEditingStateDidInteractWithMessage(_ interaction: NewTabPageMessageInteraction) {
+        recordNewTabPageSessionMessageInteraction(interaction)
+    }
+
+    func unifiedInputEditingStateDidChangeFavoritesExpansion() {
+        recordNewTabPageSessionAction(.toggleFavoritesExpansion)
     }
 }
 

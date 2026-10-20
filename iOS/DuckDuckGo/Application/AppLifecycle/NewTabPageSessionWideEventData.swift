@@ -32,7 +32,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
         mobileMetaType: "ios-new-tab-page-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-new-tab-page-session",
-        version: "1.1.0"
+        version: "1.1.1"
     )
 
     enum Trigger: String, Codable, CaseIterable {
@@ -47,6 +47,59 @@ final class NewTabPageSessionWideEventData: WideEventData {
     enum LaunchKeyboardMode: String, Codable, CaseIterable {
         case up
         case down
+    }
+
+    /// Which New Tab Page design the visit was shown.
+    enum PageDesign: String, Codable, CaseIterable {
+        case legacy
+        case redesign
+    }
+
+    /// A user action on the New Tab Page. The raw value is its parameter name under
+    /// `feature.data.ext.actions.`, so renaming a case renames the reported field.
+    enum Action: String, Codable, CaseIterable {
+        case tapInputBar = "tap_input_bar"
+        case typeInInput = "type_in_input"
+        case switchToggleToSearch = "switch_toggle_to_search"
+        case switchToggleToAiChat = "switch_toggle_to_ai_chat"
+        case tapDuckaiButton = "tap_duckai_button"
+        case hitSubmit = "hit_submit"
+        case chooseSuggestion = "choose_suggestion"
+        case tapFavorite = "tap_favorite"
+        case tapAddFavorite = "tap_add_favorite"
+        case tapCustomize = "tap_customize"
+        /// See all, See less or the collapse chevron on the redesigned favorites.
+        case toggleFavoritesExpansion = "toggle_favorites_expansion"
+        case tapFireButton = "tap_fire_button"
+        case tapReturnToLast = "tap_return_to_last"
+        /// Reached through the return-to-tab card rather than the toolbar's tab button.
+        case tapTabViewerEscapeHatch = "tap_tab_viewer_escape_hatch"
+        case tapTabViewerToolbar = "tap_tab_viewer_toolbar"
+        case tapBookmarksToolbarItem = "tap_bookmarks_toolbar_item"
+        case tapPasswordsToolbarItem = "tap_passwords_toolbar_item"
+        case openMenu = "open_menu"
+        case menuBookmarks = "menu_bookmarks"
+        case menuPasswords = "menu_passwords"
+        case menuChats = "menu_chats"
+        case menuDownloads = "menu_downloads"
+        case menuVpn = "menu_vpn"
+        case clickMessageCta = "click_message_cta"
+        case clickMessageDismiss = "click_message_dismiss"
+        case dismissKeyboard = "dismiss_keyboard"
+        case scrollView = "scroll_view"
+        /// The back arrow that leaves search mode, in the omnibar's unified text input.
+        case utiBackArrow = "uti_back_arrow"
+        case selectBookmark = "select_bookmark"
+        case selectPassword = "select_password"
+        case selectDownload = "select_download"
+        case emailCopied = "email_copied"
+        case vpnOn = "vpn_on"
+        case vpnOff = "vpn_off"
+
+        /// Arrives as one call per keystroke or scroll tick, so an uninterrupted run is one step.
+        var arrivesAsStream: Bool {
+            self == .typeInInput || self == .scrollView
+        }
     }
 
     /// The single action that ended the visit.
@@ -65,7 +118,8 @@ final class NewTabPageSessionWideEventData: WideEventData {
         /// Only reachable while the New Tab Page icon customization flag is on.
         case customButton = "custom_button"
         /// A top level browsing menu entry with no terminal of its own, such as New Tab or
-        /// Settings. Those replace the New Tab Page for good, so the visit ends here.
+        /// Settings, or All Settings from the customization sheet. Those replace the New Tab
+        /// Page for good, so the visit ends here.
         case menuItemSelected = "menu_item_selected"
         case noActionTimeout = "no_action_timeout"
         case maxDurationExceeded = "max_duration_exceeded"
@@ -110,6 +164,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
     var trigger: Trigger
     var launchKeyboardMode: LaunchKeyboardMode
     var toggleEnabled: Bool
+    var pageDesign: PageDesign
 
     /// Carried explicitly rather than derived from `feature.status`, because the sender
     /// only writes a status reason for SUCCESS and UNKNOWN outcomes.
@@ -124,41 +179,14 @@ final class NewTabPageSessionWideEventData: WideEventData {
 
     var actionCount: Int = 0
 
-    var tapInputBar: Bool = false
-    var typeInInput: Bool = false
-    var switchToggleToSearch: Bool = false
-    var switchToggleToAiChat: Bool = false
-    var tapDuckaiButton: Bool = false
-    var hitSubmit: Bool = false
-    var chooseSuggestion: Bool = false
-    var tapFavorite: Bool = false
-    var tapFireButton: Bool = false
-    var tapReturnToLast: Bool = false
-    var tapTabViewerEscapeHatch: Bool = false
-    var tapTabViewerToolbar: Bool = false
-    var tapBookmarksToolbarItem: Bool = false
-    var tapPasswordsToolbarItem: Bool = false
-    var openMenu: Bool = false
-    var menuBookmarks: Bool = false
-    var menuPasswords: Bool = false
-    var menuChats: Bool = false
-    var menuDownloads: Bool = false
-    var menuVpn: Bool = false
-    var clickMessageCta: Bool = false
-    var clickMessageDismiss: Bool = false
-    var dismissKeyboard: Bool = false
-    var scrollView: Bool = false
-    var utiBackArrow: Bool = false
-    var selectBookmark: Bool = false
-    var selectPassword: Bool = false
-    var selectDownload: Bool = false
-    var emailCopied: Bool = false
-    var vpnOn: Bool = false
-    var vpnOff: Bool = false
+    /// Every action taken during the visit. A set, because the event reports which actions
+    /// happened, never their order or how often.
+    var actions: Set<Action> = []
 
     init(trigger: Trigger,
          launchKeyboardMode: LaunchKeyboardMode,
          toggleEnabled: Bool,
+         pageDesign: PageDesign,
          startedAt: Date = Date(),
          contextData: WideEventContextData = WideEventContextData(),
          appData: WideEventAppData = WideEventAppData(),
@@ -166,12 +194,67 @@ final class NewTabPageSessionWideEventData: WideEventData {
         self.trigger = trigger
         self.launchKeyboardMode = launchKeyboardMode
         self.toggleEnabled = toggleEnabled
+        self.pageDesign = pageDesign
         self.sessionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.firstInteractionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.lastActionAt = startedAt
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
+    }
+
+    /// Decodes a visit stored by any earlier version of the app.
+    init(from decoder: Decoder) throws {
+        // A visit left open when the app died is decoded after an update to be reported. Fields
+        // added since the event shipped would otherwise fail that decode, and the storage skips
+        // records it cannot decode, so the visit would never be reported or deleted.
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        globalData = try container.decode(WideEventGlobalData.self, forKey: .globalData)
+        contextData = try container.decode(WideEventContextData.self, forKey: .contextData)
+        appData = try container.decode(WideEventAppData.self, forKey: .appData)
+        errorData = try container.decodeIfPresent(WideEventErrorData.self, forKey: .errorData)
+        trigger = try container.decode(Trigger.self, forKey: .trigger)
+        launchKeyboardMode = try container.decode(LaunchKeyboardMode.self, forKey: .launchKeyboardMode)
+        toggleEnabled = try container.decode(Bool.self, forKey: .toggleEnabled)
+        // Builds without this field could only show the legacy page in production.
+        pageDesign = try container.decodeIfPresent(PageDesign.self, forKey: .pageDesign) ?? .legacy
+        terminalAction = try container.decodeIfPresent(TerminalAction.self, forKey: .terminalAction)
+        sessionInterval = try container.decode(WideEvent.MeasuredInterval.self, forKey: .sessionInterval)
+        firstInteractionInterval = try container.decode(WideEvent.MeasuredInterval.self, forKey: .firstInteractionInterval)
+        lastActionAt = try container.decode(Date.self, forKey: .lastActionAt)
+        actionCount = try container.decodeIfPresent(Int.self, forKey: .actionCount) ?? 0
+        actions = try container.decodeIfPresent([String].self, forKey: .actions).map(Self.actions(named:))
+            ?? Self.actionsStoredAsFlags(in: decoder)
+    }
+
+    /// Actions stored by name. A name this build does not know, written by a newer one, is dropped.
+    private static func actions(named names: [String]) -> Set<Action> {
+        Set(names.compactMap(Action.init(rawValue:)))
+    }
+
+    /// Actions stored by builds that kept one Bool property per action, named after its case.
+    private static func actionsStoredAsFlags(in decoder: Decoder) throws -> Set<Action> {
+        let container = try decoder.container(keyedBy: ActionFlagKey.self)
+        return try Set(Action.allCases.filter { action in
+            try container.decodeIfPresent(Bool.self, forKey: ActionFlagKey(action)) == true
+        })
+    }
+
+    private struct ActionFlagKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+
+        init(_ action: Action) {
+            stringValue = String(describing: action)
+        }
+
+        init?(stringValue: String) {
+            self.stringValue = stringValue
+        }
+
+        init?(intValue: Int) {
+            return nil
+        }
     }
 
     /// Orphaned visits are cleaned up by the instrumentation's own start hook, which runs
@@ -204,54 +287,23 @@ extension NewTabPageSessionWideEventData {
         return thresholds.last(where: { $0 <= count }) ?? 0
     }
 
-    /// Omits an action that did not happen, since thirty `false` flags per visit are payload
-    /// without information.
-    private func whenDone(_ actionOccurred: Bool) -> Bool? {
-        actionOccurred ? true : nil
-    }
-
     func jsonParameters() -> [String: Encodable] {
         let bucket = Self.durationBucket
-        return Dictionary(compacting: [
+        var parameters: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.NewTabPageSessionFeature.trigger, trigger.rawValue),
             (WideEventParameter.NewTabPageSessionFeature.launchKeyboardMode, launchKeyboardMode.rawValue),
             (WideEventParameter.NewTabPageSessionFeature.toggleEnabled, toggleEnabled),
+            (WideEventParameter.NewTabPageSessionFeature.pageDesign, pageDesign.rawValue),
             (WideEventParameter.NewTabPageSessionFeature.terminalAction, terminalAction?.rawValue),
             (WideEventParameter.NewTabPageSessionFeature.actionCountBucketed, String(Self.actionCountBucket(actionCount))),
             (WideEventParameter.NewTabPageSessionFeature.timeToFirstInteractionMsBucketed, firstInteractionInterval.stringValue(bucket)),
             (WideEventParameter.NewTabPageSessionFeature.sessionDurationMsBucketed, sessionInterval.stringValue(bucket)),
-            (WideEventParameter.NewTabPageSessionFeature.tapInputBar, whenDone(tapInputBar)),
-            (WideEventParameter.NewTabPageSessionFeature.typeInInput, whenDone(typeInInput)),
-            (WideEventParameter.NewTabPageSessionFeature.switchToggleToSearch, whenDone(switchToggleToSearch)),
-            (WideEventParameter.NewTabPageSessionFeature.switchToggleToAiChat, whenDone(switchToggleToAiChat)),
-            (WideEventParameter.NewTabPageSessionFeature.tapDuckaiButton, whenDone(tapDuckaiButton)),
-            (WideEventParameter.NewTabPageSessionFeature.hitSubmit, whenDone(hitSubmit)),
-            (WideEventParameter.NewTabPageSessionFeature.chooseSuggestion, whenDone(chooseSuggestion)),
-            (WideEventParameter.NewTabPageSessionFeature.tapFavorite, whenDone(tapFavorite)),
-            (WideEventParameter.NewTabPageSessionFeature.tapFireButton, whenDone(tapFireButton)),
-            (WideEventParameter.NewTabPageSessionFeature.tapReturnToLast, whenDone(tapReturnToLast)),
-            (WideEventParameter.NewTabPageSessionFeature.tapTabViewerEscapeHatch, whenDone(tapTabViewerEscapeHatch)),
-            (WideEventParameter.NewTabPageSessionFeature.tapTabViewerToolbar, whenDone(tapTabViewerToolbar)),
-            (WideEventParameter.NewTabPageSessionFeature.tapBookmarksToolbarItem, whenDone(tapBookmarksToolbarItem)),
-            (WideEventParameter.NewTabPageSessionFeature.tapPasswordsToolbarItem, whenDone(tapPasswordsToolbarItem)),
-            (WideEventParameter.NewTabPageSessionFeature.openMenu, whenDone(openMenu)),
-            (WideEventParameter.NewTabPageSessionFeature.menuBookmarks, whenDone(menuBookmarks)),
-            (WideEventParameter.NewTabPageSessionFeature.menuPasswords, whenDone(menuPasswords)),
-            (WideEventParameter.NewTabPageSessionFeature.menuChats, whenDone(menuChats)),
-            (WideEventParameter.NewTabPageSessionFeature.menuDownloads, whenDone(menuDownloads)),
-            (WideEventParameter.NewTabPageSessionFeature.menuVpn, whenDone(menuVpn)),
-            (WideEventParameter.NewTabPageSessionFeature.clickMessageCta, whenDone(clickMessageCta)),
-            (WideEventParameter.NewTabPageSessionFeature.clickMessageDismiss, whenDone(clickMessageDismiss)),
-            (WideEventParameter.NewTabPageSessionFeature.dismissKeyboard, whenDone(dismissKeyboard)),
-            (WideEventParameter.NewTabPageSessionFeature.scrollView, whenDone(scrollView)),
-            (WideEventParameter.NewTabPageSessionFeature.utiBackArrow, whenDone(utiBackArrow)),
-            (WideEventParameter.NewTabPageSessionFeature.selectBookmark, whenDone(selectBookmark)),
-            (WideEventParameter.NewTabPageSessionFeature.selectPassword, whenDone(selectPassword)),
-            (WideEventParameter.NewTabPageSessionFeature.selectDownload, whenDone(selectDownload)),
-            (WideEventParameter.NewTabPageSessionFeature.emailCopied, whenDone(emailCopied)),
-            (WideEventParameter.NewTabPageSessionFeature.vpnOn, whenDone(vpnOn)),
-            (WideEventParameter.NewTabPageSessionFeature.vpnOff, whenDone(vpnOff)),
         ])
+        // Actions not taken are omitted: thirty `false` flags per visit are payload without information.
+        for action in actions {
+            parameters[WideEventParameter.NewTabPageSessionFeature.key(for: action)] = true
+        }
+        return parameters
     }
 }
 
@@ -261,41 +313,15 @@ extension WideEventParameter {
         static let trigger = "feature.data.ext.trigger"
         static let launchKeyboardMode = "feature.data.ext.launch_keyboard_mode"
         static let toggleEnabled = "feature.data.ext.toggle_enabled"
+        static let pageDesign = "feature.data.ext.page_design"
         static let terminalAction = "feature.data.ext.terminal_action"
         static let actionCountBucketed = "feature.data.ext.action_count_bucketed"
         static let timeToFirstInteractionMsBucketed = "feature.data.ext.time_to_first_interaction_ms_bucketed"
         static let sessionDurationMsBucketed = "feature.data.ext.session_duration_ms_bucketed"
 
-        static let tapInputBar = "feature.data.ext.actions.tap_input_bar"
-        static let typeInInput = "feature.data.ext.actions.type_in_input"
-        static let switchToggleToSearch = "feature.data.ext.actions.switch_toggle_to_search"
-        static let switchToggleToAiChat = "feature.data.ext.actions.switch_toggle_to_ai_chat"
-        static let tapDuckaiButton = "feature.data.ext.actions.tap_duckai_button"
-        static let hitSubmit = "feature.data.ext.actions.hit_submit"
-        static let chooseSuggestion = "feature.data.ext.actions.choose_suggestion"
-        static let tapFavorite = "feature.data.ext.actions.tap_favorite"
-        static let tapFireButton = "feature.data.ext.actions.tap_fire_button"
-        static let tapReturnToLast = "feature.data.ext.actions.tap_return_to_last"
-        static let tapTabViewerEscapeHatch = "feature.data.ext.actions.tap_tab_viewer_escape_hatch"
-        static let tapTabViewerToolbar = "feature.data.ext.actions.tap_tab_viewer_toolbar"
-        static let tapBookmarksToolbarItem = "feature.data.ext.actions.tap_bookmarks_toolbar_item"
-        static let tapPasswordsToolbarItem = "feature.data.ext.actions.tap_passwords_toolbar_item"
-        static let openMenu = "feature.data.ext.actions.open_menu"
-        static let menuBookmarks = "feature.data.ext.actions.menu_bookmarks"
-        static let menuPasswords = "feature.data.ext.actions.menu_passwords"
-        static let menuChats = "feature.data.ext.actions.menu_chats"
-        static let menuDownloads = "feature.data.ext.actions.menu_downloads"
-        static let menuVpn = "feature.data.ext.actions.menu_vpn"
-        static let clickMessageCta = "feature.data.ext.actions.click_message_cta"
-        static let clickMessageDismiss = "feature.data.ext.actions.click_message_dismiss"
-        static let dismissKeyboard = "feature.data.ext.actions.dismiss_keyboard"
-        static let scrollView = "feature.data.ext.actions.scroll_view"
-        static let utiBackArrow = "feature.data.ext.actions.uti_back_arrow"
-        static let selectBookmark = "feature.data.ext.actions.select_bookmark"
-        static let selectPassword = "feature.data.ext.actions.select_password"
-        static let selectDownload = "feature.data.ext.actions.select_download"
-        static let emailCopied = "feature.data.ext.actions.email_copied"
-        static let vpnOn = "feature.data.ext.actions.vpn_on"
-        static let vpnOff = "feature.data.ext.actions.vpn_off"
+        /// The parameter an action is reported under.
+        static func key(for action: NewTabPageSessionWideEventData.Action) -> String {
+            "feature.data.ext.actions.\(action.rawValue)"
+        }
     }
 }

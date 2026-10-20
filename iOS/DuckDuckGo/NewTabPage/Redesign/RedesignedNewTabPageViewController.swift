@@ -172,6 +172,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     @objc private func customizeButtonTapped() {
+        // UIKit drops a presentation while another is on screen or in flight, such as on a double
+        // tap, and nothing would then report the sheet closing.
+        guard presentedViewController == nil else { return }
+
         let model = NewTabPageCustomizationModel()
         model.reportOpening()
         let customizationViewController = NewTabPageCustomizationViewController(model: model)
@@ -179,7 +183,12 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             guard let self else { return }
             delegate?.newTabPageDidRequestSettings(self)
         }
+        customizationViewController.onDismissed = { [weak self] in
+            guard let self else { return }
+            delegate?.newTabPageDidCloseCustomization(self)
+        }
 
+        delegate?.newTabPageDidOpenCustomization(self)
         present(customizationViewController, animated: true)
     }
 
@@ -265,6 +274,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.addSubview(backgroundImageView)
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
+        scrollView.delegate = self
         scrollView.addSubview(blocksStackView)
         contentContainerView.addSubview(customizeButton)
 
@@ -467,5 +477,14 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1
         customizeButton.isUserInteractionEnabled = !isEditing
+    }
+}
+
+extension RedesignedNewTabPageViewController: UIScrollViewDelegate {
+
+    // A drag rather than every offset change, so restoring the resting scroll position does not
+    // count as the user scrolling.
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        delegate?.newTabPageDidScroll(self)
     }
 }

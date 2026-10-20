@@ -117,7 +117,7 @@ extension MainViewController {
         // Deferred so the shown pixel records an actual display rather than the menu being attached.
         button.menu = UIMenu(title: UserText.duckAiFeatureName, children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
-                self?.recordNewTabPageSessionAction { $0.tapDuckaiButton() }
+                self?.recordNewTabPageSessionAction(.tapDuckaiButton)
                 self?.duckAIAddressBarPixelHandler.fireAddressBarMenuShown(source: DuckAIMenuSource(source))
                 completion(self?.duckAIAddressBarMenuChildren(source: source, type: type) ?? [])
             }

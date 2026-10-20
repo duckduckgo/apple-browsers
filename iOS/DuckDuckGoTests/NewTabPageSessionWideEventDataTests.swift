@@ -34,6 +34,9 @@ struct NewTabPageSessionWideEventDataTests {
         "feature.data.ext.actions.hit_submit",
         "feature.data.ext.actions.choose_suggestion",
         "feature.data.ext.actions.tap_favorite",
+        "feature.data.ext.actions.tap_add_favorite",
+        "feature.data.ext.actions.tap_customize",
+        "feature.data.ext.actions.toggle_favorites_expansion",
         "feature.data.ext.actions.tap_fire_button",
         "feature.data.ext.actions.tap_return_to_last",
         "feature.data.ext.actions.tap_tab_viewer_escape_hatch",
@@ -62,45 +65,36 @@ struct NewTabPageSessionWideEventDataTests {
     private func makeData(trigger: NewTabPageSessionWideEventData.Trigger = .appOpen,
                           launchKeyboardMode: NewTabPageSessionWideEventData.LaunchKeyboardMode = .down,
                           toggleEnabled: Bool = false,
+                          pageDesign: NewTabPageSessionWideEventData.PageDesign = .legacy,
                           startedAt: Date = Date()) -> NewTabPageSessionWideEventData {
         NewTabPageSessionWideEventData(trigger: trigger,
                                        launchKeyboardMode: launchKeyboardMode,
                                        toggleEnabled: toggleEnabled,
+                                       pageDesign: pageDesign,
                                        startedAt: startedAt)
     }
 
-    private func setAllActionFlags(on data: NewTabPageSessionWideEventData) {
-        data.tapInputBar = true
-        data.typeInInput = true
-        data.switchToggleToSearch = true
-        data.switchToggleToAiChat = true
-        data.tapDuckaiButton = true
-        data.hitSubmit = true
-        data.chooseSuggestion = true
-        data.tapFavorite = true
-        data.tapFireButton = true
-        data.tapReturnToLast = true
-        data.tapTabViewerEscapeHatch = true
-        data.tapTabViewerToolbar = true
-        data.tapBookmarksToolbarItem = true
-        data.tapPasswordsToolbarItem = true
-        data.openMenu = true
-        data.menuBookmarks = true
-        data.menuPasswords = true
-        data.menuChats = true
-        data.menuDownloads = true
-        data.menuVpn = true
-        data.clickMessageCta = true
-        data.clickMessageDismiss = true
-        data.dismissKeyboard = true
-        data.scrollView = true
-        data.utiBackArrow = true
-        data.selectBookmark = true
-        data.selectPassword = true
-        data.selectDownload = true
-        data.emailCopied = true
-        data.vpnOn = true
-        data.vpnOff = true
+    /// The per-action Bool keys that builds before actions were stored as a set wrote. Frozen: these
+    /// records can still be on devices, so the list must not follow later renames.
+    private static let actionFlagKeysStoredByEarlierBuilds = [
+        "tapInputBar", "typeInInput", "switchToggleToSearch", "switchToggleToAiChat", "tapDuckaiButton",
+        "hitSubmit", "chooseSuggestion", "tapFavorite", "tapAddFavorite", "tapCustomize", "tapFireButton",
+        "tapReturnToLast", "tapTabViewerEscapeHatch", "tapTabViewerToolbar", "tapBookmarksToolbarItem",
+        "tapPasswordsToolbarItem", "openMenu", "menuBookmarks", "menuPasswords", "menuChats", "menuDownloads",
+        "menuVpn", "clickMessageCta", "clickMessageDismiss", "dismissKeyboard", "scrollView", "utiBackArrow",
+        "selectBookmark", "selectPassword", "selectDownload", "emailCopied", "vpnOn", "vpnOff",
+    ]
+
+    /// Encodes `data` and rewrites its actions the way builds that stored one Bool per action did.
+    private func storedByEarlierBuild(_ data: NewTabPageSessionWideEventData,
+                                      flagsSetToTrue: [String]) throws -> Data {
+        var stored = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(data)) as? [String: Any])
+        stored["actions"] = nil
+        stored["pageDesign"] = nil
+        for key in Self.actionFlagKeysStoredByEarlierBuilds {
+            stored[key] = flagsSetToTrue.contains(key)
+        }
+        return try JSONSerialization.data(withJSONObject: stored)
     }
 
     // MARK: - Metadata
@@ -111,7 +105,7 @@ struct NewTabPageSessionWideEventDataTests {
         #expect(NewTabPageSessionWideEventData.metadata.pixelName == "new_tab_page_session")
         #expect(NewTabPageSessionWideEventData.metadata.featureName == "new-tab-page-session")
         #expect(NewTabPageSessionWideEventData.metadata.type == "ios-new-tab-page-session")
-        #expect(NewTabPageSessionWideEventData.metadata.version == "1.1.0")
+        #expect(NewTabPageSessionWideEventData.metadata.version == "1.1.1")
     }
 
     @available(iOS 16, *)
@@ -131,6 +125,7 @@ struct NewTabPageSessionWideEventDataTests {
         #expect(params["feature.data.ext.trigger"] as? String == "app_open")
         #expect(params["feature.data.ext.launch_keyboard_mode"] as? String == "down")
         #expect(params["feature.data.ext.toggle_enabled"] as? Bool == false)
+        #expect(params["feature.data.ext.page_design"] as? String == "legacy")
         #expect(params["feature.data.ext.action_count_bucketed"] as? String == "0")
         #expect(params["feature.data.ext.terminal_action"] == nil)
         #expect(params["feature.data.ext.session_duration_ms_bucketed"] == nil)
@@ -149,6 +144,13 @@ struct NewTabPageSessionWideEventDataTests {
     func keyboardUpModeEmitsUp() {
         let params = makeData(launchKeyboardMode: .up).jsonParameters()
         #expect(params["feature.data.ext.launch_keyboard_mode"] as? String == "up")
+    }
+
+    @available(iOS 16, *)
+    @Test("Redesigned page emits redesign", .timeLimit(.minutes(1)))
+    func redesignedPageEmitsRedesign() {
+        let params = makeData(pageDesign: .redesign).jsonParameters()
+        #expect(params["feature.data.ext.page_design"] as? String == "redesign")
     }
 
     @available(iOS 16, *)
@@ -190,20 +192,29 @@ struct NewTabPageSessionWideEventDataTests {
     @Test("Only the actions performed are emitted", .timeLimit(.minutes(1)))
     func onlyPerformedActionsAreEmitted() {
         let data = makeData()
-        data.tapFavorite = true
+        data.actions = [.tapFavorite]
         let params = data.jsonParameters()
 
-        #expect(params[WideEventParameter.NewTabPageSessionFeature.tapFavorite] as? Bool == true)
-        for key in Self.actionKeys where key != WideEventParameter.NewTabPageSessionFeature.tapFavorite {
+        let tapFavoriteKey = "feature.data.ext.actions.tap_favorite"
+        #expect(params[tapFavoriteKey] as? Bool == true)
+        for key in Self.actionKeys where key != tapFavoriteKey {
             #expect(params[key] == nil, "Expected \(key) to be absent")
         }
+    }
+
+    @available(iOS 16, *)
+    @Test("Every action is reported under its key in the event definition", .timeLimit(.minutes(1)))
+    func actionKeysMatchDefinition() {
+        let keys = NewTabPageSessionWideEventData.Action.allCases.map(WideEventParameter.NewTabPageSessionFeature.key(for:))
+
+        #expect(keys.sorted() == Self.actionKeys.sorted())
     }
 
     @available(iOS 16, *)
     @Test("Action flags propagate when set", .timeLimit(.minutes(1)))
     func actionFlagsPropagateWhenSet() {
         let data = makeData()
-        setAllActionFlags(on: data)
+        data.actions = Set(NewTabPageSessionWideEventData.Action.allCases)
         let params = data.jsonParameters()
 
         for key in Self.actionKeys {
@@ -401,13 +412,14 @@ struct NewTabPageSessionWideEventDataTests {
         let original = makeData(trigger: .newTabOpened,
                                 launchKeyboardMode: .up,
                                 toggleEnabled: true,
+                                pageDesign: .redesign,
                                 startedAt: start)
         original.terminalAction = .loadSerp
         original.sessionInterval.end = start.addingTimeInterval(5)
         original.firstInteractionInterval.end = start.addingTimeInterval(1)
         original.lastActionAt = start.addingTimeInterval(4)
         original.actionCount = 7
-        setAllActionFlags(on: original)
+        original.actions = Set(NewTabPageSessionWideEventData.Action.allCases)
 
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(NewTabPageSessionWideEventData.self, from: encoded)
@@ -415,6 +427,7 @@ struct NewTabPageSessionWideEventDataTests {
         #expect(decoded.trigger == .newTabOpened)
         #expect(decoded.launchKeyboardMode == .up)
         #expect(decoded.toggleEnabled == true)
+        #expect(decoded.pageDesign == .redesign)
         #expect(decoded.terminalAction == .loadSerp)
         #expect(decoded.sessionInterval.start == start)
         #expect(decoded.sessionInterval.end == start.addingTimeInterval(5))
@@ -422,10 +435,44 @@ struct NewTabPageSessionWideEventDataTests {
         #expect(decoded.firstInteractionInterval.end == start.addingTimeInterval(1))
         #expect(decoded.lastActionAt == start.addingTimeInterval(4))
         #expect(decoded.actionCount == 7)
+        #expect(decoded.actions == Set(NewTabPageSessionWideEventData.Action.allCases))
+    }
 
-        let params = decoded.jsonParameters()
-        for key in Self.actionKeys {
-            #expect(params[key] as? Bool == true, "Expected \(key) to survive the round trip as true")
-        }
+    @available(iOS 16, macOS 13, *)
+    @Test("Decodes every action flag stored by earlier builds", .timeLimit(.minutes(1)))
+    func decodesEveryActionFlagStoredByEarlierBuilds() throws {
+        let payload = try storedByEarlierBuild(makeData(), flagsSetToTrue: Self.actionFlagKeysStoredByEarlierBuilds)
+
+        let decoded = try JSONDecoder().decode(NewTabPageSessionWideEventData.self, from: payload)
+
+        let actionsAddedSince: Set<NewTabPageSessionWideEventData.Action> = [.toggleFavoritesExpansion]
+        #expect(decoded.actions == Set(NewTabPageSessionWideEventData.Action.allCases).subtracting(actionsAddedSince))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Decodes a visit stored by an earlier build with only the actions it took", .timeLimit(.minutes(1)))
+    func decodesVisitStoredByEarlierBuild() throws {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let payload = try storedByEarlierBuild(makeData(trigger: .appOpen, startedAt: start),
+                                               flagsSetToTrue: ["tapFavorite"])
+
+        let decoded = try JSONDecoder().decode(NewTabPageSessionWideEventData.self, from: payload)
+
+        #expect(decoded.trigger == .appOpen)
+        #expect(decoded.sessionInterval.start == start)
+        #expect(decoded.pageDesign == .legacy)
+        #expect(decoded.actions == [.tapFavorite])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Drops stored action names this build does not know", .timeLimit(.minutes(1)))
+    func dropsUnknownStoredActionNames() throws {
+        var stored = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(makeData())) as? [String: Any])
+        stored["actions"] = ["tap_input_bar", "an_action_added_later"]
+        let payload = try JSONSerialization.data(withJSONObject: stored)
+
+        let decoded = try JSONDecoder().decode(NewTabPageSessionWideEventData.self, from: payload)
+
+        #expect(decoded.actions == [.tapInputBar])
     }
 }

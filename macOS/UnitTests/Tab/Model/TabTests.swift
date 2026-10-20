@@ -95,6 +95,82 @@ final class TabTests: XCTestCase {
         }
     }
 
+    // MARK: - Web Extension Snapshots
+
+    func testExtensionAPIDelegatesHaveNoTrappingFailurePaths() throws {
+        var root = URL(fileURLWithPath: #filePath)
+        for _ in 0..<5 { root.deleteLastPathComponent() }
+        let files = ["Tab+WKWebExtensionTab.swift", "MainWindowController+WKWebExtensionWindow.swift",
+                     "WebExtensionWindowTabProvider+macOS.swift", "WebExtensionInternalSiteNavigationDelegate.swift"]
+        let traps = #"\b(?:assertionFailure|assert|preconditionFailure|precondition|fatalError)\s*\(|\b(?:as|try)\s*!"#
+        for file in files {
+            let url = root.appendingPathComponent("macOS/DuckDuckGo/WebExtensions/" + file)
+            let source = try String(contentsOf: url, encoding: .utf8)
+            XCTAssertNil(source.range(of: traps, options: .regularExpression), "Trapping extension entry point in \(file)")
+        }
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testUnsupportedExtensionAPIsReturnErrorsWithoutTrapping() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try #"{"manifest_version":3,"name":"Unsupported API Test","version":"1.0"}"#
+            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let calls: [String: () async throws -> Void] = [
+            "tabs.setZoom": { try await self.tab.setZoomFactor(2, for: context) },
+            "tabs.toggleReaderMode": { try await self.tab.setReaderModeActive(true, for: context) },
+            "tabs.update.openerTabId": { try await self.tab.setParentTab(nil, for: context) },
+            "tabs.update.highlighted": { try await self.tab.setSelected(false, for: context) }
+        ]
+        for (api, call) in calls {
+            do {
+                try await call()
+                XCTFail("Unsupported API succeeded: \(api)")
+            } catch {
+                XCTAssertEqual((error as NSError).domain, "WebExtensionUnsupportedAPI")
+                XCTAssertTrue(error.localizedDescription.contains(api))
+            }
+        }
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionRequestsSnapshotThenExtensionPageIsCaptured() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try #"{"manifest_version":3,"name":"Snapshot Test","version":"1.0"}"#
+            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        let context = WKWebExtensionContext(for: webExtension)
+
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let pageTab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let pageWebView = pageTab.webView
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 64, height: 48),
+                              styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = pageWebView
+        pageWebView.frame = NSRect(x: 0, y: 0, width: 64, height: 48)
+        tab.webExtensionPageWebView = pageWebView
+        pageWebView.loadHTMLString("<html><body style='background: red'></body></html>", baseURL: nil)
+        let loaded = keyValueObservingExpectation(for: pageWebView, keyPath: "loading", expectedValue: false)
+        await fulfillment(of: [loaded], timeout: 5)
+
+        let configuration = WKSnapshotConfiguration()
+        configuration.afterScreenUpdates = false
+        configuration.snapshotWidth = 32
+        let snapshot = try await tab.snapshot(using: configuration, for: context)
+        let image = try XCTUnwrap(snapshot)
+
+        XCTAssertEqual(image.size.width, 32)
+        XCTAssertEqual(image.size.height, 24)
+        withExtendedLifetime((pageTab, window)) {}
+    }
+
     // MARK: - Equality
 
     @MainActor func testWhenTabsAreIdenticalThenTheyAreEqual() {

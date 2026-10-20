@@ -41,6 +41,11 @@ final class NativeMessagingHostSession {
     var terminationHandler: (@MainActor (Error?) -> Void)?
 
     let hostName: String
+    let diagnosticIdentifier = String(UUID().uuidString.prefix(8))
+
+    private let createdAt = Date()
+    private var queuedMessageCount = 0
+    private var receivedMessageCount = 0
 
     private let process = Process()
     private let inputPipe = Pipe()
@@ -90,6 +95,10 @@ final class NativeMessagingHostSession {
                 MainActor.assumeMainThread {
                     guard let self else { return }
                     self.exitStatus = status
+                    Logger.webExtensions.info("""
+                    [NativeMessaging] process-exited session=\(self.diagnosticIdentifier, privacy: .public) \
+                    host=\(self.hostName, privacy: .public) status=\(status) outputClosed=\(self.outputDidClose)
+                    """)
 
                     // Finish only once the output has closed. A host often writes its last message
                     // and exits at once, and that message explains why it exited.
@@ -105,9 +114,18 @@ final class NativeMessagingHostSession {
         do {
             try process.run()
         } catch {
+            Logger.webExtensions.error("""
+            [NativeMessaging] launch-failed session=\(self.diagnosticIdentifier, privacy: .public) \
+            host=\(self.hostName, privacy: .public) errorDomain=\((error as NSError).domain, privacy: .public) \
+            errorCode=\((error as NSError).code)
+            """)
             throw SessionError.launchFailed(underlying: error)
         }
 
+        Logger.webExtensions.info("""
+        [NativeMessaging] started session=\(self.diagnosticIdentifier, privacy: .public) \
+        host=\(self.hostName, privacy: .public) pid=\(self.process.processIdentifier)
+        """)
         Logger.webExtensions.debug("🔗 Host \(self.hostName, privacy: .public) started, pid \(self.process.processIdentifier, privacy: .public)")
         startReadLoop()
         startErrorLoop()
@@ -117,6 +135,11 @@ final class NativeMessagingHostSession {
     func stop() {
         guard !didFinish else { return }
         didFinish = true
+        Logger.webExtensions.info("""
+        [NativeMessaging] stopped session=\(self.diagnosticIdentifier, privacy: .public) \
+        host=\(self.hostName, privacy: .public) queued=\(self.queuedMessageCount) received=\(self.receivedMessageCount) \
+        elapsedMs=\(Int(Date().timeIntervalSince(self.createdAt) * 1000))
+        """)
         tearDown()
     }
 
@@ -124,6 +147,12 @@ final class NativeMessagingHostSession {
     private func finish(with error: Error?) {
         guard !didFinish else { return }
         didFinish = true
+        Logger.webExtensions.info("""
+        [NativeMessaging] finished session=\(self.diagnosticIdentifier, privacy: .public) \
+        host=\(self.hostName, privacy: .public) failed=\(error != nil) \
+        queued=\(self.queuedMessageCount) received=\(self.receivedMessageCount) \
+        elapsedMs=\(Int(Date().timeIntervalSince(self.createdAt) * 1000))
+        """)
         tearDown()
 
         let handler = terminationHandler
@@ -155,6 +184,13 @@ final class NativeMessagingHostSession {
     func send(_ message: Any) throws {
         let frame = try NativeMessagingFraming.encode(message)
         let handle = inputPipe.fileHandleForWriting
+        queuedMessageCount += 1
+        let sequence = queuedMessageCount
+        let identifier = diagnosticIdentifier
+        Logger.webExtensions.info("""
+        [NativeMessaging] write-queued session=\(identifier, privacy: .public) \
+        sequence=\(sequence) framedBytes=\(frame.count)
+        """)
 
         // Writes go off the main thread, so a host that reads slowly cannot block the browser.
         // They go through one serial queue, so frames reach the host in the order the extension
@@ -163,7 +199,15 @@ final class NativeMessagingHostSession {
         writeQueue.async {
             do {
                 try handle.write(contentsOf: frame)
+                Logger.webExtensions.info("""
+                [NativeMessaging] write-completed session=\(identifier, privacy: .public) \
+                sequence=\(sequence) framedBytes=\(frame.count)
+                """)
             } catch {
+                Logger.webExtensions.error("""
+                [NativeMessaging] write-failed session=\(identifier, privacy: .public) \
+                sequence=\(sequence) errorDomain=\((error as NSError).domain, privacy: .public) errorCode=\((error as NSError).code)
+                """)
                 Logger.webExtensions.error("❌ Write to host failed: \(error.localizedDescription, privacy: .public)")
             }
         }
@@ -188,6 +232,10 @@ final class NativeMessagingHostSession {
 
             outputBuffer.append(chunk)
             let (messages, error) = takeMessages()
+            Logger.webExtensions.info("""
+            [NativeMessaging] read session=\(self.diagnosticIdentifier, privacy: .public) \
+            bytes=\(chunk.count) messages=\(messages.count) bufferedBytes=\(self.outputBuffer.count) failed=\(error != nil)
+            """)
             if let error {
                 handle.readabilityHandler = nil
                 Logger.webExtensions.error("❌ Read from host \(name, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
@@ -199,6 +247,11 @@ final class NativeMessagingHostSession {
             DispatchQueue.main.async {
                 MainActor.assumeMainThread {
                     for message in messages where !self.didFinish {
+                        self.receivedMessageCount += 1
+                        Logger.webExtensions.info("""
+                        [NativeMessaging] host-to-extension session=\(self.diagnosticIdentifier, privacy: .public) \
+                        sequence=\(self.receivedMessageCount) handlerPresent=\(self.messageHandler != nil)
+                        """)
                         self.messageHandler?(message)
                     }
                     if let error {
@@ -240,6 +293,10 @@ final class NativeMessagingHostSession {
     private func didCloseOutput() {
         guard !didFinish else { return }
         outputDidClose = true
+        Logger.webExtensions.info("""
+        [NativeMessaging] output-closed session=\(self.diagnosticIdentifier, privacy: .public) \
+        host=\(self.hostName, privacy: .public) bufferedBytes=\(self.outputBuffer.count)
+        """)
 
         if exitStatus != nil || !process.isRunning {
             finishAfterDrain()

@@ -66,9 +66,11 @@ struct WebExtensionBackgroundPagePatcher {
     }
 
     private let fileManager: FileManager
+    private let useServiceWorkerWrapper: Bool
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, useServiceWorkerWrapper: Bool = true) {
         self.fileManager = fileManager
+        self.useServiceWorkerWrapper = useServiceWorkerWrapper
     }
 
     /// Returns the URL WebKit should load the installed extension from.
@@ -115,7 +117,11 @@ struct WebExtensionBackgroundPagePatcher {
         // install changes with its manifest.
         let sourceURL = isArchive ? installedExtensionURL : installedExtensionURL.appendingPathComponent(Self.manifestFilename)
         let sourceDate = try fileManager.attributesOfItem(atPath: sourceURL.path)[.modificationDate] as? Date
-        let dateStamp = sourceDate.map { String($0.timeIntervalSinceReferenceDate) } ?? ""
+        var dateStamp = (sourceDate.map { String($0.timeIntervalSinceReferenceDate) } ?? "")
+            + (useServiceWorkerWrapper ? "-service-worker-compatibility-v1" : "")
+#if DEBUG
+        if useServiceWorkerWrapper { dateStamp += "-port-probe-v3" }
+#endif
         let stampURL = loadableURL.appendingPathComponent(Self.sourceDateFilename)
         if let copiedStamp = try? String(contentsOf: stampURL, encoding: .utf8), copiedStamp == dateStamp {
             return
@@ -230,6 +236,32 @@ struct WebExtensionBackgroundPagePatcher {
         // neither the shim nor preloaded chunks are needed — or wanted — there.
         let isModule = background[ManifestKey.type] as? String == ManifestKey.moduleType
         let normalizedWorkerPath = Self.normalizedExtensionPath(serviceWorkerPath)
+
+        if useServiceWorkerWrapper {
+            let wrapperFilename = "ddg-service-worker.js"
+            let stubsFilename = "ddg-api-stubs.js"
+            let compatibilityFilename = "ddg-api-compatibility.js"
+            guard normalizedWorkerPath != wrapperFilename else { return false }
+
+            try WebExtensionAPIStubScript.source.write(to: manifestDirectory.appendingPathComponent(stubsFilename),
+                                                       atomically: true, encoding: .utf8)
+            try WebExtensionAPICompatibilityScript.source.write(to: manifestDirectory.appendingPathComponent(compatibilityFilename),
+                                                                atomically: true, encoding: .utf8)
+            var imports = [compatibilityFilename, stubsFilename, normalizedWorkerPath]
+#if DEBUG
+            let probeFilename = "ddg-worker-port-probe.js"
+            try Self.workerPortProbe.write(to: manifestDirectory.appendingPathComponent(probeFilename), atomically: true, encoding: .utf8)
+            imports.insert(probeFilename, at: 2)
+#endif
+            let wrapper = isModule
+                ? imports.map { "import \"/\($0)\";\n" }.joined()
+                : "importScripts(\(imports.map { "\"/\($0)\"" }.joined(separator: ", ")));\n"
+            try wrapper.write(to: manifestDirectory.appendingPathComponent(wrapperFilename), atomically: true, encoding: .utf8)
+            background[ManifestKey.serviceWorker] = wrapperFilename
+            manifest[ManifestKey.background] = background
+            return true
+        }
+
         let chunkPaths = isModule ? [] : chunkScriptPaths(forWorkerAt: normalizedWorkerPath, in: manifestDirectory)
 
         if !isModule {
@@ -353,6 +385,102 @@ struct WebExtensionBackgroundPagePatcher {
 
         """
     }
+
+#if DEBUG
+    // Bounded diagnostic metadata only; the app reads this reserved key through the popup.
+    private static let workerPortProbe = #"""
+    (function() {
+        "use strict";
+        var record = function() {};
+        try {
+            var api = globalThis.chrome || globalThis.browser;
+            if (!api || !api.runtime || globalThis.__ddgWorkerPortProbeInstalled) { return; }
+            var runtime = api.runtime;
+            var state = { api: api, runtime: runtime, retained: [], hooks: [], events: [], runId: String(Date.now()) };
+            globalThis.__ddgWorkerPortProbeInstalled = state;
+            var writes = Promise.resolve();
+            record = function(event, detail) {
+                state.events.push({ event: event, time: Date.now(), detail: detail || "" });
+                if (state.events.length > 40) { state.events.shift(); }
+                var snapshot = { runId: state.runId, events: state.events.slice() };
+                writes = writes.catch(function() {}).then(function() {
+                    if (api.storage && api.storage.local) {
+                        return api.storage.local.set({ __ddgWorkerPortProbe: snapshot });
+                    }
+                });
+                writes.catch(function() {});
+            };
+            function snapshot() {
+                var hooks = state.hooks.map(function(hook) {
+                    return hook.name + ":" + (hook.event.addListener === hook.wrapper);
+                });
+                record("probe.snapshot", hooks.join(","));
+            }
+            ["runtime.onConnect", "runtime.onMessage", "runtime.onStartup", "action.onClicked"].forEach(function(name) {
+                try {
+                    var parts = name.split(".");
+                    var event = api[parts[0]] && api[parts[0]][parts[1]];
+                    if (!event) { return; }
+                    var add = event.addListener;
+                    var wrapper = function() {
+                        record(name + ".registering");
+                        try {
+                            var result = add.apply(this, arguments);
+                            record(name + ".registered");
+                            return result;
+                        } catch (error) {
+                            record(name + ".registration-error", String(error));
+                            throw error;
+                        }
+                    };
+                    state.retained.push(event, add, wrapper);
+                    state.hooks.push({ name: name, event: event, wrapper: wrapper });
+                    event.addListener = wrapper;
+                } catch (error) { record(name + ".probe-error", String(error)); }
+            });
+            function sourceLocations() {
+                // Keep script locations only: exception messages and database contents can contain secrets.
+                return (String(new Error().stack || "").match(/[^\s/@()]+\.js:\d+:\d+/g) || []).slice(0, 6).join(",");
+            }
+            if (globalThis.IDBDatabase && globalThis.IDBTransaction) {
+                var transaction = IDBDatabase.prototype.transaction;
+                IDBDatabase.prototype.transaction = function() {
+                    var result = transaction.apply(this, arguments);
+                    var origin = sourceLocations();
+                    result.addEventListener("abort", function() {
+                        record("indexedDB.transaction-aborted", (result.error ? result.error.name : "unknown") + " " + origin);
+                    }, { once: true });
+                    return result;
+                };
+                var abort = IDBTransaction.prototype.abort;
+                IDBTransaction.prototype.abort = function() {
+                    record("indexedDB.abort-called", sourceLocations());
+                    return abort.apply(this, arguments);
+                };
+            }
+            globalThis.addEventListener("error", function(event) {
+                record("worker.error", String(event.message || "unknown error").slice(0, 300));
+            });
+            globalThis.addEventListener("unhandledrejection", function(event) {
+                record("worker.rejection", String(event.reason).slice(0, 300));
+            });
+            var consoleObject = globalThis.console;
+            var consoleError = consoleObject.error;
+            state.retained.push(consoleObject, consoleError);
+            consoleObject.error = function() {
+                var error = Array.from(arguments).find(function(value) { return value instanceof Error; });
+                record("console.error", error ? String(error).slice(0, 300) : "no Error argument");
+                return consoleError.apply(this, arguments);
+            };
+            record("worker.start", "setTimeout=" + typeof globalThis.setTimeout);
+            snapshot();
+            setTimeout(snapshot, 1000);
+            setTimeout(snapshot, 5000);
+            record("probe.timers-scheduled");
+        } catch (error) { record("probe.setup-error", String(error)); }
+    })();
+    """#
+#endif
 
     private static func htmlEscaped(_ value: String) -> String {
         value

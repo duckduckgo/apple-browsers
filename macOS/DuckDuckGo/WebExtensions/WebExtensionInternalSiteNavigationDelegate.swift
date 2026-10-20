@@ -31,7 +31,6 @@ final class WebExtensionInternalSiteNavigationDelegate: NSObject, WKNavigationDe
 
         guard let tabCollectionViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
               let tab = tabCollectionViewModel.selectedTab else {
-            assertionFailure("No current tab")
             return .allow
         }
 

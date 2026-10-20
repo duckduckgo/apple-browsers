@@ -136,6 +136,75 @@ final class WebExtensionAPICompatibilityScriptTests: XCTestCase {
 
     // MARK: - Reports From Other Scripts
 
+    func testWorkerReportsUseTheReservedNativeChannel() throws {
+        context.evaluateScript("""
+        webkit = undefined;
+        var nativeReports = [];
+        chrome.runtime.getManifest = function() { return { permissions: ["nativeMessaging"] }; };
+        chrome.runtime.sendNativeMessage = function(host, payload) {
+            nativeReports.push({ host: host, payload: payload });
+            return Promise.resolve(null);
+        };
+        """)
+        try evaluateScript()
+
+        context.evaluateScript("""
+        \(WebExtensionAPICompatibilityScript.reportFunctionName)("stubbed", "notifications.create");
+        \(WebExtensionAPICompatibilityScript.reportFunctionName)("stubbed", "notifications.create");
+        listeners.error({ error: new TypeError("Symbol.dispose is not defined.") });
+        """)
+        try assertNoExceptions()
+        try assertTrue("nativeReports.length === 2")
+        try assertTrue("nativeReports[0].host === '\(WebExtensionAPICompatibilityScript.nativeMessagingApplicationIdentifier)'")
+        try assertTrue("nativeReports[0].payload.api === 'notifications.create'")
+        try assertTrue("nativeReports[1].payload.kind === 'error'")
+    }
+
+    func testWorkerWithoutNativePermissionKeepsReportsUntilAPageAcknowledgesThem() throws {
+        context.evaluateScript("""
+        webkit = undefined;
+        var channelMessages = [];
+        chrome.runtime.getManifest = function() { return { background: { service_worker: "worker.js" } }; };
+        chrome.runtime.sendNativeMessage = function() { throw new Error("Must not request native messaging permission"); };
+        globalThis.BroadcastChannel = function() {
+            this.postMessage = function(message) { channelMessages.push(message); };
+        };
+        """)
+        try evaluateScript()
+        context.evaluateScript("""
+        \(WebExtensionAPICompatibilityScript.reportFunctionName)("missing", "tts.speak");
+        var first = channelMessages[0];
+        var channel = globalThis.__ddgAPICompatibilityChannel;
+        channel.onmessage({ data: { type: "ready" } });
+        var afterReady = channelMessages.length;
+        channel.onmessage({ data: { type: "ack", key: first.key } });
+        channel.onmessage({ data: { type: "ready" } });
+        """)
+        try assertNoExceptions()
+        try assertTrue("first.payload.api === 'tts.speak'")
+        try assertTrue("afterReady === 2 && channelMessages.length === 2")
+    }
+
+    func testExtensionPageRelaysWorkerReportsToTheCompatibilityHandler() throws {
+        context.evaluateScript("""
+        var document = {};
+        var channelMessages = [];
+        chrome.runtime.getManifest = function() { return { background: { service_worker: "worker.js" } }; };
+        globalThis.BroadcastChannel = function() {
+            this.postMessage = function(message) { channelMessages.push(message); };
+        };
+        """)
+        try evaluateScript()
+        context.evaluateScript("""
+        globalThis.__ddgAPICompatibilityChannel.onmessage({ data: {
+            type: "report", key: "missing tts.speak", payload: { kind: "missing", api: "tts.speak" }
+        } });
+        """)
+        try assertNoExceptions()
+        try assertReports("[{\"kind\":\"missing\",\"api\":\"tts.speak\"}]")
+        try assertTrue("channelMessages[0].type === 'ready' && channelMessages[1].type === 'ack'")
+    }
+
     func testWhenAnotherScriptReportsAnAPI_ThenItIsPostedOncePerPage() throws {
         try evaluateScript()
 

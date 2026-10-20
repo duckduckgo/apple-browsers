@@ -106,8 +106,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
         }
 
-        // swiftlint:disable:next force_cast
-        return mainWindow?.windowController as! MainWindowController
+        return mainWindow?.windowController as? MainWindowController
     }
 
     func openNewTab(
@@ -123,8 +122,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             return tab
         }
 
-        assertionFailure("Failed to create tab based on configuration")
-        return Tab(content: .newtab)
+        return nil
     }
 
     func openChromePage(_ url: URL, for context: WKWebExtensionContext) -> Bool {
@@ -144,12 +142,21 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         _ action: WKWebExtension.Action,
         for context: WKWebExtensionContext
     ) async throws {
+#if DEBUG
+        Logger.webExtensions.warning("[ExtensionPopupProbe] present-callback id=\(context.uniqueIdentifier, privacy: .public)")
+#endif
         guard let button = buttonForContext(context) else {
+#if DEBUG
+            Logger.webExtensions.warning("[ExtensionPopupProbe] present rejected: toolbar button missing id=\(context.uniqueIdentifier, privacy: .public)")
+#endif
             Logger.webExtensions.error("❌ No navigation bar button for \(context.uniqueIdentifier), popup not shown")
             return
         }
 
         guard action.presentsPopup else {
+#if DEBUG
+            Logger.webExtensions.warning("[ExtensionPopupProbe] present rejected: no popup id=\(context.uniqueIdentifier, privacy: .public)")
+#endif
             // The extension declares an action without a popup, so the click is its own event.
             Logger.webExtensions.debug("🧩 Action of \(context.uniqueIdentifier) presents no popup")
             return
@@ -158,6 +165,9 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         guard let popupPopover = action.popupPopover,
               let popupWebView = action.popupWebView
         else {
+#if DEBUG
+            Logger.webExtensions.warning("[ExtensionPopupProbe] present rejected: popover or web view missing id=\(context.uniqueIdentifier, privacy: .public)")
+#endif
             Logger.webExtensions.error("❌ Action of \(context.uniqueIdentifier) has no popup popover or web view")
             return
         }
@@ -171,6 +181,20 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             }
         }
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+
+#if DEBUG
+        Logger.webExtensions.warning("""
+        [ExtensionPopupProbe] show-returned id=\(context.uniqueIdentifier, privacy: .public) \
+        anchorVisible=\(button.window?.isVisible ?? false) shown=\(popupPopover.isShown) \
+        loading=\(popupWebView.isLoading) progress=\(popupWebView.estimatedProgress) attached=\(popupWebView.window != nil)
+        """)
+        popupWebView.evaluateJavaScript("document.readyState") { result, error in
+            Logger.webExtensions.warning("""
+            [ExtensionPopupProbe] document-reply id=\(context.uniqueIdentifier, privacy: .public) \
+            ready=\((result as? String) ?? "unavailable", privacy: .public) errorCode=\((error as NSError?)?.code ?? 0)
+            """)
+        }
+#endif
 
         let selectedTabChange = (windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
             .$selectedTabViewModel
@@ -205,7 +229,6 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
                     .mainViewController.tabCollectionViewModel,
                 let currentIndex = sourceViewModel.tabCollection.firstIndex(of: tab)
             else {
-                assertionFailure("Failed to find tab collection view model for \(existingTab)")
                 continue
             }
 
@@ -215,7 +238,6 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
     private func buttonForContext(_ context: WKWebExtensionContext) -> NSButton? {
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
-            assertionFailure("No main window controller")
             return nil
         }
 

@@ -80,8 +80,13 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     func connect(_ port: WKWebExtension.MessagePort,
                  applicationIdentifier: String?,
                  for context: WKWebExtensionContext) async throws {
+        Logger.webExtensions.info("""
+        [NativeMessaging] connect-request extension=\(context.uniqueIdentifier, privacy: .public) \
+        host=\(applicationIdentifier ?? "containing-app", privacy: .public)
+        """)
         let hostName = try hostName(from: applicationIdentifier, for: context)
         let session = try makeSession(hostName: hostName, for: context)
+        let identifier = session.diagnosticIdentifier
 
         let key = ObjectIdentifier(port)
         sessions[key] = session
@@ -93,6 +98,9 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
                 return
             }
             port.sendMessage(message) { error in
+                Logger.webExtensions.info("""
+                [NativeMessaging] port-delivery-completed session=\(identifier, privacy: .public) failed=\(error != nil)
+                """)
                 if let error {
                     Logger.webExtensions.error("❌ Port send failed: \(error.localizedDescription, privacy: .public)")
                 }
@@ -101,6 +109,9 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
         session.terminationHandler = { [weak self, weak port] error in
             self?.sessions[key] = nil
+            Logger.webExtensions.info("""
+            [NativeMessaging] disconnect-extension session=\(identifier, privacy: .public) failed=\(error != nil)
+            """)
             if let error {
                 port?.disconnect(throwing: error)
             } else {
@@ -110,6 +121,10 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
         // Extension to host.
         port.messageHandler = { [weak session] message, error in
+            Logger.webExtensions.info("""
+            [NativeMessaging] extension-to-host session=\(identifier, privacy: .public) \
+            messagePresent=\(message != nil) sessionPresent=\(session != nil) failed=\(error != nil)
+            """)
             if let error {
                 Logger.webExtensions.error("❌ Port receive failed: \(error.localizedDescription, privacy: .public)")
                 return
@@ -123,6 +138,7 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         }
 
         port.disconnectHandler = { [weak self] _ in
+            Logger.webExtensions.info("[NativeMessaging] port-closed-by-extension session=\(identifier, privacy: .public)")
             Logger.webExtensions.debug("🔗 Extension closed the port to \(hostName, privacy: .public)")
             self?.sessions[key]?.stop()
             self?.sessions[key] = nil
@@ -135,6 +151,10 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
     func sendMessage(_ message: Any,
                      applicationIdentifier: String?,
                      for context: WKWebExtensionContext) async throws -> Any? {
+        Logger.webExtensions.info("""
+        [NativeMessaging] single-message-request extension=\(context.uniqueIdentifier, privacy: .public) \
+        host=\(applicationIdentifier ?? "containing-app", privacy: .public)
+        """)
         let hostName = try hostName(from: applicationIdentifier, for: context)
         let session = try makeSession(hostName: hostName, for: context)
 
@@ -223,9 +243,15 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         }
 
         let origin = try callerOrigin(for: context, hostName: hostName, manifest: located.manifest)
-        return NativeMessagingHostSession(hostName: hostName,
-                                          executable: located.executable,
-                                          callerOrigin: origin)
+        let session = NativeMessagingHostSession(hostName: hostName,
+                                                 executable: located.executable,
+                                                 callerOrigin: origin)
+        Logger.webExtensions.info("""
+        [NativeMessaging] prepared session=\(session.diagnosticIdentifier, privacy: .public) \
+        extension=\(context.uniqueIdentifier, privacy: .public) host=\(hostName, privacy: .public) \
+        callerOrigin=\(origin, privacy: .public) executable=\(located.executable.lastPathComponent, privacy: .public)
+        """)
+        return session
     }
 
     /// Picks the origin to hand the host as its first argument.

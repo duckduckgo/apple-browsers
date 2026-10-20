@@ -882,6 +882,11 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder
+    /// Controls reloading an unchanged GET document after a late background startup loses its first response.
+    case cpmLateBackgroundDocumentRecovery
+    /// Controls retrying failed embedded background content without replacing its context (P2).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
+    case cpmBackgroundLoadRecovery
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
 

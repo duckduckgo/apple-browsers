@@ -182,6 +182,16 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func performSearchTokenRefresh()
+
+    /// Returns the shared startup task before a main-frame navigation, including idle wakes.
+    /// Its identity stays stable while the same WebKit operation is pending.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>?
+
+    /// The already running startup, without waking background content or recording a navigation.
+    @MainActor
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { get }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -192,6 +202,11 @@ public extension WebExtensionManaging {
 
     @MainActor
     func recoverEmbeddedBackgroundAfterNetworkProcessReplacement() {}
+
+    func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? { nil }
+
+    @MainActor
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { nil }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

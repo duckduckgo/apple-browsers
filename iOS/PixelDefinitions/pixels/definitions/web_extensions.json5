@@ -554,5 +554,63 @@
                 "description": "Whether the ad-blocking extension itself was loaded (true) or also missing (false)."
             }
         ]
+    },
+    "web_extension_cpm_episode": {
+        "description": "One terminal CPM failure-episode report: a qualifying dashboard response or the five-minute observation deadline. Time while the app is suspended (iOS background, macOS sleep) does not count: waits and the deadline stop, pending waits restart in full on resume (8 s for a response wait, 30 s for an extension-load wait), and the deadline keeps at least 30 s after resume. First failure and later stuck/reload transitions emit nothing. Response attribution does not prove initResp delivery or recovery of every failed tab. No response by the deadline is not proof of permanent failure. Unfinished in-memory episodes may be lost on process termination. Includes allowlisted first-failure facts, background readiness/view age and conditional attributed error-6 timing/app state, and the existing bounded bg_events timeline, which may contain error descriptors; no tab/document identifiers, diagnostic counts or app/memory ages. Load facts are frozen at the first failure: pending can later fail, and errors observed later are not included. One logical report uses dailyAndCount: the first completed episode of the day sends the same summary in daily and count requests; subsequent episodes send count only. Daily estimates affected installations per day; count measures completed episodes.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle", "exception"],
+        "expires": "2027-01-15",
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "type": "string",
+                "enum": ["session_restoration", "tab_crash", "extension_reload", "other"],
+                "description": "Navigation context of the first timeout in this episode."
+            },
+            {
+                "key": "was_stuck",
+                "type": "boolean",
+                "description": "Whether, after the first failure, a regular (non-restoration) navigation also timed out in a different tab than the one that opened the episode. Repeated timeouts in the same tab do not set it, although they still trigger the recovery reload. False does not distinguish a transient or page-specific failure from a persistent one in a single-tab session; reload_state helps to tell them apart. True does not prove all tabs failed."
+            },
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": [
+                    "failed_measurement_response",
+                    "failed_tab_response",
+                    "other_tab_response",
+                    "unattributed_response",
+                    "no_response_before_deadline"
+                ],
+                "description": "Dashboard response on the timed-out measurement, a later measurement on a failed tab, another tab, an ambiguous current-document match, or no qualifying response by the deadline. No document-level ACK is implied."
+            },
+            {
+                "key": "reload_state",
+                "type": "string",
+                "enum": ["none", "pending", "failed", "loaded", "response_timed_out"],
+                "description": "Latest embedded-extension reload evidence during the episode: no reload observed, replacement in progress, context replacement failed, replacement loaded, or its first eligible CPM measurement timed out. Loaded alone does not mean messaging recovered."
+            },
+            {
+                "key": "response_after",
+                "type": "string",
+                "enum": ["under_30s", "30s_to_1m", "1m_to_deadline"],
+                "description": "Elapsed time from first failure to qualifying dashboard response: under 30 seconds, 30 to under 60 seconds, or at least 60 seconds before the deadline. Measured on the monitor's own time, which excludes time the app was suspended. Omitted when no response was observed."
+            },
+            "extension_context_loaded",
+            "background_view_alive",
+            "background_web_process_alive",
+            "background_web_process_responsive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_events",
+            "background_ready_after",
+            "background_view_age",
+            "background_load_error_after",
+            "background_load_error_app_state"
+        ],
+        "suffixes": ["daily_count", "platform", "form_factor"]
     }
 }

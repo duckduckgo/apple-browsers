@@ -15,30 +15,26 @@
  */
 
 /*
- * Evaluates document policy in the app's isolated content world. Signing state
- * and asynchronous sandbox verdicts never enter the page's JavaScript realm.
+ * Evaluates document policy in the app's isolated content world. A subframe
+ * asks its parent's copy of this script about its embedding element directly,
+ * so the page never observes these checks.
  */
 (() => {
     if (globalThis.__ddgSitePermissionsGeolocationPolicy) {
         return;
     }
-    const callThen = Function.prototype.call.bind(Promise.prototype.then);
-    const scheduleTask = globalThis.setTimeout.bind(globalThis);
-    const cancelTask = globalThis.clearTimeout.bind(globalThis);
     const apply = globalThis.Reflect.apply;
-    const addWindowEventListener = globalThis.addEventListener;
-    const postWindowMessage = globalThis.postMessage;
     const querySelectorAll = globalThis.Document?.prototype?.querySelectorAll;
     const elementQuerySelectorAll = globalThis.Element?.prototype?.querySelectorAll;
     const elementMatches = globalThis.Element?.prototype?.matches;
     const hasAttribute = globalThis.Element?.prototype?.hasAttribute;
+    const getAttribute = globalThis.Element?.prototype?.getAttribute;
+    const baseURI = Object.getOwnPropertyDescriptor(globalThis.Node?.prototype ?? {}, "baseURI")?.get;
     const nodeListLength = Object.getOwnPropertyDescriptor(globalThis.NodeList?.prototype ?? {}, "length")?.get;
     const nodeListItem = globalThis.NodeList?.prototype?.item;
-    const mapGet = globalThis.Map.prototype.get;
-    const mapSet = globalThis.Map.prototype.set;
-    const mapDelete = globalThis.Map.prototype.delete;
     const weakSetAdd = globalThis.WeakSet.prototype.add;
     const weakSetHas = globalThis.WeakSet.prototype.has;
+    const NativeURL = globalThis.URL;
     const NativeMutationObserver = globalThis.MutationObserver;
     const observeMutations = NativeMutationObserver?.prototype?.observe;
     const mutationRecordPrototype = globalThis.MutationRecord?.prototype ?? {};
@@ -48,11 +44,6 @@
     const mutationRecordOldValue = Object.getOwnPropertyDescriptor(mutationRecordPrototype, "oldValue")?.get;
     const mutationRecordAddedNodes = Object.getOwnPropertyDescriptor(mutationRecordPrototype, "addedNodes")?.get;
     const freeze = globalThis.Object.freeze;
-    const contentWindowGetters = [
-        Object.getOwnPropertyDescriptor(globalThis.HTMLIFrameElement?.prototype ?? {}, "contentWindow")?.get,
-        Object.getOwnPropertyDescriptor(globalThis.HTMLFrameElement?.prototype ?? {}, "contentWindow")?.get
-    ].filter(Boolean);
-    const signingToken = "${SIGNING_TOKEN}";
     const randomToken = () => {
         if (typeof globalThis.crypto?.getRandomValues !== "function") {
             return null;
@@ -61,44 +52,7 @@
         globalThis.crypto.getRandomValues(values);
         return Array.from(values, (value) => value.toString(16).padStart(8, "0")).join("");
     };
-    const nonce = randomToken();
     const documentID = randomToken();
-
-    const textEncoder = globalThis.TextEncoder ? new globalThis.TextEncoder() : null;
-    const encodeText = textEncoder?.encode.bind(textEncoder);
-    const subtleCrypto = globalThis.crypto?.subtle;
-    const importHMACKey = subtleCrypto?.importKey.bind(subtleCrypto);
-    const signHMAC = subtleCrypto?.sign.bind(subtleCrypto);
-    const NativeUint8Array = globalThis.Uint8Array;
-    const hmacKey = importHMACKey && encodeText
-        ? callThen(importHMACKey("raw", encodeText(signingToken), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]), undefined, () => null)
-        : Promise.resolve(null);
-    const numberToString = globalThis.Number.prototype.toString;
-    const noncePattern = /^[0-9a-f]{32}$/;
-    const testPattern = globalThis.RegExp.prototype.test;
-
-    // This entire Promise graph belongs to the isolated content world.
-    const signSandboxProbe = (value, completion) => {
-        callThen(hmacKey, (key) => {
-            if (!key || !signHMAC || !encodeText) {
-                completion(null);
-                return;
-            }
-            try {
-                callThen(signHMAC("HMAC", key, encodeText(value)), (signature) => {
-                    const bytes = new NativeUint8Array(signature);
-                    let result = "";
-                    for (let index = 0; index < 32; index++) {
-                        const hex = apply(numberToString, bytes[index], [16]);
-                        result += bytes[index] < 16 ? `0${hex}` : hex;
-                    }
-                    completion(result);
-                }, () => completion(null));
-            } catch (_) {
-                completion(null);
-            }
-        }, () => completion(null));
-    };
 
     // Cross-origin frames are unsupported. Same-origin frames also need the
     // platform's effective policy: origin alone cannot prove that an iframe's
@@ -118,29 +72,10 @@
         (globalThis.location.protocol === "https:" || globalThis.location.protocol === "http:");
     const nativePermissionsPolicy = document.permissionsPolicy ?? document.featurePolicy;
     const nativePolicyAllowsFeature = nativePermissionsPolicy?.allowsFeature;
-    const policyAllowsGeolocation = () => {
-        try {
-            if (typeof nativePolicyAllowsFeature === "function") {
-                return apply(nativePolicyAllowsFeature, nativePermissionsPolicy, ["geolocation"]);
-            }
-            // Native code checks the top-level response policy. Without this API,
-            // subframe response policies cannot be verified, so deny subframes.
-            return globalThis.top === globalThis;
-        } catch (_) {
-            return false;
-        }
-    };
 
-    // A child cannot reliably inspect its embedding element. Parent and child
-    // scripts exchange signed sandbox verdicts, including ancestor restrictions.
-    // Signing authenticates these public messages without exposing the signing key.
-    const sandboxProbeChannel = "ddg-site-permissions-geolocation-sandbox";
-    const sandboxRequestValue = (childNonce) => `${sandboxProbeChannel}:request:${childNonce}`;
-    const sandboxResponseValue = (childNonce, sandboxed) =>
-        `${sandboxProbeChannel}:response:${childNonce}:${sandboxed ? "1" : "0"}`;
     const parentWindow = globalThis.parent;
-    const hasOpaqueOrigin = globalThis.origin === "null";
-    const pendingSandboxProbeSources = new Map();
+    const documentOrigin = globalThis.origin;
+    const hasOpaqueOrigin = documentOrigin === "null";
     const sandboxedEmbeddingFrames = new WeakSet();
 
     const rememberSandboxedFrame = (element, force = false) => {
@@ -167,7 +102,7 @@
     };
 
     // Removing a sandbox attribute does not unsandbox the current document.
-    // Remember observed restrictions so a later probe cannot overlook them.
+    // Remember observed restrictions so a later check cannot overlook them.
     let sandboxHistoryAvailable = false;
     let sandboxHistoryObserver;
     if (NativeMutationObserver && observeMutations && elementMatches && hasAttribute &&
@@ -208,177 +143,124 @@
         } catch (_) {}
     }
 
-    const embeddingFrameForSource = (source) => {
-        if (!source || !querySelectorAll || !hasAttribute || !nodeListLength || !nodeListItem || contentWindowGetters.length === 0) {
-            return null;
+    const sourceOrigin = (element, childOrigin) => {
+        const source = apply(getAttribute, element, ["src"]);
+        if (source === null || apply(getAttribute, element, ["srcdoc"]) !== null) {
+            return documentOrigin;
         }
-        const elements = apply(querySelectorAll, document, ["iframe,frame"]);
-        const elementCount = apply(nodeListLength, elements, []);
-        for (let index = 0; index < elementCount; index++) {
-            const element = apply(nodeListItem, elements, [index]);
-            for (let getterIndex = 0; getterIndex < contentWindowGetters.length; getterIndex++) {
-                try {
-                    if (apply(contentWindowGetters[getterIndex], element, []) === source) {
-                        return element;
-                    }
-                } catch (_) {}
-            }
-        }
-        return null;
-    };
-
-    let finishSandboxProbe;
-    let sandboxProbeTimeout;
-    let sandboxVerdictPromise;
-    // The embedding page can observe the probe, so it starts only when this frame
-    // or a descendant requests location or queries its permission state.
-    // Missing or unverifiable parent replies deny access after the timeout.
-    const sandboxVerdict = () => {
-        if (sandboxVerdictPromise) {
-            return sandboxVerdictPromise;
-        }
-        if (parentWindow === globalThis) {
-            sandboxVerdictPromise = Promise.resolve(hasOpaqueOrigin);
-            return sandboxVerdictPromise;
-        }
-        sandboxVerdictPromise = new Promise((resolve) => {
-            let finished = false;
-            finishSandboxProbe = (sandboxed) => {
-                if (finished) {
-                    return;
-                }
-                finished = true;
-                cancelTask(sandboxProbeTimeout);
-                resolve(sandboxed || hasOpaqueOrigin);
-            };
-            sandboxProbeTimeout = scheduleTask(() => finishSandboxProbe(true), 1_000);
-        });
         try {
-            if (nonce === null) {
-                finishSandboxProbe(true);
-            } else {
-                signSandboxProbe(sandboxRequestValue(nonce), (proof) => {
-                    if (proof === null) {
-                        finishSandboxProbe(true);
-                        return;
-                    }
-                    try {
-                        apply(postWindowMessage, parentWindow, [{
-                            channel: sandboxProbeChannel,
-                            kind: "request",
-                            nonce,
-                            proof
-                        }, "*"]);
-                    } catch (_) {
-                        finishSandboxProbe(true);
-                    }
-                });
-            }
+            const url = new NativeURL(source, apply(baseURI, element, []));
+            return url.protocol === "http:" || url.protocol === "https:" ? url.origin : childOrigin;
         } catch (_) {
-            finishSandboxProbe(true);
+            return documentOrigin;
         }
-        return sandboxVerdictPromise;
     };
 
-    const handleSandboxProbeMessage = (event) => {
+    // Evaluates the iframe allow attribute like WebKit's container policy. Without a
+    // geolocation directive, the default allowlist is 'self'. A same-origin frame can
+    // already reach its parent's API, so the current attribute is enough here.
+    const allowAttributeAllowsGeolocation = (element, childOrigin) => {
+        const directives = (apply(getAttribute, element, ["allow"]) ?? "").split(";");
+        for (const directive of directives) {
+            const value = directive.trim();
+            const name = value.split(/[\t\n\f\r :]/, 1)[0];
+            if (name !== "geolocation") {
+                continue;
+            }
+            // WebKit also accepts the legacy colon separator after a feature name.
+            const allowlist = value.slice(name.length).replace(/^:/, "").trim();
+            if (!allowlist) {
+                return sourceOrigin(element, childOrigin) === childOrigin;
+            }
+            let allowed = false;
+            for (const token of allowlist.split(/[\t\n\f\r ]+/)) {
+                const keyword = token.toLowerCase();
+                if (token === "*") {
+                    return true;
+                }
+                if (keyword === "'none'") {
+                    return false;
+                }
+                if (keyword === "'self'") {
+                    allowed ||= documentOrigin === childOrigin;
+                } else if (keyword === "'src'") {
+                    allowed ||= sourceOrigin(element, childOrigin) === childOrigin;
+                } else {
+                    try {
+                        allowed ||= new NativeURL(token).origin === childOrigin;
+                    } catch (_) {}
+                }
+            }
+            return allowed;
+        }
+        return documentOrigin === childOrigin;
+    };
+
+    // A cross-origin parent hides frameElement, so its descendants fail closed, as
+    // do frames whose parent lacks this script. Native code checks the top-level
+    // response policy.
+    const documentVerdict = () => {
+        if (parentWindow === globalThis) {
+            return freeze({ isSandboxed: hasOpaqueOrigin, isPolicyAllowed: true });
+        }
         try {
-            const data = event.data;
-            const source = event.source;
-            const kind = data?.kind;
-            const childNonce = data?.nonce;
-            const proof = data?.proof;
-            const reportedSandboxed = data?.sandboxed;
-            if (data?.channel !== sandboxProbeChannel ||
-                typeof childNonce !== "string" ||
-                !apply(testPattern, noncePattern, [childNonce])) {
-                return;
-            }
-
-            if (kind === "response") {
-                if (source !== parentWindow ||
-                    typeof reportedSandboxed !== "boolean" ||
-                    typeof proof !== "string" || proof.length !== 64 ||
-                    !finishSandboxProbe) {
-                    return;
-                }
-                signSandboxProbe(sandboxResponseValue(childNonce, reportedSandboxed), (expectedProof) => {
-                    if (expectedProof !== null && childNonce === nonce && proof === expectedProof) {
-                        finishSandboxProbe(reportedSandboxed);
-                    }
+            const element = globalThis.frameElement;
+            const parentPolicy = parentWindow.__ddgSitePermissionsGeolocationPolicy;
+            if (element && typeof parentPolicy?.embeddedFrameVerdict === "function") {
+                const verdict = parentPolicy.embeddedFrameVerdict(element, documentOrigin);
+                return freeze({
+                    isSandboxed: hasOpaqueOrigin || verdict.isSandboxed !== false,
+                    isPolicyAllowed: verdict.isPolicyAllowed === true
                 });
-                return;
             }
-
-            if (kind !== "request" || typeof proof !== "string" || proof.length !== 64) {
-                return;
-            }
-            const pinnedSource = apply(mapGet, pendingSandboxProbeSources, [childNonce]);
-            if (pinnedSource && pinnedSource !== source) {
-                return;
-            }
-            const embeddingFrame = embeddingFrameForSource(source);
-            if (!embeddingFrame) {
-                return;
-            }
-            apply(mapSet, pendingSandboxProbeSources, [childNonce, source]);
-            const directlySandboxed = !sandboxHistoryAvailable ||
-                apply(weakSetHas, sandboxedEmbeddingFrames, [embeddingFrame]) ||
-                apply(hasAttribute, embeddingFrame, ["sandbox"]);
-            const clearPendingSource = () => { apply(mapDelete, pendingSandboxProbeSources, [childNonce]); };
-            signSandboxProbe(sandboxRequestValue(childNonce), (expectedProof) => {
-                if (expectedProof === null || proof !== expectedProof) {
-                    clearPendingSource();
-                    return;
-                }
-                try {
-                    callThen(sandboxVerdict(), (ancestorSandboxed) => {
-                        const sandboxed = ancestorSandboxed || directlySandboxed;
-                        signSandboxProbe(sandboxResponseValue(childNonce, sandboxed), (responseProof) => {
-                            clearPendingSource();
-                            if (responseProof !== null) {
-                                try {
-                                    apply(postWindowMessage, source, [{
-                                        channel: sandboxProbeChannel,
-                                        kind: "response",
-                                        nonce: childNonce,
-                                        sandboxed,
-                                        proof: responseProof
-                                    }, "*"]);
-                                } catch (_) {}
-                            }
-                        });
-                    }, clearPendingSource);
-                } catch (_) {
-                    clearPendingSource();
-                }
-            });
         } catch (_) {}
+        return freeze({ isSandboxed: true, isPolicyAllowed: false });
     };
 
-    apply(addWindowEventListener, globalThis, ["message", (event) => {
-        handleSandboxProbeMessage(event);
-    }, false]);
+    // Called by a child frame's copy of this script, with the child's frameElement.
+    const embeddedFrameVerdict = (element, childOrigin) => {
+        const ownVerdict = documentVerdict();
+        let isSandboxed = true;
+        let isPolicyAllowed = false;
+        try {
+            if (apply(elementMatches, element, ["iframe,frame"])) {
+                isSandboxed = !sandboxHistoryAvailable ||
+                    apply(weakSetHas, sandboxedEmbeddingFrames, [element]) ||
+                    apply(hasAttribute, element, ["sandbox"]);
+                isPolicyAllowed = allowAttributeAllowsGeolocation(element, childOrigin);
+            }
+        } catch (_) {}
+        return freeze({
+            isSandboxed: ownVerdict.isSandboxed || isSandboxed,
+            isPolicyAllowed: ownVerdict.isPolicyAllowed && isPolicyAllowed
+        });
+    };
+
+    const policyAllowsGeolocation = (verdict) => {
+        try {
+            if (typeof nativePolicyAllowsFeature === "function") {
+                return apply(nativePolicyAllowsFeature, nativePermissionsPolicy, ["geolocation"]);
+            }
+            return verdict.isPolicyAllowed;
+        } catch (_) {
+            return false;
+        }
+    };
 
     const isSecureContext = globalThis.isSecureContext === true;
     const isFramePolicyEligible = hasNetworkOrigin && isSameOriginAsTopLevel;
-    // The embedding page can observe the probe, so it is skipped at document load
-    // and whenever another constraint already denies the request. Without a probe,
-    // the frame stays sandboxed.
-    const getConstraints = (probeSandbox) => {
-        const requestedDocumentID = documentID;
-        const needsSandboxVerdict = probeSandbox !== false && isSecureContext &&
-            requestedDocumentID !== null && isFramePolicyEligible && policyAllowsGeolocation();
-        const verdict = needsSandboxVerdict ? sandboxVerdict() : Promise.resolve(true);
-        return callThen(verdict, (isSandboxed) => freeze({
-            documentID: requestedDocumentID,
+    const getConstraints = () => {
+        const verdict = documentVerdict();
+        return freeze({
+            documentID,
             isSecureContext,
-            isPolicyAllowed: requestedDocumentID !== null && isFramePolicyEligible && policyAllowsGeolocation(),
-            isSandboxed
-        }));
+            isPolicyAllowed: documentID !== null && isFramePolicyEligible && policyAllowsGeolocation(verdict),
+            isSandboxed: verdict.isSandboxed
+        });
     };
 
     Object.defineProperty(globalThis, "__ddgSitePermissionsGeolocationPolicy", {
         configurable: false,
-        value: freeze({ documentID, getConstraints })
+        value: freeze({ documentID, getConstraints, embeddedFrameVerdict })
     });
 })();

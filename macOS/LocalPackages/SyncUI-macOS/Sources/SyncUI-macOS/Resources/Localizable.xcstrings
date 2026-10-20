@@ -7619,66 +7619,6 @@
         }
       }
     },
-    "preferences.sync.turn-off-sync-v3.data-remains.footer" : {
-      "comment" : "Footer under the list of devices on the turn off Sync & Backup dialog",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lesezeichen, Autofill-Daten und Duck.ai-Chats bleiben auf deinen Geräten."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Bookmarks, Autofill data and Duck.ai chats will remain on your devices."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los marcadores, los datos de autocompletado y los chats de Duck.ai permanecerán en tus dispositivos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les signets, les données de saisie automatique et les discussions Duck.ai resteront sur vos appareils."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I segnalibri, i dati di compilazione automatica e le chat di Duck.ai resteranno sui tuoi dispositivi."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bladwijzers, automatisch ingevulde gegevens en Duck.ai-chats blijven op je apparaten staan."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zakładki, dane autouzupełniania i czaty Duck.ai pozostaną na Twoich urządzeniach."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os marcadores, dados de preenchimento automático e conversas do Duck.ai permanecerão nos teus dispositivos."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закладки, данные автозаполнения и чаты Duck.ai останутся на ваших устройствах."
-          }
-        }
-      }
-    },
     "preferences.sync.turn-off-sync-v3.delete.button" : {
       "comment" : "Button on the turn off Sync & Backup dialog that turns off Sync & Backup on all devices and deletes the server data",
       "extractionState" : "extracted_with_value",

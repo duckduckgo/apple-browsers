@@ -186,11 +186,6 @@ public final class WebExtensionLoader: WebExtensionLoading {
         if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest) {
             installThirdPartyScriptsIfNeeded(on: controller)
             reportDroppedPermissions(of: context.webExtension)
-            let worker = (context.webExtension.manifest["background"] as? [String: Any])?["service_worker"] as? String
-            Logger.webExtensions.info("""
-            [ExtensionWorker] loading id=\(identifier, privacy: .public) \
-            serviceWorker=\(worker != nil) wrapped=\(worker == "ddg-service-worker.js")
-            """)
         }
 #endif
 

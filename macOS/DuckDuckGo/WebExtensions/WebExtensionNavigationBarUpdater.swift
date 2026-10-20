@@ -53,9 +53,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private var buttons = Set<ExtensionButton>()
     private var updateCancellable: AnyCancellable?
     private var actionCancellable: AnyCancellable?
-#if DEBUG
-    private var errorProbeCancellable: AnyCancellable?
-#endif
 
     /// Whether the toolbar buttons are shown. The navigation bar sets it from the selected tab's
     /// content, because an extension popup makes no sense on a tab without a web page.
@@ -80,24 +77,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         self.isPrivateWindow = isPrivateWindow
 
         super.init()
-
-#if DEBUG
-        Logger.webExtensions.warning("[ExtensionPopupProbe] toolbar ready pid=\(ProcessInfo.processInfo.processIdentifier)")
-        errorProbeCancellable = NotificationCenter.default
-            .publisher(for: WKWebExtensionContext.errorsDidUpdateNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { notification in
-                guard let context = notification.object as? WKWebExtensionContext else { return }
-                for error in context.errors {
-                    guard let detail = (error as AnyObject) as? NSError else { continue }
-                    let message = detail.userInfo[NSDebugDescriptionErrorKey] as? String ?? detail.localizedDescription
-                    Logger.webExtensions.warning("""
-                    [ExtensionPopupProbe] error-notification id=\(context.uniqueIdentifier, privacy: .public) \
-                    domain=\(detail.domain, privacy: .public) code=\(detail.code) message=\(message, privacy: .public)
-                    """)
-                }
-            }
-#endif
 
         subscribeToThemeChanges()
     }
@@ -277,42 +256,17 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
             return
         }
 
-#if DEBUG
-        Logger.webExtensions.warning("[ExtensionPopupProbe] click id=\(identifier, privacy: .public) attached=\(sender.window != nil)")
-#endif
-
         let context = webExtensionManagerProvider()?.loadedExtensions.first { context in
             context.uniqueIdentifier == identifier
         }
 
         guard let context, !isPrivateWindow || context.hasAccessToPrivateData else {
-#if DEBUG
-            Logger.webExtensions.warning("[ExtensionPopupProbe] click rejected: context missing or private access denied id=\(identifier, privacy: .public)")
-#endif
             assertionFailure("Navigation bar button for extension has no matching extension context")
             return
         }
 
         let selectedTab = selectedTabProvider()
         let action = currentAction(of: context)
-
-#if DEBUG
-        Logger.webExtensions.warning("""
-        [ExtensionPopupProbe] before-perform id=\(identifier, privacy: .public) \
-        selectedTab=\(selectedTab != nil) enabled=\(action?.isEnabled ?? false) \
-        presentsPopup=\(action?.presentsPopup ?? false) shown=\(action?.popupPopover?.isShown ?? false) \
-        loading=\(action?.popupWebView?.isLoading ?? false) errors=\(context.errors.count)
-        """)
-        for error in context.errors {
-            // Class-cast the proxy, avoiding Swift's Error-to-NSError bridge.
-            guard let detail = (error as AnyObject) as? NSError else { continue }
-            let message = detail.userInfo[NSDebugDescriptionErrorKey] as? String ?? detail.localizedDescription
-            Logger.webExtensions.warning("""
-            [ExtensionPopupProbe] context-error id=\(identifier, privacy: .public) \
-            domain=\(detail.domain, privacy: .public) code=\(detail.code) message=\(message, privacy: .public)
-            """)
-        }
-#endif
 
         // A second click on the button of the open popup closes it.
         if let action, action.popupPopover?.isShown == true {
@@ -329,36 +283,6 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
         """)
 
         context.performAction(for: selectedTab)
-
-#if DEBUG
-        Task { @MainActor [weak context] in
-            for delay in [1, 4] {
-                try? await Task.sleep(for: .seconds(delay))
-                guard let context else { return }
-                let pendingAction = selectedTab.flatMap { context.action(for: $0) } ?? context.action(for: nil)
-                let webView = pendingAction?.popupWebView
-                Logger.webExtensions.warning("""
-                [ExtensionPopupProbe] after-perform id=\(identifier, privacy: .public) \
-                shown=\(pendingAction?.popupPopover?.isShown ?? false) loading=\(webView?.isLoading ?? false) \
-                progress=\(webView?.estimatedProgress ?? -1) attached=\(webView?.window != nil) errors=\(context.errors.count)
-                """)
-                if let webView {
-                    Task { @MainActor in
-                        do {
-                            let history = try await webView.callAsyncJavaScript("""
-                                const api = globalThis.chrome || globalThis.browser;
-                                const stored = await api.storage.local.get("__ddgWorkerPortProbe");
-                                return JSON.stringify(stored.__ddgWorkerPortProbe || []);
-                                """, arguments: [:], in: nil, contentWorld: .page)
-                            Logger.webExtensions.warning("[ExtensionPopupProbe] worker-history id=\(identifier, privacy: .public) events=\((history as? String) ?? "unavailable", privacy: .public)")
-                        } catch {
-                            Logger.webExtensions.warning("[ExtensionPopupProbe] worker-history failed id=\(identifier, privacy: .public) error=\(String(describing: error), privacy: .public)")
-                        }
-                    }
-                }
-            }
-        }
-#endif
     }
 
     @objc private func showAPICompatibilityLog(sender: NSMenuItem) {

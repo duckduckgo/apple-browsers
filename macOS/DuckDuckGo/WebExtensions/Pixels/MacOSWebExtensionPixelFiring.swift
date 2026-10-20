@@ -190,6 +190,7 @@ enum WebExtensionPixel: PixelKit.Event {
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
         case .debugCPM(let metadata):
+            // Preserve the shared canonical CPM names on both platforms.
             return metadata.name
         case .cpmNetworkProcessRecoveryApplied:
             return "web_extension_cpm_network_process_recovery_applied"
@@ -363,7 +364,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmMessagingEpisode:
+        case .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
         case .cpmNetworkProcessRecoveryApplied:

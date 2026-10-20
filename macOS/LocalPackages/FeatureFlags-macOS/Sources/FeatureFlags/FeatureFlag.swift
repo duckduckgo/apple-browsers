@@ -872,7 +872,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewSafariFilePicker:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
         case .dataImportHistory:
-            Config(source: .remoteReleasable(DataImportSubfeature.historyImport))
+            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:

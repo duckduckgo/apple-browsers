@@ -175,9 +175,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var backgroundRecovery: CPMBackgroundReadinessRecovery? {
         (cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery
     }
-    private var recoveryInstrumentation: CPMRecoveryInstrumentation {
-        WebExtensionCPMRecoveryInstrumentation(pixels: pixelFiring)
-    }
 
     // MARK: - AsyncStream
 
@@ -246,7 +243,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery = CPMBackgroundReadinessRecovery(
             isEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
             isApplicationInBackground: isApplicationInBackground,
-            instrumentation: WebExtensionCPMRecoveryInstrumentation(pixels: pixelFiring)
+            pixelFiring: pixelFiring
         )
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
@@ -779,7 +776,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 self.backgroundRecovery?.backgroundCompleted(startupID, succeeded: error == nil)
                 let didWaitForNavigation = self.navigationWaitContexts.remove(identifier) != nil
                 if error == nil, (elapsed >= 1 && didWaitForNavigation) || fix == .backgroundLoadRetry {
-                    self.recoveryInstrumentation.record(fix, outcome: .backgroundReady)
+                    self.pixelFiring.fire(.cpmRecovery(fix, outcome: .backgroundReady))
                 }
             }
             if self?.embeddedBackgroundStartup == startup {

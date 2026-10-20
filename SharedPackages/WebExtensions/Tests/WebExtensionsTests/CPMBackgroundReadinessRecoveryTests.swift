@@ -29,14 +29,14 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
     private var date = Date()
     private var reloads = 0
     private let reloadNavigation = WKNavigation()
-    private var outcomes: [CPMRecoveryOutcome] = []
-    private var detections = 0
+    private let pixelFiring = CapturingRecoveryPixelFiring()
+    private var outcomes: [CPMRecoveryOutcome] { pixelFiring.outcomes }
+    private var detections: Int { pixelFiring.detections }
 
     private func makeRecovery() -> CPMBackgroundReadinessRecovery {
         CPMBackgroundReadinessRecovery(isEnabled: { [unowned self] in enabled },
                                        isApplicationInBackground: { [unowned self] in backgrounded },
-                                       instrumentation: Instrumentation(callback: { [unowned self] in outcomes.append($0) },
-                                                                        detection: { [unowned self] in detections += 1 }),
+                                       pixelFiring: pixelFiring,
                                        now: { [unowned self] in date })
     }
 
@@ -366,18 +366,161 @@ final class CPMBackgroundReadinessRecoveryTests: XCTestCase {
             XCTAssertEqual(metadata?.parameters, ["outcome": outcome.rawValue])
         }
     }
+
+    func testRealWebViewDoesNotReloadEditedInput() async throws {
+        try await assertRealDocumentRecovery(html: "<input id='draft'>",
+                                             edit: "document.querySelector('#draft').value = 'unsaved'; true",
+                                             expectsReload: false)
+    }
+
+    func testRealWebViewDoesNotReloadEditedIframeAfterFocusLeavesIt() async throws {
+        try await assertRealDocumentRecovery(html: "<iframe srcdoc=\"<input id='draft'>\"></iframe>",
+                                             edit: """
+                                             const frame = document.querySelector('iframe');
+                                             const input = frame.contentDocument.querySelector('input');
+                                             input.value = 'unsaved';
+                                             input.focus();
+                                             input.blur();
+                                             document.body.tabIndex = -1;
+                                             document.body.focus();
+                                             document.activeElement === document.body
+                                             """,
+                                             expectsReload: false)
+    }
+
+    func testRealWebViewDoesNotReloadFocusedShadowInput() async throws {
+        try await assertRealDocumentRecovery(html: "<div id='host'></div>",
+                                             edit: """
+                                             const host = document.querySelector('#host');
+                                             const shadow = host.attachShadow({ mode: 'open' });
+                                             shadow.innerHTML = '<input>';
+                                             const input = shadow.querySelector('input');
+                                             input.value = 'unsaved';
+                                             input.focus();
+                                             document.activeElement === host
+                                             """,
+                                             expectsReload: false)
+    }
+
+    func testRealWebViewDoesNotReloadNonGETDocument() async throws {
+        try await assertRealDocumentRecovery(html: "<p>Pristine document</p>", isGET: false, expectsReload: false)
+    }
+
+    func testRealWebViewReloadsPristineGETDocument() async throws {
+        try await assertRealDocumentRecovery(html: "<input value='unchanged'>", expectsReload: true)
+    }
+
+    private func assertRealDocumentRecovery(html: String, edit: String? = nil, isGET: Bool = true,
+                                            expectsReload: Bool, file: StaticString = #filePath, line: UInt = #line) async throws {
+        let loaded = expectation(description: "Fixture document loaded")
+        let navigationDelegate = RecoveryDocumentNavigationDelegate(loaded: loaded)
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        configuration.setURLSchemeHandler(RecoveryDocumentSchemeHandler(html: html), forURLScheme: "cpm-recovery-test")
+        let webView = RecoveryDocumentWebView(frame: CGRect(x: 0, y: 0, width: 640, height: 480), configuration: configuration)
+        webView.navigationDelegate = navigationDelegate
+        webView.load(URLRequest(url: URL(string: "cpm-recovery-test://document")!))
+        await fulfillment(of: [loaded], timeout: 5)
+        XCTAssertFalse(webView.isLoading, file: file, line: line)
+        XCTAssertNotNil(webView.backForwardList.currentItem, file: file, line: line)
+        if let edit {
+            let edited = try await webView.evaluateJavaScript(edit, in: nil, contentWorld: .page) as? Bool
+            XCTAssertEqual(edited, true, "Fixture must reach its intended edited/focused state", file: file, line: line)
+        }
+
+        let reload = expectation(description: "Production recovery requests reload")
+        reload.isInverted = !expectsReload
+        webView.onReload = { reload.fulfill() }
+        let reloaded = expectsReload ? expectation(description: "Recovery navigation finishes") : nil
+        navigationDelegate.onSubsequentFinish = { reloaded?.fulfill() }
+        let recovery = makeRecovery()
+        let startup = UUID()
+        recovery.backgroundStarted(startup, isFirstLoad: true)
+        recovery.navigationCommitted(in: "tab", url: url)
+        recovery.registerDocument(in: "tab", webView: webView, isGET: isGET)
+        recovery.initializationFailed(in: "tab")
+        recovery.backgroundCompleted(startup, succeeded: true)
+        await fulfillment(of: [reload] + (reloaded.map { [$0] } ?? []), timeout: expectsReload ? 5 : 1)
+        XCTAssertEqual(webView.reloadCount, expectsReload ? 1 : 0, file: file, line: line)
+        XCTAssertEqual(detections, 1, "Detection must remain independent of the reload veto", file: file, line: line)
+        XCTAssertEqual(outcomes, expectsReload ? [.reloadStarted] : [], file: file, line: line)
+        withExtendedLifetime(navigationDelegate) {}
+    }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
-private struct Instrumentation: CPMRecoveryInstrumentation {
-    let callback: (CPMRecoveryOutcome) -> Void
-    let detection: () -> Void
-    func record(_ fix: CPMRecoveryFix, outcome: CPMRecoveryOutcome) {
-        XCTAssertEqual(fix, .lateDocumentReload)
-        callback(outcome)
+@MainActor
+private final class RecoveryDocumentWebView: WKWebView {
+    var onReload: (() -> Void)?
+    private(set) var reloadCount = 0
+
+    override func reload() -> WKNavigation? {
+        reloadCount += 1
+        let navigation = super.reload()
+        onReload?()
+        return navigation
+    }
+}
+
+@MainActor
+private final class RecoveryDocumentSchemeHandler: NSObject, WKURLSchemeHandler {
+    private let html: Data
+
+    init(html: String) { self.html = Data(html.utf8) }
+
+    func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
+        let response = URLResponse(url: urlSchemeTask.request.url!, mimeType: "text/html",
+                                   expectedContentLength: html.count, textEncodingName: "utf-8")
+        urlSchemeTask.didReceive(response)
+        urlSchemeTask.didReceive(html)
+        urlSchemeTask.didFinish()
     }
 
-    func recordStartupResponseMissing() {
-        detection()
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+}
+
+@MainActor
+private final class RecoveryDocumentNavigationDelegate: NSObject, WKNavigationDelegate {
+    private let loaded: XCTestExpectation
+    private var didFinishInitialLoad = false
+    var onSubsequentFinish: (() -> Void)?
+
+    init(loaded: XCTestExpectation) { self.loaded = loaded }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if didFinishInitialLoad {
+            onSubsequentFinish?()
+        } else {
+            didFinishInitialLoad = true
+            loaded.fulfill()
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        XCTFail("Fixture navigation failed: \(error)")
+        loaded.fulfill()
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        XCTFail("Fixture provisional navigation failed: \(error)")
+        loaded.fulfill()
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class CapturingRecoveryPixelFiring: WebExtensionPixelFiring {
+    private(set) var outcomes: [CPMRecoveryOutcome] = []
+    private(set) var detections = 0
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        switch event {
+        case .cpmRecovery(let fix, let outcome):
+            XCTAssertEqual(fix, .lateDocumentReload)
+            outcomes.append(outcome)
+        case .cpmStartupResponseMissing:
+            detections += 1
+        default:
+            XCTFail("Unexpected recovery pixel: \(event)")
+        }
     }
 }

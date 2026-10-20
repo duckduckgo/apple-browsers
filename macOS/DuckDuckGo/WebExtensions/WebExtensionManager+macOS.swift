@@ -26,7 +26,7 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 @MainActor
-final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
+private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
     private let featureFlagger: FeatureFlagger
 
     init(featureFlagger: FeatureFlagger) {

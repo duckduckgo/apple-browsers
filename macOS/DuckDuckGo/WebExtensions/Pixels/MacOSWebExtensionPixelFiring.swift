@@ -274,8 +274,6 @@ private extension DuckDuckGoWebExtensionType {
 
 @available(macOS 15.4, *)
 struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
-    var pixelFiring: PixelKitFiring? = PixelKit.shared
-
     func fire(_ event: WebExtensionPixelEvent) {
         let pixel: WebExtensionPixel
         let frequency: PixelKit.Frequency
@@ -341,7 +339,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         } else {
             frequency = .dailyAndStandard
         }
-        pixelFiring?.fire(pixel, frequency: frequency)
+        PixelKit.fire(pixel, frequency: frequency)
     }
 }
 

@@ -157,7 +157,7 @@ public actor DefaultTokenRefresher: TokenRefreshing {
             let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken,
                                                    refreshToken: refreshTokenResponse.refreshToken,
                                                    refreshID: refreshID)
-            Logger.OAuthClient.log("Tokens refreshed, access token expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
+            Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
             return refreshedTokens
         } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyError.errorCode == .invalidTokenRequest {
             Logger.OAuthClient.error("Failed to refresh token: \(apiError.description, privacy: .public)")

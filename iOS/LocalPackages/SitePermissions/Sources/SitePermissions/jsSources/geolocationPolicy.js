@@ -361,13 +361,14 @@
 
     const isSecureContext = globalThis.isSecureContext === true;
     const isFramePolicyEligible = hasNetworkOrigin && isSameOriginAsTopLevel;
-    // Registration at document load passes false so loading a frame never posts
-    // the probe. Without a probe, a subframe stays sandboxed.
+    // The embedding page can observe the probe, so it is skipped at document load
+    // and whenever another constraint already denies the request. Without a probe,
+    // the frame stays sandboxed.
     const getConstraints = (probeSandbox) => {
         const requestedDocumentID = documentID;
-        const verdict = probeSandbox === false && parentWindow !== globalThis
-            ? Promise.resolve(true)
-            : sandboxVerdict();
+        const needsSandboxVerdict = probeSandbox !== false && isSecureContext &&
+            requestedDocumentID !== null && isFramePolicyEligible && policyAllowsGeolocation();
+        const verdict = needsSandboxVerdict ? sandboxVerdict() : Promise.resolve(true);
         return callThen(verdict, (isSandboxed) => freeze({
             documentID: requestedDocumentID,
             isSecureContext,

@@ -1189,7 +1189,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
-    func testWhenFetchingAuditLogWithoutCursorThenSendsAuthenticatedRequestAndDecodesVersions() async throws {
+    func testWhenFetchingAuditLogWithoutCursorThenSendsAuthenticatedRequestAndDecodesStringVersions() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
@@ -1198,8 +1198,8 @@ final class AccountManagerTests: XCTestCase {
         {
             "audit_log": {
                 "entries": [
-                    { "id": "event-string", "version": "1", "payload": "jwe-string" },
-                    { "id": "event-number", "version": 1, "payload": "jwe-number" }
+                    { "id": "historical-event", "version": "1", "payload": "historical-jwe" },
+                    { "id": "current-event", "version": "1", "payload": "current-jwe" }
                 ],
                 "after": "after-cursor"
             }
@@ -1215,9 +1215,9 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertEqual(request.headers["Authorization"], "Bearer token-1")
         XCTAssertEqual(request.parameters, [:])
         XCTAssertNil(request.body)
-        XCTAssertEqual(page.entries.map(\.id), ["event-string", "event-number"])
+        XCTAssertEqual(page.entries.map(\.id), ["historical-event", "current-event"])
         XCTAssertEqual(page.entries.map(\.version), ["1", "1"])
-        XCTAssertEqual(page.entries.map(\.payload), ["jwe-string", "jwe-number"])
+        XCTAssertEqual(page.entries.map(\.payload), ["historical-jwe", "current-jwe"])
         XCTAssertEqual(page.after, "after-cursor")
         XCTAssertNil(page.before)
     }

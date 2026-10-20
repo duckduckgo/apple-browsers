@@ -101,6 +101,10 @@ public enum WebExtensionPixelEvent {
     /// Missing first-document dashboard response after a successful first background startup.
     case cpmStartupResponseMissing
 
+    /// A stale background was restarted after an observed Network process replacement.
+    /// This records applying the mitigation, not confirmed messaging recovery.
+    case cpmNetworkProcessRecoveryApplied
+
     /// An extension turned password saving off, which makes it the default password manager.
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     /// Bitwarden is installed and loaded. Fired once a day.
@@ -253,6 +257,10 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_episode"
             frequency = .dailyAndCount
             parameters = report.pixelParameters
+        case .cpmNetworkProcessRecoveryApplied:
+            name = "web_extension_cpm_network_process_recovery_applied"
+            frequency = .dailyAndCount
+            parameters = [:]
         case .installed, .installError, .uninstalled, .uninstallError, .uninstalledAll,
              .uninstallAllError, .loaded, .loadError, .reloadError, .stateChecked, .expectedExtensionNotLoaded,
              .adBlockingScriptletsNotFetched, .embeddedInstalled, .embeddedUpgraded,

@@ -196,10 +196,6 @@ extension DataBrokerProtectionManager {
         case commandTimedOut
     }
 
-    private final class DebugLaunchReply {
-        var value: Bool?
-    }
-
     func handleDebugLaunch() -> Bool {
         do {
             guard let options = try PIRDebugLaunchOptions.parse() else { return false }
@@ -228,21 +224,10 @@ extension DataBrokerProtectionManager {
         Logger.dataBrokerProtection.log("PIR debug launch: reading stored profile.")
         guard let dataManager else { throw DebugLaunchError.unavailableDataManager }
         let existingProfile = try dataManager.fetchProfile()
-        let profileToSave: DataBrokerProtectionProfile?
-        let shouldReset: Bool
-        switch options.profileSetup {
-        case .seedIfMissing(let profile):
-            profileToSave = existingProfile == nil ? profile : nil
-            shouldReset = false
-            if existingProfile != nil {
-                Logger.dataBrokerProtection.log("PIR debug launch: preserving existing profile and history; fixture skipped.")
-            }
-        case .resetAndSeed(let profile):
-            profileToSave = profile
-            shouldReset = true
-        case nil:
-            profileToSave = nil
-            shouldReset = false
+        let shouldReset = options.profileSetup?.resetBeforeSeeding == true
+        let profileToSave = existingProfile == nil || shouldReset ? options.profileSetup?.profile : nil
+        if options.profileSetup != nil, profileToSave == nil {
+            Logger.dataBrokerProtection.log("PIR debug launch: preserving existing profile and history; fixture skipped.")
         }
         guard existingProfile != nil || profileToSave != nil else {
             Logger.dataBrokerProtection.error("PIR debug launch: server requires a saved profile or valid fixture.")
@@ -338,18 +323,17 @@ extension DataBrokerProtectionManager {
     }
 
     private static func debugReply(timeout: TimeInterval = 5, _ request: (@escaping (Bool) -> Void) -> Void) async throws -> Bool {
-        let reply = DebugLaunchReply()
-        request { value in
-            Task { @MainActor in
-                if reply.value == nil { reply.value = value }
+        let stream = AsyncStream<Bool>(bufferingPolicy: .bufferingOldest(1)) { continuation in
+            request { value in
+                continuation.yield(value)
+                continuation.finish()
             }
         }
-        let deadline = ProcessInfo.processInfo.systemUptime + timeout
-        while true {
+        return try await withTimeout(timeout, throwing: DebugLaunchError.commandTimedOut) {
+            var iterator = stream.makeAsyncIterator()
+            let reply = await iterator.next()
             try Task.checkCancellation()
-            if let value = reply.value { return value }
-            guard ProcessInfo.processInfo.systemUptime < deadline else { throw DebugLaunchError.commandTimedOut }
-            try await Task.sleep(nanoseconds: 50_000_000)
+            return reply ?? false
         }
     }
 }

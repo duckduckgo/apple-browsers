@@ -128,6 +128,17 @@ class AccountManagingMock: AccountManaging {
         return fetchAuditLogStub
     }
 
+    var decodeAuditLogEntriesCalls: [([AuditLogEntry], SyncAccount)] = []
+    var decodeAuditLogEntriesStub: [AuditLogEntryDecodingResult] = []
+    var decodeAuditLogEntriesError: Error?
+    func decodeAuditLogEntriesForDebug(_ entries: [AuditLogEntry], for account: SyncAccount) async throws -> [AuditLogEntryDecodingResult] {
+        decodeAuditLogEntriesCalls.append((entries, account))
+        if let decodeAuditLogEntriesError {
+            throw decodeAuditLogEntriesError
+        }
+        return decodeAuditLogEntriesStub
+    }
+
     var fetchDevicesForAccountCalls: [SyncAccount] = []
     var fetchDevicesForAccountStub = RegisteredDeviceMappingResult(devices: [.mock], needsCurrentDeviceInfoRepair: false)
     var fetchDevicesForAccountError: Error?

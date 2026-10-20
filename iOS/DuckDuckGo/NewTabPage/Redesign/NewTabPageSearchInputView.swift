@@ -37,7 +37,7 @@ struct NewTabPageSearchInputView: View {
                     .padding(.horizontal, Metrics.cardPadding)
             }
             NewTabPageRestingSearchField(textEntryMode: model.textEntryMode,
-                                        isAIChatButtonShown: model.settings.isAIChatEnabled && !model.settings.isModeToggleShown,
+                                        isAIChatButtonShown: model.isAIChatButtonShown,
                                         isVoiceSearchEnabled: model.settings.isVoiceSearchEnabled,
                                         onActivate: onActivate,
                                         onVoiceSearch: onVoiceSearch)
@@ -165,7 +165,7 @@ private enum Metrics {
 
 #Preview("Toggle shown") {
     NewTabPageSearchInputView(model: NewTabPageSearchInputModel(readSettings: {
-        .init(isModeToggleShown: true, isAIChatEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
+        .init(isModeToggleShown: true, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
     }),
                              onActivate: { _ in },
                              onVoiceSearch: { _ in })
@@ -175,7 +175,7 @@ private enum Metrics {
 
 #Preview("Search only") {
     NewTabPageSearchInputView(model: NewTabPageSearchInputModel(readSettings: {
-        .init(isModeToggleShown: false, isAIChatEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
+        .init(isModeToggleShown: false, isAIChatShortcutEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
     }),
                              onActivate: { _ in },
                              onVoiceSearch: { _ in })

@@ -30,6 +30,7 @@ final class CriticalPathsTests: XCTestCase {
         static let mobileDeviceRow = "SyncSettings.deviceRow.mobile"
         static let successCopyCodeButton = "SyncSuccessCopyCodeButton"
         static let successDoneButton = "SyncSuccessDoneButton"
+        static let turnOffSyncDeleteServerDataButton = "SyncSettings.turnOffSync.deleteServerDataButton"
     }
 
     private enum Titles {
@@ -39,15 +40,15 @@ final class CriticalPathsTests: XCTestCase {
         static let syncWithAnotherDevice = "Sync With Another Device"
         static let syncThisDeviceOnly = "Sync This Device Only"
         static let recoveryCode = "I Have a Recovery Code"
-        static let getStarted = "Get Started"
+        static let recoverSyncedData = "Recover Synced Data"
         static let enterCodeTab = "Enter Code"
         static let pasteCode = "Paste Code"
         static let paste = "Paste"
         static let deviceDetails = "Details..."
         static let turnOffSync = "Turn Off Sync & Backup"
         static let removeDevice = "Remove Device"
-        static let turnOffAndDeleteServerData = "Turn Off and Delete Server Data"
-        static let deleteServerData = "Delete Server Data"
+        static let remove = "Remove"
+        static let deleteServerDataConfirmation = "You can’t undo this action."
         static let shareFavorites = "Share Favorites Across Devices"
         static let syncFailed = "Sync failed."
         static let gotIt = "Got It"
@@ -59,6 +60,7 @@ final class CriticalPathsTests: XCTestCase {
     override func setUp() {
         app = XCUIApplication(bundleIdentifier: "com.duckduckgo.macos.browser.review")
         app.launchEnvironment["UITEST_MODE"] = "1"
+        app.launchEnvironment["FEATURE_FLAGS"] = "syncImprovedPairingFlow=true"
         app.launch()
         ensureMainWindowOpen()
         selectDevelopmentEnvironment()
@@ -271,7 +273,7 @@ final class CriticalPathsTests: XCTestCase {
         let sheetsQuery = settingsWindow.sheets
 
         settingsWindow.buttons[Titles.recoveryCode].assertExists().click()
-        sheetsQuery.buttons[Titles.getStarted].assertExists().click()
+        sheetsQuery.buttons[Titles.recoverSyncedData].assertExists().click()
         sheetsQuery.buttons[Titles.paste].assertExists(with: Timeouts.syncOperation).click()
 
         sheetsQuery.buttons[Identifiers.successDoneButton].assertExists(with: Timeouts.syncOperation).click()
@@ -307,8 +309,8 @@ final class CriticalPathsTests: XCTestCase {
         let sheetsQuery = settingsWindow.sheets
 
         openCurrentDeviceDetails()
-        sheetsQuery.buttons[Titles.turnOffSync].assertExists().click()
         sheetsQuery.buttons[Titles.removeDevice].assertExists().click()
+        sheetsQuery.buttons[Titles.remove].assertExists().click()
     }
 
     private func deleteServerData() {
@@ -316,8 +318,12 @@ final class CriticalPathsTests: XCTestCase {
         let sheetsQuery = settingsWindow.sheets
 
         settingsWindow.swipeUp()
-        settingsWindow.buttons[Titles.turnOffAndDeleteServerData].assertExists().click()
-        sheetsQuery.buttons[Titles.deleteServerData].assertExists().click()
+        settingsWindow.buttons[Titles.turnOffSync].assertExists().click()
+
+        let deleteServerDataButton = sheetsQuery.buttons[Identifiers.turnOffSyncDeleteServerDataButton]
+        deleteServerDataButton.assertExists(with: Timeouts.syncOperation).click()
+        sheetsQuery.staticTexts[Titles.deleteServerDataConfirmation].assertExists()
+        deleteServerDataButton.click()
     }
 
     private func openCurrentDeviceDetails() {
@@ -335,7 +341,7 @@ final class CriticalPathsTests: XCTestCase {
                 .click()
         }
 
-        settingsWindow.sheets.buttons[Titles.turnOffSync].assertExists()
+        settingsWindow.sheets.buttons[Titles.removeDevice].assertExists()
     }
 
     private func assertSyncIsEnabled() {

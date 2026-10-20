@@ -159,6 +159,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Skip the automatic update check triggered when the release notes page loads
     case skipReleaseNotesUpdateCheck
 
+    /// Makes updates more prominent, such as in the address bar and browser menu
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219579052808597?focus=true
+    case moreProminentUpdates
+
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
@@ -409,6 +413,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
+
+    /// Turns long pastes in the native Duck.ai inputs into pasted-text attachments.
+    /// https://app.asana.com/0/0/1219207880593588/f
+    case unifiedToggleInputPastedText
 
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
@@ -876,7 +884,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case protectedDataLoadGate
     /// Failsafe for waiting on embedded background content before restoring web pages.
     case stateRestorationGate
-    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health, and for the
+    /// background-load readiness observation, which asks the context to join the load already in progress to learn how it ended.
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder

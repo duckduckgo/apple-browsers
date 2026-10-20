@@ -103,7 +103,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
     case webExtensionStateRestorationGate
 
-    /// Failsafe for Web Extensions background-process diagnostics observation.
+    /// Failsafe for Web Extensions background-process diagnostics observation: the forwarding delegate and the
+    /// background-load readiness observation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
 
@@ -248,6 +249,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Skip the automatic update check triggered when the release notes page loads
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1213741383383740
     case skipReleaseNotesUpdateCheck
+
+    /// Makes updates more prominent, such as in the address bar and browser menu
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219579052808597?focus=true
+    case moreProminentUpdates
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
@@ -846,6 +851,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.automaticUpdatesOnly), category: .updates)
         case .skipReleaseNotesUpdateCheck:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.skipReleaseNotesUpdateCheck), category: .updates)
+        case .moreProminentUpdates:
+            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.moreProminentUpdates), category: .updates)
         case .unifiedURLPredictor:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .addressBarPerformanceInstrumentation:
@@ -1052,7 +1059,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .syncImprovedPairingFlow:
-            Config(source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:

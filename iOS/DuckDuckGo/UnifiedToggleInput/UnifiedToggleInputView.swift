@@ -514,6 +514,7 @@ final class UnifiedToggleInputView: UIView {
         }
         let slot: BottomCardSlot = messages.isEmpty ? (editReplaceDisclaimerCard.isHidden ? .none : .editDisclaimer) : .footer
         applyBottomSlot(slot)
+        editReplaceDisclaimerCard.alpha = slot == .editDisclaimer ? 1 : 0
         reportFooterVisibility()
         footerCard.layoutIfNeeded()
         return wasVisible || !messages.isEmpty

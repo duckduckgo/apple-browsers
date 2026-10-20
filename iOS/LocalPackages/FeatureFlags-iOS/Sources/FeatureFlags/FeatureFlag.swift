@@ -361,6 +361,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/task/1218397803938552
     case unifiedToggleInputAttachmentPrivacy
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219661921884283
+    case unifiedToggleInputPastedText
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     /// https://app.asana.com/1/137249556945/task/1218992416130371
     case aiChatAttachmentPrivacyIPad
@@ -415,7 +418,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617265
     case webExtensionLightweightReload
 
-    /// Failsafe for Web Extensions background-process diagnostics observation.
+    /// Failsafe for Web Extensions background-process diagnostics observation: the forwarding delegate and the
+    /// background-load readiness observation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218782530802146
     case cpmBackgroundDelegateProxy
 
@@ -889,6 +893,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
         case .unifiedToggleInputAttachmentPrivacy:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPrivacy))
+        case .unifiedToggleInputPastedText:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputPastedText))
         case .aiChatAttachmentPrivacyIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadAttachmentPrivacy))
         case .freeTrialConversionWideEvent:

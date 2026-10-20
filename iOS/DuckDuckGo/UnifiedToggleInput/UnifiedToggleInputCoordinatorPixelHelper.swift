@@ -200,6 +200,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             firing.fireDailyAndCount(.unifiedToggleInputImageRemoved, surfaceParameters(surface))
         case .file, .invalidFile:
             firing.fireDailyAndCount(.unifiedToggleInputFileRemoved, surfaceParameters(surface))
+        case .pastedText:
+            break
         }
     }
 
@@ -211,6 +213,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             firing.fireDailyAndCount(.unifiedToggleInputEditImageRemoved, surfaceParameters(surface))
         case .file, .invalidFile:
             firing.fireDailyAndCount(.unifiedToggleInputEditFileRemoved, surfaceParameters(surface))
+        case .pastedText:
+            break
         }
     }
 
@@ -370,7 +374,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         attachments.contains { attachment in
             switch attachment {
             case .file, .invalidFile: return true
-            case .image, .tab: return false
+            case .image, .tab, .pastedText: return false
             }
         }
     }

@@ -121,8 +121,8 @@ final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
         let selection = AIChatSelectionContextData(id: "selection", title: "Page", url: "https://example.com",
                                                   content: "selected", truncated: false, fullContentLength: 8, wordCount: 1)
         let prompts: [AIChatNativePrompt] = [
-            .queryPrompt("", autoSubmit: true, images: [.init(data: "image", format: "png")]),
-            .queryPrompt("", autoSubmit: true, files: [.init(data: "file", fileName: "file.txt", mimeType: "text/plain")]),
+            .queryPrompt("", autoSubmit: true, attachments: AIChatPromptAttachments(images: [.init(data: "image", format: "png")])),
+            .queryPrompt("", autoSubmit: true, attachments: AIChatPromptAttachments(files: [.init(data: "file", fileName: "file.txt", mimeType: "text/plain")])),
             .queryPrompt("", autoSubmit: true, pageContext: .single(context)),
             .queryPrompt("", autoSubmit: true, pageContext: .multiple([context])),
             .queryPrompt("", autoSubmit: true, selections: [selection])
@@ -132,7 +132,7 @@ final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
             XCTAssertTrue(info.hasContent)
             XCTAssertTrue(info.hasAutoSubmittedPrompt)
         }
-        let empty = AIChatNativePrompt.queryPrompt(" \n ", autoSubmit: true, images: [], files: [], pageContext: .multiple([]), selections: [])
+        let empty = AIChatNativePrompt.queryPrompt(" \n ", autoSubmit: true, attachments: AIChatPromptAttachments(images: [], files: []), pageContext: .multiple([]), selections: [])
         XCTAssertFalse(AIChatOpeningPromptInfo(prompt: empty).hasContent)
         XCTAssertFalse(AIChatOpeningPromptInfo(prompt: empty).hasAutoSubmittedPrompt)
         let draft = AIChatNativePrompt.queryPrompt("", autoSubmit: false, pageContext: .multiple([context]))
@@ -146,7 +146,7 @@ final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
         for query in emptyQueries {
             let opening = AIChatOpeningRequest.Query(query: query, autoSend: true, flowType: .mobileAppOnboarding,
                                                       tools: [.webSearch], modelId: "model", reasoningEffort: .medium,
-                                                      images: [], files: [], termsAccepted: true)
+                                                      attachments: .none, termsAccepted: true)
             XCTAssertNil(opening.sharedPrompt)
         }
         let images: [AIChatNativePrompt.NativePromptImage] = [.init(data: "image", format: "png")]
@@ -154,9 +154,9 @@ final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
         for autoSend in [false, true] {
             let opening = AIChatOpeningRequest.Query(query: nil, autoSend: autoSend, flowType: .mobileAppOnboarding,
                                                       tools: [.webSearch], modelId: "model", reasoningEffort: .medium,
-                                                      images: images, files: files, termsAccepted: true)
+                                                      attachments: AIChatPromptAttachments(images: images, files: files), termsAccepted: true)
             XCTAssertEqual(opening.sharedPrompt, .queryPrompt("", autoSubmit: autoSend, toolChoice: [AIChatRAGTool.webSearch.rawValue],
-                                                               images: images, files: files, modelId: "model", reasoningEffort: .medium)
+                                                               attachments: AIChatPromptAttachments(images: images, files: files), modelId: "model", reasoningEffort: .medium)
                 .withTermsAccepted(true))
             XCTAssertEqual(opening.promptInfo.hasAutoSubmittedPrompt, autoSend)
         }
@@ -171,8 +171,8 @@ final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
             (.queryPrompt("", autoSubmit: true, pageContext: .multiple([context])), false),
             (.queryPrompt(" \n ", autoSubmit: true, selections: [selection]), false),
             (.queryPrompt("text", autoSubmit: true, pageContext: .multiple([context])), true),
-            (.queryPrompt("", autoSubmit: true, images: [.init(data: "image", format: "png")], pageContext: .multiple([context])), true),
-            (.queryPrompt("", autoSubmit: true, files: [.init(data: "file", fileName: "file.txt", mimeType: "text/plain")]), true)
+            (.queryPrompt("", autoSubmit: true, attachments: AIChatPromptAttachments(images: [.init(data: "image", format: "png")]), pageContext: .multiple([context])), true),
+            (.queryPrompt("", autoSubmit: true, attachments: AIChatPromptAttachments(files: [.init(data: "file", fileName: "file.txt", mimeType: "text/plain")])), true)
         ]
         for (prompt, handsOverQuery) in cases {
             let info = AIChatOpeningPromptInfo(prompt: prompt)
@@ -190,7 +190,7 @@ final class OpenAIChatFromAddressBarHandlingTests: XCTestCase {
     @MainActor
     func testOrdinaryOpeningKeepsEntryPixelAndDeepLinkMeasurementRules() {
         let query = AIChatOpeningRequest.Query(query: "   ", autoSend: true, flowType: .default, tools: nil,
-                                               modelId: nil, reasoningEffort: nil, images: nil, files: nil, termsAccepted: false)
+                                               modelId: nil, reasoningEffort: nil, attachments: .none, termsAccepted: false)
         let deepLink = AIChatOpeningRequest(url: .example, payload: nil, source: .addressBarPrompt, opensNewTab: true,
                                             prompt: .sharedHandler(query, reportsNewTab: false, fromDeepLink: true))
         XCTAssertFalse(deepLink.shouldMeasureOpening)

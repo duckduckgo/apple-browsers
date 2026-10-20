@@ -128,7 +128,7 @@ struct UTIAttachmentPolicy {
 
     func isAttachmentSupported(_ attachment: UnifiedToggleInputAttachment) -> Bool {
         switch attachment {
-        case .tab:
+        case .tab, .pastedText:
             return true
         case .image:
             return model?.supportsImageUpload == true

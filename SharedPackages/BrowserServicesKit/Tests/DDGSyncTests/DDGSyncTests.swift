@@ -169,6 +169,70 @@ final class DDGSyncTests: XCTestCase {
         }
     }
 
+    func testFetchAuditLogEntriesForDebugReturnsDecodedEntryDetails() async throws {
+        let accountManager = dependencies.account as! AccountManagingMock
+        let entry = AuditLogEntry(id: "event-id", version: "1", payload: "encrypted-payload")
+        accountManager.fetchAuditLogStub = AuditLogPage(entries: [entry], after: "head-cursor", before: "older-cursor")
+        accountManager.decodeAuditLogEntriesStub = [
+            .decoded(AuditLogEvent(id: entry.id,
+                                   type: .login,
+                                   occurredAt: Date(timeIntervalSince1970: 1_788_359_391),
+                                   device: RegisteredDevice(id: "device-id", name: "Test Mac", type: "desktop"),
+                                   actor: nil,
+                                   deviceMapping: nil,
+                                   actorMapping: nil))
+        ]
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let report = try await syncService.fetchAuditLogEntriesForDebug()
+
+        XCTAssertEqual(report.entryCount, 1)
+        XCTAssertTrue(report.hasAfterCursor)
+        XCTAssertTrue(report.hasBeforeCursor)
+        XCTAssertTrue(report.formattedEntries.contains("ID: event-id"))
+        XCTAssertTrue(report.formattedEntries.contains("Version: 1"))
+        XCTAssertTrue(report.formattedEntries.contains("Status: Decoded"))
+        XCTAssertTrue(report.formattedEntries.contains("Type: login"))
+        XCTAssertTrue(report.formattedEntries.contains("Test Mac • desktop • device-id"))
+        XCTAssertTrue(report.formattedEntries.contains("Payload: encrypted (omitted)"))
+        XCTAssertFalse(report.formattedEntries.contains("encrypted-payload"))
+        XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
+        XCTAssertNil(accountManager.fetchAuditLogCalls.first?.1)
+        XCTAssertNil(accountManager.fetchAuditLogCalls.first?.2)
+        XCTAssertEqual(accountManager.decodeAuditLogEntriesCalls.first?.0.map(\.id), [entry.id])
+    }
+
+    func testFetchAuditLogEntriesForDebugWithoutAccountThrows() async {
+        (dependencies.secureStore as! SecureStorageStub).theAccount = nil
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        do {
+            _ = try await syncService.fetchAuditLogEntriesForDebug()
+            XCTFail("Expected missing account to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .accountNotFound)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testFetchAuditLogEntriesForDebugPropagatesRequestFailure() async {
+        let accountManager = dependencies.account as! AccountManagingMock
+        accountManager.fetchAuditLogError = SyncError.unexpectedStatusCode(418)
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        do {
+            _ = try await syncService.fetchAuditLogEntriesForDebug()
+            XCTFail("Expected request failure to throw")
+        } catch let error as SyncError {
+            XCTAssertEqual(error, .unexpectedStatusCode(418))
+            XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
+            XCTAssertTrue(accountManager.decodeAuditLogEntriesCalls.isEmpty)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testRecoveryCodeWhenScopedAccessCredentialsAndPairingV2CodeAreEnabledReturnsV2Code() throws {
         dependencies.isScopedAccessCredentialsEnabled = { true }
         dependencies.isPairingV2CodeEnabled = { true }

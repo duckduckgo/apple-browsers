@@ -636,8 +636,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     @discardableResult public func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         Logger.subscriptionTokensManagement.log("Get tokens \(policy.description, privacy: .public)")
+        // Snapshot of the stored token before the request, used to detect a replacement and for the sign-out pixel
         let tokenBeforeAttempt = localTokenSnapshot()
 
+        // Before creating a new account, try to restore the missing token from the backup
         if policy == .createIfNeeded, tokenBeforeAttempt == .missing, tokenRecoveryCoordinator != nil {
             if (try? await recoverToken(trigger: .missingToken, deadPrimary: nil)) != nil {
                 Logger.subscriptionTokensManagement.log("Restored the missing token before creating an account")
@@ -645,6 +647,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
 
         do {
+            // Get the token, refreshing it or creating an account as the policy requires, and update the cached state
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
@@ -652,6 +655,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             self.updateCachedIsUserAuthenticated(true)
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
+            // No token stored: restore it from the backup if possible
             if tokenRecoveryCoordinator != nil, let restored = try? await recoverToken(trigger: .missingToken, deadPrimary: nil) {
                 updateCachedUserEntitlements(restored.decodedAccessToken.subscriptionEntitlements)
                 updateCachedIsUserAuthenticated(true)
@@ -661,11 +665,13 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             self.updateCachedUserEntitlements([])
             throw SubscriptionManagerError.noTokenAvailable
         } catch let tokenRequestError {
+            // Any other failure: report it, then handle the server rejections
             pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, tokenRequestError))
             Logger.subscriptionTokensManagement.error("Getting token \(policy, privacy: .public) failed: \(tokenRequestError, privacy: .public)")
 
             switch tokenRequestError {
             case OAuthClientError.unknownAccount:
+                // The account doesn't exist on the server: sign out without trying to recover
                 let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 await automaticallySignOut(recoveryOutcome: .notApplicable,
                                            failedRequest: failedRequest,
@@ -674,6 +680,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.invalidTokenRequest:
+                // The refresh was rejected, but a new valid token was stored in the meantime (for example by another process): use it
                 if case .present(let before) = tokenBeforeAttempt,
                    case .present(let stored) = localTokenSnapshot(),
                    stored.refreshToken != before.refreshToken,
@@ -686,6 +693,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 }
                 let failedRequest = await captureFailedTokenRequestState(policy: policy, tokenBeforeAttempt: tokenBeforeAttempt)
                 pixelHandler.handle(pixel: .invalidRefreshToken)
+
+                // Recover the token through the recovery coordinator (in the apps: backup, then App Store restore) and return it
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery(deadPrimary: tokenBeforeAttempt.tokenContainer)
                     updateCachedUserEntitlements(recoveredTokenContainer.decodedAccessToken.subscriptionEntitlements)
@@ -694,6 +703,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil, signedOut: false)
                     return recoveredTokenContainer
                 } catch TokenBackupError.sessionChanged {
+                    // The user signed out, signed in or switched account during the recovery: keep that session, don't sign out
                     Logger.subscriptionTokensManagement.log("The session changed during token recovery, keeping the current session")
                     if case .present(let current) = localTokenSnapshot(), !current.decodedRefreshToken.isExpired() {
                         authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded, error: nil, signedOut: false)
@@ -704,9 +714,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .failed, error: TokenBackupError.sessionChanged, signedOut: false)
                     throw SubscriptionManagerError.noTokenAvailable
                 } catch let recoveryError {
-                    // `tokenRecoveryNotAttempted` means no restore ran (no coordinator, or the platform
-                    // can't restore), which is a different finding from a restore that ran and
-                    // failed to yield a valid token. Either way the refresh is a failure.
+                    // The recovery failed or didn't apply: sign out.
+                    // `tokenRecoveryNotAttempted` means no restore ran (no coordinator, or the platform can't restore), which is a different finding from a restore that ran and failed to yield a valid token.
+                    // Either way the refresh is a failure.
                     let notAttempted = (recoveryError as? SubscriptionManagerError) == .tokenRecoveryNotAttempted
                     Logger.subscriptionTokensManagement.error("Token recovery \(notAttempted ? "not attempted" : "failed", privacy: .public), signing out: \(String(describing: recoveryError), privacy: .public)")
                     await automaticallySignOut(recoveryOutcome: notAttempted ? .notAttempted : .failed,
@@ -722,6 +732,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 }
 
             default:
+                // Other errors, such as network or keychain failures, keep the session and are thrown
                 throw SubscriptionManagerError.errorRetrievingTokenContainer(error: tokenRequestError)
             }
         }

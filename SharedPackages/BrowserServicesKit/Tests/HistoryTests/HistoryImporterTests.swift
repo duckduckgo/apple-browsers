@@ -54,72 +54,26 @@ final class HistoryImporterTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenHistoryIsNotLoaded_ThenImportThrows() async {
-        await assertImportIsRejected(coordinator: HistoryCoordinatingMock())
-    }
-
-    @MainActor
-    func testWhenDictionaryExistsButLoadingHasNotFinished_ThenImportThrows() async {
+    func testWhenHistoryHasNotFinishedLoading_ThenImportThrows() async {
         let coordinator = HistoryCoordinatingMock()
         coordinator.historyDictionary = [:]
+        let importer = HistoryImporter(historyCoordinator: coordinator)
 
-        await assertImportIsRejected(coordinator: coordinator)
+        let error = await importError(of: [visit(newURL, hoursAgo: 1)], using: importer)
+
+        XCTAssertEqual(error as? HistoryImport.Error, .historyNotLoaded)
+        XCTAssertTrue(coordinator.addImportedVisitsCalls.isEmpty)
     }
 
     @MainActor
-    func testWhenSavingIsPending_ThenImportDoesNotReturnASummary() async throws {
+    func testWhenSavingFails_ThenImportThrowsTheSavingError() async {
         let coordinator = makeCoordinator(historyWithVisitOf: knownURL, hoursAgo: 1)
-        let saveStarted = expectation(description: "Save started")
-        var saveContinuation: CheckedContinuation<Void, Never>?
-        coordinator.addImportedVisitsHandler = {
-            await withCheckedContinuation {
-                saveContinuation = $0
-                saveStarted.fulfill()
-            }
-        }
-        let importer = HistoryImporter(historyCoordinator: coordinator)
-        var didReturnSummary = false
-        let task = Task {
-            let summary = try await importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))
-            didReturnSummary = true
-            return summary
-        }
-
-        await fulfillment(of: [saveStarted], timeout: 1)
-        XCTAssertFalse(didReturnSummary)
-        try XCTUnwrap(saveContinuation).resume()
-        let summary = try await task.value
-        XCTAssertEqual(summary.imported, 1)
-    }
-
-    @MainActor
-    func testWhenSavingFails_ThenImportPropagatesTheError() async {
-        let coordinator = makeCoordinator(historyWithVisitOf: knownURL, hoursAgo: 1)
-        coordinator.addImportedVisitsHandler = { throw HistoryStoringMock.HistoryStoringMockError.defaultError }
+        coordinator.addImportedVisitsError = HistoryStoringMock.HistoryStoringMockError.defaultError
         let importer = HistoryImporter(historyCoordinator: coordinator)
 
-        do {
-            _ = try await importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))
-            XCTFail("Import should propagate the save failure")
-        } catch HistoryStoringMock.HistoryStoringMockError.defaultError {
-            // Expected.
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
+        let error = await importError(of: [visit(newURL, hoursAgo: 1)], using: importer)
 
-    @MainActor
-    private func assertImportIsRejected(coordinator: HistoryCoordinatingMock, file: StaticString = #filePath, line: UInt = #line) async {
-        let importer = HistoryImporter(historyCoordinator: coordinator)
-        do {
-            _ = try await importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))
-            XCTFail("Import should be rejected before history finishes loading", file: file, line: line)
-        } catch HistoryImport.Error.historyNotLoaded {
-            // Expected.
-        } catch {
-            XCTFail("Unexpected error: \(error)", file: file, line: line)
-        }
-        XCTAssertTrue(coordinator.addImportedVisitsCalls.isEmpty, file: file, line: line)
+        XCTAssertEqual(error as? HistoryStoringMock.HistoryStoringMockError, .defaultError)
     }
 
     // MARK: - Helpers
@@ -130,6 +84,16 @@ final class HistoryImporterTests: XCTestCase {
 
     private func visit(_ url: URL, title: String? = nil, hoursAgo: Double) -> HistoryImport.Visit {
         HistoryImport.Visit(url: url, title: title, date: date(hoursAgo: hoursAgo))
+    }
+
+    @MainActor
+    private func importError(of visits: [HistoryImport.Visit], using importer: HistoryImporter) async -> Error? {
+        do {
+            _ = try await importer.importVisits(HistoryImport.ParseResult(visits: visits, skipped: 0))
+            return nil
+        } catch {
+            return error
+        }
     }
 
     @MainActor

@@ -28,11 +28,13 @@ final class HistoryCoordinatingMock: HistoryCoordinating {
     @Published var historyDictionary: [URL: HistoryEntry]?
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { $historyDictionary }
 
-    var addImportedVisitsHandler: (@MainActor () async throws -> Void)?
+    var addImportedVisitsError: Error?
     var addImportedVisitsCalls: [[HistoryImport.Visit]] = []
     func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
         addImportedVisitsCalls.append(visits)
-        try await addImportedVisitsHandler?()
+        if let addImportedVisitsError {
+            throw addImportedVisitsError
+        }
     }
 
     func loadHistory(onCleanFinished: @escaping () -> Void) {}

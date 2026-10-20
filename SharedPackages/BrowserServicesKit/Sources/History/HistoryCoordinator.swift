@@ -122,24 +122,6 @@ final public class HistoryCoordinator: HistoryCoordinating {
     private var regularCleaningTimer: Timer?
 
     @MainActor private(set) public var isHistoryLoaded = false
-    @MainActor private var entriesBeingImported = Set<HistoryEntry>()
-    @MainActor private var deferredSaves = Set<HistoryEntry>()
-
-    private final class ImportedEntryChange {
-        let entry: HistoryEntry
-        let wasInHistory: Bool
-        let previousTitle: String?
-        let previousLastVisit: Date
-        var visits = Set<Visit>()
-        var importedTitle: String?
-
-        init(entry: HistoryEntry, wasInHistory: Bool) {
-            self.entry = entry
-            self.wasInHistory = wasInHistory
-            previousTitle = entry.title
-            previousLastVisit = entry.lastVisit
-        }
-    }
 
     // Source of truth
     @Published private(set) public var historyDictionary: [URL: HistoryEntry]?
@@ -175,83 +157,32 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return visit
     }
 
-    /// Adds imported visits in a batch and returns after all changed entries have been saved.
-    /// Successfully saved entries are kept if a later save fails; unsaved imported visits are removed so they can be retried.
+    /// Adds imported visits in a batch, publishing history once, and returns after each changed entry has been saved once.
+    ///
     /// An imported title replaces the entry's title only when its visit is the entry's newest, or the entry has no title.
     @MainActor
     public func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
         guard isHistoryLoaded, var historyDictionary else {
             throw HistoryImport.Error.historyNotLoaded
         }
-        guard entriesBeingImported.isEmpty else {
-            throw HistoryImport.Error.importInProgress
-        }
-        guard !visits.isEmpty else { return }
 
-        var changes = [URL: ImportedEntryChange]()
+        var changedEntries = [URL: HistoryEntry]()
         for importedVisit in visits.sorted(by: { $0.date < $1.date }) {
             let entry = historyDictionary[importedVisit.url] ?? HistoryEntry(url: importedVisit.url)
-            let change = changes[entry.url] ?? ImportedEntryChange(entry: entry, wasInHistory: historyDictionary[entry.url] != nil)
-            change.visits.insert(entry.addVisit(at: importedVisit.date, tabID: nil))
+            _ = entry.addVisit(at: importedVisit.date, tabID: nil)
             if let title = importedVisit.title, !title.isEmpty,
                importedVisit.date >= entry.lastVisit || entry.title?.isEmpty ?? true {
                 entry.title = title
             }
-            change.importedTitle = entry.title
-            historyDictionary[entry.url] = entry
-            changes[entry.url] = change
+            historyDictionary[importedVisit.url] = entry
+            changedEntries[importedVisit.url] = entry
         }
 
-        entriesBeingImported = Set(changes.values.map(\.entry))
         self.historyDictionary = historyDictionary
-        defer {
-            rollBackImportedChanges(changes)
-            entriesBeingImported.removeAll()
-            let entriesToSave = deferredSaves
-            deferredSaves.removeAll()
-            for entry in entriesToSave where self.historyDictionary?[entry.url] === entry {
-                save(entry: entry)
-            }
+        for entry in changedEntries.values {
+            guard let entryCopy = copyForSaving(entry) else { continue }
+            try await store(entryCopy, of: entry)
         }
-
-        for change in Array(changes.values) {
-            try Task.checkCancellation()
-            let entry = change.entry
-            // An entry burned while another save was pending must not be inserted again.
-            guard self.historyDictionary?[entry.url] === entry else {
-                changes.removeValue(forKey: entry.url)
-                continue
-            }
-            guard let entryCopy = entry.copy() as? HistoryEntry else {
-                throw HistoryCoordinatorError(description: "Copying imported HistoryEntry failed")
-            }
-            let unsavedVisits = entry.visits.filter { $0.savingState == .initialized }
-            unsavedVisits.forEach { $0.savingState = .saved }
-            do {
-                let result = try await historyStoring.save(entry: entryCopy)
-                updateVisitIdentifiers(result, in: entry)
-                changes.removeValue(forKey: entry.url)
-            } catch {
-                unsavedVisits.forEach { $0.savingState = .initialized }
-                throw error
-            }
-        }
-    }
-
-    @MainActor
-    private func rollBackImportedChanges(_ changes: [URL: ImportedEntryChange]) {
-        guard !changes.isEmpty, var historyDictionary else { return }
-        // Roll back only this import's visits, preserving browsing that happened during a save.
-        for change in changes.values where historyDictionary[change.entry.url] === change.entry {
-            change.entry.removeImportedVisits(change.visits, previousLastVisit: change.previousLastVisit)
-            if change.entry.title == change.importedTitle {
-                change.entry.title = change.previousTitle
-            }
-            if !change.wasInHistory && change.entry.visits.isEmpty {
-                historyDictionary.removeValue(forKey: change.entry.url)
-            }
-        }
-        self.historyDictionary = historyDictionary
     }
 
     public func addBlockedTracker(entityName: String, on url: URL) {
@@ -574,29 +505,32 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     /// Public for some custom macOS migration
-    @MainActor
     public func save(entry: HistoryEntry) {
-        // A normal browsing save must not persist imported visits before their import succeeds.
-        if entriesBeingImported.contains(entry) {
-            deferredSaves.insert(entry)
-            return
-        }
-        guard let entryCopy = entry.copy() as? HistoryEntry else {
-            assertionFailure("Copying HistoryEntry failed")
-            return
-        }
-        entry.visits.forEach { $0.savingState = .saved }
+        guard let entryCopy = copyForSaving(entry) else { return }
 
         Task {
             do {
-                let result = try await historyStoring.save(entry: entryCopy)
-                Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.shortDescription), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no"), cookie popup blocked: \(entry.cookiePopupBlocked ? "yes" : "no")")
-                await MainActor.run {
-                    self.updateVisitIdentifiers(result, in: entry)
-                }
+                try await store(entryCopy, of: entry)
             } catch {
                 Logger.history.error("Saving of history entry failed: \(error.localizedDescription)")
             }
+        }
+    }
+
+    private func copyForSaving(_ entry: HistoryEntry) -> HistoryEntry? {
+        guard let entryCopy = entry.copy() as? HistoryEntry else {
+            assertionFailure("Copying HistoryEntry failed")
+            return nil
+        }
+        entry.visits.forEach { $0.savingState = .saved }
+        return entryCopy
+    }
+
+    private func store(_ entryCopy: HistoryEntry, of entry: HistoryEntry) async throws {
+        let result = try await historyStoring.save(entry: entryCopy)
+        Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.shortDescription), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no"), cookie popup blocked: \(entry.cookiePopupBlocked ? "yes" : "no")")
+        await MainActor.run {
+            updateVisitIdentifiers(result, in: entry)
         }
     }
 

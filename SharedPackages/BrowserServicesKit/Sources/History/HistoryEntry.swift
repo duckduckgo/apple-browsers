@@ -68,13 +68,6 @@ final public class HistoryEntry {
         return visit
     }
 
-    /// Removes a failed import without undoing visits added by normal browsing while it was being saved.
-    func removeImportedVisits(_ importedVisits: Set<Visit>, previousLastVisit: Date) {
-        visits.subtract(importedVisits)
-        numberOfTotalVisits -= importedVisits.count
-        lastVisit = visits.map(\.date).max() ?? previousLastVisit
-    }
-
     // MARK: - Tracker blocking info
 
     public private(set) var numberOfTrackersBlocked: Int

@@ -263,7 +263,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     @discardableResult
     func getTokens(authCode: String, codeVerifier: String) async throws -> TokenContainer {
-        Logger.OAuthClient.log("Getting tokens")
+        Logger.OAuthClient.log("Exchanging the authorization code for tokens")
         let getTokensResponse = try await authService.getAccessToken(clientID: Constants.clientID,
                                                              codeVerifier: codeVerifier,
                                                              code: authCode,
@@ -272,10 +272,10 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
     func getVerificationCodes() async throws -> (codeVerifier: String, codeChallenge: String) {
-        Logger.OAuthClient.log("Getting verification codes")
+        Logger.OAuthClient.log("Generating verification codes")
         let codeVerifier = try OAuthCodesGenerator.generateCodeVerifier()
         guard let codeChallenge = OAuthCodesGenerator.codeChallenge(codeVerifier: codeVerifier) else {
-            Logger.OAuthClient.error("Failed to get verification codes")
+            Logger.OAuthClient.error("Failed to generate the code challenge")
             throw OAuthClientError.internalError("Failed to generate code challenge")
         }
         return (codeVerifier, codeChallenge)
@@ -306,26 +306,26 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         case .local:
             let localTokenContainer = try tokenStorage.getTokenContainer()
             guard let localTokenContainer else {
-                Logger.OAuthClient.log("Tokens not found")
+                Logger.OAuthClient.log("Current token not found")
                 throw OAuthClientError.missingTokenContainer
             }
-            Logger.OAuthClient.log("Local tokens found, expiry: \(localTokenContainer.decodedAccessToken.exp.value, privacy: .public)")
+            Logger.OAuthClient.log("Current token found, access token expiry: \(localTokenContainer.decodedAccessToken.exp.value, privacy: .public)")
             return localTokenContainer
 
         case .localValid:
             let localTokenContainer = try tokenStorage.getTokenContainer()
             guard let localTokenContainer else {
-                Logger.OAuthClient.log("Tokens not found")
+                Logger.OAuthClient.log("Current token not found")
                 throw OAuthClientError.missingTokenContainer
             }
             let tokenExpiryDate = localTokenContainer.decodedAccessToken.exp.value
-            Logger.OAuthClient.log("Local tokens found, expiry: \(tokenExpiryDate, privacy: .public)")
+            Logger.OAuthClient.log("Current token found, access token expiry: \(tokenExpiryDate, privacy: .public)")
 
             // If the token expires in less than `Constants.tokenExpiryBufferInterval` minutes we treat it as already expired
             let expirationInterval = tokenExpiryDate.timeIntervalSinceNow
             let expiresSoon = expirationInterval < Constants.tokenExpiryBufferInterval
             if localTokenContainer.decodedAccessToken.isExpired() || expiresSoon {
-                Logger.OAuthClient.log("Refreshing local already expired token")
+                Logger.OAuthClient.log("Access token expired or about to expire, refreshing it")
                 return try await getTokens(policy: .localForceRefresh, trigger: trigger)
             } else {
                 return localTokenContainer
@@ -344,12 +344,13 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             do {
                 localTokenContainer = try tokenStorage.getTokenContainer()
             } catch {
+                Logger.OAuthClient.error("Failed to read the current token before refreshing it: \(String(describing: error), privacy: .public)")
                 refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                 throw error
             }
 
             guard let localTokenContainer else {
-                Logger.OAuthClient.log("Tokens not found")
+                Logger.OAuthClient.log("Current token not found")
                 let error = OAuthClientError.missingTokenContainer
                 refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                 throw error
@@ -360,7 +361,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     self.refreshOngoingTask = nil
                 }
 
-                Logger.OAuthClient.log("Starting token refresh")
+                Logger.OAuthClient.log("Starting token refresh, trigger: \(trigger.rawValue, privacy: .public)")
 
                 do {
                     let (refreshedTokens, newBackup) = try await refreshPossiblyForking(localTokenContainer, refreshID: refreshID)
@@ -388,7 +389,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             do {
                 return try await getTokens(policy: .localValid, trigger: .createIfNeeded)
             } catch {
-                Logger.OAuthClient.log("Local token not found, creating a new account")
+                Logger.OAuthClient.log("No valid current token, creating a new account: \(String(describing: error), privacy: .public)")
                 do {
                     let tokenContainer = try await createAccount()
                     sessionGeneration.increment()
@@ -396,7 +397,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     backupStore?.removeIfForAnotherAccount(than: tokenContainer)
                     return tokenContainer
                 } catch {
-                    Logger.OAuthClient.fault("Failed to create account: \(String(describing: error), privacy: .public)")
+                    Logger.OAuthClient.error("Failed to create account: \(String(describing: error), privacy: .public)")
                     throw error
                 }
             }
@@ -404,7 +405,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
     public func adopt(tokenContainer: TokenContainer) throws {
-        Logger.OAuthClient.log("Adopting TokenContainer")
+        Logger.OAuthClient.log("Adopting token container")
         sessionGeneration.increment()
         try tokenStorage.saveTokenContainer(tokenContainer)
         backupStore?.removeIfForAnotherAccount(than: tokenContainer)
@@ -441,6 +442,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         guard let backupStore, backupStore.needsRenewal(for: source) else {
             return (try await tokenRefresher.refresh(source, refreshID: refreshID), nil)
         }
+        Logger.OAuthClient.log("Refreshing the current token and renewing the backup token")
         do {
             let minted = try await tokenRefresher.fork(source, count: 2, refreshID: refreshID)
             guard minted.count == 2, let backup = minted.first, let primary = minted.last else {
@@ -572,6 +574,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
     public func removeBackup() {
+        Logger.OAuthClient.log("Deleting the backup token")
         sessionGeneration.increment()
         backupStore?.remove()
     }
@@ -607,6 +610,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     /// Removes the backup token container, if any, then the current one, and asks the server to invalidate the current access token.
     /// The server request is not awaited and its result is ignored.
     public func logout() async throws {
+        Logger.OAuthClient.log("Logging out")
         sessionGeneration.increment()
         let existingToken = try tokenStorage.getTokenContainer()?.accessToken
         backupStore?.remove()
@@ -615,14 +619,18 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         if let existingToken {
             Task { // Not waiting for an answer
                 Logger.OAuthClient.log("Invalidating the V2 token")
-                try? await authService.logout(accessToken: existingToken)
+                do {
+                    try await authService.logout(accessToken: existingToken)
+                } catch {
+                    Logger.OAuthClient.error("Failed to invalidate the V2 token: \(String(describing: error), privacy: .public)")
+                }
             }
         }
     }
 
     /// Removes the current token container. A backup token container, if any, is kept.
     public func removeLocalAccount() throws {
-        Logger.OAuthClient.log("Removing local account")
+        Logger.OAuthClient.log("Removing the current token")
         try tokenStorage.saveTokenContainer(nil)
     }
 }

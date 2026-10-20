@@ -86,7 +86,6 @@ struct TurnOffSyncOptionsView: View {
             deleteServerDataToggle
             if isDeleteServerDataSelected {
                 devicesSection
-                SyncUIViews.LeadingSecondaryBody(text: UserText.turnOffSyncDataRemainsFooter)
             }
         }
     }

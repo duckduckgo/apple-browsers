@@ -24,23 +24,23 @@ import Testing
 struct PageResourceLoadErrorTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test("Errors are wrapped as-is", .timeLimit(.minutes(1)), arguments: [
+    @Test("Errors are mapped into an enum", .timeLimit(.minutes(1)), arguments: [
         NSError(domain: NSURLErrorDomain, code: URLError.cannotFindHost.rawValue),
         NSError(domain: NSURLErrorDomain, code: URLError.cancelled.rawValue),
         NSError(domain: "WebKitErrorDomain", code: 102)
     ])
     func errorsAreWrapped(error: NSError) {
-        #expect(PageResourceLoadError.resourceLoadError(from: error, response: nil) == .error(error))
+        #expect(PageResourceLoadError.resourceLoadError(from: error, response: nil) == .error(domain: error.domain, code: error.code))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Different error domains, codes, and cases remain distinct", .timeLimit(.minutes(1)))
     func differentErrorSignaturesRemainDistinct() {
-        let error = PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: URLError.badURL.rawValue))
+        let error = PageResourceLoadError.error(domain: NSURLErrorDomain, code: URLError.badURL.rawValue)
 
-        #expect(error != .error(NSError(domain: NSURLErrorDomain, code: URLError.timedOut.rawValue)))
-        #expect(error != .error(NSError(domain: "WebKitErrorDomain", code: URLError.badURL.rawValue)))
-        #expect(PageResourceLoadError.error(NSError(domain: "statusCode", code: 404)) != .statusCode(404))
+        #expect(error != .error(domain: NSURLErrorDomain, code: URLError.timedOut.rawValue))
+        #expect(error != .error(domain: "WebKitErrorDomain", code: URLError.badURL.rawValue))
+        #expect(PageResourceLoadError.error(domain: "statusCode", code: 404) != .statusCode(404))
         #expect(PageResourceLoadError.statusCode(404) != .statusCode(500))
     }
 
@@ -70,13 +70,13 @@ struct PageResourceLoadErrorTests {
         let error = NSError(domain: NSURLErrorDomain, code: URLError.timedOut.rawValue)
         let response = HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 500, httpVersion: nil, headerFields: nil)
 
-        #expect(PageResourceLoadError.resourceLoadError(from: error, response: response) == .error(error))
+        #expect(PageResourceLoadError.resourceLoadError(from: error, response: response) == .error(domain: error.domain, code: error.code))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("String value encodes domain or status code", .timeLimit(.minutes(1)))
     func stringValueEncoding() {
-        #expect(PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: -1003)).stringValue == "(NSURLErrorDomain,-1003)")
+        #expect(PageResourceLoadError.error(domain: NSURLErrorDomain, code: -1003).stringValue == "(NSURLErrorDomain,-1003)")
         #expect(PageResourceLoadError.statusCode(404).stringValue == "(statusCode,404)")
     }
 }

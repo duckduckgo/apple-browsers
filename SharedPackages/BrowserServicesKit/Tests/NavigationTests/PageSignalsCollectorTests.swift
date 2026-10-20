@@ -26,7 +26,7 @@ import Testing
 struct PageSignalsCollectorTests {
 
     private let collector = PageSignalsCollector(tld: TLD())
-    private let dnsError = PageResourceLoadError.error(URLError(.cannotFindHost) as NSError)
+    private let dnsError = PageResourceLoadError.error(domain: NSURLErrorDomain, code: URLError.cannotFindHost.rawValue)
     private let serverError = PageResourceLoadError.statusCode(503)
 
     @available(iOS 16, macOS 13, *)
@@ -51,7 +51,7 @@ struct PageSignalsCollectorTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Repeated resource errors with different metadata are deduplicated", .timeLimit(.minutes(1)))
-    func repeatedResourceErrorsWithDifferentMetadataAreDeduplicated() {
+    func repeatedResourceErrorsWithDifferentMetadataAreDeduplicated() throws {
         let url = URL(string: "https://cdn.example.com/config.json")!
 
         for requestID in 0..<1_000 {
@@ -59,7 +59,8 @@ struct PageSignalsCollectorTests {
                 NSURLErrorFailingURLErrorKey: url,
                 NSUnderlyingErrorKey: NSError(domain: NSURLErrorDomain, code: requestID)
             ])
-            collector.recordResourceFailure(.error(error), for: url)
+            let resourceLoadError = try #require(PageResourceLoadError.resourceLoadError(from: error, response: nil))
+            collector.recordResourceFailure(resourceLoadError, for: url)
         }
 
         #expect(collector.signals.resourceFailures["example.com"]?.count == 1)

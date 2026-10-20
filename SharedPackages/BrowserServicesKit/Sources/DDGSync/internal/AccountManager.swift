@@ -261,6 +261,17 @@ struct AccountManager: AccountManaging {
         return response.auditLog
     }
 
+    func decodeAuditLogEntriesForDebug(_ entries: [AuditLogEntry], for account: SyncAccount) async throws -> [AuditLogEntryDecodingResult] {
+        let decoder = AuditLogEntryDecoder(accountInfoKeys: accountInfoKeys, deviceMapper: registeredDeviceMapper)
+        var results = [AuditLogEntryDecodingResult]()
+        results.reserveCapacity(entries.count)
+        for entry in entries {
+            try Task.checkCancellation()
+            results.append(try await decoder.decode(entry, for: account))
+        }
+        return results
+    }
+
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {
         guard let token = account.token else {
             throw SyncError.noToken

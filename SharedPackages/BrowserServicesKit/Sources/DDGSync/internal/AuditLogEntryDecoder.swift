@@ -29,6 +29,8 @@ struct AuditLogEvent {
     let occurredAt: Date
     let device: RegisteredDevice
     let actor: RegisteredDevice?
+    let deviceMapping: RegisteredDeviceDebugInfo?
+    let actorMapping: RegisteredDeviceDebugInfo?
 }
 
 enum AuditLogUnreadableReason {
@@ -68,11 +70,11 @@ struct AuditLogEntryDecoder {
         let actor: RegisteredDeviceEntry?
     }
 
-    private let accountInfoKeys: any AccountInfoKeyManaging
+    private let accountInfoKeys: (any AccountInfoKeyManaging)?
     private let deviceMapper: any RegisteredDeviceMapping
     private let jweCompactCodec: JWECompactCodec
 
-    init(accountInfoKeys: any AccountInfoKeyManaging,
+    init(accountInfoKeys: (any AccountInfoKeyManaging)?,
          deviceMapper: any RegisteredDeviceMapping,
          jweCompactCodec: JWECompactCodec = JWECompactCodec()) {
         self.accountInfoKeys = accountInfoKeys
@@ -115,15 +117,21 @@ struct AuditLogEntryDecoder {
         guard payload.actor == nil || actor != nil else {
             return .unreadable(id: entry.id, reason: .invalidPayload)
         }
+        let actorMapping = payload.actor == nil ? nil : mapping.debugDevices.dropFirst().first
 
         return .decoded(AuditLogEvent(id: entry.id,
                                       type: type,
                                       occurredAt: occurredAt,
                                       device: device,
-                                      actor: actor))
+                                      actor: actor,
+                                      deviceMapping: mapping.debugDevices.first,
+                                      actorMapping: actorMapping))
     }
 
     private func decryptPayload(for entry: AuditLogEntry, account: SyncAccount) async throws -> PayloadDecryptionResult {
+        guard let accountInfoKeys else {
+            return .unreadable(.keyUnavailable)
+        }
         let key: AccountInfoKey
         do {
             key = try await accountInfoKeys.loadKey(for: account)
@@ -138,14 +146,15 @@ struct AuditLogEntryDecoder {
                                                             expectedKid: key.kid)
             return .decrypted(data)
         } catch JWECompactCodecError.unexpectedKeyID {
-            return try await decryptPayloadAfterKeyRefresh(for: entry, account: account)
+            return try await decryptPayloadAfterKeyRefresh(for: entry, account: account, accountInfoKeys: accountInfoKeys)
         } catch {
             return .unreadable(.decryptionFailed)
         }
     }
 
     private func decryptPayloadAfterKeyRefresh(for entry: AuditLogEntry,
-                                               account: SyncAccount) async throws -> PayloadDecryptionResult {
+                                               account: SyncAccount,
+                                               accountInfoKeys: any AccountInfoKeyManaging) async throws -> PayloadDecryptionResult {
         let refreshedKey: AccountInfoKey
         do {
             refreshedKey = try await accountInfoKeys.refreshKey(for: account)

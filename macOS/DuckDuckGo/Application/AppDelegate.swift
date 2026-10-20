@@ -2327,6 +2327,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Bitwarden's Chrome Web Store ID. Bitwarden is disabled while the `webExtensionBitwarden` flag is off.
     private static let bitwardenChromeWebStoreID = "nngceckbapebfimnlniiiahkandclblb"
 
+    /// 1Password's Chrome Web Store ID. 1Password is disabled while the `webExtensionOnePassword` flag is off.
+    private static let onePasswordChromeWebStoreID = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
+
     @available(macOS 15.4, *)
     @MainActor
     private func initializeWebExtensions() async {
@@ -2368,7 +2371,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             manager: webExtensionManager,
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             disabledExtensionIDs: { [featureFlagger] in
-                featureFlagger.isFeatureOn(.webExtensionBitwarden) ? [] : [Self.bitwardenChromeWebStoreID]
+                var disabledIDs: Set<String> = []
+                if !featureFlagger.isFeatureOn(.webExtensionBitwarden) {
+                    disabledIDs.insert(Self.bitwardenChromeWebStoreID)
+                }
+                if !featureFlagger.isFeatureOn(.webExtensionOnePassword) {
+                    disabledIDs.insert(Self.onePasswordChromeWebStoreID)
+                }
+                return disabledIDs
             },
             disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
         )

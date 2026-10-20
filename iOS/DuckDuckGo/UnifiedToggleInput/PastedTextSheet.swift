@@ -80,12 +80,17 @@ struct PastedTextSheetView: View {
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
 
-                TextEditor(text: $text)
-                    .daxBodyRegular()
-                    .disabled(isViewOnly)
-                    .focused($isTextFocused)
-                    .accessibilityIdentifier("PastedTextSheet.TextView")
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(designSystemColor: .lines)))
+                Group {
+                    if isViewOnly {
+                        PastedTextReadOnlyView(text: text)
+                    } else {
+                        TextEditor(text: $text)
+                            .daxBodyRegular()
+                            .focused($isTextFocused)
+                    }
+                }
+                .accessibilityIdentifier("PastedTextSheet.TextView")
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(designSystemColor: .lines)))
 
                 Text(countLine)
                     .daxFootnoteRegular()
@@ -126,6 +131,27 @@ struct PastedTextSheetView: View {
             line[range].foregroundColor = Color(designSystemColor: .destructivePrimary)
         }
         return line
+    }
+}
+
+/// A disabled `TextEditor` cannot scroll, so the view-only sheet shows its text in a `UITextView` that scrolls and selects but never edits.
+private struct PastedTextReadOnlyView: UIViewRepresentable {
+    let text: String
+
+    func makeUIView(context: Context) -> UITextView {
+        let textView = UITextView()
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.font = .daxBodyRegular()
+        textView.adjustsFontForContentSizeCategory = true
+        textView.backgroundColor = .clear
+        return textView
+    }
+
+    func updateUIView(_ textView: UITextView, context: Context) {
+        if textView.text != text {
+            textView.text = text
+        }
     }
 }
 

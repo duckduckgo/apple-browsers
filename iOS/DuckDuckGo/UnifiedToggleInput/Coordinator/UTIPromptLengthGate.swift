@@ -64,6 +64,13 @@ final class UTIPromptLengthGate {
 
     var isSubmitBlocked: Bool { promptLength?.isOverLimit == true }
 
+    /// `refresh()` measures the typed draft. A submit may send other text (Paste & Go clears the draft, a quick action
+    /// replaces it), so the prompt that is actually sent is measured here with the attachments it carries.
+    func blocksSubmission(of text: String) -> Bool {
+        guard inputs.isEnabled() else { return false }
+        return limits.evaluate(prompt: text, attachments: inputs.attachments(), attachmentLimits: inputs.attachmentLimits()).isOverLimit
+    }
+
     func sheetLimit(for paste: AIChatPastedText) -> Int {
         let length = promptLength ?? limits.evaluate(prompt: inputs.promptText(), attachments: inputs.attachments(),
                                                      attachmentLimits: inputs.attachmentLimits())

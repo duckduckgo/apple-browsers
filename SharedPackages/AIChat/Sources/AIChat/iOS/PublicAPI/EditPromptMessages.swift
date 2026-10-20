@@ -40,7 +40,7 @@ public struct EditPromptRequest: Decodable {
         attachments = AIChatPromptAttachments(
             images: try container.decodeIfPresent([AIChatNativePrompt.NativePromptImage].self, forKey: .images),
             files: try container.decodeIfPresent([AIChatNativePrompt.NativePromptFile].self, forKey: .files),
-            textPasted: try container.decodeIfPresent([AIChatNativePrompt.NativePromptPastedText].self, forKey: .textPasted)
+            textPasted: (try? container.decodeIfPresent([AIChatNativePrompt.NativePromptPastedText].self, forKey: .textPasted)) ?? nil
         )
         hasResponsesToLose = try container.decode(Bool.self, forKey: .hasResponsesToLose)
     }

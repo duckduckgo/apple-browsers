@@ -172,6 +172,27 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Reads the runtime kill switch immediately before a CPM messaging hang recovery reload.
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
+    /// Independent kill switch for retrying a failed background load in its current context.
+    private let isCPMBackgroundLoadRecoveryEnabled: @MainActor () -> Bool
+    /// Platform lifecycle state must remain available when diagnostics are disabled.
+    private let isApplicationInBackground: @MainActor () -> Bool
+
+    /// Concurrent navigations share one wake; a replacement context must start its own preparation.
+    private weak var preferredEmbeddedBackgroundContext: WKWebExtensionContext?
+    private var embeddedBackgroundStartup: Task<Void, Never>?
+    private weak var embeddedBackgroundStartupContext: WKWebExtensionContext?
+    private var embeddedBackgroundStartupCompletion: AsyncStream<Void>.Continuation?
+    private var isCPMMessagingRecoveryInProgress = false
+    private var lastBackgroundLoadRecoveryAt: Date?
+    private var backgroundLoadErrorObserver: NSObjectProtocol?
+    private var backgroundStartupFix: [String: CPMRecoveryFix] = [:]
+    private var navigationWaitContexts: Set<String> = []
+    /// Distinguishes first startup from idle wakes without retaining replaced contexts.
+    private let preparedEmbeddedBackgroundContexts = NSHashTable<WKWebExtensionContext>.weakObjects()
+    @MainActor
+    private var backgroundRecovery: CPMBackgroundReadinessRecovery? {
+        (cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery
+    }
     private let now: () -> Date
     /// Keeps the health monitor informed of app suspension for as long as the manager lives.
     private var cpmInterruptionObserver: CPMInterruptionObserver?
@@ -194,6 +215,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     public init(configuration: WebExtensionConfigurationProviding,
+                controllerConfiguration: WKWebExtensionController.Configuration? = nil,
                 windowTabProvider: WebExtensionWindowTabProviding,
                 storageProvider: WebExtensionStorageProviding,
                 installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
@@ -207,6 +229,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
+                isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
+                isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
@@ -215,7 +240,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL },
                 now: @escaping () -> Date = Date.init) {
-        let controllerConfiguration = WKWebExtensionController.Configuration.default()
+        let controllerConfiguration = controllerConfiguration ?? WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
         // The API compatibility script, which `WebExtensionLoader` adds for each third-party extension,
@@ -250,6 +275,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.pixelFiring = pixelFiring
         self.now = now
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery = CPMBackgroundReadinessRecovery(
+            isEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
+            isApplicationInBackground: isApplicationInBackground,
+            pixelFiring: pixelFiring
+        )
         self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
         self.isCPMMessagingHangRecoveryEnabled = isCPMMessagingHangRecoveryEnabled
         self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
@@ -257,6 +287,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates,
             pixelFiring: pixelFiring
         )
+        self.isCPMBackgroundLoadRecoveryEnabled = isCPMBackgroundLoadRecoveryEnabled
+        self.isApplicationInBackground = isApplicationInBackground
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
         self.nativeMessagingHandler = nativeMessagingHandler
@@ -341,6 +373,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         controller.delegate = self
         self.loader.delegate = self
 
+        configureCPMMonitoring()
+    }
+
+    @MainActor
+    private func configureCPMMonitoring() {
         if let cpmDiagnosticsRecorder {
             (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.diagnosticsProvider = cpmDiagnosticsRecorder
             cpmDiagnosticsRecorder.nativeMessageHandlerCheck = { [weak self] context in
@@ -355,6 +392,37 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 }
             }
             self.cpmInterruptionObserver = CPMInterruptionObserver(monitor: healthMonitor)
+        }
+
+        backgroundLoadErrorObserver = NotificationCenter.default.addObserver(
+            forName: WKWebExtensionContext.errorsDidUpdateNotification, object: nil, queue: .main
+        ) { [weak self] notification in
+            guard let context = notification.object as? WKWebExtensionContext else { return }
+            MainActor.assumeIsolated {
+                guard let self, self.context(for: context.uniqueIdentifier) === context,
+                      let error = context.errors.first(where: {
+                    let error = $0 as NSError
+                    return error.domain == "WKWebExtensionContextErrorDomain" &&
+                        error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
+                }) else { return }
+                // WebKit can record a service-worker load failure without invoking pending
+                // loadBackgroundContent callbacks. Release callers before retrying its background.
+                if self.embeddedBackgroundStartupContext === context {
+                    // Retained callbacks may succeed with a later retry. They must not turn this
+                    // known failed startup into a P4 detection or an automatic document reload.
+                    self.backgroundRecovery?.invalidate()
+                    self.clearEmbeddedBackgroundStartup()
+                }
+                Task { @MainActor [weak self] in
+                    await self?.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+                }
+            }
+        }
+    }
+
+    deinit {
+        if let backgroundLoadErrorObserver {
+            NotificationCenter.default.removeObserver(backgroundLoadErrorObserver)
         }
     }
 
@@ -495,6 +563,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         let installedExtension = installationStore.installedExtension(withUniqueIdentifier: identifier)
         let embeddedType = installedExtension?.embeddedType
+        let removesCurrentEmbeddedContext = embeddedBackgroundContextForNavigation?.uniqueIdentifier == identifier
 
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
@@ -509,6 +578,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
         }
 
+        if removesCurrentEmbeddedContext {
+            // A preflight can still be suspended after startup completed. Do not reload its
+            // document after uninstall, or cancel the replacement when removing an old version.
+            backgroundRecovery?.invalidate()
+        }
+        clearEmbeddedBackgroundStartup(identifier: identifier)
         do {
             try permissionController?.forget(identifier)
         } catch {
@@ -803,19 +878,134 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         await loadInstalledExtensions(lifecycle: lifecycle)
     }
 
+    /// Tracks the exact replacement while the old and new installations coexist during upgrade.
+    @MainActor
+    func trackEmbeddedBackgroundStartup(identifier: String) {
+        guard let context = context(for: identifier), context.webExtension.hasBackgroundContent else { return }
+        backgroundRecovery?.invalidate()
+        backgroundStartupFix[identifier] = installationStore.installedExtensions.contains {
+            $0.embeddedType == .embedded && $0.uniqueIdentifier != identifier
+        } ? .upgradeReadiness : .installReadiness
+        preferredEmbeddedBackgroundContext = context
+        Task { @MainActor [weak self] in
+            await self?.loadEmbeddedExtensionBackgroundContent(in: context)
+        }
+    }
+
+    @MainActor
+    var embeddedBackgroundContextForNavigation: WKWebExtensionContext? {
+        if let preferred = preferredEmbeddedBackgroundContext, context(for: preferred.uniqueIdentifier) === preferred {
+            return preferred
+        }
+        // Installations are appended before the previous version is removed; prefer the newest.
+        for installed in installationStore.installedExtensions.reversed() where installed.embeddedType == .embedded {
+            if let context = context(for: installed.uniqueIdentifier) { return context }
+        }
+        // Lightweight clients may load a context without an installation store. Never guess
+        // between overlapping versions when their installation order is unavailable.
+        let contexts = controller.extensionContexts.filter { $0.webExtension.duckDuckGoWebExtensionType == .embedded }
+        return contexts.count == 1 ? contexts.first : nil
+    }
+
+    @MainActor
+    public var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { embeddedBackgroundStartup }
+
+    @MainActor
+    public func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? {
+        guard let context = embeddedBackgroundContextForNavigation, context.webExtension.hasBackgroundContent else { return nil }
+        navigationWaitContexts.insert(context.uniqueIdentifier)
+        return startEmbeddedBackgroundContent(in: context)
+    }
+
     @MainActor
     public func loadEmbeddedExtensionBackgroundContent() async {
-        guard let context = controller.extensionContexts.first(where: {
-            $0.webExtension.duckDuckGoWebExtensionType == .embedded
-        }), context.webExtension.hasBackgroundContent else { return }
+        guard let context = embeddedBackgroundContextForNavigation else { return }
+        await loadEmbeddedExtensionBackgroundContent(in: context)
+    }
 
-        // Explicitly await WebKit's background startup so restored tabs cannot navigate before the
-        // Web Extension has registered the listeners and scripts needed for that first document.
-        do {
-            try await context.loadBackgroundContentCopyingErrors()
-        } catch {
-            Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
+    @MainActor
+    private func loadEmbeddedExtensionBackgroundContent(in context: WKWebExtensionContext) async {
+        await startEmbeddedBackgroundContent(in: context)?.value
+    }
+
+    @MainActor
+    private func startEmbeddedBackgroundContent(in context: WKWebExtensionContext) -> Task<Void, Never>? {
+        guard self.context(for: context.uniqueIdentifier) === context, context.webExtension.hasBackgroundContent else { return nil }
+
+        if let startup = embeddedBackgroundStartup, embeddedBackgroundStartupContext === context {
+            return startup
         }
+
+        clearEmbeddedBackgroundStartup()
+        let (completion, continuation) = AsyncStream<Void>.makeStream()
+        let startup = Task<Void, Never> { for await _ in completion { } }
+        embeddedBackgroundStartup = startup
+        embeddedBackgroundStartupContext = context
+        embeddedBackgroundStartupCompletion = continuation
+        let started = Date()
+        let startupID = UUID()
+        let isFirstLoad = !preparedEmbeddedBackgroundContexts.contains(context)
+        preparedEmbeddedBackgroundContexts.add(context)
+        backgroundRecovery?.backgroundStarted(startupID, isFirstLoad: isFirstLoad)
+        let identifier = context.uniqueIdentifier
+        let fix = backgroundStartupFix.removeValue(forKey: identifier) ?? .backgroundWake
+        Logger.webExtensions.debug("[CPM Background] Starting background wait for \(identifier, privacy: .public)")
+        // Copies WebKit's error on the main thread, as the other background-load paths do.
+        context.loadBackgroundContentCopyingErrors { [weak self, weak context] error in
+            let elapsed = Date().timeIntervalSince(started)
+            if elapsed >= 1 {
+                Logger.webExtensions.info("[CPM Background] Background callback for \(identifier, privacy: .public) after \(elapsed, privacy: .public)s")
+            }
+            if let error {
+                Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
+            }
+            if let self, let context, self.embeddedBackgroundContextForNavigation === context {
+                self.backgroundRecovery?.backgroundCompleted(startupID, succeeded: error == nil)
+                let didWaitForNavigation = self.navigationWaitContexts.remove(identifier) != nil
+                if error == nil, (elapsed >= 1 && didWaitForNavigation) || fix == .backgroundLoadRetry {
+                    self.pixelFiring.fire(.cpmRecovery(fix, outcome: .backgroundReady))
+                }
+            }
+            if self?.embeddedBackgroundStartup == startup {
+                self?.clearEmbeddedBackgroundStartup()
+            }
+            continuation.finish()
+        }
+        return startup
+    }
+
+    @MainActor
+    private func clearEmbeddedBackgroundStartup(identifier: String? = nil) {
+        if let identifier, embeddedBackgroundStartupContext?.uniqueIdentifier != identifier { return }
+        embeddedBackgroundStartupCompletion?.finish()
+        embeddedBackgroundStartup = nil
+        embeddedBackgroundStartupContext = nil
+        embeddedBackgroundStartupCompletion = nil
+    }
+
+    @discardableResult
+    @MainActor
+    func recoverEmbeddedBackgroundLoadFailure(_ error: Error, context: WKWebExtensionContext) async -> Bool {
+        let error = error as NSError
+        guard error.domain == "WKWebExtensionContextErrorDomain",
+              error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue,
+              context.webExtension.duckDuckGoWebExtensionType == .embedded,
+              self.context(for: context.uniqueIdentifier) === context,
+              embeddedBackgroundContextForNavigation === context,
+              isCPMBackgroundLoadRecoveryEnabled(),
+              !isApplicationInBackground(),
+              !isCPMMessagingRecoveryInProgress,
+              lastBackgroundLoadRecoveryAt.map({ Date().timeIntervalSince($0) >= 60 }) ?? true else { return false }
+        lastBackgroundLoadRecoveryAt = Date()
+        // Retry only the failed background first. Replacing the whole context invalidates
+        // in-flight content-script replies; keeping it preserves the failed document's init.
+        // The existing confirmed-hang recovery remains the fallback if messaging stays stuck.
+        Task { @MainActor [weak self] in
+            guard let self, self.isCPMBackgroundLoadRecoveryEnabled(), !self.isApplicationInBackground() else { return }
+            self.backgroundStartupFix[context.uniqueIdentifier] = .backgroundLoadRetry
+            await self.loadEmbeddedExtensionBackgroundContent(in: context)
+        }
+        return true
     }
 
     @MainActor
@@ -1071,12 +1261,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     func reportLifecycleEvent(_ event: WebExtensionLifecycleEvent) {
+        if case .willReload(let identifier, _, _) = event,
+           embeddedBackgroundStartupContext?.uniqueIdentifier == identifier {
+            clearEmbeddedBackgroundStartup()
+        }
         lifecycleEventsContinuation?.yield(event)
         cpmMessagingHealthMonitor.handle(.extensionLifecycle(event))
     }
 
     @MainActor
     private func reloadEmbeddedExtensionAfterCPMMessagingHang() async {
+        guard !isCPMMessagingRecoveryInProgress else { return }
         guard isCPMMessagingHangRecoveryEnabled() else {
             Logger.webExtensions.info("[CPM Health Monitor] Skipping embedded extension reload after a confirmed hang because cpmMessagingHangRecovery is disabled")
             return
@@ -1087,8 +1282,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             return
         }
 
+        isCPMMessagingRecoveryInProgress = true
+        defer { isCPMMessagingRecoveryInProgress = false }
         do {
             try await reloadExtension(identifier: installedExtension.uniqueIdentifier, trigger: .cpmMessagingHang)
+            // A missing WebKit completion must not hold the recovery guard forever.
+            Task { @MainActor [weak self] in await self?.loadEmbeddedExtensionBackgroundContent() }
         } catch {
             Logger.webExtensions.error("[CPM Health Monitor] Failed to reload the embedded extension after a confirmed hang: \(error.localizedDescription)")
         }

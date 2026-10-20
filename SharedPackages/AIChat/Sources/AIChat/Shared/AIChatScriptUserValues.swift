@@ -404,6 +404,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let mode: String?
         public let reasoningEffort: AIChatReasoningEffort?
 
+        public var images: [NativePromptImage]? { attachments.images }
+        public var files: [NativePromptFile]? { attachments.files }
+
         private enum CodingKeys: String, CodingKey {
             case prompt
             case autoSubmit

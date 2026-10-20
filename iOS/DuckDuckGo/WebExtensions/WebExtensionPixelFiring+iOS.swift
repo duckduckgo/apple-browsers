@@ -84,7 +84,6 @@ private extension DuckDuckGoWebExtensionType {
 
 @available(iOS 18.4, *)
 struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
-
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
         case .installed:
@@ -166,7 +165,7 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             PixelKit.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
-        case .cpmMessagingEpisode:
+        case .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
             fireCPMPixel(event)
         case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
             // Chrome extensions, and so password manager extensions, are only supported on macOS, so

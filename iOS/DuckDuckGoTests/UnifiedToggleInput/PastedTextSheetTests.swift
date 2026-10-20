@@ -18,6 +18,8 @@
 //
 
 import AIChat
+import SwiftUI
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -55,6 +57,35 @@ final class PastedTextSheetTests: XCTestCase {
         let paste = AIChatPastedText(content: "pasted")
         XCTAssertTrue(PastedTextSheetRules(original: paste, mode: .editable(limit: 100)).opensWithKeyboard)
         XCTAssertFalse(PastedTextSheetRules(original: paste, mode: .viewOnly).opensWithKeyboard)
+    }
+
+    func testViewOnlySheetShowsTheFullTextInAScrollableReadOnlyViewAndEditableKeepsTheEditor() throws {
+        let content = String(repeating: "line\n", count: 2_000)
+        let viewOnly = try textView(hosting: .viewOnly, content: content)
+        XCTAssertFalse(viewOnly.isEditable)
+        XCTAssertTrue(viewOnly.isScrollEnabled, "Reading past the first screen needs scrolling")
+        XCTAssertTrue(viewOnly.isSelectable)
+        XCTAssertEqual(viewOnly.text, content)
+
+        let editable = try textView(hosting: .editable(limit: 100_000), content: content)
+        XCTAssertTrue(editable.isEditable)
+        XCTAssertEqual(editable.text, content)
+    }
+
+    private func textView(hosting mode: PastedTextSheetMode, content: String) throws -> UITextView {
+        let view = PastedTextSheetView(pastedText: AIChatPastedText(content: content), mode: mode, onSave: { _ in }, onCancel: {})
+        let controller = UIHostingController(rootView: view)
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        controller.view.layoutIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        return try XCTUnwrap(firstDescendant(of: UITextView.self, in: controller.view), "The sheet shows its text in a UITextView")
+    }
+
+    private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {
+        if let match = view as? T { return match }
+        return view.subviews.lazy.compactMap { self.firstDescendant(of: type, in: $0) }.first
     }
 
     func testCountIsUTF16() {

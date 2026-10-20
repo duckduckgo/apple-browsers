@@ -884,6 +884,49 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertEqual(delegate.submittedPrompt, "")
     }
 
+    func testPasteAndGoOverATypedDraftSendsThePasteOnlyPromptBeforeTheDraftClears() {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.setText(longText(1_000))
+        _ = sut.viewController.attachmentPasteHandler?.attachInsertedTextIfLong(longText(15_500))
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength, "Draft plus paste is over the limit until the draft clears")
+
+        sut.viewController.handler.submitAIChatAttachmentOnlyPrompt(trigger: .pasteAndGo)
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, "")
+        XCTAssertEqual(delegate.submittedAttachments?.textPasted?.map(\.content.utf16.count), [15_500])
+    }
+
+    func testProgrammaticSubmitOfShortTextSendsWhileTheTypedDraftIsOverTheLimit() {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.setText(longText(16_001))
+        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+
+        sut.submitProgrammatic(text: "Summarize this page")
+        flushMainQueue()
+
+        XCTAssertEqual(delegate.submittedPrompt, "Summarize this page")
+    }
+
+    func testProgrammaticSubmitOverTheLimitIsBlockedWhateverTheDraft() {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+
+        sut.submitProgrammatic(text: longText(16_001))
+        flushMainQueue()
+
+        XCTAssertNil(delegate.submittedPrompt)
+    }
+
     func testPasteWhileEditingASentPromptStaysInline() throws {
         let sut = makePastedTextCoordinator()
         sut.updateInputMode(.aiChat, animated: false)

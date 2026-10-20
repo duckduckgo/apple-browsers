@@ -2287,7 +2287,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
            viewController.currentAttachments.allSatisfy(\.isTab) {
             return
         }
-        guard !promptLengthGate.isSubmitBlocked else { return }
+        guard !promptLengthGate.blocksSubmission(of: text) else { return }
         let userScript = boundUserScript
         let tools = toolsController.selectedToolsForSubmission()
 

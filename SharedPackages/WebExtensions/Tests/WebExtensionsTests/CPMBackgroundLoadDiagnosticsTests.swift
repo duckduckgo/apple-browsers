@@ -99,6 +99,14 @@ final class CPMBackgroundLoadDiagnosticsTests: XCTestCase {
         XCTAssertEqual(loadRequests, 0)
     }
 
+    func testResumeAppearsAsOneInterruptionEventInTheTimeline() {
+        let recorder = makeRecorder()
+
+        recorder.recordInterruption()
+
+        XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["interruption"])
+    }
+
     func testRepeatedSnapshotsDoNotRequestBackgroundLoads() async throws {
         let recorder = makeRecorder()
         var requests = 0

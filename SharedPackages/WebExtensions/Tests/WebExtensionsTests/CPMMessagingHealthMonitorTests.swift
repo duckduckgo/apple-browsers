@@ -1359,6 +1359,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
                                                reloadState: .none, secondsToResponse: 12.345, diagnostics: diagnostics)
         XCTAssertEqual(report.pixelParameters, [
             "reason": "other", "was_stuck": "false", "outcome": "failed_measurement_response",
+            "tabs_affected": "1", "repeat_failures": "0", "interrupted": "false",
             "reload_state": "none", "response_after": "under_30s", "context_loaded": "true", "bg_view_alive": "true",
             "bg_process_alive": "false", "bg_process_responsive": "false", "tab_in_context": "false",
             "handler_registered": "true", "tab_controller_match": "false", "tab_has_ext_scripts": "true",
@@ -1387,8 +1388,97 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         XCTAssertEqual(metadata.frequency, .dailyAndCount)
         XCTAssertEqual(metadata.parameters, [
             "reason": "tab_crash", "was_stuck": "true", "outcome": "failed_tab_response",
+            "tabs_affected": "1", "repeat_failures": "0", "interrupted": "false",
             "reload_state": "loaded", "response_after": "30s_to_1m"
         ])
+    }
+
+    func testTabAndRepeatCountsAreBucketedAndNeverExact() {
+        let cases: [(tabs: Int, repeats: Int, tabsBucket: String, repeatsBucket: String)] = [
+            (1, 0, "1", "0"), (2, 0, "2", "0"), (3, 1, "3+", "1"), (9, 2, "3+", "2+"), (1, 40, "1", "2+")
+        ]
+        for testCase in cases {
+            let report = CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .otherTabResponse,
+                                                   reloadState: .none, secondsToResponse: 1, diagnostics: nil,
+                                                   failedTabCount: testCase.tabs, repeatedFailureCount: testCase.repeats)
+            XCTAssertEqual(report.pixelParameters["tabs_affected"], testCase.tabsBucket)
+            XCTAssertEqual(report.pixelParameters["repeat_failures"], testCase.repeatsBucket)
+        }
+    }
+
+    func testEpisodeCountsDistinctFailedTabsAndRepeatsWithinTabs() {
+        let scenarios: [(tabs: [String], tabsBucket: String, repeatsBucket: String)] = [
+            (["tab-1"], "1", "0"),
+            (["tab-1", "tab-1"], "1", "1"),
+            (["tab-1", "tab-1", "tab-1"], "1", "2+"),
+            (["tab-1", "tab-2"], "2", "0"),
+            (["tab-1", "tab-1", "tab-2"], "2", "1"),
+            (["tab-1", "tab-2", "tab-3"], "3+", "0")
+        ]
+        for scenario in scenarios {
+            let pixelFiring = CapturingWebExtensionPixelFiring()
+            let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+            for tab in scenario.tabs {
+                beginAndReportFailure(on: monitor, tabIdentifier: tab, navigationKind: .other)
+            }
+            monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "responder", navigationKind: .other))
+
+            let parameters = pixelFiring.metadata.last?.parameters
+            XCTAssertEqual(parameters?["tabs_affected"], scenario.tabsBucket, "\(scenario.tabs)")
+            XCTAssertEqual(parameters?["repeat_failures"], scenario.repeatsBucket, "\(scenario.tabs)")
+        }
+    }
+
+    func testEpisodeIsInterruptedWhenItsFirstWaitWasRestartedByASuspension() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeInterruptibleMonitor(pixelFiring: pixelFiring)
+
+        finishNavigation(tabIdentifier: "tab-1", path: "first-wait", on: monitor)
+        monitor.handle(.interruptionBegan)
+        monitor.handle(.interruptionEnded)
+        await waitForEventTimeout(on: monitor)
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "responder", navigationKind: .other))
+
+        XCTAssertEqual(pixelFiring.metadata.last?.parameters["interrupted"], "true")
+    }
+
+    func testEpisodeIsInterruptedWhenItsFirstNavigationFinishedWhileSuspended() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeInterruptibleMonitor(pixelFiring: pixelFiring)
+
+        monitor.handle(.interruptionBegan)
+        finishNavigation(tabIdentifier: "tab-1", path: "started-suspended", on: monitor)
+        monitor.handle(.interruptionEnded)
+        await waitForEventTimeout(on: monitor)
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "responder", navigationKind: .other))
+
+        XCTAssertEqual(pixelFiring.metadata.last?.parameters["interrupted"], "true")
+    }
+
+    func testEpisodeIsNotInterruptedByASuspensionAfterItsFirstFailure() {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        beginAndReportFailure(on: monitor, tabIdentifier: "tab-1", navigationKind: .other)
+
+        monitor.handle(.interruptionBegan)
+        monitor.handle(.interruptionEnded)
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "responder", navigationKind: .other))
+
+        XCTAssertEqual(pixelFiring.metadata.last?.parameters["interrupted"], "false")
+    }
+
+    func testResumeIsRecordedOnceInTheDiagnosticsTimeline() {
+        let provider = StubDiagnosticsProvider()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: CapturingWebExtensionPixelFiring())
+        monitor.diagnosticsProvider = provider
+
+        monitor.handle(.interruptionBegan)
+        monitor.handle(.interruptionBegan)
+        XCTAssertEqual(provider.interruptionCount, 0, "Only a resume is recorded")
+        monitor.handle(.interruptionEnded)
+        monitor.handle(.interruptionEnded)
+
+        XCTAssertEqual(provider.interruptionCount, 1)
     }
 
     func testRecoveryParametersDistinguishEpisodeStateWithAndWithoutReload() throws {
@@ -1700,7 +1790,12 @@ private final class StubDiagnosticsProvider: CPMMessagingDiagnosticsProviding {
     }
 
     private(set) var requests: [Request] = []
+    private(set) var interruptionCount = 0
     var diagnostics = CPMMessagingDiagnostics(extensionContextLoaded: true, tabKnownToWebKit: true)
+
+    func recordInterruption() {
+        interruptionCount += 1
+    }
 
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics {
         requests.append(Request(tabIdentifier: tabIdentifier))

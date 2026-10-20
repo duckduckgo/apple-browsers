@@ -399,20 +399,18 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let prompt: String
         public let autoSubmit: Bool
         public let toolChoice: [String]?
-        public let images: [NativePromptImage]?
-        public let files: [NativePromptFile]?
-        public let textPasted: [NativePromptPastedText]?
+        public let attachments: AIChatPromptAttachments
         public let modelId: String?
         public let mode: String?
         public let reasoningEffort: AIChatReasoningEffort?
+
+        public var images: [NativePromptImage]? { attachments.images }
+        public var files: [NativePromptFile]? { attachments.files }
 
         private enum CodingKeys: String, CodingKey {
             case prompt
             case autoSubmit
             case toolChoice
-            case images
-            case files
-            case textPasted
             case modelId
             case mode
             case reasoningEffort
@@ -430,9 +428,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             self.prompt = prompt
             self.autoSubmit = autoSubmit
             self.toolChoice = toolChoice
-            self.images = attachments.images
-            self.files = attachments.files
-            self.textPasted = attachments.textPasted
+            self.attachments = attachments
             self.modelId = modelId
             self.mode = mode
             self.reasoningEffort = reasoningEffort
@@ -443,17 +439,22 @@ public struct AIChatNativePrompt: Codable, Equatable {
             prompt = try container.decode(String.self, forKey: .prompt)
             autoSubmit = try container.decode(Bool.self, forKey: .autoSubmit)
             toolChoice = try container.decodeIfPresent([String].self, forKey: .toolChoice)
-            images = try container.decodeIfPresent([NativePromptImage].self, forKey: .images)
-            files = try container.decodeIfPresent([NativePromptFile].self, forKey: .files)
-            textPasted = try container.decodeIfPresent([NativePromptPastedText].self, forKey: .textPasted)
+            attachments = try AIChatPromptAttachments(from: decoder)
             modelId = try container.decodeIfPresent(String.self, forKey: .modelId)
             mode = try container.decodeIfPresent(String.self, forKey: .mode)
             let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
             reasoningEffort = rawReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
         }
 
-        public var attachments: AIChatPromptAttachments {
-            AIChatPromptAttachments(images: images, files: files, textPasted: textPasted)
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(prompt, forKey: .prompt)
+            try container.encode(autoSubmit, forKey: .autoSubmit)
+            try container.encodeIfPresent(toolChoice, forKey: .toolChoice)
+            try attachments.encode(to: encoder)
+            try container.encodeIfPresent(modelId, forKey: .modelId)
+            try container.encodeIfPresent(mode, forKey: .mode)
+            try container.encodeIfPresent(reasoningEffort, forKey: .reasoningEffort)
         }
     }
 

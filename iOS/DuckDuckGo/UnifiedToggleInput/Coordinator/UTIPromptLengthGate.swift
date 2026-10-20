@@ -42,10 +42,10 @@ final class UTIPromptLengthGate {
         let isEnabled: () -> Bool
     }
 
+    /// Each sink ignores a repeated value, so `refresh()` reports every time.
     struct Outputs {
-        let onOverLimitChanged: (UTIFooterPromptOverLimit?) -> Void
-        let onSubmitBlockedChanged: (Bool) -> Void
-        let onChipErrorChanged: (Bool) -> Void
+        let onOverLimitChanged: (AIChatPromptLength?) -> Void
+        let onPromptOverLimitChanged: (Bool) -> Void
     }
 
     private let limits: AIChatPromptLimits
@@ -53,8 +53,6 @@ final class UTIPromptLengthGate {
     private let outputs: Outputs
 
     private(set) var promptLength: AIChatPromptLength?
-    private var reportedOverLimit: UTIFooterPromptOverLimit?
-    private var reportedSubmitBlocked = false
 
     init(limits: AIChatPromptLimits = .current, inputs: Inputs, outputs: Outputs) {
         self.limits = limits
@@ -81,16 +79,8 @@ final class UTIPromptLengthGate {
         promptLength = inputs.isEnabled()
             ? limits.evaluate(prompt: inputs.promptText(), attachments: inputs.attachments(), attachmentLimits: inputs.attachmentLimits())
             : nil
-        let overLimit = promptLength.flatMap { $0.isOverLimit ? UTIFooterPromptOverLimit(count: $0.count, limit: $0.limit) : nil }
-        if overLimit != reportedOverLimit {
-            reportedOverLimit = overLimit
-            outputs.onOverLimitChanged(overLimit)
-        }
-        let blocked = overLimit != nil
-        if blocked != reportedSubmitBlocked {
-            reportedSubmitBlocked = blocked
-            outputs.onSubmitBlockedChanged(blocked)
-            outputs.onChipErrorChanged(blocked)
-        }
+        let overLimit = promptLength.flatMap { $0.isOverLimit ? $0 : nil }
+        outputs.onOverLimitChanged(overLimit)
+        outputs.onPromptOverLimitChanged(overLimit != nil)
     }
 }

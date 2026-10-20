@@ -626,11 +626,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             ),
             outputs: .init(
                 onOverLimitChanged: { [weak self] in self?.footerController?.setPromptTooLong($0) },
-                onSubmitBlockedChanged: { [weak self] in self?.viewController.isSubmitBlockedByPromptLength = $0 },
-                onChipErrorChanged: { [weak self] in self?.viewController.showsPromptLengthError = $0 }
+                onPromptOverLimitChanged: { [weak self] in self?.viewController.isPromptOverLimit = $0 }
             )
         )
-        viewController.handler.isSubmitBlockedByPromptLength = { [weak self] in self?.promptLengthGate.isSubmitBlocked ?? false }
         viewController.attachmentPasteHandler = attachmentPasteEnabled || isPastedTextEnabled ? attachmentController.pasteHandler : nil
         viewController.onAttachmentTapped = { [weak self] id in
             self?.attachmentController.presentPastedTextSheet(id: id)

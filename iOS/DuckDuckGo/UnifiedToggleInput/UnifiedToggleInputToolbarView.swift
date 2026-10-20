@@ -79,7 +79,10 @@ final class UnifiedToggleInputToolbarView: UIView {
     }
 
     var isSubmitBlockedByPromptLength: Bool = false {
-        didSet { updateSubmitButtonAppearance() }
+        didSet {
+            guard oldValue != isSubmitBlockedByPromptLength else { return }
+            updateSubmitButtonAppearance()
+        }
     }
 
     /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.

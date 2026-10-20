@@ -19,7 +19,8 @@
 import Foundation
 
 /// Everything a prompt carries besides its text, in wire form. A nil kind omits its key; an empty array sends `[]`.
-public struct AIChatPromptAttachments: Equatable {
+/// Codes its keys flat into the enclosing message, so `Query`, `EditPromptRequest` and `EditPromptReply` share one coding.
+public struct AIChatPromptAttachments: Codable, Equatable {
     public var images: [AIChatNativePrompt.NativePromptImage]?
     public var files: [AIChatNativePrompt.NativePromptFile]?
     public var textPasted: [AIChatNativePrompt.NativePromptPastedText]?
@@ -36,5 +37,13 @@ public struct AIChatPromptAttachments: Equatable {
 
     public var isEmpty: Bool {
         (images?.isEmpty ?? true) && (files?.isEmpty ?? true) && (textPasted?.isEmpty ?? true)
+    }
+
+    /// A malformed `textPasted` drops only the pastes; failing the whole message would cancel the user's edit.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        images = try container.decodeIfPresent([AIChatNativePrompt.NativePromptImage].self, forKey: .images)
+        files = try container.decodeIfPresent([AIChatNativePrompt.NativePromptFile].self, forKey: .files)
+        textPasted = (try? container.decodeIfPresent([AIChatNativePrompt.NativePromptPastedText].self, forKey: .textPasted)) ?? nil
     }
 }

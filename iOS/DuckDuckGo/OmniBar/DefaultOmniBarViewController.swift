@@ -44,7 +44,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private var isBindingIPadDraft = false
     private let promptLimits = AIChatPromptLimits.current
     private var promptLengthGate: UTIPromptLengthGate?
-    private var promptOverLimit: UTIFooterPromptOverLimit?
+    private var promptOverLimit: AIChatPromptLength?
     private var isPastedTextEnabled: Bool { dependencies.featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) }
 
     override var isExpandedPhone: Bool {
@@ -794,15 +794,16 @@ extension DefaultOmniBarViewController {
             ),
             outputs: .init(
                 onOverLimitChanged: { [weak self] overLimit in
-                    self?.promptOverLimit = overLimit
-                    self?.refreshFooterMessage(animated: true)
+                    guard let self, promptOverLimit != overLimit else { return }
+                    promptOverLimit = overLimit
+                    refreshFooterMessage(animated: true)
                 },
-                onSubmitBlockedChanged: { [weak self] isBlocked in
-                    guard let self else { return }
-                    omniBarView.isAIChatSubmitBlockedByPromptLength = isBlocked
+                onPromptOverLimitChanged: { [weak self] isOverLimit in
+                    guard let self, omniBarView.isAIChatSubmitBlockedByPromptLength != isOverLimit else { return }
+                    omniBarView.isAIChatSubmitBlockedByPromptLength = isOverLimit
                     omniBarView.updateAIChatSendButton(hasText: hasSubmittableAIChatText)
-                },
-                onChipErrorChanged: { [weak self] in self?.omniBarView.attachmentsStripView.showsPromptLengthError = $0 }
+                    omniBarView.attachmentsStripView.showsPromptLengthError = isOverLimit
+                }
             )
         )
         promptLengthGate = gate

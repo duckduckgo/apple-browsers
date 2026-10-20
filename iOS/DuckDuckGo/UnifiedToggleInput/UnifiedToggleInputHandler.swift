@@ -135,8 +135,6 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     /// the buttons that look closed.
     var isInputBlockedByUsageLimit: Bool = false
 
-    var isSubmitBlockedByPromptLength: () -> Bool = { false }
-
     // MARK: - SwitchBarHandling — Publishers
 
     var currentTextPublisher: AnyPublisher<String, Never> {
@@ -221,7 +219,7 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     }
 
     func submitText(_ text: String, trigger: TextSubmissionTrigger) {
-        guard !isInputBlockedByUsageLimit, !isSubmitBlockedByPromptLength() else { return }
+        guard !isInputBlockedByUsageLimit else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         textSubmissionSubject.send((text: trimmed, mode: currentToggleState, trigger: trigger))

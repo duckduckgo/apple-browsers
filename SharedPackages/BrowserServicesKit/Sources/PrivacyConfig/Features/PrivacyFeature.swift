@@ -682,7 +682,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
@@ -691,7 +690,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
-    case simplifiedSyncSetupV2
 
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
     case improvedPairingFlow
@@ -852,6 +850,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
+    case historyImport
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {
@@ -883,6 +882,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmDiagnosticsRecorder
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
+    /// Preserve surviving shared pinned tabs when WebKit processes a macOS window close.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
+    case sharedPinnedTabWindowClose
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.
@@ -959,6 +961,12 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
     case bookmarkAddedSyncPromo
+
+    /// Kill switch for the import/sync promo on the Bookmarks "No bookmarks yet" empty state.
+    case bookmarksEmptyStatePromo
+
+    /// Kill switch for the import/sync promo on the Passwords panel empty states.
+    case autofillEmptyStatePromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {

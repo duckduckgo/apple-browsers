@@ -614,7 +614,7 @@ final class PermissionAuthorizationViewModelTests: XCTestCase {
     func testAuthorizationPixelIsNamedAsOnWindowsWithoutMacPrefix() {
         let pixel = PermissionPixel.authorizationAction(permissionType: .externalScheme(scheme: "mailto"), action: .allowOnce)
 
-        XCTAssertEqual(pixel.name, "permission_authorization_external-scheme_allow_once_macos")
+        XCTAssertEqual(pixel.name, "permission_authorization_external-scheme_allow-once_macos")
         XCTAssertNil(pixel.parameters)
     }
 

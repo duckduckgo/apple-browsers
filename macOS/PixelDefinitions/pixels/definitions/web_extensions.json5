@@ -4,21 +4,30 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
     },
     "m_mac_web_extension_install_error": {
         "description": "Fires when a web extension installation fails.",
         "owners": ["tomasstrba"],
         "triggers": ["exception"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            "channel",
+            "web_extension"
+        ]
     },
     "m_mac_web_extension_uninstalled": {
         "description": "Fires when a web extension is successfully uninstalled.",
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
     },
     "m_mac_web_extension_uninstall_error": {
         "description": "Fires when a web extension uninstallation fails.",
@@ -353,6 +362,70 @@
                 "type": "string",
                 "description": "Whether the user opted in to anonymous breakage reports for YouTube ad blocking (true/false)"
             },
+            "channel"
+        ]
+    },
+    "web_extension_bitwarden_dau_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation, when the Bitwarden extension from the Chrome Web Store is loaded, reporting whether it is the default password manager.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "is_default",
+                "type": "boolean",
+                "description": "Whether Bitwarden is the default password manager, so DuckDuckGo leaves passwords to it"
+            },
+            "channel"
+        ]
+    },
+    "web_extension_default_password_manager_set_macos": {
+        "description": "Fires when an extension turns off the browser's password saving through chrome.privacy, which makes it the default password manager.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_api_gaps_bitwarden_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the Bitwarden extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "web_extension_api_gaps_onepassword_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the 1Password extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "web_extension_api_gaps_lastpass_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the LastPass extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
             "channel"
         ]
     },

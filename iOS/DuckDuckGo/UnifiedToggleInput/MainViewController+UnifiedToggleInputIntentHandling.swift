@@ -367,8 +367,7 @@ private extension MainViewController {
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
-            coordinator?.clearText()
-            self?.applyUnifiedInputChromeBackground(.standardChrome)
+            self?.clearOmnibarEditingTextAndChromeUnlessOnAITab()
             self?.applyFloatingUIIfNeeded()
             if fadesForFloatingBottom {
                 // Lay out favorites while still covered by UTI, so a tall grid's last row doesn't pop in late.
@@ -434,6 +433,13 @@ private extension MainViewController {
         // Floating-bottom keeps NTP chrome hidden until dismiss completion / interrupt cleanup.
         resetUnifiedInputContentAfterHide(hidingContent: !fadesForFloatingBottom, restoringNTPChrome: !fadesForFloatingBottom)
         viewCoordinator.suggestionTrayContainer.backgroundColor = .clear
+    }
+
+    /// A tab switch can land on a Duck.ai tab before the dismiss completes; its restored draft and chrome must stay.
+    private func clearOmnibarEditingTextAndChromeUnlessOnAITab() {
+        guard let coordinator = unifiedToggleInputCoordinator, !coordinator.isAITabState else { return }
+        coordinator.clearText()
+        applyUnifiedInputChromeBackground(.standardChrome)
     }
 
     func handleHideIntent() {

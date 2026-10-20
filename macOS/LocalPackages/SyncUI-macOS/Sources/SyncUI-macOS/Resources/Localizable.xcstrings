@@ -2220,7 +2220,7 @@
       }
     },
     "preferences.begin-sync-v2.card-button" : {
-      "comment" : "Button text on the Begin Syncing card in sync settings (V2)",
+      "comment" : "Button text on the Begin Syncing card in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2280,7 +2280,7 @@
       }
     },
     "preferences.begin-sync-v2.card-description" : {
-      "comment" : "Begin Syncing card description in sync settings (V2)",
+      "comment" : "Begin Syncing card description in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2340,7 +2340,7 @@
       }
     },
     "preferences.begin-sync-v2.card-footer" : {
-      "comment" : "Footer under the Begin Syncing card in sync settings (V2). The [text](url) markdown is a link and must be preserved.",
+      "comment" : "Footer under the Begin Syncing card in sync settings. The [text](url) markdown is a link and must be preserved.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2400,7 +2400,7 @@
       }
     },
     "preferences.begin-sync-v2.card-title" : {
-      "comment" : "Begin Syncing card title in sync settings (V2)",
+      "comment" : "Begin Syncing card title in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2700,7 +2700,7 @@
       }
     },
     "preferences.preparing-to-sync-v2.check-other-device-title" : {
-      "comment" : "Title shown when Sync setup is still waiting for the other device to finish (V2)",
+      "comment" : "Title shown when Sync setup is still waiting for the other device to finish",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2760,7 +2760,7 @@
       }
     },
     "preferences.preparing-to-sync-v2.dialog-action" : {
-      "comment" : "Status text while preparing to sync (V2)",
+      "comment" : "Status text while preparing to sync",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2820,7 +2820,7 @@
       }
     },
     "preferences.preparing-to-sync-v2.dialog-title" : {
-      "comment" : "Preparing to sync dialog title during two-device sync set up (V2)",
+      "comment" : "Preparing to sync dialog title during two-device sync set up",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2880,7 +2880,7 @@
       }
     },
     "preferences.recover-synced-data-v2.button" : {
-      "comment" : "Button to recover synced data with a recovery code in sync settings (V2)",
+      "comment" : "Button to recover synced data with a recovery code in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2940,7 +2940,7 @@
       }
     },
     "preferences.recover-synced-data-v2.section-title" : {
-      "comment" : "Recover Synced Data section title in sync settings (V2)",
+      "comment" : "Recover Synced Data section title in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -2995,6 +2995,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Восстановление синхронизованных данных"
+          }
+        }
+      }
+    },
+    "preferences.recover-synced-data-v3.dialog-button" : {
+      "comment" : "Button on the dialog shown before entering a Sync recovery code that continues to the recovery code screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisierte Daten wiederherstellen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recover Synced Data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recuperar datos sincronizados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Récupérer les données synchronisées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recupera i dati sincronizzati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesynchroniseerde gegevens herstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odzyskaj zsynchronizowane dane"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recuperar dados sincronizados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Восстановить синхронизированные данные"
+          }
+        }
+      }
+    },
+    "preferences.recover-synced-data-v3.dialog-subtitle" : {
+      "comment" : "Subtitle of the dialog shown before entering a Sync recovery code",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du benötigst den Wiederherstellungscode, den du bei der Einrichtung von Sync & Backup erhalten hast. Möglicherweise hast du ihn auf dem verwendeten Gerät als PDF gespeichert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You’ll need the Recovery Code you got when you set up Sync & Backup. You may have saved it as a PDF on the device you used."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Necesitarás el código de recuperación que recibiste cuando configuraste Sync & Backup. Puede que lo hayas guardado como PDF en el dispositivo que usaste."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il vous faudra le code de récupération obtenu lors de la configuration de Sync & Backup. Peut-être l'avez-vous enregistré au format PDF sur l'appareil utilisé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ti servirà il codice di ripristino che hai ricevuto quando hai configurato Sync & Backup. Potresti averlo salvato in formato PDF sul dispositivo che hai utilizzato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je hebt de herstelcode nodig die je kreeg toen je Sync & Backup instelde. Je hebt deze mogelijk als PDF opgeslagen op het apparaat dat je gebruikte."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Będziesz potrzebować kodu odzyskiwania otrzymanego po skonfigurowaniu funkcji Sync & Backup. Możliwe, że został on zapisany jako plik PDF na używanym wówczas urządzeniu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vais precisar do código de recuperação que recebeste quando configuraste o Sync & Backup. Podes ter guardado como um PDF no dispositivo que utilizaste."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вам потребуется код восстановления, полученный при настройке Sync & Backup. Возможно, вы сохранили его в виде PDF на устройстве, где выполнялась настройка."
+          }
+        }
+      }
+    },
+    "preferences.recover-synced-data-v3.dialog-title" : {
+      "comment" : "Title of the dialog shown before entering a Sync recovery code",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stelle deine synchronisierten Daten wieder her"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recover your synced data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recuperar tus datos sincronizados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Récupérer vos données synchronisées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recupera i tuoi dati sincronizzati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herstel je gesynchroniseerde gegevens"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odzyskaj zsynchronizowane dane"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recupera os teus dados sincronizados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Восстановление синхронизированных данных"
           }
         }
       }
@@ -3240,7 +3420,7 @@
       }
     },
     "preferences.sync-enabled-v2.footer" : {
-      "comment" : "Footer describing what is being synced in sync settings when sync is enabled (V2). The [text](url) markdown is a link and must be preserved.",
+      "comment" : "Footer describing what is being synced in sync settings when sync is enabled. The [text](url) markdown is a link and must be preserved.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3300,7 +3480,7 @@
       }
     },
     "preferences.sync-enabled-v2.footer-without-ai-chat" : {
-      "comment" : "Footer describing what is being synced in sync settings when sync is enabled and Duck.ai chat sync is unavailable (V2). The [text](url) markdown is a link and must be preserved.",
+      "comment" : "Footer describing what is being synced in sync settings when sync is enabled and Duck.ai chat sync is unavailable. The [text](url) markdown is a link and must be preserved.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3360,7 +3540,7 @@
       }
     },
     "preferences.sync-this-device-v2.title" : {
-      "comment" : "Title of the row to start syncing and backing up this device in sync settings (V2)",
+      "comment" : "Title of the row to start syncing and backing up this device in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3420,7 +3600,7 @@
       }
     },
     "preferences.sync.another-device-prompt-v2.another-device-button" : {
-      "comment" : "Button to continue to the pairing screen to sync with another device (V2)",
+      "comment" : "Button to continue to the pairing screen to sync with another device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3480,7 +3660,7 @@
       }
     },
     "preferences.sync.another-device-prompt-v2.subtitle" : {
-      "comment" : "Subtitle of the prompt asking whether to sync with another device or just this device (V2)",
+      "comment" : "Subtitle of the prompt asking whether to sync with another device or just this device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3540,7 +3720,7 @@
       }
     },
     "preferences.sync.another-device-prompt-v2.this-device-only-button" : {
-      "comment" : "Button to enable Sync & Backup on the current device only, without pairing another device (V2)",
+      "comment" : "Button to enable Sync & Backup on the current device only, without pairing another device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3600,7 +3780,7 @@
       }
     },
     "preferences.sync.another-device-prompt-v2.title" : {
-      "comment" : "Title of the prompt asking whether to sync with another device or just this device (V2)",
+      "comment" : "Title of the prompt asking whether to sync with another device or just this device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3659,8 +3839,128 @@
         }
       }
     },
+    "preferences.sync.another-device-prompt-v3.subtitle" : {
+      "comment" : "Subtitle of the prompt explaining that the user can sync this device only and pair another device later",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hast du gerade kein anderes Gerät? Synchronisiere nur dieses Gerät und später mit einem anderen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t have another device right now? Sync this device only and sync with another one later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿No tienes otro dispositivo ahora mismo? Sincroniza solo este dispositivo y hazlo con otro más adelante."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous n'avez pas d'autre appareil pour le moment ? Synchronisez uniquement cet appareil, puis effectuez la synchronisation avec un autre plus tard."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non hai un altro dispositivo al momento? Sincronizza solo questo dispositivo e sincronizzalo con un altro più tardi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heb je nu geen ander apparaat? Synchroniseer alleen dit apparaat en synchroniseer later met een ander apparaat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie masz teraz pod ręką innego urządzenia? Zsynchronizuj tylko to urządzenie, a z innym zsynchronizujesz je później."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não tens outro dispositivo neste momento? Sincroniza apenas este dispositivo e sincroniza com outro mais tarde."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сейчас рядом нет других устройств? Синхронизируйте данные только с этим устройством, а синхронизацию на другом устройстве можно выполнить позже."
+          }
+        }
+      }
+    },
+    "preferences.sync.another-device-prompt-v3.title" : {
+      "comment" : "Title of the prompt asking whether to sync with another device or just this device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hast du ein anderes Gerät in der Nähe? Geräte synchronisieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Do you have another device nearby? Sync your devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Tienes otro dispositivo cerca? Sincroniza tus dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avez-vous un autre appareil à proximité ? Synchronisez vos appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai un altro dispositivo nelle vicinanze? Sincronizza i tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heb je een ander apparaat in de buurt? Synchroniseer je apparaten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy masz w pobliżu inne urządzenie? Synchronizuj swoje urządzenia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tens outro dispositivo por perto? Sincroniza os teus dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поблизости есть другие устройства? Синхронизируйте все свои устройства."
+          }
+        }
+      }
+    },
     "preferences.sync.authentication-cancelled-v2.close-button" : {
-      "comment" : "Button to dismiss the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "comment" : "Button to dismiss the alert shown when the user cancels the device authentication prompt while setting up Sync",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3720,7 +4020,7 @@
       }
     },
     "preferences.sync.authentication-cancelled-v2.subtitle" : {
-      "comment" : "Subtitle of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "comment" : "Subtitle of the alert shown when the user cancels the device authentication prompt while setting up Sync",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3780,7 +4080,7 @@
       }
     },
     "preferences.sync.authentication-cancelled-v2.title" : {
-      "comment" : "Title of the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "comment" : "Title of the alert shown when the user cancels the device authentication prompt while setting up Sync",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3840,7 +4140,7 @@
       }
     },
     "preferences.sync.authentication-cancelled-v2.try-again-button" : {
-      "comment" : "Button to retry device authentication from the alert shown when the user cancels the device authentication prompt while setting up Sync (V2)",
+      "comment" : "Button to retry device authentication from the alert shown when the user cancels the device authentication prompt while setting up Sync",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -3900,7 +4200,7 @@
       }
     },
     "preferences.sync.bookmarks-section-title-v2" : {
-      "comment" : "Bookmarks options section title in sync settings (V2)",
+      "comment" : "Bookmarks options section title in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4020,7 +4320,7 @@
       }
     },
     "preferences.sync.delete-account-v2.button" : {
-      "comment" : "Button that confirms turning Sync off and deleting the server data (V2)",
+      "comment" : "Button that confirms turning Sync off and deleting the server data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4080,7 +4380,7 @@
       }
     },
     "preferences.sync.delete-account-v2.message" : {
-      "comment" : "Message of the confirmation shown before turning Sync off and deleting the server data (V2)",
+      "comment" : "Message of the confirmation shown before turning Sync off and deleting the server data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4140,7 +4440,7 @@
       }
     },
     "preferences.sync.delete-account-v2.title" : {
-      "comment" : "Title of the confirmation shown before turning Sync off and deleting the server data (V2)",
+      "comment" : "Title of the confirmation shown before turning Sync off and deleting the server data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4199,8 +4499,68 @@
         }
       }
     },
+    "preferences.sync.delete-server-data-v3.confirm.title" : {
+      "comment" : "Title of the final confirmation before turning off Sync & Backup and deleting the server data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst diese Aktion nicht rückgängig machen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can’t undo this action."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No podrás deshacer esta acción."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous ne pouvez pas annuler cette action."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non puoi annullare questa azione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je kunt deze actie niet ongedaan maken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tej czynności nie można cofnąć."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não podes anular esta ação."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это действие нельзя отменить."
+          }
+        }
+      }
+    },
     "preferences.sync.device-details-v2.close-button" : {
-      "comment" : "Button that dismisses the details dialog of another synced device (V2)",
+      "comment" : "Button that dismisses the details dialog of another synced device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4260,7 +4620,7 @@
       }
     },
     "preferences.sync.device-details-v2.done-button" : {
-      "comment" : "Button that saves the device name and dismisses the device details dialog (V2)",
+      "comment" : "Button that saves the device name and dismisses the device details dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4320,7 +4680,7 @@
       }
     },
     "preferences.sync.device-details-v2.name-label" : {
-      "comment" : "Label of the editable device name field on the device details dialog (V2)",
+      "comment" : "Label of the editable device name field on the device details dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4380,7 +4740,7 @@
       }
     },
     "preferences.sync.device-details-v2.remove-device-button" : {
-      "comment" : "Button that removes another synced device, on the device details dialog (V2)",
+      "comment" : "Button that removes another synced device, on the device details dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4440,7 +4800,7 @@
       }
     },
     "preferences.sync.device-details-v2.synced-status" : {
-      "comment" : "Status shown under the device name on the device details dialog (V2)",
+      "comment" : "Status shown under the device name on the device details dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4500,7 +4860,7 @@
       }
     },
     "preferences.sync.device-details-v2.turn-off-sync-button" : {
-      "comment" : "Button that turns Sync & Backup off for the current device, on the device details dialog (V2)",
+      "comment" : "Button that turns Sync & Backup off for the current device, on the device details dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4560,7 +4920,7 @@
       }
     },
     "preferences.sync.download-recovery-code-v2" : {
-      "comment" : "Button to download the recovery code in sync settings (V2)",
+      "comment" : "Button to download the recovery code in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4620,7 +4980,7 @@
       }
     },
     "preferences.sync.fetch-favicons-option-caption-v2" : {
-      "comment" : "Caption for the load bookmark icons option in sync settings (V2)",
+      "comment" : "Caption for the load bookmark icons option in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4680,7 +5040,7 @@
       }
     },
     "preferences.sync.fetch-favicons-option-title-v2" : {
-      "comment" : "Title for the load bookmark icons option in sync settings (V2)",
+      "comment" : "Title for the load bookmark icons option in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4740,7 +5100,7 @@
       }
     },
     "preferences.sync.my-devices-footer-v2" : {
-      "comment" : "Footer under the synced devices section in sync settings (V2)",
+      "comment" : "Footer under the synced devices section in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4800,7 +5160,7 @@
       }
     },
     "preferences.sync.my-devices-v2" : {
-      "comment" : "Synced devices section title in sync settings (V2)",
+      "comment" : "Synced devices section title in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4860,7 +5220,7 @@
       }
     },
     "preferences.sync.recovery-code-section-title-v2" : {
-      "comment" : "Recovery code section title in sync settings (V2)",
+      "comment" : "Recovery code section title in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4920,7 +5280,7 @@
       }
     },
     "preferences.sync.recovery-instructions-footer-v2" : {
-      "comment" : "Footer on the recovery code section in sync settings (V2). The [text](url) markdown is a link and must be preserved.",
+      "comment" : "Footer on the recovery code section in sync settings. The [text](url) markdown is a link and must be preserved.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4980,7 +5340,7 @@
       }
     },
     "preferences.sync.recovery-instructions-v2" : {
-      "comment" : "Instructions on how to restore synced data in sync settings (V2)",
+      "comment" : "Instructions on how to restore synced data in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5040,7 +5400,7 @@
       }
     },
     "preferences.sync.remove-device-v2.button" : {
-      "comment" : "Button that confirms removing a synced device (V2)",
+      "comment" : "Button that confirms removing a synced device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5100,7 +5460,7 @@
       }
     },
     "preferences.sync.remove-device-v2.message" : {
-      "comment" : "Message of the confirmation shown before removing a synced device (V2). The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.",
+      "comment" : "Message of the confirmation shown before removing a synced device. The device name is inserted in place of %@ and the ** markers around it indicate bold styling, which should be preserved.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5160,7 +5520,7 @@
       }
     },
     "preferences.sync.remove-device-v2.title" : {
-      "comment" : "Title of the confirmation shown before removing a synced device (V2)",
+      "comment" : "Title of the confirmation shown before removing a synced device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5219,8 +5579,188 @@
         }
       }
     },
+    "preferences.sync.remove-device-v3.button" : {
+      "comment" : "Button that confirms removing a device from Sync & Backup",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить"
+          }
+        }
+      }
+    },
+    "preferences.sync.remove-device-v3.message" : {
+      "comment" : "Message of the confirmation shown before removing a device from Sync & Backup. The device name is inserted in place of %@",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@“ kann nicht mehr auf deine synchronisierten Daten auf anderen Geräten zugreifen. Lesezeichen, Autofill-Daten und Duck.ai-Chats bleiben auf deinen Geräten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%@” will no longer be able to access your synced data on other devices. Bookmarks, Autofill data and Duck.ai chats will remain on your devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» ya no podrá acceder a tus datos sincronizados en otros dispositivos. Los marcadores, los datos de autocompletado y los chats de Duck.ai permanecerán en tus dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "« %@ » ne pourra plus accéder à tes données synchronisées sur d’autres appareils. Les signets, les données de remplissage automatique et les discussions Duck.ai resteront sur tes appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "\"%@\" non potrà più accedere ai tuoi dati sincronizzati su altri dispositivi. I segnalibri, i dati di compilazione automatica e le chat di Duck.ai resteranno sui tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” heeft geen toegang meer tot je gesynchroniseerde gegevens op andere apparaten. Bladwijzers, automatisch ingevulde gegevens en Duck.ai-chats blijven op je apparaten staan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Urządzenie %@ nie będzie już mieć dostępu do zsynchronizowanych danych na innych urządzeniach. Zakładki, dane autouzupełniania i czaty Duck.ai pozostaną na Twoich urządzeniach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” deixará de poder aceder aos teus dados sincronizados noutros dispositivos. Os marcadores, dados de preenchimento automático e conversas do Duck.ai permanecerão nos teus dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "«%@» больше не сможет получать доступ к твоим синхронизированным данным на других устройствах. Закладки, данные автозаполнения и чаты Duck.ai останутся на твоих устройствах."
+          }
+        }
+      }
+    },
+    "preferences.sync.remove-device-v3.title" : {
+      "comment" : "Title of the confirmation shown before removing a device from Sync & Backup. The device name is inserted in place of %@",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ aus Sync & Backup entfernen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove %@ from Sync & Backup?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quieres eliminar %@ de Sync & Backup?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer %@ de Sync & Backup ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovere %@ da Sync & Backup?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ verwijderen uit Sync & Backup?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć urządzenie %@ z Sync & Backup?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover %@ do Sync & Backup?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить %@ из Sync & Backup?"
+          }
+        }
+      }
+    },
     "preferences.sync.share-favorite-option-caption-v2" : {
-      "comment" : "Caption for the share favorites option in sync settings (V2)",
+      "comment" : "Caption for the share favorites option in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5280,7 +5820,7 @@
       }
     },
     "preferences.sync.share-favorite-option-title-v2" : {
-      "comment" : "Title for the share favorites option in sync settings (V2)",
+      "comment" : "Title for the share favorites option in sync settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5340,7 +5880,7 @@
       }
     },
     "preferences.sync.success-v2.copied-code-button" : {
-      "comment" : "Confirmation shown on the copy button after copying the recovery code in the Sync success dialog (V2)",
+      "comment" : "Confirmation shown on the copy button after copying the recovery code in the Sync success dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5400,7 +5940,7 @@
       }
     },
     "preferences.sync.success-v2.copy-code-button" : {
-      "comment" : "Button to copy the recovery code in the Sync success dialog (V2)",
+      "comment" : "Button to copy the recovery code in the Sync success dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5460,7 +6000,7 @@
       }
     },
     "preferences.sync.success-v2.description" : {
-      "comment" : "Recovery code explanation in the Sync success dialog (V2)",
+      "comment" : "Recovery code explanation in the Sync success dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5520,7 +6060,7 @@
       }
     },
     "preferences.sync.success-v2.download-pdf-button" : {
-      "comment" : "Button to download the recovery code as a PDF in the Sync success dialog (V2)",
+      "comment" : "Button to download the recovery code as a PDF in the Sync success dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5580,7 +6120,7 @@
       }
     },
     "preferences.sync.success-v2.fallback-device-name" : {
-      "comment" : "Fallback device name in the Sync success dialog when the current device name is unavailable (V2)",
+      "comment" : "Fallback device name in the Sync success dialog when the current device name is unavailable",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5640,7 +6180,7 @@
       }
     },
     "preferences.sync.success-v2.recovery-code-label" : {
-      "comment" : "Recovery code label in the Sync success dialog (V2)",
+      "comment" : "Recovery code label in the Sync success dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5700,7 +6240,7 @@
       }
     },
     "preferences.sync.success-v2.title" : {
-      "comment" : "Title in the Sync success dialog. %@ is the name of the device that was added (V2)",
+      "comment" : "Title in the Sync success dialog. %@ is the name of the device that was added",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5759,8 +6299,188 @@
         }
       }
     },
+    "preferences.sync.sync-this-device-fallback.button" : {
+      "comment" : "Button on the dialog offering to sync only this computer, which turns on Sync & Backup for this device only",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Gerät synchronisieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync This Device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar este dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser cet appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizza questo dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit apparaat synchroniseren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronizuj to urządzenie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar este dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать это устройство"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-this-device-fallback.subtitle" : {
+      "comment" : "Subtitle of the dialog offering to sync only this computer after the user closes the Sync with another device dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst später mit einer anderen DuckDuckGo-App synchronisieren und deine Autofill-Daten, Lesezeichen und Duck.ai-Chats auf allen deinen Apps abrufen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can sync with another DuckDuckGo app later and get your autofill data, bookmarks, and Duck.ai chats on all your apps."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes sincronizar con otra aplicación de DuckDuckGo más adelante y tener tus datos de autocompletar, marcadores y chats de Duck.ai en todas tus aplicaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu pourras plus tard synchroniser avec une autre application DuckDuckGo et retrouver tes données de saisie automatique, tes signets et tes discussions Duck.ai dans toutes tes applications."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puoi sincronizzare con un'altra app DuckDuckGo in un secondo momento e ottenere i tuoi dati di compilazione automatica, i segnalibri e le chat di Duck.ai su tutte le tue app."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je kunt later met een andere DuckDuckGo-app synchroniseren en je automatisch ingevulde gegevens, bladwijzers en Duck.ai-chats in al je apps krijgen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Możesz później zsynchronizować dane z inną aplikacją DuckDuckGo i mieć dane autouzupełniania, zakładki oraz czaty Duck.ai we wszystkich swoich aplikacjach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podes sincronizar com outra aplicação DuckDuckGo mais tarde e ter os teus dados de preenchimento automático, marcadores e conversas do Duck.ai em todas as tuas aplicações."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Позже ты сможешь синхронизироваться с другим приложением DuckDuckGo и получить данные автозаполнения, закладки и чаты Duck.ai во всех своих приложениях."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-this-device-fallback.title" : {
+      "comment" : "Title of the dialog offering to sync only this computer after the user closes the Sync with another device dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diesen Computer vorerst synchronisieren?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sync this computer for now?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Sincronizar este ordenador por ahora?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchroniser cet ordinateur pour l’instant ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizzare questo computer per ora?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze computer voorlopig synchroniseren?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zsynchronizować na razie ten komputer?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizar este computador por agora?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизировать пока только этот компьютер?"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device-v2.copied" : {
-      "comment" : "Confirmation shown after copying the sync code (V2)",
+      "comment" : "Confirmation shown after copying the sync code",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5820,7 +6540,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.copy-confirmation-message" : {
-      "comment" : "Message of the reminder shown after copying the sync code (V2)",
+      "comment" : "Message of the reminder shown after copying the sync code",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5880,7 +6600,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.copy-confirmation-title" : {
-      "comment" : "Title of the reminder shown after copying the sync code (V2)",
+      "comment" : "Title of the reminder shown after copying the sync code",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -5940,7 +6660,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.enter-step-3" : {
-      "comment" : "Third pairing instruction when entering a code from another device (V2)",
+      "comment" : "Third pairing instruction when entering a code from another device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6000,7 +6720,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.enter-tab" : {
-      "comment" : "Tab that lets the user paste a sync code from another device (V2)",
+      "comment" : "Tab that lets the user paste a sync code from another device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6060,7 +6780,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.enter-title" : {
-      "comment" : "Title of the Sync with another device dialog when entering a sync code (V2)",
+      "comment" : "Title of the Sync with another device dialog when entering a sync code",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6120,7 +6840,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.example-code" : {
-      "comment" : "Label above the example sync code in the code entry tab (V2)",
+      "comment" : "Label above the example sync code in the code entry tab",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6180,7 +6900,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.paste-code" : {
-      "comment" : "Button that pastes a sync code from the clipboard (V2)",
+      "comment" : "Button that pastes a sync code from the clipboard",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6240,7 +6960,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.scan-step-1" : {
-      "comment" : "First pairing instruction (V2). %@ is replaced by the emphasized DuckDuckGo product name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon after it.",
+      "comment" : "First pairing instruction. %@ is replaced by the emphasized DuckDuckGo product name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon after it.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6300,7 +7020,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.scan-step-1-detail" : {
-      "comment" : "Emphasized DuckDuckGo product name inserted into the first pairing instruction (On your phone, open the %@) (V2)",
+      "comment" : "Emphasized DuckDuckGo product name inserted into the first pairing instruction (On your phone, open the %@)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6360,7 +7080,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.scan-step-3" : {
-      "comment" : "Third pairing instruction when showing the QR code (V2)",
+      "comment" : "Third pairing instruction when showing the QR code",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6420,7 +7140,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.scan-tab" : {
-      "comment" : "Tab that displays a QR code to scan from another device (V2)",
+      "comment" : "Tab that displays a QR code to scan from another device",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6480,7 +7200,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.scan-title" : {
-      "comment" : "Title of the Sync with another device dialog when showing the QR code (V2)",
+      "comment" : "Title of the Sync with another device dialog when showing the QR code",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6540,7 +7260,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.step-2" : {
-      "comment" : "Second pairing instruction (V2). %@ is replaced by the emphasized Settings path (e.g. “Settings › Sync & Backup › Sync With Another Device”).",
+      "comment" : "Second pairing instruction. %@ is replaced by the emphasized Settings path (e.g. “Settings › Sync & Backup › Sync With Another Device”).",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6600,7 +7320,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.step-2-detail" : {
-      "comment" : "Emphasized Settings path inserted into the second pairing instruction (Go to %@) (V2)",
+      "comment" : "Emphasized Settings path inserted into the second pairing instruction (Go to %@)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6660,7 +7380,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.step-4" : {
-      "comment" : "Fourth pairing instruction, reminding the user to keep the dialog open (V2)",
+      "comment" : "Fourth pairing instruction, reminding the user to keep the dialog open",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6895,6 +7615,486 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отключить и удалить данные с сервера"
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-sync-v3.data-remains.footer" : {
+      "comment" : "Footer under the list of devices on the turn off Sync & Backup dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen, Autofill-Daten und Duck.ai-Chats bleiben auf deinen Geräten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmarks, Autofill data and Duck.ai chats will remain on your devices."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los marcadores, los datos de autocompletado y los chats de Duck.ai permanecerán en tus dispositivos."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les signets, les données de saisie automatique et les discussions Duck.ai resteront sur vos appareils."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I segnalibri, i dati di compilazione automatica e le chat di Duck.ai resteranno sui tuoi dispositivi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bladwijzers, automatisch ingevulde gegevens en Duck.ai-chats blijven op je apparaten staan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zakładki, dane autouzupełniania i czaty Duck.ai pozostaną na Twoich urządzeniach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os marcadores, dados de preenchimento automático e conversas do Duck.ai permanecerão nos teus dispositivos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закладки, данные автозаполнения и чаты Duck.ai останутся на ваших устройствах."
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-sync-v3.delete.button" : {
+      "comment" : "Button on the turn off Sync & Backup dialog that turns off Sync & Backup on all devices and deletes the server data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serverdaten deaktivieren und löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn Off and Delete Server Data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivar y eliminar datos del servidor"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactiver et supprimer les données du serveur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattiva ed elimina i dati del server"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servergegevens uitschakelen en verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłącz i usuń dane z serwera"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativar e eliminar dados do servidor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить и удалить данные с сервера"
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-sync-v3.delete.message" : {
+      "comment" : "Message of the turn off Sync & Backup dialog when deleting server data is selected, also shown on the final confirmation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Geräte, die Sync & Backup verwenden, werden getrennt und deine synchronisierten Daten werden vom Server gelöscht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All devices using Sync & Backup will be disconnected and your synced data will be deleted from the server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los dispositivos que usan Sync & Backup se desconectarán y tus datos sincronizados se eliminarán del servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les appareils utilisant Sync & Backup seront déconnectés et vos données synchronisées seront supprimées du serveur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti i dispositivi che usano Sync & Backup saranno disconnessi e i dati sincronizzati eliminati dal server."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De verbinding met alle apparaten die Sync & Backup gebruiken wordt verbroken en je gesynchroniseerde gegevens worden van de server verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wszystkie urządzenia korzystające z Sync & Backup zostaną odłączone, a zsynchronizowane dane – usunięte z serwera."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos os dispositivos que usam Sync & Backup serão desconectados e os dados sincronizados serão eliminados do servidor."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На всех устройствах, использующих Sync & Backup, синхронизация будет отключена, а ваши синхронизированные данные будут удалены с сервера."
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-sync-v3.delete.title" : {
+      "comment" : "Title of the turn off Sync & Backup dialog when deleting server data is selected",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup deaktivieren?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn Off Sync & Backup?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Desactivar Sync & Backup?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactiver Sync & Backup ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattivare Sync & Backup?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup uitschakelen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłączyć Sync & Backup?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativar Sync & Backup?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить Sync & Backup?"
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-sync-v3.delete.toggle" : {
+      "comment" : "Toggle label on the turn off Sync & Backup dialog to also delete the synced data from the server",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auch Serverdaten löschen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Also delete server data?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar también los datos del servidor?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer également les données du serveur ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminare anche i dati del server?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wil je ook de servergegevens verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć również dane z serwera?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar também os dados do servidor?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Также удалить данные с сервера?"
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-sync-v3.delete.toggle.caption" : {
+      "comment" : "Caption under the delete server data toggle on the turn off Sync & Backup dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup deaktivieren und alle synchronisierten Daten vom Server löschen und deinen Wiederherstellungscode deaktivieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn off Sync & Backup and delete all synced data from the server and deactivate your recovery code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivar Sync & Backup y eliminar todos los datos sincronizados del servidor y desactivar tu código de recuperación."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivez Sync & Backup, supprimez toutes les données synchronisées du serveur et désactivez votre code de récupération."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattiva Sync & Backup ed elimina tutti i dati sincronizzati dal server e disattiva il tuo codice di recupero."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup uitschakelen en alle gesynchroniseerde gegevens van de server verwijderen en je herstelcode deactiveren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłącz Sync & Backup, usuń wszystkie zsynchronizowane dane z serwera i dezaktywuj swój kod odzyskiwania."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativa o Sync & Backup e elimina todos os dados sincronizados do servidor e desativa o teu código de recuperação."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить Sync & Backup и удалить все синхронизированные данные с сервера и деактивировать свой код восстановления."
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-sync-v3.remove-device.button" : {
+      "comment" : "Button on the turn off Sync & Backup dialog that turns off Sync & Backup on this device only",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerät entfernen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Device"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar dispositivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi dispositivo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apparaat verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń urządzenie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover dispositivo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить устройство"
+          }
+        }
+      }
+    },
+    "preferences.sync.turn-off-sync-v3.settings-button" : {
+      "comment" : "Sync settings button that opens the options to turn off Sync & Backup",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup deaktivieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn Off Sync & Backup"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivar Sync & Backup"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactiver Sync & Backup"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattiva Sync & Backup"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync & Backup uitschakelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłącz Sync & Backup"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativar Sync & Backup"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключить Sync & Backup"
           }
         }
       }

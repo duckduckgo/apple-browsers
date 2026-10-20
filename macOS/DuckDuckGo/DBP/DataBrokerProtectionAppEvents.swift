@@ -50,7 +50,7 @@ struct DataBrokerProtectionAppEvents {
 #endif
     func applicationDidFinishLaunching() {
 #if DEBUG
-        if DataBrokerProtectionManager.shared.handleDebugLaunch(LaunchOptionsHandler()) { return }
+        if DataBrokerProtectionManager.shared.handleDebugLaunch() { return }
 #endif
         let loginItemsManager = LoginItemsManager()
         let loginItemInterface = DataBrokerProtectionManager.shared.loginItemInterface

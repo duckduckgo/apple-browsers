@@ -24,6 +24,11 @@ public protocol HistoryImporterProtocol {
 }
 
 public final class HistoryImporter: HistoryImporterProtocol {
+    private struct VisitKey: Hashable {
+        let url: URL
+        let date: Date
+    }
+
     private let historyCoordinator: HistoryCoordinating
     private let cutoff: () -> Date
 
@@ -63,10 +68,5 @@ public final class HistoryImporter: HistoryImporterProtocol {
         historyCoordinator.addImportedVisits(newVisits)
         summary.imported = newVisits.count
         return summary
-    }
-
-    private struct VisitKey: Hashable {
-        let url: URL
-        let date: Date
     }
 }

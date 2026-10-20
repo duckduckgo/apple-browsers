@@ -283,6 +283,7 @@ final class AIChatCoordinator: AIChatCoordinating {
 
         if let chatViewController = sessionStore.sessions[currentTabID]?.chatViewController {
             chatViewController.setAIChatPrompt(prompt)
+            chatViewController.focusChatWebView()
             entryPointReporter.reportEntry(to: nil)
         } else {
             AIChatPromptHandler.shared.setData(prompt)
@@ -297,8 +298,10 @@ final class AIChatCoordinator: AIChatCoordinating {
             return
         }
         if isChatFloating(for: currentTabID) {
-            sessionStore.sessions[currentTabID]?.chatViewController?.setAIChatPrompt(prompt)
+            let chatViewController = sessionStore.sessions[currentTabID]?.chatViewController
+            chatViewController?.setAIChatPrompt(prompt)
             focusFloatingWindow(for: currentTabID)
+            chatViewController?.focusChatWebView()
             entryPointReporter.reportEntry(to: nil)
             return
         }
@@ -313,6 +316,7 @@ final class AIChatCoordinator: AIChatCoordinating {
         }
         if isChatFloating(for: currentTabID) {
             focusFloatingWindow(for: currentTabID)
+            sessionStore.sessions[currentTabID]?.chatViewController?.focusChatWebView()
             entryPointReporter.reportEntry(to: nil)
             return
         }

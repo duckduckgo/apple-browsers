@@ -389,7 +389,7 @@ private extension UnifiedToggleInputAttachmentPresenter {
     }
 
     func presentDocumentPicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedFileTypes, asCopy: true)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedFileTypes, asCopy: false)
         picker.allowsMultipleSelection = false
         picker.delegate = self
         pickerCallbacks[ObjectIdentifier(picker)] = pickerCallbacksProvider?()

@@ -674,32 +674,43 @@ extension URL {
         return canonicalHost
      }
 
-    /// `absoluteString` up to the first literal `#`; an encoded `%23` is not a delimiter.
+    /// Byte offset of the `#` that starts the fragment in `bytes` (the UTF-8 of `absoluteString`), or `nil` if there is
+    /// none. An encoded `%23` is not a delimiter.
     ///
-    /// Foundation's `fragment` answers in O(1) for URLs that have none, so they are not scanned at all. Otherwise the
-    /// `#` is found in the UTF-8 bytes in place: `String.range(of:)` walks grapheme clusters and takes hundreds of
-    /// milliseconds on multi-megabyte URLs, which stalled the main thread. Opaque URLs (`about:`, `data:`) are always
-    /// scanned, because `fragment` can't see their fragment.
+    /// Core Foundation reports it from the already parsed URL, so nothing is scanned. That offset counts the bytes the
+    /// URL was created from, which differ from `absoluteString` when it had non-ASCII characters or a tab, and it
+    /// doesn't cover a relative URL's base. Opaque URLs (`about:`, `data:`) have no parsed fragment. In those cases the
+    /// `#` is found in the bytes instead.
+    private func fragmentDelimiterOffset(in bytes: UnsafeBufferPointer<UInt8>) -> Int? {
+        if baseURL == nil, !isOpaque {
+            var rangeWithDelimiter = CFRange()
+            let range = CFURLGetByteRangeForComponent(self as CFURL, .fragment, &rangeWithDelimiter)
+            guard range.location != kCFNotFound else { return nil }
+
+            let offset = rangeWithDelimiter.location
+            if offset < bytes.count, bytes[offset] == UInt8(ascii: "#") { return offset }
+        }
+        return bytes.firstIndex(of: UInt8(ascii: "#"))
+    }
+
+    /// `absoluteString` up to the fragment. URLs without a fragment are returned as is, without a copy.
+    ///
+    /// `String.range(of:)` walks grapheme clusters and took hundreds of milliseconds on multi-megabyte URLs, which
+    /// stalled the main thread.
     private var absoluteStringWithoutFragment: String {
         var string = absoluteString
-        guard fragment != nil || isOpaque else { return string }
-        return string.withUTF8 { bytes in
-            let end = bytes.firstIndex(of: UInt8(ascii: "#")) ?? bytes.count
-            guard end > 0, let source = bytes.baseAddress else { return "" }
-            return String(unsafeUninitializedCapacity: end) { output in
-                UnsafeMutableRawPointer(output.baseAddress!).copyMemory(from: source, byteCount: end)
-                return end
-            }
-        }
+        guard let end = string.withUTF8({ fragmentDelimiterOffset(in: $0) }) else { return string }
+
+        let utf8 = string.utf8
+        return String(string[..<utf8.index(utf8.startIndex, offsetBy: end)])
     }
 
     public func canonicalURL() -> URL? {
         // Remove the fragment before copying or transforming the URL: fragments can contain very large payloads.
         // Steps 1 and 2: Remove tab (0x09), CR (0x0d), LF (0x0a), and the fragment.
+        // A URL never contains a raw tab, CR or LF (they are percent-encoded when it is created), so only the
+        // fragment is removed here.
         var urlString = absoluteStringWithoutFragment
-        if urlString.contains(where: { $0 == "\t" || $0 == "\r" || $0 == "\n" }) {
-            urlString = urlString.filter { $0 != "\t" && $0 != "\r" && $0 != "\n" }
-        }
 
         // Step 3: Repeatedly percent-unescape the URL until it has no more percent-escapes
         urlString = urlString.fullyRemovingPercentEncoding()

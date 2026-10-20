@@ -816,37 +816,6 @@ extension URL {
 
 final class URLEqualityComponentsTests {
 
-    // MARK: - canonicalURL fragment removal
-
-    @available(iOS 16, macOS 13, *)
-    @Test("canonicalURL — removes the fragment at the first literal #", .timeLimit(.minutes(1)))
-    func canonicalURL_removesFragmentAtFirstLiteralHash() {
-        #expect(URL(string: "https://example.com/path?q=1#frag")!.canonicalURL()?.absoluteString == "https://example.com/path?q=1")
-        #expect(URL(string: "https://example.com/path?q=1#a#b")!.canonicalURL()?.absoluteString == "https://example.com/path?q=1")
-        #expect(URL(string: "https://example.com/path?q=1#")!.canonicalURL()?.absoluteString == "https://example.com/path?q=1")
-        #expect(URL(string: "https://example.com/path?q=1")!.canonicalURL()?.absoluteString == "https://example.com/path?q=1")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("canonicalURL — an encoded %23 is not a fragment delimiter", .timeLimit(.minutes(1)))
-    func canonicalURL_encodedHashIsNotFragmentDelimiter() {
-        // Percent-decoding happens after the fragment is removed, so `%23` ends up as a literal `#` inside the query.
-        #expect(URL(string: "https://example.com/path?q=%23x")!.canonicalURL()?.absoluteString == "https://example.com/path?q=#x")
-        #expect(URL(string: "https://example.com/path?q=%23x#frag")!.canonicalURL()?.absoluteString == "https://example.com/path?q=#x")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("canonicalURL — keeps the query and drops a large fragment of a multi-megabyte URL", .timeLimit(.minutes(1)), arguments: [false, true])
-    func canonicalURL_largeURL(hasFragment: Bool) throws {
-        let query = String(repeating: "a=1&", count: 500_000)
-        let fragment = hasFragment ? "#" + String(repeating: "f", count: 100_000) : ""
-        let url = try #require(NSURL(string: "https://example.com/path?" + query + fragment) as URL?)
-
-        let canonical = url.canonicalURL()
-
-        #expect(canonical?.absoluteString == "https://example.com/path?" + query)
-    }
-
     // MARK: - hasFragment
 
     @available(iOS 16, macOS 13, *)

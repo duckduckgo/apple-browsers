@@ -205,6 +205,48 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         XCTAssertEqual(event.device.credentialId, SyncCredentialID.defaultCredential)
     }
 
+    func testAccountManagerDebugDecodeUsesEncryptedAuditEntryAndConfiguredDeviceMapper() async throws {
+        let fixture = try makeFixture()
+        let deviceInfoCodec = DeviceInfoCodec()
+        let encryptedInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: "Decoded Mac", type: "desktop"),
+                                                        using: fixture.protectedKey)
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: fixture.keyManager,
+                                            deviceInfoCodec: deviceInfoCodec,
+                                            isScopedAccessCredentialsEnabled: { false },
+                                            canReadUnifiedDeviceList: { true })
+        let manager = AccountManager(endpoints: Endpoints(baseURL: URL(string: "https://dev.null")!),
+                                     api: RemoteAPIRequestCreatingMock(),
+                                     crypter: CryptingMock(),
+                                     registeredDeviceMapper: mapper,
+                                     accountInfoKeys: fixture.keyManager,
+                                     isScopedAccessCredentialsEnabled: { false })
+        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"logged-in","info":"\#(encryptedInfo)"}}"#.utf8)
+
+        let results = try await manager.decodeAuditLogEntriesForDebug([try fixture.entry(payload: payload)], for: account)
+
+        guard case .decoded(let event) = try XCTUnwrap(results.first) else {
+            return XCTFail("Expected production AccountManager decode path to decrypt the audit entry")
+        }
+        XCTAssertEqual(event.id, "audit-entry")
+        XCTAssertEqual(event.device.name, "Decoded Mac")
+        XCTAssertEqual(event.deviceMapping?.source, .deviceInfo)
+    }
+
+    func testAccountManagerDebugDecodeWithoutKeyManagerReturnsExplicitKeyUnavailable() async throws {
+        let manager = AccountManager(endpoints: Endpoints(baseURL: URL(string: "https://dev.null")!),
+                                     api: RemoteAPIRequestCreatingMock(),
+                                     crypter: CryptingMock(),
+                                     isScopedAccessCredentialsEnabled: { false })
+        let entry = AuditLogEntry(id: "audit-entry", version: "1", payload: "encrypted-payload")
+
+        let results = try await manager.decodeAuditLogEntriesForDebug([entry], for: account)
+
+        guard case .unreadable(id: "audit-entry", reason: .keyUnavailable) = try XCTUnwrap(results.first) else {
+            return XCTFail("Expected missing key manager to be reported as unreadable")
+        }
+    }
+
     func testWhenJWEOrKnownPayloadIsMalformedThenReturnsUnreadableOutcome() async throws {
         let fixture = try makeFixture()
         let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,

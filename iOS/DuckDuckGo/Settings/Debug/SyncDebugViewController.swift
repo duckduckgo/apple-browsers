@@ -68,6 +68,7 @@ class SyncDebugViewController: UITableViewController {
         case ensureAccountInfoKey
         case resetMigrationMarker
         case fetchAuditLog
+        case viewAuditLogEntries
 
     }
 
@@ -92,6 +93,8 @@ class SyncDebugViewController: UITableViewController {
     private var migrationStatus = "Not checked"
     private var isRefreshingDevices = false
     private var auditLogStatus = "Not checked"
+    private var auditLogEntriesStatus = "Not checked"
+    private var isFetchingAuditLogEntries = false
 
     var syncCancellable: Cancellable?
 
@@ -196,6 +199,10 @@ class SyncDebugViewController: UITableViewController {
             case .fetchAuditLog:
                 cell.textLabel?.text = "Fetch audit log"
                 cell.detailTextLabel?.text = auditLogStatus
+            case .viewAuditLogEntries:
+                cell.textLabel?.text = "View audit log entries"
+                cell.detailTextLabel?.text = isFetchingAuditLogEntries ? "Loading…" : auditLogEntriesStatus
+                cell.selectionStyle = isFetchingAuditLogEntries ? .none : .default
             case .none:
                 break
             }
@@ -317,6 +324,8 @@ class SyncDebugViewController: UITableViewController {
                 confirmResetMigrationMarker()
             case .fetchAuditLog:
                 fetchAuditLogForDebug()
+            case .viewAuditLogEntries:
+                fetchAuditLogEntriesForDebug()
             case .none:
                 break
             }
@@ -459,6 +468,57 @@ class SyncDebugViewController: UITableViewController {
                 showAlert(title: "Unable to Fetch Audit Log", message: String(reflecting: error))
             }
         }
+    }
+
+    private func fetchAuditLogEntriesForDebug() {
+        guard !isFetchingAuditLogEntries else { return }
+        isFetchingAuditLogEntries = true
+        tableView.reloadSections(IndexSet(integer: Sections.testActions.rawValue), with: .automatic)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                isFetchingAuditLogEntries = false
+                tableView.reloadSections(IndexSet(integer: Sections.testActions.rawValue), with: .automatic)
+            }
+            do {
+                let report = try await sync.fetchAuditLogEntriesForDebug()
+                auditLogEntriesStatus = "\(report.entryCount) entries • newer: \(report.hasAfterCursor ? "yes" : "no") • older: \(report.hasBeforeCursor ? "yes" : "no")"
+                showAuditLogEntries(report)
+            } catch {
+                auditLogEntriesStatus = "Failed"
+                showAlert(title: "Unable to Read Audit Log Entries", message: String(reflecting: error))
+            }
+        }
+    }
+
+    private func showAuditLogEntries(_ report: AuditLogDebugEntries) {
+        let details = UIViewController()
+        details.title = "Audit Log Entries"
+        details.view.backgroundColor = UIColor(designSystemColor: .background)
+
+        let textView = UITextView()
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.backgroundColor = UIColor(designSystemColor: .background)
+        textView.textColor = UIColor(designSystemColor: .textPrimary)
+        textView.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.text = "Fetched \(report.entryCount) entries • newer cursor: \(report.hasAfterCursor ? "available" : "none") • older page: \(report.hasBeforeCursor ? "available" : "none")\n\n\(report.formattedEntries.isEmpty ? "No entries returned." : report.formattedEntries)"
+        details.view.addSubview(textView)
+        NSLayoutConstraint.activate([
+            textView.topAnchor.constraint(equalTo: details.view.safeAreaLayoutGuide.topAnchor),
+            textView.leadingAnchor.constraint(equalTo: details.view.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: details.view.trailingAnchor),
+            textView.bottomAnchor.constraint(equalTo: details.view.bottomAnchor)
+        ])
+        details.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done,
+                                                                   target: self,
+                                                                   action: #selector(dismissAuditLogEntries))
+        present(UINavigationController(rootViewController: details), animated: true)
+    }
+
+    @objc private func dismissAuditLogEntries() {
+        dismiss(animated: true)
     }
 
     private func confirmResetMigrationMarker() {

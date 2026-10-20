@@ -187,6 +187,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         (cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.backgroundReadinessRecovery
     }
     private let now: () -> Date
+    /// Keeps the health monitor informed of app suspension for as long as the manager lives.
+    private var cpmInterruptionObserver: CPMInterruptionObserver?
 
     // MARK: - AsyncStream
 
@@ -373,6 +375,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                     await self?.reloadEmbeddedExtensionAfterCPMMessagingHang()
                 }
             }
+            self.cpmInterruptionObserver = CPMInterruptionObserver(monitor: healthMonitor)
         }
 
         backgroundLoadErrorObserver = NotificationCenter.default.addObserver(

@@ -756,8 +756,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         sut.setText(longText(16_001))
 
-        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
-        XCTAssertTrue(sut.viewController.handler.isSubmitBlockedByPromptLength())
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
         sut.viewController.handler.submitText(sut.currentText, trigger: .textEntry)
         sut.viewController.handler.submitText(sut.currentText, trigger: .pasteAndGo)
         sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
@@ -766,10 +765,30 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         XCTAssertNil(delegate.submittedPrompt)
 
         sut.setText(longText(16_000))
-        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertFalse(sut.viewController.isPromptOverLimit)
         sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
         flushMainQueue()
         XCTAssertEqual(delegate.submittedPrompt, longText(16_000))
+    }
+
+    func testBlockedReturnAndSendKeepTheDraftAndTheChips() {
+        let sut = makePastedTextCoordinator()
+        let delegate = SpyUnifiedToggleInputDelegate()
+        sut.delegate = delegate
+        sut.updateInputMode(.aiChat, animated: false)
+        _ = sut.viewController.attachmentPasteHandler?.attachInsertedTextIfLong(longText(12_000))
+        sut.setText(longText(4_001))
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
+
+        sut.viewController.handler.submitText(sut.currentText, trigger: .textEntry)
+        flushMainQueue()
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        XCTAssertNil(delegate.submittedPrompt)
+        XCTAssertEqual(sut.currentText, longText(4_001), "A blocked Return or Send keeps the typed draft")
+        XCTAssertEqual(sut.viewController.currentAttachments.compactMap(\.pastedText).map(\.length), [12_000], "and the chips")
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
     }
 
     func testOverLimitDraftRestoredOnTabSwitchIsBlockedWithoutAKeystrokeAndReleasedAfterSubmitClears() {
@@ -777,10 +796,10 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.updateInputMode(.aiChat, animated: false)
 
         sut.applyState(TabInputState(text: longText(16_001), toggleMode: .aiChat, attachments: []))
-        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
 
         sut.setText("")
-        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertFalse(sut.viewController.isPromptOverLimit)
     }
 
     func testWithPastedTextOffATypedDraftOverTheLimitStillSubmits() {
@@ -790,7 +809,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.updateInputMode(.aiChat, animated: false)
         sut.setText(longText(16_001))
 
-        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertFalse(sut.viewController.isPromptOverLimit)
         sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
         flushMainQueue()
 
@@ -801,13 +820,13 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         let sut = makePastedTextCoordinator()
         sut.updateInputMode(.aiChat, animated: false)
         sut.setText(longText(16_001))
-        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
 
         sut.updateInputMode(.search, animated: false)
-        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertFalse(sut.viewController.isPromptOverLimit)
 
         sut.updateInputMode(.aiChat, animated: false)
-        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
     }
 
     func testImageLowersTheLimitToTheModelValueAndAFileDoesNot() {
@@ -819,10 +838,10 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.setText(longText(4_501))
 
         sut.addFileAttachment(makeFileAttachment())
-        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength, "Files never lower the limit")
+        XCTAssertFalse(sut.viewController.isPromptOverLimit, "Files never lower the limit")
 
         sut.addImageAttachment(image: UIImage(systemName: "photo")!, fileName: "a.jpg")
-        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength, "The model's 4,500 applies with an image")
+        XCTAssertTrue(sut.viewController.isPromptOverLimit, "The model's 4,500 applies with an image")
         XCTAssertEqual(sut.promptLengthGate.promptLength?.limit, 4_500)
     }
 
@@ -836,14 +855,14 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         XCTAssertTrue(pasteHandler.attachInsertedTextIfLong(longText(4_000)))
         XCTAssertEqual(sut.viewController.currentAttachments.compactMap(\.pastedText).map(\.length), [4_000])
-        XCTAssertFalse(sut.viewController.showsPromptLengthError)
+        XCTAssertFalse(sut.viewController.isPromptOverLimit)
 
         XCTAssertTrue(pasteHandler.attachInsertedTextIfLong(longText(12_001)))
-        XCTAssertTrue(sut.viewController.showsPromptLengthError)
-        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
 
         sut.removeAttachment(id: sut.viewController.currentAttachments[1].id)
-        XCTAssertFalse(sut.viewController.showsPromptLengthError)
+        XCTAssertFalse(sut.viewController.isPromptOverLimit)
     }
 
     func testWithPastedTextOffTheHandlerStaysOffWhenImagePasteIsOffToo() {
@@ -891,7 +910,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.updateInputMode(.aiChat, animated: false)
         sut.setText(longText(1_000))
         _ = sut.viewController.attachmentPasteHandler?.attachInsertedTextIfLong(longText(15_500))
-        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength, "Draft plus paste is over the limit until the draft clears")
+        XCTAssertTrue(sut.viewController.isPromptOverLimit, "Draft plus paste is over the limit until the draft clears")
 
         sut.viewController.handler.submitAIChatAttachmentOnlyPrompt(trigger: .pasteAndGo)
         flushMainQueue()
@@ -906,7 +925,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         sut.delegate = delegate
         sut.updateInputMode(.aiChat, animated: false)
         sut.setText(longText(16_001))
-        XCTAssertTrue(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertTrue(sut.viewController.isPromptOverLimit)
 
         sut.submitProgrammatic(text: "Summarize this page")
         flushMainQueue()
@@ -919,7 +938,7 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
         let delegate = SpyUnifiedToggleInputDelegate()
         sut.delegate = delegate
         sut.updateInputMode(.aiChat, animated: false)
-        XCTAssertFalse(sut.viewController.isSubmitBlockedByPromptLength)
+        XCTAssertFalse(sut.viewController.isPromptOverLimit)
 
         sut.submitProgrammatic(text: longText(16_001))
         flushMainQueue()

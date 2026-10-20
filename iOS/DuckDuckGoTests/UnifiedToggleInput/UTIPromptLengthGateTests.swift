@@ -40,25 +40,24 @@ final class UTIPromptLengthGateTests: XCTestCase {
             ),
             outputs: .init(
                 onOverLimitChanged: { [unowned self] in events.append("footer:\($0.map { "\($0.count)/\($0.limit)" } ?? "nil")") },
-                onSubmitBlockedChanged: { [unowned self] in events.append("send:\($0)") },
-                onChipErrorChanged: { [unowned self] in events.append("chip:\($0)") }
+                onPromptOverLimitChanged: { [unowned self] in events.append("over:\($0)") }
             )
         )
     }
 
     private func text(_ count: Int) -> String { String(repeating: "a", count: count) }
 
-    func testOverLimitFansOutFooterThenSendThenChips() {
+    func testOverLimitReportsTheFooterBeforeTheInput() {
         let gate = makeGate()
         promptText = text(16_001)
 
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:16001/16000", "send:true", "chip:true"])
+        XCTAssertEqual(events, ["footer:16001/16000", "over:true"])
         XCTAssertTrue(gate.isSubmitBlocked)
     }
 
-    func testTypingWhileOverUpdatesTheFooterCountWithoutRefiringSendOrChips() {
+    func testTypingWhileOverReportsTheNewCount() {
         let gate = makeGate()
         promptText = text(16_001)
         gate.refresh()
@@ -67,18 +66,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
         promptText = text(16_002)
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:16002/16000"])
-    }
-
-    func testRefreshIsIdempotent() {
-        let gate = makeGate()
-        promptText = text(16_001)
-        gate.refresh()
-        events.removeAll()
-
-        gate.refresh()
-
-        XCTAssertEqual(events, [])
+        XCTAssertEqual(events, ["footer:16002/16000", "over:true"])
     }
 
     func testClearingTheDraftReleasesEverything() {
@@ -90,7 +78,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
         promptText = ""
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:nil", "send:false", "chip:false"])
+        XCTAssertEqual(events, ["footer:nil", "over:false"])
         XCTAssertFalse(gate.isSubmitBlocked)
     }
 
@@ -113,7 +101,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
 
         gate.refresh()
 
-        XCTAssertEqual(events, [])
+        XCTAssertEqual(events, ["footer:nil", "over:false"])
         XCTAssertEqual(gate.promptLength?.limit, 16_000)
     }
 
@@ -126,7 +114,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
         isEnabled = false
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:nil", "send:false", "chip:false"])
+        XCTAssertEqual(events, ["footer:nil", "over:false"])
         XCTAssertNil(gate.promptLength)
     }
 

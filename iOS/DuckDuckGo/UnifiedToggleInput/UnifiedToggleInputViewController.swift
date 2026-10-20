@@ -215,14 +215,10 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isInputFrozenForInitialPromptPreparation = newValue }
     }
 
-    var isSubmitBlockedByPromptLength: Bool {
-        get { inputBarView.isToolbarSubmitBlockedByPromptLength }
-        set { inputBarView.isToolbarSubmitBlockedByPromptLength = newValue }
-    }
-
-    var showsPromptLengthError: Bool {
-        get { inputBarView.showsPromptLengthError }
-        set { inputBarView.showsPromptLengthError = newValue }
+    /// Greys out Send and marks the pasted-text chips in one go.
+    var isPromptOverLimit: Bool {
+        get { inputBarView.isPromptOverLimit }
+        set { inputBarView.isPromptOverLimit = newValue }
     }
 
     var onAttachmentTapped: ((UUID) -> Void)? {

@@ -201,6 +201,7 @@ class NullHistoryCoordinator: HistoryCoordinating {
     }
 
     func addImportedVisits(_ visits: [HistoryImport.Visit]) {
+        // History is off, so imported visits are dropped.
     }
 
     func title(for url: URL) -> String? {

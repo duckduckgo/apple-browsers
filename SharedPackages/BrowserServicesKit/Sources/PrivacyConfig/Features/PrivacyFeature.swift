@@ -883,6 +883,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmDiagnosticsRecorder
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
+    /// Preserve surviving shared pinned tabs when WebKit processes a macOS window close.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
+    case sharedPinnedTabWindowClose
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.

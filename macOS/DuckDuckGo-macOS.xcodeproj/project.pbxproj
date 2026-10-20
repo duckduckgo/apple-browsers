@@ -4718,6 +4718,11 @@
 		EEC4A6712B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC4A6702B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift */; };
 		EEC4A6722B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC4A6702B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift */; };
 		EEC7BE2E2BC6C09500F86835 /* AddressBarKeyboardShortcutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC7BE2D2BC6C09400F86835 /* AddressBarKeyboardShortcutsTests.swift */; };
+		338D9D0453AA10EDBF6786CA /* DuckAIOmnibarEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31CC5F25B1E23A720EB92378 /* DuckAIOmnibarEditingTests.swift */; };
+		B1EF5171606E8220E76D2704 /* AddressBarUrlEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBB69B2496DB071F13F70C73 /* AddressBarUrlEditingTests.swift */; };
+		1A98067326E3B7F662484152 /* AddressBarMouseSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4976591CC222D9D47FD453D6 /* AddressBarMouseSelectionTests.swift */; };
+		787AF5AE5ED043EE193B431A /* AddressBarSearchQueryEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CC69BF3D4551E16E5B7451D /* AddressBarSearchQueryEditingTests.swift */; };
+		E13D64DBAEF14EC797F7DE7F /* AddressBarEditingTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC1BEBC709B02F38AB289BD /* AddressBarEditingTestSupport.swift */; };
 		EEC8EB3E2982CA3B0065AA39 /* JSAlertViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEC111E5294D06290086524F /* JSAlertViewModel.swift */; };
 		EEC8EB402982CD550065AA39 /* JSAlertViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF53E172950CED5002D78F4 /* JSAlertViewModelTests.swift */; };
 		EECA36B92E869885005A42EE /* ImportArchiveReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECA36B82E869885005A42EE /* ImportArchiveReader.swift */; };
@@ -7538,6 +7543,11 @@
 		EEC4A66C2B2C894F00F7C0AA /* VPNLocationPreferenceItemModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNLocationPreferenceItemModel.swift; sourceTree = "<group>"; };
 		EEC4A6702B2C90AB00F7C0AA /* VPNLocationPreferenceItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNLocationPreferenceItem.swift; sourceTree = "<group>"; };
 		EEC7BE2D2BC6C09400F86835 /* AddressBarKeyboardShortcutsTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddressBarKeyboardShortcutsTests.swift; sourceTree = "<group>"; };
+		31CC5F25B1E23A720EB92378 /* DuckAIOmnibarEditingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DuckAIOmnibarEditingTests.swift; sourceTree = "<group>"; };
+		DBB69B2496DB071F13F70C73 /* AddressBarUrlEditingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddressBarUrlEditingTests.swift; sourceTree = "<group>"; };
+		4976591CC222D9D47FD453D6 /* AddressBarMouseSelectionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddressBarMouseSelectionTests.swift; sourceTree = "<group>"; };
+		5CC69BF3D4551E16E5B7451D /* AddressBarSearchQueryEditingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddressBarSearchQueryEditingTests.swift; sourceTree = "<group>"; };
+		DDC1BEBC709B02F38AB289BD /* AddressBarEditingTestSupport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddressBarEditingTestSupport.swift; sourceTree = "<group>"; };
 		EECA36B82E869885005A42EE /* ImportArchiveReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportArchiveReader.swift; sourceTree = "<group>"; };
 		EECA36BB2E869E3B005A42EE /* SafariArchiveImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariArchiveImporter.swift; sourceTree = "<group>"; };
 		EED4D3D72C874AE200C79EEA /* PopoverInfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverInfoViewController.swift; sourceTree = "<group>"; };
@@ -10373,6 +10383,11 @@
 				EEBCE6802BA444FA00B9DF00 /* Common */,
 				842FE38C2E0D17C500E4F9E4 /* Resources */,
 				EEC7BE2D2BC6C09400F86835 /* AddressBarKeyboardShortcutsTests.swift */,
+				31CC5F25B1E23A720EB92378 /* DuckAIOmnibarEditingTests.swift */,
+				DBB69B2496DB071F13F70C73 /* AddressBarUrlEditingTests.swift */,
+				4976591CC222D9D47FD453D6 /* AddressBarMouseSelectionTests.swift */,
+				5CC69BF3D4551E16E5B7451D /* AddressBarSearchQueryEditingTests.swift */,
+				DDC1BEBC709B02F38AB289BD /* AddressBarEditingTestSupport.swift */,
 				844905422E54A3600054F4FD /* AddressBarSpoofingUITests.swift */,
 				844905402E54A3540054F4FD /* AddressBarUITests.swift */,
 				312613A72DB16EFE009F9420 /* AIChatTests.swift */,
@@ -18241,6 +18256,11 @@
 				CC7582C32EA15D010062BFCE /* StateRestorationPromptTests.swift in Sources */,
 				560419492DD5FF3700818414 /* ContentScopeExperimentsEndToEndTests.swift in Sources */,
 				EEC7BE2E2BC6C09500F86835 /* AddressBarKeyboardShortcutsTests.swift in Sources */,
+				338D9D0453AA10EDBF6786CA /* DuckAIOmnibarEditingTests.swift in Sources */,
+				B1EF5171606E8220E76D2704 /* AddressBarUrlEditingTests.swift in Sources */,
+				1A98067326E3B7F662484152 /* AddressBarMouseSelectionTests.swift in Sources */,
+				787AF5AE5ED043EE193B431A /* AddressBarSearchQueryEditingTests.swift in Sources */,
+				E13D64DBAEF14EC797F7DE7F /* AddressBarEditingTestSupport.swift in Sources */,
 				84E2FC462E0DB043000874F7 /* XCUIElementSnapshotExtension.swift in Sources */,
 				EE54F7B32BBFEA49006218DB /* BookmarksAndFavoritesTests.swift in Sources */,
 				BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */,

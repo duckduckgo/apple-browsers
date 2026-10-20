@@ -267,8 +267,9 @@
             return watchID;
         }
 
+        // A watch cleared during registration must not start native location updates.
         callThen(
-            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform()
+            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform() && apply(mapHas, activeWatches, [requestID])
                 ? postWatch(message("startWatch", { requestID, options: optionsPayload(options) }))
                 : deniedResult()),
             (result) => {

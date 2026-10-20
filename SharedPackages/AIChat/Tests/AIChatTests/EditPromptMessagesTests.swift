@@ -86,6 +86,31 @@ final class EditPromptMessagesTests: XCTestCase {
         XCTAssertEqual(request.attachments.files?.first?.mimeType, "application/pdf")
     }
 
+    func testMalformedPastedTextDropsOnlyThePastes() throws {
+        let malformed = [
+            #""not an array""#,
+            #"[{ "title": "no content" }]"#,
+            #"["plain string"]"#,
+            #"[null]"#,
+            "null",
+            #"{ "content": "object" }"#
+        ]
+        for value in malformed {
+            let json = """
+            {
+              "prompt": "hi",
+              "hasResponsesToLose": false,
+              "images": [{ "data": "aW1n", "format": "jpeg" }],
+              "textPasted": \(value)
+            }
+            """
+            let request = try JSONDecoder().decode(EditPromptRequest.self, from: Data(json.utf8))
+            XCTAssertEqual(request.prompt, "hi", value)
+            XCTAssertEqual(request.attachments.images?.count, 1, value)
+            XCTAssertNil(request.attachments.textPasted, value)
+        }
+    }
+
     func testRequestDecodesWithoutAttachments() throws {
         let json = #"{ "prompt": "hi", "hasResponsesToLose": false }"#
         let request = try JSONDecoder().decode(EditPromptRequest.self, from: Data(json.utf8))

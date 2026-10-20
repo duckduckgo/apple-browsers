@@ -20,32 +20,8 @@ import Foundation
 import FoundationExtensions
 
 public enum PageResourceLoadError: Error, Hashable {
-    case error(NSError)
+    case error(domain: String, code: Int)
     case statusCode(Int)
-
-    // Per-request metadata must not turn repeated failures into distinct page signals.
-    public static func == (lhs: PageResourceLoadError, rhs: PageResourceLoadError) -> Bool {
-        switch (lhs, rhs) {
-        case let (.error(lhsError), .error(rhsError)):
-            return lhsError.domain == rhsError.domain && lhsError.code == rhsError.code
-        case let (.statusCode(lhsCode), .statusCode(rhsCode)):
-            return lhsCode == rhsCode
-        default:
-            return false
-        }
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        switch self {
-        case .error(let error):
-            hasher.combine(0)
-            hasher.combine(error.domain)
-            hasher.combine(error.code)
-        case .statusCode(let statusCode):
-            hasher.combine(1)
-            hasher.combine(statusCode)
-        }
-    }
 }
 
 extension PageResourceLoadError {
@@ -54,7 +30,7 @@ extension PageResourceLoadError {
     ///
     static func resourceLoadError(from error: NSError?, response: URLResponse?) -> PageResourceLoadError? {
         if let error {
-            return .error(error)
+            return .error(domain: error.domain, code: error.code)
         }
 
         if let response = response as? HTTPURLResponse {
@@ -70,8 +46,8 @@ public extension PageResourceLoadError {
     /// Encodes as `(errorDomain,code)` or `(statusCode,code)`.
     var stringValue: String {
         switch self {
-        case .error(let error):
-            return "(\(error.domain),\(error.code))"
+        case .error(let domain, let code):
+            return "(\(domain),\(code))"
         case .statusCode(let statusCode):
             return "(statusCode,\(statusCode))"
         }

@@ -35,4 +35,20 @@ extension PromoServiceFactory {
             delegate: dependencies.bookmarksEmptyStatePromoDelegate
         )
     }
+
+    static let autofillEmptyStateImportSyncPromoID = "autofill-empty-state-import-sync"
+
+    /// The import/sync CTAs in the Passwords panel empty states ("Nothing added yet", "No passwords added yet", identities, credit cards).
+    @MainActor
+    static func autofillEmptyStateImportSync(dependencies: PromoDependencies) -> Promo {
+        InternalPromo(
+            id: autofillEmptyStateImportSyncPromoID,
+            triggers: [.passwordsPanelOpened, .passwordsPanelEmptyStateShown],
+            initiated: .app,
+            promoType: PromoType(.emptyStateMessage),
+            context: .global,
+            canShowDuringOnboarding: true,
+            delegate: dependencies.autofillEmptyStatePromoDelegate
+        )
+    }
 }

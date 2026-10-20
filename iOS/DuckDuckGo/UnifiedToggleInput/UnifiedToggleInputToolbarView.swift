@@ -836,7 +836,7 @@ private extension UnifiedToggleInputToolbarView {
         submitButton.isEnabled = isActive
         // The blocked button and a disabled "Ask" take the inactive submit fill: the voice and
         // return-key styles have no disabled state of their own.
-        if isPreparingInitialPrompt || isInputBlockedByUsageLimit || isSubmitBlockedByMissingPromptText || (labelTitle != nil && !isActive) {
+        if isPreparingInitialPrompt || isInputBlockedByUsageLimit || isSubmitBlockedByMissingPromptText || isSubmitBlockedByPromptLength || (labelTitle != nil && !isActive) {
             submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
         } else if labelTitle != nil {
             // An enabled "Ask" is the disclaimer's call to action, so it keeps the primary fill in every style.

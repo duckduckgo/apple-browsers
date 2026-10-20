@@ -306,6 +306,12 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         applyAppearance()
     }
 
+    private static let accessibilityValueLimit = 100
+
+    private static func cappedAccessibilityValue(_ title: String) -> String {
+        title.count > accessibilityValueLimit ? String(title.prefix(accessibilityValueLimit)) + "…" : title
+    }
+
     func configurePastedText(_ pastedText: AIChatPastedText) {
         imageView.image = nil
         imageView.isHidden = true
@@ -318,7 +324,7 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         isAccessibilityElement = true
         accessibilityTraits = .button
         accessibilityLabel = UserText.aiChatPastedTextAccessibilityLabel
-        accessibilityValue = pastedText.title
+        accessibilityValue = Self.cappedAccessibilityValue(pastedText.title)
         accessibilityCustomActions = [
             UIAccessibilityCustomAction(name: UserText.aiChatPastedTextRemoveAction) { [weak self] _ in
                 guard let self else { return false }

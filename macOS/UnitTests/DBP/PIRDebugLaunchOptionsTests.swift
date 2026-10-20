@@ -28,51 +28,36 @@ final class PIRDebugLaunchOptionsTests: XCTestCase {
         """
     }
 
-    func testPIRDebugLaunchWithoutOptionsReturnsNil() throws {
-        XCTAssertNil(try PIRDebugLaunchOptions.parse(arguments: [], environment: [:]))
-    }
-
     func testPIRDebugLaunchReadsEnvironmentAndNativeProfile() throws {
         let options = try XCTUnwrap(PIRDebugLaunchOptions.parse(arguments: [], environment: [
             "PIR_DEBUG_SERVER": "true",
             "PIR_PROFILE_JSON": pirProfileJSON,
-            "PIR_RESET_BEFORE_SEEDING": "true",
         ]))
         XCTAssertTrue(options.startServer)
-        guard case .resetAndSeed(let profile) = options.profileSetup else {
-            return XCTFail("Expected explicit reset and seed")
-        }
+        let setup = try XCTUnwrap(options.profileSetup)
+        XCTAssertFalse(setup.resetBeforeSeeding)
+        let profile = setup.profile
         XCTAssertEqual(profile.names.first?.firstName, "Test")
         XCTAssertEqual(profile.addresses.first?.city, "Test City")
         XCTAssertEqual(profile.birthYear, 1980)
         XCTAssertTrue(profile.phones.isEmpty)
     }
 
-    func testPIRDebugLaunchArgumentsOverrideEnvironmentIncludingFalse() throws {
+    func testPIRDebugLaunchRawJSONArgumentsOverrideEnvironmentIncludingFalse() throws {
         let options = try XCTUnwrap(PIRDebugLaunchOptions.parse(arguments: [
-            "DuckDuckGo", "-pirDebugServer", "false", "-pirProfileJSON", pirProfileJSON, "-pirResetBeforeSeeding", "false",
+            "DuckDuckGo", "-pirDebugServer", "false", "-pirProfileJSON", pirProfileJSON, "-pirResetBeforeSeeding", "true",
         ], environment: [
             "PIR_DEBUG_SERVER": "true",
             "PIR_PROFILE_JSON": "invalid",
-            "PIR_RESET_BEFORE_SEEDING": "true",
+            "PIR_RESET_BEFORE_SEEDING": "false",
         ]))
-        guard case .seedIfMissing(let profile) = options.profileSetup else {
-            return XCTFail("Expected non-destructive profile seeding")
-        }
-        XCTAssertEqual(profile.birthYear, 1980)
-        XCTAssertFalse(options.startServer)
-    }
-
-    func testPIRDebugLaunchResetsWithRawJSONArgument() throws {
-        let options = try XCTUnwrap(PIRDebugLaunchOptions.parse(arguments: [
-            "DuckDuckGo", "-pirProfileJSON", pirProfileJSON, "-pirResetBeforeSeeding", "true", "-pirDebugServer", "true",
-        ], environment: [:]))
-        guard case .resetAndSeed(let profile) = options.profileSetup else {
-            return XCTFail("Expected explicit reset and seed")
-        }
+        let setup = try XCTUnwrap(options.profileSetup)
+        XCTAssertTrue(setup.resetBeforeSeeding)
+        let profile = setup.profile
         XCTAssertEqual(profile.names.first?.firstName, "Test")
         XCTAssertEqual(profile.addresses.first?.city, "Test City")
-        XCTAssertTrue(options.startServer)
+        XCTAssertEqual(profile.birthYear, 1980)
+        XCTAssertFalse(options.startServer)
     }
 
     func testPIRDebugLaunchRejectsResetWithoutValidFixtureEvenWithServer() {

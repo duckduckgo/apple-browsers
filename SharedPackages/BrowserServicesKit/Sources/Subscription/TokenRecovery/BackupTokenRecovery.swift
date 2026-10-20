@@ -48,7 +48,8 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
 
     /// Restores from the backup. The backup must belong to the dead current token's account, when there is one,
     /// and its refresh token must have been issued after the cut-off recorded at the last explicit sign-out.
-    /// For a missing token, a restore within `retryInterval` of a transient failure is skipped with `TokenBackupError.unavailable`.
+    /// For `.missingToken`, a restore within `retryInterval` of a transient failure is skipped with `TokenBackupError.unavailable`;
+    /// `.accountCreation` restores are never skipped.
     public func recover(_ context: TokenRecoveryContext) async throws {
         let isMissingToken = context.trigger == .missingToken
         if isMissingToken, let retryAfter = currentRetryAfter(), now() < retryAfter {
@@ -75,7 +76,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
     /// Whether a restore failure may succeed when retried: a backup that couldn't be read, or anything but a rejected or missing backup
     /// or a refresh the server rejected.
     /// - Parameter error: The error `restoreFromBackup` threw.
-    private static func isTransient(_ error: Error) -> Bool {
+    static func isTransient(_ error: Error) -> Bool {
         switch error {
         case TokenBackupError.readFailed:
             return true

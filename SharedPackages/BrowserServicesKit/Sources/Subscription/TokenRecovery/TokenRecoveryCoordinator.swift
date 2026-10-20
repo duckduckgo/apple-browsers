@@ -28,7 +28,7 @@ public final class TokenRecoveryCoordinator {
 
     /// - Parameters:
     ///   - invalidTokenStrategies: The strategies tried, in order, when refreshing the current token was rejected.
-    ///   - missingTokenStrategies: The strategies tried, in order, when no current token is stored.
+    ///   - missingTokenStrategies: The strategies tried, in order, when no current token is stored, including before an account is created.
     public init(invalidTokenStrategies: [TokenRecoveryStrategy], missingTokenStrategies: [TokenRecoveryStrategy]) {
         self.invalidTokenStrategies = invalidTokenStrategies
         self.missingTokenStrategies = missingTokenStrategies

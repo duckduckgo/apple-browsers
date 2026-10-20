@@ -152,16 +152,17 @@ class HistoryCoordinatorTests: XCTestCase {
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
         let newest = importedVisit(title: "Newest", hoursAgo: 0)
         let older = importedVisit(title: "Older", hoursAgo: 1)
-        let saved = expectSave(in: historyStoringMock)
+        let other = importedVisit(of: URL(string: "https://example.com/")!, title: "Other", hoursAgo: 2)
+        let saves = expectSaves(2, in: historyStoringMock)
 
-        historyCoordinator.addImportedVisits([newest, older])
+        historyCoordinator.addImportedVisits([newest, older, other])
 
         let entry = try XCTUnwrap(historyCoordinator.historyDictionary?[newest.url])
         XCTAssertEqual(entry.visits.count, 2)
         XCTAssertEqual(entry.lastVisit, newest.date)
         XCTAssertEqual(entry.title, "Newest")
-        await fulfillment(of: [saved], timeout: 1.0)
-        XCTAssertEqual(historyStoringMock.savedHistoryEntries.map(\.url), [newest.url])
+        await fulfillment(of: saves, timeout: 0.5)
+        XCTAssertEqual(Set(historyStoringMock.savedHistoryEntries.map(\.url)), [newest.url, other.url])
     }
 
     @MainActor
@@ -797,15 +798,25 @@ class HistoryCoordinatorTests: XCTestCase {
 
     // MARK: - Imported Visits Helpers
 
-    private func importedVisit(title: String, hoursAgo: Double) -> HistoryImport.Visit {
-        HistoryImport.Visit(url: .duckDuckGo, title: title, date: Date().addingTimeInterval(-hoursAgo * 3600))
+    private func importedVisit(of url: URL = .duckDuckGo, title: String, hoursAgo: Double) -> HistoryImport.Visit {
+        HistoryImport.Visit(url: url, title: title, date: Date().addingTimeInterval(-hoursAgo * 3600))
     }
 
+    /// Expects exactly `count` saves: waiting on the result fails on fewer, and on any further save before the timeout.
     @MainActor
-    private func expectSave(in historyStoringMock: HistoryStoringMock) -> XCTestExpectation {
-        let saved = expectation(description: "Entry saved")
-        historyStoringMock.saveCompletion = { saved.fulfill() }
-        return saved
+    private func expectSaves(_ count: Int, in historyStoringMock: HistoryStoringMock) -> [XCTestExpectation] {
+        let saved = expectation(description: "Entries saved")
+        saved.expectedFulfillmentCount = count
+        let extraSave = expectation(description: "Extra entry saved")
+        extraSave.isInverted = true
+        historyStoringMock.saveCompletion = {
+            if historyStoringMock.savedHistoryEntries.count > count {
+                extraSave.fulfill()
+            } else {
+                saved.fulfill()
+            }
+        }
+        return [saved, extraSave]
     }
 
 }

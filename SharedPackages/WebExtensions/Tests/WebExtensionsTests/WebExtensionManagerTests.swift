@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import Persistence
 import XCTest
+import PrivacyConfig
 import WebKit
 import ZIPFoundation
 @testable import WebExtensions
@@ -83,7 +85,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenOtherManagerIsAttached_ThenThatManagerAttaches() {
+    func testWhenOtherManagerIsAttached_ThenThatManagerAttaches() throws {
         let manager = MockWebExtensionManaging()
         let configuration = WKWebViewConfiguration()
 
@@ -137,14 +139,23 @@ final class WebExtensionManagerTests: XCTestCase {
         )
     }
 
+    /// A permission controller whose prompts the user always approves.
+    @MainActor
+    private func makePermissionController() -> WebExtensionPermissionController {
+        WebExtensionPermissionController(store: WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore()),
+                                         installationStore: installedExtensionStoringMock,
+                                         prompter: ApprovingPermissionPrompter())
+    }
+
     /// Loads a real (backgroundless) extension context into the controller so that
     /// `unloadAllExtensions()` has something to capture for the lightweight reload tests.
     @MainActor
     @discardableResult
     private func loadRealContext(identifier: String,
                                  into controller: WKWebExtensionController,
-                                 permissions: [String] = []) async throws -> WKWebExtensionContext {
-        let dir = try makeTestExtensionDirectory(permissions: permissions)
+                                 permissions: [String] = [],
+                                 optionalPermissions: [String] = []) async throws -> WKWebExtensionContext {
+        let dir = try makeTestExtensionDirectory(permissions: permissions, optionalPermissions: optionalPermissions)
         let webExtension = try await WKWebExtension(resourceBaseURL: dir)
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = identifier
@@ -152,14 +163,17 @@ final class WebExtensionManagerTests: XCTestCase {
         return context
     }
 
-    private func makeTestExtensionDirectory(permissions: [String] = [], embeddedType: DuckDuckGoWebExtensionType? = nil) throws -> URL {
+    private func makeTestExtensionDirectory(permissions: [String] = [],
+                                            optionalPermissions: [String] = [],
+                                            embeddedType: DuckDuckGoWebExtensionType? = nil) throws -> URL {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ReloadTestExtension-\(UUID().uuidString)")
         var manifest: [String: Any] = [
             "manifest_version": 3,
             "name": "Reload Test Extension",
             "version": "1.0.0",
             "description": "Minimal backgroundless test extension for reload unit tests",
-            "permissions": permissions
+            "permissions": permissions,
+            "optional_permissions": optionalPermissions
         ]
         if let embeddedType {
             manifest["browser_specific_settings"] = ["duckduckgo": ["id": embeddedType.rawValue]]
@@ -420,6 +434,165 @@ final class WebExtensionManagerTests: XCTestCase {
         }
     }
 
+    // MARK: - Disable/Enable Extension Tests
+
+    @MainActor
+    func testWhenExtensionIsDisabled_ThenLoaderUnloadsItAndStoreMarksItDisabled() async throws {
+        let manager = makeManager()
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
+        try await loadRealContext(identifier: identifier, into: manager.controller)
+
+        try await manager.disableExtension(identifier: identifier)
+
+        XCTAssertEqual(webExtensionLoadingMock.unloadedIdentifier, identifier)
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isDisabled, true)
+        XCTAssertFalse(storageProvidingMock.removeExtensionCalled)
+        XCTAssertTrue(lifecycleDelegateMock.didUpdateExtensionsCalled)
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsDisabled_ThenDisablingFailsAndExtensionStaysEnabled() async {
+        let manager = makeManager()
+        let identifier = "embedded"
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier, embeddedType: .embedded)]
+
+        do {
+            try await manager.disableExtension(identifier: identifier)
+            XCTFail("Expected an error")
+        } catch WebExtensionError.embeddedExtensionCannotBeDisabled {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isDisabled, false)
+    }
+
+    @MainActor
+    func testWhenUnloadingFails_ThenExtensionIsNotMarkedDisabled() async throws {
+        let manager = makeManager()
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: identifier)]
+        try await loadRealContext(identifier: identifier, into: manager.controller)
+        webExtensionLoadingMock.mockUnloadError = NSError(domain: "test", code: 1)
+
+        do {
+            try await manager.disableExtension(identifier: identifier)
+            XCTFail("Expected an error")
+        } catch {}
+
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isDisabled, false)
+    }
+
+    @MainActor
+    func testWhenLoadInstalledExtensions_ThenDisabledExtensionsAreSkipped() async {
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: "extension1"),
+            InstalledWebExtension(uniqueIdentifier: "extension2", filename: "extension.zip", name: nil, version: nil, isDisabled: true)
+        ]
+        let manager = makeManager()
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, ["extension1"])
+        XCTAssertEqual(storageProvidingMock.cleanupOrphanedExtensionsKnownIdentifiers, ["extension1", "extension2"])
+    }
+
+    @MainActor
+    func testWhenDisabledExtensionIsEnabled_ThenLoaderLoadsItAndStoreMarksItEnabled() async throws {
+        let manager = makeManager()
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: identifier, filename: "extension.zip", name: nil, version: nil, isDisabled: true)
+        ]
+
+        try await manager.enableExtension(identifier: identifier)
+
+        XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, [identifier])
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isDisabled, false)
+        XCTAssertTrue(lifecycleDelegateMock.didUpdateExtensionsCalled)
+    }
+
+    @MainActor
+    func testWhenLoadingFails_ThenExtensionStaysDisabled() async {
+        let manager = makeManager()
+        let identifier = "extension1"
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: identifier, filename: "extension.zip", name: nil, version: nil, isDisabled: true)
+        ]
+        webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
+
+        do {
+            try await manager.enableExtension(identifier: identifier)
+            XCTFail("Expected an error")
+        } catch {}
+
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: identifier)?.isDisabled, true)
+    }
+
+    @MainActor
+    func testWhenDisabledExtensionNameIsRequested_ThenReturnsNameFromStore() {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "extension1", filename: "extension.zip", name: "Stored Name", version: nil, isDisabled: true)
+        ]
+
+        XCTAssertEqual(manager.extensionName(for: "extension1"), "Stored Name")
+    }
+
+    @MainActor
+    func testWhenExtensionIsDisabledBeforeLightweightReload_ThenItIsNotReloaded() async throws {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: "extension1")]
+        try await loadRealContext(identifier: "extension1", into: manager.controller)
+        manager.unloadAllExtensions()
+
+        try await manager.disableExtension(identifier: "extension1")
+        await manager.reloadInstalledExtensions()
+
+        XCTAssertFalse(webExtensionLoadingMock.reloadWebExtensionCalled)
+        XCTAssertNil(manager.context(for: "extension1"))
+    }
+
+    @MainActor
+    func testWhenExtensionIsDisabledDuringLightweightReload_ThenItIsUnloadedAgain() async throws {
+        let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: "extension1")]
+        try await loadRealContext(identifier: "extension1", into: manager.controller)
+        manager.unloadAllExtensions()
+        webExtensionLoadingMock.loadHandler = { [unowned self] identifier, controller in
+            // The disable finds no context yet, so it only marks the record.
+            try await manager.disableExtension(identifier: identifier)
+            XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+            try await loadRealContext(identifier: identifier, into: controller)
+        }
+
+        await manager.reloadInstalledExtensions()
+
+        XCTAssertEqual(webExtensionLoadingMock.unloadedIdentifier, "extension1")
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: "extension1")?.isDisabled, true)
+    }
+
+    @MainActor
+    func testWhenExtensionIsDisabledDuringInstalledExtensionsLoad_ThenItIsUnloadedAgain() async throws {
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: "extension1")]
+        webExtensionLoadingMock.mockLoadResults = [.success(WebExtensionLoadResult(identifier: "extension1",
+                                                                                   filename: "extension.zip",
+                                                                                   displayName: nil,
+                                                                                   version: nil))]
+        let manager = makeManager()
+        webExtensionLoadingMock.loadHandler = { [unowned self] identifier, controller in
+            try await manager.disableExtension(identifier: identifier)
+            try await loadRealContext(identifier: identifier, into: controller)
+        }
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(webExtensionLoadingMock.unloadedIdentifier, "extension1")
+        XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: "extension1")?.isDisabled, true)
+    }
+
     // MARK: - Load Installed Extensions Tests
 
     @MainActor
@@ -483,7 +656,7 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Reload Installed Extensions Tests
 
     @MainActor
-    func testWhenExplicitReloadUnloadFails_ThenFiresReloadErrorPixel() async {
+    func testWhenExplicitReloadUnloadFails_ThenFiresReloadErrorPixel() async throws {
         let pixelFiring = CapturingReloadErrorPixelFiring()
         let manager = makeManager(pixelFiring: pixelFiring)
         installedExtensionStoringMock.installedExtensions = [
@@ -502,7 +675,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenExplicitReloadLoadFails_ThenFiresReloadErrorPixel() async {
+    func testWhenExplicitReloadLoadFails_ThenFiresReloadErrorPixel() async throws {
         let pixelFiring = CapturingReloadErrorPixelFiring()
         let manager = makeManager(pixelFiring: pixelFiring)
         installedExtensionStoringMock.installedExtensions = [
@@ -579,6 +752,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testWhenReloadInstalledExtensionsCalledAfterUnload_ThenUsesLightweightReloadAndSkipsFullLoad() async throws {
         let manager = makeManager()
+        installedExtensionStoringMock.installedExtensions = [makeInstalledWebExtension(uniqueIdentifier: "extension1")]
         try await loadRealContext(identifier: "extension1", into: manager.controller)
 
         manager.unloadAllExtensions()
@@ -755,6 +929,228 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
 #if os(macOS)
+    // MARK: - Bitwarden Pixels
+
+    /// Bitwarden is recognized by its Chrome Web Store catalog entry, so its pixels carry the catalog's name and
+    /// never its identifier.
+    @MainActor
+    func testWhenBrowsingWithBitwardenLoaded_ThenItsDailyPixelReportsWhetherItIsTheDefaultPasswordManager() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        var date = Date(timeIntervalSince1970: 0)
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID))
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          permissionController: makePermissionController(),
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          keyValueStore: InMemoryThrowingKeyValueStore(),
+                                          now: { date })
+        let webStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden])
+        manager.chromeWebStore = webStore
+        let context = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        try await manager.permissionController?.prepare(context)
+        let loadResult = WebExtensionLoadResult(identifier: "bitwarden", filename: "bitwarden", displayName: nil, version: "1")
+
+        webExtensionLoadingMock.mockLoadResults = [.success(loadResult)]
+        await manager.loadInstalledExtensions()
+        XCTAssertEqual(pixels.events, [])
+
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
+
+        let store = try XCTUnwrap(manager.privacySettings)
+        try store.set(false, for: .passwordSavingEnabled, by: "bitwarden")
+        date += 59 * 60
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events, ["bitwarden dau, default: false", "default set: bitwarden"], "Activity within the hour isn't checked again")
+
+        date += 60
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events.filter { !$0.hasPrefix("gaps") },
+                       ["bitwarden dau, default: false", "default set: bitwarden", "bitwarden dau, default: true"])
+    }
+
+    /// Only a loaded Bitwarden counts: an installed Bitwarden that isn't loaded, or another catalog extension
+    /// that is, sends nothing.
+    @MainActor
+    func testWhenBitwardenIsNotLoaded_ThenBrowsingSendsNoDailyPixelEvenWithAnotherCatalogExtensionLoaded() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let onePasswordStoreID = String(repeating: "o", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "onePassword", filename: "onePassword", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: onePasswordStoreID))
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden, onePasswordStoreID: .onePassword])
+        _ = try await loadRealContext(identifier: "onePassword", into: manager.controller)
+
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events, [])
+
+        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller)
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events, ["bitwarden dau, default: false"])
+    }
+
+    /// Each loaded catalog extension reports its version and distinct gaps once the app has run for an
+    /// hour, zeros included; stubs, dropped permissions and rejected arguments don't count, and
+    /// extensions outside the catalog don't report.
+    @MainActor
+    func testWhenBrowsingAnHourAfterLaunch_ThenEachLoadedCatalogExtensionReportsItsGapCounts() async throws {
+        let bitwardenStoreID = String(repeating: "n", count: 32)
+        let lastPassStoreID = String(repeating: "l", count: 32)
+        let pixels = EventCapturingPixelFiring()
+        var date = Date(timeIntervalSince1970: 0)
+        installedExtensionStoringMock.installedExtensions = [
+            InstalledWebExtension(uniqueIdentifier: "bitwarden", filename: "bitwarden", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: bitwardenStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "lastPass", filename: "lastPass", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: lastPassStoreID)),
+            InstalledWebExtension(uniqueIdentifier: "sideloaded", filename: "sideloaded", name: nil, version: "1",
+                                  embeddedType: nil, storeIdentity: nil)
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          pixelFiring: pixels,
+                                          keyValueStore: InMemoryThrowingKeyValueStore(),
+                                          now: { date })
+        manager.chromeWebStore = CatalogNamingWebStore(entries: [bitwardenStoreID: .bitwarden, lastPassStoreID: .lastPass])
+        for identifier in ["bitwarden", "lastPass", "sideloaded"] {
+            _ = try await loadRealContext(identifier: identifier, into: manager.controller)
+        }
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "chrome.sidePanel"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "chrome.sidePanel"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "js:Object.groupBy"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .stubbed, api: "chrome.offscreen.createDocument"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "permission:offscreen"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .invalidArgs, api: "chrome.tabs.query"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .unsupportedURL, api: "chrome://password-manager/settings"), for: "bitwarden")
+        manager.recordAPICompatibilityIssue(.init(kind: .missing, api: "chrome.sidePanel"), for: "sideloaded")
+
+        date += 59 * 60
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(pixels.events.filter { $0.hasPrefix("gaps") }, [], "Too soon after launch")
+
+        date += 60
+        manager.eventsListener.onBrowsingActivity?()
+        XCTAssertEqual(Set(pixels.events.filter { $0.hasPrefix("gaps") }),
+                       ["gaps bitwarden 1.0.0: 2 apis, 1 urls", "gaps lastPass 1.0.0: 0 apis, 0 urls"])
+    }
+
+    // MARK: - Autofill Takeover Flag
+
+    /// The app's flag decides whether any extension may take over autofill, read each time, so turning it
+    /// off hands autofill back and turning it on again restores what the extension chose.
+    @MainActor
+    func testWhenAutofillTakeoverIsTurnedOffAndOn_ThenAnExtensionsControlFollows() async throws {
+        var isTakeoverEnabled = true
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          permissionController: makePermissionController(),
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          keyValueStore: InMemoryThrowingKeyValueStore(),
+                                          isAutofillTakeoverEnabled: { isTakeoverEnabled })
+        let context = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        try await manager.permissionController?.prepare(context)
+        let store = try XCTUnwrap(manager.privacySettings)
+        XCTAssertNoThrow(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+
+        isTakeoverEnabled = false
+
+        XCTAssertNil(store.identifierTurningOff(.passwordSavingEnabled))
+        XCTAssertEqual(store.details(of: .passwordSavingEnabled, for: "bitwarden").levelOfControl, .notControllable)
+        XCTAssertThrowsError(try store.set(false, for: .autofillAddressEnabled, by: "bitwarden"))
+        XCTAssertThrowsError(try store.clear(.passwordSavingEnabled, for: "bitwarden"))
+
+        isTakeoverEnabled = true
+
+        XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "bitwarden")
+    }
+
+    /// `privacy` is a permission the user grants: until then, or once it's taken back, the extension
+    /// can't take over autofill, and taking it back hands autofill back to DuckDuckGo.
+    @MainActor
+    func testWhenTheUserGrantsAndTakesBackPrivacy_ThenTheExtensionsControlFollows() async throws {
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          permissionController: makePermissionController(),
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        let context = try await loadRealContext(identifier: "bitwarden", into: manager.controller, optionalPermissions: ["privacy"])
+        let permissionController = try XCTUnwrap(manager.permissionController)
+        try await permissionController.prepare(context)
+        let store = try XCTUnwrap(manager.privacySettings)
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+
+        let granted = await permissionController.request(.init(appPermissions: [.privacy]), for: context)
+        XCTAssertTrue(granted)
+        XCTAssertNoThrow(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+        XCTAssertEqual(store.identifierTurningOff(.passwordSavingEnabled), "bitwarden")
+
+        XCTAssertTrue(permissionController.revoke(.privacy, from: context))
+        XCTAssertNil(store.identifierTurningOff(.passwordSavingEnabled))
+        XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
+    }
+
+    /// Without the permissions system nothing is granted, so no extension can take over autofill.
+    @MainActor
+    func testWhenThereIsNoPermissionController_ThenNoExtensionCanTakeOverAutofill() async throws {
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        let store = try XCTUnwrap(manager.privacySettings)
+
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "bitwarden"))
+    }
+
+    @MainActor
+    func testWhenAnExtensionDoesNotDeclarePrivacy_ThenItCannotTakeOverAutofill() async throws {
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          keyValueStore: InMemoryThrowingKeyValueStore())
+        _ = try await loadRealContext(identifier: "other", into: manager.controller, permissions: ["storage"])
+        let store = try XCTUnwrap(manager.privacySettings)
+
+        XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "other"))
+        XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
+    }
+
     // MARK: - Zip to Folder Upgrade Tests
 
     /// Existing Dark Reader installs are stored as a zip, which WebKit unzips on the main thread on
@@ -885,7 +1281,7 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenManagerIsCreated_ThenThirdPartyScriptsAreNotAddedForEveryExtension() {
+    func testWhenManagerIsCreated_ThenThirdPartyScriptsAreNotAddedForEveryExtension() throws {
         let manager = makeManager()
 
         let userScripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
@@ -971,5 +1367,51 @@ private final class CapturingReloadErrorPixelFiring: WebExtensionPixelFiring {
             errorDomain: metadata.parameters["d"] ?? "missing",
             errorCode: metadata.parameters["e"] ?? "missing"
         ))
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class EventCapturingPixelFiring: WebExtensionPixelFiring {
+    private(set) var events: [String] = []
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        switch event {
+        case .bitwardenDailyActive(let isDefault):
+            events.append("bitwarden dau, default: \(isDefault)")
+        case .defaultPasswordManagerSet(let pixelExtension):
+            events.append("default set: \(pixelExtension.parameterValue)")
+        case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
+            events.append("gaps \(catalogEntry.rawValue) \(version): \(missingAPICount) apis, \(unsupportedURLCount) urls")
+        default:
+            break
+        }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class CatalogNamingWebStore: ChromeWebStoreManaging {
+    let entries: [String: ExtensionsCatalogSubfeature]
+
+    init(entries: [String: ExtensionsCatalogSubfeature]) {
+        self.entries = entries
+    }
+
+    var catalogExtensionIDs: [String] { [] }
+    func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
+    func install(identifier: String, downloadURL: URL) async -> Bool { false }
+    func remove(identifier: String) async -> Bool { false }
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { entries[identifier] }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class ApprovingPermissionPrompter: WebExtensionPermissionPrompting {
+    func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
+        .granted(privateDataAccess: false)
+    }
+
+    func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        .granted
     }
 }

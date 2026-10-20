@@ -614,6 +614,9 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? { nil }
     func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? { nil }
     @MainActor func reloadExtension(identifier: String) async throws {}
+    @MainActor func disableExtension(identifier: String) async throws {}
+    @MainActor func enableExtension(identifier: String) async throws {}
+    func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
     func extensionName(for identifier: String) -> String? { nil }
     func extensionVersion(for identifier: String) -> String? { nil }
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
@@ -629,6 +632,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
 @available(macOS 15.4, iOS 18.4, *)
 private final class RecordingEventsListener: WebExtensionEventsListening {
     var droppedCallbacksCount = 0
+    var onBrowsingActivity: (() -> Void)?
     func didOpenWindow(_ window: WKWebExtensionWindow) {}
     func didCloseWindow(_ window: WKWebExtensionWindow) {}
     func didFocusWindow(_ window: WKWebExtensionWindow) {}

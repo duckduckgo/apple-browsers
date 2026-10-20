@@ -558,6 +558,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    /// Whether a password manager extension has taken autofill over from DuckDuckGo.
+    let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
@@ -784,6 +786,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
         networkSignalsProvider = NetworkSignalsProvider(
@@ -2273,6 +2276,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.webExtensionLifecycleCoordinator?.cancelAll()
                 self?.webExtensionLifecycleCoordinator = nil
                 self?.webExtensionManager = nil
+                self?.webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
             },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
@@ -2296,6 +2300,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 scriptletConfiguration: makeScriptletConfiguration()
             )
             self.webExtensionManager = webExtensionManager
+            webExtensionAutofillTakeover.manager = webExtensionManager
 
             let coordinator = WebExtensionLifecycleCoordinator(
                 manager: webExtensionManager,
@@ -2309,11 +2314,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.webExtensionLifecycleCoordinator = coordinator
 
             // Load extensions asynchronously - the controller is already attached to tabs
-            coordinator.loadAndSync()
+            let initialLoad = coordinator.loadAndSync()
+            Task { @MainActor [weak self] in
+                await initialLoad.value
+                self?.startRemoteDisableEnforcer(for: webExtensionManager)
+            }
         } else {
-            webExtensionManager = nil
+            webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
         }
     }
+
+    /// Bitwarden's Chrome Web Store ID. Bitwarden is disabled while the `webExtensionBitwarden` flag is off.
+    private static let bitwardenChromeWebStoreID = "nngceckbapebfimnlniiiahkandclblb"
 
     @available(macOS 15.4, *)
     @MainActor
@@ -2331,6 +2343,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionAutofillTakeover.manager = webExtensionManager
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2343,6 +2356,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.webExtensionLifecycleCoordinator = coordinator
         await coordinator.loadAndSync().value
+        startRemoteDisableEnforcer(for: webExtensionManager)
+    }
+
+    /// Call it after the initial load, so an enforcement pass can't race it.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
+        guard self.webExtensionManager === webExtensionManager, webExtensionManager.remoteDisableEnforcer == nil else { return }
+        let remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(
+            manager: webExtensionManager,
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            disabledExtensionIDs: { [featureFlagger] in
+                featureFlagger.isFeatureOn(.webExtensionBitwarden) ? [] : [Self.bitwardenChromeWebStoreID]
+            },
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+        )
+        webExtensionManager.remoteDisableEnforcer = remoteDisableEnforcer
+        remoteDisableEnforcer.start()
     }
 
     @available(macOS 15.4, *)

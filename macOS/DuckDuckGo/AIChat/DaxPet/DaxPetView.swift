@@ -1,0 +1,228 @@
+//
+//  DaxPetView.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import SwiftUI
+
+/// Speech bubble on top, Dax in the middle, controls at his feet. Every area has a fixed size, so the
+/// window never resizes and Dax never moves; only the controls capsule grows into the prompt field.
+struct DaxPetView: View {
+
+    enum Metrics {
+        static let padding: CGFloat = 8
+        static let spacing: CGFloat = 6
+        static let bubbleAreaHeight: CGFloat = 56
+        static let controlsHeight: CGFloat = 36
+        static let toolbarSize = CGSize(width: 106, height: 32)
+        static let composingWidth: CGFloat = 320
+        static let promptLeadingInset: CGFloat = 14
+
+        static let windowSize = CGSize(width: composingWidth + padding * 2,
+                                       height: padding * 2 + bubbleAreaHeight + spacing * 2
+                                       + DaxCharacterView.preferredSize.height + controlsHeight)
+
+        /// The parts of the window that take clicks, in window coordinates (origin bottom-left).
+        static func characterFrame() -> CGRect {
+            let size = DaxCharacterView.preferredSize
+            return CGRect(x: (windowSize.width - size.width) / 2,
+                          y: padding + controlsHeight + spacing,
+                          width: size.width, height: size.height)
+        }
+
+        static func controlsFrame(isComposing: Bool) -> CGRect {
+            let size = isComposing ? CGSize(width: composingWidth, height: controlsHeight) : toolbarSize
+            return CGRect(x: (windowSize.width - size.width) / 2,
+                          y: padding + (controlsHeight - size.height) / 2,
+                          width: size.width, height: size.height)
+        }
+
+        static func bubbleFrame() -> CGRect {
+            CGRect(x: padding, y: characterFrame().maxY + spacing, width: composingWidth, height: bubbleAreaHeight)
+        }
+    }
+
+    @ObservedObject var model: DaxPetViewModel
+
+    var body: some View {
+        VStack(spacing: Metrics.spacing) {
+            ZStack(alignment: .bottom) {
+                if let speech = model.speech {
+                    SpeechBubble(text: speech)
+                        .id(speech)
+                        .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
+                }
+            }
+            .frame(width: Metrics.composingWidth, height: Metrics.bubbleAreaHeight, alignment: .bottom)
+
+            DaxCharacterRepresentable(character: model.character)
+                .frame(width: DaxCharacterView.preferredSize.width, height: DaxCharacterView.preferredSize.height)
+
+            Controls(model: model)
+                .frame(width: Metrics.composingWidth, height: Metrics.controlsHeight)
+        }
+        .padding(Metrics.padding)
+        .frame(width: Metrics.windowSize.width, height: Metrics.windowSize.height)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.speech)
+    }
+}
+
+/// One capsule that morphs between the toolbar and the prompt field, cross-fading their contents.
+private struct Controls: View {
+    @ObservedObject var model: DaxPetViewModel
+
+    var body: some View {
+        let size = model.isComposing
+            ? CGSize(width: DaxPetView.Metrics.composingWidth, height: DaxPetView.Metrics.controlsHeight)
+            : DaxPetView.Metrics.toolbarSize
+
+        ZStack {
+            Capsule().fill(.regularMaterial)
+
+            Toolbar(model: model)
+                .opacity(model.isComposing ? 0 : 1)
+                .scaleEffect(model.isComposing ? 0.9 : 1)
+                .allowsHitTesting(!model.isComposing)
+
+            PromptField(model: model)
+                .frame(width: DaxPetView.Metrics.composingWidth)
+                .opacity(model.isComposing ? 1 : 0)
+                .allowsHitTesting(model.isComposing)
+        }
+        .frame(width: size.width, height: size.height)
+        .clipShape(Capsule())
+        .overlay(Capsule().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+        .animation(.spring(response: 0.38, dampingFraction: 0.86), value: model.isComposing)
+    }
+}
+
+private struct DaxCharacterRepresentable: NSViewRepresentable {
+    let character: DaxCharacterView
+
+    func makeNSView(context: Context) -> DaxCharacterView { character }
+    func updateNSView(_ nsView: DaxCharacterView, context: Context) {}
+}
+
+private struct SpeechBubble: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: 220)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color(designSystemColor: .surfacePrimary))
+                    .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
+            )
+    }
+}
+
+private struct Toolbar: View {
+    @ObservedObject var model: DaxPetViewModel
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ToolbarButton(image: DesignSystemImages.Glyphs.Size16.compose, help: UserText.daxPetAsk) {
+                model.startComposing()
+            }
+            Divider().frame(height: 16)
+            ToolbarButton(image: DesignSystemImages.Glyphs.Size16.aiChat, help: UserText.daxPetOpenDuckAI) {
+                model.openDuckAI()
+            }
+            Divider().frame(height: 16)
+            ToolbarButton(image: DesignSystemImages.Glyphs.Size16.close, help: UserText.daxPetHide) {
+                model.hide()
+            }
+        }
+        .frame(width: DaxPetView.Metrics.toolbarSize.width, height: DaxPetView.Metrics.toolbarSize.height)
+    }
+}
+
+private struct ToolbarButton: View {
+    let image: NSImage
+    let help: String
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(nsImage: image)
+                .renderingMode(.template)
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                .frame(width: 28, height: 26)
+                .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)).opacity(isHovered ? 1 : 0))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(help)
+        .onHover { isHovered = $0 }
+    }
+}
+
+private struct PromptField: View {
+    @ObservedObject var model: DaxPetViewModel
+    @FocusState private var isFocused: Bool
+
+    private var canSubmit: Bool {
+        !model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            TextField(UserText.daxPetPromptPlaceholder, text: $model.prompt)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .focused($isFocused)
+                .onSubmit { model.submit() }
+                .onExitCommand { model.endComposing() }
+                .padding(.leading, DaxPetView.Metrics.promptLeadingInset)
+
+            Button(action: model.submit) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.arrowUp)
+                    .renderingMode(.template)
+                    .foregroundColor(.white)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(Color(designSystemColor: .accentPrimary)))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSubmit)
+            .opacity(canSubmit ? 1 : 0.4)
+            .help(UserText.daxPetSend)
+            .accessibilityLabel(UserText.daxPetSend)
+            .padding(.trailing, 5)
+        }
+        .frame(height: DaxPetView.Metrics.controlsHeight)
+        .disabled(!model.isComposing)
+        .onChange(of: model.isComposing) { isComposing in
+            // The window turns key just after composing starts.
+            DispatchQueue.main.async { isFocused = isComposing }
+        }
+    }
+}

@@ -34007,6 +34007,114 @@
         }
       }
     },
+    "duckai.dax-pet.ask" : {
+      "comment" : "Tooltip of the button that opens the field to ask Dax, the DuckDuckGo mascot, a question",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask Dax"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.greeting" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when the user opens the field to ask him a question",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Quack! What can I help with?"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.hello" : {
+      "comment" : "Speech bubble shown when Dax, the DuckDuckGo mascot, first appears on the desktop",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hi, I'm Dax!"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.hide" : {
+      "comment" : "Tooltip and menu item that hides Dax, the DuckDuckGo mascot, from the desktop. It can be shown again from Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Dax"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.open-duck-ai" : {
+      "comment" : "Tooltip and menu item that opens Duck.ai in the browser, shown next to Dax, the DuckDuckGo mascot",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.prompt.placeholder" : {
+      "comment" : "Placeholder of the text field used to ask Dax, the DuckDuckGo mascot, a question",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask Dax anything…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.send" : {
+      "comment" : "Tooltip of the button that sends the question typed for Dax to Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.thinking" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, right after the user sends him a question, before Duck.ai opens",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On it!"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.toggle" : {
+      "comment" : "Checkbox in Settings → AI Features that shows Dax, the DuckDuckGo mascot, floating on the desktop. Dax can be asked Duck.ai questions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Dax on your desktop"
+          }
+        }
+      }
+    },
     "duckai.description" : {
       "comment" : "Description of Duck.ai feature in settings",
       "extractionState" : "extracted_with_value",

@@ -120,7 +120,7 @@ public enum FeatureFlag: String, CaseIterable {
     case cpmLateBackgroundDocumentRecovery
 
     /// Retries a failed embedded background load in the same context, independently of hang recovery.
-    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219701603183698?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
     case cpmBackgroundLoadRecovery
 
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.

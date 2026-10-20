@@ -1901,8 +1901,8 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.setPromptTooLong(overLimit)
         let appliedBefore = presenter.appliedStacks.count
 
-        sut.setPromptTooLong(UTIFooterPromptOverLimit(count: 16_900, limit: 16_000))
-        sut.setPromptTooLong(UTIFooterPromptOverLimit(count: 16_900, limit: 16_000))
+        sut.setPromptTooLong(AIChatPromptLength(count: 16_900, limit: 16_000))
+        sut.setPromptTooLong(AIChatPromptLength(count: 16_900, limit: 16_000))
 
         XCTAssertEqual(presenter.appliedStacks.count, appliedBefore + 1)
         XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
@@ -1952,8 +1952,8 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertFalse(sut.isTermsOfServiceInEffect)
     }
 
-    private var overLimit: UTIFooterPromptOverLimit {
-        UTIFooterPromptOverLimit(count: 16_800, limit: 16_000)
+    private var overLimit: AIChatPromptLength {
+        AIChatPromptLength(count: 16_800, limit: 16_000)
     }
 
     private func previousVisibleIDs(from ids: [UTIFooterItem.ID], isEditing: Bool) -> [UTIFooterItem.ID] {

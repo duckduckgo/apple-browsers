@@ -278,7 +278,7 @@ public enum FeatureFlag: String, CaseIterable {
     case dataImportNewSafariFilePicker
 
     /// Imports browsing history from third-party browsers.
-    /// https://app.asana.com/1/137249556945/project/1216562341335231/task/1211716331683931
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219685718776840
     case dataImportHistory
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141

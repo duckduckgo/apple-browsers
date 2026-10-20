@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKitTestsUtils
 import PixelKit
 import PixelExperimentKit
@@ -625,7 +626,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs])
         let nativeHandler = AIChatUserScriptHandler(
             experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
-            syncHandler: MockAIChatSyncHandling(), featureFlagger: featureFlagger)
+            syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(), featureFlagger: featureFlagger)
         let script = AIChatUserScript(handler: nativeHandler, debugSettings: MockAIChatDebugSettingsForTests())
         script.connectInitialPromptSession(session)
         return script

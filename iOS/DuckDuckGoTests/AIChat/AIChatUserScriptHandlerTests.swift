@@ -1219,12 +1219,13 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         // When
         _ = aiChatUserScriptHandler.aiChatBonusRedeemOutcome(params: ["bonusId": "id"], message: message)
-        _ = aiChatUserScriptHandler.aiChatBonusDismiss(params: [], message: message)
+        _ = aiChatUserScriptHandler.aiChatBonusDismiss(params: ["campaignName": "launch"], message: message)
         _ = aiChatUserScriptHandler.aiChatBonusEnd(params: [], message: message)
 
         // Then
         XCTAssertEqual(mockBonusHandler.redeemOutcomeCallCount, 1)
         XCTAssertEqual(mockBonusHandler.dismissCallCount, 1)
+        XCTAssertEqual(mockBonusHandler.dismissParams.first as? [String: String], ["campaignName": "launch"])
         XCTAssertEqual(mockBonusHandler.endCallCount, 1)
     }
 
@@ -1235,7 +1236,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         // When
         _ = aiChatUserScriptHandler.aiChatBonusRedeemOutcome(params: ["bonusId": "id"], message: message)
-        _ = aiChatUserScriptHandler.aiChatBonusDismiss(params: [], message: message)
+        _ = aiChatUserScriptHandler.aiChatBonusDismiss(params: ["campaignName": "launch"], message: message)
         _ = aiChatUserScriptHandler.aiChatBonusEnd(params: [], message: message)
 
         // Then

@@ -341,6 +341,7 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
+    private let autofillPromptKeyboardHandler = AutofillPromptKeyboardHandler()
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
                                                                   isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) },
                                                                   eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
@@ -1146,7 +1147,7 @@ class TabViewController: UIViewController {
         setSitePermissionsGeolocationActive(true)
         
         registerForResignActive()
-        registerForKeyboardNotifications()
+        registerForCreditCardAutofillKeyboardNotifications()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -4262,7 +4263,13 @@ extension TabViewController: WKNavigationDelegate {
     func dismissKeyboardIfPresent() {
         self.webView.evaluateJavaScript("document.activeElement?.blur()")
     }
-    
+
+    /// A pending field tap can restore focus after blur, so observe keyboard appearances while the prompt is presented.
+    func prepareForAutofillPrompt(_ promptViewController: UIViewController) {
+        autofillPromptKeyboardHandler.startObserving(for: promptViewController, webView: webView)
+        dismissKeyboardIfPresent()
+    }
+
     private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount, source: AutofillSettingsSource) {
         delegate?.tab(self, didRequestAutofillLogins: account, source: source, extensionPromotionManager: extensionPromotionManager)
     }
@@ -4295,20 +4302,17 @@ extension TabViewController: WKNavigationDelegate {
         )
     }
 
-    private func registerForKeyboardNotifications() {
-        guard isCreditCardAutofillEnabled() else {
-            return
+    private func registerForCreditCardAutofillKeyboardNotifications() {
+        if isCreditCardAutofillEnabled() {
+            NotificationCenter.default.addObserver(self,
+                                                   selector: #selector(creditCardAutofillKeyboardDidHide),
+                                                   name: UIResponder.keyboardDidHideNotification,
+                                                   object: nil)
         }
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(keyboardDidHide),
-                                               name: UIResponder.keyboardDidHideNotification,
-                                               object: nil)
     }
 
     private func unregisterFromKeyboardNotifications() {
-        guard isCreditCardAutofillEnabled() else {
-            return
-        }
+        autofillPromptKeyboardHandler.stopObserving()
 
         NotificationCenter.default.removeObserver(
             self,
@@ -4338,7 +4342,7 @@ extension TabViewController: WKNavigationDelegate {
         ActionMessageView.present(message: UserText.autofillSettingsReportNotWorkingSentConfirmation)
     }
 
-    @objc private func keyboardDidHide(_ notification: Notification) {
+    @objc private func creditCardAutofillKeyboardDidHide(_ notification: Notification) {
         if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
             autofillUserScript?.cancelAllPendingReplies()
             cleanupInputAccessoryView()
@@ -5608,9 +5612,6 @@ extension TabViewController: SecureVaultManagerDelegate {
 
     private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
                                                      completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
-
         let creditCardPromptViewController = CreditCardPromptViewController(creditCards: creditCards) { creditCard in
             completionHandler(creditCard)
         }
@@ -5625,6 +5626,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(creditCardPromptViewController)
         self.present(creditCardPromptViewController, animated: true, completion: nil)
     }
 
@@ -5664,9 +5666,6 @@ extension TabViewController: SecureVaultManagerDelegate {
                             promptUserWithGeneratedPassword password: String,
                             completionHandler: @escaping (Bool) -> Void) {
 
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
-
         var responseSent: Bool = false
 
         let sendResponse: (Bool) -> Void = { useGeneratedPassword in
@@ -5689,6 +5688,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(passwordGenerationPromptViewController)
         self.present(passwordGenerationPromptViewController, animated: true)
     }
 
@@ -5699,9 +5699,6 @@ extension TabViewController: SecureVaultManagerDelegate {
                                              useLargeDetent: Bool,
                                              onAccountSelected: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
                                              completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
-
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
 
         var responseSent: Bool = false
 
@@ -5758,6 +5755,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(autofillPromptViewController)
         self.present(autofillPromptViewController, animated: true, completion: nil)
     }
 
@@ -5768,9 +5766,6 @@ extension TabViewController: SecureVaultManagerDelegate {
             completionHandler(false)
             return
         }
-
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
 
         credentialsImportManager.domainPasswordImportLastShownOn = eTLDplus1
 
@@ -5808,6 +5803,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(promptViewController)
         self.present(promptViewController, animated: true) { [weak self] in
             guard let self else { return }
             self.delegate?.tab(self, didShowPrompt: .importPasswordsGoogle)
@@ -5818,9 +5814,6 @@ extension TabViewController: SecureVaultManagerDelegate {
         guard let eTLDplus1 = storageCache.tld.eTLDplus1(url?.host), extensionPromotionManager.domainExtensionPromptLastShownOn != eTLDplus1 else {
             return
         }
-
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
 
         extensionPromotionManager.domainExtensionPromptLastShownOn = eTLDplus1
 
@@ -5841,6 +5834,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(promptViewController)
         self.present(promptViewController, animated: true) { [weak self] in
             guard let self else { return }
             self.delegate?.tab(self, didShowPrompt: .autofillExtensionPrompt)

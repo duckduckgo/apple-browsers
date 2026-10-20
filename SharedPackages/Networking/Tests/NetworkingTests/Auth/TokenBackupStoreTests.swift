@@ -141,8 +141,11 @@ final class TokenBackupStoreTests: XCTestCase {
         assertRejected(.unavailable, store: makeStore(storage: MockTokenStorage()), expectedExternalID: nil, issuedAfter: nil)
     }
 
-    func testUsableBackup_readFails_isUnavailable() {
-        assertRejected(.unavailable, store: makeStore(storage: ThrowingTokenStorage()), expectedExternalID: nil, issuedAfter: nil)
+    func testUsableBackup_readFails_isReadFailedWithTheStorageError() {
+        let storageError = NSError(domain: "keychain", code: 1)
+
+        assertRejected(.readFailed(underlying: storageError), store: makeStore(storage: ThrowingTokenStorage()), expectedExternalID: nil, issuedAfter: nil)
+        XCTAssertEqual(TokenBackupError.readFailed(underlying: storageError).underlyingError as NSError?, storageError)
     }
 
     func testUsableBackup_anotherAccount_isRejectedAndDeleted() throws {

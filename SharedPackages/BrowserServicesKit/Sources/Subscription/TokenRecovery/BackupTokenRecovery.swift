@@ -72,10 +72,13 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
         onRestored?(context.trigger)
     }
 
-    /// Whether a restore failure may succeed when retried: anything but a rejected or missing backup, or a refresh the server rejected.
+    /// Whether a restore failure may succeed when retried: a backup that couldn't be read, or anything but a rejected or missing backup
+    /// or a refresh the server rejected.
     /// - Parameter error: The error `restoreFromBackup` threw.
     private static func isTransient(_ error: Error) -> Bool {
         switch error {
+        case TokenBackupError.readFailed:
+            return true
         case is TokenBackupError, OAuthClientError.invalidTokenRequest, OAuthClientError.unknownAccount:
             return false
         default:

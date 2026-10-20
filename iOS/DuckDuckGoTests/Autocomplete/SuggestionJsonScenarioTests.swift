@@ -418,6 +418,10 @@ extension SuggestionJsonScenarioTests {
         func commitChanges(url: URL) {
         }
         
+        func addImportedVisits(_ visits: [HistoryImport.Visit]) -> [History.Visit]? {
+            return nil
+        }
+        
         func title(for url: URL) -> String? {
             return nil
         }

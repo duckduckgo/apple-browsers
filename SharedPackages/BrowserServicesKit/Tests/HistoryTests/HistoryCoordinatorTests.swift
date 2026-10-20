@@ -148,6 +148,25 @@ class HistoryCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenImportedVisitsAreAdded_ThenEachEntryGetsItsNewestTitleAndIsSavedOnce() async throws {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+        let url = URL.duckDuckGo
+        let newestDate = Date()
+        let saved = expectation(description: "Entry saved")
+        historyStoringMock.saveCompletion = { saved.fulfill() }
+
+        historyCoordinator.addImportedVisits([HistoryImport.Visit(url: url, title: "Newest", date: newestDate),
+                                              HistoryImport.Visit(url: url, title: "Older", date: newestDate.addingTimeInterval(-3600))])
+
+        let entry = try XCTUnwrap(historyCoordinator.historyDictionary?[url])
+        XCTAssertEqual(entry.visits.count, 2)
+        XCTAssertEqual(entry.lastVisit, newestDate)
+        XCTAssertEqual(entry.title, "Newest")
+        await fulfillment(of: [saved], timeout: 1.0)
+        XCTAssertEqual(historyStoringMock.savedHistoryEntries.map(\.url), [url])
+    }
+
+    @MainActor
     func testWhenHistoryIsBurning_ThenHistoryIsCleanedIncludingFireproofDomains() async {
         let burnAllFinished = expectation(description: "Burn All Finished")
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()

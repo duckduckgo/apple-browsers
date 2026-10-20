@@ -61,6 +61,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func markFailedToLoadUrl(_ url: URL)
     @MainActor func commitChanges(url: URL)
+    @discardableResult @MainActor func addImportedVisits(_ visits: [HistoryImport.Visit]) -> [Visit]?
 
     @MainActor func title(for url: URL) -> String?
 

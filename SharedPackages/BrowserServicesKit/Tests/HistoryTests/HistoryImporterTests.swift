@@ -20,83 +20,41 @@ import XCTest
 @testable import History
 
 final class HistoryImporterTests: XCTestCase {
-
-    private let url = URL(string: "https://example.com/")!
+    private let now = Date()
+    private let newURL = URL(string: "https://new.example/")!
+    private let oldURL = URL(string: "https://old.example/")!
+    private let knownURL = URL(string: "https://known.example/")!
 
     @MainActor
-    func testWhenVisitsAreImported_ThenTheyAreAddedWithTitlesAndSaved() async throws {
-        let (storingMock, coordinator, importer) = await makeLoadedImporter()
-        let parseResult = HistoryImport.ParseResult(visits: [visit(url, title: "Example", hoursAgo: 2)], skipped: 3)
+    func testWhenVisitsAreImported_ThenOnlyNewVisitsWithinCutoffAreAddedAndEveryVisitIsCounted() throws {
+        let coordinator = makeCoordinator(historyWithVisitOf: knownURL, hoursAgo: 1)
+        let importer = HistoryImporter(historyCoordinator: coordinator, cutoff: { self.date(hoursAgo: 24) })
+        let parseResult = HistoryImport.ParseResult(visits: [visit(newURL, title: "New", hoursAgo: 2),
+                                                             visit(newURL, title: "New", hoursAgo: 2),
+                                                             visit(knownURL, hoursAgo: 1),
+                                                             visit(oldURL, hoursAgo: 48)],
+                                                    skipped: 3)
 
         let summary = try importer.importVisits(parseResult)
 
-        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1, skipped: 3))
-        let entry = try XCTUnwrap(coordinator.historyDictionary?[url])
-        XCTAssertEqual(entry.title, "Example")
-        XCTAssertEqual(entry.visits.count, 1)
-        XCTAssertEqual(entry.lastVisit.timeIntervalSince1970, date(hoursAgo: 2).timeIntervalSince1970, accuracy: 0.001)
-        await waitForSaves(storingMock) { $0.contains { $0.url == self.url && $0.title == "Example" } }
-    }
-
-    @MainActor
-    func testWhenVisitIsOlderThanCutoff_ThenItIsNotImported() async throws {
-        let (_, coordinator, importer) = await makeLoadedImporter(cutoff: date(hoursAgo: 24))
-
-        let summary = try importer.importVisits(parseResult([visit(url, hoursAgo: 48)]))
-
-        XCTAssertEqual(summary, HistoryImport.Summary(tooOld: 1))
-        XCTAssertNil(coordinator.historyDictionary?[url])
-    }
-
-    @MainActor
-    func testWhenSameVisitsAreImportedTwice_ThenVisitsAreNotDuplicated() async throws {
-        let (_, coordinator, importer) = await makeLoadedImporter()
-        let parseResult = parseResult([visit(url, hoursAgo: 2)])
-        _ = try importer.importVisits(parseResult)
-
-        let summary = try importer.importVisits(parseResult)
-
-        XCTAssertEqual(summary, HistoryImport.Summary(alreadyInHistory: 1))
-        XCTAssertEqual(coordinator.historyDictionary?[url]?.visits.count, 1)
-    }
-
-    @MainActor
-    func testWhenBatchHasDuplicateVisits_ThenOnlyOneVisitIsAdded() async throws {
-        let (_, coordinator, importer) = await makeLoadedImporter()
-
-        let summary = try importer.importVisits(parseResult([visit(url, hoursAgo: 2), visit(url, hoursAgo: 2)]))
-
-        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1, alreadyInHistory: 1))
-        XCTAssertEqual(coordinator.historyDictionary?[url]?.visits.count, 1)
-    }
-
-    @MainActor
-    func testWhenSameURLHasSeveralVisits_ThenLastVisitIsTheNewest() async throws {
-        let (_, coordinator, importer) = await makeLoadedImporter()
-
-        _ = try importer.importVisits(parseResult([visit(url, hoursAgo: 5), visit(url, hoursAgo: 1)]))
-
-        let entry = try XCTUnwrap(coordinator.historyDictionary?[url])
-        XCTAssertEqual(entry.visits.count, 2)
-        XCTAssertEqual(entry.lastVisit.timeIntervalSince1970, date(hoursAgo: 1).timeIntervalSince1970, accuracy: 0.001)
+        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1, alreadyInHistory: 2, tooOld: 1, skipped: 3))
+        XCTAssertEqual(coordinator.addImportedVisitsCalls, [[visit(newURL, title: "New", hoursAgo: 2)]])
     }
 
     @MainActor
     func testWhenHistoryIsNotLoaded_ThenImportThrows() {
-        let importer = HistoryImporter(historyCoordinator: HistoryCoordinator(historyStoring: HistoryStoringMock()))
+        let coordinator = HistoryCoordinatingMock()
+        let importer = HistoryImporter(historyCoordinator: coordinator)
 
-        do {
-            _ = try importer.importVisits(parseResult([visit(url, hoursAgo: 1)]))
-            XCTFail("Expected import to throw")
-        } catch HistoryImport.Error.historyNotLoaded {
-        } catch {
-            XCTFail("Unexpected error: \(error)")
+        XCTAssertThrowsError(try importer.importVisits(HistoryImport.ParseResult(visits: [visit(newURL, hoursAgo: 1)], skipped: 0))) { error in
+            guard case HistoryImport.Error.historyNotLoaded = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
         }
+        XCTAssertTrue(coordinator.addImportedVisitsCalls.isEmpty)
     }
 
     // MARK: - Helpers
-
-    private let now = Date()
 
     private func date(hoursAgo: Double) -> Date {
         now.addingTimeInterval(-hoursAgo * 3600)
@@ -106,35 +64,12 @@ final class HistoryImporterTests: XCTestCase {
         HistoryImport.Visit(url: url, title: title, date: date(hoursAgo: hoursAgo))
     }
 
-    private func parseResult(_ visits: [HistoryImport.Visit]) -> HistoryImport.ParseResult {
-        HistoryImport.ParseResult(visits: visits, skipped: 0)
-    }
-
     @MainActor
-    private func makeLoadedImporter(cutoff: Date = .monthAgo) async -> (HistoryStoringMock, HistoryCoordinator, HistoryImporter) {
-        let storingMock = HistoryStoringMock(cleanOldResult: .success(BrowsingHistory()), removeEntriesResult: .success(()))
-        let coordinator = HistoryCoordinator(historyStoring: storingMock)
-        await withCheckedContinuation { continuation in
-            coordinator.loadHistory {
-                continuation.resume()
-            }
-        }
-        return (storingMock, coordinator, HistoryImporter(historyCoordinator: coordinator, cutoff: { cutoff }))
-    }
-
-    @MainActor
-    private func waitForSaves(_ storingMock: HistoryStoringMock, until condition: @escaping ([HistoryEntry]) -> Bool) async {
-        let expectation = expectation(description: "Entry saved")
-        storingMock.saveCompletion = {
-            if condition(storingMock.savedHistoryEntries) {
-                storingMock.saveCompletion = nil
-                expectation.fulfill()
-            }
-        }
-        if condition(storingMock.savedHistoryEntries) {
-            storingMock.saveCompletion = nil
-            expectation.fulfill()
-        }
-        await fulfillment(of: [expectation], timeout: 2.0)
+    private func makeCoordinator(historyWithVisitOf url: URL, hoursAgo: Double) -> HistoryCoordinatingMock {
+        let entry = HistoryEntry(url: url)
+        entry.addVisit(at: date(hoursAgo: hoursAgo), tabID: nil)
+        let coordinator = HistoryCoordinatingMock()
+        coordinator.historyDictionary = [url: entry]
+        return coordinator
     }
 }

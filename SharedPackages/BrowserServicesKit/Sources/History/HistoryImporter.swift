@@ -24,12 +24,11 @@ public protocol HistoryImporterProtocol {
 }
 
 public final class HistoryImporter: HistoryImporterProtocol {
-
-    private let historyCoordinator: HistoryCoordinator
+    private let historyCoordinator: HistoryCoordinating
     private let cutoff: () -> Date
 
     /// `cutoff` is read on every import, so a long-lived importer keeps up with the date.
-    public init(historyCoordinator: HistoryCoordinator, cutoff: @escaping () -> Date = { .monthAgo }) {
+    public init(historyCoordinator: HistoryCoordinating, cutoff: @escaping () -> Date = { .monthAgo }) {
         self.historyCoordinator = historyCoordinator
         self.cutoff = cutoff
     }

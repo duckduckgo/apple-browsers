@@ -19,7 +19,6 @@
 import Foundation
 
 public enum HistoryImport {
-
     public struct Visit: Equatable, Sendable {
         public let url: URL
         public let title: String?

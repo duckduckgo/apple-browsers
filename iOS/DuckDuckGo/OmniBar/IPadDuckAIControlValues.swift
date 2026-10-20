@@ -38,6 +38,9 @@ protocol IPadDuckAIControlValues {
 
     /// The files attached in the iPad address-bar attach button, encoded for submission, or `nil`.
     var selectedFiles: [AIChatNativePrompt.NativePromptFile]? { get }
+
+    /// The user's Duck.ai tier as the model picker last resolved it.
+    var userTier: AIChatUserTier { get }
 }
 
 /// A concrete snapshot of `IPadDuckAIControlValues`. Every value defaults to `nil`, so callers
@@ -48,4 +51,5 @@ struct IPadDuckAIControlValuesSnapshot: IPadDuckAIControlValues {
     var selectedTools: [AIChatRAGTool]?
     var selectedImages: [AIChatNativePrompt.NativePromptImage]?
     var selectedFiles: [AIChatNativePrompt.NativePromptFile]?
+    var userTier: AIChatUserTier = .free
 }

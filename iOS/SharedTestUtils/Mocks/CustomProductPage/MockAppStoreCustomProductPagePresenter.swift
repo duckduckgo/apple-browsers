@@ -39,6 +39,7 @@ final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCu
         reportsNewTab: Bool?,
         forcesNewTab: Bool,
         fromDeepLink: Bool,
-        termsAccepted: Bool
+        termsAccepted: Bool,
+        nativePromptFlow: DuckAIPromptFlowStart?
     ) {}
 }

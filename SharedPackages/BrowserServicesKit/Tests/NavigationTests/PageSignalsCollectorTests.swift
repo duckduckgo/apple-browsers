@@ -50,6 +50,23 @@ struct PageSignalsCollectorTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Repeated resource errors with different metadata are deduplicated", .timeLimit(.minutes(1)))
+    func repeatedResourceErrorsWithDifferentMetadataAreDeduplicated() {
+        let url = URL(string: "https://cdn.example.com/config.json")!
+
+        for requestID in 0..<1_000 {
+            let error = NSError(domain: NSURLErrorDomain, code: URLError.badURL.rawValue, userInfo: [
+                NSURLErrorFailingURLErrorKey: url,
+                NSUnderlyingErrorKey: NSError(domain: NSURLErrorDomain, code: requestID)
+            ])
+            collector.recordResourceFailure(.error(error), for: url)
+        }
+
+        #expect(collector.signals.resourceFailures["example.com"]?.count == 1)
+        #expect(collector.signals.formattedResourceLoadErrors(maxEntries: 10) == "example.com:(NSURLErrorDomain,-1000)")
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Only blocked content rule list actions are counted", .timeLimit(.minutes(1)))
     func onlyBlockedLoadsAreCounted() {
         let url = URL(string: "https://tracker.example.com/pixel.gif")!

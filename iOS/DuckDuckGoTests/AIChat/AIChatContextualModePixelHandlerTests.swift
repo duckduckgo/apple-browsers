@@ -584,14 +584,14 @@ final class AIChatContextualModePixelHandlerTests {
             firePixel: { _ in Issue.record("Must use PixelKit") },
             firePixelKitEvent: { event, frequency in
                 #expect(frequency == .dailyAndCount)
-                #expect(event.parameters == nil)
+                #expect(event.parameters == ["source": "tabs_bar_button"])
                 #expect(event.standardParameters == nil)
                 #expect(event.platformSuffixPolicy == .standard)
                 #expect(event.namePrefix == .platformDefault)
                 firedEventNames.append(event.name)
             })
 
-        sut.fireAddressBarMenuRecentChatsSelected()
+        sut.fireAddressBarMenuRecentChatsSelected(source: .tabsBarButton)
 
         #expect(firedEventNames == ["aichat_contextual_address_bar_menu_all_chats_selected"])
     }
@@ -604,11 +604,11 @@ final class AIChatContextualModePixelHandlerTests {
             firePixel: { _ in Issue.record("Must use PixelKit") },
             firePixelKitEvent: { event, frequency in
                 #expect(frequency == .dailyAndCount)
-                #expect(event.parameters == nil)
+                #expect(event.parameters == ["source": "address_bar"])
                 firedEventNames.append(event.name)
             })
 
-        sut.fireAddressBarMenuAskAboutSearchSelected()
+        sut.fireAddressBarMenuAskAboutSearchSelected(source: .addressBar)
 
         #expect(firedEventNames == ["aichat_contextual_address_bar_menu_ask_about_search_selected"])
     }

@@ -23,7 +23,6 @@ import SwiftUI
 struct NewTabPageWelcomeView: View {
 
     @ObservedObject var model: NewTabPageWelcomeModel
-    @Environment(\.colorScheme) private var colorScheme
     @State private var isVisible = false
 
     var body: some View {
@@ -46,7 +45,6 @@ struct NewTabPageWelcomeView: View {
         }
         .onDisappear { isVisible = false }
         .onReceive(model.contextChanges) { _ in refreshGreetingIfVisible() }
-        .onChange(of: colorScheme) { _ in refreshGreetingIfVisible() }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             refreshGreetingIfVisible()
         }
@@ -61,7 +59,7 @@ struct NewTabPageWelcomeView: View {
     }
 
     private func refreshGreeting() {
-        model.refresh(appearance: colorScheme == .dark ? .dark : .light)
+        model.refresh()
     }
 }
 
@@ -74,5 +72,5 @@ private enum Metrics {
 }
 
 #Preview {
-    NewTabPageWelcomeView(model: NewTabPageWelcomeModel(greetingProvider: DaxGreetingService(), updateAppearance: { _ in }))
+    NewTabPageWelcomeView(model: NewTabPageWelcomeModel(greetingProvider: DaxGreetingService()))
 }

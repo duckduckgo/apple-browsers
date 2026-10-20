@@ -48,7 +48,10 @@ final class SitePermissionsXCUITests: XCTestCase {
         frameServer["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
         try frameServer.start(0, forceIPv4: true, priority: .userInitiated)
         let framePort = try frameServer.port()
-        server["/iframe-same-origin"] = { _ in .ok(.html(Self.iframeHTML(src: "/geolocation-frame"))) }
+        server["/iframe-same-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "/geolocation-frame", sandbox: "allow-scripts allow-same-origin allow-forms allow-popups")))
+        }
+        server["/iframe-opaque-sandbox"] = { _ in .ok(.html(Self.iframeHTML(src: "/geolocation-frame", sandbox: "allow-scripts"))) }
         server["/iframe-cross-origin"] = { _ in
             .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/geolocation-frame")))
         }
@@ -651,17 +654,11 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     func testWhenCrossOriginIframeRequestsLocationThenItIsDeniedWithoutSiteOrSystemPrompt() {
-        // Cross-origin frames are denied outright for now; update this if they get their own prompt.
-        let crossOriginResult = "Frame result: error 1 Geolocation is not allowed in this context"
-        launchApp()
-        openPermissionPage(path: "/iframe-cross-origin")
-        assertResult("Frame result: ready")
-        tap(app.webViews.buttons["Frame location"])
-        assertResult(crossOriginResult)
-        // Location authorization is reset in setUp, so a native request would still show the iOS alert.
-        XCTAssertFalse(element("SitePermissions.Dialog").waitForExistence(timeout: 2))
-        XCTAssertFalse(springboard.alerts.firstMatch.waitForExistence(timeout: 2))
-        assertNoPermissionPrompt()
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-cross-origin")
+    }
+
+    func testWhenOpaqueSandboxedIframeRequestsLocationThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-opaque-sandbox")
     }
 
     func testWhenActiveLocationWatchIsDeniedThenItStopsAndReallowDoesNotRestartIt() throws {
@@ -1201,6 +1198,18 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("location error 1 1")
     }
 
+    private func assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: String) {
+        launchApp()
+        openPermissionPage(path: path)
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame location"])
+        assertResult("Frame result: error 1")
+        // Location authorization is reset in setUp, so a native request would still show the iOS alert.
+        XCTAssertFalse(element("SitePermissions.Dialog").waitForExistence(timeout: 2))
+        XCTAssertFalse(springboard.alerts.firstMatch.waitForExistence(timeout: 2))
+        assertNoPermissionPrompt()
+    }
+
     private func simulateLocation(latitude: Double, longitude: Double) throws {
         guard #available(iOS 16.4, *) else {
             throw XCTSkip("Deterministic device location requires iOS 16.4 or later")
@@ -1475,15 +1484,16 @@ final class SitePermissionsXCUITests: XCTestCase {
     </html>
     """
 
-    private static func iframeHTML(src: String) -> String {
-        """
+    private static func iframeHTML(src: String, sandbox: String? = nil) -> String {
+        let sandboxAttribute = sandbox.map { " sandbox=\"\($0)\"" } ?? ""
+        return """
         <!doctype html>
         <html lang="en">
         <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Permissions fixture</title></head>
         <body>
           <h1>Permissions fixture</h1>
           <p role="status">ready</p>
-          <iframe src="\(src)" allow="geolocation"></iframe>
+          <iframe src="\(src)" allow="geolocation"\(sandboxAttribute)></iframe>
         </body>
         </html>
         """
@@ -1502,7 +1512,7 @@ final class SitePermissionsXCUITests: XCTestCase {
           navigator.geolocation.getCurrentPosition(
             position => result.textContent = 'Frame result: success '
               + position.coords.latitude.toFixed(4) + ',' + position.coords.longitude.toFixed(4),
-            error => result.textContent = 'Frame result: error ' + error.code + ' ' + error.message,
+            error => result.textContent = 'Frame result: error ' + error.code,
             {maximumAge: 0});
         }
       </script>

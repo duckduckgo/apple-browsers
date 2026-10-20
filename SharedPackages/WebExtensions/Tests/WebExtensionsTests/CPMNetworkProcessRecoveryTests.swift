@@ -67,6 +67,33 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         XCTAssertEqual(pixels.recoveryCount, 0)
     }
 
+    func testRecoveryReadsTheWatchedDataStoreWithoutCopyingConfigurationAgain() {
+        let dataStore = WKWebsiteDataStore.nonPersistent()
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = dataStore
+        let view = ConfigurationCountingWebView(frame: .zero, configuration: configuration)
+        var observedStores: [WKWebsiteDataStore] = []
+        let recovery = CPMNetworkProcessRecovery(isEnabled: { true },
+                                                 processIdentifier: { [unowned self] store in
+            observedStores.append(store)
+            return self.process
+        }, restart: { [unowned self] view in
+            self.restarted.append(view)
+            return true
+        })
+        watch(view, in: recovery)
+        let configurationReads = view.configurationReads
+
+        XCTAssertFalse(recovery.recoverIfNeeded())
+        process = 200
+        XCTAssertTrue(recovery.recoverIfNeeded())
+
+        XCTAssertEqual(observedStores.count, 3)
+        XCTAssertTrue(observedStores.allSatisfy { $0 === dataStore }, "Read the background's isolated store, not the default store")
+        XCTAssertEqual(view.configurationReads, configurationReads, "Checks must reuse the store captured by the watch")
+        XCTAssertEqual(restarted, [view])
+    }
+
     func testReplacedNetworkProcessRestartsOnlyOnce() {
         let recovery = makeRecovery()
         let view = WKWebView()
@@ -365,6 +392,17 @@ final class CPMNetworkProcessRecoveryTests: XCTestCase {
         XCTAssertEqual(restarted, [view])
         recovery = nil
         XCTAssertNil(released)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class ConfigurationCountingWebView: WKWebView {
+    private(set) var configurationReads = 0
+
+    override var configuration: WKWebViewConfiguration {
+        configurationReads += 1
+        return super.configuration
     }
 }
 

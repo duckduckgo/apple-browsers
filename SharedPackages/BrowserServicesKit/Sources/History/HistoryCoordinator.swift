@@ -152,6 +152,33 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return visit
     }
 
+    /// Adds visits imported from another browser, publishing history and saving each changed entry once.
+    ///
+    /// Returns `nil` if history isn't loaded.
+    @MainActor
+    @discardableResult public func addImportedVisits(_ visits: [HistoryImporter.ImportedVisit]) -> [Visit]? {
+        guard var historyDictionary else {
+            Logger.history.debug("Import of \(visits.count) visits ignored")
+            return nil
+        }
+
+        var changedEntries = [URL: HistoryEntry]()
+        let addedVisits = visits.sorted { $0.date < $1.date }.map { importedVisit in
+            let entry = historyDictionary[importedVisit.url] ?? HistoryEntry(url: importedVisit.url)
+            let visit = entry.addVisit(at: importedVisit.date, tabID: nil)
+            if let title = importedVisit.title, !title.isEmpty {
+                entry.title = title
+            }
+            historyDictionary[importedVisit.url] = entry
+            changedEntries[importedVisit.url] = entry
+            return visit
+        }
+
+        self.historyDictionary = historyDictionary
+        changedEntries.values.forEach(save(entry:))
+        return addedVisits
+    }
+
     public func addBlockedTracker(entityName: String, on url: URL) {
         guard let historyDictionary else {
             Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no history")

@@ -401,7 +401,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let subscriptionManager: any SubscriptionManager
-    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
 
@@ -958,8 +957,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
                                                      pendingTransactionHandler: pendingTransactionHandler)
         let backupRecovery = BackupTokenRecovery(oAuthClient: authClient)
-        let appStoreRecovery = AppStoreTokenRecovery(recoverer: Self.deadTokenRecoverer,
-                                                     purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
+        let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
                                                      restoreFlow: restoreFlow)
         defaultSubscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
                                                                                        missingTokenStrategies: [backupRecovery])

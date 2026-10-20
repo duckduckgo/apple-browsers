@@ -34,6 +34,17 @@ struct PageResourceLoadErrorTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Different error domains, codes, and cases remain distinct", .timeLimit(.minutes(1)))
+    func differentErrorSignaturesRemainDistinct() {
+        let error = PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: URLError.badURL.rawValue))
+
+        #expect(error != .error(NSError(domain: NSURLErrorDomain, code: URLError.timedOut.rawValue)))
+        #expect(error != .error(NSError(domain: "WebKitErrorDomain", code: URLError.badURL.rawValue)))
+        #expect(PageResourceLoadError.error(NSError(domain: "statusCode", code: 404)) != .statusCode(404))
+        #expect(PageResourceLoadError.statusCode(404) != .statusCode(500))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Non-2xx status codes are captured", .timeLimit(.minutes(1)), arguments: [
         (200, nil),
         (204, nil),

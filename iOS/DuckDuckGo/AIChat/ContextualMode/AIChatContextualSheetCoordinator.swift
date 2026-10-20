@@ -49,7 +49,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL)
 
     /// Opens duck.ai in a new tab: the hand-off passes this chat's URL, Open Duck.ai a chat-ID-free one.
-    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL)
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didRequestExpandWithURL url: URL,
+                                          entrySource: AIChatEntryPointSource)
 
     /// Called when the user taps "View all chats" to open the native chat history page.
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator)
@@ -95,6 +97,7 @@ final class AIChatContextualSheetCoordinator {
     private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private let usageContextProvider: UsageContextProviding
     private let debugSettings: AIChatDebugSettingsHandling
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
     private let isFireTab: Bool
@@ -252,6 +255,7 @@ final class AIChatContextualSheetCoordinator {
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         usageContextProvider: UsageContextProviding,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
@@ -276,6 +280,7 @@ final class AIChatContextualSheetCoordinator {
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.usageContextProvider = usageContextProvider
         self.debugSettings = debugSettings
         self.onboardingActivationRecorder = onboardingActivationRecorder
         self.pixelHandler = pixelHandler
@@ -918,6 +923,8 @@ private extension AIChatContextualSheetCoordinator {
             usageLimitsStore: duckAiUsageLimitsStore,
             floatingUIManager: floatingUIManager,
             tabAttachmentSource: tabAttachmentSource,
+            duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                                                  usageContextProvider: usageContextProvider),
             isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }
         )
         host.onAttachRequested = { [weak self] in
@@ -1123,6 +1130,7 @@ private extension AIChatContextualSheetCoordinator {
             unifiedToggleInputFeature: contextualUTIFeature,
             isFireTab: isFireTab,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            usageContextProvider: usageContextProvider,
             downloadHandler: downloadHandler,
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }
@@ -1297,8 +1305,10 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         viewController.dismiss(animated: true)
     }
 
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL) {
-        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didRequestExpandWithURL url: URL,
+                                             entrySource: AIChatEntryPointSource) {
+        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url, entrySource: entrySource)
         // Ends the attach measurement while it is still in progress, so before the reset below.
         sessionState.cancelManualAttach()
         // The chat carries on in its own tab, leaving this one to start over on the next Duck.ai tap.
@@ -1377,7 +1387,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     /// Opens Duck.ai itself, not this conversation: that is the header's hand-off. This chat is untouched.
     func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController) {
-        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: aiChatSettings.aiChatURL)
+        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: aiChatSettings.aiChatURL, entrySource: .contextualChat)
         viewController.dismiss(animated: true)
         sessionState.cancelManualAttach()
     }

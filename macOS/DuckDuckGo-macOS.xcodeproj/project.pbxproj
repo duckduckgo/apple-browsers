@@ -133,6 +133,8 @@
 		1D4B03D92CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4B03D82CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift */; };
 		1D4B03DA2CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4B03D82CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift */; };
 		1D5072062F3A41AE005BE196 /* AIChatModelPickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5072052F3A41AE005BE196 /* AIChatModelPickerButton.swift */; };
+		1F59B11F1BBBC7902112EEAB /* AIChatSubmitButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72BC1E92F152DE47CC62638 /* AIChatSubmitButton.swift */; };
+		3779F74D6E235E2EB699C52A /* AIChatSubmitButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72BC1E92F152DE47CC62638 /* AIChatSubmitButton.swift */; };
 		1D5072072F3A41AE005BE196 /* AIChatModelPickerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5072052F3A41AE005BE196 /* AIChatModelPickerButton.swift */; };
 		1D532BB42ED8D3D300D219FA /* LegacyPermissionAuthorizationSwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BB32ED8D3D300D219FA /* LegacyPermissionAuthorizationSwiftUIView.swift */; };
 		1D532BB52ED8D3D300D219FA /* LegacyPermissionAuthorizationSwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BB32ED8D3D300D219FA /* LegacyPermissionAuthorizationSwiftUIView.swift */; };
@@ -1255,8 +1257,10 @@
 		377D801F2AB48191002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */; };
 		377DF17C306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */; };
 		7BD5A0122F0A0C0100000012 /* WebExtensionPageStubUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */; };
+		B73BDC758E413DFF0D2B8186 /* WebExtensionAutofillTakeover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F8D1AE2C4110F89B161808 /* WebExtensionAutofillTakeover.swift */; };
 		377DF17D306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */; };
 		7BD5A0132F0A0C0100000013 /* WebExtensionPageStubUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */; };
+		F6BF0B5355B30B2DD7AA2DCE /* WebExtensionAutofillTakeover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23F8D1AE2C4110F89B161808 /* WebExtensionAutofillTakeover.swift */; };
 		378205F8283BC6A600D1D4AA /* StartupPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */; };
 		378205FB283C277800D1D4AA /* MainMenuTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205FA283C277800D1D4AA /* MainMenuTests.swift */; };
 		3783F92329432E1800BCA897 /* WebViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3783F92229432E1800BCA897 /* WebViewTests.swift */; };
@@ -2459,8 +2463,12 @@
 		7BE33DE52DC12C4E00A96502 /* NativeMessagingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */; };
 		7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
 		7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
+		91547350ABB7129992749FED /* WebExtensionAutofillTakeoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0898EEB948483158814EED8C /* WebExtensionAutofillTakeoverTests.swift */; };
+		8E5B20389C25F965CD6D475C /* WebExtensionPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB95E76397D5D1F48F5AB0F /* WebExtensionPixelTests.swift */; };
 		7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */; };
 		7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */; };
+		B5A373FA411A6E99C15ACE3C /* WebExtensionAutofillTakeoverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0898EEB948483158814EED8C /* WebExtensionAutofillTakeoverTests.swift */; };
+		405C8B51EE6B3E080C023678 /* WebExtensionPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FB95E76397D5D1F48F5AB0F /* WebExtensionPixelTests.swift */; };
 		7BEC182F2AD5D8DC00D30536 /* SystemExtensionManager in Frameworks */ = {isa = PBXBuildFile; productRef = 7BEC182E2AD5D8DC00D30536 /* SystemExtensionManager */; };
 		7BEC20422B0F505F00243D3E /* AddBookmarkPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */; };
 		7BEC20432B0F505F00243D3E /* AddBookmarkPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */; };
@@ -5258,6 +5266,7 @@
 		1D4B03D52CA4431C00224E99 /* BookmarkUrlExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkUrlExtension.swift; sourceTree = "<group>"; };
 		1D4B03D82CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkUrlExtensionTests.swift; sourceTree = "<group>"; };
 		1D5072052F3A41AE005BE196 /* AIChatModelPickerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatModelPickerButton.swift; sourceTree = "<group>"; };
+		E72BC1E92F152DE47CC62638 /* AIChatSubmitButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSubmitButton.swift; sourceTree = "<group>"; };
 		1D532BB32ED8D3D300D219FA /* LegacyPermissionAuthorizationSwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyPermissionAuthorizationSwiftUIView.swift; sourceTree = "<group>"; };
 		1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPermissionManager.swift; sourceTree = "<group>"; };
 		1D532BDD2EDC3E3F00D219FA /* PermissionCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionCenterView.swift; sourceTree = "<group>"; };
@@ -5587,6 +5596,7 @@
 		377D801B2AB47FBB002AF251 /* FavoritesDisplayModeSyncHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesDisplayModeSyncHandler.swift; sourceTree = "<group>"; };
 		377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStoreUserScript.swift; sourceTree = "<group>"; };
 		7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPageStubUserScript.swift; sourceTree = "<group>"; };
+		23F8D1AE2C4110F89B161808 /* WebExtensionAutofillTakeover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAutofillTakeover.swift; sourceTree = "<group>"; };
 		377E54382937B7C400780A0A /* DuckDuckGoAppStoreCI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStoreCI.entitlements; sourceTree = "<group>"; };
 		378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupPreferencesTests.swift; sourceTree = "<group>"; };
 		378205FA283C277800D1D4AA /* MainMenuTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuTests.swift; sourceTree = "<group>"; };
@@ -6255,6 +6265,8 @@
 		7BE33DE42DC12C0300A96502 /* NativeMessagingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHandler.swift; sourceTree = "<group>"; };
 		7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostManifestTests.swift; sourceTree = "<group>"; };
 		7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHostSessionTests.swift; sourceTree = "<group>"; };
+		0898EEB948483158814EED8C /* WebExtensionAutofillTakeoverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAutofillTakeoverTests.swift; sourceTree = "<group>"; };
+		7FB95E76397D5D1F48F5AB0F /* WebExtensionPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPixelTests.swift; sourceTree = "<group>"; };
 		7BD5A0302F0A0C0100000030 /* WebExtensionAPICompatibilityLogViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAPICompatibilityLogViewModelTests.swift; sourceTree = "<group>"; };
 		7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemExtensionManager; sourceTree = "<group>"; };
 		7BEC20402B0F505F00243D3E /* AddBookmarkPopoverView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddBookmarkPopoverView.swift; sourceTree = "<group>"; };
@@ -8211,6 +8223,7 @@
 				1E1B24AD2F4729C100D239CE /* WebExtensionAvailability+macOS.swift */,
 				377DF17B306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift */,
 				7BD5A0112F0A0C0100000011 /* WebExtensionPageStubUserScript.swift */,
+				23F8D1AE2C4110F89B161808 /* WebExtensionAutofillTakeover.swift */,
 			);
 			path = WebExtensions;
 			sourceTree = "<group>";
@@ -8507,6 +8520,7 @@
 				5702A8BDFFA04DF4616C41E3 /* AIChatDeleter.swift */,
 				1D5C233F2F16CE000055046E /* PassthroughView.swift */,
 				1D5072052F3A41AE005BE196 /* AIChatModelPickerButton.swift */,
+				E72BC1E92F152DE47CC62638 /* AIChatSubmitButton.swift */,
 				1D94E7982F333CA1008315A2 /* AIChatOmnibarToolButton.swift */,
 				1DE906D22F3DBF4500C3B853 /* AIChatImageAttachmentThumbnailView.swift */,
 				7BAB1A0100000000A0000001 /* AIChatTabAttachment.swift */,
@@ -8935,6 +8949,8 @@
 				DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */,
 				7BD5A0012F0A0C0100000001 /* NativeMessagingHostManifestTests.swift */,
 				7BD5A0032F0A0C0100000003 /* NativeMessagingHostSessionTests.swift */,
+				0898EEB948483158814EED8C /* WebExtensionAutofillTakeoverTests.swift */,
+				7FB95E76397D5D1F48F5AB0F /* WebExtensionPixelTests.swift */,
 				7BD5A0142F0A0C0100000014 /* WebExtensionPageStubUserScriptTests.swift */,
 			);
 			path = WebExtensions;
@@ -15948,6 +15964,7 @@
 				3706FA93293F65D500E42796 /* WKWebView+Download.swift in Sources */,
 				377DF17D306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */,
 				7BD5A0132F0A0C0100000013 /* WebExtensionPageStubUserScript.swift in Sources */,
+				F6BF0B5355B30B2DD7AA2DCE /* WebExtensionAutofillTakeover.swift in Sources */,
 				371E1D672D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift in Sources */,
 				3706FA94293F65D500E42796 /* TabShadowConfig.swift in Sources */,
 				3706FA97293F65D500E42796 /* WindowDraggingView.swift in Sources */,
@@ -16392,6 +16409,7 @@
 				3706FB65293F65D500E42796 /* PrivacyDashboardWebView.swift in Sources */,
 				372BC2A22A4AFA47001D8FD5 /* SyncCredentialsAdapter.swift in Sources */,
 				1D5072062F3A41AE005BE196 /* AIChatModelPickerButton.swift in Sources */,
+				1F59B11F1BBBC7902112EEAB /* AIChatSubmitButton.swift in Sources */,
 				3706FB66293F65D500E42796 /* AppearancePreferences.swift in Sources */,
 				844D7DA52C9443EA00BE61D4 /* NSPrintInfoExtension.swift in Sources */,
 				3706FB67293F65D500E42796 /* DownloadListCoordinator.swift in Sources */,
@@ -17478,6 +17496,8 @@
 				7BD5A0312F0A0C0100000031 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */,
 				7BD5A0062F0A0C0100000006 /* NativeMessagingHostManifestTests.swift in Sources */,
 				7BD5A0072F0A0C0100000007 /* NativeMessagingHostSessionTests.swift in Sources */,
+				91547350ABB7129992749FED /* WebExtensionAutofillTakeoverTests.swift in Sources */,
+				8E5B20389C25F965CD6D475C /* WebExtensionPixelTests.swift in Sources */,
 				1D9FDEC72B9B64DB0040B78C /* PrivacyProtectionStatusTests.swift in Sources */,
 				BBE497DD2EDF9AE6000C3DB5 /* QuitSurveyDeciderTests.swift in Sources */,
 				FFA1DFE4967209A9C47D7160 /* QuitSurveyPromoObserverTests.swift in Sources */,
@@ -18436,6 +18456,7 @@
 				379E877629E98729001C8BB0 /* BookmarksCleanupErrorHandling.swift in Sources */,
 				377DF17C306D480F00CDD6A7 /* ChromeWebStoreUserScript.swift in Sources */,
 				7BD5A0122F0A0C0100000012 /* WebExtensionPageStubUserScript.swift in Sources */,
+				B73BDC758E413DFF0D2B8186 /* WebExtensionAutofillTakeover.swift in Sources */,
 				B6DA06E42913ECEE00225DE2 /* ContextMenuManager.swift in Sources */,
 				B693955126F04BEB0015B914 /* GradientView.swift in Sources */,
 				C1858CD22C7C971D00C9BEAB /* FreemiumDBPFeature.swift in Sources */,
@@ -19514,6 +19535,7 @@
 				AA6820EB25503D6A005ED0D5 /* Fire.swift in Sources */,
 				3158B1492B0BF73000AF130C /* DBPHomeViewController.swift in Sources */,
 				1D5072072F3A41AE005BE196 /* AIChatModelPickerButton.swift in Sources */,
+				3779F74D6E235E2EB699C52A /* AIChatSubmitButton.swift in Sources */,
 				37F09AD32DDE433500643A1B /* FaviconManagerMock.swift in Sources */,
 				1DD0DBBC2E3DEE8A00B0E5F1 /* NewTabPageLoadMetrics.swift in Sources */,
 				9F56CFA92B82DC4300BB7F11 /* AddEditBookmarkFolderView.swift in Sources */,
@@ -19981,6 +20003,8 @@
 				7BD5A0322F0A0C0100000032 /* WebExtensionAPICompatibilityLogViewModelTests.swift in Sources */,
 				7BD5A0022F0A0C0100000002 /* NativeMessagingHostManifestTests.swift in Sources */,
 				7BD5A0042F0A0C0100000004 /* NativeMessagingHostSessionTests.swift in Sources */,
+				B5A373FA411A6E99C15ACE3C /* WebExtensionAutofillTakeoverTests.swift in Sources */,
+				405C8B51EE6B3E080C023678 /* WebExtensionPixelTests.swift in Sources */,
 				B68412202B6A30680092F66A /* StringExtensionTests.swift in Sources */,
 				B6106BB526A809E60013B453 /* GeolocationProviderTests.swift in Sources */,
 				BDA764912BC4E57200D0400C /* MockVPNLocationFormatter.swift in Sources */,

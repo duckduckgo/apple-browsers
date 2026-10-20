@@ -157,7 +157,23 @@ public class Tab: NSObject, NSCoding {
 
     @MainActor lazy var iPadOmnibarDraft = IPadOmnibarDraft()
 
-    var duckAIEntrySource: AIChatEntryPointSource?
+    var duckAIEntrySource: AIChatEntryPointSource? {
+        didSet { isDuckAIEntrySourceAwaitingPageLoad = duckAIEntrySource != nil }
+    }
+
+    /// True between a door stamping `duckAIEntrySource` and the next page load, which takes it.
+    private var isDuckAIEntrySourceAwaitingPageLoad = false
+
+    /// A load that failed before committing leaves its door unused.
+    func discardDuckAIEntrySourceAwaitingPageLoad() {
+        isDuckAIEntrySourceAwaitingPageLoad = false
+    }
+
+    /// The door stamped for the page now loading, if any. Each stamp attributes one page load only.
+    func takeDuckAIEntrySourceForPageLoad() -> AIChatEntryPointSource? {
+        defer { isDuckAIEntrySourceAwaitingPageLoad = false }
+        return isDuckAIEntrySourceAwaitingPageLoad ? duckAIEntrySource : nil
+    }
 
     /// Type of tab: web or AI Chat, derived from the current URL
     var type: TabType {

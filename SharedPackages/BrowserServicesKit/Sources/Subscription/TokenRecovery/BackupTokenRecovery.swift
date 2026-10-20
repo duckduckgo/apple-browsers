@@ -76,7 +76,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
     /// Whether a restore failure may succeed when retried: a backup that couldn't be read, or anything but a rejected or missing backup
     /// or a refresh the server rejected.
     /// - Parameter error: The error `restoreFromBackup` threw.
-    static func isTransient(_ error: Error) -> Bool {
+    private static func isTransient(_ error: Error) -> Bool {
         switch error {
         case TokenBackupError.readFailed:
             return true
@@ -84,6 +84,20 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
             return false
         default:
             return true
+        }
+    }
+
+    /// Whether a restore failure is known to be temporary: no connection or a timeout, a server error, a timed-out or rate-limited request,
+    /// or a backup that couldn't be read. Any other failure, including an unknown one, is not.
+    /// - Parameter error: The error `restoreFromBackup` threw.
+    static func isTemporary(_ error: Error) -> Bool {
+        switch error {
+        case TokenBackupError.readFailed, is URLError, APIRequestV2Error.urlSession:
+            return true
+        case OAuthServiceError.invalidResponseCode(let status):
+            return status.isServerError || status == .requestTimeout || status == .tooManyRequests
+        default:
+            return false
         }
     }
 

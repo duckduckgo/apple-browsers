@@ -18,7 +18,6 @@
 
 import Foundation
 
-/// Types shared by the browser history readers and `HistoryImporter`.
 public enum HistoryImport {
 
     public struct Visit: Equatable, Sendable {

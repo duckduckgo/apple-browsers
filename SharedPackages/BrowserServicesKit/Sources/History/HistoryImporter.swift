@@ -23,19 +23,17 @@ public protocol HistoryImporterProtocol {
     @MainActor func importVisits(_ parseResult: HistoryImport.ParseResult) throws -> HistoryImport.Summary
 }
 
-/// Adds visits read from another browser's history to the local history.
 public final class HistoryImporter: HistoryImporterProtocol {
 
     private let historyCoordinator: HistoryCoordinator
     private let cutoff: () -> Date
 
-    /// - Parameter cutoff: Visits older than this are skipped. Read on every import, so a long-lived importer keeps up with the date.
+    /// `cutoff` is read on every import, so a long-lived importer keeps up with the date.
     public init(historyCoordinator: HistoryCoordinator, cutoff: @escaping () -> Date = { .monthAgo }) {
         self.historyCoordinator = historyCoordinator
         self.cutoff = cutoff
     }
 
-    /// Adds visits to history, skipping ones older than the cutoff or already present.
     @MainActor
     public func importVisits(_ parseResult: HistoryImport.ParseResult) throws -> HistoryImport.Summary {
         guard let historyDictionary = historyCoordinator.historyDictionary else {

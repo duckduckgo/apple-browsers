@@ -27,8 +27,20 @@ public struct WebExtensionPermissionSettings: Codable, Equatable {
     public var grantedPermissions: [String: Date] = [:]
     public var grantedMatchPatterns: [String: Date] = [:]
     public var hasRequestedOptionalAccessToAllHosts = false
+    /// Permissions the app implements itself, which WebKit doesn't keep (see `WebExtensionAppPermission`).
+    public var grantedAppPermissions: [String: Date] = [:]
 
     public init() {}
+
+    /// Settings saved before a property existed decode with its default.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        hasAccessToPrivateData = try container.decodeIfPresent(Bool.self, forKey: .hasAccessToPrivateData) ?? false
+        grantedPermissions = try container.decodeIfPresent([String: Date].self, forKey: .grantedPermissions) ?? [:]
+        grantedMatchPatterns = try container.decodeIfPresent([String: Date].self, forKey: .grantedMatchPatterns) ?? [:]
+        hasRequestedOptionalAccessToAllHosts = try container.decodeIfPresent(Bool.self, forKey: .hasRequestedOptionalAccessToAllHosts) ?? false
+        grantedAppPermissions = try container.decodeIfPresent([String: Date].self, forKey: .grantedAppPermissions) ?? [:]
+    }
 }
 
 public protocol WebExtensionPermissionStoring {

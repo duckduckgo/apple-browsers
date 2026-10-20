@@ -670,6 +670,30 @@
         "description": "Web extension type whose reload failed.",
         "enum": ["embedded", "darkMode", "adBlocking", "searchToken", "unknown"]
     },
+    "web_extension": {
+        "key": "extension",
+        "type": "string",
+        "description": "The extension's name in the Chrome Web Store catalog, or other for an extension the catalog doesn't list. Keep in sync with ExtensionsCatalogSubfeature.",
+        "enum": ["bitwarden", "onePassword", "lastPass", "other"]
+    },
+    "web_extension_version": {
+        "key": "extension_version",
+        "type": "string",
+        "description": "The extension's version from its manifest, one to four numbers separated by dots, or other when it has a different format.",
+        "pattern": "^([0-9]{1,9}(\\.[0-9]{1,9}){0,3}|other)$"
+    },
+    "web_extension_missing_api_count": {
+        "key": "missing_api_count",
+        "type": "integer",
+        "description": "How many distinct Chrome or JavaScript APIs the extension used that are missing.",
+        "minimum": 0
+    },
+    "web_extension_unsupported_url_count": {
+        "key": "unsupported_url_count",
+        "type": "integer",
+        "description": "How many distinct Chrome pages, such as chrome://password-manager, the extension tried to open without a DuckDuckGo counterpart.",
+        "minimum": 0
+    },
     "web_extension_reload_trigger": {
         "key": "reload_trigger",
         "type": "string",

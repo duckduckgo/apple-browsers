@@ -94,6 +94,7 @@ extension TabViewController: AITabController {
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     func submitStartChatAction() {
+        cancelPendingAIChatTabAttachmentPrompt()
         Task { @MainActor in
             await aiChatContentHandler.submitStartChatAction()
         }
@@ -182,6 +183,7 @@ extension TabViewController {
               targetURL != pendingNativeLoadURL else {
             return nil
         }
-        return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL)
+        return AIChatEntryPointSource.forInPageNavigation(from: currentURL, to: targetURL,
+                                                          isLinkActivation: navigationAction.navigationType == .linkActivated)
     }
 }

@@ -148,7 +148,6 @@ final class AppDependencyProvider: DependencyProvider {
     var tokenHandlerProvider: any SubscriptionTokenHandling
     let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
     let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging = SubscriptionOnboardingSessionState()
-    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionTunnelController: NetworkProtectionTunnelController
@@ -376,8 +375,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                      storePurchaseManager: storePurchaseManager,
                                                      pendingTransactionHandler: pendingTransactionHandler)
         let backupRecovery = BackupTokenRecovery(oAuthClient: authClient)
-        let appStoreRecovery = AppStoreTokenRecovery(recoverer: Self.deadTokenRecoverer,
-                                                     purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
+        let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
                                                      restoreFlow: restoreFlow)
         subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
                                                                                 missingTokenStrategies: [backupRecovery])

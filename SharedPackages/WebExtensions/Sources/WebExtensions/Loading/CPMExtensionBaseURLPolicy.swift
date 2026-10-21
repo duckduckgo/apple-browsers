@@ -49,6 +49,21 @@ final class CPMExtensionBaseURLPolicy {
     /// WebKit can retain a stale service-worker registration after website data is cleared.
     /// Rotate only for the data-clearing lifecycle, and persist the new origin for subsequent launches/reloads.
     func prepareForDataClearingReload(of context: WKWebExtensionContext) {
+        rotateOrigin(of: context)
+    }
+
+    /// A crashed service worker can leave error 6 attached to its registration on macOS 27.
+    /// Reset that origin only after its context has successfully unloaded, retaining healthy origins.
+    func prepareForBackgroundFailureReload(of context: WKWebExtensionContext, errors: [Error]) {
+        guard isEnabled(), errors.contains(where: {
+            let error = $0 as NSError
+            return error.domain == WKWebExtensionContext.errorDomain &&
+                error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
+        }) else { return }
+        rotateOrigin(of: context)
+    }
+
+    private func rotateOrigin(of context: WKWebExtensionContext) {
         let identifier = context.uniqueIdentifier
         guard originIdentifier(for: identifier, webExtension: context.webExtension) != nil,
               let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) else { return }

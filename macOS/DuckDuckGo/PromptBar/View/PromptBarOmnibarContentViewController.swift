@@ -268,6 +268,8 @@ extension PromptBarOmnibarContentViewController: PromptBarContentHosting {
     }
 
     func resetAfterDismissal() {
+        // Escape and submitting hide the bar mid-capture too, and the draft is about to be reset.
+        containerViewController.cancelScreenshotCapture()
         textViewController.stopEventMonitoring()
         containerViewController.cleanup()
         draftStore.reset()

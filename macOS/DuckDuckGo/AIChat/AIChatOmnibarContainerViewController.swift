@@ -295,6 +295,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// True from the menu pick until the capture ends; the prompt bar stays open while it is.
     private(set) var isCapturingScreenshot = false
+    private let screenshotCaptureCancellation = PassthroughSubject<Void, Never>()
 
     /// Called once a screenshot has finished and focus has settled, for the prompt bar to take key back.
     var onScreenshotCaptureEnded: (() -> Void)?
@@ -2222,13 +2223,20 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         }
     }
 
+    /// For a surface whose draft goes when it's dismissed, so a capture still open never lands in the next prompt.
+    func cancelScreenshotCapture() {
+        screenshotCaptureCancellation.send()
+    }
+
     private func captureScreenshot(mode: AIChatScreenshotMode) async {
         let restoreSurface = clearSurfaceForScreenshot()
         // The screenshot lands in the active tab's draft, so switching or closing the tab cancels it.
         let result = await NSApp.delegateTyped.aiChatScreenshotCaptureService.capture(mode: mode,
                                                                           excluding: screenshotExcludedWindows,
                                                                           returningFocusTo: view.window,
-                                                                          cancellingOn: omnibarController.activeDraftChangesPublisher)
+                                                                          cancellingOn: omnibarController.activeDraftChangesPublisher
+                                                                            .merge(with: screenshotCaptureCancellation)
+                                                                            .eraseToAnyPublisher())
         restoreSurface()
         handleScreenshotResult(result)
         // The picker and the overlay hand focus back asynchronously, and the prompt bar would read

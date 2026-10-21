@@ -66,6 +66,28 @@ extension XCUIApplication {
             "Expected page content '\(text)' did not appear.", file: file, line: line)
     }
 
+    func dismissAddressBarEditing(file: StaticString = #filePath, line: UInt = #line) {
+        let menuButton = buttons["Browser.Toolbar.Button.Menu"]
+        if menuButton.isHittable {
+            return
+        }
+
+        // Classic omnibar editing uses Cancel; the unified input overlay uses Back.
+        let cancelButton = buttons["Cancel"].firstMatch
+        let backButton = buttons["Back"].firstMatch
+        if cancelButton.isHittable {
+            cancelButton.tap()
+        } else {
+            backButton.tapWhenHittable(file: file, line: line)
+        }
+
+        XCTAssertTrue(
+            menuButton.wait(
+                for: NSPredicate(format: "isHittable == true AND isEnabled == true"),
+                timeout: UITestTimeouts.elementExistence),
+            "Browser controls did not appear after dismissing address-bar editing.", file: file, line: line)
+    }
+
     func openTabSwitcher(file: StaticString = #filePath, line: UInt = #line) {
         buttons["Browser.Toolbar.Button.TabSwitcher"].tapWhenHittable(file: file, line: line)
         XCTAssertTrue(

@@ -103,6 +103,9 @@ extension DebugScreensViewModel {
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
             }),
+            .view(title: "Native Duck.ai (demo)", { _ in
+                DuckAINativeDebugView()
+            }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()
             }),

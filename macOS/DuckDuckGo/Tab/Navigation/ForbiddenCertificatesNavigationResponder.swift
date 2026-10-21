@@ -18,7 +18,9 @@
 
 import CryptoKit
 import DDGNavigation
+import FeatureFlags_macOS
 import Foundation
+import PrivacyConfig
 import Security
 
 /// Cancels TLS connections whose certificate chain contains a certificate with a forbidden SPKI SHA-256 hash.
@@ -39,9 +41,11 @@ struct ForbiddenCertificatesNavigationResponder: NavigationResponder {
     private static let evaluationQueue = DispatchQueue(label: "com.duckduckgo.forbidden-certificates", qos: .userInitiated)
 
     let forbiddenSPKIHashes: Set<Data>
+    private let featureFlagger: FeatureFlagger
 
-    init(forbiddenSPKIHashes: Set<Data> = cve2026111943) {
+    init(forbiddenSPKIHashes: Set<Data> = cve2026111943, featureFlagger: FeatureFlagger) {
         self.forbiddenSPKIHashes = forbiddenSPKIHashes
+        self.featureFlagger = featureFlagger
     }
 
     func didReceive(_ authenticationChallenge: URLAuthenticationChallenge, for navigation: Navigation?) async -> AuthChallengeDisposition? {
@@ -53,6 +57,9 @@ struct ForbiddenCertificatesNavigationResponder: NavigationResponder {
     }
 
     func decision(for trust: SecTrust) async -> AuthChallengeDisposition? {
+        // Read on every challenge so a remote config change applies without a relaunch.
+        guard featureFlagger.isFeatureOn(.forbiddenCertificates) else { return .next }
+
         // Evaluation builds the full chain, including a trust anchor the server didn't send.
         // The result is ignored: a forbidden chain must be cancelled even when the user would bypass a certificate error.
         await withCheckedContinuation { continuation in

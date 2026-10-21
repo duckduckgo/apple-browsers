@@ -17,6 +17,8 @@
 //
 
 import DDGNavigation
+import FeatureFlags_macOS
+import PrivacyConfig
 import Security
 import XCTest
 
@@ -35,15 +37,18 @@ final class ForbiddenCertificatesNavigationResponderTests: XCTestCase {
 
     var root: SecCertificate!
     var leaf: SecCertificate!
+    var featureFlagger: MockFeatureFlagger!
 
     override func setUpWithError() throws {
         root = try XCTUnwrap(SecCertificateCreateWithData(nil, try XCTUnwrap(Data(base64Encoded: Self.rootDERBase64)) as CFData))
         leaf = try XCTUnwrap(SecCertificateCreateWithData(nil, try XCTUnwrap(Data(base64Encoded: Self.leafDERBase64)) as CFData))
+        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.forbiddenCertificates.rawValue: true])
     }
 
     override func tearDown() {
         root = nil
         leaf = nil
+        featureFlagger = nil
     }
 
     func testSPKIHashMatchesOpenSSL() {
@@ -59,20 +64,20 @@ final class ForbiddenCertificatesNavigationResponderTests: XCTestCase {
     }
 
     func testWhenRootIsForbidden_ThenChallengeIsCancelled() async throws {
-        let responder = ForbiddenCertificatesNavigationResponder(forbiddenSPKIHashes: [try data(Self.rootSPKIHex)])
+        let responder = makeResponder(forbidding: [try data(Self.rootSPKIHex)])
         let disposition = await responder.decision(for: try trust(anchored: true))
         XCTAssertTrue(disposition.isCancel, "\(String(describing: disposition))")
     }
 
     func testWhenLeafIsForbidden_ThenChallengeIsCancelled() async throws {
-        let responder = ForbiddenCertificatesNavigationResponder(forbiddenSPKIHashes: [try data(Self.leafSPKIHex)])
+        let responder = makeResponder(forbidding: [try data(Self.leafSPKIHex)])
         let disposition = await responder.decision(for: try trust(anchored: true))
         XCTAssertTrue(disposition.isCancel, "\(String(describing: disposition))")
     }
 
     func testWhenNoCertificateIsForbidden_ThenChallengeIsPassedToNextResponder() async throws {
-        let emptyDenylist = ForbiddenCertificatesNavigationResponder(forbiddenSPKIHashes: [])
-        let unrelatedDenylist = ForbiddenCertificatesNavigationResponder(forbiddenSPKIHashes: [try data(Self.unrelatedSPKIHex)])
+        let emptyDenylist = makeResponder(forbidding: [])
+        let unrelatedDenylist = makeResponder(forbidding: [try data(Self.unrelatedSPKIHex)])
 
         let emptyDisposition = await emptyDenylist.decision(for: try trust(anchored: true))
         let unrelatedDisposition = await unrelatedDenylist.decision(for: try trust(anchored: true))
@@ -85,13 +90,13 @@ final class ForbiddenCertificatesNavigationResponderTests: XCTestCase {
         let untrusted = try trust(anchored: false)
         XCTAssertFalse(SecTrustEvaluateWithError(untrusted, nil), "the root must not be trusted without anchors")
 
-        let responder = ForbiddenCertificatesNavigationResponder(forbiddenSPKIHashes: [try data(Self.rootSPKIHex)])
+        let responder = makeResponder(forbidding: [try data(Self.rootSPKIHex)])
         let disposition = await responder.decision(for: try trust(anchored: false))
         XCTAssertTrue(disposition.isCancel, "\(String(describing: disposition))")
     }
 
     func testWhenChallengeIsNotServerTrust_ThenChallengeIsPassedToNextResponder() async throws {
-        let responder = ForbiddenCertificatesNavigationResponder(forbiddenSPKIHashes: [try data(Self.rootSPKIHex)])
+        let responder = makeResponder(forbidding: [try data(Self.rootSPKIHex)])
         let protectionSpace = URLProtectionSpace(host: "forbidden.example", port: 443, protocol: "https", realm: nil, authenticationMethod: NSURLAuthenticationMethodHTTPBasic)
         let challenge = URLAuthenticationChallenge(protectionSpace: protectionSpace, proposedCredential: nil, previousFailureCount: 0, failureResponse: nil, error: nil, sender: ChallangeSender())
 
@@ -99,7 +104,35 @@ final class ForbiddenCertificatesNavigationResponderTests: XCTestCase {
         XCTAssertNil(disposition)
     }
 
+    func testWhenFlagIsOff_ThenForbiddenChainIsPassedToNextResponder() async throws {
+        featureFlagger.featuresStub[FeatureFlag.forbiddenCertificates.rawValue] = false
+        let responder = makeResponder(forbidding: [try data(Self.rootSPKIHex)])
+
+        let disposition = await responder.decision(for: try trust(anchored: true))
+        XCTAssertNil(disposition)
+    }
+
+    func testWhenFlagChangesWhileRunning_ThenNextChallengeFollowsIt() async throws {
+        featureFlagger.featuresStub[FeatureFlag.forbiddenCertificates.rawValue] = false
+        let responder = makeResponder(forbidding: [try data(Self.rootSPKIHex)])
+
+        let offDisposition = await responder.decision(for: try trust(anchored: true))
+        XCTAssertNil(offDisposition)
+
+        featureFlagger.featuresStub[FeatureFlag.forbiddenCertificates.rawValue] = true
+        let onDisposition = await responder.decision(for: try trust(anchored: true))
+        XCTAssertTrue(onDisposition.isCancel, "\(String(describing: onDisposition))")
+
+        featureFlagger.featuresStub[FeatureFlag.forbiddenCertificates.rawValue] = false
+        let offAgainDisposition = await responder.decision(for: try trust(anchored: true))
+        XCTAssertNil(offAgainDisposition)
+    }
+
     // MARK: - Helpers
+
+    private func makeResponder(forbidding hashes: Set<Data>) -> ForbiddenCertificatesNavigationResponder {
+        ForbiddenCertificatesNavigationResponder(forbiddenSPKIHashes: hashes, featureFlagger: featureFlagger)
+    }
 
     private func trust(anchored: Bool) throws -> SecTrust {
         var trust: SecTrust?

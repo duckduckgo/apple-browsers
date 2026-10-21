@@ -1,0 +1,184 @@
+name: Smartling - Release Import
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        default: both
+        options:
+          - both
+          - iOS
+          - macOS
+      release_branch:
+        description: "Release branch, e.g. release/ios/0.1.0 (defaults to the latest one; needs a single platform)"
+        type: string
+        default: ""
+      dry_run:
+        description: "Import into the working tree only: no commit, push or pull request"
+        type: boolean
+        default: false
+      ignore_existing_pr:
+        description: "Import even if a translations pull request for this version already exists"
+        type: boolean
+        default: false
+      simulate_wednesday:
+        description: "Open the Asana task as the Wednesday run does when the translations aren't ready"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: smartling-release-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    name: ${{ matrix.platform }} release translations
+    runs-on: macos-26
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON((github.event_name == 'schedule' || inputs.platform == 'both') && '["iOS","macOS"]' || format('["{0}"]', inputs.platform)) }}
+
+    steps:
+      - name: Find the release branch
+        id: release
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          INPUT_PLATFORM: ${{ inputs.platform }}
+          INPUT_RELEASE_BRANCH: ${{ inputs.release_branch }}
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
+          SIMULATE_WEDNESDAY: ${{ inputs.simulate_wednesday || false }}
+        run: |
+          platform_slug="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
+          if [ -n "$INPUT_RELEASE_BRANCH" ]; then
+            if [ "$INPUT_PLATFORM" = "both" ]; then
+              echo "Pick a single platform when setting the release branch." >&2
+              exit 1
+            fi
+            branch="$INPUT_RELEASE_BRANCH"
+          else
+            branch="$(git ls-remote --heads "$REPOSITORY_URL" "refs/heads/release/$platform_slug/*" \
+              | awk '{ print $2 }' | sed 's#^refs/heads/##' | sort -V | tail -n 1)"
+          fi
+          if [ "$SIMULATE_WEDNESDAY" = "true" ] || { [ "$IS_SCHEDULED" = "true" ] && [ "$(date -u +%u)" = "3" ]; }; then
+            is_wednesday="true"
+          else
+            is_wednesday="false"
+          fi
+          echo "Release branch: ${branch:-none}"
+          echo "Wednesday check: $is_wednesday"
+          {
+            echo "branch=$branch"
+            echo "is_wednesday=$is_wednesday"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Register SSH keys for private repos
+        if: steps.release.outputs.branch != ''
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Check out the release branch
+        if: steps.release.outputs.branch != ''
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.release.outputs.branch }}
+          submodules: recursive
+
+      - name: Resolve platform configuration
+        if: steps.release.outputs.branch != ''
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          case "$PLATFORM" in
+            iOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}"
+              } >> "$GITHUB_ENV"
+              ;;
+            macOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Unknown platform: $PLATFORM" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Check the release branch has the import script
+        id: script
+        if: steps.release.outputs.branch != ''
+        run: |
+          if [ -x ./scripts/smartling/smartling_release_import.sh ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ steps.release.outputs.branch }} was cut before the release import existed, so there is nothing to do."
+          fi
+
+      - name: Select Xcode
+        if: steps.script.outputs.available == 'true'
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Set up Python
+        if: steps.script.outputs.available == 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        if: steps.script.outputs.available == 'true'
+        run: pip install aiohttp
+
+      - name: Import ${{ matrix.platform }} release translations
+        id: import
+        if: steps.script.outputs.available == 'true'
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
+          DRY_RUN: ${{ inputs.dry_run || false }}
+          IGNORE_EXISTING_PR: ${{ inputs.ignore_existing_pr || false }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          args=("$PLATFORM" --release-branch "$RELEASE_BRANCH")
+          [ "$DRY_RUN" != "true" ] || args+=(--dry-run)
+          [ "$IGNORE_EXISTING_PR" != "true" ] || args+=(--ignore-existing-pr)
+          ./scripts/smartling/smartling_release_import.sh "${args[@]}"
+
+      - name: Open ${{ matrix.platform }} release translations task
+        if: >-
+          always() && steps.release.outputs.is_wednesday == 'true' &&
+          steps.script.outputs.available == 'true' &&
+          (steps.import.outcome == 'failure' || steps.import.outputs.outcome == 'not_ready')
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: ${{ env.ASANA_PROJECT_ID }}
+          asana-task-name: "Release translations not ready: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
+          asana-task-description: >-
+            The ${{ matrix.platform }} translations for ${{ steps.release.outputs.branch }} aren't ready to import yet.
+            Please follow up with the Smartling AoR DRI.
+            Job: ${{ steps.import.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.import.outputs.job_id) || 'no release job found' }} (${{ steps.import.outputs.job_status || 'unknown status' }}).
+            String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}.
+            Incomplete locales: ${{ steps.import.outputs.incomplete_locales || 'unavailable' }}.
+            Reason: ${{ steps.import.outputs.reason || 'The release import failed' }}.
+            Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

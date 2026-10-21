@@ -192,6 +192,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Whether the web view is currently visible (vs native input being visible)
     var isWebViewVisible = false
     var nativeChatViewController: UIViewController?
+    /// A `ChatSession`; typed loosely so this file need not import the native chat package.
+    var nativeChatSession: AnyObject?
     var nativeChatOrigin: NativeChatOrigin?
     var bypassesNativeChat = false
 
@@ -214,7 +216,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// True until that chat arrives, which it cannot do any sooner — the prompt needs the web view this sheet
     /// owns. Until then the session still reports its pre-submit state, and that state is stale here.
-    private var isAwaitingSubmittedChat: Bool
+    var isAwaitingSubmittedChat: Bool
 
     private var initialPromptRevealFallbackWorkItem: DispatchWorkItem?
     private var suggestionSubmissionTask: Task<Void, Never>?

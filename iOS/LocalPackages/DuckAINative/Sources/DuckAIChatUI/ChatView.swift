@@ -40,12 +40,15 @@ public struct ChatView: View {
     @Bindable var session: ChatSession
     let surface: ChatSurface
     let actions: ChatActions
+    let showsComposer: Bool
     @State private var draft = ""
 
-    public init(session: ChatSession, surface: ChatSurface, actions: ChatActions) {
+    /// `showsComposer` is false when the host app drives the session from its own input.
+    public init(session: ChatSession, surface: ChatSurface, actions: ChatActions, showsComposer: Bool = true) {
         self.session = session
         self.surface = surface
         self.actions = actions
+        self.showsComposer = showsComposer
     }
 
     public var body: some View {
@@ -54,7 +57,9 @@ public struct ChatView: View {
                 header
             }
             transcript
-            composer
+            if showsComposer {
+                composer
+            }
         }
         .background(DuckAIChatTokens.Color.pageBackground)
     }

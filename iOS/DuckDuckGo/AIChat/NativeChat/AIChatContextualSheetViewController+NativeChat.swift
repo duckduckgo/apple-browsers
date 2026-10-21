@@ -19,6 +19,7 @@
 
 import AIChat
 import DuckAINative
+import Observation
 import UIKit
 
 /// What the native chat was started from, so "Continue in Duck.ai" can replay it on the web.
@@ -66,10 +67,14 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
     /// New Chat, or leaving for the web. Puts the sheet's own input back.
     func tearDownNativeChat() {
         guard nativeChatViewController != nil else { return }
+        (nativeChatSession as? ChatSession)?.close()
         nativeChatViewController = nil
+        nativeChatSession = nil
         nativeChatOrigin = nil
+        persistentUTIHost?.nativeChatPromptSink = nil
+        persistentUTIHost?.nativeChatStopHandler = nil
+        persistentUTIHost?.setNativeChatStatus(.ready)
         showNativeInputUI()
-        mountPersistentUTIHostIfNeeded()
     }
 
     func nativeChatDidRequestClose() {
@@ -85,25 +90,50 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
     }
 
     private func showNativeChat(_ context: ChatContext, origin: NativeChatOrigin) {
-        let chat = DuckAINative.makeChatViewController(surface: .contextualSheet,
-                                                       context: context,
-                                                       provider: NativeChatProviderFactory.makeProvider(),
+        let session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider())
+        // The sheet's own input drives the native chat when it has one.
+        let chat = DuckAINative.makeChatViewController(session: session,
+                                                       surface: .contextualSheet,
+                                                       showsComposer: persistentUTIHost == nil,
                                                        delegate: self)
-        // The native chat brings its own composer; the sheet's input would send follow-ups to the web chat.
         if let persistentUTIHost {
-            persistentUTIHost.unmount(from: self)
-            contentContainerBottomConstraint?.isActive = false
-            let bottom = contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-            bottom.isActive = true
-            contentContainerBottomConstraint = bottom
+            persistentUTIHost.nativeChatPromptSink = { [weak session] prompt in session?.send(prompt) }
+            persistentUTIHost.nativeChatStopHandler = { [weak session] in session?.stop() }
+            observeStatus(of: session)
         }
+        nativeChatSession = session
         removeCurrentChildViewController()
         isWebViewVisible = false
         nativeChatViewController = chat
         nativeChatOrigin = origin
         embedChildViewController(chat)
+        isAwaitingSubmittedChat = false
+        cancelWaitingForInitialPromptResponseState()
+        mountPersistentUTIHostIfNeeded()
         sessionState.consumeAttachedSelections(ids: sessionState.attachedSelections.map { $0.id })
         sessionState.beginChatForUTISubmission()
         expandToLargeDetent()
+    }
+
+    /// Mirrors the session's status into the sheet's input, so it shows Stop while a reply is generating.
+    private func observeStatus(of session: ChatSession) {
+        let status = withObservationTracking {
+            session.state.status
+        } onChange: { [weak self, weak session] in
+            Task { @MainActor in
+                guard let self, let session, self.nativeChatSession === session else { return }
+                self.observeStatus(of: session)
+            }
+        }
+        persistentUTIHost?.setNativeChatStatus(Self.inputStatus(for: status))
+    }
+
+    private static func inputStatus(for status: ChatStatus) -> AIChatStatusValue {
+        switch status {
+        case .ready: .ready
+        case .loading: .loading
+        case .streaming: .streaming
+        case .error: .error
+        }
     }
 }

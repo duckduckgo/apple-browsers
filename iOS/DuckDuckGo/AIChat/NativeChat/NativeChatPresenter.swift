@@ -36,10 +36,8 @@ final class NativeChatPresenter: NativeChatDelegate {
     }
 
     func present(_ context: ChatContext, from host: UIViewController) {
-        let chat = DuckAINative.makeChatViewController(surface: .fullScreen,
-                                                       context: context,
-                                                       provider: NativeChatProviderFactory.makeProvider(),
-                                                       delegate: self)
+        let session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider())
+        let chat = DuckAINative.makeChatViewController(session: session, surface: .fullScreen, delegate: self)
         chat.modalPresentationStyle = .fullScreen
         continueInWeb = nil
         presented = chat

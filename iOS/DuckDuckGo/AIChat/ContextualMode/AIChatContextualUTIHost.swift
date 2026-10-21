@@ -56,6 +56,13 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onPromptSubmitted: (() -> Void)?
     /// Demo branch: lets the native Duck.ai chat take the first prompt instead of the web chat.
     var nativePromptHandler: ((String, AIChatPageContextData?) -> Bool)?
+    /// Demo branch: set while a native chat is shown; every later prompt and Stop go to it.
+    var nativeChatPromptSink: ((String) -> Void)?
+    var nativeChatStopHandler: (() -> Void)?
+
+    func setNativeChatStatus(_ status: AIChatStatusValue) {
+        coordinator.aiChatStatus = status
+    }
     /// Counted once per prompt: the user script echoes the first one back as a second delivery.
     var onPromptSent: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
@@ -141,7 +148,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         coordinator.configureTabAttachments(source: tabAttachmentSource, feature: attachMoreTabsFeature, hasActiveChat: hasActiveChat)
         coordinator.onTabMentionSuggestionsChanged = { [weak self] in self?.showTabMentionSuggestions($0) }
         coordinator.didPressStopGeneratingButton
-            .sink { [weak self] in self?.contextualChatViewController?.cancelPendingTabAttachmentPrompt() }
+            .sink { [weak self] in
+                self?.contextualChatViewController?.cancelPendingTabAttachmentPrompt()
+                self?.nativeChatStopHandler?()
+            }
             .store(in: &cancellables)
         coordinator.viewController.bindPageContextChip(to: chipViewModel)
         chipViewModel.onAttachActionRequested = { [weak self] in
@@ -617,6 +627,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            attachments: AIChatPromptAttachments,
                                            termsAccepted: Bool) {
         onPromptSent?()
+        if let nativeChatPromptSink {
+            nativeChatPromptSink(prompt)
+            return
+        }
         guard claimFirstPromptSubmission() else { return }
         if nativePromptHandler?(prompt, chipViewModel.pendingAttachedContextData) == true { return }
         onPromptSubmitted?()

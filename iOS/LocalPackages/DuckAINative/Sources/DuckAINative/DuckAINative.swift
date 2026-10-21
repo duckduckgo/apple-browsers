@@ -30,17 +30,17 @@ public protocol NativeChatDelegate: AnyObject {
 
 public enum DuckAINative {
 
-    /// The only entry point the app uses. The chat preloads the model and sends the context's opening when it appears,
-    /// and releases the model when it goes away.
+    /// The only entry point the app uses. The chat preloads the model and sends the session's opening when it appears.
+    /// Pass `showsComposer: false` when the app's own input drives `session`.
     @MainActor
-    public static func makeChatViewController(surface: ChatSurface,
-                                              context: ChatContext,
-                                              provider: any ChatProvider,
+    public static func makeChatViewController(session: ChatSession,
+                                              surface: ChatSurface,
+                                              showsComposer: Bool = true,
                                               delegate: NativeChatDelegate) -> UIViewController {
-        let session = ChatSession(context: context, provider: provider)
         let actions = ChatActions(close: { [weak delegate] in delegate?.nativeChatDidRequestClose() },
                                   continueInWeb: { [weak delegate] in delegate?.nativeChatDidRequestContinueInWeb($0) })
-        return NativeChatHostingController(session: session, rootView: ChatView(session: session, surface: surface, actions: actions))
+        let view = ChatView(session: session, surface: surface, actions: actions, showsComposer: showsComposer)
+        return NativeChatHostingController(session: session, rootView: view)
     }
 }
 

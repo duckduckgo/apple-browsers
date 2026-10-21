@@ -22,6 +22,9 @@ import WebKit
 final class WebExtensionInternalSiteNavigationDelegate: NSObject, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        guard navigationAction.targetFrame?.isMainFrame == true else {
+            return .allow
+        }
         guard let url = navigationAction.request.url else {
             return .allow
         }

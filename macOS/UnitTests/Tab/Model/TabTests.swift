@@ -162,6 +162,35 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(tab.content, .none)
     }
 
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionSubframeNavigatesThenOwningTabStaysUnchanged() async {
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let frame = WKFrameInfo.mock(for: tab.webView, isMain: false)
+        let delegate = WebExtensionInternalSiteNavigationDelegate()
+        for url in [urls.url1, URL(string: "about:blank")!, URL(string: "webkit-extension://example/frame.html")!] {
+            let action = MockWKNavigationAction(request: URLRequest(url: url), targetFrame: frame, sourceFrame: frame)
+
+            let policy = await delegate.webView(tab.webView, decidePolicyFor: action)
+
+            XCTAssertEqual(policy, .allow)
+            XCTAssertEqual(tab.content, .none)
+        }
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionNavigationHasNoTargetFrameThenOwningTabStaysUnchanged() async {
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let frame = WKFrameInfo.mock(for: tab.webView)
+        let action = MockWKNavigationAction(request: URLRequest(url: urls.url1), targetFrame: nil, sourceFrame: frame)
+
+        let policy = await WebExtensionInternalSiteNavigationDelegate().webView(tab.webView, decidePolicyFor: action)
+
+        XCTAssertEqual(policy, .allow)
+        XCTAssertEqual(tab.content, .none)
+    }
+
     // MARK: - Web Extension Snapshots
 
     func testExtensionAPIDelegatesHaveNoTrappingFailurePaths() throws {

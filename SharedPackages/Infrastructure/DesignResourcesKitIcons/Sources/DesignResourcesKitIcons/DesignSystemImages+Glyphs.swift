@@ -535,6 +535,7 @@ public extension DesignSystemImages {
             public static var deviceTablet: DesignSystemImage { .init(resource: .deviceTablet24) }
             public static var documentNew: DesignSystemImage { .init(resource: .documentNew24) }
             public static var documentReplace: DesignSystemImage { .init(resource: .documentReplace24) }
+            public static var documentText: DesignSystemImage { .init(resource: .documentText24) }
             public static var downloads: DesignSystemImage { .init(resource: .downloads24) }
             public static var duckAi: DesignSystemImage { .init(resource: .duckAi24) }
             public static var duckDuckGoDaxColor: DesignSystemImage { .init(resource: .duckDuckGoDaxColor24) }

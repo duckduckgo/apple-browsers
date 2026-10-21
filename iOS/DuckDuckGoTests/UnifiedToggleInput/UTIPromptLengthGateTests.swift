@@ -29,6 +29,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
     private var attachmentLimits: AIChatAttachmentTierLimits?
     private var isEnabled = true
     private var events: [String] = []
+    private var pastedTextToEdit: UUID?
 
     private func makeGate() -> UTIPromptLengthGate {
         UTIPromptLengthGate(
@@ -39,7 +40,10 @@ final class UTIPromptLengthGateTests: XCTestCase {
                 isEnabled: { [unowned self] in isEnabled }
             ),
             outputs: .init(
-                onOverLimitChanged: { [unowned self] in events.append("footer:\($0.map { "\($0.count)/\($0.limit)" } ?? "nil")") },
+                onOverLimitChanged: { [unowned self] length, pastedTextToEdit in
+                    events.append("footer:\(length.map { "\($0.count)/\($0.limit)" } ?? "nil")")
+                    self.pastedTextToEdit = pastedTextToEdit
+                },
                 onPromptOverLimitChanged: { [unowned self] in events.append("over:\($0)") }
             )
         )
@@ -91,6 +95,33 @@ final class UTIPromptLengthGateTests: XCTestCase {
         gate.refresh()
 
         XCTAssertEqual(events.first, "footer:4501/4500")
+    }
+
+    func testOverLimitOffersTheLargestPasteForEditingAndTheFirstOnATie() {
+        let gate = makeGate()
+        let small = AIChatPastedText(content: text(4_000))
+        let largest = AIChatPastedText(content: text(6_000))
+        let tiedLater = AIChatPastedText(content: text(6_000))
+        attachments = [.pastedText(small), .pastedText(largest), .pastedText(tiedLater)]
+        promptText = text(1)
+
+        gate.refresh()
+
+        XCTAssertEqual(events.first, "footer:16001/16000")
+        XCTAssertEqual(pastedTextToEdit, largest.id)
+    }
+
+    func testOverLimitWithoutAPasteOffersNothingToEditAndUnderTheLimitNeither() {
+        let gate = makeGate()
+        promptText = text(16_001)
+        gate.refresh()
+        XCTAssertNil(pastedTextToEdit)
+
+        promptText = ""
+        attachments = [.pastedText(AIChatPastedText(content: text(5_000)))]
+        gate.refresh()
+        XCTAssertEqual(events.last, "over:false")
+        XCTAssertNil(pastedTextToEdit)
     }
 
     func testFilesDoNotLowerTheLimit() {

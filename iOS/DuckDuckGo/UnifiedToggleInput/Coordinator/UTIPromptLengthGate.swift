@@ -44,7 +44,8 @@ final class UTIPromptLengthGate {
 
     /// Each sink ignores a repeated value, so `refresh()` reports every time.
     struct Outputs {
-        let onOverLimitChanged: (AIChatPromptLength?) -> Void
+        /// The id is the pasted text the footer's Edit opens, `nil` when the prompt carries none.
+        let onOverLimitChanged: (AIChatPromptLength?, _ pastedTextToEdit: UUID?) -> Void
         let onPromptOverLimitChanged: (Bool) -> Void
     }
 
@@ -80,7 +81,12 @@ final class UTIPromptLengthGate {
             ? limits.evaluate(prompt: inputs.promptText(), attachments: inputs.attachments(), attachmentLimits: inputs.attachmentLimits())
             : nil
         let overLimit = promptLength.flatMap { $0.isOverLimit ? $0 : nil }
-        outputs.onOverLimitChanged(overLimit)
+        outputs.onOverLimitChanged(overLimit, overLimit == nil ? nil : largestPastedTextID())
         outputs.onPromptOverLimitChanged(overLimit != nil)
+    }
+
+    /// Trimming the largest paste frees the most room.
+    private func largestPastedTextID() -> UUID? {
+        inputs.attachments().compactMap(\.pastedText).max { $0.length < $1.length }?.id
     }
 }

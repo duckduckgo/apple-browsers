@@ -76,9 +76,9 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     private var iconSize: CGFloat {
         guard usesCompactLayout else { return iconFrameSize }
         switch attachment {
-        case .tab, .pastedText:
+        case .tab:
             return Constants.faviconSize
-        case .image, .file, .invalidFile:
+        case .image, .file, .invalidFile, .pastedText:
             return iconFrameSize
         }
     }
@@ -315,7 +315,7 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
     func configurePastedText(_ pastedText: AIChatPastedText) {
         imageView.image = nil
         imageView.isHidden = true
-        fileIconView.image = DesignSystemImages.Glyphs.Size24.textSelect.withRenderingMode(.alwaysTemplate)
+        fileIconView.image = DesignSystemImages.Glyphs.Size24.documentText.withRenderingMode(.alwaysTemplate)
         fileIconView.tintColor = UIColor(designSystemColor: .textSecondary)
         fileNameLabel.text = pastedText.title
         fileNameLabel.lineBreakMode = .byTruncatingTail

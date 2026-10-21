@@ -120,7 +120,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// Turns 1Password on or off. While off, an installed 1Password is disabled but kept with its data.
     /// Turning the flag back on doesn't re-enable 1Password; the user does.
     /// Follows 1Password's extensions catalog entry, which also controls installing 1Password.
-    /// https://app.asana.com/1/137249556945/task/1218702273284006
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219743179155238
     case webExtensionOnePassword
 
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.

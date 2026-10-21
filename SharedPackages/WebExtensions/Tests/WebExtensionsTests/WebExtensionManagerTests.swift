@@ -1619,6 +1619,62 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertNil(version)
     }
 
+    // MARK: - Extension Origin Tests
+
+    @MainActor
+    func testWhenChromeWebStoreExtensionIsInstalledAndReloaded_ThenOriginUsesStoreIdentifier() async throws {
+        let extensionURL = try createTestWebExtension()
+        storageProvidingMock.resolvedExtensionURL = extensionURL
+        storageProvidingMock.mockCopyResult = extensionURL
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: String(repeating: "b", count: 32))
+        let manager = makeManagerWithRealLoader()
+
+        try await manager.installExtension(from: extensionURL, storeIdentity: identity)
+
+        let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
+        let context = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        let expectedURL = URL(string: "webkit-extension://\(identity.id)/")
+        XCTAssertEqual(context.baseURL, expectedURL)
+        XCTAssertEqual(context.uniqueIdentifier, installed.uniqueIdentifier)
+        XCTAssertNotEqual(context.uniqueIdentifier, identity.id)
+
+        manager.unloadAllExtensions()
+        await manager.reloadInstalledExtensions()
+
+        let restoredContext = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        XCTAssertEqual(restoredContext.baseURL, expectedURL)
+        XCTAssertEqual(restoredContext.uniqueIdentifier, installed.uniqueIdentifier)
+        manager.unloadAllExtensions()
+    }
+
+    @MainActor
+    func testWhenChromeWebStoreReplacementFails_ThenExistingExtensionIsRestored() async throws {
+        let extensionURL = try createTestWebExtension()
+        storageProvidingMock.resolvedExtensionURL = extensionURL
+        storageProvidingMock.mockCopyResult = extensionURL
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: String(repeating: "b", count: 32))
+        let manager = makeManagerWithRealLoader()
+        try await manager.installExtension(from: extensionURL, storeIdentity: identity)
+        let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
+        let originalContext = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        storageProvidingMock.shouldReturnNilForResolve = true
+
+        do {
+            try await manager.installExtension(from: extensionURL, storeIdentity: identity, replacing: installed.uniqueIdentifier)
+            XCTFail("Expected replacement loading to fail")
+        } catch WebExtensionError.failedToLoadWebExtension {
+            // Expected: the new installation cannot be resolved.
+        }
+
+        let restoredContext = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        XCTAssertTrue(restoredContext === originalContext)
+        XCTAssertEqual(restoredContext.baseURL, URL(string: "webkit-extension://\(identity.id)/"))
+        XCTAssertEqual(manager.contexts.count, 1)
+        XCTAssertEqual(installedExtensionStoringMock.installedExtensions.map(\.uniqueIdentifier), [installed.uniqueIdentifier])
+        XCTAssertTrue(manager.installingStoreIdentities.isEmpty)
+        manager.unloadAllExtensions()
+    }
+
     // MARK: - Configuration Tests
 
     @MainActor

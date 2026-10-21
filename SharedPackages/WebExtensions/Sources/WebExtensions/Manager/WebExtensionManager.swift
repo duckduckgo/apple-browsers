@@ -137,6 +137,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Extensions whose data-clearing reload lifecycle began before their contexts were unloaded.
     private var dataClearingReloadIdentifiers: Set<String> = []
 
+    /// Store identities available before a successful first load creates the installation record.
+    var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
+
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
@@ -499,6 +502,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
 
+        var replacedContext: WKWebExtensionContext?
         do {
             if let oldIdentifier {
                 try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
@@ -507,6 +511,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 privacySettings?.copySettingsForUpdate(from: oldIdentifier, to: identifier)
 #endif
             }
+            if storeIdentity?.store == .chromeWebStore,
+               let oldIdentifier, let oldContext = context(for: oldIdentifier) {
+                // Both versions use the same origin, so only one can be loaded at a time.
+                await unloadGuard.awaitSettled(oldContext)
+                try loader.unloadExtension(identifier: oldIdentifier, from: controller)
+                replacedContext = oldContext
+                cpmNetworkProcessRecovery.stopWatching(identifier: oldIdentifier)
+                cpmDiagnosticsRecorder?.contextDidUnload(identifier: oldIdentifier)
+                unregisterHandlers(for: oldIdentifier)
+            }
+            installingStoreIdentities[identifier] = storeIdentity
+            defer { installingStoreIdentities.removeValue(forKey: identifier) }
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
 
@@ -540,6 +556,21 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             privacySettings?.removeSettings(for: identifier)
 #endif
             try? storageProvider.removeExtension(identifier: identifier)
+
+            if let replacedContext {
+                let oldIdentifier = replacedContext.uniqueIdentifier
+                do {
+                    try await permissionController?.prepare(replacedContext)
+                    webExtensionLoader(loader, willLoad: replacedContext, identifier: oldIdentifier)
+                    try controller.loadCopyingErrors(replacedContext)
+                    unloadGuard.recordLoad(of: oldIdentifier)
+                } catch {
+                    permissionController?.didUnload(oldIdentifier)
+                    unregisterHandlers(for: oldIdentifier)
+                    Logger.webExtensions.error("Failed to restore extension after replacement failure: \(error.localizedDescription)")
+                }
+                notifyUpdate()
+            }
 
             if let preparationError = error as? WebExtensionLoader.PermissionPreparationError,
                let permissionError = preparationError.underlyingError as? WebExtensionPermissionController.PermissionError,

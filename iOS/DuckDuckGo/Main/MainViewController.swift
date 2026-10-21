@@ -1610,6 +1610,7 @@ class MainViewController: UIViewController {
         dismissContextualSheetIfKeyboardIsForBackgroundContent()
         // Keyboard up. Fix minimal chrome bar spot.
         refreshMinimalChromeBottomAnchor()
+        updateWebInputChromeVisibility()
     }
 
     private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
@@ -1708,7 +1709,8 @@ class MainViewController: UIViewController {
 
     /// Bottom bar hidden behind web keyboard.
     var isBottomAddressBarHiddenForWebKeyboard: Bool {
-        isStandardBottomOmnibar && (keyboardShowing || isKeyboardOverlappingContent) && !isKeyboardOwnedByOmnibar
+        if viewCoordinator.isWebInputEditing && appSettings.currentAddressBarPosition.isBottom { return true }
+        return isStandardBottomOmnibar && (keyboardShowing || isKeyboardOverlappingContent) && !isKeyboardOwnedByOmnibar
     }
 
     /// Minimal chrome bar: stick to bottom behind keyboard. Lift above keyboard only when omnibar has
@@ -1955,7 +1957,7 @@ class MainViewController: UIViewController {
 
     private func updateFloatingDomainCapsuleVisibility(for barsVisibilityPercent: CGFloat) {
         floatingDomainCapsuleController.update(addressBarPosition: appSettings.currentAddressBarPosition,
-                                               isFloatingUIEnabled: isFloatingUIEnabled,
+                                               isFloatingUIEnabled: isFloatingUIEnabled && !isBottomAddressBarHiddenForWebKeyboard,
                                                isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
                                                isAITab: currentTab?.isAITab == true,
                                                isMinimalChromeLayout: isInMinimalChromeLayout,
@@ -1970,7 +1972,7 @@ class MainViewController: UIViewController {
     /// not minimal chrome / unified toggle input / AI tab).
     private var isFloatingCapsuleActive: Bool {
         FloatingUILayoutPolicy.shouldShowFloatingDomainCapsule(
-            isFloatingUIEnabled: isFloatingUIEnabled,
+            isFloatingUIEnabled: isFloatingUIEnabled && !isBottomAddressBarHiddenForWebKeyboard,
             isUnifiedToggleInputActive: unifiedToggleInputCoordinator?.isActive == true,
             isAITab: currentTab?.isAITab == true,
             isMinimalChromeLayout: isInMinimalChromeLayout
@@ -2071,26 +2073,46 @@ class MainViewController: UIViewController {
     /// keyboard handler defers the landscape cap to that settle instead of fighting it.
     private var isUTIRotating = false
 
-    /// Based on https://stackoverflow.com/a/46117073/73479
-    ///  Handles iPhone X devices properly.
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
+        adjustUI(withKeyboardFrame: keyboard.frame, in: keyboard.duration, animationCurve: keyboard.animationCurve)
+    }
 
-        guard let userInfo = notification.userInfo,
-            let keyboardFrame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else {
-            return
+    private var floatingWebInputKeyboardFrame: CGRect {
+        BrowserKeyboardLayout.webInputFrame(notificationFrame: view.convert(latestKeyboardFrame, from: nil),
+                                             layoutGuideFrame: view.keyboardLayoutGuide.layoutFrame,
+                                             viewBounds: view.bounds,
+                                             safeAreaFrame: view.safeAreaLayoutGuide.layoutFrame)
+    }
+
+    private func updateWebInputChromeVisibility() {
+        let hasVisibleKeyboard = keyboardShowing || isKeyboardOverlappingContent
+        let isEditing: Bool
+        if isFloatingUIEnabled, !isAnyAITabUTIState,
+           hasVisibleKeyboard || !floatingWebInputKeyboardFrame.isEmpty, !isKeyboardOwnedByOmnibar,
+           let webView = currentTab?.webView,
+           let firstResponder = UIResponder.currentFirstResponder() {
+            let hasStaleAccessoryGuide: Bool
+            if #available(iOS 27, *) {
+                hasStaleAccessoryGuide = false
+            } else {
+                // iOS 26 keeps dismissed accessory guides.
+                hasStaleAccessoryGuide = !hasVisibleKeyboard && (firstResponder as? UITextInput)?.selectedTextRange == nil
+            }
+            isEditing = firstResponder.isInViewHierarchy(of: webView)
+                && !hasStaleAccessoryGuide
+        } else {
+            isEditing = false
         }
-
-        latestKeyboardFrame = keyboardFrame
-        let duration: TimeInterval = (userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0
-        let animationCurveRawNSN = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
-        let animationCurveRaw = animationCurveRawNSN?.uintValue ?? UIView.AnimationOptions.curveEaseInOut.rawValue
-        let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRaw)
-
-        adjustUI(withKeyboardFrame: keyboardFrame, in: duration, animationCurve: animationCurve)
+        guard viewCoordinator.setWebInputEditing(isEditing) else { return }
+        reconcileToolbarVisibilityForCurrentTab()
+        updateFloatingDomainCapsuleVisibility(for: currentBarsVisibility)
+        currentTab?.updateWebViewLayoutForKeyboard()
     }
 
     // swiftlint:disable:next cyclomatic_complexity
     func adjustUI(withKeyboardFrame keyboardFrame: CGRect, in duration: TimeInterval = 0.2, animationCurve: UIView.AnimationOptions = .curveEaseInOut) {
+        latestKeyboardFrame = keyboardFrame
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
@@ -2101,6 +2123,10 @@ class MainViewController: UIViewController {
         isKeyboardOverlappingContent = keyboardVisible
         keyboardHeight = keyboardFrameInView.height
         updateUnifiedToggleInputKeyboardVisibility(keyboardVisible)
+        updateWebInputChromeVisibility()
+        if isFloatingUIEnabled {
+            currentTab?.updateWebViewLayoutForKeyboard()
+        }
 
         let coordinator = unifiedToggleInputCoordinator
         let isAITabCollapsed = coordinator?.isAITabCollapsed == true
@@ -3976,6 +4002,12 @@ class MainViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if isFloatingUIEnabled {
+            // Guide and selection settle after layout.
+            DispatchQueue.main.async { [weak self] in
+                self?.updateWebInputChromeVisibility()
+            }
+        }
         updateAddressBarSuppressionForNewTabPage()
         updateWindowControlsRowMetricsIfNeeded()
         ViewHighlighter.updatePositions()
@@ -5531,7 +5563,8 @@ extension MainViewController: BrowserChromeDelegate {
         if isWindowControlsRowEnabled {
             tabsBarController?.setCurrentTabSelectionAlpha(hidden ? 0 : 1)
         }
-        viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
+        let keepsStatusBackgroundVisible = isFloatingUIEnabled && viewCoordinator.addressBarPosition.isBottom
+        viewCoordinator.statusBackground.alpha = hidden && !keepsStatusBackgroundVisible ? 0 : 1
         updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
 
@@ -5669,6 +5702,9 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat {
+        if viewCoordinator.isWebInputEditing {
+            return view.safeAreaInsets.bottom
+        }
         // Minimal chrome hides the toolbar: reserve the single bar's height only for a bottom address
         // bar (reclaimed as it scrolls away); a top address bar leaves just the safe area.
         if isInMinimalChromeLayout {
@@ -5688,10 +5724,16 @@ extension MainViewController: BrowserChromeDelegate {
     }
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
-        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
-                     left: 0,
-                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
-                     right: 0)
+        let chromeInsets = UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
+                                       left: 0,
+                                       bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
+                                       right: 0)
+        guard isFloatingUIEnabled, !isKeyboardOwnedByOmnibar else { return chromeInsets }
+        return BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
+                                                    keyboardFrame: viewCoordinator.isWebInputEditing
+                                                        ? floatingWebInputKeyboardFrame
+                                                        : view.convert(latestKeyboardFrame, from: nil),
+                                                    viewBounds: view.bounds)
     }
 
     /// Read off the card's applied constraints, so it honours the landscape cap and the hidden-chrome
@@ -6490,7 +6532,7 @@ extension MainViewController: OmniBarDelegate {
         // The scroll-edge chrome must track the currently visible scroll view. On the NTP (or any
         // tab without a web view) there's no scroll view to track, so we leave the interactions
         // detached rather than pointing them at a dismissed tab's scroll view.
-        guard let scrollView = currentTab?.webView?.scrollView else { return }
+        guard newTabPageViewController == nil, let scrollView = currentTab?.webView?.scrollView else { return }
 
         func attach(to view: UIView, onEdge edge: UIRectEdge) {
             let interaction = UIScrollEdgeElementContainerInteraction()
@@ -6506,6 +6548,9 @@ extension MainViewController: OmniBarDelegate {
             // The split bottom pill is slid by a container transform. A scroll-edge interaction
             // on it makes UIGlassEffect move independently of the icons.
         } else {
+            if currentTab?.isAITab == false {
+                attach(to: viewCoordinator.statusBackground, onEdge: .top)
+            }
             attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
             // The toolbar is already pinned to the concentric layout guides. A scroll-edge
             // interaction would apply a second, larger device-concentric inset.

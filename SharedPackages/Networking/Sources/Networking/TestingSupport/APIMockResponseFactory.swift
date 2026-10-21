@@ -41,7 +41,7 @@ public struct APIMockResponseFactory {
         let request = OAuthRequest.authorize(baseURL: OAuthEnvironment.staging.url, codeChallenge: "codeChallenge")!
         if success {
             let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: request.httpSuccessCode.rawValue,
+                                               statusCode: request.successCode.rawValue,
                                                httpVersion: nil,
                                                headerFields: authCookieHeaders)!
             let response = APIResponseV2(data: nil, httpResponse: httpResponse)
@@ -55,7 +55,7 @@ public struct APIMockResponseFactory {
         let request = OAuthRequest.createAccount(baseURL: OAuthEnvironment.staging.url, authSessionID: "someAuthSessionID")!
         if success {
             let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: request.httpSuccessCode.rawValue,
+                                               statusCode: request.successCode.rawValue,
                                                httpVersion: nil,
                                                headerFields: [HTTPHeaderKey.location: "com.duckduckgo:/authcb?code=NgNjnlLaqUomt9b5LDbzAtTyeW9cBNhCGtLB3vpcctluSZI51M9tb2ZDIZdijSPTYBr4w8dtVZl85zNSemxozv"])!
             let response = APIResponseV2(data: nil, httpResponse: httpResponse)
@@ -77,7 +77,7 @@ public struct APIMockResponseFactory {
     "refresh_token":"eyJraWQiOiIzODJiNzQ5Yy1hNTc3LTRkOTMtOTU0My04NTI5MWZiYTM3MmEiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGkiOiJ2MiIsImlzcyI6Imh0dHBzOi8vcXVhY2tkZXYuZHVja2R1Y2tnby5jb20iLCJleHAiOjE3MzI4NzkxNzIsInN1YiI6ImUzNzZkOGM0LWNhYTktNGZjZC04ZTg2LTE5YTZkNjNlZTM3MSIsImF1ZCI6IkF1dGgiLCJpYXQiOjE3MzAyODcxNzIsInNjb3BlIjoicmVmcmVzaCIsImp0aSI6InFYeTZOVGN4QjZSRDRRS1JTTlFiQ1IzdnFhTVJBTVEzVDVTNW1NZ05Za0I5VlNWdHlId2VvVHhvNzFUbUNiQkpkbUZaaWFQNVZsVVFCd3lXV1gwY0ZSOmU2ODkwMDE5LWJmMDUtNGQxZC04OGFhLThlM2UyMDdjOGNkOSJ9.OQaGCmDBbDMM5XIpyY-WCmCLkZxt5Obp4YAmtFP8CerBSRexbUUp6SNwGDjlvCF0-an2REBsrX92ZmQe5ewqyQ","expires_in": 14400,"token_type": "Bearer"}
 """
             let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: request.httpSuccessCode.rawValue,
+                                               statusCode: request.successCode.rawValue,
                                                httpVersion: nil,
                                                headerFields: [:])!
             let response = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)
@@ -97,7 +97,7 @@ public struct APIMockResponseFactory {
     "refresh_token":"eyJraWQiOiIzODJiNzQ5Yy1hNTc3LTRkOTMtOTU0My04NTI5MWZiYTM3MmEiLCJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGkiOiJ2MiIsImlzcyI6Imh0dHBzOi8vcXVhY2tkZXYuZHVja2R1Y2tnby5jb20iLCJleHAiOjE3MzI4NzkxNzIsInN1YiI6ImUzNzZkOGM0LWNhYTktNGZjZC04ZTg2LTE5YTZkNjNlZTM3MSIsImF1ZCI6IkF1dGgiLCJpYXQiOjE3MzAyODcxNzIsInNjb3BlIjoicmVmcmVzaCIsImp0aSI6InFYeTZOVGN4QjZSRDRRS1JTTlFiQ1IzdnFhTVJBTVEzVDVTNW1NZ05Za0I5VlNWdHlId2VvVHhvNzFUbUNiQkpkbUZaaWFQNVZsVVFCd3lXV1gwY0ZSOmU2ODkwMDE5LWJmMDUtNGQxZC04OGFhLThlM2UyMDdjOGNkOSJ9.OQaGCmDBbDMM5XIpyY-WCmCLkZxt5Obp4YAmtFP8CerBSRexbUUp6SNwGDjlvCF0-an2REBsrX92ZmQe5ewqyQ","expires_in": 14400,"token_type": "Bearer"}
 """
             let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: request.httpSuccessCode.rawValue,
+                                               statusCode: request.successCode.rawValue,
                                                httpVersion: nil,
                                                headerFields: [:])!
             let response = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)
@@ -114,7 +114,7 @@ public struct APIMockResponseFactory {
 {"keys":[{"alg":"ES256","crv":"P-256","kid":"382b749c-a577-4d93-9543-85291fba372a","kty":"EC","ts":1727109704,"x":"e-WcWXtyf0mzVuc8lzAErb0EYq0kiOj7u8Ia4qsB4z4","y":"2WYzD5-POgIx2_3B_J6u84giGwSwgrYMTj83djMSWxM"},{"crv":"P-256","kid":"aa4c0019-9da9-4143-9866-3f7b54224a46","kty":"EC","ts":1722282670,"x":"kN2BXRyRbylNSaw3CrZKiKdATXjF1RIp2FpOxYMeuWg","y":"wovX-ifQuoKKAi-ZPYFcZ9YBhCxN_Fng3qKSW2wKpdg"}]}
 """
             let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: request.httpSuccessCode.rawValue,
+                                               statusCode: request.successCode.rawValue,
                                                httpVersion: nil,
                                                headerFields: [:])!
             let response = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)

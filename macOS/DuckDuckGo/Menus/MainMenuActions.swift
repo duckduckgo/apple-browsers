@@ -255,7 +255,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: Any?) {
-        guard dockCustomization.addToDock() else { return }
+        guard dockCustomization.addToDockOrShowDemoVideo() else { return }
         PixelKit.fire(GeneralPixel.userAddedToDockFromMainMenu)
     }
 

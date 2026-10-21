@@ -428,7 +428,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .bringStuff:
             return !dataImportProvider.didImport
         case .addAppToDockMac:
-            return !isAppStoreBuild && !dockCustomizer.isAddedToDock
+            return !dockCustomizer.isAddedToDock
         case .duckplayer:
             return false
         case .emailProtection:

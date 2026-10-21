@@ -208,8 +208,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-        if dockCustomizer.supportsAddingToDock,
-           dockCustomizer.isAddedToDock == false {
+        if dockCustomizer.isAddedToDock == false {
 
             if dockCustomizer.shouldShowNotification {
                 let addToDockMenuItem = NSMenuItem(action: #selector(addToDock(_:)))
@@ -295,7 +294,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: NSMenuItem) {
-        guard dockCustomizer.supportsAddingToDock, dockCustomizer.addToDock() else { return }
+        guard dockCustomizer.addToDockOrShowDemoVideo() else { return }
         PixelKit.fire(GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)
     }
 

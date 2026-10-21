@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKit
 import ContentScopeScripts
 import Foundation
+import SwiftUI
 import PixelKit
 
 final class DockPreferencesModel: ObservableObject {
@@ -75,5 +77,39 @@ final class DockPreferencesModel: ObservableObject {
 
     func refresh() {
         isBeingAddedToDock = false
+    }
+}
+
+extension DockCustomization {
+    @discardableResult
+    func addToDockOrShowDemoVideo() -> Bool {
+        if supportsAddingToDock {
+            return addToDock()
+        }
+        Task { @MainActor in
+            AddToDockDemoVideoPresenter.present()
+        }
+        return false
+    }
+}
+
+@MainActor
+enum AddToDockDemoVideoPresenter {
+    static func present() {
+        guard let parentWindow = NSApp.mainWindow ?? NSApp.keyWindow else { return }
+        var sheetWindow: NSWindow?
+        let isPresented = Binding<Bool>(
+            get: { true },
+            set: { newValue in
+                guard !newValue, let sheetWindow else { return }
+                parentWindow.endSheet(sheetWindow)
+            }
+        )
+        let view = Preferences.PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
+                                                     videoSize: DockPreferencesModel.demoVideoSize,
+                                                     isPresented: isPresented)
+        let sheet = NSWindow(contentViewController: NSHostingController(rootView: view))
+        sheetWindow = sheet
+        parentWindow.beginSheet(sheet)
     }
 }

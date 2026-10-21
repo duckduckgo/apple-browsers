@@ -134,6 +134,10 @@ private extension NewTabPageNextStepsCardsActionHandler {
     }
 
     func performDockAction(completion: (() -> Void)?) {
+        guard dockCustomizer.supportsAddingToDock else {
+            dockCustomizer.addToDockOrShowDemoVideo()
+            return
+        }
         onboardingExperiment.fireMetric(.addToDockRequested)
         pixelHandler.fireAddedToDockPixel()
         if dockCustomizer.addToDock() {

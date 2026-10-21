@@ -214,18 +214,14 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         let isDefaultBrowser = defaultBrowserProvider.isDefault
         let isAddedToDock = dockCustomization.isAddedToDock
 
-        if dockCustomization.supportsAddingToDock {
-            if isDefaultBrowser && isAddedToDock {
-                return nil
-            } else if isDefaultBrowser && !isAddedToDock {
-                return .addToDockPrompt
-            } else if !isDefaultBrowser && isAddedToDock {
-                return .setAsDefaultPrompt
-            } else {
-                return .bothDefaultBrowserAndDockPrompt
-            }
+        if isDefaultBrowser && isAddedToDock {
+            return nil
+        } else if isDefaultBrowser && !isAddedToDock {
+            return .addToDockPrompt
+        } else if !isDefaultBrowser && isAddedToDock {
+            return .setAsDefaultPrompt
         } else {
-            return isDefaultBrowser ? nil : .setAsDefaultPrompt
+            return .bothDefaultBrowserAndDockPrompt
         }
     }
 
@@ -338,11 +334,16 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             switch type {
             case .bothDefaultBrowserAndDockPrompt:
                 // User needs to do both → add to dock first, then show system prompt for default browser
-                dockCustomization.addToDock()
-                setAsDefaultBrowserAction()
+                if dockCustomization.supportsAddingToDock {
+                    dockCustomization.addToDock()
+                    setAsDefaultBrowserAction()
+                } else {
+                    setAsDefaultBrowserAction()
+                    dockCustomization.addToDockOrShowDemoVideo()
+                }
             case .addToDockPrompt:
                 // User only needs to add to dock (already default browser)
-                dockCustomization.addToDock()
+                dockCustomization.addToDockOrShowDemoVideo()
             case .setAsDefaultPrompt:
                 // User only needs to set default browser (already in dock or App Store build)
                 setAsDefaultBrowserAction()

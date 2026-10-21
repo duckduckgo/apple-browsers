@@ -26,10 +26,14 @@ import DesignResourcesKitIcons
 public final class DBPLivePreviewViewController: NSViewController {
     public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
                 hidesWhenIdle: Bool = true,
-                takeControl: (@MainActor (String) async throws -> Bool)? = nil) {
+                takeControl: (@MainActor (String) async throws -> Bool)? = nil,
+                assistedOptOuts: (@MainActor () throws -> [PIRAssistedOptOut])? = nil,
+                startAssistedOptOut: (@MainActor (PIRAssistedOptOut) async throws -> Void)? = nil) {
         self.agentInterface = agentInterface
         self.hidesWhenIdle = hidesWhenIdle
         self.takeControl = takeControl
+        self.assistedOptOuts = assistedOptOuts
+        self.startAssistedOptOut = startAssistedOptOut
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -84,13 +88,6 @@ public final class DBPLivePreviewViewController: NSViewController {
         snapshotButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(snapshotButton)
 
-        takeControlButton.title = "Take Control"
-        takeControlButton.bezelStyle = .rounded
-        takeControlButton.controlSize = .large
-        takeControlButton.target = self
-        takeControlButton.action = #selector(takeControlPressed)
-        takeControlButton.isEnabled = false
-        sidebar.setFooter(takeControlButton)
         sidebar.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(sidebar)
 
@@ -144,7 +141,10 @@ public final class DBPLivePreviewViewController: NSViewController {
 
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
     private let takeControl: (@MainActor (String) async throws -> Bool)?
-    private let takeControlButton = NSButton()
+    private let assistedOptOuts: (@MainActor () throws -> [PIRAssistedOptOut])?
+    private let startAssistedOptOut: (@MainActor (PIRAssistedOptOut) async throws -> Void)?
+    private var assistedOptOutsCheckedAt: Date?
+    private var pendingAssistedOptOuts: [PIRAssistedOptOut] = []
     private let snapshotButton = NSButton()
     private var controlRequestInProgress = false
     private var operationID: String?
@@ -198,14 +198,16 @@ public final class DBPLivePreviewViewController: NSViewController {
 
     private func display(_ frame: DBPLivePreviewFrame?) {
         guard let frame else {
-            clearFrame()
+            // Clear once when the last page finishes; clearing on every poll would rebuild the Needs you list.
+            if operationID != nil { clearFrame() }
+            showAssistedOptOuts()
             return
         }
+        assistedOptOutsCheckedAt = nil
+        pendingAssistedOptOuts = []
         let image = NSImage(data: frame.imageData).flatMap { $0.size.width > 0 && $0.size.height > 0 ? $0 : nil }
         operationID = frame.operationID
-        takeControlButton.title = frame.isManualControl ? "You have control" : "Take Control"
-        takeControlButton.isEnabled = frame.canTakeControl && takeControl != nil && !controlRequestInProgress
-        snapshotButton.isEnabled = takeControlButton.isEnabled
+        snapshotButton.isEnabled = frame.canTakeControl && takeControl != nil && !controlRequestInProgress
         imageView.image = image
         if let image {
             overlay.update(target: frame.target, imageSize: image.size,
@@ -227,9 +229,7 @@ public final class DBPLivePreviewViewController: NSViewController {
         // Keep polling while the card is transparent so a new operation can reveal it.
         view.alphaValue = hidesWhenIdle ? 0 : 1
         operationID = nil
-        takeControlButton.isEnabled = false
         snapshotButton.isEnabled = false
-        takeControlButton.title = "Take Control"
         updateFavicon(nil)
         imageView.image = nil
         overlay.reset()
@@ -239,10 +239,26 @@ public final class DBPLivePreviewViewController: NSViewController {
         placeholderLabel.isHidden = false
     }
 
+    /// While nothing runs, list the opt-outs that wait for the user to start them.
+    private func showAssistedOptOuts() {
+        guard let assistedOptOuts else { return }
+        if Date().timeIntervalSince(assistedOptOutsCheckedAt ?? .distantPast) > 2 {
+            assistedOptOutsCheckedAt = Date()
+            pendingAssistedOptOuts = (try? assistedOptOuts()) ?? []
+        }
+        placeholderLabel.stringValue = pendingAssistedOptOuts.isEmpty ? "Waiting for a broker page" : "Choose a site to start"
+        sidebar.showNeedsYou(pendingAssistedOptOuts) { [weak self] optOut in
+            guard let self, let startAssistedOptOut = self.startAssistedOptOut else { return }
+            self.sidebar.showNotice("Starting \(optOut.brokerName)\u{2026}")
+            Task { @MainActor in
+                do { try await startAssistedOptOut(optOut) } catch { self.sidebar.showNotice("Could not start \(optOut.brokerName).") }
+            }
+        }
+    }
+
     @objc private func takeControlPressed() {
-        guard takeControlButton.isEnabled, let operationID, let takeControl else { return }
+        guard snapshotButton.isEnabled, let operationID, let takeControl else { return }
         controlRequestInProgress = true
-        takeControlButton.isEnabled = false
         snapshotButton.isEnabled = false
         Task { @MainActor [weak self] in
             defer { self?.controlRequestInProgress = false }
@@ -454,7 +470,7 @@ private final class PIRAgentOverlayView: NSView {
             guard let field = elementRect(index) else { continue }
             highlight([index], style: .working)
             let inset = min(Self.typedTextInset, field.width / 2)
-            moveCursor(to: CGPoint(x: field.minX + inset, y: field.midY), label: "Moving", duration: 0.35)
+            moveCursor(to: CGPoint(x: field.minX + inset, y: field.midY), label: "", duration: 0.35)
             guard await wait(0.35), let field = elementRect(index) else { return }
             guard let text = texts.indices.contains(index) ? texts[index] : nil, !text.isEmpty else {
                 let typedWidth = max(inset, min(field.width - inset, field.width * 0.6))
@@ -477,6 +493,8 @@ private final class PIRAgentOverlayView: NSView {
                 CATransaction.commit()
                 guard await wait(0.05) else { return }
             }
+            // The field is typed; whatever moves the cursor next is no longer typing.
+            setLabel("")
         }
         // By now the real values are in the page; let the next snapshot show them.
         guard await wait(1) else { return }
@@ -510,7 +528,7 @@ private final class PIRAgentOverlayView: NSView {
     private func click() async {
         guard let button = elementRect(0) else { return }
         highlight([0], style: .working)
-        moveCursor(to: CGPoint(x: button.midX, y: button.midY), label: "Moving", duration: 0.45)
+        moveCursor(to: CGPoint(x: button.midX, y: button.midY), label: "", duration: 0.45)
         guard await wait(0.6), let button = elementRect(0) else { return }
         let point = CGPoint(x: button.midX, y: button.midY)
         moveCursor(to: point, label: "Clicking", duration: 0.1)
@@ -615,12 +633,15 @@ private final class PIRAgentOverlayView: NSView {
 
     private func hideCursor() {
         cursor.opacity = 0
+        setLabel("")
     }
 
     private func setLabel(_ label: String) {
         guard labelText.string as? String != label else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
+        // A plain move needs no label; the pill only names what the cursor is doing.
+        labelPill.isHidden = label.isEmpty
         let size = (label as NSString).size(withAttributes: [.font: labelFont])
         let height: CGFloat = 22
         labelPill.frame = CGRect(x: 18, y: 14, width: ceil(size.width) + 32, height: height)
@@ -754,6 +775,7 @@ private final class PIRBrowserBarView: NSView {
         }
         address.attributedStringValue = text
         lock.isHidden = pageURL?.scheme != "https"
+        dax.isHidden = false
 
         let state = isManualControl ? "you have control" : needsAssistance ? "is waiting for you" : isOptOut ? "is filling this in" : "is searching"
         let statusText = NSMutableAttributedString(string: "DuckDuckGo ",
@@ -768,6 +790,7 @@ private final class PIRBrowserBarView: NSView {
     func reset() {
         address.stringValue = ""
         lock.isHidden = true
+        dax.isHidden = true
         status.stringValue = ""
     }
 }
@@ -789,7 +812,6 @@ private final class PIRStepsSidebarView: NSView {
     private let subtitleLabel = NSTextField(wrappingLabelWithString: "")
     private let steps = NSStackView()
     private let stepsScroll = NSScrollView()
-    private let footer = NSStackView()
     private let placeholderIcon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)
     private var state: State?
 
@@ -821,7 +843,7 @@ private final class PIRStepsSidebarView: NSView {
         steps.alignment = .leading
         steps.spacing = 14
         steps.translatesAutoresizingMaskIntoConstraints = false
-        // Long steps, such as SpyFly's scan, scroll instead of running past the footer.
+        // Long steps, such as SpyFly's scan, scroll within the sidebar.
         let stepsDocument = FlippedView()
         stepsDocument.translatesAutoresizingMaskIntoConstraints = false
         stepsDocument.addSubview(steps)
@@ -830,8 +852,6 @@ private final class PIRStepsSidebarView: NSView {
         stepsScroll.hasVerticalScroller = true
         stepsScroll.autohidesScrollers = true
         stepsScroll.translatesAutoresizingMaskIntoConstraints = false
-        footer.orientation = .horizontal
-        footer.translatesAutoresizingMaskIntoConstraints = false
         headerCard.translatesAutoresizingMaskIntoConstraints = false
         // The header keeps its full height; the steps below scroll instead.
         for view in [headerContent, titleLabel, subtitleLabel] as [NSView] {
@@ -839,7 +859,6 @@ private final class PIRStepsSidebarView: NSView {
         }
         addSubview(headerCard)
         addSubview(stepsScroll)
-        addSubview(footer)
 
         NSLayoutConstraint.activate([
             favicon.widthAnchor.constraint(equalToConstant: 48),
@@ -854,26 +873,20 @@ private final class PIRStepsSidebarView: NSView {
             stepsScroll.topAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: 12),
             stepsScroll.leadingAnchor.constraint(equalTo: leadingAnchor),
             stepsScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stepsScroll.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -12),
+            stepsScroll.bottomAnchor.constraint(equalTo: bottomAnchor),
             stepsDocument.topAnchor.constraint(equalTo: stepsScroll.contentView.topAnchor),
             stepsDocument.leadingAnchor.constraint(equalTo: stepsScroll.contentView.leadingAnchor),
             stepsDocument.widthAnchor.constraint(equalTo: stepsScroll.contentView.widthAnchor),
             steps.topAnchor.constraint(equalTo: stepsDocument.topAnchor, constant: 8),
             steps.leadingAnchor.constraint(equalTo: stepsDocument.leadingAnchor, constant: 12),
             steps.trailingAnchor.constraint(equalTo: stepsDocument.trailingAnchor, constant: -12),
-            steps.bottomAnchor.constraint(equalTo: stepsDocument.bottomAnchor, constant: -8),
-            footer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
-            footer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4)
+            steps.bottomAnchor.constraint(equalTo: stepsDocument.bottomAnchor, constant: -8)
         ])
         reset()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    func setFooter(_ view: NSView) {
-        footer.addArrangedSubview(view)
     }
 
     func setFavicon(_ image: NSImage?) {
@@ -930,8 +943,34 @@ private final class PIRStepsSidebarView: NSView {
         }
     }
 
+    private var needsYou: [PIRAssistedOptOut] = []
+
+    /// The artifact's "Needs you" group: one row per broker, each started with its own button.
+    func showNeedsYou(_ optOuts: [PIRAssistedOptOut], start: @escaping (PIRAssistedOptOut) -> Void) {
+        guard state == nil, optOuts != needsYou else { return }
+        needsYou = optOuts
+        steps.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        guard !optOuts.isEmpty else {
+            reset()
+            return
+        }
+        titleLabel.stringValue = "Needs you"
+        subtitleLabel.stringValue = "These sites need a person to finish the requests. We\u{2019}ll do most of it."
+        var brokerOrder: [String] = []
+        var byBroker: [String: [PIRAssistedOptOut]] = [:]
+        for optOut in optOuts {
+            if byBroker[optOut.brokerName] == nil { brokerOrder.append(optOut.brokerName) }
+            byBroker[optOut.brokerName, default: []].append(optOut)
+        }
+        for broker in brokerOrder {
+            guard let records = byBroker[broker], let first = records.first else { continue }
+            steps.addArrangedSubview(NeedsYouRow(brokerName: broker, recordCount: records.count, width: width - 24) { start(first) })
+        }
+    }
+
     func reset(message: String? = nil) {
         state = nil
+        needsYou = []
         setFavicon(nil)
         titleLabel.stringValue = "Personal Information Removal"
         subtitleLabel.stringValue = message ?? "We\u{2019}ll show each broker here while we work on it."
@@ -950,6 +989,45 @@ private final class SidebarHeaderCard: NSView {
     override func updateLayer() {
         layer?.cornerRadius = 16
         layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.04).cgColor
+    }
+}
+
+@MainActor
+private final class NeedsYouRow: NSStackView {
+    private let onStart: () -> Void
+
+    init(brokerName: String, recordCount: Int, width: CGFloat, onStart: @escaping () -> Void) {
+        self.onStart = onStart
+        super.init(frame: .zero)
+        orientation = .horizontal
+        alignment = .centerY
+        spacing = 12
+
+        let name = NSTextField(labelWithString: brokerName)
+        name.font = .systemFont(ofSize: 15, weight: .medium)
+        let meta = NSTextField(wrappingLabelWithString: "\(recordCount) record\(recordCount == 1 ? "" : "s") \u{00b7} about 1 min with our help")
+        meta.font = .systemFont(ofSize: 12)
+        meta.textColor = .secondaryLabelColor
+        meta.preferredMaxLayoutWidth = width - 130
+        let text = NSStackView(views: [name, meta])
+        text.orientation = .vertical
+        text.alignment = .leading
+        text.spacing = 2
+        let button = NSButton(title: "Start request", target: self, action: #selector(startPressed))
+        button.bezelStyle = .rounded
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        addArrangedSubview(text)
+        addArrangedSubview(button)
+        widthAnchor.constraint(equalToConstant: width).isActive = true
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc private func startPressed(_ sender: NSButton) {
+        sender.isEnabled = false
+        onStart()
     }
 }
 
@@ -1038,7 +1116,7 @@ private final class YourTurnCallout: NSView {
 
         let title = NSTextField(labelWithString: "Your turn")
         title.font = .systemFont(ofSize: 15, weight: .semibold)
-        let body = NSTextField(wrappingLabelWithString: "Choose Take Control and complete the security check. We\u{2019}ll continue as soon as it clears.")
+        let body = NSTextField(wrappingLabelWithString: "Click the page to open it, then complete the security check. We\u{2019}ll continue as soon as it clears.")
         body.font = .systemFont(ofSize: 12)
         body.textColor = .secondaryLabelColor
         body.preferredMaxLayoutWidth = width - 28

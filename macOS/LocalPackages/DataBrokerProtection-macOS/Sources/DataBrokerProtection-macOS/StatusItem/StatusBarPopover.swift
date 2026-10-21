@@ -40,7 +40,9 @@ public final class StatusBarPopover: NSPopover {
     public func setLivePreviewContent(agentInterface: DataBrokerProtectionAgentManager) {
         behavior = .applicationDefined
         let controller = DBPLivePreviewViewController(agentInterface: agentInterface, hidesWhenIdle: false,
-                                                      takeControl: { try await agentInterface.takeControlOfLivePreview(operationID: $0) })
+                                                      takeControl: { try await agentInterface.takeControlOfLivePreview(operationID: $0) },
+                                                      assistedOptOuts: { try agentInterface.assistedOptOuts() },
+                                                      startAssistedOptOut: { try await agentInterface.startAssistedOptOut($0) })
         let size = DBPLivePreviewViewController.contentSize
         controller.view.frame = NSRect(origin: .zero, size: size)
         contentViewController = controller

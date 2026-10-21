@@ -584,6 +584,16 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
         return try await PIRLivePreview.shared.takeControl(operationID: id)
     }
 
+    public func assistedOptOuts() throws -> [PIRAssistedOptOut] {
+        try PIRAssistedOptOuts.pending(in: jobDependencies.database)
+    }
+
+    /// Starts one held opt-out right away; it pauses for the user when the broker needs a person.
+    public func startAssistedOptOut(_ optOut: PIRAssistedOptOut) async throws {
+        try PIRAssistedOptOuts.start(optOut, in: jobDependencies.database)
+        await startScheduledOperations()
+    }
+
     @MainActor
     public func getLivePreview() async throws -> DBPLivePreviewFrame? {
         guard let frame = try await PIRLivePreview.shared.captureFrame() else { return nil }

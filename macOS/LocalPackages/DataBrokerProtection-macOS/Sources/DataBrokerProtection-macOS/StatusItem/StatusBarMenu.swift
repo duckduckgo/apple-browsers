@@ -54,9 +54,18 @@ public final class StatusBarMenu: NSObject {
     @MainActor
     public func setLivePreviewContent(agentInterface: DataBrokerProtectionAgentManager) {
         popover.setLivePreviewContent(agentInterface: agentInterface)
-        PIRLivePreview.shared.manualControlStarted = { [weak self] in self?.popover.close() }
+        PIRLivePreview.shared.manualControlStarted = { [weak self] in
+            if let frame = self?.popover.contentViewController?.view.window?.frame { PIRLivePreview.shared.anchorFrame = frame }
+            self?.popover.close()
+        }
         PIRLivePreview.shared.automationResumed = { [weak self] in self?.showPopover() }
         PIRLivePreview.shared.activityChanged = { [weak self] isActive in self?.livePreviewActivityChanged(isActive) }
+        // Open on Needs you when the agent starts with opt-outs waiting for the user, such as after a demo seed.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard let pending = try? agentInterface.assistedOptOuts(), !pending.isEmpty else { return }
+            self?.showPopover()
+        }
     }
 
     /// Jobs in one run start a few seconds apart, so wait before treating the run as finished.
@@ -100,6 +109,9 @@ public final class StatusBarMenu: NSObject {
         }
         #endif
         popover.contentViewController?.view.window?.makeKey()
+        #if DEBUG
+        PIRLivePreview.shared.anchorFrame = popover.contentViewController?.view.window?.frame
+        #endif
     }
 
     // MARK: - Showing & Hiding the menu

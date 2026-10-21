@@ -126,7 +126,6 @@ final class NativeMessagingHostSession {
         [NativeMessaging] started session=\(self.diagnosticIdentifier, privacy: .public) \
         host=\(self.hostName, privacy: .public) pid=\(self.process.processIdentifier)
         """)
-        Logger.webExtensions.debug("🔗 Host \(self.hostName, privacy: .public) started, pid \(self.process.processIdentifier, privacy: .public)")
         startReadLoop()
         startErrorLoop()
     }
@@ -187,7 +186,7 @@ final class NativeMessagingHostSession {
         queuedMessageCount += 1
         let sequence = queuedMessageCount
         let identifier = diagnosticIdentifier
-        Logger.webExtensions.info("""
+        Logger.webExtensions.debug("""
         [NativeMessaging] write-queued session=\(identifier, privacy: .public) \
         sequence=\(sequence) framedBytes=\(frame.count)
         """)
@@ -199,7 +198,7 @@ final class NativeMessagingHostSession {
         writeQueue.async {
             do {
                 try handle.write(contentsOf: frame)
-                Logger.webExtensions.info("""
+                Logger.webExtensions.debug("""
                 [NativeMessaging] write-completed session=\(identifier, privacy: .public) \
                 sequence=\(sequence) framedBytes=\(frame.count)
                 """)
@@ -208,7 +207,6 @@ final class NativeMessagingHostSession {
                 [NativeMessaging] write-failed session=\(identifier, privacy: .public) \
                 sequence=\(sequence) errorDomain=\((error as NSError).domain, privacy: .public) errorCode=\((error as NSError).code)
                 """)
-                Logger.webExtensions.error("❌ Write to host failed: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -232,13 +230,16 @@ final class NativeMessagingHostSession {
 
             outputBuffer.append(chunk)
             let (messages, error) = takeMessages()
-            Logger.webExtensions.info("""
+            Logger.webExtensions.debug("""
             [NativeMessaging] read session=\(self.diagnosticIdentifier, privacy: .public) \
             bytes=\(chunk.count) messages=\(messages.count) bufferedBytes=\(self.outputBuffer.count) failed=\(error != nil)
             """)
             if let error {
                 handle.readabilityHandler = nil
-                Logger.webExtensions.error("❌ Read from host \(name, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+                Logger.webExtensions.error("""
+                [NativeMessaging] read-failed session=\(self.diagnosticIdentifier, privacy: .public) host=\(name, privacy: .public) \
+                errorDomain=\((error as NSError).domain, privacy: .public) errorCode=\((error as NSError).code)
+                """)
             }
             guard !messages.isEmpty || error != nil else { return }
 
@@ -248,7 +249,7 @@ final class NativeMessagingHostSession {
                 MainActor.assumeMainThread {
                     for message in messages where !self.didFinish {
                         self.receivedMessageCount += 1
-                        Logger.webExtensions.info("""
+                        Logger.webExtensions.debug("""
                         [NativeMessaging] host-to-extension session=\(self.diagnosticIdentifier, privacy: .public) \
                         sequence=\(self.receivedMessageCount) handlerPresent=\(self.messageHandler != nil)
                         """)

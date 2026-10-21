@@ -94,15 +94,17 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
         // Host to extension.
         session.messageHandler = { [weak port] message in
             guard let port else {
-                Logger.webExtensions.error("❌ Host \(hostName, privacy: .public) sent a message but its port is gone")
+                Logger.webExtensions.error("[NativeMessaging] port-unavailable session=\(identifier, privacy: .public) host=\(hostName, privacy: .public)")
                 return
             }
             port.sendMessage(message) { error in
-                Logger.webExtensions.info("""
-                [NativeMessaging] port-delivery-completed session=\(identifier, privacy: .public) failed=\(error != nil)
-                """)
                 if let error {
-                    Logger.webExtensions.error("❌ Port send failed: \(error.localizedDescription, privacy: .public)")
+                    Logger.webExtensions.error("""
+                    [NativeMessaging] port-delivery-failed session=\(identifier, privacy: .public) \
+                    errorDomain=\((error as NSError).domain, privacy: .public) errorCode=\((error as NSError).code)
+                    """)
+                } else {
+                    Logger.webExtensions.debug("[NativeMessaging] port-delivery-completed session=\(identifier, privacy: .public)")
                 }
             }
         }
@@ -121,25 +123,30 @@ final class NativeMessagingHandler: WebExtensionNativeMessagingHandling {
 
         // Extension to host.
         port.messageHandler = { [weak session] message, error in
-            Logger.webExtensions.info("""
+            Logger.webExtensions.debug("""
             [NativeMessaging] extension-to-host session=\(identifier, privacy: .public) \
             messagePresent=\(message != nil) sessionPresent=\(session != nil) failed=\(error != nil)
             """)
             if let error {
-                Logger.webExtensions.error("❌ Port receive failed: \(error.localizedDescription, privacy: .public)")
+                Logger.webExtensions.error("""
+                [NativeMessaging] port-receive-failed session=\(identifier, privacy: .public) \
+                errorDomain=\((error as NSError).domain, privacy: .public) errorCode=\((error as NSError).code)
+                """)
                 return
             }
             guard let message, let session else { return }
             do {
                 try session.send(message)
             } catch {
-                Logger.webExtensions.error("❌ Message to host rejected: \(error.localizedDescription, privacy: .public)")
+                Logger.webExtensions.error("""
+                [NativeMessaging] message-rejected session=\(identifier, privacy: .public) \
+                errorDomain=\((error as NSError).domain, privacy: .public) errorCode=\((error as NSError).code)
+                """)
             }
         }
 
         port.disconnectHandler = { [weak self] _ in
             Logger.webExtensions.info("[NativeMessaging] port-closed-by-extension session=\(identifier, privacy: .public)")
-            Logger.webExtensions.debug("🔗 Extension closed the port to \(hostName, privacy: .public)")
             self?.sessions[key]?.stop()
             self?.sessions[key] = nil
         }

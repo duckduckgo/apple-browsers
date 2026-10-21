@@ -35,21 +35,6 @@ public final class StatusBarPopover: NSPopover {
         fatalError("init(coder:) has not been implemented")
     }
 
-    #if DEBUG
-    @MainActor
-    public func setLivePreviewContent(agentInterface: DataBrokerProtectionAgentManager) {
-        behavior = .applicationDefined
-        let controller = DBPLivePreviewViewController(agentInterface: agentInterface, hidesWhenIdle: false,
-                                                      takeControl: { try await agentInterface.takeControlOfLivePreview(operationID: $0) },
-                                                      assistedOptOuts: { try agentInterface.assistedOptOuts() },
-                                                      startAssistedOptOut: { try await agentInterface.startAssistedOptOut($0) })
-        let size = DBPLivePreviewViewController.contentSize
-        controller.view.frame = NSRect(origin: .zero, size: size)
-        contentViewController = controller
-        contentSize = size
-    }
-    #endif
-
     private func setupContentController() {
         let controller = NSHostingController(rootView: StatusBarPopoverView(viewModel: StatusBarMenuDebugInfoViewModel()))
         contentViewController = controller

@@ -1145,6 +1145,13 @@ extension MainViewController {
 
 extension MainViewController {
 
+    func resetLegacyScrollForDismiss(coordinator: UnifiedToggleInputCoordinator?, duration: TimeInterval) {
+        guard let coordinator, !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
+        coordinator.contentViewController.scrollLegacyContentToTop(duration: duration)
+        // Reset the resting copy while covered, so the last collapse frame reveals the same position.
+        (newTabPageViewController as? NewTabPageViewController)?.scrollToTop(duration: 0)
+    }
+
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
         if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
@@ -1157,6 +1164,7 @@ extension MainViewController {
         let utiPlaceholderColor = coordinator.viewController.defaultPlaceholderColor
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
 
+        resetLegacyScrollForDismiss(coordinator: coordinator, duration: duration)
         let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent

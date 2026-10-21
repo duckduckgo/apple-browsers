@@ -33,6 +33,12 @@ enum UnifiedSuggestionsContentKind: Hashable {
     case logo
 }
 
+enum FocusedContentPlacement {
+    case hidden
+    case embedded
+    case pinned
+}
+
 /// The complete set of facts that decide the presentation. No UIKit, no managers.
 struct UnifiedSuggestionsInputs: Equatable {
     let mode: TextEntryMode
@@ -46,6 +52,32 @@ struct UnifiedSuggestionsInputs: Equatable {
 /// Pure decision table. `previous` lets us hold the prior presentation while
 /// duck.ai fetchers are still settling, so the logo never flashes mid-query.
 enum UnifiedSuggestionsContentResolver {
+
+    static func resolveChromePlacement(usesRedesignedNewTabPageLayout: Bool,
+                                       showsRedesignedSearchModules: Bool,
+                                       mode: TextEntryMode,
+                                       isTyping: Bool,
+                                       isFireTab: Bool,
+                                       hasEscapeHatch: Bool,
+                                       showsSyncPromo: Bool) -> (escapeHatch: FocusedContentPlacement, syncPromo: FocusedContentPlacement) {
+        guard !isTyping, !isFireTab else { return (.hidden, .hidden) }
+        let hatchPlacement: FocusedContentPlacement = usesRedesignedNewTabPageLayout && !showsRedesignedSearchModules ? .pinned : .embedded
+        let promoPlacement: FocusedContentPlacement = usesRedesignedNewTabPageLayout ? .pinned : .embedded
+        return (hasEscapeHatch ? hatchPlacement : .hidden, mode == .aiChat && showsSyncPromo ? promoPlacement : .hidden)
+    }
+
+    static func showsEmbeddedLegacyContent(usesRedesignedNewTabPageLayout: Bool,
+                                           isFireTab: Bool,
+                                           content: UnifiedSuggestionsContentKind) -> Bool {
+        guard !usesRedesignedNewTabPageLayout, !isFireTab else { return false }
+        switch content {
+        case .favorites, .logo, .list(.recents):
+            // Pending Duck.ai results keep recents in this scroll view until the typing list is ready.
+            return true
+        case .list(.search), .list(.duckAI):
+            return false
+        }
+    }
 
     static func resolve(_ inputs: UnifiedSuggestionsInputs,
                         previous: UnifiedSuggestionsContentKind?) -> UnifiedSuggestionsContentKind {

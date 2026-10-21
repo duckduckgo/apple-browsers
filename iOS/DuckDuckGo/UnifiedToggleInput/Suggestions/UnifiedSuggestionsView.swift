@@ -32,13 +32,15 @@ struct UnifiedSuggestionsView: View {
     var escapeHatch: EscapeHatchModel?
 
     var body: some View {
-        // Chrome stays pinned to the bar except for the redesigned Search escape hatch,
-        // which follows favorites in the scrolling modules. The logo overlays
-        // the content, anchored to the keyboard (the host's fixed bottom) so neither the bar-driven top
-        // inset nor a Search↔Duck.ai toggle moves it.
+        // Keep the logo behind the legacy scroll view so the hatch can bounce over it.
         ZStack(alignment: .bottom) {
+            if !usesRedesignedNewTabPageLayout {
+                logoLayer
+            }
             contentArea
-            logoLayer
+            if usesRedesignedNewTabPageLayout {
+                logoLayer
+            }
             fireLayer
         }
         // UIKit already bounds this host with its keyboard layout guide. Keep container
@@ -88,14 +90,15 @@ struct UnifiedSuggestionsView: View {
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
             } else {
-                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: isShowingFavorites)
+                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: showsEmbeddedLegacyContent)
                     .transition(.identity)
+                    .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
             }
         }
     }
 
     private var isShowingList: Bool {
-        guard !showsRedesignedSearchModules else { return false }
+        guard !showsRedesignedSearchModules, !showsEmbeddedLegacyContent else { return false }
         if case .list = viewModel.content { return true }
         return false
     }
@@ -111,12 +114,15 @@ struct UnifiedSuggestionsView: View {
         FocusedSuggestionsView(viewModel: viewModel.listViewModel(for: activeListKind),
                                isAddressBarAtBottom: isAddressBarAtBottom,
                                isVisible: isShowingList,
-                               isFadingOut: viewModel.isFadingOut)
+                               isFadingOut: viewModel.isFadingOut,
+                               animatesAppearance: usesRedesignedNewTabPageLayout)
     }
 
-    private var isShowingFavorites: Bool {
-        if case .favorites = viewModel.content { return true }
-        return false
+    private var showsEmbeddedLegacyContent: Bool {
+        UnifiedSuggestionsContentResolver.showsEmbeddedLegacyContent(
+            usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
+            isFireTab: viewModel.isFireTab,
+            content: viewModel.content)
     }
 
     private var isShowingLogo: Bool {

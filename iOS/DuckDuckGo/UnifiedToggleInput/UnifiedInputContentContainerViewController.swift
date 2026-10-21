@@ -345,6 +345,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         unifiedSuggestionsHost?.beginDismissFade()
     }
 
+    func scrollLegacyContentToTop(duration: TimeInterval) {
+        unifiedSuggestionsHost?.scrollLegacyContentToTop(duration: duration)
+    }
+
     /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible, so it hands
     /// off to the (identical) NTP logo without crossfading two different logos. Sped up to finish
     /// within the bar's `collapseDuration`.
@@ -383,8 +387,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// Creates / updates / removes the bar-pinned chrome hosting controller and rebinds its content
     /// (hatch + sync-promo) to the current state.
     private func updatePinnedChrome() {
+        if !usesRedesignedNewTabPageLayout {
+            unifiedSuggestionsHost?.setLegacyFocusedContent(
+                mode: switchBarHandler.currentToggleState,
+                escapeHatch: chromePlacement.escapeHatch == .embedded ? escapeHatchModel : nil,
+                syncPromo: chromePlacement.syncPromo == .embedded ? syncPromoView : nil)
+        }
         let hatchModel = shouldShowPinnedHatch ? escapeHatchModel : nil
-        let promo: AnyView? = isSyncPromoCardVisible ? syncPromoView : nil
+        let promo: AnyView? = chromePlacement.syncPromo == .pinned ? syncPromoView : nil
         guard hatchModel != nil || promo != nil || chromeHostingController != nil else { return }
 
         let rootView = FocusedChromeView(
@@ -445,18 +455,26 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// The hatch shows in the non-typing empty/branding states — using the same not-typing rule as the
     /// resolver so it never diverges from the host's content (e.g. a pre-filled, unedited URL).
     private var shouldShowPinnedHatch: Bool {
-        escapeHatchModel != nil
-            && !(unifiedSuggestionsHost?.isShowingRedesignedSearchModules ?? false)
-            && !switchBarHandler.isFireTab
-            && !UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
-                                                        hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText)
+        chromePlacement.escapeHatch == .pinned
+    }
+
+    private var chromePlacement: (escapeHatch: FocusedContentPlacement, syncPromo: FocusedContentPlacement) {
+        UnifiedSuggestionsContentResolver.resolveChromePlacement(
+            usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
+            showsRedesignedSearchModules: unifiedSuggestionsHost?.isShowingRedesignedSearchModules ?? false,
+            mode: switchBarHandler.currentToggleState,
+            isTyping: UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
+                                                              hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText),
+            isFireTab: switchBarHandler.isFireTab,
+            hasEscapeHatch: escapeHatchModel != nil,
+            showsSyncPromo: isSyncPromoCardVisible)
     }
 
     /// Height to reserve below the bar for the pinned chrome. The hatch is a fixed height (reserved
     /// synchronously so favorites slide without a late jump); the variable sync-promo uses the
     /// async-measured height (Duck.ai only, where favorites never show).
     private var currentChromeReservedHeight: CGFloat {
-        if isSyncPromoCardVisible {
+        if chromePlacement.syncPromo == .pinned {
             return chromeMeasuredHeight
         } else if shouldShowPinnedHatch {
             let cardPadding = usesRedesignedNewTabPageLayout ? EscapeHatchView.materialPadding * 2 : 0
@@ -831,8 +849,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         // Route favorite taps / edits / tab actions to the host's delegate so they open like the
         // standalone NTP (the embedded controller has no owner to set this otherwise).
         controller.delegate = self
-        // The escape hatch and the empty-state logo are UTI chrome (bar-pinned hatch + the host's
-        // `FocusedDaxLogoView`), not the NTP's — leave the NTP's own hatch unset so we never get two.
+        // The host owns the mode-switching logo; legacy hatch and recents are fed into this NTP.
         controller.setLogoHidden(true)
         return controller
     }

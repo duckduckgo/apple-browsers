@@ -173,6 +173,17 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
         updateBorderView()
     }
 
+    func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
+        newTabPageViewModel.setFocusedContent(content, escapeHatch: escapeHatch)
+        if content != nil {
+            view.backgroundColor = .clear
+        }
+    }
+
+    func scrollToTop(duration: TimeInterval) {
+        newTabPageViewModel.scrollToTopRequests.send(duration)
+    }
+
     func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         messagesModel.refresh()
@@ -191,7 +202,16 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if newTabPageViewModel.focusedContent != nil {
+            // SwiftUI's scrollBounceBehavior is unavailable on iOS 15.
+            focusedScrollView(in: view)?.alwaysBounceVertical = true
+        }
         onboardingCoordinator.refreshContextualOnboardingDialogLayout()
+    }
+
+    private func focusedScrollView(in view: UIView) -> UIScrollView? {
+        if let scrollView = view as? UIScrollView { return scrollView }
+        return view.subviews.lazy.compactMap { self.focusedScrollView(in: $0) }.first
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -204,7 +224,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = newTabPageViewModel.focusedContent == nil ? UIColor(designSystemColor: .background) : .clear
 
         // If there's no tab switcher then this will be true, if there is a tabswitcher then only allow the
         // stuff below to happen if it's being dismissed

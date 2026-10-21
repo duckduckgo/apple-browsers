@@ -39,6 +39,7 @@ final class UnifiedSuggestionsHost {
     private var escapeHatchTopInset: CGFloat = 0
     private var escapeHatch: EscapeHatchModel?
     private var contentInsets: UIEdgeInsets = .zero
+    private var embeddedHatchInset: CGFloat = 0
     private var cancellables = Set<AnyCancellable>()
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
@@ -60,6 +61,22 @@ final class UnifiedSuggestionsHost {
 
     func updateOpenedAfterIdle(_ openedAfterIdle: Bool) {
         favoritesPresentation.updateOpenedAfterIdle(openedAfterIdle)
+    }
+
+    func setLegacyFocusedContent(mode: TextEntryMode, escapeHatch: EscapeHatchModel?, syncPromo: AnyView?) {
+        guard redesignedSearchPresentation == nil else { return }
+        let controller = favoritesPresentation.viewController
+        controller?.setFocusedContent(LegacyFocusedNewTabPageContent(
+            recentChats: mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+            syncPromo: syncPromo,
+            isAddressBarAtBottom: isAddressBarAtBottom), escapeHatch: escapeHatch)
+        embeddedHatchInset = escapeHatch == nil ? 0 : 10 + TabSwitcherPill.compactSize
+        applyCombinedInsets()
+    }
+
+    func scrollLegacyContentToTop(duration: TimeInterval) {
+        guard redesignedSearchPresentation == nil else { return }
+        favoritesPresentation.viewController?.scrollToTop(duration: duration)
     }
 
     init(config: UnifiedSuggestionsHostConfig) {
@@ -128,6 +145,8 @@ final class UnifiedSuggestionsHost {
         guard enabled != (redesignedSearchPresentation != nil) else { return }
         redesignedPresentationCancellable = nil
         if enabled {
+            favoritesPresentation.viewController?.setFocusedContent(nil)
+            embeddedHatchInset = 0
             let presentation = RedesignedFocusedSearchPresentation(
                 inputsPublisher: config.inputsPublisher,
                 dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
@@ -171,6 +190,7 @@ final class UnifiedSuggestionsHost {
 
     /// Resets the dismiss/morph state on each focus.
     func prepareForActivation(favoritesExpansionState: FavoritesExpansionState? = nil) {
+        scrollLegacyContentToTop(duration: 0)
         if let favoritesExpansionState,
            let model = favoritesPresentation.viewController?.favoritesModel,
            model.expansionState !== favoritesExpansionState {
@@ -206,7 +226,7 @@ final class UnifiedSuggestionsHost {
 
     private func applyCombinedInsets() {
         let top = escapeHatchTopInset + contentInsets.top
-        viewModel.chromeInsetTop = top
+        viewModel.chromeInsetTop = top + embeddedHatchInset
         hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
             top: top,
             left: contentInsets.left,
@@ -236,6 +256,7 @@ final class UnifiedSuggestionsHost {
 
         surface.source.start(textPublisher: textPublisher)
         rebuildRootView()
+        onContentChanged?()
     }
 
     /// Releases the duck.ai source/VM only (search persists), mirroring today's lazy lifecycle.

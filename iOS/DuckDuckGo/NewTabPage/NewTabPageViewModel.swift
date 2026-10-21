@@ -22,12 +22,21 @@ import Core
 import BrowserServicesKit
 import Combine
 import PixelKit
+import SwiftUI
+
+struct LegacyFocusedNewTabPageContent {
+    var recentChats: SuggestionsListViewModel?
+    var syncPromo: AnyView?
+    var isAddressBarAtBottom: Bool
+}
 
 final class NewTabPageViewModel: ObservableObject {
 
     @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
     @Published var escapeHatch: EscapeHatchModel?
+    @Published var focusedContent: LegacyFocusedNewTabPageContent?
+    let scrollToTopRequests = PassthroughSubject<TimeInterval, Never>()
     var openedAfterIdle: Bool = false
     @Published var sectionTitle: String?
     @Published var isLogoHidden: Bool = false
@@ -50,6 +59,20 @@ final class NewTabPageViewModel: ObservableObject {
         self.pixelFiring = pixelFiring
 
         isOnboarding = false
+    }
+
+    func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
+        // Focused chrome visibility must not change the session's remote-message eligibility.
+        if self.escapeHatch !== escapeHatch {
+            self.escapeHatch = escapeHatch
+        }
+        if let current = focusedContent, let content,
+           current.recentChats === content.recentChats,
+           (current.syncPromo == nil) == (content.syncPromo == nil),
+           current.isAddressBarAtBottom == content.isAddressBarAtBottom {
+            return
+        }
+        focusedContent = content
     }
 
     func startOnboarding() {

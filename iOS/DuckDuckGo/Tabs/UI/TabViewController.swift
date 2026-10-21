@@ -4918,18 +4918,12 @@ extension TabViewController: UIGestureRecognizerDelegate {
         pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
 
         if #available(iOS 16.0, *) {
-            let previousInteraction = webView.findInteraction
-            let query = previousInteraction?.isFindNavigatorVisible == true
-                ? previousInteraction?.searchText
-                : (webView as? WebView)?.lastFindInPageQuery
-
-            // Reset stuck navigator state.
-            previousInteraction?.dismissFindNavigator()
-            webView.isFindInteractionEnabled = false
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction
+            // Ignore repeat invocations while find is open so in-progress text isn't replaced with a stored query.
+            guard findInteraction?.isFindNavigatorVisible == false else { return }
             // Default to empty (not nil) so this tab's field doesn't fall back to the system-wide retained query from another tab.
-            findInteraction?.searchText = query ?? ""
+            findInteraction?.searchText = (webView as? WebView)?.lastFindInPageQuery ?? ""
             findInteraction?.presentFindNavigator(showingReplace: false)
             (webView as? WebView)?.beginTrackingFindInPageQuery()
             return

@@ -298,39 +298,6 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["New Tab"].exists)
     }
 
-    func verifyFindInPageReopening() {
-        openPage(path: "/long-page", heading: Page.longHeading)
-
-        func openFindInPage() {
-            let menuButton = element(withIdentifier: AccessibilityID.toolbarMenu)
-            XCTAssertTrue(menuButton.waitForHittable(timeout: timeout))
-            menuButton.tap()
-            let findAction = app.buttons["Find in Page"]
-            XCTAssertTrue(findAction.waitForHittable(timeout: timeout))
-            findAction.tap()
-            XCTAssertTrue(element(withIdentifier: "find.searchField").waitForHittable(timeout: timeout))
-        }
-
-        func closeFindInPage() {
-            app.buttons["find.doneButton"].tap()
-            XCTAssertTrue(element(withIdentifier: "find.searchField").waitForNonExistence(timeout: timeout))
-        }
-
-        openFindInPage()
-        element(withIdentifier: "find.searchField").typeText("Floating")
-        closeFindInPage()
-
-        openFindInPage()
-        XCTAssertEqual(element(withIdentifier: "find.searchField").value as? String, "Floating")
-        element(withIdentifier: "find.searchField").buttons["Clear text"].tap()
-        closeFindInPage()
-
-        openFindInPage()
-        XCTAssertEqual(element(withIdentifier: "find.searchField").value as? String, "")
-        closeFindInPage()
-        assertChromeButtonsAreUsable()
-    }
-
     func verifyConsecutiveAddressBarRelocation() {
         openPage(path: "/long-page", heading: Page.longHeading)
 
@@ -339,37 +306,6 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertConfiguredBarPosition()
-    }
-
-    func verifyFindInPageAfterExpandingSections() {
-        openPage(path: "/find-in-page-sections", heading: "Find in Page Sections")
-
-        func openFindInPage() {
-            let menuButton = element(withIdentifier: AccessibilityID.toolbarMenu)
-            XCTAssertTrue(menuButton.waitForHittable(timeout: timeout))
-            menuButton.tap()
-            let findAction = app.buttons["Find in Page"]
-            XCTAssertTrue(findAction.waitForHittable(timeout: timeout))
-            findAction.tap()
-            XCTAssertTrue(element(withIdentifier: "find.searchField").waitForHittable(timeout: timeout))
-        }
-
-        openFindInPage()
-        app.buttons["find.doneButton"].tap()
-        XCTAssertTrue(element(withIdentifier: "find.searchField").waitForNonExistence(timeout: timeout))
-
-        for section in (1...6).reversed() {
-            let button = app.buttons["Section \(section)"]
-            XCTAssertTrue(button.waitForHittable(timeout: timeout))
-            button.tap()
-        }
-
-        openFindInPage()
-        element(withIdentifier: "find.searchField").typeText("Expanded")
-        XCTAssertTrue(waitUntil(timeout: timeout) { self.app.buttons["find.nextButton"].isEnabled })
-        app.buttons["find.doneButton"].tap()
-        XCTAssertTrue(element(withIdentifier: "find.searchField").waitForNonExistence(timeout: timeout))
-        assertChromeButtonsAreUsable()
     }
 
     func verifyStatusBarScrollEdgeInBothBarPositions() {
@@ -972,25 +908,6 @@ class FloatingUIXCUITestCase: XCTestCase {
         server["/long-page"] = { _ in
             .ok(.html(Self.longPageHTML))
         }
-        server["/find-in-page-sections"] = { _ in
-            let sections = (1...6).map { section in
-                """
-                <button aria-expanded="false" aria-controls="section-\(section)"
-                  onclick="const expanded = this.getAttribute('aria-expanded') !== 'true';
-                    this.setAttribute('aria-expanded', expanded);
-                    document.getElementById('section-\(section)').hidden = !expanded;">
-                  Section \(section)
-                </button>
-                <div id="section-\(section)" hidden><p>Expanded section \(section) content.</p></div>
-                """
-            }.joined()
-            return .ok(.html("""
-                <!doctype html><html><head>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>button { display: block; height: 48px; width: 100%; }</style>
-                </head><body><h1>Find in Page Sections</h1>\(sections)</body></html>
-                """))
-        }
         server["/scroll-edge"] = { _ in
             .ok(.html(Self.scrollEdgeHTML))
         }
@@ -1200,8 +1117,6 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
-    func testFindInPageReopening() { verifyFindInPageReopening() }
-    func testFindInPageAfterExpandingSections() { verifyFindInPageAfterExpandingSections() }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }

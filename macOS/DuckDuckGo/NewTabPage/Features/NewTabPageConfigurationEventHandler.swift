@@ -23,7 +23,7 @@ import PixelKit
 
 final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigurationEvent> {
 
-    init() {
+    init(pixelFiring: PixelFiring? = PixelKit.shared) {
         super.init { event, _, _, _ in
             switch event {
             case .newTabPageError:
@@ -58,22 +58,22 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
             // Image and screenshot chips: the page owns them, so its telemetry is the only signal.
             case .newTabPageTelemetry(.omnibarImageAttached(let rawSource)):
                 guard let source = AIChatImageAttachmentSource(rawValue: rawSource) else { return }
-                Self.fireDailyAndCount(AIChatPixel.aiChatNtpImageAttached(source: source))
+                pixelFiring?.fire(AIChatPixel.aiChatNtpImageAttached(source: source), frequency: .dailyAndCount)
 
             case .newTabPageTelemetry(.omnibarImageRemoved(let rawSource)):
                 guard let source = AIChatImageAttachmentSource(rawValue: rawSource) else { return }
-                Self.fireDailyAndCount(AIChatPixel.aiChatNtpImageRemoved(source: source))
+                pixelFiring?.fire(AIChatPixel.aiChatNtpImageRemoved(source: source), frequency: .dailyAndCount)
 
             case .newTabPageTelemetry(.omnibarScreenshotTaken(let rawKind)):
                 guard let kind = AIChatScreenshotKind(rawValue: rawKind) else { return }
-                Self.fireDailyAndCount(AIChatPixel.aiChatNtpScreenshotTaken(kind: kind))
+                pixelFiring?.fire(AIChatPixel.aiChatNtpScreenshotTaken(kind: kind), frequency: .dailyAndCount)
 
             case .newTabPageTelemetry(.omnibarScreenshotRemoved):
-                Self.fireDailyAndCount(AIChatPixel.aiChatNtpScreenshotRemoved)
+                pixelFiring?.fire(AIChatPixel.aiChatNtpScreenshotRemoved, frequency: .dailyAndCount)
 
             case .newTabPageTelemetry(.omnibarScreenshotFailed(let rawReason)):
                 guard let reason = AIChatScreenshotFailureReason(rawValue: rawReason) else { return }
-                Self.fireDailyAndCount(AIChatPixel.aiChatNtpScreenshotFailed(reason: reason))
+                pixelFiring?.fire(AIChatPixel.aiChatNtpScreenshotFailed(reason: reason), frequency: .dailyAndCount)
             }
         }
     }
@@ -84,10 +84,6 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
 
     private static func fireOmnibarPickerImpression(_ makePixel: (String) -> AIChatPixel,
                                                     _ origin: SubscriptionFunnelOrigin) {
-        fireDailyAndCount(makePixel(origin.rawValue))
-    }
-
-    private static func fireDailyAndCount(_ pixel: AIChatPixel) {
-        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        PixelKit.fire(makePixel(origin.rawValue), frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 }

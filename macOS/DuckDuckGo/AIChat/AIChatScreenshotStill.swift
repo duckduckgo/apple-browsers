@@ -18,6 +18,7 @@
 
 import AppKit
 import CoreMedia
+import DDGError
 import ScreenCaptureKit
 import VideoToolbox
 
@@ -39,8 +40,12 @@ enum AIChatScreenshotStill {
 /// Starts a stream on the picked content, keeps its first complete frame and stops.
 final class AIChatScreenshotSingleFrameStream: NSObject, SCStreamOutput {
 
-    private enum FrameError: Error {
+    private enum FrameError: DDGError {
         case timedOut
+
+        static var errorDomain: String { "com.duckduckgo.aichat.screenshot-frame" }
+        var errorCode: Int { 0 }
+        var description: String { "No complete frame before the timeout" }
     }
 
     private static let timeout: TimeInterval = 5

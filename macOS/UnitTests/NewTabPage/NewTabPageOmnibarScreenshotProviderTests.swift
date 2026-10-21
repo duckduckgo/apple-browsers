@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags_macOS
 import NewTabPage
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
@@ -30,14 +31,14 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     @available(macOS 13, *)
     @Test("The flag off omits screenshot modes", .timeLimit(.minutes(1)))
     func flagOffOmitsModes() {
-        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: MockFeatureFlagger(), firePixel: { _ in })
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: MockFeatureFlagger(), pixelFiring: nil)
         #expect(provider.screenshotModes == nil)
     }
 
     @available(macOS 13, *)
     @Test("The flag on offers both modes, Drag to Select first", .timeLimit(.minutes(1)))
     func flagOnOffersBothModes() {
-        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: makeFeatureFlagger(enabled: true), firePixel: { _ in })
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: makeFeatureFlagger(enabled: true), pixelFiring: nil)
         #expect(provider.screenshotModes == ["dragToSelect", "selectWindowOrDisplay"])
     }
 
@@ -45,7 +46,7 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     @Test("The config changes only when the flag flips", .timeLimit(.minutes(1)))
     func configChangesOnlyWhenTheFlagFlips() {
         let featureFlagger = makeFeatureFlagger(enabled: false)
-        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger, firePixel: { _ in })
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger, pixelFiring: nil)
         var changes = 0
         let cancellable = provider.configChangesPublisher.sink { changes += 1 }
 
@@ -67,7 +68,7 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     @Test("Pasted attachments follow their own flag, and flipping it changes the config", .timeLimit(.minutes(1)))
     func pastedAttachmentsFollowTheirFlag() {
         let featureFlagger = MockFeatureFlagger()
-        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger, firePixel: { _ in })
+        let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger, pixelFiring: nil)
         var changes = 0
         let cancellable = provider.configChangesPublisher.sink { changes += 1 }
         #expect(provider.enablePastedAttachments == false)
@@ -83,38 +84,39 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     @available(macOS 13, *)
     @Test("A capture request with the flag off is a cancel and fires nothing", .timeLimit(.minutes(1)))
     func flagOffCaptureIsACancel() async {
-        var pixels: [AIChatPixel] = []
+        let pixels = PixelKitMock()
         let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: MockFeatureFlagger(),
                                                            captureService: makeDeniedCaptureService(),
-                                                           firePixel: { pixels.append($0) })
+                                                           pixelFiring: pixels)
         let response = await provider.captureScreenshot(mode: "dragToSelect", requestingWebView: nil)
         #expect(response == .cancelled)
-        #expect(pixels.isEmpty)
+        #expect(pixels.actualFireCalls.isEmpty)
     }
 
     @available(macOS 13, *)
     @Test("An unknown mode is a cancel and fires nothing", .timeLimit(.minutes(1)))
     func unknownModeIsACancel() async {
-        var pixels: [AIChatPixel] = []
+        let pixels = PixelKitMock()
         let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: makeFeatureFlagger(enabled: true),
                                                            captureService: makeDeniedCaptureService(),
-                                                           firePixel: { pixels.append($0) })
+                                                           pixelFiring: pixels)
         let response = await provider.captureScreenshot(mode: "unknown", requestingWebView: nil)
         #expect(response == .cancelled)
-        #expect(pixels.isEmpty)
+        #expect(pixels.actualFireCalls.isEmpty)
     }
 
     @available(macOS 13, *)
     @Test("A denied capture is a cancel for the page and fires the denied pixel", .timeLimit(.minutes(1)))
     func deniedCaptureIsACancelAndFiresDenied() async {
-        var pixels: [AIChatPixel] = []
+        let pixels = PixelKitMock()
         let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: makeFeatureFlagger(enabled: true),
                                                            captureService: makeDeniedCaptureService(),
-                                                           firePixel: { pixels.append($0) })
+                                                           pixelFiring: pixels)
         let response = await provider.captureScreenshot(mode: "dragToSelect", requestingWebView: nil)
         #expect(response == .cancelled)
-        #expect(pixels.map(\.name) == ["aichat_ntp_screenshot_failed"])
-        #expect(pixels.first?.parameters == ["reason": "denied"])
+        #expect(pixels.actualFireCalls.map(\.pixel.name) == ["aichat_ntp_screenshot_failed"])
+        #expect(pixels.actualFireCalls.first?.pixel.parameters == ["reason": "denied"])
+        #expect(pixels.actualFireCalls.first?.frequency == .dailyAndCount)
     }
 
     // MARK: - Helpers

@@ -2179,7 +2179,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     /// A screenshot is an image, so it follows the image cap; one capture at a time across the app.
     private var canAttachScreenshot: Bool {
-        canPickAdditionalImages && !AIChatScreenshotCaptureService.shared.isCapturing
+        canPickAdditionalImages && !NSApp.delegateTyped.aiChatScreenshotCaptureService.isCapturing
     }
 
     /// The prompt bar floats over other apps, so it stays out of the picker and the frozen frame.
@@ -2225,7 +2225,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     private func captureScreenshot(mode: AIChatScreenshotMode) async {
         let restoreSurface = clearSurfaceForScreenshot()
         // The screenshot lands in the active tab's draft, so switching or closing the tab cancels it.
-        let result = await AIChatScreenshotCaptureService.shared.capture(mode: mode,
+        let result = await NSApp.delegateTyped.aiChatScreenshotCaptureService.capture(mode: mode,
                                                                           excluding: screenshotExcludedWindows,
                                                                           returningFocusTo: view.window,
                                                                           cancellingOn: omnibarController.activeDraftChangesPublisher)
@@ -2249,7 +2249,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         case .cancelled:
             return
         case .permissionDenied:
-            AIChatScreenshotCaptureService.shared.presentPermissionAlert(on: view.window)
+            NSApp.delegateTyped.aiChatScreenshotCaptureService.presentPermissionAlert(on: view.window)
         case .failed:
             lastAttachmentError = UserText.aiChatScreenshotCaptureFailed
             updateAttachmentsLayout()

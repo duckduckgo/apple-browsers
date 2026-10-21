@@ -29,15 +29,15 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
 
     private let featureFlagger: FeatureFlagger
     private let captureService: AIChatScreenshotCaptureService
-    private let firePixel: (AIChatPixel) -> Void
+    private let pixelFiring: PixelFiring?
 
     /// `captureService` is resolved in the body: a default argument is evaluated off the main actor.
     init(featureFlagger: FeatureFlagger,
          captureService: AIChatScreenshotCaptureService? = nil,
-         firePixel: @escaping (AIChatPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndCount, includeAppVersionParameter: true) }) {
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.featureFlagger = featureFlagger
-        self.captureService = captureService ?? .shared
-        self.firePixel = firePixel
+        self.captureService = captureService ?? NSApp.delegateTyped.aiChatScreenshotCaptureService
+        self.pixelFiring = pixelFiring
     }
 
     var screenshotModes: [String]? {
@@ -80,7 +80,7 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
                                                   cancellingOn: tabChanged ?? Empty().eraseToAnyPublisher())
         // The page reports taken and its own processing failures; native reports what fails before the page sees an image.
         if let reason = result.failureReason {
-            firePixel(.aiChatNtpScreenshotFailed(reason: reason))
+            pixelFiring?.fire(AIChatPixel.aiChatNtpScreenshotFailed(reason: reason), frequency: .dailyAndCount)
         }
 
         switch result {

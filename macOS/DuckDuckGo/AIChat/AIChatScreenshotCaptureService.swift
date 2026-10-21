@@ -19,12 +19,10 @@
 import AppKit
 import Combine
 
-/// The one entry point for Duck.ai screenshots on every surface. One capture at a time, app-wide;
-/// captures stay in memory and never reach disk or the pasteboard.
+/// The one entry point for Duck.ai screenshots on every surface. `AppDelegate` owns the instance every surface
+/// uses, so there is one capture at a time, app-wide; captures stay in memory and never reach disk or the pasteboard.
 @MainActor
 final class AIChatScreenshotCaptureService {
-
-    static let shared = AIChatScreenshotCaptureService()
 
     private(set) var isCapturing = false
     private let permission: AIChatScreenRecordingPermission

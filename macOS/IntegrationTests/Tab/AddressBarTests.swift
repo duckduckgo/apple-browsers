@@ -164,8 +164,12 @@ class AddressBarTests: XCTestCase {
         autoreleasepool {
             window?.close()
             window = nil
-            // A pinned tab left behind keeps later tests' last window from closing
-            Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: TabCollection())
+            // Pinned tabs are shared by all windows: a pinned tab left behind keeps later tests' last window open,
+            // and the history the closed pinned tabs keep for the Fire button ends up in later tests' current window
+            let pinnedTabs = Application.appDelegate.pinnedTabsManager.tabCollection
+            pinnedTabs.removeAll()
+            pinnedTabs.localHistoryOfRemovedTabs = []
+            pinnedTabs.removedTabDomains = []
             schemeHandler = nil
             contentBlockingMock = nil
             privacyFeaturesMock = nil

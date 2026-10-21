@@ -68,7 +68,7 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
 
     @Generable
     struct Suggestions {
-        @Guide(description: "Requests the user could send to an AI assistant about the content, each at most six words, without quotes",
+        @Guide(description: "Requests the user could send to an AI assistant about the content, each at most five words, without quotes",
                .count(3))
         var requests: [String]
     }

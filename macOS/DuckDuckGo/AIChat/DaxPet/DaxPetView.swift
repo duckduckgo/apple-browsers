@@ -119,28 +119,100 @@ private struct SuggestionChips: View {
     let onSelect: (String) -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(suggestions, id: \.self) { suggestion in
-                Button {
-                    onSelect(suggestion)
-                } label: {
-                    Text(suggestion)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(Color(designSystemColor: .surfacePrimary)))
-                        .overlay(Capsule().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .help(suggestion)
+        Group {
+            if #available(macOS 13, *) {
+                ChipRows(spacing: 6, maximumRows: 2) { chips(suggestions) }
+            } else {
+                VStack(spacing: 6) { chips(Array(suggestions.prefix(2))) }
             }
         }
-        .frame(maxWidth: DaxPetView.Metrics.composingWidth)
+        .frame(width: DaxPetView.Metrics.composingWidth, height: DaxPetView.Metrics.bubbleAreaHeight, alignment: .bottom)
         .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
+    }
+
+    private func chips(_ suggestions: [String]) -> some View {
+        ForEach(suggestions, id: \.self) { suggestion in
+            Button {
+                onSelect(suggestion)
+            } label: {
+                Text(suggestion)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color(designSystemColor: .surfacePrimary)))
+                    .overlay(Capsule().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .help(suggestion)
+        }
+    }
+}
+
+/// Lays chips out at their full width, wrapping onto centred rows from the bottom up; chips that don't fit
+/// in `maximumRows` are left out rather than squeezed.
+@available(macOS 13, *)
+private struct ChipRows: Layout {
+    let spacing: CGFloat
+    let maximumRows: Int
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = rows(for: subviews, width: proposal.width ?? .infinity)
+        return CGSize(width: rows.map(\.width).max() ?? 0, height: height(of: rows))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = rows(for: subviews, width: bounds.width)
+        var y = bounds.maxY - height(of: rows)
+        for row in rows {
+            var x = bounds.midX - row.width / 2
+            for index in row.indices {
+                let size = chipSize(subviews[index], width: bounds.width)
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+        // Left out: a zero size still draws the chip's padding, so out of sight it goes.
+        let placed = Set(rows.flatMap(\.indices))
+        for index in subviews.indices where !placed.contains(index) {
+            subviews[index].place(at: CGPoint(x: bounds.minX - 10_000, y: bounds.minY), proposal: .unspecified)
+        }
+    }
+
+    /// A chip as wide as its text, but never wider than the room there is.
+    private func chipSize(_ subview: LayoutSubview, width: CGFloat) -> CGSize {
+        let ideal = subview.sizeThatFits(.unspecified)
+        return ideal.width <= width ? ideal : subview.sizeThatFits(ProposedViewSize(width: width, height: ideal.height))
+    }
+
+    private func rows(for subviews: Subviews, width: CGFloat) -> [Row] {
+        var rows: [Row] = []
+        for index in subviews.indices {
+            let size = chipSize(subviews[index], width: width)
+            if var row = rows.last, row.width + spacing + size.width <= width {
+                row.indices.append(index)
+                row.width += spacing + size.width
+                row.height = max(row.height, size.height)
+                rows[rows.count - 1] = row
+            } else if rows.count < maximumRows {
+                rows.append(Row(indices: [index], width: size.width, height: size.height))
+            }
+        }
+        return rows
+    }
+
+    private func height(of rows: [Row]) -> CGFloat {
+        rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
     }
 }
 

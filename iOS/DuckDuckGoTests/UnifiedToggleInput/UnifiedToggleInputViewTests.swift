@@ -936,6 +936,21 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(placeholderLabel.center.y, textView.center.y, accuracy: 1)
     }
 
+    func test_collapsedAIChatPlaceholderWithoutButtonsHasMatchingTrailingPadding() throws {
+        let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: handler)
+        sut.setVoiceButtonAppearance(.hidden, animated: false)
+        prepareForFitting(sut, height: 48)
+        applyFittingHeight(to: sut, height: 48)
+
+        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        let leadingPadding = placeholderLabel.frame.minX
+        let trailingPadding = sut.bounds.width - placeholderLabel.frame.maxX
+
+        XCTAssertEqual(leadingPadding, 20, accuracy: 1)
+        XCTAssertEqual(trailingPadding, leadingPadding, accuracy: 1)
+    }
+
     func test_expandedSearchPlaceholderStaysVerticallyCenteredInPill() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         handler.setToggleState(.search)

@@ -481,6 +481,8 @@ class SwitchBarTextEntryView: UIView {
         buttonsCenterYConstraint = buttonsCenterY
         let placeholderTopConstraint = placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset)
         let placeholderCenterYConstraint = placeholderLabel.centerYAnchor.constraint(equalTo: textView.centerYAnchor)
+        let placeholderTrailingToButtons = placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor)
+        placeholderTrailingToButtons.priority = .defaultHigh
         self.placeholderTopConstraint = placeholderTopConstraint
         self.placeholderCenterYConstraint = placeholderCenterYConstraint
         placeholderTopConstraint.isActive = false
@@ -499,8 +501,11 @@ class SwitchBarTextEntryView: UIView {
             placeholderCenterYConstraint,
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: placeholderHorizontalOffset),
             // Trail to the buttons so a visible stop / search-go-to / voice button truncates the
-            // placeholder. When `.noButtons`, buttonsView has zero width so this is a no-op.
-            placeholderLabel.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor),
+            // placeholder. With no buttons, buttonsView keeps only its 8pt stack margin, so the
+            // cap below mirrors the leading offset and a long placeholder can't touch the edge.
+            placeholderTrailingToButtons,
+            placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: buttonsView.leadingAnchor),
+            placeholderLabel.trailingAnchor.constraint(lessThanOrEqualTo: textView.trailingAnchor, constant: -placeholderHorizontalOffset),
 
             // Pin to the top row so the button stays top-right when the field grows multi-line.
             buttonsCenterY

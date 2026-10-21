@@ -98,6 +98,8 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
             sheetParent.beginSheet(panel)
         } else {
             panel.level = .modalPanel
+            // Like the prompt bar it serves, so it opens on a full-screen app's Space too.
+            panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             panel.hidesOnDeactivate = false
             panel.center()
             panel.makeKeyAndOrderFront(nil)

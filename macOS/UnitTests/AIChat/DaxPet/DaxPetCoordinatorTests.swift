@@ -60,4 +60,39 @@ final class DaxPetCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(characterFrame(at: corrected).minX, secondScreen.minX, accuracy: 0.001)
     }
+
+    // MARK: - Duck.ai answers
+
+    func testWhenAPageAnswersThenTheAnswerStartsAndFinishes() {
+        var tracker = DaxAnswerTracker()
+        let page = NSObject()
+
+        XCTAssertEqual(tracker.update(.loading, on: page), .started)
+        XCTAssertNil(tracker.update(.streaming, on: page))
+        XCTAssertEqual(tracker.update(.ready, on: page), .finished(succeeded: true))
+    }
+
+    func testWhenAPageIsReadyWithoutHavingAnsweredThenNothingHappens() {
+        var tracker = DaxAnswerTracker()
+
+        XCTAssertNil(tracker.update(.ready, on: NSObject()))
+    }
+
+    func testWhenTwoPagesAnswerThenTheAnswerFinishesWithTheLastOne() {
+        var tracker = DaxAnswerTracker()
+        let first = NSObject(), second = NSObject()
+
+        XCTAssertEqual(tracker.update(.streaming, on: first), .started)
+        XCTAssertNil(tracker.update(.streaming, on: second))
+        XCTAssertNil(tracker.update(.ready, on: first))
+        XCTAssertEqual(tracker.update(.ready, on: second), .finished(succeeded: true))
+    }
+
+    func testWhenAPageFailsThenTheAnswerFinishesUnsuccessfully() {
+        var tracker = DaxAnswerTracker()
+        let page = NSObject()
+        _ = tracker.update(.startStreamNewPrompt, on: page)
+
+        XCTAssertEqual(tracker.update(.error, on: page), .finished(succeeded: false))
+    }
 }

@@ -35,11 +35,21 @@ final class DaxPetCoordinator: NSObject {
     private var enabledCancellable: AnyCancellable?
     private var pointerTimer: Timer?
     private var isPointerOverCharacter = false
+    private let notificationCenter: NotificationCenter
+    private let isBrowserActive: () -> Bool
+    private var responseStateCancellable: AnyCancellable?
+    private var answers = DaxAnswerTracker()
 
-    init(preferences: DaxPetPreferences, persistor: DaxPetPreferencesPersistor, submitter: DaxPetPromptSubmitting) {
+    init(preferences: DaxPetPreferences,
+         persistor: DaxPetPreferencesPersistor,
+         submitter: DaxPetPromptSubmitting,
+         notificationCenter: NotificationCenter = .default,
+         isBrowserActive: @escaping () -> Bool = { NSApp.isActive }) {
         self.preferences = preferences
         self.persistor = persistor
         self.submitter = submitter
+        self.notificationCenter = notificationCenter
+        self.isBrowserActive = isBrowserActive
     }
 
     func start() {
@@ -80,6 +90,7 @@ final class DaxPetCoordinator: NSObject {
 
         self.window = window
         self.model = model
+        observeAnswers()
 
         let position = initialPosition()
         window.setFrameOrigin(NSPoint(x: (position.x - DaxPetView.Metrics.windowSize.width / 2).rounded(), y: position.y))
@@ -89,6 +100,8 @@ final class DaxPetCoordinator: NSObject {
     }
 
     private func dismiss() {
+        responseStateCancellable = nil
+        answers = DaxAnswerTracker()
         model?.endComposing()
         window?.orderOut(nil)
         window?.close()
@@ -96,6 +109,28 @@ final class DaxPetCoordinator: NSObject {
         model = nil
         pointerTimer?.invalidate()
         pointerTimer = nil
+    }
+
+    // MARK: - Duck.ai answers
+
+    private func observeAnswers() {
+        responseStateCancellable = notificationCenter.publisher(for: .aiChatResponseStateChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let status = notification.userInfo?[AIChatNotificationUserInfoKey.responseStatus] as? AIChatStatusValue else { return }
+                self?.responseStateChanged(to: status, on: notification.object as AnyObject?)
+            }
+    }
+
+    private func responseStateChanged(to status: AIChatStatusValue, on page: AnyObject?) {
+        switch answers.update(status, on: page) {
+        case .started:
+            model?.answerStarted()
+        case .finished(let succeeded):
+            model?.answerFinished(succeeded: succeeded, isBrowserActive: isBrowserActive())
+        case nil:
+            break
+        }
     }
 
     /// The window is mostly empty space: it only takes clicks over Dax, his controls and his speech bubble.
@@ -179,6 +214,34 @@ extension DaxPetCoordinator: NSWindowDelegate {
     }
 }
 
+/// Turns Duck.ai pages' response states into one answer at a time: started when the first page starts
+/// answering, finished when the last one is done. A page reporting it's ready without having answered
+/// (e.g. on load) is ignored.
+struct DaxAnswerTracker {
+
+    enum Event: Equatable {
+        case started
+        case finished(succeeded: Bool)
+    }
+
+    private var answeringPages = Set<ObjectIdentifier>()
+
+    mutating func update(_ status: AIChatStatusValue, on page: AnyObject?) -> Event? {
+        let id = page.map(ObjectIdentifier.init) ?? ObjectIdentifier(NSNull.self)
+        switch status {
+        case .startStreamNewPrompt, .startStreamRestartStream, .loading, .streaming:
+            let wasIdle = answeringPages.isEmpty
+            answeringPages.insert(id)
+            return wasIdle ? .started : nil
+        case .ready, .error, .blocked:
+            guard answeringPages.remove(id) != nil, answeringPages.isEmpty else { return nil }
+            return .finished(succeeded: status == .ready)
+        case .unknown:
+            return nil
+        }
+    }
+}
+
 /// Floats above everything, on every Space, without ever activating the browser by itself.
 final class DaxPetWindow: NSPanel {
 
@@ -225,6 +288,10 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     func openDuckAI() {
         aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func showBrowser() {
         NSApp.activate(ignoringOtherApps: true)
     }
 }

@@ -34007,6 +34007,30 @@
         }
       }
     },
+    "duckai.dax-pet.answer-failed" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when Duck.ai couldn't answer the question",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hmm, that didn't work. Want to try again?"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.answer-ready" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when Duck.ai finishes answering while the browser is in the background. Clicking Dax brings the browser forward",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your answer is ready! Click me to see it."
+          }
+        }
+      }
+    },
     "duckai.dax-pet.ask" : {
       "comment" : "Tooltip of the button that opens the field to ask Dax, the DuckDuckGo mascot, a question",
       "extractionState" : "extracted_with_value",

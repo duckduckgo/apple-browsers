@@ -23,6 +23,8 @@ import Combine
 protocol DaxPetPromptSubmitting {
     func submit(prompt: String)
     func openDuckAI()
+    /// Brings the browser forward, where Duck.ai's answer is waiting.
+    func showBrowser()
 }
 
 @MainActor
@@ -41,6 +43,14 @@ final class DaxPetViewModel: ObservableObject {
 
     /// How long Dax shows he's on it before Duck.ai takes over the screen.
     var submissionDelay: TimeInterval = 0.7
+    /// How long he waits for Duck.ai to start answering, and then to finish, before he stops thinking.
+    var answerStartTimeout: TimeInterval = 15
+    var answerFinishTimeout: TimeInterval = 120
+
+    /// Waiting on Duck.ai to finish an answer.
+    private(set) var isAwaitingAnswer = false
+    /// An answer finished while the browser was in the background, and Dax is pointing it out.
+    private(set) var hasUnseenAnswer = false
 
     var onHide: (() -> Void)?
     /// Asks the window to take keyboard focus.
@@ -50,6 +60,7 @@ final class DaxPetViewModel: ObservableObject {
 
     private let submitter: DaxPetPromptSubmitting
     private var speechWork: DispatchWorkItem?
+    private var answerTimeoutWork: DispatchWorkItem?
 
     init(submitter: DaxPetPromptSubmitting, character: DaxCharacterView? = nil) {
         self.submitter = submitter
@@ -67,7 +78,12 @@ final class DaxPetViewModel: ObservableObject {
     }
 
     func characterClicked() {
-        if isComposing {
+        if hasUnseenAnswer {
+            hasUnseenAnswer = false
+            say(nil)
+            character.hop()
+            submitter.showBrowser()
+        } else if isComposing {
             endComposing()
         } else {
             startComposing()
@@ -80,6 +96,7 @@ final class DaxPetViewModel: ObservableObject {
 
     func startComposing() {
         guard !isComposing else { return }
+        hasUnseenAnswer = false
         isComposing = true
         character.mood = .listening
         character.wave()
@@ -92,7 +109,7 @@ final class DaxPetViewModel: ObservableObject {
         guard isComposing else { return }
         isComposing = false
         prompt = ""
-        character.mood = .idle
+        character.mood = isAwaitingAnswer ? .thinking : .idle
         character.lookTarget = nil
         say(nil)
     }
@@ -114,10 +131,55 @@ final class DaxPetViewModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + submissionDelay) { [weak self] in
             guard let self else { return }
             submitter.submit(prompt: prompt)
-            character.mood = .idle
-            character.hop()
             say(nil)
+            // He keeps thinking until Duck.ai is done, or gives up if it never says it started.
+            isAwaitingAnswer = true
+            scheduleAnswerTimeout(after: answerStartTimeout)
         }
+    }
+
+    // MARK: - Duck.ai answers
+
+    /// Duck.ai started working on an answer, whoever asked.
+    func answerStarted() {
+        isAwaitingAnswer = true
+        hasUnseenAnswer = false
+        if !isComposing {
+            character.mood = .thinking
+        }
+        scheduleAnswerTimeout(after: answerFinishTimeout)
+    }
+
+    /// Duck.ai is done. If the browser is out of sight, Dax lets you know the answer is in.
+    func answerFinished(succeeded: Bool, isBrowserActive: Bool) {
+        guard isAwaitingAnswer else { return }
+        stopAwaitingAnswer()
+        guard !isComposing else { return }
+        if succeeded {
+            character.hop()
+            if !isBrowserActive {
+                hasUnseenAnswer = true
+                say(UserText.daxPetAnswerReady, for: 8)
+            }
+        } else {
+            say(UserText.daxPetAnswerFailed, for: 4)
+        }
+    }
+
+    private func stopAwaitingAnswer() {
+        answerTimeoutWork?.cancel()
+        answerTimeoutWork = nil
+        isAwaitingAnswer = false
+        if character.mood == .thinking {
+            character.mood = .idle
+        }
+    }
+
+    private func scheduleAnswerTimeout(after delay: TimeInterval) {
+        answerTimeoutWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.stopAwaitingAnswer() }
+        answerTimeoutWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     func openDuckAI() {
@@ -166,7 +228,10 @@ final class DaxPetViewModel: ObservableObject {
         speechWork?.cancel()
         speech = text
         guard text != nil, let duration else { return }
-        let work = DispatchWorkItem { [weak self] in self?.speech = nil }
+        let work = DispatchWorkItem { [weak self] in
+            self?.speech = nil
+            self?.hasUnseenAnswer = false
+        }
         speechWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
     }

@@ -24,6 +24,7 @@ import XCTest
 private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
     var submittedPrompts: [String] = []
     var openDuckAICount = 0
+    var showBrowserCount = 0
     var onSubmit: (() -> Void)?
 
     func submit(prompt: String) {
@@ -33,6 +34,10 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     func openDuckAI() {
         openDuckAICount += 1
+    }
+
+    func showBrowser() {
+        showBrowserCount += 1
     }
 }
 
@@ -107,7 +112,6 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertEqual(model.speech, UserText.daxPetThinking)
         wait(for: [submitted], timeout: 1)
         XCTAssertEqual(submitter.submittedPrompts, ["What's a duck?"])
-        XCTAssertEqual(model.character.mood, .idle)
         XCTAssertNil(model.speech)
     }
 
@@ -177,6 +181,81 @@ final class DaxPetViewModelTests: XCTestCase {
 
         XCTAssertNotNil(first)
         XCTAssertNotEqual(model.heartBurst, first)
+    }
+
+    // MARK: - Duck.ai answers
+
+    func testWhenDuckAIStartsAnsweringThenDaxThinksUntilItIsDone() {
+        model.answerStarted()
+
+        XCTAssertEqual(model.character.mood, .thinking)
+        XCTAssertTrue(model.isAwaitingAnswer)
+
+        model.answerFinished(succeeded: true, isBrowserActive: true)
+
+        XCTAssertEqual(model.character.mood, .idle)
+        XCTAssertFalse(model.isAwaitingAnswer)
+        XCTAssertNil(model.speech)
+    }
+
+    func testWhenTheAnswerIsReadyWithTheBrowserInTheBackgroundThenDaxPointsItOut() {
+        model.answerStarted()
+
+        model.answerFinished(succeeded: true, isBrowserActive: false)
+
+        XCTAssertEqual(model.speech, UserText.daxPetAnswerReady)
+        XCTAssertTrue(model.hasUnseenAnswer)
+    }
+
+    func testWhenDaxIsClickedWithAnUnseenAnswerThenTheBrowserComesForward() {
+        model.answerStarted()
+        model.answerFinished(succeeded: true, isBrowserActive: false)
+
+        model.characterClicked()
+
+        XCTAssertEqual(submitter.showBrowserCount, 1)
+        XCTAssertFalse(model.isComposing)
+        XCTAssertFalse(model.hasUnseenAnswer)
+        XCTAssertNil(model.speech)
+    }
+
+    func testWhenDuckAIFailsThenDaxSaysSo() {
+        model.answerStarted()
+
+        model.answerFinished(succeeded: false, isBrowserActive: true)
+
+        XCTAssertEqual(model.speech, UserText.daxPetAnswerFailed)
+        XCTAssertFalse(model.hasUnseenAnswer)
+    }
+
+    func testWhenAnAnswerFinishesThatDaxNeverSawStartThenHeIgnoresIt() {
+        model.answerFinished(succeeded: true, isBrowserActive: false)
+
+        XCTAssertNil(model.speech)
+        XCTAssertFalse(model.hasUnseenAnswer)
+    }
+
+    func testWhenDuckAIAnswersWhileAPromptIsTypedThenDaxKeepsListeningAndThinksAfterwards() {
+        model.startComposing()
+
+        model.answerStarted()
+        XCTAssertEqual(model.character.mood, .listening)
+
+        model.endComposing()
+        XCTAssertEqual(model.character.mood, .thinking)
+    }
+
+    func testWhenAPromptIsSentThenDaxKeepsThinkingUntilTheAnswerIsIn() {
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        model.startComposing()
+        model.prompt = "What's a duck?"
+
+        model.submit()
+        wait(for: [submitted], timeout: 1)
+
+        XCTAssertEqual(model.character.mood, .thinking)
+        XCTAssertTrue(model.isAwaitingAnswer)
     }
 
     // MARK: - Typing

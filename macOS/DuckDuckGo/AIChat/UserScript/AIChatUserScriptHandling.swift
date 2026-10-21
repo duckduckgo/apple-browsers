@@ -177,6 +177,10 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
     @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
+
+    /// Duck.ai's progress with an answer, sent while `supportsResponseStateReporting` is on. Native
+    /// rebroadcasts it as `aiChatResponseStateChanged`, carrying the source `WKWebView` as `object`.
+    @MainActor func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -1042,6 +1046,17 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? {
         notificationCenter.post(name: .aiChatVoiceSessionEnded, object: message.messageWebView)
+        return nil
+    }
+
+    // MARK: - Response State
+
+    @MainActor
+    func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let status: AIChatStatus = DecodableHelper.decode(from: params) else { return nil }
+        notificationCenter.post(name: .aiChatResponseStateChanged,
+                                object: message.messageWebView,
+                                userInfo: [AIChatNotificationUserInfoKey.responseStatus: status.status])
         return nil
     }
 

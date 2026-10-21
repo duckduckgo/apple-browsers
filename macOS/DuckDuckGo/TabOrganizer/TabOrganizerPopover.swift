@@ -31,6 +31,8 @@ enum TabOrganizerPopover {
         let popover = NSPopover()
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: TabOrganizerView(viewModel: viewModel))
+        // Sized up front: positioning happens before SwiftUI reports its size.
+        popover.contentSize = TabOrganizerView.size
         popover.show(positionedBelow: button)
         current = popover
     }
@@ -219,6 +221,8 @@ extension TabGroupAction {
 
 struct TabOrganizerView: View {
 
+    static let size = NSSize(width: 440, height: 560)
+
     @ObservedObject var viewModel: TabOrganizerViewModel
 
     var body: some View {
@@ -233,7 +237,7 @@ struct TabOrganizerView: View {
             }
         }
         .padding(16)
-        .frame(width: 440, height: 560)
+        .frame(width: Self.size.width, height: Self.size.height)
     }
 
     private var header: some View {

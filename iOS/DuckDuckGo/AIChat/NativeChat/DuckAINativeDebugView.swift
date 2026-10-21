@@ -33,12 +33,26 @@ struct DuckAINativeDebugView: View {
         List {
             Section {
                 LabeledContent("Feature flag", value: settings.isFeatureAvailable ? "On" : "Off, enable duckAINativeMode")
-                Picker("New chats open in", selection: $settings.mode) {
-                    Text("Web").tag(DuckAINativeSettings.Mode.web)
-                    Text("Native").tag(DuckAINativeSettings.Mode.native)
+                Picker("Chat", selection: $settings.routing.chat) {
+                    Text("Web").tag(DuckAIRouting.Chat.web)
+                    Text("Native").tag(DuckAIRouting.Chat.native)
                 }
+                Picker("Suggested prompts", selection: $settings.routing.suggestedPrompts) {
+                    Text("Static").tag(DuckAIRouting.SuggestedPrompts.staticCatalog)
+                    Text("Local model").tag(DuckAIRouting.SuggestedPrompts.localModel)
+                }
+                Picker("Page actions", selection: $settings.routing.pageActions) {
+                    Text("Web").tag(DuckAIRouting.Action.web)
+                    Text("Local").tag(DuckAIRouting.Action.local)
+                }
+                Picker("Selection actions", selection: $settings.routing.selectionActions) {
+                    Text("Web").tag(DuckAIRouting.Action.web)
+                    Text("Local").tag(DuckAIRouting.Action.local)
+                }
+            } header: {
+                Text("Answered by a local model")
             } footer: {
-                Text("Applies to new chats. Open chats keep their mode.")
+                Text("Page and selection actions are Summarize and Translate. Chat covers typed prompts, other suggestions and Duck.ai entry points. Applies to new chats.")
             }
             Section("Try it") {
                 Button("Open native chat") {

@@ -41,6 +41,7 @@ let package = Package(
         .testTarget(name: "DuckAIChatProvidersTests", dependencies: ["DuckAIChatCore", "DuckAIChatProviders"], swiftSettings: v5),
         .testTarget(name: "DuckAIChatUITests", dependencies: ["DuckAIChatUI"], swiftSettings: v5),
         .testTarget(name: "DuckAILocalTasksTests", dependencies: ["DuckAIChatCore", "DuckAIChatProviders", "DuckAILocalTasks"], swiftSettings: v5),
+        .testTarget(name: "DuckAINativeTests", dependencies: ["DuckAINative"], swiftSettings: v5),
         .testTarget(name: "DuckAIEvalsTests", dependencies: ["DuckAIChatCore", "DuckAIChatProviders", "DuckAIEvals"], swiftSettings: v5)
     ]
 )

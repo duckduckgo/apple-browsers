@@ -1003,7 +1003,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         cancelSuggestionSubmission()
         delegate?.aiChatContextualSheetViewController(self, didSelectSelectionSuggestion: selectionAction)
         pixelHandler.fireSuggestionSelected(suggestionId: suggestion.id, pageType: sessionState.viewState.suggestionsPageType)
-        if !bypassesNativeChat, DuckAINativeSettings.shared.opensNewChatsNatively {
+        if !bypassesNativeChat, DuckAINativeSettings.shared.answersNatively(suggestionID: suggestion.id) {
             runSubmission { [weak self] in
                 guard let self else { return true }
                 if await self.deliverSuggestionNatively(suggestion, actsOnSelection: actsOnSelection) { return true }

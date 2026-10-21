@@ -83,6 +83,10 @@ final class CPMAppFailureRecorder: CPMMessagingDiagnosticsProviding {
         return diagnostics
     }
 
+    func recordInterruption() {
+        recorder.recordInterruption()
+    }
+
 }
 
 @available(macOS 15.4, *)
@@ -140,7 +144,7 @@ final class CPMAppNativeHandler: WebExtensionMessageHandler {
 /// The real provider creates the native handler; the wrapper records successful replies and isolates pixel transport.
 @available(macOS 15.4, *)
 @MainActor
-final class CPMAppHandlerProvider: WebExtensionHandlerProviding {
+final class CPMAppHandlerProvider: @preconcurrency WebExtensionHandlerProviding {
     let production: WebExtensionHandlerProvider
     let native: CPMAppNativeRecorder
 

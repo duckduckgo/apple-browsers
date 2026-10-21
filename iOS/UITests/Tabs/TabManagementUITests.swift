@@ -108,6 +108,7 @@ final class TabManagementUITests: UITestCase {
 
     func testWhenTabSwitcherStyleIsChangedThenGridAndListLayoutsAreApplied() {
         XCTContext.runActivity(named: "Open the default grid tab switcher") { _ in
+            app.dismissAddressBarEditing()
             app.openTabSwitcher()
             app.assertTabCount(1)
         }
@@ -142,6 +143,7 @@ final class TabManagementUITests: UITestCase {
 
     func testWhenTabsAreSelectedThenSelectionStateUpdatesAndSelectedTabCanBeClosed() {
         XCTContext.runActivity(named: "Create two tabs") { _ in
+            app.dismissAddressBarEditing()
             app.openNewTab()
             app.openURL("https://privacy-test-pages.site", expecting: "Privacy Test Pages")
             app.openTabSwitcher()
@@ -186,6 +188,7 @@ final class TabManagementUITests: UITestCase {
 
     func testWhenTabIsLongPressedThenSelectionModeStartsWithThatTabSelected() {
         XCTContext.runActivity(named: "Long-press a home tab") { _ in
+            app.dismissAddressBarEditing()
             app.openTabSwitcher()
             app.assertTabCount(1)
             app.tabCell(at: 0).buttons["TabSwitcher.Tab.Open"].press(forDuration: 1)

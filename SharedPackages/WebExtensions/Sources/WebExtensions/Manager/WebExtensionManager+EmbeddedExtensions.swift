@@ -184,6 +184,10 @@ extension WebExtensionManager {
 
             installationStore.add(installedExtension)
             if type == .embedded {
+                // An error notification can arrive while the initial installation is still pending.
+                if let context = context(for: identifier) {
+                    cpmBaseURLPolicy.recordBackgroundLoadFailure(in: context, errors: context.errors)
+                }
                 trackEmbeddedBackgroundStartup(identifier: identifier)
             }
             reportLifecycleEvent(.loaded(identifier: identifier, type: type))

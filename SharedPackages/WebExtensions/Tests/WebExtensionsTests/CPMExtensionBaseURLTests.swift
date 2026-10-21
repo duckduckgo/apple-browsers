@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Persistence
 import XCTest
 import WebKit
 @testable import WebExtensions
@@ -191,9 +192,11 @@ final class CPMExtensionBaseURLTests: XCTestCase {
         let initial = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = identifier
-        policy.prepareForBackgroundFailureReload(of: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+        policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
         let replacement = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
         XCTAssertNotEqual(replacement, initial)
+        policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+        XCTAssertEqual(policy.baseURL(for: identifier, webExtension: webExtension), replacement, "Repeated notifications must not rotate twice")
         let restored = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
         XCTAssertEqual(restored.baseURL(for: identifier, webExtension: webExtension), replacement)
         XCTAssertEqual(store.installedExtensions.first?.uniqueIdentifier, identifier)
@@ -206,9 +209,67 @@ final class CPMExtensionBaseURLTests: XCTestCase {
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = identifier
         for errors: [Error] in [[], [NSError(domain: "other", code: 6)], [NSError(domain: WKWebExtensionContext.errorDomain, code: 1)]] {
-            policy.prepareForBackgroundFailureReload(of: context, errors: errors)
+            policy.recordBackgroundLoadFailure(in: context, errors: errors)
             XCTAssertEqual(policy.baseURL(for: identifier, webExtension: webExtension), initial)
         }
+    }
+
+    func testError6PersistsReplacementForNewStoreAndPolicyWithoutUnloadingContext() async throws {
+        let suite = "com.duckduckgo.cpm-origin-tests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let webExtension = try await webExtension()
+        let replacement: URL
+        do {
+            let store = InstalledWebExtensionStore(storage: defaults.keyedStoring())
+            store.add(installed())
+            let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
+            let initial = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
+            let context = WKWebExtensionContext(for: webExtension)
+            context.uniqueIdentifier = identifier
+            context.baseURL = initial
+            policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+            replacement = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
+            XCTAssertNotEqual(replacement, initial)
+            XCTAssertEqual(context.baseURL, initial, "The current context remains on its original origin")
+            XCTAssertTrue(defaults.synchronize(), "Flush only this test's preferences before recreating its store")
+        }
+        let freshDefaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let restoredStore = InstalledWebExtensionStore(storage: freshDefaults.keyedStoring())
+        let restored = CPMExtensionBaseURLPolicy(installationStore: restoredStore, isEnabled: { true })
+        XCTAssertEqual(restored.baseURL(for: identifier, webExtension: webExtension), replacement)
+        XCTAssertEqual(restoredStore.installedExtensions.first?.uniqueIdentifier, identifier)
+    }
+
+    func testNewContextWithSameInstallationCanRecordAnotherBackgroundFailure() async throws {
+        let policy = CPMExtensionBaseURLPolicy(installationStore: registry(), isEnabled: { true })
+        let webExtension = try await webExtension()
+        let old = WKWebExtensionContext(for: webExtension)
+        old.uniqueIdentifier = identifier
+        let errors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        policy.recordBackgroundLoadFailure(in: old, errors: errors)
+        let first = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
+        let replacement = WKWebExtensionContext(for: webExtension)
+        replacement.uniqueIdentifier = identifier
+        policy.recordBackgroundLoadFailure(in: replacement, errors: errors)
+        let second = try XCTUnwrap(policy.baseURL(for: identifier, webExtension: webExtension))
+        XCTAssertNotEqual(second, first)
+        policy.recordBackgroundLoadFailure(in: old, errors: errors)
+        XCTAssertEqual(policy.baseURL(for: identifier, webExtension: webExtension), second)
+    }
+
+    func testFirstInstallFailureCanBeRecordedAfterRegistryEntryIsWritten() async throws {
+        let store = InstalledWebExtensionStoringMock()
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
+        policy.pendingInstallations[identifier] = .embedded
+        let context = WKWebExtensionContext(for: try await webExtension())
+        context.uniqueIdentifier = identifier
+        let errors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        policy.recordBackgroundLoadFailure(in: context, errors: errors)
+        XCTAssertTrue(store.installedExtensions.isEmpty)
+        store.add(installed())
+        policy.recordBackgroundLoadFailure(in: context, errors: errors)
+        XCTAssertNotNil(store.installedExtensions.first?.cpmOriginIdentifier)
     }
 
     func testBackgroundFailureRotationHonorsRuntimeKillSwitch() async throws {
@@ -220,10 +281,12 @@ final class CPMExtensionBaseURLTests: XCTestCase {
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = identifier
         enabled = false
-        policy.prepareForBackgroundFailureReload(of: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+        policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
         XCTAssertNil(store.installedExtensions.first?.cpmOriginIdentifier)
         enabled = true
         XCTAssertEqual(policy.baseURL(for: identifier, webExtension: webExtension), initial)
+        policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+        XCTAssertNotEqual(policy.baseURL(for: identifier, webExtension: webExtension), initial)
     }
 
     func testBackgroundFailureDoesNotRotateUntrustedOrigin() async throws {
@@ -231,7 +294,7 @@ final class CPMExtensionBaseURLTests: XCTestCase {
         let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
         let context = WKWebExtensionContext(for: try await webExtension())
         context.uniqueIdentifier = identifier
-        policy.prepareForBackgroundFailureReload(of: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+        policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
         XCTAssertNil(store.installedExtensions.first?.cpmOriginIdentifier)
     }
 

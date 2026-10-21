@@ -139,6 +139,10 @@ extension DebugScreensViewModel {
             .view(title: "Bookmarks", { _ in
                 BookmarksDebugRootView()
             }),
+            .view(title: "Favorites", { d in
+                FavoritesDebugView(bookmarksDatabase: d.bookmarksDatabase,
+                                   favoritesDisplayMode: AppDependencyProvider.shared.appSettings.favoritesDisplayMode)
+            }),
             .view(title: "Remote Messaging", { dependencies in
                 RemoteMessagingDebugRootView(remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
             }),

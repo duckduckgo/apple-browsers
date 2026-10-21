@@ -132,6 +132,7 @@
 		986CD5352DE8F4FA00AFA98A /* RemoteMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5342DE8F4FA00AFA98A /* RemoteMessaging */; };
 		986CD5372DE8F50100AFA98A /* RemoteMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5362DE8F50100AFA98A /* RemoteMessaging */; };
 		986CD5392DE8F50400AFA98A /* Configuration in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5382DE8F50400AFA98A /* Configuration */; };
+		2770D4125E3B4DF72172680E /* FavoritesDebugViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3314906A045ECD3B9FD5559 /* FavoritesDebugViewModelTests.swift */; };
 		9876DF2B2DEEE21700E30713 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */; };
 		9876DF2C2DEEE21700E30713 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */; };
 		9876DF2D2DEEE21700E30713 /* MockThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */; };
@@ -520,6 +521,7 @@
 		85F21DAD210F5E32002631A6 /* AtbUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AtbUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9825F9D7293F2DE900F220F2 /* PerformanceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerformanceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		98424AA92CED4F430071C7DB /* WebViewUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebViewUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3314906A045ECD3B9FD5559 /* FavoritesDebugViewModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FavoritesDebugViewModelTests.swift; sourceTree = "<group>"; };
 		9876DF2A2DEEE21700E30713 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
 		98A54A8122AFCB2C00E541F4 /* Instruments.instrdst */ = {isa = PBXFileReference; explicitFileType = com.apple.instruments.instrdst; includeInIndex = 0; path = Instruments.instrdst; sourceTree = BUILT_PRODUCTS_DIR; };
 		98E562FF2DE8AF3100E6E75F /* CombineTestUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombineTestUtilities.swift; sourceTree = "<group>"; };
@@ -1345,6 +1347,7 @@
 		84E341A91E2F7EFB00BDBA6F /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				B3314906A045ECD3B9FD5559 /* FavoritesDebugViewModelTests.swift */,
 				C0DE52010000000000000001 /* MediaCapturePermissionLegacyMatrixTests.swift */,
 				C0DE53010000000000000001 /* MediaCapturePermissionRoutingTests.swift */,
 				C0DE54010000000000000003 /* SitePermissionsPixelHandlerTests.swift */,
@@ -2651,6 +2654,7 @@
 				98E563352DE8AF3100E6E75F /* UserDefaultsExtension.swift in Sources */,
 				98E563362DE8AF3100E6E75F /* JsonTestDataLoader.swift in Sources */,
 				BBF1BDF32EA6333000358243 /* MockWinBackOfferService.swift in Sources */,
+				2770D4125E3B4DF72172680E /* FavoritesDebugViewModelTests.swift in Sources */,
 				98E564BD2DE8F34E00E6E75F /* TimeTraveller.swift in Sources */,
 				652A1E08DFB4460E2E44DEAF /* WebViewInputAccessoryTests.swift in Sources */,
 				586DE183A09495820D56CFE1 /* TabViewControllerFindInPageTests.swift in Sources */,

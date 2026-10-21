@@ -146,7 +146,7 @@ jobs:
             The ${{ matrix.platform }} nightly Smartling job could not be automatically authorized.
             Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}.
             Maximum USD estimate: ${{ steps.submit.outputs.max_usd || 'unavailable' }}.
-            Untranslated strings: ${{ steps.submit.outputs.total_strings || 'unavailable' }}.
+            String translations: ${{ steps.submit.outputs.total_strings && format('{0} across {1} locales', steps.submit.outputs.total_strings, steps.submit.outputs.locales) || 'unavailable' }}.
             Reason: ${{ steps.submit.outputs.reason || 'Localization export or Smartling submission failed' }}.
             Authorized automatically up to: $${{ env.AUTO_AUTHORIZE_MAX_USD }}.
             Commit: ${{ github.sha }}.

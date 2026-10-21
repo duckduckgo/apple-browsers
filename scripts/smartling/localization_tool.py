@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
-from typing import List, Dict
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 from urllib.parse import urlencode
 
@@ -43,7 +43,8 @@ class SubmitResult:
     outcome: str
     job_id: str = ""
     job_name: str = ""
-    total_strings: int = 0
+    total_strings: Optional[int] = None  # Smartling's totalStrings: each string counted once per locale
+    locales: Optional[int] = None
     max_usd: str = ""
     reason: str = ""
     failed: bool = False
@@ -54,6 +55,7 @@ class SubmitResult:
             'job_id': self.job_id,
             'job_name': self.job_name,
             'total_strings': self.total_strings,
+            'locales': self.locales,
             'max_usd': self.max_usd,
             'reason': self.reason,
         }
@@ -472,7 +474,8 @@ async def run_submit(client: SmartlingClient,
         report = await wait_for_estimate(client, report_id, sleep)
         total_strings, max_usd = parse_estimate(report)
         log(
-            f"💵 Estimate: {total_strings} strings, max ${format(max_usd, 'f')} USD "
+            f"💵 Estimate: {total_strings} string translations across {len(locales)} locales, "
+            f"max ${format(max_usd, 'f')} USD "
             f"(authorized automatically up to ${format(auto_authorize_max_usd, 'f')})"
         )
 
@@ -481,7 +484,13 @@ async def run_submit(client: SmartlingClient,
             await wait_for_job_cancellation(client, job_id, process_id, sleep)
             await client.delete_job(job_id)
             log(f"🗑️ Nothing to translate, cancelled and deleted job {job_id}")
-            return SubmitResult(outcome='no_new_strings', job_id=job_id, job_name=job_name)
+            return SubmitResult(
+                outcome='no_new_strings',
+                job_id=job_id,
+                job_name=job_name,
+                total_strings=0,
+                locales=len(locales)
+            )
         if max_usd <= auto_authorize_max_usd:
             await client.authorize_job(job_id)
             log("✅ Authorized")
@@ -490,6 +499,7 @@ async def run_submit(client: SmartlingClient,
                 job_id=job_id,
                 job_name=job_name,
                 total_strings=total_strings,
+                locales=len(locales),
                 max_usd=format(max_usd, 'f')
             )
         log("✋ Over the limit, leaving the job for review")
@@ -498,6 +508,7 @@ async def run_submit(client: SmartlingClient,
             job_id=job_id,
             job_name=job_name,
             total_strings=total_strings,
+            locales=len(locales),
             max_usd=format(max_usd, 'f'),
             reason=f"Maximum USD estimate exceeds {format(auto_authorize_max_usd, 'f')}"
         )
@@ -623,7 +634,8 @@ async def submit_command(args):
     print(f"OUTCOME={result.outcome}")
     print(f"JOB_ID={result.job_id}")
     print(f"JOB_NAME={result.job_name}")
-    print(f"TOTAL_STRINGS={result.total_strings}")
+    print(f"TOTAL_STRINGS={'' if result.total_strings is None else result.total_strings}")
+    print(f"LOCALES={'' if result.locales is None else result.locales}")
     print(f"MAX_USD={result.max_usd}")
     print(f"REASON={result.reason}")
 

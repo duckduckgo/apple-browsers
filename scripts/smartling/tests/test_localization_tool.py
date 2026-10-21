@@ -168,6 +168,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.outcome, 'review_required')
         self.assertEqual(result.job_id, 'job-123')
         self.assertEqual(result.max_usd, '500.01')
+        self.assertEqual((result.total_strings, result.locales), (10, 1))
         self.assertEqual(client.authorized_jobs, [])
 
     async def testWhenEstimateHasNoUSDPriceThenReviewIsRequired(self):
@@ -210,6 +211,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.outcome, 'review_required')
         self.assertEqual(result.job_id, 'pending-job')
         self.assertEqual(result.job_name, 'Nightly iOS - 2026-08-03')
+        self.assertIsNone(result.total_strings)
         self.assertIn('Nightly iOS - 2026-08-03', result.reason)
         self.assertEqual(client.created_jobs, [])
 

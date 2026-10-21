@@ -17,9 +17,9 @@
 //  limitations under the License.
 //
 
+import CoreData
 import Foundation
 @_spi(Testing) import PixelKit
-import PrivacyStats
 import XCTest
 @testable import DuckDuckGo
 
@@ -38,20 +38,20 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         try? FileManager.default.removeItem(at: location)
     }
 
-    func testWhenStoreLoadsThenDatabaseIsUsableAndNoPixelIsFired() async throws {
+    func testWhenStoreLoadsThenDatabaseIsUsableAndNoPixelIsFired() throws {
         let database = try XCTUnwrap(PrivacyStatsDatabase(location: location, pixelFiring: pixelKit))
 
-        try await assertStoreIsUsable(database)
+        try assertStoreIsUsable(database)
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
 
-    func testWhenStoreIsCorruptedThenItIsRecreatedAndPixelIsFired() async throws {
+    func testWhenStoreIsCorruptedThenItIsRecreatedAndPixelIsFired() throws {
         try Data(repeating: 0xAB, count: 4096).write(to: location.appendingPathComponent("PrivacyStats.sqlite"))
 
         // Before the fix, creating PrivacyStats never returned here.
         let database = try XCTUnwrap(PrivacyStatsDatabase(location: location, pixelFiring: pixelKit))
 
-        try await assertStoreIsUsable(database)
+        try assertStoreIsUsable(database)
         XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixelKit.actualFireCalls.first)
         XCTAssertEqual(call.pixel.name, "privacy-stats_database_load_failed")
@@ -72,7 +72,17 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         XCTAssertEqual(pixelKit.actualFireCalls.map(\.frequency), [.dailyAndCount, .dailyAndCount])
     }
 
-    private func assertStoreIsUsable(_ database: PrivacyStatsDatabase) async throws {
-        try await PrivacyStats(databaseProvider: database).clearPrivacyStats().get()
+    private func assertStoreIsUsable(_ database: PrivacyStatsDatabase) throws {
+        let context = database.initializeDatabase().makeContext(concurrencyType: .privateQueueConcurrencyType)
+        var saveError: Error?
+        context.performAndWait {
+            XCTAssertFalse(context.persistentStoreCoordinator?.persistentStores.isEmpty ?? true)
+            do {
+                try context.save()
+            } catch {
+                saveError = error
+            }
+        }
+        if let saveError { throw saveError }
     }
 }

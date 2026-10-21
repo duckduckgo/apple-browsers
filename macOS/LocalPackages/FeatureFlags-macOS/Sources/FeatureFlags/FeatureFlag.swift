@@ -672,6 +672,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// Reader Mode: shows a simplified, readable view of article pages from a button in the address bar.
+    case readerMode
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1109,6 +1112,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
+        case .readerMode:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.readerMode))
         }
     }
 

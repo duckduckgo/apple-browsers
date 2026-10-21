@@ -923,6 +923,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func showCollapsed() {
+        stopInlineVoiceToText()
         keyboardMonitor.disarm()
         let previousDisplayState = displayState
         displayState = duckAISurfaceState(.collapsed)
@@ -1638,10 +1639,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     // MARK: - Inline Voice To Text
 
-    /// The address bar's microphone transcribes speech straight into the field rather than opening voice search.
+    /// The microphone in the address bar or a Duck.ai tab's input transcribes speech straight into the field
+    /// rather than opening voice search.
     var isInlineVoiceToTextAvailable: Bool {
         host == .omnibar
-            && isOmnibarSession
+            && (isOmnibarSession || isAITabState)
             && featureFlagger.isFeatureOn(.inlineVoiceToText)
     }
 
@@ -1667,7 +1669,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
         // The field keeps its caret but gives the keyboard's room to the listening row.
         viewController.softwareKeyboardSuppression = .suppressed
-        if !viewController.isInputFirstResponder {
+        if isAITabState && !isInputPaneExpanded {
+            // A collapsed Duck.ai tab input opens first, as a tap on it would, so the listening row has room.
+            showExpanded(inputMode: inputMode)
+        } else if !viewController.isInputFirstResponder {
             viewController.activateInput()
         }
         viewController.setInlineVoiceListening(true)

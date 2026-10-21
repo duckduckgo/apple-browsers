@@ -4485,6 +4485,70 @@ extension UnifiedToggleInputCoordinatorTests {
         featureFlagger.enabledFeatureFlags = [.inlineVoiceToText]
         XCTAssertTrue(coordinator.isInlineVoiceToTextAvailable)
     }
+
+    func testWhenFlagIsOffInDuckAITabThenMicrophoneDoesNotTranscribeInline() {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(), recognizer: recognizer)
+        coordinator.showExpanded(inputMode: .aiChat)
+
+        coordinator.startInlineVoiceToText()
+
+        XCTAssertTrue(coordinator.isAITabState)
+        XCTAssertFalse(coordinator.isInlineVoiceToTextAvailable)
+        XCTAssertFalse(coordinator.isInlineVoiceToTextActive)
+        XCTAssertEqual(recognizer.startCount, 0)
+    }
+
+    func testWhenFlagIsOnInDuckAITabThenTranscriptIsWrittenIntoTheInputAndSubmittedWhenSpeechFinishes() async {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.inlineVoiceToText]),
+                                                     recognizer: recognizer)
+        coordinator.showExpanded(inputMode: .aiChat)
+
+        coordinator.startInlineVoiceToText()
+        XCTAssertTrue(coordinator.isInlineVoiceToTextActive)
+        XCTAssertTrue(coordinator.viewController.isInlineVoiceListening)
+
+        recognizer.emit("Summarize this chat")
+        await drainMainQueue()
+        XCTAssertEqual(coordinator.currentText, "Summarize this chat")
+
+        recognizer.emit("Summarize this chat please", isFinal: true)
+        await drainMainQueue()
+        XCTAssertFalse(coordinator.isInlineVoiceToTextActive)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "Summarize this chat please")
+        XCTAssertEqual(mockDelegate.submittedTermsAccepted, false)
+    }
+
+    func testWhenDuckAITabInputIsCollapsedThenMicrophoneExpandsItAndListens() {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.inlineVoiceToText]),
+                                                     recognizer: recognizer)
+        coordinator.showCollapsed()
+        XCTAssertFalse(coordinator.isInputPaneExpanded)
+
+        coordinator.startInlineVoiceToText()
+
+        XCTAssertTrue(coordinator.isAITabState)
+        XCTAssertTrue(coordinator.isInputPaneExpanded)
+        XCTAssertTrue(coordinator.isInlineVoiceToTextActive)
+        XCTAssertEqual(coordinator.viewController.softwareKeyboardSuppression, .suppressed)
+        XCTAssertEqual(recognizer.startCount, 1)
+    }
+
+    func testWhenDuckAITabInputCollapsesWhileListeningThenRecordingStops() {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.inlineVoiceToText]),
+                                                     recognizer: recognizer)
+        coordinator.showExpanded(inputMode: .aiChat)
+        coordinator.startInlineVoiceToText()
+
+        coordinator.showCollapsed()
+
+        XCTAssertFalse(coordinator.isInlineVoiceToTextActive)
+        XCTAssertFalse(coordinator.viewController.isInlineVoiceListening)
+        XCTAssertEqual(recognizer.stopCount, 1)
+    }
 }
 
 

@@ -12,9 +12,13 @@ import json
 import asyncio
 import argparse
 import subprocess
+import time
+import traceback
+from contextlib import contextmanager
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import List, Dict
+from decimal import Decimal, InvalidOperation
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 from urllib.parse import urlencode
 
@@ -31,6 +35,30 @@ class Credentials:
     user_id: str
     user_secret: str
     project_id: str
+
+
+@dataclass
+class SubmitResult:
+    """Machine-readable result for automated job submission."""
+    outcome: str
+    job_id: str = ""
+    job_name: str = ""
+    total_strings: Optional[int] = None  # Smartling's totalStrings: each string counted once per locale
+    locales: Optional[int] = None
+    max_usd: str = ""
+    reason: str = ""
+    failed: bool = False
+
+    def as_dict(self) -> Dict:
+        return {
+            'outcome': self.outcome,
+            'job_id': self.job_id,
+            'job_name': self.job_name,
+            'total_strings': self.total_strings,
+            'locales': self.locales,
+            'max_usd': self.max_usd,
+            'reason': self.reason,
+        }
 
 
 # ============================================================================
@@ -106,6 +134,17 @@ class SmartlingClient:
         )
         return data['response']['data']
 
+    async def list_jobs(self, job_name: str, statuses: List[str]) -> List[Dict]:
+        """List jobs whose name contains job_name, in any of the statuses (all when empty)."""
+        params = [('jobName', job_name), ('limit', '100')]
+        params.extend(('translationJobStatus', status) for status in statuses)
+        data = await self._request(
+            'GET',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
+            params=params
+        )
+        return data['response']['data'].get('items', [])
+
     async def get_job_progress(self, job_id: str) -> int:
         """Get job progress percentage."""
         data = await self._request(
@@ -119,6 +158,34 @@ class SmartlingClient:
             'POST',
             f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/authorize',
             json={'localeWorkflows': []}
+        )
+
+    async def cancel_job(self, job_id: str) -> str:
+        """Cancel a translation job and return its process ID."""
+        data = await self._request(
+            'POST',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/cancel',
+            json={'reason': 'No untranslated strings'}
+        )
+        process_url = data['response']['data'].get('url', '')
+        process_id = process_url.rstrip('/').rsplit('/', 1)[-1]
+        if not process_url or not process_id:
+            raise RuntimeError("Smartling cancellation returned no process ID")
+        return process_id
+
+    async def get_job_process_state(self, job_id: str, process_id: str) -> str:
+        """Get an asynchronous job process state."""
+        data = await self._request(
+            'GET',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/processes/{process_id}'
+        )
+        return data['response']['data']['processState']
+
+    async def delete_job(self, job_id: str):
+        """Delete a cancelled translation job."""
+        await self._request(
+            'DELETE',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}'
         )
 
     async def get_project_locales(self) -> List[str]:
@@ -161,6 +228,40 @@ class SmartlingClient:
         )
         return data['response']['data']['status']
 
+    async def generate_cost_estimate(self, job_id: str) -> str:
+        """Start an estimate for unauthorized job content."""
+        data = await self._request(
+            'POST',
+            f'/estimates-api/v2/projects/{self.creds.project_id}/jobs/{job_id}/reports/cost',
+            json={'contentType': 'UNAUTHORIZED'}
+        )
+        return data['response']['data']['reportUid']
+
+    async def get_estimate_status(self, report_id: str) -> str:
+        """Get estimate generation status."""
+        data = await self._request(
+            'GET',
+            f'/estimates-api/v2/projects/{self.creds.project_id}/reports/{report_id}/status'
+        )
+        return data['response']['data']['reportStatus']
+
+    async def get_estimate_report(self, report_id: str) -> Dict:
+        """Get a completed estimate report."""
+        data = await self._request(
+            'GET',
+            f'/estimates-api/v2/projects/{self.creds.project_id}/reports/{report_id}'
+        )
+        report_data = data['response']['data']
+        if 'items' in report_data:
+            matching_reports = [
+                report for report in report_data['items']
+                if report.get('reportUid') == report_id
+            ]
+            if not matching_reports:
+                raise RuntimeError("Completed estimate report was not returned")
+            return matching_reports[0]
+        return report_data
+
     async def get_job_files(self, job_id: str) -> List[str]:
         """Get file URIs in job."""
         data = await self._request(
@@ -190,6 +291,255 @@ class SmartlingClient:
 # ============================================================================
 # CLI Commands
 # ============================================================================
+
+def log(message: str):
+    """Print a progress line for CI logs."""
+    print(f"[smartling] {message}", flush=True)
+
+
+def annotate(level: str, message: str):
+    """Show a notice, warning or error at the top of a GitHub Actions run."""
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        escaped = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+        print(f"::{level}::{escaped}", flush=True)
+
+
+@contextmanager
+def log_group(title: str):
+    """Fold the lines logged inside into one collapsible group on GitHub Actions."""
+    in_actions = os.environ.get('GITHUB_ACTIONS') == 'true'
+    if in_actions:
+        print(f"::group::{title}", flush=True)
+    else:
+        log(f"⏳ {title}")
+    try:
+        yield
+    finally:
+        if in_actions:
+            print("::endgroup::", flush=True)
+
+
+def job_url(client: SmartlingClient, job_id: str) -> str:
+    """Smartling dashboard link for a job."""
+    project_id = client.creds.project_id
+    return f"https://dashboard.smartling.com/app/projects/{project_id}/account-jobs/{project_id}:{job_id}"
+
+
+async def poll_status(get_status, terminal: set, sleep, interval: int, attempts: int = 60) -> str:
+    """Poll until get_status returns a terminal status, logging each change."""
+    started = time.monotonic()
+    last_status = None
+    for _ in range(attempts):
+        status = await get_status()
+        if status != last_status:
+            log(f"Status: {status} ({int(time.monotonic() - started)}s)")
+            last_status = status
+        if status in terminal:
+            return status
+        await sleep(interval)
+    return last_status
+
+
+async def wait_for_batch(client: SmartlingClient, batch_id: str, sleep=asyncio.sleep):
+    """Wait for Smartling to finish ingesting a batch."""
+    failed = {'FAILED', 'COMPLETED_WITH_ERRORS', 'CANCELED', 'CANCELLED'}
+    with log_group(f"Waiting for Smartling to process batch {batch_id}"):
+        status = await poll_status(
+            lambda: client.get_batch_status(batch_id), {'COMPLETED'} | failed, sleep, 5
+        )
+    if status in failed:
+        raise RuntimeError(f"Smartling batch processing ended with status {status}")
+    if status != 'COMPLETED':
+        raise RuntimeError("Smartling batch processing timed out")
+
+
+async def wait_for_estimate(client: SmartlingClient, report_id: str, sleep=asyncio.sleep) -> Dict:
+    """Wait for a Smartling cost estimate."""
+    failed = {'FAILED', 'TIMEOUT', 'NOT_FOUND'}
+    with log_group(f"Waiting for cost estimate {report_id}"):
+        status = await poll_status(
+            lambda: client.get_estimate_status(report_id), {'COMPLETED'} | failed, sleep, 5
+        )
+    if status in failed:
+        raise RuntimeError(f"Smartling estimate ended with status {status}")
+    if status != 'COMPLETED':
+        raise RuntimeError("Smartling cost estimate timed out")
+    return await client.get_estimate_report(report_id)
+
+
+async def wait_for_job_cancellation(client: SmartlingClient,
+                                    job_id: str,
+                                    process_id: str,
+                                    sleep=asyncio.sleep):
+    """Wait until a Smartling job is cancelled."""
+    for _ in range(60):
+        state = await client.get_job_process_state(job_id, process_id)
+        if state == 'FAILED':
+            raise RuntimeError("Smartling job cancellation failed")
+        if state == 'COMPLETED':
+            job = await client.get_job(job_id)
+            if job.get('jobStatus') == 'CANCELLED':
+                return
+        await sleep(2)
+    raise RuntimeError("Smartling job cancellation timed out")
+
+
+def parse_estimate(report: Dict) -> tuple[int, Decimal]:
+    """Return untranslated string count and the maximum USD estimate."""
+    errors = report.get('errors') or []
+    if errors:
+        raise RuntimeError("Smartling estimate contains errors")
+
+    total_strings = int(report.get('totalStrings') or 0)
+    if total_strings == 0:
+        return 0, Decimal('0')
+
+    # A warning (e.g. a missing rate) means the price may leave out some locales or workflows.
+    warnings = report.get('warnings') or []
+    if warnings:
+        details = '; '.join(
+            warning.get('message', str(warning)) if isinstance(warning, dict) else str(warning)
+            for warning in warnings
+        )
+        raise RuntimeError(f"Smartling estimate may be incomplete: {details}")
+
+    usd_prices = []
+    for price in report.get('priceInformation') or []:
+        if price.get('currencyCode') != 'USD' or price.get('priceMax') is None:
+            continue
+        try:
+            usd_prices.append(Decimal(str(price['priceMax'])))
+        except InvalidOperation as error:
+            raise RuntimeError("Smartling returned an invalid USD estimate") from error
+
+    if not usd_prices:
+        raise RuntimeError("Smartling estimate has no maximum USD price")
+    # One USD entry is the job's total. Several could be parts to add up, so don't guess.
+    if len(usd_prices) > 1:
+        raise RuntimeError(f"Smartling estimate has {len(usd_prices)} USD prices, expected one total")
+
+    return total_strings, usd_prices[0]
+
+
+async def run_submit(client: SmartlingClient,
+                     files: List[Path],
+                     job_name: str,
+                     pending_job_prefix: str,
+                     file_uri_prefix: str,
+                     auto_authorize_max_usd: Decimal,
+                     sleep=asyncio.sleep) -> SubmitResult:
+    """Submit files to a new job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd."""
+    job_id = ""
+    try:
+        pending_jobs = await client.list_jobs(
+            pending_job_prefix,
+            ['AWAITING_AUTHORIZATION']
+        )
+        pending_job = next(
+            (
+                job for job in pending_jobs
+                if job.get('jobName', '').startswith(pending_job_prefix)
+            ),
+            None
+        )
+        if pending_job:
+            job_id = pending_job.get('translationJobUid') or pending_job.get('jobUid', '')
+            log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
+            # The run that left this job waiting already opened a review task, so don't open another.
+            return SubmitResult(
+                outcome='pending_review',
+                job_id=job_id,
+                job_name=pending_job['jobName'],
+                reason=f"'{pending_job['jobName']}' is still awaiting authorization, so no new job was created"
+            )
+
+        existing_jobs = await client.list_jobs(job_name, [])
+        existing_job = next(
+            (job for job in existing_jobs if job.get('jobName') == job_name),
+            None
+        )
+        if existing_job:
+            log(f"⏭️ A job named '{job_name}' already exists")
+            return SubmitResult(
+                outcome='skipped_existing_job',
+                job_id=existing_job.get('translationJobUid') or existing_job.get('jobUid', ''),
+                job_name=job_name,
+                reason=f"A job named '{job_name}' already exists"
+            )
+
+        log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+
+        locales = await client.get_project_locales()
+        job_id = await client.create_job(
+            job_name,
+            locales,
+            "Created by localization automation"
+        )
+        log(f"✅ Created job '{job_name}' ({job_id}) for {len(locales)} locales: {job_url(client, job_id)}")
+        file_uris = [f"{file_uri_prefix}/{file_path.name}" for file_path in files]
+        batch_id = await client.create_batch(job_id, file_uris)
+        for file_path, file_uri in zip(files, file_uris):
+            await client.upload_to_batch(batch_id, file_path, file_uri, locales)
+            log(f"📤 Uploaded {file_uri} ({file_path.stat().st_size // 1024} KB)")
+        await wait_for_batch(client, batch_id, sleep)
+
+        report_id = await client.generate_cost_estimate(job_id)
+        report = await wait_for_estimate(client, report_id, sleep)
+        total_strings, max_usd = parse_estimate(report)
+        log(
+            f"💵 Estimate: {total_strings} string translations across {len(locales)} locales, "
+            f"max ${format(max_usd, 'f')} USD "
+            f"(authorized automatically up to ${format(auto_authorize_max_usd, 'f')})"
+        )
+
+        if total_strings == 0:
+            process_id = await client.cancel_job(job_id)
+            await wait_for_job_cancellation(client, job_id, process_id, sleep)
+            await client.delete_job(job_id)
+            log(f"🗑️ Nothing to translate, cancelled and deleted job {job_id}")
+            return SubmitResult(
+                outcome='no_new_strings',
+                job_id=job_id,
+                job_name=job_name,
+                total_strings=0,
+                locales=len(locales)
+            )
+        if auto_authorize_max_usd > 0 and max_usd <= auto_authorize_max_usd:
+            await client.authorize_job(job_id)
+            log("✅ Authorized")
+            return SubmitResult(
+                outcome='authorized',
+                job_id=job_id,
+                job_name=job_name,
+                total_strings=total_strings,
+                locales=len(locales),
+                max_usd=format(max_usd, 'f')
+            )
+        if auto_authorize_max_usd > 0:
+            reason = f"Maximum USD estimate exceeds {format(auto_authorize_max_usd, 'f')}"
+        else:
+            reason = "Automatic authorization is off (limit is 0)"
+        log(f"✋ {reason}, leaving the job for review")
+        return SubmitResult(
+            outcome='review_required',
+            job_id=job_id,
+            job_name=job_name,
+            total_strings=total_strings,
+            locales=len(locales),
+            max_usd=format(max_usd, 'f'),
+            reason=reason
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        log(f"❌ {error}")
+        traceback.print_exc()
+        return SubmitResult(
+            outcome='review_required',
+            job_id=job_id,
+            job_name=job_name if job_id else "",
+            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500],
+            failed=True
+        )
+
 
 def get_git_branch() -> str:
     """Get current git branch name."""
@@ -256,6 +606,55 @@ async def upload_command(args):
         print(f"JOB_ID={job_id}")
         print(f"BATCH_ID={batch_id}")
         print(f"\n🎉 Upload complete! Job ID: {job_id}")
+
+
+async def submit_command(args):
+    """Create a translation job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd."""
+    try:
+        files = [Path(file_path) for file_path in args.files]
+        missing_files = [str(file_path) for file_path in files if not file_path.exists()]
+        if missing_files:
+            raise RuntimeError(f"Missing export files: {', '.join(missing_files)}")
+
+        auto_authorize_max_usd = Decimal(args.auto_authorize_max_usd)
+        log(f"Submitting {len(files)} files as '{args.job_name}' under {args.file_uri_prefix}/")
+        async with SmartlingClient(get_credentials(args)) as client:
+            result = await run_submit(
+                client,
+                files,
+                args.job_name,
+                args.pending_job_prefix,
+                args.file_uri_prefix,
+                auto_authorize_max_usd
+            )
+    except Exception as error:  # pylint: disable=broad-except
+        log(f"❌ {error}")
+        traceback.print_exc()
+        result = SubmitResult(
+            outcome='review_required',
+            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500],
+            failed=True
+        )
+
+    summary = f"{result.job_name or args.job_name}: {result.outcome}"
+    if result.reason:
+        summary += f" ({result.reason})"
+    if result.failed:
+        annotate('error', summary)
+    elif result.outcome in {'review_required', 'pending_review'}:
+        annotate('warning', summary)
+    else:
+        annotate('notice', summary)
+
+    result_path = Path(args.result_file)
+    result_path.write_text(json.dumps(result.as_dict()), encoding='utf-8')
+    print(f"OUTCOME={result.outcome}")
+    print(f"JOB_ID={result.job_id}")
+    print(f"JOB_NAME={result.job_name}")
+    print(f"TOTAL_STRINGS={'' if result.total_strings is None else result.total_strings}")
+    print(f"LOCALES={'' if result.locales is None else result.locales}")
+    print(f"MAX_USD={result.max_usd}")
+    print(f"REASON={result.reason}")
 
 
 async def status_command(args):
@@ -365,6 +764,18 @@ def main():
     upload_parser.add_argument('--job-name', required=True)
     upload_parser.add_argument('--files', nargs='+', required=True)
 
+    # Submit
+    submit_parser = subparsers.add_parser('submit')
+    submit_parser.add_argument('--job-name', required=True)
+    submit_parser.add_argument('--pending-job-prefix', required=True,
+                               help='Skip submission while a job with this name prefix awaits authorization')
+    submit_parser.add_argument('--file-uri-prefix', required=True,
+                               help='Smartling file URIs become <prefix>/<file name>, e.g. main or release/ios/7.200.0')
+    submit_parser.add_argument('--files', nargs='+', required=True)
+    submit_parser.add_argument('--auto-authorize-max-usd', default='500.00',
+                               help='Authorize the job when its maximum USD estimate is at most this amount')
+    submit_parser.add_argument('--result-file', default='submit_result.json')
+
     # Status
     status_parser = subparsers.add_parser('status')
     status_parser.add_argument('--job-id', required=True)
@@ -388,6 +799,7 @@ def main():
     # Run command
     commands = {
         'upload': upload_command,
+        'submit': submit_command,
         'status': status_command,
         'approve': approve_command,
         'download': download_command,

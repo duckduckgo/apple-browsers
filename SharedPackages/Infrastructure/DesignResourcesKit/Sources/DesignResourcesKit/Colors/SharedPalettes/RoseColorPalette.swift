@@ -162,8 +162,6 @@ struct RoseColorPalette: SharedColorPaletteDefinition {
     static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
     static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 
-    static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
-
     static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
     static let buttonsPrimaryDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))

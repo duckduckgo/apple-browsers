@@ -98,9 +98,6 @@ public enum SharedDesignSystemColor {
     case buttonsSecondaryFillText
     case buttonsSecondaryFillTextDisabled
 
-    // Buttons/Color
-    case buttonsWhite
-
     // Container
     case containerFillPrimary
     case containerFillSecondary

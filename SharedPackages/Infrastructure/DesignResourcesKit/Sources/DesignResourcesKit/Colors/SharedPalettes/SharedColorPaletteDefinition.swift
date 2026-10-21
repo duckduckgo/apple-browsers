@@ -96,9 +96,6 @@ protocol SharedColorPaletteDefinition {
     static var buttonsSecondaryFillText: DynamicColor { get }
     static var buttonsSecondaryFillTextDisabled: DynamicColor { get }
 
-    // MARK: - Buttons/Color
-    static var buttonsWhite: DynamicColor { get }
-
     // MARK: - Container Colors
     static var containerFillPrimary: DynamicColor { get }
     static var containerFillSecondary: DynamicColor { get }

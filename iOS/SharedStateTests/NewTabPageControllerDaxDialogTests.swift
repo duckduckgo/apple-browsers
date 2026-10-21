@@ -55,7 +55,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         flowProvider = MockOnboardingFlowProvider()
         tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
 
-        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true })
+        let homePageConfiguration = HomePageConfiguration(remoteMessagingStore: MockRemoteMessagingStore(), subscriptionDataReporter: MockSubscriptionDataReporter(), isStillOnboarding: { true }, promptExposureReporter: MockPromptExposureReporter())
         hvc = NewTabPageViewController(
             isFocussedState: false,
             dismissKeyboardOnScroll: false,
@@ -134,7 +134,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         }
         let config = HomePageConfiguration(remoteMessagingStore: store,
                                            subscriptionDataReporter: MockSubscriptionDataReporter(),
-                                           isStillOnboarding: { false })
+                                           isStillOnboarding: { false }, promptExposureReporter: MockPromptExposureReporter())
         return (config, store)
     }
 

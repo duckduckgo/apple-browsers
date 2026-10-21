@@ -45,6 +45,7 @@ public enum CrashReportPixelParameter: String {
     case signal
     case first
     case bundle
+    case terminationReason
 }
 
 @available(iOSApplicationExtension, unavailable)
@@ -101,6 +102,7 @@ public final class CrashCollection {
                         .code: "\(diagnostic.exceptionCode ?? -1)",
                         .type: "\(diagnostic.exceptionType ?? -1)",
                         .signal: "\(diagnostic.signal ?? -1)",
+                        .terminationReason: Self.pixelTerminationReason(from: diagnostic.terminationReason),
                     ]
                     if first {
                         params[.first] = "1"
@@ -247,6 +249,31 @@ public final class CrashCollection {
     let crashSender: CrashReportSending
     let crashCollectionStorage: KeyValueStoring
     let crcidManager: CRCIDManager
+
+    // MARK: - Termination Reason
+
+    private static let terminationReasonRegex = try? NSRegularExpression(
+        pattern: #"Namespace\s+([A-Za-z0-9_]{1,32}),\s*Code\s+(0x[0-9A-Fa-f]{1,16}|[0-9]{1,20})"#
+    )
+
+    /// Reduces an `MXCrashDiagnostic.terminationReason` to its namespace and code, e.g.
+    /// "Namespace SPRINGBOARD, Code 0x8badf00d, scene-update watchdog transgression" becomes
+    /// "springboard_0x8badf00d". Only the namespace and code are kept, so free text from the OS
+    /// never reaches the pixel.
+    ///
+    /// - Returns: "-1" when the crash has no termination reason, "unknown" when it can't be parsed.
+    static func pixelTerminationReason(from terminationReason: String?) -> String {
+        guard let terminationReason, !terminationReason.isEmpty else { return "-1" }
+
+        guard let regex = terminationReasonRegex,
+              let match = regex.firstMatch(in: terminationReason, range: NSRange(terminationReason.startIndex..., in: terminationReason)),
+              let namespaceRange = Range(match.range(at: 1), in: terminationReason),
+              let codeRange = Range(match.range(at: 2), in: terminationReason) else {
+            return "unknown"
+        }
+
+        return "\(terminationReason[namespaceRange])_\(terminationReason[codeRange])".lowercased()
+    }
 
     // MARK: - Call Stack Tree Depth Limiting
 

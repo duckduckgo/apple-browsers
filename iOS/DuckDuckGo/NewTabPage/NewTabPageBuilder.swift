@@ -43,6 +43,7 @@ struct NewTabPageBuilder {
     let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider
+    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let subscriptionManager: any SubscriptionManager
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
@@ -51,7 +52,6 @@ struct NewTabPageBuilder {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let daxGreetingProvider: DaxGreetingProviding
     let daxGreetingChanges: AnyPublisher<Void, Never>
-    let updateDaxGreetingAppearance: (DaxGreetingContext.Appearance) -> Void
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
@@ -76,10 +76,10 @@ struct NewTabPageBuilder {
                                           daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
-        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
+        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, aiChatAddressBarExperience, toggleModeStorage, voiceSearchHelper] in
             NewTabPageSearchInputModel.Settings(
                 isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+                isAIChatShortcutEnabled: aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton,
                 isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
                 // Must match the address bar's home-tab mode resolution.
                 defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
@@ -132,8 +132,7 @@ struct NewTabPageBuilder {
         let page = RedesignedNewTabPageViewController(blocks: [
             NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView(
                 model: NewTabPageWelcomeModel(greetingProvider: daxGreetingProvider,
-                                             contextChanges: daxGreetingChanges,
-                                             updateAppearance: updateDaxGreetingAppearance))),
+                                             contextChanges: daxGreetingChanges))),
             NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
             NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(
                 favoritesModel: favoritesModel,

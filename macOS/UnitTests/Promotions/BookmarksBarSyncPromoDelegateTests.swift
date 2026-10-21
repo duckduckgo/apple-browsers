@@ -289,7 +289,7 @@ final class BookmarksBarSyncPromoDelegateTests: XCTestCase {
         sut.syncSetupStarted()
         syncService.authState = .active
 
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
         XCTAssertEqual(recordedResults.map(\.promoID), [PromoServiceFactory.bookmarksBarSyncPromoID])
         await eligibility(of: sut, becomes: false)
     }
@@ -301,7 +301,7 @@ final class BookmarksBarSyncPromoDelegateTests: XCTestCase {
         sut.syncSetupStarted()
         syncService.authState = .addingNewDevice
 
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
         XCTAssertEqual(recordedResults.map(\.promoID), [PromoServiceFactory.bookmarksBarSyncPromoID])
     }
 
@@ -315,7 +315,7 @@ final class BookmarksBarSyncPromoDelegateTests: XCTestCase {
 
         let result = await showTask.value
         XCTAssertEqual(result, .noChange)
-        await recordedResults(become: [.actioned])
+        await recordedResults(become: [.actioned()])
     }
 
     func testWhenSyncTurnsOnWithoutSetupStartedThenNothingIsRecorded() async {

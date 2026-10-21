@@ -141,7 +141,8 @@ struct PromptCoordinationDebugViewModelTests {
             mode: .coordinated,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: policy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
         let lease = try #require(service.tryAcquireRemoteMessageLease(for: "message"))
         #expect(lease.markShown())
@@ -167,6 +168,26 @@ struct PromptCoordinationDebugViewModelTests {
         let reconstructedHistory = PromoQueueRemoteMessageHistoryStore(keyValueStore: keyValueStore)
         #expect(reconstructedHistory.lastConfirmedAppearance == nil)
         _ = lease
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Prompt exposure reset clears the reporter state", .timeLimit(.minutes(1)))
+    func promptExposureReset() {
+        let reporter = MockPromptExposureReporter()
+        let service = PromoCoordinationService(
+            launchSourceManager: MockLaunchSourceManager(),
+            modalPromptCoordinationManager: MockModalPromptCoordinationManager(),
+            mode: .coordinated,
+            promoQueueLeaseArbiter: PromoQueueLeaseArbiter(),
+            promoQueueCooldownPolicy: MockPromoQueueCooldownPolicy(),
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: reporter
+        )
+        let viewModel = PromptCoordinationDebugViewModel(diagnosticsProvider: service, cooldownResetter: service)
+
+        viewModel.resetPromptExposureState()
+
+        #expect(reporter.resetCallCount == 1)
     }
 }
 

@@ -76,6 +76,9 @@ public final class WebExtensionLoader: WebExtensionLoading {
     public init(storageProvider: WebExtensionStorageProviding,
                 isInspectable: Bool = false,
                 permissionController: WebExtensionPermissionController? = nil) {
+        // The loader creates every extension context, so its `errors` are
+        // safe before any of them exists.
+        WebExtensionErrorsSwizzling.install()
         self.storageProvider = storageProvider
         self.isInspectable = isInspectable
         self.permissionController = permissionController
@@ -112,7 +115,9 @@ public final class WebExtensionLoader: WebExtensionLoading {
             for: extensionURL,
             installFolder: storageProvider.extensionsDirectory.appendingPathComponent(identifier))
 
-        let webExtension = try await WKWebExtension(resourceBaseURL: loadableURL)
+        let webExtension = try await WKWebExtension.makeCopyingErrors(
+            at: loadableURL
+        )
 
         let context = try await makeContext(for: webExtension, identifier: identifier)
 
@@ -174,21 +179,25 @@ public final class WebExtensionLoader: WebExtensionLoading {
     /// shared by every extension, so each script checks the page's manifest and returns early in our own.
     /// They are only added once a third-party extension loads, so without one, no page ever runs them. They
     /// must be added before the context loads, because a user script only reaches documents created after it.
+    /// Only macOS adds them: Chrome extensions are supported there, and not on iOS.
     @MainActor
     private func loadWithThirdPartyScripts(_ context: WKWebExtensionContext, identifier: String, into controller: WKWebExtensionController) throws {
+#if os(macOS)
         if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest) {
             installThirdPartyScriptsIfNeeded(on: controller)
             reportDroppedPermissions(of: context.webExtension)
         }
+#endif
 
         do {
-            try controller.load(context)
+            try controller.loadCopyingErrors(context)
         } catch {
             permissionController?.didUnload(identifier)
             throw error
         }
     }
 
+    @available(iOS, unavailable)
     private func installThirdPartyScriptsIfNeeded(on controller: WKWebExtensionController) {
         guard !areThirdPartyScriptsInstalled else { return }
         let userContentController = controller.configuration.webViewConfiguration.userContentController
@@ -199,6 +208,7 @@ public final class WebExtensionLoader: WebExtensionLoading {
     }
 
     /// WebKit drops manifest permissions it does not implement; the compatibility log lists them.
+    @available(iOS, unavailable)
     private func reportDroppedPermissions(of webExtension: WKWebExtension) {
         let webKitPermissions = Set(webExtension.requestedPermissions.union(webExtension.optionalPermissions).map(\.rawValue))
         let dropped = WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: webExtension.manifest,
@@ -223,7 +233,13 @@ public final class WebExtensionLoader: WebExtensionLoading {
             throw WebExtensionLoaderError.failedToFindContextForIdentifier(identifier: identifier)
         }
 
-        try controller.unload(context)
+        // WebKit crashes if an extension's popup finishes closing after the extension unloads. The popup
+        // can belong to the extension's default action or to a tab's own action.
+        context.action(for: nil)?.closePopup()
+        for case let tab as any WKWebExtensionTab in context.openTabs {
+            context.action(for: tab)?.closePopup()
+        }
+        try controller.unloadCopyingErrors(context)
         permissionController?.didUnload(identifier)
     }
 

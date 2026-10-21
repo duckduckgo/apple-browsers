@@ -22,10 +22,11 @@ import PixelKit
 enum NewTabPageCustomizationPixel: PixelKit.Event {
 
     case opened
-    case favoritesToggled
+    case favoritesToggled(enabled: Bool)
     case messagesToggled
-    case keyboardToggled
+    case keyboardToggled(enabled: Bool)
     case allSettingsOpened
+    case stateDaily(favoritesVisible: Bool)
 
     var name: String {
         switch self {
@@ -34,10 +35,38 @@ enum NewTabPageCustomizationPixel: PixelKit.Event {
         case .messagesToggled: return "new-tab-page_customization_messages_toggled"
         case .keyboardToggled: return "new-tab-page_customization_keyboard_toggled"
         case .allSettingsOpened: return "new-tab-page_customization_all_settings_opened"
+        case .stateDaily: return "new-tab-page_redesign_state"
         }
     }
 
-    var parameters: [String: String]? { nil }
+    var parameters: [String: String]? {
+        switch self {
+        case .favoritesToggled(let enabled), .keyboardToggled(let enabled):
+            return ["enabled": String(enabled)]
+        case .stateDaily(let favoritesVisible):
+            return ["favorites_visible": String(favoritesVisible)]
+        case .opened, .messagesToggled, .allSettingsOpened:
+            return nil
+        }
+    }
+
     var standardParameters: [PixelKitStandardParameter]? { nil }
     var namePrefix: PixelKitNamePrefix { .none }
+}
+
+struct NewTabPageCustomizationStateReporter {
+
+    private let persistor: NewTabPageCustomizationPersisting
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(persistor: NewTabPageCustomizationPersisting = NewTabPageCustomizationStore(),
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.persistor = persistor
+        self.pixelFiring = pixelFiring
+    }
+
+    func fireDailyState() {
+        pixelFiring?.fire(NewTabPageCustomizationPixel.stateDaily(favoritesVisible: persistor.isFavoritesSectionVisible),
+                          frequency: .daily)
+    }
 }

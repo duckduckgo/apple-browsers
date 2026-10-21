@@ -1050,11 +1050,11 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}
     func fireFireButtonConfirmed() {}
-    func fireAddressBarMenuShown() {}
-    func fireAddressBarMenuNewChatSelected() {}
-    func fireAddressBarMenuAskAboutPageSelected() {}
-    func fireAddressBarMenuAskAboutSearchSelected() {}
-    func fireAddressBarMenuRecentChatsSelected() {}
+    func fireAddressBarMenuShown(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuNewChatSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuAskAboutPageSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuAskAboutSearchSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuRecentChatsSelected(source: DuckAIMenuSource) {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() {}

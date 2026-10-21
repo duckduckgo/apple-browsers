@@ -620,16 +620,19 @@ final class BrowserToolbarView: UIView {
         }
     }
 
-    func setOmnibarView(_ view: UIView?, height: CGFloat) {
+    /// Hosts `view` in the omnibar container, or detaches the hosted omnibar when `view` is nil.
+    /// - Returns: Whether `view` is hosted in the container afterwards.
+    @discardableResult
+    func setOmnibarView(_ view: UIView?, height: CGFloat) -> Bool {
         endOmnibarSwipe()
         isOmnibarMorphing = false
         buttonRowCollapseProgress = 0
-        
+
         guard let view else {
             hostedOmnibarView?.removeFromSuperview()
             hostedOmnibarView = nil
             applyOmnibarDetachmentPose()
-            return
+            return false
         }
         
         omnibarHeightConstraint.constant = height
@@ -638,9 +641,16 @@ final class BrowserToolbarView: UIView {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.isUserInteractionEnabled = true
         (view as? DefaultOmniBarView)?.safeAreaManagedByContainer = false
-        if hostedOmnibarView !== view || view.superview !== omnibarContainer {
+        if !isHostingOmnibarView(view) {
             hostedOmnibarView?.removeFromSuperview()
             omnibarContainer.addSubview(view)
+            // Activating the attachment constraints throws if the view is no longer in the container,
+            // e.g. when a hierarchy callback triggered by `addSubview` re-hosted it elsewhere.
+            guard view.superview === omnibarContainer else {
+                hostedOmnibarView = nil
+                applyOmnibarDetachmentPose()
+                return false
+            }
             hostedOmnibarView = view
 
             NSLayoutConstraint.activate([
@@ -653,6 +663,7 @@ final class BrowserToolbarView: UIView {
         
         updateCornerStyle()
         scheduleHostedOmnibarMaterialRefresh()
+        return true
     }
 
     func prepareForOmnibarDetachment() {
@@ -722,7 +733,7 @@ final class BrowserToolbarView: UIView {
     }
 
     func isHostingOmnibarView(_ view: UIView) -> Bool {
-        hostedOmnibarView === view
+        hostedOmnibarView === view && view.superview === omnibarContainer
     }
 
     func beginOmnibarSwipe(with incomingView: UIView) {
@@ -1121,7 +1132,12 @@ final class BrowserToolbarView: UIView {
         appliedMaterialInterfaceStyle = nil
         let legacyBackgroundColor: UIColor = isLegacyBackgroundTransparent ? .clear : ThemeManager.shared.currentTheme.barBackgroundColor
         let updates = {
-            self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
+            if #available(iOS 26.0, *) {
+                // Liquid Glass already provides a shadow; avoid compositing another dynamic shadow.
+                self.materialBackgroundView.layer.shadowOpacity = 0
+            } else {
+                self.materialBackgroundView.layer.shadowOpacity = self.isFloatingStyleEnabled ? 0.12 : 0
+            }
             self.materialBackgroundView.effect = self.isFloatingStyleEnabled ? self.materialEffect() : nil
             self.materialBackgroundView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor
             self.materialBackgroundView.contentView.backgroundColor = self.isFloatingStyleEnabled ? .clear : legacyBackgroundColor

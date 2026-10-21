@@ -35,7 +35,7 @@ struct MultiTabAttachmentCandidate: Equatable {
     }
 }
 
-/// Reads metadata from the source sheet's browsing mode without materializing tab controllers.
+/// Reads metadata from the source tab's browsing mode without materializing tab controllers.
 @MainActor
 struct MultiTabAttachmentSource {
     let currentTabID: TabUID

@@ -38,8 +38,9 @@ Copy the run descriptor URL from the producer job summary. In a fresh directory:
 RUN_URL='https://<test-build-prefix>/<revision>/run-review.json'
 curl -fL "${RUN_URL%/*}/run-ui-tests.py" -o runner.py
 python3 runner.py download "$RUN_URL" --output run
-python3 run/ui-tests/Scripts/artifact.py run run/ui-tests \
-  --only AddressBarUrlEditingTests
+python3 run/ui-tests/Scripts/prepare-host.py --result readiness
+python3 run/ui-tests/Scripts/with-keychain.py --result keychain-session -- \
+  python3 run/ui-tests/Scripts/artifact.py run run/ui-tests --only AddressBarUrlEditingTests
 ```
 
 Use `--suite performance`, `--suite sync`, or `--suite sync-appstore` for other suites;
@@ -49,7 +50,10 @@ for Sync tests that require it. Results include xcresult bundles, xcodebuild/ser
 summaries; zero executed tests, all skipped tests and missing result bundles fail the command.
 
 The Mac needs a full locally compatible Xcode, Python 3, an unlocked GUI login and working developer
-UI automation. Xcode's first-launch components must be installed. No Screen Sharing is required by
+UI automation. Xcode's first-launch components must be installed. `prepare-host.py` builds a tiny
+independent probe with that Xcode, launches its own app, clicks and checks an accessibility value.
+It saves its xcresult and log, and rejects zero/skipped/failed execution even if old xcodebuild exits
+zero. This qualification uses no Swift packages and leaves the Review profile alone. No Screen Sharing is required by
 the launcher: commands run over SSH against the existing console session. Pass
 `--xcode /Applications/Xcode13.4.1.app` if xcode-select points elsewhere.
 
@@ -57,10 +61,16 @@ Check `/usr/bin/automationmodetool` when provisioning a dedicated CI Mac. Apple'
 `automationmodetool enable-automationmode-without-authentication` configures unattended activation
 and requires administrator authentication in the shell (`man automationmodetool`). Do this only
 on the dedicated test environment. A `ready` Virfield developer lease does not prove UI-test
-readiness: qualify a real XCUITest before unattended use. In the 2026-10-21 validation, fresh
-Monterey and Sonoma developer profiles still timed out enabling automation after this configuration;
-loading the bundle successfully did not establish successful UI execution. `--gui` is an optional
+readiness: qualify a real XCUITest before unattended use. The native probe has been executed on
+Monterey/Xcode 13.4.1 and Sonoma/Xcode 16.2. A loader check alone does not establish UI execution.
+`--gui` is an optional
 Terminal console launcher, not an automation permission grant.
+
+On Sonoma, the portable workload uses the installed Xcode 16 XCTest and the Swift adapter instead
+of the producer's XCTest runtime. Whole classes and retry behavior are retained there. This keeps
+the OS and test service/runtime combination used by the earlier CI while sharing the compiled
+test bundle. Newer hosts use the packaged runtime. Qualify both architectures when changing this
+selection; an Intel Sonoma pass does not establish the result on an ARM runner.
 
 ## Monterey
 
@@ -73,12 +83,19 @@ is checked before app state is touched. Application/test sources and package gra
 on Monterey.
 
 The old runtime runs one method per xcodebuild process because its automation event queue can
-become unusable across methods. A run tracks classes and enables the full reset only for the first
+become unusable across methods. The owned app is terminated between those processes; its persisted
+class state is retained. A run tracks classes and enables the full reset only for the first
 method of each class. Class fixture setup still runs in each fresh process. This costs process startup
 and produces one xcresult per method. A legacy method is limited to five minutes; modern batches
 use `--timeout` (default one hour) and retain retry-on-failure behavior. Changes in compiler/XCTest
 symbols require revalidating the adapter; this is a compatibility layer, not an Apple guarantee
 that arbitrary Xcode versions can exchange UI test bundles.
+
+The autocomplete class fixture writes its persisted preference before app launch on Monterey:
+Xcode 13's accessibility query for that Settings checkbox can hang before the test method starts.
+The assertions in editing tests still run against the application UI. Monterey uses XCTest's
+interruption monitor for permission prompts; it avoids the polling timer's nested event synthesis,
+which Xcode 13 cannot safely perform while another keyboard/mouse event is pending.
 
 ## Virfield and a rented Mac mini
 
@@ -95,8 +112,15 @@ python3 macOS/UITests/Helpers/ui-tests/remote.py monterey-mini "$RUN_URL" \
   --xcode /Applications/Xcode13.4.1.app --only AddressBarUrlEditingTests
 ```
 
-The launcher uses a unique remote directory, uses the logged-in GUI session through SSH and fetches
-results even after test failure. It does not provision machines, disable host-key checks, reset an
+The launcher uses a unique remote directory, qualifies UI Automation with the native probe, uses
+the logged-in GUI session through SSH and fetches readiness/test results even after test failure.
+It gives the workload a disposable keychain instead of reading personal login items. Class setup
+unlocks that keychain in the GUI audit session as well as the launcher's SSH session: an SSH-only
+unlock can leave the sandboxed app waiting for a password before it creates a window. The wrapper
+restores the original default/search list after failure or success, removes only its own temporary
+keychain and deletes its password file before results are fetched. Run one UI workload per account.
+`--preflight-only` checks bundle loading without running the probe or application.
+It does not provision machines, disable host-key checks, reset an
 OS or release leases. Use a dedicated test account/profile and run only one UI session per Mac.
 Virfield guests and physical hosts use the same protocol once a lease is ready.
 
@@ -105,6 +129,15 @@ That announcement is from 2023; confirm current Intel/M1 Monterey stock, full Xc
 admin/SSH and an interactive desktop before renting. Current stock is not established by that
 article. [MacStadium offers dedicated Macs](https://macstadium.com/pricing), but Monterey inventory
 also requires confirmation. Do not choose new hardware that cannot boot Monterey.
+
+## Verified execution
+
+The current candidate passed the native UI Automation probe on Monterey ARM/Xcode 13.4.1 and
+Sonoma Intel/Xcode 16.2. On Monterey, AddressBarSearchQueryEditingTests executed 26/26 methods
+on the first attempt, with one class reset followed by 25 methods retaining the class profile.
+Sonoma executed PrintingTests 7/7 with its installed XCTest 16, then the search-editing class
+and SaveCredentials regression test together passed 27/27. These are bounded qualification
+runs, not a full-suite or ARM Sonoma compatibility guarantee. Full CI remains required.
 
 ## Validation
 

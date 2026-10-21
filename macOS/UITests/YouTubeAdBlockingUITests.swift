@@ -120,9 +120,11 @@ final class YouTubeAdBlockingUITests: UITestCase {
 
     func testYouTubeAdBlockButtonShowsContingencyMessage_whenRemotelyDisabled() throws {
         try skipIfUnsupported()
+        try clearYouTubeAdBlockingEnabledDefault()
         app = XCUIApplication.setUp(featureFlags: [
             "webExtensions": true,
-            "adBlockingExtension": false
+            "adBlockingExtension": false,
+            "adBlockingExtensionEnabledByDefault": true
         ])
         app.enforceSingleWindow()
         app.navigateToYouTubeVideo("dQw4w9WgXcQ")

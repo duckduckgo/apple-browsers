@@ -20,12 +20,36 @@ if [[ "$console_user" != "$(id -un)" ]]; then
 fi
 mkdir -p "$work"
 cd "$work"
+mkdir host-readiness
 umask 077
 __RUNTIME_ENVIRONMENT__
 trap 'rm -f runtime-environment.json' EXIT
 curl --fail --location --silent --show-error "${url%/*}/run-ui-tests.py" -o runner.py
 python3 runner.py download "$url" --output payload
-python3 payload/ui-tests/Scripts/artifact.py run payload/ui-tests --environment-file runtime-environment.json "$@" 2>&1 | tee run.log
+mkdir -p payload/ui-tests/Results
+: > run.log
+readiness_command=(python3 payload/ui-tests/Scripts/prepare-host.py --result host-readiness/probe)
+preflight=false
+for ((index=1; index<=$#; index++)); do
+    argument="${!index}"
+    if [[ "$argument" == --xcode ]]; then
+        next=$((index+1))
+        readiness_command+=(--xcode "${!next}")
+    elif [[ "$argument" == --xcode=* ]]; then
+        readiness_command+=("$argument")
+    elif [[ "$argument" == --preflight-only ]]; then
+        preflight=true
+    fi
+done
+if [[ "$preflight" == false ]]; then
+    "${readiness_command[@]}"
+fi
+if [[ "$preflight" == true ]]; then
+    python3 payload/ui-tests/Scripts/artifact.py run payload/ui-tests --environment-file runtime-environment.json "$@" 2>&1 | tee run.log
+else
+    python3 payload/ui-tests/Scripts/with-keychain.py --result host-readiness/keychain -- \
+        python3 payload/ui-tests/Scripts/artifact.py run payload/ui-tests --environment-file runtime-environment.json "$@" 2>&1 | tee run.log
+fi
 '''
 
 
@@ -53,7 +77,8 @@ def main():
     finally:
         destination = args.results.resolve() / (args.host.replace('@', '-') + '-' + stamp)
         destination.mkdir(parents=True)
-        copied = subprocess.run(['scp'] + options + ['-r', args.host + ':' + remote + '/payload/ui-tests/Results', args.host + ':' + remote + '/run.log', str(destination)])
+        copied = subprocess.run(['scp'] + options + ['-r', args.host + ':' + remote + '/payload/ui-tests/Results',
+                                                     args.host + ':' + remote + '/host-readiness', args.host + ':' + remote + '/run.log', str(destination)])
         print('Local results: ' + str(destination), flush=True)
         print('Remote workspace: ' + args.host + ':~/' + remote, flush=True)
     return return_code or copied.returncode

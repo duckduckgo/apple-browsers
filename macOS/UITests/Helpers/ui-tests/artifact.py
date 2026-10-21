@@ -202,10 +202,15 @@ def download(args):
 def legacy_host(root, target, developer, env):
     original = root / target['TestHostPath'].replace('__TESTROOT__/', '')
     original_bundle = original / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest')
-    if minimum_os(binary(original)) <= tuple(map(int, platform.mac_ver()[0].split('.'))):
+    host_os = tuple(map(int, platform.mac_ver()[0].split('.')))
+    # Sonoma keeps the installed Xcode 16 XCTest, as the previous CI did. The
+    # producer's runner can load there, but that does not establish runtime compatibility.
+    if host_os >= (15, 0) and minimum_os(binary(original)) <= host_os:
         return original, None
     source = root / 'Scripts/XCTestCompat.swift'
-    fingerprint = hashlib.sha256((output(['xcodebuild', '-version'], env=env) + platform.machine() + digest(binary(original_bundle)) + digest(source)).encode()).hexdigest()[:20]
+    seal = original_bundle / 'Contents/_CodeSignature/CodeResources'
+    fingerprint = hashlib.sha256((output(['xcodebuild', '-version'], env=env) + platform.machine()
+                                  + digest(binary(original_bundle)) + digest(seal) + digest(source)).encode()).hexdigest()[:20]
     final = root / 'Compatibility' / fingerprint
     if (final / 'ready').is_file():
         return final / 'Legacy-Runner.app', final
@@ -291,14 +296,18 @@ def specification(root, target, host, legacy, developer, identifiers, plan, mode
             environment[item['key']] = os.environ.get(item['key'], '') if '$(' in value else value
     environment.update(INTERNAL_USER_MODE='true' if mode == 'internal' else 'false', UITEST_APP_PATH=str(app),
                        UITEST_LIFECYCLE_SCRIPT=str(root / 'Scripts/pre-run.sh'))
-    if 'CODE' in os.environ:
-        environment['CODE'] = os.environ['CODE']
+    for key in ('CODE', 'UITEST_KEYCHAIN_PATH'):
+        if key in os.environ:
+            environment[key] = os.environ[key]
     data['EnvironmentVariables'] = environment
     data['CommandLineArguments'] = [item['argument'] for item in plan.get('defaultOptions', {}).get('commandLineArgumentEntries', []) if item.get('enabled', True)]
     # Producer Xcode defaults must not enable app diagnostics for a different consumer test plan.
     data['UITargetAppPerformanceAntipatternCheckerEnabled'] = bool(plan.get('defaultOptions', {}).get('performanceAntipatternCheckerEnabled', False))
+    if legacy and not platform.mac_ver()[0].startswith('12.'):
+        # Xcode 16's generated specification uses this older diagnostics key.
+        data['UITargetAppMainThreadCheckerEnabled'] = bool(plan.get('defaultOptions', {}).get('mainThreadCheckerEnabled', True))
     data['UITargetAppEnvironmentVariables'] = {k: v for k, v in target.get('UITargetAppEnvironmentVariables', {}).items() if not k.startswith(('DYLD_', '__'))}
-    if legacy:
+    if legacy and platform.mac_ver()[0].startswith('12.'):
         allowed = ('BlueprintName', 'ProductModuleName', 'IsUITestBundle', 'IsXCTRunnerHostedTestBundle', 'TestHostPath',
                    'TestHostBundleIdentifier', 'TestBundlePath', 'UITargetAppPath', 'OnlyTestIdentifiers', 'EnvironmentVariables',
                    'TestingEnvironmentVariables', 'UITargetAppEnvironmentVariables', 'CommandLineArguments')
@@ -318,7 +327,7 @@ def stop_process(process):
         process.wait()
 
 
-def stop_owned_runners(host):
+def stop_owned_app(host):
     expected = str(binary(host))
     rows = output(['ps', '-axo', 'pid=,comm=']).splitlines()
     for row in rows:
@@ -330,8 +339,28 @@ def stop_owned_runners(host):
             # Recheck the exact executable after enumeration; never target a runner by its generic name.
             if output(['ps', '-p', str(pid), '-o', 'comm=']) == expected:
                 os.kill(pid, signal.SIGTERM)
+                deadline = time.monotonic() + 10
+                while time.monotonic() < deadline:
+                    status = subprocess.run(['ps', '-p', str(pid), '-o', 'comm='], stdout=subprocess.PIPE, text=True)
+                    if status.returncode or status.stdout.strip() != expected:
+                        break
+                    time.sleep(.1)
+                else:
+                    if output(['ps', '-p', str(pid), '-o', 'comm=']) == expected:
+                        os.kill(pid, signal.SIGKILL)
         except (ProcessLookupError, subprocess.CalledProcessError):
             pass
+
+
+def execution_summary(log, code, result, expected, retrying=False, allow_all_skipped=False):
+    counts = re.findall(r'Executed (\d+) tests?, with (?:(\d+) tests? skipped and )?(\d+) failures?', log)
+    count, skipped, failed = tuple(int(v or 0) for v in counts[-1]) if counts else (0, 0, 0)
+    skipped = max(skipped, len(re.findall(r'Test Case .* skipped(?: |\()', log)))
+    count = max((int(item[0]) for item in counts), default=0)
+    # XCTest's exit status accounts for successful retries across attempts. A textual
+    # suite summary only describes one attempt and can still contain failures.
+    passed = code == 0 and count >= expected and (count > skipped or allow_all_skipped) and (retrying or failed == 0) and result.is_dir()
+    return dict(exit_code=code, executed=count, skipped=skipped, failed=failed, passed=passed)
 
 
 def execute_tests(args):
@@ -357,6 +386,7 @@ def execute_tests(args):
     developer, env = xcode(args)
     target = next(t for t in targets(read_plist(root / 'source.xctestrun')) if t['BlueprintName'] == SUITES[args.suite])
     host, legacy = legacy_host(root, target, developer, env)
+    legacy_execution = bool(legacy) and platform.mac_ver()[0].startswith('12.')
     if args.preflight_only:
         bundle = host / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest')
         inventory = json.loads(output([sys.executable, root / 'Scripts/discover.py', binary(bundle), target['ProductModuleName']],
@@ -376,8 +406,9 @@ def execute_tests(args):
         raise ValueError('No enabled tests match this plan/filter')
     results = args.result.resolve() if args.result else root / 'Results' / (time.strftime('%Y%m%d-%H%M%S') + '-' + str(os.getpid()))
     results.mkdir(parents=True, exist_ok=False)
-    batches = [[test] for test in identifiers] if legacy else [identifiers]
+    batches = [[test] for test in identifiers] if legacy_execution else [identifiers]
     failures = 0
+    executed = skipped = 0
     for index, batch in enumerate(batches):
         directory = results / str(index + 1)
         directory.mkdir()
@@ -386,7 +417,7 @@ def execute_tests(args):
         runtime_target = targets(specification_data)[0]
         test_class = batch[0].split('/')[0]
         runtime_target['EnvironmentVariables']['UITEST_RESET_CLASS_STATE'] = '1'
-        if legacy:
+        if legacy_execution:
             marker = results / ('class-reset-' + hashlib.sha256(test_class.encode()).hexdigest()[:20])
             runtime_target['EnvironmentVariables']['UITEST_RESET_CLASS_STATE'] = '0' if marker.exists() else '1'
             runtime_target['EnvironmentVariables']['UITEST_CLASS_RESET_MARKER'] = str(marker)
@@ -400,12 +431,12 @@ def execute_tests(args):
         try:
             command = ['xcodebuild', 'test-without-building', '-xctestrun', str(spec), '-destination', 'platform=macOS,arch=' + platform.machine(),
                        '-resultBundlePath', str(directory / 'tests.xcresult')]
-            if not legacy:
+            if not legacy_execution:
                 command += ['-test-iterations', '2', '-retry-tests-on-failure', '-test-repetition-relaunch-enabled', 'YES']
             with (directory / 'xcodebuild.log').open('w') as log:
                 process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
                 try:
-                    code = process.wait(timeout=min(args.timeout, 300) if legacy else args.timeout)
+                    code = process.wait(timeout=min(args.timeout, 300) if legacy_execution else args.timeout)
                 except subprocess.TimeoutExpired:
                     stop_process(process)
                     code = 124
@@ -414,22 +445,28 @@ def execute_tests(args):
                     raise
         finally:
             try:
-                stop_owned_runners(host)
+                try:
+                    # Xcode 13 can leave an application's event request pending after
+                    # its runner exits. Close that app before starting the next method.
+                    if legacy_execution or 'UITEST_KEYCHAIN_PATH' in os.environ:
+                        stop_owned_app(app)
+                finally:
+                    stop_owned_app(host)
             finally:
                 execute(['bash', root / 'Scripts/post-run.sh'], env=lifecycle_env)
         log = (directory / 'xcodebuild.log').read_text(errors='replace')
         print(log, end='', flush=True)
-        counts = re.findall(r'Executed (\d+) tests?, with (?:(\d+) tests? skipped and )?(\d+) failures?', log)
-        count, skipped, failed = tuple(int(v or 0) for v in counts[-1]) if counts else (0, 0, 0)
-        skipped = max(skipped, len(re.findall(r'Test Case .* skipped(?: |\()', log)))
-        count = max((int(item[0]) for item in counts), default=0)
-        passed = code == 0 and count >= len(batch) and count > skipped and failed == 0 and (directory / 'tests.xcresult').is_dir()
-        failures += not passed
-        summary = dict(tests=batch, exit_code=code, executed=count, skipped=skipped, failed=failed, passed=passed)
+        summary = dict(tests=batch, **execution_summary(log, code, directory / 'tests.xcresult', len(batch),
+                                                      retrying=not legacy_execution, allow_all_skipped=legacy_execution))
+        executed += summary['executed']
+        skipped += summary['skipped']
+        failures += not summary['passed']
         (directory / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
         print(json.dumps(summary), flush=True)
-    (results / 'summary.json').write_text(json.dumps({'requested': len(identifiers), 'failed_batches': failures}, indent=2) + '\n')
-    return 1 if failures else 0
+    passed = failures == 0 and executed > skipped
+    (results / 'summary.json').write_text(json.dumps({'requested': len(identifiers), 'failed_batches': failures,
+                                                     'executed': executed, 'skipped': skipped, 'passed': passed}, indent=2) + '\n')
+    return 0 if passed else 1
 
 
 def require_noninteractive_automation():

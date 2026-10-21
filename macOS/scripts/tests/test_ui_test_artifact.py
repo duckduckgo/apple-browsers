@@ -24,6 +24,7 @@ def load(name):
 
 artifact = load('artifact')
 lifecycle = load('lifecycle')
+keychain_session = load('with-keychain')
 
 
 class PortableTests(unittest.TestCase):
@@ -53,6 +54,42 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(environment['DEVELOPER_DIR'], str(developer))
         output.assert_not_called()
 
+    def test_remote_keychain_restores_selection_after_failed_tests_and_removes_password(self):
+        result = self.root / 'keychain-session'
+        actions = []
+        passwords = []
+
+        def security(action, *arguments, **kwargs):
+            actions.append((action, *arguments))
+            if kwargs.get('capture'):
+                return ['/previous/login'] if action == 'default-keychain' else ['/previous/login', '/previous/other']
+
+        def configure_gui(directory, selection, keychain=None, password_file=None):
+            directory.mkdir()
+            (directory / 'status.json').write_text(json.dumps({'previous': {'default': ['/gui/login'], 'search': ['/gui/login']}}))
+            if password_file:
+                passwords.append(password_file)
+                self.assertEqual(password_file.stat().st_mode & 0o777, 0o600)
+                self.assertTrue(password_file.read_text())
+            else:
+                self.assertEqual(selection, {'default': ['/gui/login'], 'search': ['/gui/login']})
+
+        def failed_test(command, env):
+            self.assertTrue(Path(env['UITEST_KEYCHAIN_PATH']).name.startswith('ddg-ui-'))
+            return 65
+
+        with mock.patch.object(keychain_session, 'security', side_effect=security), \
+             mock.patch.object(keychain_session, 'configure_gui', side_effect=configure_gui), \
+             mock.patch.object(keychain_session.subprocess, 'call', side_effect=failed_test), \
+             mock.patch('sys.argv', ['with-keychain.py', '--result', str(result), '--', 'python3', 'artifact.py', 'run']):
+            self.assertEqual(keychain_session.main(), 65)
+        self.assertIn(('default-keychain', '-d', 'user', '-s', '/previous/login'), actions)
+        self.assertIn(('list-keychains', '-d', 'user', '-s', '/previous/login', '/previous/other'), actions)
+        self.assertEqual(actions[-1][0], 'delete-keychain')
+        self.assertFalse(passwords[0].is_relative_to(result))
+        self.assertFalse(passwords[0].exists())
+        self.assertTrue(json.loads((result / 'summary.json').read_text())['original_selection_restored'])
+
     def test_plan_selection_and_cli_filter_intersect(self):
         plan = {'testTargets': [{'target': {'name': 'UI Tests'}, 'selectedTests': ['First', 'Second/testOne()'],
                                 'skippedTests': ['First/testTwo()']}]}
@@ -76,8 +113,9 @@ class PortableTests(unittest.TestCase):
         self.assertTrue(target['UITargetAppPerformanceAntipatternCheckerEnabled'])
 
     def test_old_xcode_specification_is_format_one(self):
-        data = artifact.specification(self.root, self.target, self.root / 'runner.app', self.root / 'compat',
-                                      self.root / 'Developer', ['First/testOne'], {}, 'production')
+        with mock.patch.object(artifact.platform, 'mac_ver', return_value=('12.7.6', (), 'arm64')):
+            data = artifact.specification(self.root, self.target, self.root / 'runner.app', self.root / 'compat',
+                                          self.root / 'Developer', ['First/testOne'], {}, 'production')
         self.assertEqual(data['__xctestrun_metadata__']['FormatVersion'], 1)
         self.assertEqual(artifact.targets(data)[0]['BlueprintName'], 'UI Tests')
         self.assertNotIn('DependentProductPaths', artifact.targets(data)[0])
@@ -109,22 +147,104 @@ class PortableTests(unittest.TestCase):
                 return 0
 
         with mock.patch.object(artifact.platform, 'machine', return_value='x86_64'), \
+             mock.patch.object(artifact.platform, 'mac_ver', return_value=('12.7.6', (), 'x86_64')), \
              mock.patch.object(artifact, 'xcode', return_value=(self.root / 'Developer', {})), \
              mock.patch.object(artifact, 'legacy_host', return_value=(host, self.root / 'compat')), \
-             mock.patch.object(artifact, 'execute'), mock.patch.object(artifact, 'stop_owned_runners'), mock.patch.object(artifact.subprocess, 'Popen', PassingProcess), \
+             mock.patch.object(artifact, 'execute'), mock.patch.object(artifact, 'stop_owned_app'), mock.patch.object(artifact.subprocess, 'Popen', PassingProcess), \
              mock.patch('builtins.print'):
             self.assertEqual(artifact.execute_tests(args), 0)
         flags = [artifact.targets(artifact.read_plist(args.result / str(i) / 'run.xctestrun'))[0]
                  ['EnvironmentVariables']['UITEST_RESET_CLASS_STATE'] for i in (1, 2, 3)]
         self.assertEqual(flags, ['1', '0', '1'])
 
+    def test_successful_retries_use_xctest_final_outcome(self):
+        result = self.root / 'tests.xcresult'
+        result.mkdir()
+        log = 'Executed 2 tests, with 1 failure\nExecuted 2 tests, with 1 failure\n** TEST EXECUTE SUCCEEDED **\n'
+        self.assertTrue(artifact.execution_summary(log, 0, result, 2, retrying=True)['passed'])
+        self.assertFalse(artifact.execution_summary(log, 65, result, 2)['passed'])
+        self.assertFalse(artifact.execution_summary(log, 0, result, 2, retrying=False)['passed'])
+
+    def test_legacy_skips_are_checked_across_the_complete_run(self):
+        (self.root / 'Products/Review' / self.metadata['app']).mkdir(parents=True)
+        artifact.write_plist(self.root / 'source.xctestrun', {'TestConfigurations': [{'TestTargets': [self.target]}]})
+        args = argparse.Namespace(root=self.root, environment_file=None, preflight_only=False, app=None, suite='ui', plan=None,
+                                  only=[], result=None, user_mode='production', timeout=3600)
+        for index, summaries in enumerate(((1, 0, 0), (1, 1, 1))):
+            with self.subTest(summaries=summaries):
+                args.result = self.root / ('Results-' + str(index))
+                skipped = iter(summaries)
+
+                class SkippingProcess:
+                    def __init__(self, command, **kwargs):
+                        Path(command[command.index('-resultBundlePath') + 1]).mkdir()
+                        kwargs['stdout'].write('Executed 1 test, with %s tests skipped and 0 failures\n' % next(skipped))
+
+                    def wait(self, **kwargs):
+                        return 0
+
+                with mock.patch.object(artifact.platform, 'machine', return_value='x86_64'), \
+                     mock.patch.object(artifact.platform, 'mac_ver', return_value=('12.7.6', (), 'x86_64')), \
+                     mock.patch.object(artifact, 'xcode', return_value=(self.root / 'Developer', {})), \
+                     mock.patch.object(artifact, 'legacy_host', return_value=(self.root / 'runner.app', self.root / 'compat')), \
+                     mock.patch.object(artifact, 'execute'), mock.patch.object(artifact, 'stop_owned_app'), \
+                     mock.patch.object(artifact.subprocess, 'Popen', SkippingProcess), mock.patch('builtins.print'):
+                    self.assertEqual(artifact.execute_tests(args), 0 if index == 0 else 1)
+                summary = json.loads((args.result / 'summary.json').read_text())
+                self.assertEqual(summary['skipped'], sum(summaries))
+                self.assertEqual(summary['passed'], index == 0)
+
+    def test_sonoma_native_runtime_retains_whole_batch_and_retries(self):
+        app = self.root / 'Products/Review' / self.metadata['app']
+        app.mkdir(parents=True)
+        artifact.write_plist(self.root / 'source.xctestrun', {'TestConfigurations': [{'TestTargets': [self.target]}]})
+        args = argparse.Namespace(root=self.root, environment_file=None, preflight_only=False, app=None, suite='ui', plan=None,
+                                  only=[], result=self.root / 'Results', user_mode='production', timeout=3600)
+        commands = []
+
+        class PassingProcess:
+            def __init__(self, command, **kwargs):
+                commands.append(command)
+                Path(command[command.index('-resultBundlePath') + 1]).mkdir()
+                kwargs['stdout'].write('Executed 3 tests, with 0 failures\n')
+
+            def wait(self, **kwargs):
+                return 0
+
+        with mock.patch.object(artifact.platform, 'machine', return_value='x86_64'), \
+             mock.patch.object(artifact.platform, 'mac_ver', return_value=('14.8.9', (), 'x86_64')), \
+             mock.patch.object(artifact, 'xcode', return_value=(self.root / 'Developer', {})), \
+             mock.patch.object(artifact, 'legacy_host', return_value=(self.root / 'runner.app', self.root / 'compat')), \
+             mock.patch.object(artifact, 'execute'), mock.patch.object(artifact, 'stop_owned_app'), \
+             mock.patch.object(artifact.subprocess, 'Popen', PassingProcess), mock.patch('builtins.print'):
+            self.assertEqual(artifact.execute_tests(args), 0)
+        self.assertEqual(len(commands), 1)
+        self.assertIn('-retry-tests-on-failure', commands[0])
+        spec = artifact.read_plist(args.result / '1/run.xctestrun')
+        self.assertEqual(spec['__xctestrun_metadata__']['FormatVersion'], 2)
+        target = artifact.targets(spec)[0]
+        self.assertTrue(target['UITargetAppMainThreadCheckerEnabled'])
+        self.assertEqual(target['OnlyTestIdentifiers'], self.metadata['tests']['UI Tests'])
+        self.assertNotIn('UITEST_CLASS_RESET_MARKER', target['EnvironmentVariables'])
+        self.assertNotIn('Runtime/Frameworks', target['TestingEnvironmentVariables']['DYLD_FRAMEWORK_PATH'])
+
+    def test_success_status_cannot_hide_incomplete_or_all_skipped_run(self):
+        result = self.root / 'tests.xcresult'
+        result.mkdir()
+        for log, expected in [('', 1), ('Executed 1 test, with 0 failures\n', 2),
+                              ('Executed 2 tests, with 2 tests skipped and 0 failures\n', 2)]:
+            with self.subTest(log=log):
+                self.assertFalse(artifact.execution_summary(log, 0, result, expected)['passed'])
+        self.assertFalse(artifact.execution_summary('Executed 2 tests, with 0 failures\n', 0, result / 'missing', 2)['passed'])
+
     def test_runner_cleanup_only_targets_this_artifact(self):
         host = self.root / 'Runner.app'
         executable = str(host / 'Contents/MacOS/Runner')
         with mock.patch.object(artifact, 'binary', return_value=Path(executable)), \
              mock.patch.object(artifact, 'output', side_effect=['123 ' + executable + '\n456 /other/Runner.app/Contents/MacOS/Runner', executable]), \
+             mock.patch.object(artifact.subprocess, 'run', return_value=argparse.Namespace(returncode=1, stdout='')), \
              mock.patch.object(artifact.os, 'kill') as kill:
-            artifact.stop_owned_runners(host)
+            artifact.stop_owned_app(host)
         kill.assert_called_once_with(123, artifact.signal.SIGTERM)
 
     def test_gui_launcher_quotes_arguments_and_removes_runtime_secrets(self):

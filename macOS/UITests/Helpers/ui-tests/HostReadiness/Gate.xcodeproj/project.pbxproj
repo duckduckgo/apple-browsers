@@ -1,0 +1,392 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 55;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D2A0A4D4E8B989776B104A88 /* GateTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 2E00929E53AE06F7561B619C /* GateTests.m */; };
+		D8BA317DEAA72A0ED5A28568 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 8824C5CF6764DFDB91C513EE /* main.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CC30DB08C99BE95A5E8B44D9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1719AF7F11A42A22AAC3CE02 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5541EC324E1243F72DBB624D;
+			remoteInfo = GateApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		2E00929E53AE06F7561B619C /* GateTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GateTests.m; sourceTree = "<group>"; };
+		8824C5CF6764DFDB91C513EE /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		944880F6C97841BEC6B3A627 /* GateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF428934F688B1FC9127EE88 /* GateApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GateApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		B02AC81043ADE7055253DA4E /* App */ = {
+			isa = PBXGroup;
+			children = (
+				8824C5CF6764DFDB91C513EE /* main.m */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B660335FE5B8C22DE3C3E679 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				2E00929E53AE06F7561B619C /* GateTests.m */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		BC5CFA0BBC80E89C61CD3393 = {
+			isa = PBXGroup;
+			children = (
+				B02AC81043ADE7055253DA4E /* App */,
+				B660335FE5B8C22DE3C3E679 /* Tests */,
+				D1C10C82ED41E0A290982D6E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D1C10C82ED41E0A290982D6E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CF428934F688B1FC9127EE88 /* GateApp.app */,
+				944880F6C97841BEC6B3A627 /* GateTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5541EC324E1243F72DBB624D /* GateApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BD9E31590FFC28D3420BE09 /* Build configuration list for PBXNativeTarget "GateApp" */;
+			buildPhases = (
+				CF770A3128933EF850DD81BF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GateApp;
+			packageProductDependencies = (
+			);
+			productName = GateApp;
+			productReference = CF428934F688B1FC9127EE88 /* GateApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		5DBBF047C94E9DB37B8E5592 /* GateTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0C334429DA326B28AC876D7 /* Build configuration list for PBXNativeTarget "GateTests" */;
+			buildPhases = (
+				23FB552CD4068786BD3938CD /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ECBB194EB91E662D39AFB887 /* PBXTargetDependency */,
+			);
+			name = GateTests;
+			packageProductDependencies = (
+			);
+			productName = GateTests;
+			productReference = 944880F6C97841BEC6B3A627 /* GateTests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1719AF7F11A42A22AAC3CE02 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					5541EC324E1243F72DBB624D = {
+						DevelopmentTeam = "";
+					};
+					5DBBF047C94E9DB37B8E5592 = {
+						DevelopmentTeam = "";
+						TestTargetID = 5541EC324E1243F72DBB624D;
+					};
+				};
+			};
+			buildConfigurationList = 2C457213E8B2215092755C61 /* Build configuration list for PBXProject "Gate" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = BC5CFA0BBC80E89C61CD3393;
+			minimizedProjectReferenceProxies = 1;
+			compatibilityVersion = "Xcode 13.0";
+			productRefGroup = D1C10C82ED41E0A290982D6E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5541EC324E1243F72DBB624D /* GateApp */,
+				5DBBF047C94E9DB37B8E5592 /* GateTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		23FB552CD4068786BD3938CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D2A0A4D4E8B989776B104A88 /* GateTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF770A3128933EF850DD81BF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D8BA317DEAA72A0ED5A28568 /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		ECBB194EB91E662D39AFB887 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5541EC324E1243F72DBB624D /* GateApp */;
+			targetProxy = CC30DB08C99BE95A5E8B44D9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0605EAE117224B135875D52A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.duckduckgo.ui-validation.gate.tests";
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = GateApp;
+			};
+			name = Debug;
+		};
+		36C4CB57B4D165AAE3C318EB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.duckduckgo.ui-validation.gate";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		59B0C525B82BF7B506B6BDB9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B1EC7C6063BC5A2B7D4F7F58 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		F128B0DBFB17E31F150728B2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.duckduckgo.ui-validation.gate.tests";
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = GateApp;
+			};
+			name = Release;
+		};
+		F8719617A4A6399D9C3E0E00 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.duckduckgo.ui-validation.gate";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2C457213E8B2215092755C61 /* Build configuration list for PBXProject "Gate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1EC7C6063BC5A2B7D4F7F58 /* Debug */,
+				59B0C525B82BF7B506B6BDB9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3BD9E31590FFC28D3420BE09 /* Build configuration list for PBXNativeTarget "GateApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F8719617A4A6399D9C3E0E00 /* Debug */,
+				36C4CB57B4D165AAE3C318EB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E0C334429DA326B28AC876D7 /* Build configuration list for PBXNativeTarget "GateTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0605EAE117224B135875D52A /* Debug */,
+				F128B0DBFB17E31F150728B2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1719AF7F11A42A22AAC3CE02 /* Project object */;
+}

@@ -160,7 +160,6 @@ struct GreenColorPalette: SharedColorPaletteDefinition {
 
     static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
-    static let buttonsPrimaryDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
     static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
 
     static let buttonsSecondaryFillDefault = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))

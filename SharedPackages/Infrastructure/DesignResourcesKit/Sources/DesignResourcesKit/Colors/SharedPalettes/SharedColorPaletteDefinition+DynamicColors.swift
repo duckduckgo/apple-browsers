@@ -133,8 +133,6 @@ extension SharedColorPaletteDefinition {
             return buttonsPrimaryDefault
         case .buttonsPrimaryPressed:
             return buttonsPrimaryPressed
-        case .buttonsPrimaryDisabled:
-            return buttonsPrimaryDisabled
         case .buttonsPrimaryText:
             return buttonsPrimaryText
 

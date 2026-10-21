@@ -164,6 +164,8 @@ class AddressBarTests: XCTestCase {
         autoreleasepool {
             window?.close()
             window = nil
+            // A pinned tab left behind keeps later tests' last window from closing
+            Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: TabCollection())
             schemeHandler = nil
             contentBlockingMock = nil
             privacyFeaturesMock = nil

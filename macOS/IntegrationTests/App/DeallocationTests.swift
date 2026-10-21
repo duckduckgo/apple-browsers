@@ -23,7 +23,6 @@ import Combine
 final class DeallocationTests: XCTestCase {
     var cancellables = Set<AnyCancellable>()
     var animationDuration: TimeInterval = 0
-    var initialFireAnimationEnabled = true
 
     @MainActor
     override func setUp() {
@@ -32,9 +31,6 @@ final class DeallocationTests: XCTestCase {
             animationDuration = NSAnimationContext.current.duration
         }
         NSAnimationContext.current.duration = 0
-        // A Fire Window closing with its last tab waits for the fire animation, which doesn't advance while the display sleeps
-        initialFireAnimationEnabled = Application.appDelegate.dataClearingPreferences.isFireAnimationEnabled
-        Application.appDelegate.dataClearingPreferences.isFireAnimationEnabled = false
     }
 
     @MainActor
@@ -46,7 +42,6 @@ final class DeallocationTests: XCTestCase {
             }
         }
         NSAnimationContext.current.duration = animationDuration
-        Application.appDelegate.dataClearingPreferences.isFireAnimationEnabled = initialFireAnimationEnabled
     }
 
     class DeallocationTracker {

@@ -33,6 +33,7 @@ enum TabOrganizerPopover {
         popover.contentViewController = NSHostingController(rootView: TabOrganizerView(viewModel: viewModel))
         // Sized up front: positioning happens before SwiftUI reports its size.
         popover.contentSize = TabOrganizerView.size
+        viewModel.onApplied = { [weak popover] in popover?.close() }
         popover.show(positionedBelow: button)
         current = popover
     }
@@ -63,6 +64,7 @@ final class TabOrganizerViewModel: ObservableObject {
     @Published var readsPageContent = false
 
     let favicons: [String: NSImage]
+    var onApplied: (() -> Void)?
     private let tabCollectionViewModel: TabCollectionViewModel
     private var task: Task<Void, Never>?
 
@@ -201,7 +203,14 @@ final class TabOrganizerViewModel: ObservableObject {
     }
 
     func apply() {
-        // Step 6: close and move tabs.
+        let selectedGroups = groups.compactMap { group -> ProposedGroup? in
+            guard group.action != .keep else { return nil }
+            var selected = group
+            selected.tabIDs = selectedTabIDs(for: group.action).filter(group.tabIDs.contains)
+            return selected.tabIDs.isEmpty ? nil : selected
+        }
+        TabOrganizerActions(tabCollectionViewModel: tabCollectionViewModel).apply(selectedGroups)
+        onApplied?()
     }
 }
 

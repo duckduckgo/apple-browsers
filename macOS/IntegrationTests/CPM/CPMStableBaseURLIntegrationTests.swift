@@ -317,10 +317,22 @@ final class CPMStableBaseURLIntegrationTests: CPMAppIntegrationTestCase {
         let before = try XCTUnwrap(harness.installationStore?.installedExtension(withUniqueIdentifier: context.uniqueIdentifier))
         let liveOrigin = context.baseURL
         harness.observeBackgroundLoadErrors(in: context)
-        let pid = try XCTUnwrap(CPMAppWebKit.process(CPMAppWebKit.background(context)))
-        XCTAssertEqual(kill(pid, SIGKILL), 0)
-        try await harness.wait("real error 6 after owned background SIGKILL", timeout: 12) {
-            harness.backgroundLoadErrorContexts.contains(ObjectIdentifier(context))
+        var killedProcesses: [Int32] = []
+        for attempt in 1...5 {
+            let pid = try XCTUnwrap(CPMAppWebKit.process(CPMAppWebKit.background(context)))
+            XCTAssertEqual(kill(pid, SIGKILL), 0)
+            killedProcesses.append(pid)
+            try await harness.wait("owned background crash", timeout: 12) { CPMAppWebKit.process(CPMAppWebKit.background(context)) != pid }
+            // A kill can recover natively. A real navigation asks the worker for initResp;
+            // only an actual WebKit error notification qualifies this relaunch scenario.
+            let probe = try await harness.navigate(tab, label: "relaunch-after-crash-\(attempt)")
+            if harness.backgroundLoadErrorContexts.contains(ObjectIdentifier(context)) { break }
+            assertHealthy(probe)
+            try await harness.waitForBackgroundReady()
+        }
+        guard harness.backgroundLoadErrorContexts.contains(ObjectIdentifier(context)) else {
+            throw NSError(domain: "CPMAppIntegration", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "WebKit recovered all owned SIGKILL attempts without error 6; no relaunch reproduction"])
         }
         let after = try XCTUnwrap(harness.installationStore?.installedExtension(withUniqueIdentifier: context.uniqueIdentifier))
         XCTAssertTrue(harness.context === context, "No recovery reload may mask the next-launch case")
@@ -333,7 +345,7 @@ final class CPMStableBaseURLIntegrationTests: CPMAppIntegrationTestCase {
         }
         try harness.preserveForRelaunch(.init(token: token, hostPID: getpid(), installation: context.uniqueIdentifier,
                                             initialOrigin: liveOrigin, savedOrigin: after.cpmOriginIdentifier, storageValue: value))
-        harness.note(["relaunchPhase": phase, "hostPID": getpid(), "backgroundSIGKILL": pid,
+        harness.note(["relaunchPhase": phase, "hostPID": getpid(), "backgroundSIGKILL": killedProcesses,
                       "initialOrigin": liveOrigin.absoluteString, "savedOrigin": after.cpmOriginIdentifier?.uuidString ?? "none"])
     }
 

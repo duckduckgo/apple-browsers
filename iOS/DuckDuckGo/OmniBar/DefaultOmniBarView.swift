@@ -676,8 +676,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private(set) var visibleFooterMessages: [UTIFooterItem] = []
     private var renderedFooterMessages: [UTIFooterItem] = []
     private var reportedFooterIDs: [UTIFooterItem.ID] = []
-    /// Set by the omnibar's prompt length gate; the caller refreshes the Send button after changing it.
-    var isAIChatSubmitBlockedByPromptLength = false
+    var isPromptOverLimit = false {
+        didSet {
+            guard oldValue != isPromptOverLimit else { return }
+            attachmentsStripView.showsPromptLengthError = isPromptOverLimit
+            updateAIChatSendButton(hasText: !(aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+    }
 
     let aiChatTextView: ResignSuppressingTextView = {
         let textView = ResignSuppressingTextView()
@@ -2628,7 +2633,7 @@ extension DefaultOmniBarView {
         let attachments = attachmentsStripView.attachments
         let hasValidAttachment = attachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = attachments.contains(where: \.isInvalid)
-        let canSubmit = !hasInvalidAttachment && !isAIChatSubmitBlockedByPromptLength && (hasText || hasValidAttachment)
+        let canSubmit = !hasInvalidAttachment && !isPromptOverLimit && (hasText || hasValidAttachment)
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if canSubmit {
             setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall)

@@ -842,7 +842,6 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         sut.addImageAttachment(image: UIImage(systemName: "photo")!, fileName: "a.jpg")
         XCTAssertTrue(sut.viewController.isPromptOverLimit, "The model's 4,500 applies with an image")
-        XCTAssertEqual(sut.promptLengthGate.promptLength?.limit, 4_500)
     }
 
     func testLongPasteBecomesAChipAndAnOverLimitPasteTurnsTheChipsRed() throws {

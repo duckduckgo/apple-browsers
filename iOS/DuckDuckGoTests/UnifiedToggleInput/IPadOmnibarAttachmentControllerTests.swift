@@ -929,6 +929,19 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
 
     // MARK: - Submission
 
+    func testSubmitMeasuresTheSentTextNotTheLastTypedDraft() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+
+        controller.submitAIChatQuery(text(length: 16_001))
+        XCTAssertFalse(delegate.wasOnPromptSubmittedCalled, "Set without typing, so only the submit measures it")
+
+        controller.submitAIChatQuery(text(length: 100))
+        XCTAssertTrue(delegate.wasOnPromptSubmittedCalled)
+    }
+
     func testURLShapedPromptWithoutAttachmentsNavigates() throws {
         let (controller, view) = try makeController()
         let delegate = MockOmniBarDelegate()

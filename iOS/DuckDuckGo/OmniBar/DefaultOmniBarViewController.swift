@@ -410,7 +410,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         iPadDraft.text = ""
         modeToggleTextModel.updateText("")
         super.onClearButtonPressed()
-        promptLengthGate?.refresh()
+        aiChatTextDidChange()
     }
 
     /// Goes through the iPad Duck.ai submit, so its prompt pixels and wide event fire.
@@ -429,7 +429,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         toolPickerController?.resetSelection()
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
         omniBarView.updateAIChatSendButton(hasText: false)
-        promptLengthGate?.refresh()
         return values
     }
 
@@ -590,7 +589,7 @@ extension DefaultOmniBarViewController {
         let hasInvalidAttachment = attachmentController?.hasInvalidAttachment ?? false
         // Mirror the iPhone unified toggle rule: submit needs text or a valid attachment, and is
         // blocked while any attachment is invalid or the prompt is over its length limit.
-        guard !hasInvalidAttachment, promptLengthGate?.isSubmitBlocked != true, !query.isEmpty || hasValidAttachment else { return }
+        guard !hasInvalidAttachment, promptLengthGate?.blocksSubmission(of: query) != true, !query.isEmpty || hasValidAttachment else { return }
 
         if selectedTextEntryMode == .aiChat {
             textView.text = ""
@@ -793,19 +792,12 @@ extension DefaultOmniBarViewController {
                     return isPastedTextEnabled && selectedTextEntryMode == .aiChat
                 }
             ),
-            outputs: .init(
-                onOverLimitChanged: { [weak self] overLimit in
-                    guard let self, promptOverLimit != overLimit else { return }
-                    promptOverLimit = overLimit
-                    refreshFooterMessage(animated: true)
-                },
-                onPromptOverLimitChanged: { [weak self] isOverLimit in
-                    guard let self, omniBarView.isAIChatSubmitBlockedByPromptLength != isOverLimit else { return }
-                    omniBarView.isAIChatSubmitBlockedByPromptLength = isOverLimit
-                    omniBarView.updateAIChatSendButton(hasText: hasSubmittableAIChatText)
-                    omniBarView.attachmentsStripView.showsPromptLengthError = isOverLimit
-                }
-            )
+            onOverLimitChanged: { [weak self] overLimit in
+                guard let self, promptOverLimit != overLimit else { return }
+                promptOverLimit = overLimit
+                omniBarView.isPromptOverLimit = overLimit != nil
+                refreshFooterMessage(animated: true)
+            }
         )
         promptLengthGate = gate
         attachmentControllerInstance.pastedTextSheetLimit = { gate.sheetLimit(for: $0) }
@@ -859,6 +851,11 @@ extension DefaultOmniBarViewController {
 
         omniBarView.aiChatTextView.text = iPadDraft.text
         modeToggleTextModel.updateText(iPadDraft.text)
+        aiChatTextDidChange()
+    }
+
+    /// Typing, a restored draft and the clear button all land here, so whatever follows the Duck.ai text stays in one place.
+    private func aiChatTextDidChange() {
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
         omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
         promptLengthGate?.refresh()
@@ -957,7 +954,6 @@ extension DefaultOmniBarViewController {
             self.refreshReasoningPicker()
             self.refreshToolPicker()
             self.refreshAttachButton()
-            self.promptLengthGate?.refresh()
         }
         let isReadOnly = isUpdatedCreateImageEnabled && toolPickerController?.selectedTool == .imageGeneration
         omniBarView.isAIChatModelPickerReadOnly = isReadOnly
@@ -1107,9 +1103,7 @@ extension DefaultOmniBarViewController: UITextViewDelegate {
             refreshState(state.onTextEnteredState)
         }
 
-        omniBarView.updateTextFieldPlaceholderVisibility(hasText: !modeToggleTextModel.showPlaceholder)
-        omniBarView.updateAIChatSendButton(hasText: modeToggleTextModel.hasSubmittableText)
-        promptLengthGate?.refresh()
+        aiChatTextDidChange()
     }
 
     func textViewDidChangeSelection(_ textView: UITextView) {

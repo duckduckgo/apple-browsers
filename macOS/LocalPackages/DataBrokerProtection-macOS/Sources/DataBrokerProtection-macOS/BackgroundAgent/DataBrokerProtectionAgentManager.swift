@@ -60,7 +60,12 @@ public class DataBrokerProtectionAgentManagerProvider {
         let statsPixelRepository = DataBrokerProtectionStatsPixelsUserDefaults()
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+        #if DEBUG
+        // Check for confirmation emails every minute so the assisted demo can follow them through.
+        let schedulingConfig = DataBrokerMacOSSchedulingConfig(mode: .fastForIntegrationTests)
+        #else
         let schedulingConfig = DataBrokerMacOSSchedulingConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
+        #endif
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(
             config: schedulingConfig,
             isDeferralHandlingEnabled: featureFlagger.isSchedulerDeferralHandlingEnabled)

@@ -21,18 +21,20 @@ import Foundation
 public struct BrokerJobExecutionConfig {
 
     #if os(macOS) && DEBUG
-    public static let assistantDemoBrokerDomains: Set<String> = [
-        "veripages.com", "peoplefinders.com", "peoplewhiz.com", "spyfly.com",
-        "smartbackgroundchecks.com", "peoplesearchnow.com", "usa-people-search.com", "fastpeoplesearch.com"
-    ]
+    /// PeopleFinders needs a person for its Turnstile, Spokeo uses the captcha and email backends,
+    /// and 411.com (with its child site PeopleSearch) submits without help.
+    public static let assistantDemoBrokerDomains: Set<String> = ["peoplefinders.com", "spokeo.com", "411.com", "peoplesearch.com"]
     public var allowedBrokerDomains: Set<String>?
 
     public func includesBroker(at url: String) -> Bool {
         guard let allowedBrokerDomains else { return true }
+        return Self.domain(of: url).map(allowedBrokerDomains.contains) ?? false
+    }
+
+    private static func domain(of url: String) -> String? {
         let absoluteURL = url.contains("://") ? url : "https://\(url)"
-        guard let host = URL(string: absoluteURL)?.host?.lowercased() else { return false }
-        let domain = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
-        return allowedBrokerDomains.contains(domain)
+        guard let host = URL(string: absoluteURL)?.host?.lowercased() else { return nil }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
     #endif
 

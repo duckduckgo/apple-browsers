@@ -73,6 +73,31 @@ final class NavigationBarOverflowTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenToggleIsExpandedAndAllButtonsArePinned_ThenToggleCollapsesAndWindowShrinksToMinimumWidth() throws {
+        // Until the user interacts with it, the Search/Duck.ai toggle shows expanded in an empty address bar
+        let hasInteractedWithToggle = UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
+        UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
+        defer { UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = hasInteractedWithToggle }
+        openWindow()
+        addExtraToolbarButtons()
+        let toggle = try XCTUnwrap(navigationBar.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl)
+        XCTAssertFalse(toggle.isHidden, "The Search/Duck.ai toggle isn't shown in the new tab address bar")
+        XCTAssertTrue(toggle.isExpanded, "The Search/Duck.ai toggle isn't expanded before the user interacted with it")
+
+        resizeWindow(toWidth: MainWindow.minWindowWidth)
+
+        XCTAssertEqual(window.frame.width, MainWindow.minWindowWidth, "The window couldn't shrink to its minimum width")
+        XCTAssertFalse(toggle.isExpanded, "The Search/Duck.ai toggle stayed expanded without room for its labels")
+        XCTAssertFalse(navigationBar.overflowButton.isHidden, "No pinned buttons moved to the overflow menu")
+        assertRequiredHorizontalSpacingIsSatisfied()
+
+        resizeWindow(toWidth: 1200)
+
+        XCTAssertTrue(toggle.isExpanded, "The Search/Duck.ai toggle didn't expand again once there was room for its labels")
+        XCTAssertTrue(navigationBar.overflowButton.isHidden, "Pinned buttons stayed in the overflow menu")
+    }
+
+    @MainActor
     func testWhenWindowIsWidenedAgain_ThenPinnedButtonsLeaveOverflowMenu() {
         openWindow()
         addExtraToolbarButtons()

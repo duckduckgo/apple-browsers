@@ -129,6 +129,10 @@ final class AddressBarViewController: NSViewController {
     private(set) var activeTextFieldMinXConstraint: NSLayoutConstraint!
     private(set) var addressBarTextTrailingConstraint: NSLayoutConstraint!
     private(set) var passiveTextFieldTrailingConstraint: NSLayoutConstraint!
+    /// Keep the text fields clear of the expanded toggle's labels. Weaker than the window size, so the labels collapse
+    /// (see `updateSearchModeToggleExpansionForAvailableWidth`) instead of keeping the window from shrinking.
+    private var addressBarTextToggleLabelsTrailingConstraint: NSLayoutConstraint!
+    private var passiveTextFieldToggleLabelsTrailingConstraint: NSLayoutConstraint!
 
     private let popovers: NavigationBarPopovers?
     private(set) var addressBarButtonsViewController: AddressBarButtonsViewController?
@@ -522,9 +526,16 @@ final class AddressBarViewController: NSViewController {
         switchToTabBoxTrailingConstraint.priority = .init(200)
 
         let addressBarTextFieldTrailing = view.trailingAnchor.constraint(equalTo: addressBarTextField.trailingAnchor)
-        addressBarTextFieldTrailing.priority = .init(900)
+        /// Only stretches the text field, so it must stay weaker than `addressBarTextToggleLabelsTrailingConstraint`
+        addressBarTextFieldTrailing.priority = .init(480)
         let passiveTextFieldCenterX = passiveTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         passiveTextFieldCenterX.priority = .init(250)
+        addressBarTextToggleLabelsTrailingConstraint = view.trailingAnchor
+            .constraint(greaterThanOrEqualTo: addressBarTextField.trailingAnchor, constant: LayoutConstants.textFieldTrailing)
+        addressBarTextToggleLabelsTrailingConstraint.priority = .init(490)
+        passiveTextFieldToggleLabelsTrailingConstraint = view.trailingAnchor
+            .constraint(greaterThanOrEqualTo: passiveTextField.trailingAnchor, constant: LayoutConstants.textFieldTrailing)
+        passiveTextFieldToggleLabelsTrailingConstraint.priority = .init(490)
 
         NSLayoutConstraint.activate([
             inactiveBackgroundViewTopConstraint, inactiveBackgroundViewBottomConstraint,
@@ -562,6 +573,7 @@ final class AddressBarViewController: NSViewController {
             passiveTextField.widthAnchor.constraint(greaterThanOrEqualToConstant: LayoutConstants.passiveTextFieldMinWidth),
             passiveTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             passiveTextFieldMinXConstraint, passiveTextFieldTrailingConstraint, passiveTextFieldCenterX,
+            passiveTextFieldToggleLabelsTrailingConstraint, addressBarTextToggleLabelsTrailingConstraint,
 
             addressBarTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             addressBarTextField.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor,
@@ -729,6 +741,14 @@ final class AddressBarViewController: NSViewController {
 
     override func viewDidLayout() {
         updateSwitchToTabBoxAppearance()
+        updateSearchModeToggleExpansionForAvailableWidth()
+    }
+
+    /// Collapses the expanded Search/Duck.ai toggle when its labels would squeeze the text below its minimum width
+    private func updateSearchModeToggleExpansionForAvailableWidth() {
+        let availableTextWidth = view.bounds.width - passiveTextFieldMinXConstraint.constant - passiveTextFieldToggleLabelsTrailingConstraint.constant
+        addressBarButtonsViewController?.updateToggleExpansion(forAvailableTextWidth: availableTextWidth,
+                                                               minimumTextWidth: LayoutConstants.passiveTextFieldMinWidth)
     }
 
     // MARK: - Subscriptions
@@ -1381,8 +1401,11 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func layoutTextFields(trailingWidth width: CGFloat) {
-        addressBarTextTrailingConstraint.constant = width
-        passiveTextFieldTrailingConstraint.constant = width
+        let collapsibleWidth = addressBarButtonsViewController?.trailingButtonsCollapsibleWidth ?? 0
+        addressBarTextTrailingConstraint.constant = width - collapsibleWidth
+        passiveTextFieldTrailingConstraint.constant = width - collapsibleWidth
+        addressBarTextToggleLabelsTrailingConstraint.constant = width
+        passiveTextFieldToggleLabelsTrailingConstraint.constant = width
     }
 
     func resizeAddressBarIfNeeded() {

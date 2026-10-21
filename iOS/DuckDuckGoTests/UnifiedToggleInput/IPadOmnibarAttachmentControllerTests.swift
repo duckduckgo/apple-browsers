@@ -929,6 +929,35 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
 
     // MARK: - Submission
 
+    func testURLShapedPromptWithoutAttachmentsNavigates() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        enter("https://example.com/path", in: controller, view)
+
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertTrue(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertFalse(delegate.wasOnPromptSubmittedCalled)
+    }
+
+    func testURLShapedPromptNavigatesAgainAfterLastChipRemoved() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        XCTAssertFalse(paste(text(length: 4_100), into: controller, view))
+        let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
+        view.attachmentsStripView.removeAttachment(id: chipID, isUserInitiated: true)
+        enter("https://example.com/path", in: controller, view)
+
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertTrue(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertFalse(delegate.wasOnPromptSubmittedCalled)
+    }
+
     func testURLShapedPromptWithChipSubmitsToDuckAIWithPastedText() throws {
         let (controller, view) = try makeController()
         let delegate = MockOmniBarDelegate()

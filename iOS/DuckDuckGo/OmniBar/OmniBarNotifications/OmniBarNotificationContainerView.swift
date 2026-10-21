@@ -29,12 +29,24 @@ protocol OmniBarNotificationAnimated: UIViewController {
 final class OmniBarNotificationContainerView: UIView {
 
     var currentNotificationController: UIHostingController<OmniBarNotification>?
+    weak var fieldView: UIView?
+
+    private var lozengeHeight: CGFloat {
+        let fieldHeight = fieldView?.bounds.height ?? OmniBarMetrics.itemSize
+        return max(0, fieldHeight - 2 * OmniBarMetrics.notificationLozengeInset)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard currentNotificationController?.rootView.lozengeHeight != lozengeHeight else { return }
+        currentNotificationController?.rootView.lozengeHeight = lozengeHeight
+    }
     
     func prepareAnimation(_ type: OmniBarNotificationType, in controller: UIViewController) {
         removePreviousNotification()
         
         let viewModel = makeNotificationViewModel(for: type)
-        let notificationViewController = UIHostingController(rootView: OmniBarNotification(viewModel: viewModel),
+        let notificationViewController = UIHostingController(rootView: OmniBarNotification(viewModel: viewModel, lozengeHeight: lozengeHeight),
                                                              ignoreSafeArea: true)
         
         controller.addChild(notificationViewController)

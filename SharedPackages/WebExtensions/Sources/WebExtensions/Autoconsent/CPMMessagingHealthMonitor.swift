@@ -18,11 +18,17 @@
 
 import Foundation
 import OSLog
+import WebKit
 
 /// Bounds how long separate navigation results may be attributed to the same CPM health episode.
 private let cpmMessagingEpisodeLifetime: TimeInterval = .minutes(5)
 private let cpmMessagingExtensionLoadWait: TimeInterval = .seconds(30)
 private let cpmMessagingResponseGracePeriod: TimeInterval = .seconds(4)
+/// A navigation whose wait was interrupted by app suspension restarts with this longer window,
+/// because the web content and extension processes are still waking.
+private let cpmMessagingResumedResponseGracePeriod: TimeInterval = .seconds(8)
+/// An episode interrupted by suspension keeps observing for at least this long after resuming.
+private let cpmMessagingMinimumEpisodeRemainder: TimeInterval = .seconds(30)
 
 /// Describes the navigation context in which CPM initialization was measured.
 public enum CPMNavigationKind: String, Equatable, Sendable {
@@ -62,12 +68,32 @@ public enum CPMMessagingHealthEvent: Sendable {
     case webContentProcessTerminated(tabIdentifier: String)
     case dashboardResponse(extensionTabIdentifier: Int?, url: URL)
     case extensionLifecycle(WebExtensionLifecycleEvent)
+    /// The process may stop running: iOS entered the background, or macOS is going to sleep.
+    /// Time does not count towards waits and episodes until `interruptionEnded`.
+    case interruptionBegan
+    /// The app is running again: iOS returns to the foreground, or macOS woke.
+    case interruptionEnded
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 public protocol CPMMessagingHealthMonitoring: AnyObject, Sendable {
     @MainActor
     func handle(_ event: CPMMessagingHealthEvent)
+
+    @MainActor
+    func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool)
+
+    @MainActor
+    func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool)
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension CPMMessagingHealthMonitoring {
+    @MainActor
+    func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {}
+
+    @MainActor
+    func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool) {}
 }
 
 /// Internal token tying a completed navigation to its eventual response or timeout.
@@ -92,6 +118,15 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Called once when a failure episode is confirmed as a CPM messaging hang. The first
     /// initialization failure only begins the episode; the next qualifying failure confirms it.
     var onConfirmedHang: (() -> Void)?
+    var backgroundReadinessRecovery: CPMBackgroundReadinessRecovery?
+
+    public func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {
+        backgroundReadinessRecovery?.registerDocument(in: tabIdentifier, webView: webView, isGET: isGET)
+    }
+
+    public func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool) {
+        backgroundReadinessRecovery?.matchNavigationStarted(in: tabIdentifier, matches: matches)
+    }
 
     private enum TimeoutOutcome: Sendable {
         case reportFailure
@@ -106,6 +141,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         var navigationKind: CPMNavigationKind = .other
         var measurement: CPMMessagingMeasurement?
         var timeoutTask: Task<Void, Never>?
+        /// What the scheduled (or interruption-deferred) timeout does; only meaningful while the measurement is pending.
+        var timeoutOutcome: TimeoutOutcome?
         var crashPending = false
         /// Set when a response arrived that could not be tied to this navigation's document, so
         /// neither outcome is provable for it. Survives until the next navigation starts.
@@ -121,17 +158,32 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         let measurement: CPMMessagingMeasurement
         let startedAt: Date
         var state: MeasurementState
+        /// The wait for this measurement's response was restarted because the app was suspended.
+        var wasInterrupted = false
     }
 
     /// State retained from the first failure until a later, relevant CPM response closes the episode.
     private struct Episode {
         let failureReason: CPMMessagingFailureReason
         let startedAt: Date
+        /// When the episode closes without a response; moved later when a suspension leaves too little time.
+        var deadline: Date
+        /// The tab whose timeout opened the episode.
+        let firstFailedTabIdentifier: String
         /// Measurements up to this identifier were already in flight when the first failure arrived.
         let confirmationMustBeginAfter: UInt
         /// First-failure snapshot; later transitions do not replace it.
         let diagnostics: CPMMessagingDiagnostics?
         var failedTabIdentifiers: Set<String>
+        /// Timed-out measurements stay known while the episode is open, so a late response can still close it.
+        var failedMeasurementIdentifiers: Set<UInt>
+        /// Every timeout in the episode; repeats are those beyond one per tab.
+        var failureCount: Int
+        /// The first failed measurement waited across a suspension, so its timeout is weaker evidence.
+        let wasInterrupted: Bool
+        /// A later regular navigation timed out in any tab: the extension is reloaded.
+        var isHangConfirmed = false
+        /// Reported as `was_stuck`: a regular navigation timed out in a tab other than the first failed one.
         var isStuck = false
         /// The successful reload that a recovery must post-date to be attributed to that reload.
         var reloadGeneration: UInt?
@@ -142,7 +194,12 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private let episodeLifetime: TimeInterval
     private let extensionLoadWait: TimeInterval
     private let responseGracePeriod: TimeInterval
-    private let now: () -> Date
+    private let clock: () -> Date
+    private let resumedResponseGracePeriod: TimeInterval
+    private let minimumEpisodeRemainder: TimeInterval
+    /// Wall-clock moment the current suspension began; waits and episodes do not run while set.
+    private var interruptionStartedAt: Date?
+    private var totalInterruptedDuration: TimeInterval = 0
     private var episode: Episode?
     private var episodeDeadlineTask: Task<Void, Never>?
     private var latestMeasurementIdentifier: UInt = 0
@@ -172,6 +229,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             episodeLifetime: cpmMessagingEpisodeLifetime,
             extensionLoadWait: cpmMessagingExtensionLoadWait,
             responseGracePeriod: cpmMessagingResponseGracePeriod,
+            resumedResponseGracePeriod: cpmMessagingResumedResponseGracePeriod,
+            minimumEpisodeRemainder: cpmMessagingMinimumEpisodeRemainder,
             now: Date.init
         )
     }
@@ -189,19 +248,32 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     ///   - episodeLifetime: Maximum interval over which failures may form one episode.
     ///   - extensionLoadWait: Maximum wait for an extension that was not loaded at navigation finish.
     ///   - responseGracePeriod: Wait for a dashboard response after navigation or extension load.
-    ///   - now: Clock used to expire measurements, responses, and episodes.
+    ///   - resumedResponseGracePeriod: Wait for a response restarted after a suspension.
+    ///   - minimumEpisodeRemainder: Least time an episode keeps observing after a suspension.
+    ///   - now: Wall clock; time spent suspended is excluded before it expires measurements, responses, and episodes.
     init(
         pixelFiring: WebExtensionPixelFiring,
         episodeLifetime: TimeInterval,
         extensionLoadWait: TimeInterval = cpmMessagingExtensionLoadWait,
         responseGracePeriod: TimeInterval = cpmMessagingResponseGracePeriod,
+        resumedResponseGracePeriod: TimeInterval = cpmMessagingResumedResponseGracePeriod,
+        minimumEpisodeRemainder: TimeInterval = cpmMessagingMinimumEpisodeRemainder,
         now: @escaping () -> Date
     ) {
         self.pixelFiring = pixelFiring
         self.episodeLifetime = episodeLifetime
         self.extensionLoadWait = extensionLoadWait
         self.responseGracePeriod = responseGracePeriod
-        self.now = now
+        self.resumedResponseGracePeriod = resumedResponseGracePeriod
+        self.minimumEpisodeRemainder = minimumEpisodeRemainder
+        self.clock = now
+    }
+
+    /// Time as the monitor experiences it: frozen while suspended, and never counting suspended time.
+    private func now() -> Date {
+        let wallClock = clock()
+        let currentInterruption = interruptionStartedAt.map { wallClock.timeIntervalSince($0) } ?? 0
+        return wallClock.addingTimeInterval(-(totalInterruptedDuration + currentInterruption))
     }
 
     deinit {
@@ -212,6 +284,18 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     public func handle(_ event: CPMMessagingHealthEvent) {
         defer { Logger.webExtensions.debug("[CPM Health Monitor] \(event.logDescription, privacy: .public) -> \(self.logStateDescription, privacy: .public)") }
 
+        // Interruptions are handled before any expiry: a handler that runs late must not expire state
+        // against time spent suspended, and resuming must extend the episode before it can expire.
+        switch event {
+        case .interruptionBegan:
+            beginInterruption()
+            return
+        case .interruptionEnded:
+            endInterruption()
+            return
+        default:
+            break
+        }
         discardExpiredState()
 
         switch event {
@@ -222,10 +306,13 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         case .navigationFinished(let tabIdentifier, let url, let extensionIsLoaded):
             finishNavigation(in: tabIdentifier, url: url, extensionIsLoaded: extensionIsLoaded)
         case .navigationFailed(let tabIdentifier):
+            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
             cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
         case .tabClosed(let tabIdentifier):
+            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
             removeTab(tabIdentifier)
         case .webContentProcessTerminated(let tabIdentifier):
+            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
             markWebContentProcessTerminated(in: tabIdentifier)
         case .dashboardResponse(let extensionTabIdentifier, let url):
             if !isCPMMessagingBreakageSimulationEnabled {
@@ -233,12 +320,56 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             }
         case .extensionLifecycle(let lifecycleEvent):
             handle(lifecycleEvent)
+        case .interruptionBegan, .interruptionEnded:
+            break
         }
+    }
+
+    /// Stops every running wait. The processes involved cannot answer while suspended, so the silence
+    /// proves nothing; waits restart when the app runs again.
+    private func beginInterruption() {
+        guard interruptionStartedAt == nil else { return }
+        interruptionStartedAt = clock()
+        for tabIdentifier in Array(tabs.keys) {
+            tabs[tabIdentifier]?.timeoutTask?.cancel()
+            tabs[tabIdentifier]?.timeoutTask = nil
+        }
+        episodeDeadlineTask?.cancel()
+        episodeDeadlineTask = nil
+    }
+
+    /// Restarts pending waits in full and gives an open episode its remaining time, at least the minimum.
+    private func endInterruption() {
+        guard let interruptionStartedAt else { return }
+        totalInterruptedDuration += max(0, clock().timeIntervalSince(interruptionStartedAt))
+        self.interruptionStartedAt = nil
+        diagnosticsProvider?.recordInterruption()
+        for (tabIdentifier, state) in tabs {
+            guard let measurement = state.measurement,
+                  let outcome = state.timeoutOutcome,
+                  !state.didReceiveResponse,
+                  measurements[measurement.identifier]?.state == .pending else {
+                continue
+            }
+            measurements[measurement.identifier]?.wasInterrupted = true
+            scheduleTimeout(
+                tabIdentifier: tabIdentifier,
+                generation: state.generation,
+                measurement: measurement,
+                delay: outcome == .reportFailure ? resumedResponseGracePeriod : extensionLoadWait,
+                outcome: outcome
+            )
+        }
+        guard var episode else { return }
+        episode.deadline = max(episode.deadline, now().addingTimeInterval(minimumEpisodeRemainder))
+        self.episode = episode
+        scheduleEpisodeDeadline()
     }
 
     /// Invalidates the previous document's work and advances the tab generation.
     /// Generation changes prevent a late timeout from affecting a replacement navigation.
     private func startNavigation(in tabIdentifier: String, navigationKind: CPMNavigationKind) {
+        backgroundReadinessRecovery?.navigationStarted(in: tabIdentifier)
         var state = tabs[tabIdentifier] ?? TabNavigationState()
         cancelMeasurement(state.measurement)
         state.timeoutTask?.cancel()
@@ -265,6 +396,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
             return
         }
+        backgroundReadinessRecovery?.navigationCommitted(in: tabIdentifier, url: url)
         state.committedURL = url
         state.didReceiveResponse = false
         tabs[tabIdentifier] = state
@@ -352,6 +484,11 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         outcome: TimeoutOutcome
     ) {
         tabs[tabIdentifier]?.timeoutTask?.cancel()
+        tabs[tabIdentifier]?.timeoutOutcome = outcome
+        guard interruptionStartedAt == nil else {
+            tabs[tabIdentifier]?.timeoutTask = nil
+            return
+        }
         tabs[tabIdentifier]?.timeoutTask = Task { [weak self] in
             do {
                 try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
@@ -365,6 +502,15 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
                 measurement: measurement,
                 outcome: outcome
             )
+        }
+    }
+
+    /// Test support: returns once every navigation timeout scheduled so far has fired or been cancelled,
+    /// so tests assert on settled state instead of sleeping for a guessed interval.
+    func waitForScheduledTimeouts() async {
+        let timeoutTasks = tabs.values.compactMap(\.timeoutTask)
+        for task in timeoutTasks {
+            await task.value
         }
     }
 
@@ -483,6 +629,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Cancels the tab deadline and completes its active measurement when present.
     /// A pre-finish response remains recorded so finishing the same navigation succeeds immediately.
     private func markResponseReceived(in tabIdentifier: String) {
+        backgroundReadinessRecovery?.responseReceived(in: tabIdentifier)
         guard var state = tabs[tabIdentifier] else { return }
         Logger.webExtensions.debug("[CPM Health Monitor] Dashboard response attributed to tab=\(tabIdentifier, privacy: .public)")
         state.didReceiveResponse = true
@@ -605,7 +752,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Records a CPM initialization timeout and advances the current health episode.
     ///
     /// - Parameter measurement: Token returned when the completed navigation began measurement.
-    /// - Returns: `true` only when this failure newly promotes the episode to stuck.
+    /// - Returns: `true` only when this failure newly confirms the hang, which starts the recovery reload.
     @discardableResult
     func reportFailure(_ measurement: CPMMessagingMeasurement) -> Bool {
         discardExpiredState()
@@ -615,6 +762,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             return false
         }
         record.state = .failed
+        backgroundReadinessRecovery?.initializationFailed(in: measurement.tabIdentifier)
         measurements[measurement.identifier] = record
         // Reload attribution is reserved when the navigation begins, so simultaneous tabs cannot
         // race to become "first" merely by returning their result sooner.
@@ -633,9 +781,14 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             self.episode = Episode(
                 failureReason: failureReason,
                 startedAt: now(),
+                deadline: now().addingTimeInterval(episodeLifetime),
+                firstFailedTabIdentifier: measurement.tabIdentifier,
                 confirmationMustBeginAfter: latestMeasurementIdentifier,
                 diagnostics: captureDiagnostics(tabIdentifier: measurement.tabIdentifier),
                 failedTabIdentifiers: [measurement.tabIdentifier],
+                failedMeasurementIdentifiers: [measurement.identifier],
+                failureCount: 1,
+                wasInterrupted: record.wasInterrupted,
                 reloadGeneration: isPostExtensionReload ? measurement.extensionReloadGeneration : nil,
                 reloadState: isPostExtensionReload ? .responseTimedOut : .none
             )
@@ -644,15 +797,22 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
 
         episode.failedTabIdentifiers.insert(measurement.tabIdentifier)
-        var didBecomeStuck = false
+        episode.failedMeasurementIdentifiers.insert(measurement.identifier)
+        episode.failureCount += 1
+        var didConfirmHang = false
         // Require a non-restoration measurement begun after the first failure. Restored tabs may
         // finish serially, so they cannot confirm one another even when they were not concurrent.
-        if !episode.isStuck,
-           measurement.navigationKind != .sessionRestoration,
+        if measurement.navigationKind != .sessionRestoration,
            measurement.identifier > episode.confirmationMustBeginAfter {
-            episode.isStuck = true
-            didBecomeStuck = true
-            onConfirmedHang?()
+            if !episode.isHangConfirmed {
+                episode.isHangConfirmed = true
+                didConfirmHang = true
+            }
+            // Repeated timeouts in the first failed tab justify the reload, but cannot show that the
+            // extension, not that tab, is the problem; another tab failing can.
+            if measurement.tabIdentifier != episode.firstFailedTabIdentifier {
+                episode.isStuck = true
+            }
         }
 
         if isPostExtensionReload {
@@ -660,7 +820,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             episode.reloadState = .responseTimedOut
         }
         self.episode = episode
-        return didBecomeStuck
+        if didConfirmHang {
+            onConfirmedHang?()
+        }
+        return didConfirmHang
     }
 
     private func captureDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics? {
@@ -671,7 +834,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// The task captures no episode or monitor strongly. Process termination can still lose an in-memory report.
     private func scheduleEpisodeDeadline() {
         episodeDeadlineTask?.cancel()
-        let lifetime = episodeLifetime
+        guard interruptionStartedAt == nil, let episode else { return }
+        let lifetime = max(0, episode.deadline.timeIntervalSince(now()))
         episodeDeadlineTask = Task { [weak self] in
             do {
                 try await Task.sleep(nanoseconds: UInt64(lifetime * 1_000_000_000))
@@ -697,7 +861,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             outcome: outcome,
             reloadState: episode.reloadState,
             secondsToResponse: outcome == .noResponseBeforeDeadline ? nil : now().timeIntervalSince(episode.startedAt),
-            diagnostics: episode.diagnostics
+            diagnostics: episode.diagnostics,
+            failedTabCount: episode.failedTabIdentifiers.count,
+            repeatedFailureCount: episode.failureCount - episode.failedTabIdentifiers.count,
+            wasInterrupted: episode.wasInterrupted
         )))
     }
 
@@ -740,6 +907,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         case .loaded:
             startGracePeriodsForFinishedNavigations()
         case .willReload:
+            backgroundReadinessRecovery?.invalidate()
             episode?.reloadState = .pending
             invalidateNavigationEvidenceForReload()
         case .reloaded:
@@ -803,10 +971,15 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// cancels deadlines that could otherwise report after the evidence expired.
     private func discardExpiredState() {
         let currentDate = now()
-        if let episode, currentDate.timeIntervalSince(episode.startedAt) >= episodeLifetime {
+        if let episode, currentDate >= episode.deadline {
             finishEpisode(outcome: .noResponseBeforeDeadline)
         }
-        let expiredMeasurements = measurements.values.filter { currentDate.timeIntervalSince($0.startedAt) >= episodeLifetime }
+        // An episode can outlive its first measurement (its deadline starts later and can be extended
+        // after a suspension), and a late response on a failed measurement still closes it.
+        let expiredMeasurements = measurements.values.filter {
+            currentDate.timeIntervalSince($0.startedAt) >= episodeLifetime
+                && episode?.failedMeasurementIdentifiers.contains($0.measurement.identifier) != true
+        }
         for record in expiredMeasurements {
             cancel(record.measurement)
         }
@@ -826,7 +999,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private var logStateDescription: String {
         let episodeDescription: String
         if let episode {
-            episodeDescription = "reason=\(episode.failureReason.rawValue),stuck=\(episode.isStuck)," +
+            episodeDescription = "reason=\(episode.failureReason.rawValue),hangConfirmed=\(episode.isHangConfirmed),stuck=\(episode.isStuck)," +
                 "confirmAfter=\(episode.confirmationMustBeginAfter),failedTabs=\(episode.failedTabIdentifiers.sorted())," +
                 "reloadGeneration=\(episode.reloadGeneration.logDescription)"
         } else {
@@ -884,6 +1057,10 @@ private extension CPMMessagingHealthEvent {
             return "dashboardResponse extensionTab=\(extensionTabIdentifier.logDescription)"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"
+        case .interruptionBegan:
+            return "interruptionBegan"
+        case .interruptionEnded:
+            return "interruptionEnded"
         }
     }
 }

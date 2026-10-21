@@ -55,6 +55,8 @@ protocol OmniBar: AnyObject {
     func enterPadState()
 
     func startBrowsing()
+    /// Use after a loading-state refresh has already rendered the current interface.
+    func startBrowsingIfNeeded()
     func stopBrowsing()
     func startLoading()
     func stopLoading()
@@ -92,6 +94,9 @@ protocol OmniBar: AnyObject {
     /// Sets the selected text entry mode for the toggle (search or aiChat).
     func setSelectedTextEntryMode(_ mode: TextEntryMode)
 
+    /// Switches to search and ends editing, without handing the keyboard to the search field.
+    func endEditingInSearchMode()
+
     /// The values currently selected across the iPad address-bar Duck.ai controls
     var iPadDuckAIControlValues: IPadDuckAIControlValues { get }
 
@@ -103,6 +108,10 @@ protocol OmniBar: AnyObject {
 }
 
 extension OmniBar {
+    func startBrowsingIfNeeded() {
+        startBrowsing()
+    }
+
     var isInputFirstResponder: Bool {
         barView.textField.isFirstResponder || (barView as? ExpandableOmniBarView)?.aiChatTextView.isFirstResponder == true
     }

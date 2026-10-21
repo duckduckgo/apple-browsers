@@ -877,12 +877,22 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case protectedDataLoadGate
     /// Failsafe for waiting on embedded background content before restoring web pages.
     case stateRestorationGate
-    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health, and for the
+    /// background-load readiness observation, which asks the context to join the load already in progress to learn how it ended.
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder
+    /// Controls reloading an unchanged GET document after a late background startup loses its first response.
+    case cpmLateBackgroundDocumentRecovery
+    /// Controls retrying failed embedded background content without replacing its context (P2).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
+    case cpmBackgroundLoadRecovery
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
+
+    /// Restarts the embedded background after a confirmed Network process replacement.
+    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219531810004073
+    case cpmNetworkProcessRecovery
     /// Failsafe for keeping the embedded CPM origin stable across context reloads.
     /// https://app.asana.com/1/137249556945/task/1219231427593373
     case cpmStableBaseURL

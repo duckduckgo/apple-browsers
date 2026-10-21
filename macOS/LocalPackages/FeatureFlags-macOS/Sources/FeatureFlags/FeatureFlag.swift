@@ -103,7 +103,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
     case webExtensionStateRestorationGate
 
-    /// Failsafe for Web Extensions background-process diagnostics observation.
+    /// Failsafe for Web Extensions background-process diagnostics observation: the forwarding delegate and the
+    /// background-load readiness observation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
 
@@ -114,10 +115,21 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
 
+    /// Opt-in one-document GET recovery after the five-second background-readiness wait expires.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219588497257482
+    case cpmLateBackgroundDocumentRecovery
+
+    /// Retries a failed embedded background load in the same context, independently of hang recovery.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
+    case cpmBackgroundLoadRecovery
+
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     /// https://app.asana.com/0/0/1218855001685906
     case cpmMessagingHangRecovery
 
+    /// Restarts the embedded background after a confirmed Network process replacement.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
+    case cpmNetworkProcessRecovery
     /// Failsafe for keeping the embedded CPM origin stable across context reloads.
     /// https://app.asana.com/1/137249556945/task/1219231427593373
     case cpmStableBaseURL
@@ -751,8 +763,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
         case .cpmDiagnosticsRecorder:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
+        case .cpmLateBackgroundDocumentRecovery:
+            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmLateBackgroundDocumentRecovery), category: .webExtensions)
+        case .cpmBackgroundLoadRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRecovery), category: .webExtensions)
         case .cpmMessagingHangRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery), category: .webExtensions)
+        case .cpmNetworkProcessRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery), category: .webExtensions)
         case .cpmStableBaseURL:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL), category: .webExtensions)
         case .cpmBackgroundGraveyardTreatment:

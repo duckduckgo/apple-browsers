@@ -125,6 +125,17 @@ public enum WebExtensionManagerFactory {
             isCPMMessagingHangRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
             },
+            isCPMNetworkProcessRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isApplicationInBackground: { UIApplication.shared.applicationState == .background },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
             isCPMStableBaseURLEnabled: {
                 featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },

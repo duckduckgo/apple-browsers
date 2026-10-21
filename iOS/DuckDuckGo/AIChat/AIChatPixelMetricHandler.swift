@@ -40,7 +40,14 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
     private let timeElapsedInMinutes: Int?
     private let pixelFiring: (any PixelKitFiring)?
     private let featureDiscovery: FeatureDiscovery
+    private let promptContextProvider: DuckAIPromptPixelContextProviding?
+    private let usageContextProvider: UsageContextProviding
     private let timestampParameterKey = "delta-timestamp-minutes"
+
+    enum PromptParameter {
+        static let surface = "surface"
+        static let unattributedSource = "unattributed"
+    }
 
     /// The metrics the frontend reports when a prompt is submitted through its own composer.
     private static let promptSubmissionMetrics: Set<AIChatMetricName> = [.userDidSubmitPrompt, .userDidSubmitFirstPrompt]
@@ -98,16 +105,20 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     init(timeElapsedInMinutes: Int? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         promptContextProvider: DuckAIPromptPixelContextProviding? = nil,
+         usageContextProvider: UsageContextProviding = UsageContextProvider()) {
         self.timeElapsedInMinutes = timeElapsedInMinutes
         self.pixelFiring = pixelFiring
         self.featureDiscovery = featureDiscovery
+        self.promptContextProvider = promptContextProvider
+        self.usageContextProvider = usageContextProvider
     }
 
     // MARK: - AIChatPixelMetricHandling
 
     func fireOpenAIChat() {
-        let parameters = timestampParameters ?? [:]
+        let parameters = timestampParameters(minutes: timeElapsedInMinutes)
         pixelFiring?.fire(Pixel.Event.aiChatOpen, options: .parameters(parameters))
     }
 
@@ -115,7 +126,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
         if let event = Self.metricToEventMap[metric.metricName] {
             var parameters: [String: String] = [:]
             if metric.shouldIncludeTimestampParameters {
-                parameters = timestampParameters ?? [:]
+                parameters = timestampParameters(minutes: timeElapsedInMinutes ?? promptContextProvider?.minutesSincePageLoad)
             }
 
             // Native submission paths mark the flag first, so this claims first_prompt_new_install
@@ -123,6 +134,9 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
             let isPromptSubmission = Self.promptSubmissionMetrics.contains(metric.metricName)
             if isPromptSubmission && featureDiscovery.isFirstDuckAIPromptNewInstall {
                 parameters[PixelParameters.aiChatFirstPromptNewInstall] = "true"
+            }
+            if isPromptSubmission {
+                parameters.merge(promptAttributionParameters()) { $1 }
             }
 
             pixelFiring?.fire(event, options: .parameters(parameters))
@@ -142,9 +156,17 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     // MARK: - Private Helpers
 
-    private var timestampParameters: [String: String]? {
-        guard let timeElapsed = timeElapsedInMinutes else { return nil }
-        return [timestampParameterKey: "\(timeElapsed)"]
+    private func timestampParameters(minutes: Int?) -> [String: String] {
+        guard let minutes else { return [:] }
+        return [timestampParameterKey: "\(minutes)"]
+    }
+
+    private func promptAttributionParameters() -> [String: String] {
+        guard let context = promptContextProvider?.contextForSubmittedPrompt() else { return [:] }
+        return usageContextProvider.currentContext.parameters.merging([
+            PixelParameters.source: context.source?.rawValue ?? PromptParameter.unattributedSource,
+            PromptParameter.surface: context.surface.rawValue,
+        ]) { $1 }
     }
 }
 
@@ -155,6 +177,8 @@ enum VoiceEntryPointSource: String {
     case ntp
     case toolbar
     case addressBar = "address_bar"
+    /// "New voice chat" on a Duck.ai page.
+    case duckAI = "duck_ai"
     case controlCenter = "widget.controlcenter"
     case lockscreenComplication = "widget.lockscreen.complication"
     case quickActions = "widget.quickactions"

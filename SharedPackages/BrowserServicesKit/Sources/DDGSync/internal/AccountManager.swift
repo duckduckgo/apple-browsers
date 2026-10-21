@@ -258,18 +258,16 @@ struct AccountManager: AccountManaging {
                 throw AuditLogError.missingRequiredAfterCursor
             }
         }
-        return response.auditLog
-    }
-
-    func decodeAuditLogEntriesForDebug(_ entries: [AuditLogEntry], for account: SyncAccount) async throws -> [AuditLogEntryDecodingResult] {
-        let decoder = AuditLogEntryDecoder(accountInfoKeys: accountInfoKeys, deviceMapper: registeredDeviceMapper)
-        var results = [AuditLogEntryDecodingResult]()
-        results.reserveCapacity(entries.count)
-        for entry in entries {
+        let pageKeyProvider = accountInfoKeys.map { PageScopedAccountInfoKeys(manager: $0) }
+        let decoder = AuditLogEntryDecoder(accountInfoKeys: pageKeyProvider,
+                                           deviceMapper: registeredDeviceMapper)
+        var entries = [AuditLogEntryDecodingResult]()
+        entries.reserveCapacity(response.auditLog.entries.count)
+        for entry in response.auditLog.entries {
             try Task.checkCancellation()
-            results.append(try await decoder.decode(entry, for: account))
+            entries.append(try await decoder.decode(entry, for: account))
         }
-        return results
+        return AuditLogPage(entries: entries, after: response.auditLog.after, before: response.auditLog.before)
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {
@@ -528,8 +526,8 @@ struct AccountManager: AccountManaging {
         var devices: DeviceWrapper?
     }
 
-    struct FetchAuditLogResult: Decodable {
-        let auditLog: AuditLogPage
+    private struct FetchAuditLogResult: Decodable {
+        let auditLog: AuditLogResponsePage
     }
 }
 
@@ -559,8 +557,14 @@ enum AuditLogError: DDGError {
     }
 }
 
-struct AuditLogPage: Decodable {
+private struct AuditLogResponsePage: Decodable {
     let entries: [AuditLogEntry]
+    let after: String?
+    let before: String?
+}
+
+struct AuditLogPage {
+    let entries: [AuditLogEntryDecodingResult]
     let after: String?
     let before: String?
 }

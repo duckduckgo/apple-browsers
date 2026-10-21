@@ -291,8 +291,7 @@ public protocol DDGSyncingDebuggingSupport {
     func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int)
     /// Fetches devices through the production mapping path and includes the source used for each displayed device.
     func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo]
-    func fetchAuditLogForDebug() async throws -> AuditLogDebugSummary
-    func fetchAuditLogEntriesForDebug() async throws -> AuditLogDebugEntries
+    func auditLogDumpForDebug() async throws -> String
     func isDeviceInfoMigrationCompleteForDebug() throws -> Bool
     func resetDeviceInfoMigrationForDebug()
 }
@@ -310,11 +309,7 @@ public extension DDGSyncingDebuggingSupport {
         throw SyncError.accountNotFound
     }
 
-    func fetchAuditLogForDebug() async throws -> AuditLogDebugSummary {
-        throw SyncError.accountNotFound
-    }
-
-    func fetchAuditLogEntriesForDebug() async throws -> AuditLogDebugEntries {
+    func auditLogDumpForDebug() async throws -> String {
         throw SyncError.accountNotFound
     }
 
@@ -336,32 +331,6 @@ public struct RegisteredDeviceDebugInfo: Sendable {
     public let device: RegisteredDevice
     public let source: Source
     public let deviceInfoIssue: String?
-}
-
-public struct AuditLogDebugSummary: Sendable {
-    public let entryCount: Int
-    public let hasAfterCursor: Bool
-    public let hasBeforeCursor: Bool
-
-    public init(entryCount: Int, hasAfterCursor: Bool, hasBeforeCursor: Bool) {
-        self.entryCount = entryCount
-        self.hasAfterCursor = hasAfterCursor
-        self.hasBeforeCursor = hasBeforeCursor
-    }
-}
-
-public struct AuditLogDebugEntries: Sendable {
-    public let entryCount: Int
-    public let hasAfterCursor: Bool
-    public let hasBeforeCursor: Bool
-    public let formattedEntries: String
-
-    public init(entryCount: Int, hasAfterCursor: Bool, hasBeforeCursor: Bool, formattedEntries: String) {
-        self.entryCount = entryCount
-        self.hasAfterCursor = hasAfterCursor
-        self.hasBeforeCursor = hasBeforeCursor
-        self.formattedEntries = formattedEntries
-    }
 }
 
 public enum ServerEnvironment: LosslessStringConvertible {

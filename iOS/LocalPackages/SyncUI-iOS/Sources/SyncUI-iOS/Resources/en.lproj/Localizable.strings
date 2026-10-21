@@ -115,6 +115,15 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Remove Device?";
 
+/* Empty state shown when there is no device activity */
+"sync.device.activity.empty" = "You have no recent activity";
+
+/* Description shown above device activity history */
+"sync.device.activity.intro" = "Recently synced or removed devices:";
+
+/* Sync device activity screen and settings row title */
+"sync.device.activity.title" = "Device Activity";
+
 /* Button title to share link for downloading DuckDuckGo on other devices */
 "sync.get.other.devices.card.button.title" = "Share Download Link";
 

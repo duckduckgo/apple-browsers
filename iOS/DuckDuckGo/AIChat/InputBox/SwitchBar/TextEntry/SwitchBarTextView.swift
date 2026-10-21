@@ -26,23 +26,29 @@ import DesignResourcesKitIcons
 final class SwitchBarTextView: UITextView {
 
     var onTouchesBeganHandler: (() -> Void)?
+    var isInputFrozen = false
 
     /// When set, a native image/file paste is routed into the attachment strip; `nil` keeps default paste.
     weak var attachmentPasteHandler: AttachmentPasteHandling?
 
+    var pasteboard: () -> UIPasteboard = { .general }
+
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
-        if action == #selector(paste(_:)), AttachmentPasteRouting.canPaste(with: attachmentPasteHandler) {
+        if isInputFrozen && action == #selector(paste(_:)) { return false }
+        if action == #selector(paste(_:)), AttachmentPasteRouting.canPaste(with: attachmentPasteHandler, pasteboard: pasteboard()) {
             return true
         }
         return super.canPerformAction(action, withSender: sender)
     }
 
     override func paste(_ sender: Any?) {
-        guard AttachmentPasteRouting.routePaste(with: attachmentPasteHandler) else {
+        guard !isInputFrozen else { return }
+        let pasteboard = pasteboard()
+        guard AttachmentPasteRouting.routePaste(with: attachmentPasteHandler, pasteboard: pasteboard) else {
             super.paste(sender)
             return
         }
-        if let text = UIPasteboard.general.string, !text.isEmpty {
+        if let text = pasteboard.string, !text.isEmpty {
             insertText(text)
         }
     }

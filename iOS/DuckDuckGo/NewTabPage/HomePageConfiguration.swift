@@ -66,6 +66,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     private let remoteMessagingStore: RemoteMessagingStoring
     private let subscriptionDataReporter: SubscriptionDataReporting
     private let isStillOnboarding: () -> Bool
+    private let promptExposureReporter: PromptExposureReporting
     private let promoGate: PromoGating?
     private let notificationCenter: NotificationCenter
     private let contentDidChangeSubject = PassthroughSubject<Void, Never>()
@@ -98,12 +99,14 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
          isStillOnboarding: @escaping () -> Bool,
          promoGate: PromoGating? = nil,
          isRMFAdmissionEnabled: Bool = true,
-         notificationCenter: NotificationCenter = .default
+         notificationCenter: NotificationCenter = .default,
+         promptExposureReporter: PromptExposureReporting
     ) {
         homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
         self.remoteMessagingStore = remoteMessagingStore
         self.subscriptionDataReporter = subscriptionDataReporter
         self.isStillOnboarding = isStillOnboarding
+        self.promptExposureReporter = promptExposureReporter
         self.promoGate = promoGate
         self.notificationCenter = notificationCenter
         mode = promoGate?.mode ?? .legacy
@@ -412,6 +415,9 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         publishCoordinatedMessages(messages)
         ownership?.lease.release()
         rmfOwnership = nil
+        if ownership?.lease.didConfirmAppearance == true {
+            promptExposureReporter.recordCoordinatedPromptFinished(.ntpCard)
+        }
     }
 
     private func isCurrent(_ presentationContext: HomeMessagePresentationContext, for messageID: String) -> Bool {
@@ -432,6 +438,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     private func reportRemoteMessageShown(_ remoteMessage: RemoteMessageModel) {
+        promptExposureReporter.reportRemoteMessageCardShown(messageID: remoteMessage.id)
         Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
         if remoteMessage.isMetricsEnabled {
             PixelKit.fire(Pixel.Event.remoteMessageShown,

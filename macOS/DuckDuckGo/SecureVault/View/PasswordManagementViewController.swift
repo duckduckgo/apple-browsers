@@ -43,9 +43,10 @@ protocol PasswordManagementDelegate: AnyObject {
 
 final class PasswordManagementViewController: NSViewController {
 
-    static func create(pinningManager: PinningManager) -> Self {
+    static func create(pinningManager: PinningManager, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> Self {
         let controller = Self(nibName: nil, bundle: nil)
         controller.pinningManager = pinningManager
+        controller.pixelFiring = pixelFiring
         // Calling loadView() directly won't send viewDidLoad()
         _ = controller.view
 
@@ -170,6 +171,8 @@ final class PasswordManagementViewController: NSViewController {
 
     private let passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
     private let syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager
+    private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting = Application.appDelegate.autofillEmptyStatePromoDelegate
+    private var pixelFiring: (any PixelKitFiring)?
 
     private let emailManager = EmailManager()
     private let urlMatcher = AutofillDomainNameUrlMatcher()
@@ -533,6 +536,13 @@ final class PasswordManagementViewController: NSViewController {
 
         setUpEmptyStateMessageView()
 
+        emptyStatePromo.isPromoActivePublisher
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.updateEmptyState(state: self?.listModel?.emptyState)
+            }
+            .store(in: &cancellables)
+
         addVaultItemButton.toolTip = UserText.addItemTooltip
         moreButton.toolTip = UserText.moreOptionsTooltip
 
@@ -783,14 +793,21 @@ final class PasswordManagementViewController: NSViewController {
     @objc func onImportClicked(_ sender: NSButton) {
         self.dismiss()
         ensureMainWindowExists()
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
+        emptyStatePromo.importStarted()
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: { [emptyStatePromo] in
+            emptyStatePromo.importFinished()
+        })
     }
 
     @objc func onSyncClicked(_ sender: Any) {
         self.dismiss()
         let source = SyncDeviceButtonTouchpoint.passwordsEmpty
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-        DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.rawValue]))
+        guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
+        emptyStatePromo.syncSetupStarted()
+        deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in
+            emptyStatePromo.syncSetupFinished()
+        })
     }
 
     @objc func onDeleteAllPasswordsClicked(_ sender: Any) {
@@ -1598,6 +1615,10 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func showEmptyState(category: SecureVaultSorting.Category) {
+        if emptyState.isHidden {
+            NotificationCenter.default.post(name: .passwordsPanelEmptyStateShown, object: nil)
+        }
+
         let passwordsAddImage: NSImage = NSImage(resource: .passwordsAdd128)
 
         switch category {
@@ -1625,8 +1646,9 @@ final class PasswordManagementViewController: NSViewController {
         if !hideMessage {
             setUpEmptyStateMessageView()
         }
+        let hideImportButton = hideImportButton || !emptyStatePromo.isPromoActive
         emptyStateImportButton.isHidden = hideImportButton
-        emptyStateSyncButton.isHidden = hideSyncButton || !syncButtonModel.shouldShowSyncButton
+        emptyStateSyncButton.isHidden = hideSyncButton || !emptyStatePromo.isPromoActive || !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
 
         // Setting title to empty string when hidden since there is a width constraint dependency between the import and sync buttons

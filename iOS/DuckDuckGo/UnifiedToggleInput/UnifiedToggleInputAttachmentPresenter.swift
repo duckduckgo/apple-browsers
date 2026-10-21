@@ -54,8 +54,8 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var pickerCallbacksProvider: (() -> PickerCallbacks)?
     private var pickerCallbacks: [ObjectIdentifier: PickerCallbacks] = [:]
 
-    var tabPickerPixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface?)?
-    var onTabPickerEvent: ((MultiTabAttachmentPixel.Action, UnifiedToggleInputPixelSurface) -> Void)?
+    var tabPickerPixelAttributionProvider: (() -> MultiTabPixelAttribution?)?
+    var onTabPickerEvent: ((MultiTabAttachmentPixel.Action, MultiTabPixelAttribution) -> Void)?
 
     var onExpandIfNeeded: (() -> Void)?
     var onImagePicked: ((UIImage, String) -> Void)?
@@ -245,7 +245,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                                   isAvailable: @escaping () -> Bool,
                                   tabActionHandler: @escaping (MultiTabAttachmentCandidate, Bool, TabAttachmentOrigin) -> TabAttachmentSelectionResult) {
         let pixelSession = MultiTabPickerPixelSession(
-            surfaceProvider: { [weak self] in self?.tabPickerPixelSurfaceProvider?() },
+            attributionProvider: { [weak self] in self?.tabPickerPixelAttributionProvider?() },
             report: { [weak self] in self?.onTabPickerEvent?($0, $1) })
         let viewModel = MultiTabAttachmentPickerViewModel(
             candidates: attachableTabs,
@@ -389,7 +389,7 @@ private extension UnifiedToggleInputAttachmentPresenter {
     }
 
     func presentDocumentPicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedFileTypes, asCopy: true)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedFileTypes, asCopy: false)
         picker.allowsMultipleSelection = false
         picker.delegate = self
         pickerCallbacks[ObjectIdentifier(picker)] = pickerCallbacksProvider?()

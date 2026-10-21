@@ -104,7 +104,14 @@ public enum WebExtensionManagerFactory {
                 case .downgraded: change = .downgraded
                 case nil: change = nil
                 }
-                return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate)
+                return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate) {
+                    switch UIApplication.shared.applicationState {
+                    case .active: return .active
+                    case .inactive: return .inactive
+                    case .background: return .background
+                    @unknown default: return .inactive
+                    }
+                }
             }
         ) : nil
 
@@ -117,6 +124,17 @@ public enum WebExtensionManagerFactory {
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
             isCPMMessagingHangRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
+            },
+            isCPMNetworkProcessRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isApplicationInBackground: { UIApplication.shared.applicationState == .background },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,

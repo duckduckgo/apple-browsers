@@ -165,6 +165,26 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(visible, [.usageWarning])
     }
 
+    func testFooterErrorWhileEditingHidesTheEditDisclaimerAndItReturnsWhenTheErrorClears() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        defer { sut.removeFromSuperview() }
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let label = try XCTUnwrap(allDescendants(of: UILabel.self, in: sut).first { $0.text == UserText.aiChatEditReplaceResponseDisclaimer })
+        let disclaimer = try XCTUnwrap(sequence(first: label as UIView, next: \.superview).first { $0.superview === sut })
+        let error = UTIFooterItem(id: .promptTooLong, message: UTIFooterMessageMapper().promptTooLongMessage(count: 16_100, limit: 16_000))
+
+        sut.setEditMode(true, showsReplaceDisclaimer: true)
+        XCTAssertEqual(disclaimer.alpha, 1)
+
+        sut.setFooterMessages([error])
+        XCTAssertEqual(disclaimer.alpha, 0)
+
+        sut.setFooterMessages([])
+        XCTAssertEqual(disclaimer.alpha, 1)
+    }
+
     func testWhenTheHandlerAsksForTheAskButtonThenSubmitReadsAsk() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
@@ -295,9 +315,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     func test_flankedPillCentresTrailingButtonsOnItsTallerCard() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
-        sut.frame = CGRect(x: 0, y: 0, width: 402, height: 120)
+        sut.frame = CGRect(x: 0, y: 0, width: 402, height: UnifiedToggleInputView.aiTabCollapsedFooterHeight)
 
         let buttons = try XCTUnwrap(firstDescendant(of: SwitchBarButtonsView.self, in: sut))
+        let textEntry = try XCTUnwrap(buttons.superview as? SwitchBarTextEntryView)
 
         sut.applyCardLayout(.collapsed, animated: false)
         sut.layoutIfNeeded()
@@ -305,6 +326,8 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         sut.applyCardLayout(.flanked, animated: false)
         sut.layoutIfNeeded()
+        textEntry.setNeedsLayout()
+        textEntry.layoutIfNeeded()
         XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
     }
 
@@ -363,6 +386,57 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.frame.size.width = 1024
         sut.layoutIfNeeded()
         XCTAssertEqual(stack.arrangedSubviews.map { $0.bounds.width }, [240, 240, 196, 82])
+    }
+
+    func testPastedTextChipCapsTheVoiceOverValueForALongSingleLine() throws {
+        let paste = AIChatPastedText(content: String(repeating: "a", count: 5_000))
+        let sut = UnifiedToggleInputAttachmentThumbnailView(attachment: .pastedText(paste), usesCompactLayout: true)
+
+        XCTAssertEqual(sut.accessibilityValue, String(repeating: "a", count: 100) + "…")
+    }
+
+    func testPastedTextChipIsOneVoiceOverButtonThatOpensTheSheetAndOffersRemove() throws {
+        let paste = AIChatPastedText(content: "\n  First line of the paste \nsecond line")
+        let sut = UnifiedToggleInputAttachmentThumbnailView(attachment: .pastedText(paste), usesCompactLayout: true)
+        var tapped: [UUID] = []
+        var removed: [UUID] = []
+        sut.onTap = { tapped.append($0) }
+        sut.onRemove = { removed.append($0) }
+
+        XCTAssertTrue(sut.isAccessibilityElement)
+        XCTAssertTrue(sut.accessibilityTraits.contains(.button))
+        XCTAssertEqual(sut.accessibilityLabel, "Pasted text")
+        XCTAssertEqual(sut.accessibilityValue, "First line of the paste")
+        XCTAssertEqual(sut.intrinsicContentSize.width, UnifiedToggleInputAttachmentThumbnailView.Constants.fileChipWidth)
+        let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        XCTAssertEqual(label.text, "First line of the paste")
+
+        XCTAssertTrue(sut.accessibilityActivate())
+        XCTAssertEqual(tapped, [paste.id])
+
+        let actions = try XCTUnwrap(sut.accessibilityCustomActions)
+        XCTAssertEqual(actions.map(\.name), ["Remove"])
+        XCTAssertTrue(actions[0].actionHandler?(actions[0]) ?? false)
+        XCTAssertEqual(removed, [paste.id])
+    }
+
+    func testPastedTextChipTakesTheErrorColoursOnlyWhileTheStripShowsThePromptLengthError() throws {
+        let strip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
+        strip.addAttachment(.pastedText(AIChatPastedText(content: "pasted")))
+        strip.addAttachment(makeFileAttachment())
+        let chips = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: strip)).arrangedSubviews.compactMap { $0 as? UnifiedToggleInputAttachmentThumbnailView }
+        let pastedChip = try XCTUnwrap(chips.first)
+        let fileChip = try XCTUnwrap(chips.last)
+        let normalBorder = pastedChip.subviews[0].layer.borderColor
+
+        strip.showsPromptLengthError = true
+
+        XCTAssertNotEqual(pastedChip.subviews[0].layer.borderColor, normalBorder)
+        XCTAssertEqual(fileChip.subviews[0].layer.borderColor, normalBorder, "Only pasted-text chips show the length error")
+        XCTAssertFalse(strip.attachments[0].isInvalid, "The error state is not the invalid-file state")
+
+        strip.showsPromptLengthError = false
+        XCTAssertEqual(pastedChip.subviews[0].layer.borderColor, normalBorder)
     }
 
     func testWhenCompactLayoutIsDisabledThenImageRemainsThumbnailBesideRemoveButton() throws {
@@ -1224,6 +1298,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     private func makePageContext(title: String, url: String) -> AIChatPageContext {
         let data = AIChatPageContextData(title: title, favicon: [], url: url, content: "", truncated: false, fullContentLength: 0)
         return AIChatPageContext(contextData: data, favicon: nil)
+    }
+
+    private func allDescendants<T: UIView>(of type: T.Type, in view: UIView) -> [T] {
+        view.subviews.flatMap { [$0 as? T].compactMap { $0 } + allDescendants(of: type, in: $0) }
     }
 
     private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {

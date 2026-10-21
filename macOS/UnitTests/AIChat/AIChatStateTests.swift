@@ -124,6 +124,43 @@ final class AIChatStateTests: XCTestCase {
         XCTAssertFalse(chatState.isSessionExpired)
     }
 
+    // MARK: - Reset Chat Tests
+
+    func testResetChat_clearsChatAndKeepsLayout() {
+        // Given
+        let floatingWindowFrame = NSRect(x: 10, y: 20, width: 300, height: 400)
+        chatState.aiChatURL = URL(string: "https://duck.ai/?chatID=moved-chat")!.forAIChatSidebar()
+        chatState.restorationData = AIChatRestorationData()
+        chatState.sidebarWidth = 420
+        chatState.floatingWindowFrame = floatingWindowFrame
+        chatState.setHidden()
+        let hiddenAt = chatState.hiddenAt
+
+        // When
+        chatState.resetChat()
+
+        // Then
+        XCTAssertNil(chatState.currentAIChatURL.duckAIChatID)
+        XCTAssertEqual(chatState.currentAIChatURL, AIChatState().currentAIChatURL)
+        XCTAssertNil(chatState.restorationData)
+        XCTAssertEqual(chatState.sidebarWidth, 420)
+        XCTAssertEqual(chatState.floatingWindowFrame, floatingWindowFrame)
+        XCTAssertEqual(chatState.hiddenAt, hiddenAt)
+    }
+
+    func testResetChat_whenRestoredInitialURLHasChatID_clearsChat() {
+        // Given - a restored state gets its last URL, including chatID, as the initial URL
+        let state = AIChatState(initialAIChatURL: URL(string: "https://duck.ai/?chatID=moved-chat")!.forAIChatSidebar())
+        XCTAssertEqual(state.currentAIChatURL.duckAIChatID, "moved-chat")
+
+        // When
+        state.resetChat()
+
+        // Then
+        XCTAssertNil(state.currentAIChatURL.duckAIChatID)
+        XCTAssertEqual(state.currentAIChatURL, AIChatState().currentAIChatURL)
+    }
+
     // MARK: - Presentation Mode Transition Tests
 
     func testSetSidebar_setsPresentationModeToSidebar() {

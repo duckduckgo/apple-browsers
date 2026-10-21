@@ -78,10 +78,7 @@ extension TabViewController {
     }
 
     private func onNewTabAction(url: URL) {
-        delegate?.tab(self,
-                      didRequestNewTabForUrl: url,
-                      openedByPage: false,
-                      inheritingAttribution: adClickAttributionLogic.state)
+        delegate?.tab(self, didRequestNewTabForFollowedLink: url, inheritingAttribution: adClickAttributionLogic.state)
     }
 
     private func onFireTabAction(url: URL) {
@@ -165,6 +162,7 @@ extension TabViewController {
             voiceSearchHelper: voiceSearchHelper,
             darkReaderFeatureSettings: darkReaderFeatureSettings,
             autoplaySettings: autoplaySettings,
+            usageContextProvider: usageContextProvider,
             adBlockingAvailability: adBlockingAvailability,
             eventHub: eventHub,
             webExtensionManagerProvider: webExtensionManagerProvider,

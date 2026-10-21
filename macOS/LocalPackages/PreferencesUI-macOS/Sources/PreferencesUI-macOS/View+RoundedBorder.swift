@@ -21,7 +21,7 @@ import SwiftUI
 
 extension View {
     public func roundedBorder() -> some View {
-        let cornerRadius: CGFloat = DesignSystemRebrand.isAppRebranded() ? 12 : 8
+        let cornerRadius: CGFloat = 12
         return background(ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(Color(.blackWhite10), lineWidth: 1)

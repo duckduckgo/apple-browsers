@@ -252,7 +252,7 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         let userScript = makeTestUserScript()
 
         sut.unifiedToggleInputDidSubmitPrompt("hello", modelId: nil, tools: nil, reasoningEffort: nil,
-                                              images: nil, files: nil, termsAccepted: false)
+                                              attachments: .none, termsAccepted: false)
         sut.bindToUserScript(userScript)
         userScript.onPromptSubmitted?()
 

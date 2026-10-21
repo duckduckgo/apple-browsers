@@ -78,6 +78,7 @@ public enum AIChatMetricName: String, Codable {
 public enum AIChatModelTier: String, Codable {
     case free
     case plus
+    case pro
     case `internal`
     case unknown
 }

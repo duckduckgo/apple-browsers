@@ -162,4 +162,88 @@ private extension AIChatBonusRecordTests {
         return try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
+    // MARK: - Boost active
+
+    @Test(
+        "Check a boost is active only with terms that haven't expired",
+        arguments: [
+            (AIChatBonusRecordMock.active, true),
+            (AIChatBonusRecordMock.pending, false),
+            (AIChatBonusRecordMock.ended, false),
+            (AIChatBonusRecordMock.dismissedOnly, false),
+            (AIChatBonusRecord(), false)
+        ]
+    )
+    func boostIsActiveOnlyWithUnexpiredTerms(record: AIChatBonusRecord, isActive: Bool) {
+        // GIVEN
+        let beforeExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt - 1)
+
+        // WHEN
+        let result = record.isBoostActive(at: beforeExpiry)
+
+        // THEN
+        #expect(result == isActive)
+    }
+
+    @Test(
+        "Check a boost is no longer active from its expiry",
+        arguments: [0, 1] as [TimeInterval]
+    )
+    func boostIsNotActiveFromItsExpiry(secondsAfterExpiry: TimeInterval) {
+        // GIVEN
+        let date = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt + secondsAfterExpiry)
+
+        // WHEN
+        let result = AIChatBonusRecordMock.active.isBoostActive(at: date)
+
+        // THEN
+        #expect(result == false)
+    }
+
+    // MARK: - Boost expired
+
+    @Test(
+        "Check only a confirmed boost can be expired",
+        arguments: [
+            (AIChatBonusRecordMock.active, true),
+            (AIChatBonusRecordMock.pending, false),
+            (AIChatBonusRecordMock.ended, false),
+            (AIChatBonusRecordMock.dismissedOnly, false),
+            (AIChatBonusRecord(), false)
+        ]
+    )
+    func onlyAConfirmedBoostCanBeExpired(record: AIChatBonusRecord, hasExpired: Bool) {
+        // GIVEN
+        let afterExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt + 1)
+
+        // WHEN
+        let result = record.hasBoostExpired(at: afterExpiry)
+
+        // THEN
+        #expect(result == hasExpired)
+    }
+
+    @Test("Check a boost hasn't expired before its expiry")
+    func boostHasNotExpiredBeforeItsExpiry() {
+        // GIVEN
+        let beforeExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt - 1)
+
+        // WHEN
+        let result = AIChatBonusRecordMock.active.hasBoostExpired(at: beforeExpiry)
+
+        // THEN
+        #expect(!result)
+    }
+
+    @Test("Check a boost has expired from its expiry")
+    func boostHasExpiredFromItsExpiry() {
+        // GIVEN
+        let atExpiry = Date(timeIntervalSince1970: AIChatBonusRecordMock.terms.expiresAt)
+
+        // WHEN
+        let result = AIChatBonusRecordMock.active.hasBoostExpired(at: atExpiry)
+
+        // THEN
+        #expect(result)
+    }
 }

@@ -154,7 +154,7 @@ struct RedesignedFavoritesView: View {
             Spacer()
             Button {
                 guard !isDraggingFavorite else { return }
-                model.expansionState.isExpanded = false
+                model.changeExpansion(to: false)
             } label: {
                 Image(uiImage: DesignSystemImages.Glyphs.Size12.chevronUp)
                     .frame(width: Metrics.collapseIconSize, height: Metrics.collapseIconSize)
@@ -242,7 +242,7 @@ struct RedesignedFavoritesView: View {
     private func expansionButton(expands: Bool) -> some View {
         Button {
             guard !isDraggingFavorite else { return }
-            model.expansionState.isExpanded = expands
+            model.changeExpansion(to: expands)
         } label: {
             RedesignedFavoriteTileView(title: expands ? UserText.newTabPageFavoritesSeeAll : UserText.newTabPageFavoritesSeeLess) {
                 Image(uiImage: expands ? DesignSystemImages.Glyphs.Size24.chevronDownSmall : DesignSystemImages.Glyphs.Size24.chevronUpSmall)

@@ -181,6 +181,9 @@ extension WebExtensionManager {
             )
 
             installationStore.add(installedExtension)
+            if type == .embedded {
+                trackEmbeddedBackgroundStartup(identifier: identifier)
+            }
             reportLifecycleEvent(.loaded(identifier: identifier, type: type))
             Logger.webExtensions.info("✅ Installed embedded extension \(type.rawValue) v\(loadResult.version ?? "?")")
             notifyUpdate()

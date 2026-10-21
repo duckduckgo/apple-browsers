@@ -162,6 +162,7 @@ public class SyncSettingsViewModel: ObservableObject {
         case thisDevice = "this_device"
         case recover
         case deepLink = "deep_link"
+        case sessionRestore = "session_restore"
     }
 
     public enum DeviceDetailsPixelEvent: Equatable {
@@ -500,8 +501,7 @@ public class SyncSettingsViewModel: ObservableObject {
     }
 
     private func shouldDeferAuthentication(for continuation: PreservedAccountContinuation) -> Bool {
-        guard isImprovedPairingFlowEnabled, continuation != .setup(.pairing) else { return false }
-        return delegate?.isPreservedAccountPromptNeeded() != true
+        isImprovedPairingFlowEnabled && continuation != .setup(.pairing)
     }
 
     @MainActor
@@ -737,12 +737,16 @@ public class SyncSettingsViewModel: ObservableObject {
         delegate?.showRecoveryCodeEntry()
     }
 
-    public func startAutoRestoreSecondaryAction() {
+    @MainActor
+    public func startAutoRestoreSecondaryAction() async {
         guard let continuation = pendingPreservedAccountContinuation else {
             assertionFailure("Secondary action fired without pending continuation")
             return
         }
         delegate?.fireAutoRestorePixel(event: .readySkipRestoreTapped)
+        if continuation == .recover {
+            guard await authenticateDeferredFlowIfNeeded(setupSource: .sessionRestore) else { return }
+        }
         clearPendingPreservedAccountContinuation()
         delegate?.continueAfterPreservedAccountRemoval(continuation)
     }
@@ -750,10 +754,18 @@ public class SyncSettingsViewModel: ObservableObject {
     public func startAutoRestore() {
         Task { @MainActor in
             delegate?.fireAutoRestorePixel(event: .readyRestoreTapped)
-            guard await commonAuthenticate() else { return }
+            guard await authenticateAutoRestore() else { return }
             clearPendingPreservedAccountContinuation()
             delegate?.showRecoveringDataAutoRestore()
         }
+    }
+
+    @MainActor
+    private func authenticateAutoRestore() async -> Bool {
+        guard isFlowAuthenticationDeferred else {
+            return await commonAuthenticate()
+        }
+        return await authenticateDeferredFlowIfNeeded(setupSource: .sessionRestore)
     }
 
     public func clearPendingPreservedAccountContinuation() {

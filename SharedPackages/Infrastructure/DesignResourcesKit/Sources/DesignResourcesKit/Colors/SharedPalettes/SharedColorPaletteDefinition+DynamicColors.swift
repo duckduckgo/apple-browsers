@@ -151,6 +151,8 @@ extension SharedColorPaletteDefinition {
             return containerBorderTertiary
 
         /// Controls Colors
+        case .controlsBase:
+            return controlsBase
         case .controlsBorderPrimary:
             return controlsBorderPrimary
         case .controlsBorderSecondary:

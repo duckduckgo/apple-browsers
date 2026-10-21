@@ -91,6 +91,7 @@ public enum SharedDesignSystemColor {
     case containerBorderTertiary
 
     // Controls
+    case controlsBase
     case controlsBorderPrimary
     case controlsBorderSecondary
     case controlsBorderTertiary

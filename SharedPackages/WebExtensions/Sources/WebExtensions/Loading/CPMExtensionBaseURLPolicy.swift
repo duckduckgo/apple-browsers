@@ -25,6 +25,7 @@ import WebKit
 final class CPMExtensionBaseURLPolicy {
     private let installationStore: InstalledWebExtensionStoring
     private let isEnabled: @MainActor () -> Bool
+    private let failedBackgroundContexts = NSHashTable<WKWebExtensionContext>.weakObjects()
     // A first install has not reached the persistent registry when the loader creates its context.
     var pendingInstallations: [String: DuckDuckGoWebExtensionType] = [:]
 
@@ -52,22 +53,26 @@ final class CPMExtensionBaseURLPolicy {
         rotateOrigin(of: context)
     }
 
-    /// A crashed service worker can leave error 6 attached to its registration on macOS 27.
-    /// Reset that origin only after its context has successfully unloaded, retaining healthy origins.
-    func prepareForBackgroundFailureReload(of context: WKWebExtensionContext, errors: [Error]) {
-        guard isEnabled(), errors.contains(where: {
+    /// Save a fresh origin before retry/reload can be skipped or the app can terminate.
+    /// The live context keeps its origin. Repeated errors from it must preserve the saved replacement.
+    func recordBackgroundLoadFailure(in context: WKWebExtensionContext, errors: [Error]) {
+        guard isEnabled(), !failedBackgroundContexts.contains(context), errors.contains(where: {
             let error = $0 as NSError
             return error.domain == WKWebExtensionContext.errorDomain &&
                 error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
         }) else { return }
-        rotateOrigin(of: context)
+        if rotateOrigin(of: context) {
+            failedBackgroundContexts.add(context)
+        }
     }
 
-    private func rotateOrigin(of context: WKWebExtensionContext) {
+    @discardableResult
+    private func rotateOrigin(of context: WKWebExtensionContext) -> Bool {
         let identifier = context.uniqueIdentifier
         guard originIdentifier(for: identifier, webExtension: context.webExtension) != nil,
-              let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) else { return }
+              let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) else { return false }
         rotateOrigin(of: installed)
+        return true
     }
 
     private func rotateOrigin(of installed: InstalledWebExtension) {

@@ -408,6 +408,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                     return error.domain == "WKWebExtensionContextErrorDomain" &&
                         error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
                 }) else { return }
+                self.cpmBaseURLPolicy.recordBackgroundLoadFailure(in: context, errors: [error])
                 // WebKit can record a service-worker load failure without invoking pending
                 // loadBackgroundContent callbacks. Release callers before retrying its background.
                 if self.embeddedBackgroundStartupContext === context {
@@ -746,7 +747,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
             if let previousContext {
-                cpmBaseURLPolicy.prepareForBackgroundFailureReload(of: previousContext, errors: previousErrors)
+                cpmBaseURLPolicy.recordBackgroundLoadFailure(in: previousContext, errors: previousErrors)
             }
             cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)

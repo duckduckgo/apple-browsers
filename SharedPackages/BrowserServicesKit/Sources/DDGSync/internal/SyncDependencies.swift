@@ -70,7 +70,6 @@ protocol AccountManaging {
     func logout(deviceId: String, token: String) async throws
 
     func fetchAuditLog(for account: SyncAccount, cursor: AuditLogCursor?, limit: Int?) async throws -> AuditLogPage
-    func decodeAuditLogEntriesForDebug(_ entries: [AuditLogEntry], for account: SyncAccount) async throws -> [AuditLogEntryDecodingResult]
 
     func fetchDevicesForAccount(_ account: SyncAccount) async throws -> RegisteredDeviceMappingResult
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice]

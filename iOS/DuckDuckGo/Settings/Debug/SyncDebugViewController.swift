@@ -67,8 +67,7 @@ class SyncDebugViewController: UITableViewController {
 
         case ensureAccountInfoKey
         case resetMigrationMarker
-        case fetchAuditLog
-        case viewAuditLogEntries
+        case fetchAuditLogDump
 
     }
 
@@ -92,9 +91,8 @@ class SyncDebugViewController: UITableViewController {
     private var accountInfoKeyStatus = "Not checked"
     private var migrationStatus = "Not checked"
     private var isRefreshingDevices = false
-    private var auditLogStatus = "Not checked"
-    private var auditLogEntriesStatus = "Not checked"
-    private var isFetchingAuditLogEntries = false
+    private var auditLogDumpStatus = "Not checked"
+    private var isFetchingAuditLogDump = false
 
     var syncCancellable: Cancellable?
 
@@ -196,13 +194,10 @@ class SyncDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Ensure/repair account_info key"
             case .resetMigrationMarker:
                 cell.textLabel?.text = "Reset migration marker"
-            case .fetchAuditLog:
-                cell.textLabel?.text = "Fetch audit log"
-                cell.detailTextLabel?.text = auditLogStatus
-            case .viewAuditLogEntries:
-                cell.textLabel?.text = "View audit log entries"
-                cell.detailTextLabel?.text = isFetchingAuditLogEntries ? "Loading…" : auditLogEntriesStatus
-                cell.selectionStyle = isFetchingAuditLogEntries ? .none : .default
+            case .fetchAuditLogDump:
+                cell.textLabel?.text = "Fetch decoded audit log"
+                cell.detailTextLabel?.text = isFetchingAuditLogDump ? "Loading…" : auditLogDumpStatus
+                cell.selectionStyle = isFetchingAuditLogDump ? .none : .default
             case .none:
                 break
             }
@@ -322,10 +317,8 @@ class SyncDebugViewController: UITableViewController {
                 ensureAccountInfoKey()
             case .resetMigrationMarker:
                 confirmResetMigrationMarker()
-            case .fetchAuditLog:
-                fetchAuditLogForDebug()
-            case .viewAuditLogEntries:
-                fetchAuditLogEntriesForDebug()
+            case .fetchAuditLogDump:
+                fetchAuditLogDump()
             case .none:
                 break
             }
@@ -453,47 +446,30 @@ class SyncDebugViewController: UITableViewController {
         reloadUnifiedDevicesSection()
     }
 
-    private func fetchAuditLogForDebug() {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                let summary = try await sync.fetchAuditLogForDebug()
-                let message = "Fetched \(summary.entryCount) entries. Newer cursor: \(summary.hasAfterCursor ? "available" : "none"). Older page: \(summary.hasBeforeCursor ? "available" : "none")."
-                auditLogStatus = "\(summary.entryCount) entries • newer: \(summary.hasAfterCursor ? "yes" : "no") • older: \(summary.hasBeforeCursor ? "yes" : "no")"
-                tableView.reloadSections(IndexSet(integer: Sections.testActions.rawValue), with: .automatic)
-                showAlert(title: "Audit Log Fetch Succeeded", message: message)
-            } catch {
-                auditLogStatus = "Failed"
-                tableView.reloadSections(IndexSet(integer: Sections.testActions.rawValue), with: .automatic)
-                showAlert(title: "Unable to Fetch Audit Log", message: String(reflecting: error))
-            }
-        }
-    }
-
-    private func fetchAuditLogEntriesForDebug() {
-        guard !isFetchingAuditLogEntries else { return }
-        isFetchingAuditLogEntries = true
+    private func fetchAuditLogDump() {
+        guard !isFetchingAuditLogDump else { return }
+        isFetchingAuditLogDump = true
         tableView.reloadSections(IndexSet(integer: Sections.testActions.rawValue), with: .automatic)
         Task { @MainActor [weak self] in
             guard let self else { return }
             defer {
-                isFetchingAuditLogEntries = false
+                isFetchingAuditLogDump = false
                 tableView.reloadSections(IndexSet(integer: Sections.testActions.rawValue), with: .automatic)
             }
             do {
-                let report = try await sync.fetchAuditLogEntriesForDebug()
-                auditLogEntriesStatus = "\(report.entryCount) entries • newer: \(report.hasAfterCursor ? "yes" : "no") • older: \(report.hasBeforeCursor ? "yes" : "no")"
-                showAuditLogEntries(report)
+                let report = try await sync.auditLogDumpForDebug()
+                auditLogDumpStatus = "Fetched decoded page"
+                showAuditLogDump(report)
             } catch {
-                auditLogEntriesStatus = "Failed"
-                showAlert(title: "Unable to Read Audit Log Entries", message: String(reflecting: error))
+                auditLogDumpStatus = "Failed"
+                showAlert(title: "Unable to Fetch Decoded Audit Log", message: String(reflecting: error))
             }
         }
     }
 
-    private func showAuditLogEntries(_ report: AuditLogDebugEntries) {
+    private func showAuditLogDump(_ report: String) {
         let details = UIViewController()
-        details.title = "Audit Log Entries"
+        details.title = "Decoded Audit Log"
         details.view.backgroundColor = UIColor(designSystemColor: .background)
 
         let textView = UITextView()
@@ -503,7 +479,7 @@ class SyncDebugViewController: UITableViewController {
         textView.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
         textView.isEditable = false
         textView.isSelectable = true
-        textView.text = "Fetched \(report.entryCount) entries • newer cursor: \(report.hasAfterCursor ? "available" : "none") • older page: \(report.hasBeforeCursor ? "available" : "none")\n\n\(report.formattedEntries.isEmpty ? "No entries returned." : report.formattedEntries)"
+        textView.text = report
         details.view.addSubview(textView)
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: details.view.safeAreaLayoutGuide.topAnchor),

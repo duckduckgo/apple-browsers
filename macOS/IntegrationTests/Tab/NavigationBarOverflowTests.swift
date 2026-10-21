@@ -80,20 +80,20 @@ final class NavigationBarOverflowTests: XCTestCase {
         defer { UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = hasInteractedWithToggle }
         openWindow()
         addExtraToolbarButtons()
-        let toggle = try XCTUnwrap(navigationBar.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl)
-        XCTAssertFalse(toggle.isHidden, "The Search/Duck.ai toggle isn't shown in the new tab address bar")
-        XCTAssertTrue(toggle.isExpanded, "The Search/Duck.ai toggle isn't expanded before the user interacted with it")
+        let addressBarButtons = try XCTUnwrap(navigationBar.addressBarViewController?.addressBarButtonsViewController)
+        XCTAssertTrue(addressBarButtons.isSearchModeToggleShown, "The Search/Duck.ai toggle isn't shown in the new tab address bar")
+        XCTAssertTrue(addressBarButtons.isSearchModeToggleExpanded, "The Search/Duck.ai toggle isn't expanded before the user interacted with it")
 
         resizeWindow(toWidth: MainWindow.minWindowWidth)
 
         XCTAssertEqual(window.frame.width, MainWindow.minWindowWidth, "The window couldn't shrink to its minimum width")
-        XCTAssertFalse(toggle.isExpanded, "The Search/Duck.ai toggle stayed expanded without room for its labels")
+        XCTAssertFalse(addressBarButtons.isSearchModeToggleExpanded, "The Search/Duck.ai toggle stayed expanded without room for its labels")
         XCTAssertFalse(navigationBar.overflowButton.isHidden, "No pinned buttons moved to the overflow menu")
         assertRequiredHorizontalSpacingIsSatisfied()
 
         resizeWindow(toWidth: 1200)
 
-        XCTAssertTrue(toggle.isExpanded, "The Search/Duck.ai toggle didn't expand again once there was room for its labels")
+        XCTAssertTrue(addressBarButtons.isSearchModeToggleExpanded, "The Search/Duck.ai toggle didn't expand again once there was room for its labels")
         XCTAssertTrue(navigationBar.overflowButton.isHidden, "Pinned buttons stayed in the overflow menu")
     }
 

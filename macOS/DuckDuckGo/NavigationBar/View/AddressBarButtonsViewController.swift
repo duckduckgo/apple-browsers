@@ -165,6 +165,14 @@ final class AddressBarButtonsViewController: NSViewController {
     /// The toggle would be expanded, but the address bar lacks room for its labels
     private var isToggleCollapsedForLackOfRoom: Bool = false
 
+    var isSearchModeToggleShown: Bool {
+        searchModeToggleControl?.isHidden == false
+    }
+
+    var isSearchModeToggleExpanded: Bool {
+        searchModeToggleControl?.isExpanded == true
+    }
+
     /// Callback to focus the AI Chat text view when Tab is pressed on the toggle in AI Chat mode.
     /// Set by MainViewController to wire up the connection between toggle and AI Chat text container.
     var onToggleTabPressedInAIChatMode: (() -> Void)?

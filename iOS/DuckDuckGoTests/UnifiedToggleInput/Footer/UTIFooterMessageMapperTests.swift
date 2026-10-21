@@ -57,7 +57,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     func test_promptTooLongMessage_showsTheCountAgainstTheLimitWithoutSeparators() {
         let message = sut.promptTooLongMessage(count: 16_800, limit: 16_000)
 
-        XCTAssertEqual(message.icon, .error)
+        XCTAssertEqual(message.icon, .alert)
         XCTAssertEqual(message.title, "Please try a shorter message.")
         XCTAssertEqual(message.subtitle, "16800/16000")
         XCTAssertNil(message.primaryAction)
@@ -73,7 +73,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
     func test_promptTooLongMessage_withPastedTextNamesThePasteAndOffersEdit() {
         let message = sut.promptTooLongMessage(count: 17_005, limit: 16_000, containsPastedText: true)
 
-        XCTAssertEqual(message.icon, .error)
+        XCTAssertEqual(message.icon, .alert)
         XCTAssertEqual(message.title, "Pasted text exceeds character limit.")
         XCTAssertEqual(message.subtitle, "17005/16000")
         XCTAssertEqual(message.primaryAction, .init(title: "Edit"))

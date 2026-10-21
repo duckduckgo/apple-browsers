@@ -122,15 +122,15 @@ final class PastedTextSheetTests: XCTestCase {
         let en = Locale(identifier: "en_US")
         let rules = PastedTextSheetRules(original: original, mode: .editable(limit: 16_000))
 
-        XCTAssertEqual(rules.subtitle(for: text(1_234), locale: en), .size("1.2k of 16k Characters"))
-        XCTAssertEqual(rules.subtitle(for: text(850), locale: en), .size("850 of 16k Characters"))
-        XCTAssertEqual(rules.subtitle(for: text(16_000), locale: en), .size("16k of 16k Characters"), "At the limit is not over it")
+        XCTAssertEqual(rules.subtitle(for: text(1_234), locale: en), .size("1.2k of 16k characters"))
+        XCTAssertEqual(rules.subtitle(for: text(850), locale: en), .size("850 of 16k characters"))
+        XCTAssertEqual(rules.subtitle(for: text(16_000), locale: en), .size("16k of 16k characters"), "At the limit is not over it")
     }
 
     func testEditableSubtitleUsesTheLowerLimitTheRestOfThePromptLeaves() {
         let rules = PastedTextSheetRules(original: original, mode: .editable(limit: 4_500))
 
-        XCTAssertEqual(rules.subtitle(for: text(1_234), locale: Locale(identifier: "en_US")), .size("1.2k of 4.5k Characters"))
+        XCTAssertEqual(rules.subtitle(for: text(1_234), locale: Locale(identifier: "en_US")), .size("1.2k of 4.5k characters"))
     }
 
     func testOverLimitSubtitleGivesTheExactCountAgainstTheExactLimit() {
@@ -144,9 +144,9 @@ final class PastedTextSheetTests: XCTestCase {
         let en = Locale(identifier: "en_US")
         let rules = PastedTextSheetRules(original: original, mode: .viewOnly)
 
-        XCTAssertEqual(rules.subtitle(for: text(1_234), locale: en), .size("1.2k Characters"))
-        XCTAssertEqual(rules.subtitle(for: text(100_000), locale: en), .size("100k Characters"), "View-only is never over a limit")
-        XCTAssertEqual(rules.subtitle(for: text(1), locale: en), .size("1 Character"))
+        XCTAssertEqual(rules.subtitle(for: text(1_234), locale: en), .size("1.2k characters"))
+        XCTAssertEqual(rules.subtitle(for: text(100_000), locale: en), .size("100k characters"), "View-only is never over a limit")
+        XCTAssertEqual(rules.subtitle(for: text(1), locale: en), .size("1 character"))
     }
 
     func testTitleOffersEditingOnlyWhenTheTextCanChange() {

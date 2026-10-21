@@ -69,6 +69,14 @@ final class AIChatSession {
             .eraseToAnyPublisher()
     }
 
+    /// Publishes when the user adds page context in the chat.
+    var pageContextAddedPublisher: AnyPublisher<Void, Never> {
+        chatViewControllerSubject
+            .compactMap { $0?.pageContextAddedPublisher }
+            .switchToLatest()
+            .eraseToAnyPublisher()
+    }
+
     var chatViewControllerPublisher: AnyPublisher<AIChatViewController?, Never> {
         chatViewControllerSubject.eraseToAnyPublisher()
     }

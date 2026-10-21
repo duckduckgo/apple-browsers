@@ -128,7 +128,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     var shouldShowPageContextToggle: Bool {
-        featureFlagger.isFeatureOn(.aiChatPageContext)
+        featureFlagger.isFeatureOn(.aiChatPageContext) && !featureFlagger.isFeatureOn(.aiChatPageContextAutoAttach)
     }
 
     var shouldShowNewTabPageToggle: Bool {

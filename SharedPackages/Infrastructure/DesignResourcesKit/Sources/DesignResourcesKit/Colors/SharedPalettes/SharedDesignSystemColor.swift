@@ -62,10 +62,6 @@ public enum SharedDesignSystemColor {
     case accentAltTextSecondary
     case accentAltTextTertiary
 
-    // Alert
-    case alertGreen
-    case alertYellow
-
     // Shield
     case shieldPrivacy
 

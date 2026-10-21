@@ -98,12 +98,6 @@ extension SharedColorPaletteDefinition {
         case .accentAltTextTertiary:
             return accentAltTextTertiary
 
-        /// Alert
-        case .alertGreen:
-            return alertGreen
-        case .alertYellow:
-            return alertYellow
-
         /// Shield
         case .shieldPrivacy:
             return shieldPrivacy

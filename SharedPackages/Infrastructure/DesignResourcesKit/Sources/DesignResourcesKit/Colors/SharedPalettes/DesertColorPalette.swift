@@ -158,8 +158,6 @@ struct DesertColorPalette: SharedColorPaletteDefinition {
 
     // MARK: - Not Specialized
 
-    static let alertGreen = DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)
-    static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
     static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 
     static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)

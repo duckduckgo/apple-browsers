@@ -121,7 +121,7 @@ public struct PreferencesSubscriptionSettingsView: View {
     @ViewBuilder
     private var pendingActivationHeaderView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            StatusIndicatorView(status: .custom(UserText.activatingStatusIndicator, Color(designSystemColor: .alertYellow)), isLarge: true)
+            StatusIndicatorView(status: .custom(UserText.activatingStatusIndicator, Color(designSystemColor: .statusYellowPrimary)), isLarge: true)
 
             TextMenuItemCaption(UserText.preferencesSubscriptionPendingCaption)
 

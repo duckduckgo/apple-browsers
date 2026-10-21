@@ -114,7 +114,7 @@ struct CookiePopupProtectionOptInView: View {
                     .font(.system(size: 11, weight: .bold))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(designSystemColor: .alertYellow))
+                    .background(Color(designSystemColor: .statusYellowPrimary))
                     .foregroundColor(.black)
                     .cornerRadius(8)
             }

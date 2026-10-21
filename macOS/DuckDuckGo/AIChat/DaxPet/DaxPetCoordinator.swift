@@ -36,18 +36,19 @@ final class DaxPetCoordinator: NSObject {
     private var pointerTimer: Timer?
     private var isPointerOverCharacter = false
     private let notificationCenter: NotificationCenter
-    private let isBrowserActive: () -> Bool
+    private let isBrowserActive: @MainActor () -> Bool
     private var responseStateCancellable: AnyCancellable?
     private var dayChangeCancellable: AnyCancellable?
     private let now: () -> Date
     private let isInternalUser: () -> Bool
+    private lazy var intelligence: DaxPetIntelligence = DaxPetIntelligenceFactory.make()
     private var answers = DaxAnswerTracker()
 
     init(preferences: DaxPetPreferences,
          persistor: DaxPetPreferencesPersistor,
          submitter: DaxPetPromptSubmitting,
          notificationCenter: NotificationCenter = .default,
-         isBrowserActive: @escaping () -> Bool = { NSApp.isActive },
+         isBrowserActive: @escaping @MainActor () -> Bool = { NSApp.isActive },
          now: @escaping () -> Date = Date.init,
          isInternalUser: @escaping () -> Bool = { false }) {
         self.preferences = preferences
@@ -74,7 +75,7 @@ final class DaxPetCoordinator: NSObject {
     private func show() {
         guard window == nil else { return }
 
-        let model = DaxPetViewModel(submitter: submitter)
+        let model = DaxPetViewModel(submitter: submitter, intelligence: intelligence)
         let window = DaxPetWindow(contentRect: NSRect(origin: .zero, size: DaxPetView.Metrics.windowSize))
         window.contentView = NSHostingView(rootView: DaxPetView(model: model))
         window.delegate = self
@@ -276,7 +277,7 @@ final class DaxPetCoordinator: NSObject {
         let characterFrame = DaxPetView.Metrics.characterFrame().offsetBy(dx: model.character.strollOffset, dy: 0)
         let isOverCharacter = characterFrame.contains(point)
         var interactiveFrames = [characterFrame, DaxPetView.Metrics.controlsFrame(isComposing: model.isComposing)]
-        if model.speech != nil {
+        if model.speech != nil || !model.suggestions.isEmpty {
             interactiveFrames.append(DaxPetView.Metrics.bubbleFrame())
         }
         // A press in progress (e.g. dragging Dax) keeps its window.

@@ -49,6 +49,8 @@ final class DaxPetViewModel: ObservableObject {
     @Published private(set) var heartBurst: Int?
     /// Items dropped on Dax, going along with the prompt.
     @Published private(set) var attachments: [DaxPetAttachment] = []
+    /// Requests the on-device model came up with for what was dropped, offered as chips.
+    @Published private(set) var suggestions: [String] = []
     @Published var prompt = "" {
         didSet { promptDidChange(from: oldValue) }
     }
@@ -73,12 +75,14 @@ final class DaxPetViewModel: ObservableObject {
     var caretLocation: ((_ promptWidth: CGFloat) -> NSPoint?)?
 
     private let submitter: DaxPetPromptSubmitting
+    private let intelligence: DaxPetIntelligence
     private var speechWork: DispatchWorkItem?
     private var answerTimeoutWork: DispatchWorkItem?
     private var attachmentCapabilities = DaxPetAttachmentCapabilities.unknown
 
-    init(submitter: DaxPetPromptSubmitting, character: DaxCharacterView? = nil) {
+    init(submitter: DaxPetPromptSubmitting, character: DaxCharacterView? = nil, intelligence: DaxPetIntelligence? = nil) {
         self.submitter = submitter
+        self.intelligence = intelligence ?? DaxPetNoIntelligence()
         self.character = character ?? DaxCharacterView()
         self.character.onSleepChange = { [weak self] isAsleep in
             self?.isAsleep = isAsleep
@@ -125,6 +129,7 @@ final class DaxPetViewModel: ObservableObject {
         isComposing = false
         prompt = ""
         attachments = []
+        clearSuggestions()
         character.mood = isAwaitingAnswer ? .thinking : .idle
         character.lookTarget = nil
         say(nil)
@@ -142,6 +147,7 @@ final class DaxPetViewModel: ObservableObject {
         isComposing = false
         self.prompt = ""
         attachments = []
+        clearSuggestions()
         character.lookTarget = nil
         character.mood = .thinking
         say(UserText.daxPetThinking)
@@ -231,11 +237,35 @@ final class DaxPetViewModel: ObservableObject {
         } else if !accepted.isEmpty {
             say(UserText.daxPetDropQuestion)
         }
+        if !accepted.isEmpty {
+            await suggestRequests()
+        }
     }
 
     func removeAttachments() {
         attachments = []
+        clearSuggestions()
         updateLookTarget()
+    }
+
+    /// Sends a suggested request as the prompt, with what was dropped.
+    func useSuggestion(_ suggestion: String) {
+        prompt = suggestion
+        submit()
+    }
+
+    /// Asks the on-device model what to do with the drop; the question bubble gives way to its answers,
+    /// unless the user has moved on by then.
+    private func suggestRequests() async {
+        let attachments = self.attachments
+        let suggestions = await intelligence.suggestions(for: attachments)
+        guard isComposing, prompt.isEmpty, !suggestions.isEmpty, self.attachments.map(\.id) == attachments.map(\.id) else { return }
+        self.suggestions = Array(suggestions.prefix(3))
+        say(nil)
+    }
+
+    private func clearSuggestions() {
+        suggestions = []
     }
 
     // MARK: - Debug
@@ -303,6 +333,7 @@ final class DaxPetViewModel: ObservableObject {
     private func promptDidChange(from oldValue: String) {
         guard isComposing, prompt != oldValue else { return }
         if !prompt.isEmpty, speech != nil { say(nil) }
+        if !prompt.isEmpty { clearSuggestions() }
         updateLookTarget()
 
         character.noticeTyping()

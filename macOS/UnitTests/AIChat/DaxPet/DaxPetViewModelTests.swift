@@ -65,6 +65,17 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
 }
 
 @MainActor
+private final class StubDaxPetIntelligence: DaxPetIntelligence {
+    var suggestions: [String] = []
+    var onSuggest: (() -> Void)?
+
+    func suggestions(for attachments: [DaxPetAttachment]) async -> [String] {
+        onSuggest?()
+        return suggestions
+    }
+}
+
+@MainActor
 final class DaxPetViewModelTests: XCTestCase {
 
     private var submitter: RecordingDaxPetPromptSubmitter!
@@ -374,6 +385,65 @@ final class DaxPetViewModelTests: XCTestCase {
         model.endComposing()
 
         XCTAssertTrue(model.attachments.isEmpty)
+    }
+
+    // MARK: - On-device suggestions
+
+    private func makeModel(suggesting suggestions: [String]) -> (DaxPetViewModel, StubDaxPetIntelligence) {
+        let intelligence = StubDaxPetIntelligence()
+        intelligence.suggestions = suggestions
+        let model = DaxPetViewModel(submitter: submitter, character: DaxCharacterView(reduceMotion: { true }), intelligence: intelligence)
+        model.submissionDelay = 0
+        return (model, intelligence)
+    }
+
+    func testWhenSomethingIsDroppedThenTheOnDeviceSuggestionsReplaceTheQuestion() async {
+        let (model, _) = makeModel(suggesting: ["Summarize it", "List the dates", "Explain the jargon", "One too many"])
+
+        await model.receive([.text("Quack")])
+
+        XCTAssertEqual(model.suggestions, ["Summarize it", "List the dates", "Explain the jargon"])
+        XCTAssertNil(model.speech)
+    }
+
+    func testWhenThereAreNoSuggestionsThenDaxKeepsAsking() async {
+        let (model, _) = makeModel(suggesting: [])
+
+        await model.receive([.text("Quack")])
+
+        XCTAssertTrue(model.suggestions.isEmpty)
+        XCTAssertEqual(model.speech, UserText.daxPetDropQuestion)
+    }
+
+    func testWhenTheUserTypesBeforeTheSuggestionsArriveThenTheyAreNotShown() async {
+        let (model, intelligence) = makeModel(suggesting: ["Summarize it"])
+        intelligence.onSuggest = { model.prompt = "My own question" }
+
+        await model.receive([.text("Quack")])
+
+        XCTAssertTrue(model.suggestions.isEmpty)
+    }
+
+    func testWhenASuggestionIsChosenThenItIsSentWithTheDrop() async {
+        let (model, _) = makeModel(suggesting: ["Summarize it"])
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        await model.receive([.text("Quack")])
+
+        model.useSuggestion("Summarize it")
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertEqual(submitter.submittedPrompts, ["Summarize it\n\nQuack"])
+        XCTAssertTrue(model.suggestions.isEmpty)
+    }
+
+    func testWhenTypingStartsThenTheSuggestionsGo() async {
+        let (model, _) = makeModel(suggesting: ["Summarize it"])
+        await model.receive([.text("Quack")])
+
+        model.prompt = "T"
+
+        XCTAssertTrue(model.suggestions.isEmpty)
     }
 
     // MARK: - Debug

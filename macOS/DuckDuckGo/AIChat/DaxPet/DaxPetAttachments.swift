@@ -75,6 +75,7 @@ struct DaxPetAttachmentCapabilities {
 
     static let unknown = DaxPetAttachmentCapabilities(model: nil, limits: nil)
 
+    @MainActor
     func validator(pendingImageCount: Int, pendingFiles: [AIChatAttachmentValidator.FileDescriptor]) -> AIChatAttachmentValidator {
         AIChatAttachmentValidator(limits: limits,
                                   model: model,

@@ -70,7 +70,10 @@ struct DaxPetView: View {
     var body: some View {
         VStack(spacing: Metrics.spacing) {
             ZStack(alignment: .bottom) {
-                if let speech = model.speech {
+                if !model.suggestions.isEmpty {
+                    SuggestionChips(suggestions: model.suggestions, onSelect: model.useSuggestion)
+                        .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
+                } else if let speech = model.speech {
                     SpeechBubble(text: speech)
                         .id(speech)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
@@ -102,6 +105,38 @@ struct DaxPetView: View {
         .frame(width: Metrics.windowSize.width, height: Metrics.windowSize.height)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.speech)
         .animation(.easeInOut(duration: 0.6), value: model.isAsleep)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.suggestions)
+    }
+}
+
+/// Requests to send about what was dropped, suggested on the device; one click sends one.
+private struct SuggestionChips: View {
+    let suggestions: [String]
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(suggestions, id: \.self) { suggestion in
+                Button {
+                    onSelect(suggestion)
+                } label: {
+                    Text(suggestion)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(Color(designSystemColor: .surfacePrimary)))
+                        .overlay(Capsule().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help(suggestion)
+            }
+        }
+        .frame(maxWidth: DaxPetView.Metrics.composingWidth)
+        .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
     }
 }
 

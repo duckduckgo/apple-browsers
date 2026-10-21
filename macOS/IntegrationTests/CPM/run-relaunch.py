@@ -115,4 +115,6 @@ for flag in args.flags:
                          'fixture': token, 'observation': observation, 'probes': report['probes']}
         (output / 'results.json').write_text(json.dumps(results, indent=2))
         print(json.dumps({name: {'exit': code, 'passed': s['passedTests'], 'failed': s['failedTests'], 'skipped': s['skippedTests'], 'observation': observation}}), flush=True)
+assert all((r['exit'], r['passed'], r['failed'], r['skipped']) == (0, 1, 0, 0)
+           for r in results.values()), 'Relaunch acceptance failed; raw results are retained'
 print('RELAUNCH COMPLETE', flush=True)

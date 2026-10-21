@@ -1,6 +1,6 @@
 # CPM stable-origin app integration tests (review only)
 
-Production branch: `alex/cpm-p3-stable-base-url`, based on telemetry #7376.
+Production branch: `alex/cpm-p3-stable-base-url`, now based on `release/ios/7.243.0` after telemetry #7376 merged.
 This branch adds the app fixture, schemes and DEBUG hooks only; do not merge it into main.
 Use macOS 15.4+, a graphical login session, and the project's normal Apple Development signing.
 
@@ -15,9 +15,13 @@ scheme does not replace production methods or annotate failures as expected. It 
 random origins. A red origin assertion/migration observation proves that the startup work
 returns; it is not evidence that this Mac reproduces every production P3 no-background timeout.
 
-The ten methods cover repeated immediate navigation after reload, 20,000 cacheable resources,
+The ten explicitly selected methods cover repeated immediate navigation after reload, 20,000 cacheable resources,
 full and lightweight data-clear reloads, runtime OFF/ON, storage preservation, version upgrade,
-background crash, Network crash followed by explicit reload, and web-page resource privacy.
+real background-process SIGKILL, Network crash followed by explicit reload, and web-page resource privacy.
+The background-crash case enables the existing error-6 retry and confirmed-hang recovery.
+If native recovery fails, two real navigation timeouts trigger automatic context replacement;
+its failed worker origin must rotate and the next navigation must receive both real replies.
+All other P3 cases explicitly disable the independent recovery flags.
 Every healthy probe requires both the content script's real `initResp` and the real native
 CPM dashboard notification. The ordinary-reload/cache regressions navigate immediately, without
 a readiness wait. Upgrade/rollback controls wait for an actual background-load callback to
@@ -26,7 +30,8 @@ isolate P3 from the P4 startup race; a reported load error fails immediately.
 A passive observer records the real WebKit `_renameOrigin:to:forDataOfTypes:completionHandler:`
 calls for the fixture's own UUID store. It forwards the original arguments/completion unchanged,
 adds no delay, and restores the implementation in teardown. Normal enabled reloads require zero
-migration calls. Data clear intentionally rotates/persists the private origin; disabling the
+migration calls. Data clear and reload after WebKit background-load error 6 intentionally
+rotate/persist the private origin; disabling the
 feature prepares a fresh saved origin for a later re-enable, avoiding deleted worker registrations.
 
 Each method owns fresh persistent website/controller stores and temporary extracted extension
@@ -36,7 +41,8 @@ ZIP and telemetry definitions are untouched. Fixture servers bind only to loopba
 
 Teardown captures evidence, ends owned HTTP documents, closes only fixture windows, releases
 their models, unloads the fixture extension, clears its data through WebKit APIs,
-waits for Tab/browser UI deallocation, closes any remaining unowned WebKit page, then
+drains XCTest autorelease pools and waits for owned window/Tab/browser UI deallocation,
+preserves AppKit's shared Function Row panel, closes any remaining unowned WebKit page, then
 terminates only the test host's owned Network session and removes the owned UUID store.
 No user profile wipe, global process kill, guard bypass or fabricated monitor callback is used.
 
@@ -58,8 +64,42 @@ xcodebuild test -workspace DuckDuckGo.xcworkspace \
 Use fresh result paths for subsequent runs. For a strict identical-binary comparison, build once
 with `build-for-testing`, then use `test-without-building` with the same products for both schemes.
 
-Verified locally on macOS 26.7.1: ON 10/10; OFF 7 pass / 3 expected origin-continuity
+Historical run before the macOS 27 harness corrections, on macOS 26.7.1: ON 10/10; OFF 7 pass / 3 expected origin-continuity
 failures; restored ON 30/30 executions. No skips or host restarts. All 50 owned persistent
 stores were removed, and all 5,210 app/XCTest bundle entries stayed unchanged across the cycle.
 Raw xcresults, JSON attachments and bundle manifests are retained locally under
 `/private/tmp/cpm-p3-20261019/acceptance-v4`.
+
+
+## macOS 27 research selection
+
+The default schemes select exactly ten acceptance methods. For cache characterization, edit
+**Test → Info** in each scheme to select only
+`CPMStableBaseURLIntegrationTests.testP3ResearchPersistentCacheReload`, then build once and
+use **Test Without Building** for OFF and ON. The bounded method requires healthy controls,
+20,000 actual resource-body reads, disk-cache records and three immediate reload measurements.
+An optional disk-startup counterpart is `testP3ResearchPersistentCacheDiskLoad`.
+
+A P3 observation has a loaded context, `load>base_url_changed`, no background view,
+no extension scripts, and neither native dashboard nor page `initResp` at timeout.
+A healthy measured response is a valid negative result. Setup/cleanup failures and process
+restarts do not establish P3. The marker observes the existing production `initResp` handler;
+it does not wrap WebKit's runtime event API, fabricate replies or delay startup.
+
+Verified final code on **macOS 27.0 (26A428) / Xcode 27.0 (27A266a)**:
+ON **10 passed / 0 failed / 0 skipped**, OFF **7 passed / 3 expected origin-continuity failures / 0 skipped**,
+restored ON **10 passed / 0 failed / 0 skipped**. All 30 unique owned stores were removed;
+all 5,222 signed app/XCTest entries matched before and after all phases. Two additional
+standalone SIGKILL controls (ON and OFF) each passed with no skips and removed their stores.
+
+The OFF acceptance cache case reproduced the full P3 signature after 4.57 seconds:
+loaded context, `load>base_url_changed`, no background view/scripts, no native/page reply,
+one actual origin migration. Both ON cache cases replied on both channels after 0.37 and
+0.30 seconds with no migration. Each case completed 20,000 actual body reads and server
+send completions, passed its healthy control and verified disk-cache data. No synthetic
+startup delay or process hold was used. These are observations, not performance benchmarks;
+the VM host SSD has recorded I/O errors. Natural iOS reproduction remains unverified.
+
+The final raw xcresults, JSON evidence and hash checks are retained under
+`/private/tmp/cpm-p3-vm27-20261020/research-v9-acceptance-results` and
+`/private/tmp/cpm-p3-vm27-20261020/research-v9-crash-results`.

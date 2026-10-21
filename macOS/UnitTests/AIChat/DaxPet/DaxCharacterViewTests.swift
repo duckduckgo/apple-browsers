@@ -274,6 +274,45 @@ final class DaxCharacterViewTests: XCTestCase {
         XCTAssertTrue(character.isCelebrating)
     }
 
+    // MARK: - Debug poses
+
+    func testEveryDebugPoseCanBePlayed() {
+        character = makeLivelyCharacter()
+        character.strollRoom = 100
+        _ = showCharacter()
+
+        for pose in DaxCharacterView.DebugPose.allCases {
+            character.debugPlay(pose)
+            character.step()
+        }
+    }
+
+    func testTheDebugNapHoldsThroughInput() {
+        character = makeLivelyCharacter()
+        idleTime = 0
+
+        character.debugPlay(.sleep)
+        for _ in 0..<30 { character.step() }
+
+        XCTAssertTrue(character.isAsleep)
+    }
+
+    func testTheDebugPondersStrollsAndPetsPlayTheirPoses() {
+        character = makeLivelyCharacter()
+        character.strollRoom = 100
+
+        character.debugPlay(.ponder)
+        XCTAssertTrue(character.isPondering)
+        character.mood = .idle
+
+        character.debugPlay(.stroll)
+        XCTAssertTrue(character.isStrolling)
+
+        character.debugPlay(.pet)
+        character.step()
+        XCTAssertTrue(character.isBeingPetted)
+    }
+
     // MARK: - Outfits
 
     func testWhenDressedThenDaxWearsTheOutfitUntilItComesOff() {

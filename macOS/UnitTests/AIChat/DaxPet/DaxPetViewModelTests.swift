@@ -376,6 +376,15 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertTrue(model.attachments.isEmpty)
     }
 
+    // MARK: - Debug
+
+    func testTheDebugMenuOffersEveryPoseAndBothAnswerBubbles() {
+        let actions = DaxPetViewModel.DebugAction.allCases
+
+        XCTAssertEqual(actions.count, DaxCharacterView.DebugPose.allCases.count + 2)
+        XCTAssertEqual(Set(actions.map(\.title)).count, actions.count)
+    }
+
     // MARK: - Typing
 
     private func makeLivelyModel() -> DaxPetViewModel {

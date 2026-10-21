@@ -40,6 +40,7 @@ final class DaxPetCoordinator: NSObject {
     private var responseStateCancellable: AnyCancellable?
     private var dayChangeCancellable: AnyCancellable?
     private let now: () -> Date
+    private let isInternalUser: () -> Bool
     private var answers = DaxAnswerTracker()
 
     init(preferences: DaxPetPreferences,
@@ -47,13 +48,15 @@ final class DaxPetCoordinator: NSObject {
          submitter: DaxPetPromptSubmitting,
          notificationCenter: NotificationCenter = .default,
          isBrowserActive: @escaping () -> Bool = { NSApp.isActive },
-         now: @escaping () -> Date = Date.init) {
+         now: @escaping () -> Date = Date.init,
+         isInternalUser: @escaping () -> Bool = { false }) {
         self.preferences = preferences
         self.persistor = persistor
         self.submitter = submitter
         self.notificationCenter = notificationCenter
         self.isBrowserActive = isBrowserActive
         self.now = now
+        self.isInternalUser = isInternalUser
     }
 
     func start() {
@@ -149,6 +152,9 @@ final class DaxPetCoordinator: NSObject {
         menu.addItem(NSMenuItem(title: UserText.daxPetMenuContinueChat, action: #selector(continueLastChat), keyEquivalent: ""))
         menu.addItem(.separator())
         menu.addItem(outfitMenuItem())
+        if isInternalUser() {
+            menu.addItem(debugMenuItem())
+        }
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: UserText.daxPetOpenDuckAI, action: #selector(openDuckAI), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: UserText.daxPetHide, action: #selector(hide), keyEquivalent: ""))
@@ -176,6 +182,26 @@ final class DaxPetCoordinator: NSObject {
         let item = NSMenuItem(title: UserText.daxPetMenuOutfit, action: nil, keyEquivalent: "")
         item.submenu = submenu
         return item
+    }
+
+    /// Internal only: every pose on demand.
+    private func debugMenuItem() -> NSMenuItem {
+        let submenu = NSMenu()
+        for (index, action) in DaxPetViewModel.DebugAction.allCases.enumerated() {
+            let item = NSMenuItem(title: action.title, action: #selector(playDebugAction(_:)), keyEquivalent: "")
+            item.target = self
+            item.tag = index
+            submenu.addItem(item)
+        }
+        let item = NSMenuItem(title: "Debug: Poses", action: nil, keyEquivalent: "")
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func playDebugAction(_ sender: NSMenuItem) {
+        let actions = DaxPetViewModel.DebugAction.allCases
+        guard actions.indices.contains(sender.tag) else { return }
+        model?.debugPlay(actions[sender.tag])
     }
 
     @objc private func chooseOutfit(_ sender: NSMenuItem) {

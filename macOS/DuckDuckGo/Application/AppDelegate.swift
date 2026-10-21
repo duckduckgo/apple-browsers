@@ -2861,7 +2861,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 capabilitiesProvider: DaxPetAttachmentCapabilitiesProvider(
                                                     subscriptionManager: subscriptionManager,
                                                     preferences: aiChatPreferencesPersistor
-                                                )))
+                                                )),
+                                            isInternalUser: { [internalUserDecider] in internalUserDecider.isInternalUser })
         coordinator.start()
         daxPetCoordinator = coordinator
     }

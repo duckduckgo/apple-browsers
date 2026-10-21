@@ -150,6 +150,8 @@ final class DaxCharacterView: NSView {
     private var stroll: Stroll?
     private var nextStrollTime: TimeInterval = .random(in: DaxCharacterView.strollInterval)
     private var stepPhase: CGFloat = 0
+    /// A debug nap that input doesn't interrupt.
+    private var debugSleepUntil: TimeInterval?
 
     private struct Stroll {
         enum Leg { case out, pause, back }
@@ -322,6 +324,64 @@ final class DaxCharacterView: NSView {
         guard isPondering else { return }
         isPondering = false
         play(DaxRig.Frames.wingUp, to: DaxRig.Frames.idle, speed: 1.6)
+    }
+
+    // MARK: - Debug
+
+    /// Every pose and gesture Dax has, to look at on demand.
+    enum DebugPose: String, CaseIterable {
+        case wave = "Wave"
+        case hop = "Hop"
+        case celebrate = "Celebrate (Flap)"
+        case ponder = "Ponder (Wing to Chin)"
+        case sleep = "Fall Asleep"
+        case stroll = "Stroll"
+        case pet = "Petted (Squint, Hearts)"
+        case startle = "Startled"
+        case nod = "Nod"
+        case slowBlink = "Slow Blink"
+        case marvel = "Wide Eyes"
+        case landing = "Landing"
+        case anticipateDrop = "Something Dragged Over Him"
+    }
+
+    func debugPlay(_ pose: DebugPose) {
+        switch pose {
+        case .wave:
+            lastWaveTime = -.infinity
+            wave()
+        case .hop:
+            hop()
+        case .celebrate:
+            celebrate()
+        case .ponder:
+            mood = .thinking
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
+                if self?.mood == .thinking { self?.mood = .idle }
+            }
+        case .sleep:
+            debugSleepUntil = time + 6
+        case .stroll:
+            stroll(by: (Bool.random() ? 1 : -1) * strollRoom * 0.8)
+        case .pet:
+            petting = 2
+        case .startle:
+            widenEyes(for: 0.5)
+            hop()
+        case .nod:
+            nod()
+        case .slowBlink:
+            blinkDuration = 0.7
+            blinkStartTime = time
+        case .marvel:
+            marvel()
+        case .landing:
+            landingStartTime = time
+            hop()
+        case .anticipateDrop:
+            anticipateDrop()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in self?.isAnticipatingDrop = false }
+        }
     }
 
     // MARK: - Strolls
@@ -620,7 +680,10 @@ final class DaxCharacterView: NSView {
 
     private func updateSleep() {
         let idle = idleTime()
-        if isAsleep, idle < 1 || mood != .idle {
+        if let until = debugSleepUntil, time < until {
+            isAsleep = true
+        } else if isAsleep, idle < 1 || mood != .idle {
+            debugSleepUntil = nil
             wakeUp()
         } else if !isAsleep, mood == .idle, idle >= Self.sleepDelay {
             isAsleep = true

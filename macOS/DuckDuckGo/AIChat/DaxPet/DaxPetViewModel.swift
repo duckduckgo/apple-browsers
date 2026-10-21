@@ -238,6 +238,39 @@ final class DaxPetViewModel: ObservableObject {
         updateLookTarget()
     }
 
+    // MARK: - Debug
+
+    enum DebugAction: Hashable {
+        case pose(DaxCharacterView.DebugPose)
+        case answerReady
+        case answerFailed
+
+        static var allCases: [DebugAction] {
+            DaxCharacterView.DebugPose.allCases.map(DebugAction.pose) + [.answerReady, .answerFailed]
+        }
+
+        var title: String {
+            switch self {
+            case .pose(let pose): return pose.rawValue
+            case .answerReady: return "Answer Ready (Bubble)"
+            case .answerFailed: return "Answer Failed (Bubble)"
+            }
+        }
+    }
+
+    func debugPlay(_ action: DebugAction) {
+        switch action {
+        case .pose(let pose):
+            endComposing()
+            character.debugPlay(pose)
+        case .answerReady, .answerFailed:
+            answerStarted()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.answerFinished(succeeded: action == .answerReady, isBrowserActive: false)
+            }
+        }
+    }
+
     // MARK: - Quick actions
 
     var canSummarizeCurrentPage: Bool { submitter.canSummarizeCurrentPage }

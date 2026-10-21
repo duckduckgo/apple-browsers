@@ -86,7 +86,7 @@ A healthy measured response is a valid negative result. Setup/cleanup failures a
 restarts do not establish P3. The marker observes the existing production `initResp` handler;
 it does not wrap WebKit's runtime event API, fabricate replies or delay startup.
 
-Verified final code on **macOS 27.0 (26A428) / Xcode 27.0 (27A266a)**:
+Earlier acceptance (before the immediate error-6 persistence review fix) on **macOS 27.0 (26A428) / Xcode 27.0 (27A266a)**:
 ON **10 passed / 0 failed / 0 skipped**, OFF **7 passed / 3 expected origin-continuity failures / 0 skipped**,
 restored ON **10 passed / 0 failed / 0 skipped**. All 30 unique owned stores were removed;
 all 5,222 signed app/XCTest entries matched before and after all phases. Two additional
@@ -143,3 +143,13 @@ entries matched before and after every stage. The previous PR code reproduced mi
 metadata and reuse on the next app launch; that full restart itself restored messaging.
 Raw before/after xcresults and observations are retained under
 `/private/tmp/cpm-p3-restart-20261022/baseline-results` and `fixed-relaunch-results`.
+
+The complete ten-case matrix was also repeated on the error-6 review fix: ON 10/0/0,
+OFF 7/3/0 with exactly the three origin-continuity methods failing, then ON 10/0/0.
+All 30 distinct owned stores were removed with no cleanup/host failures, and all 5,222
+signed bundle entries stayed unchanged. Both ON cache probes replied with zero migrations.
+This repeat's OFF cache probe migrated its origin and replied successfully: it is a valid
+negative timeout reproduction. The earlier OFF full P3 signature above remains a separate
+historical observation. Final raw results and verification are retained under
+`/private/tmp/cpm-p3-restart-20261022/fixed-acceptance-results` and
+`/private/tmp/cpm-p3-restart-20261022/fixed-acceptance-verification.json`.

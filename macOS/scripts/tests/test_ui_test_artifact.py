@@ -237,6 +237,15 @@ class PortableTests(unittest.TestCase):
                 self.assertFalse(artifact.execution_summary(log, 0, result, expected)['passed'])
         self.assertFalse(artifact.execution_summary('Executed 2 tests, with 0 failures\n', 0, result / 'missing', 2)['passed'])
 
+    def test_skip_count_deduplicates_xctest_and_observer_messages(self):
+        result = self.root / 'tests.xcresult'
+        result.mkdir()
+        log = "Test Case '-[UI_Tests.First testOne]' skipped (0.1 seconds).\nTest Case '-[First testOne]' skipped (0.1 seconds).\n"
+        summary = artifact.execution_summary(log + 'Executed 2 tests, with 0 failures\n', 0, result, 2)
+        self.assertEqual(summary['skipped'], 1)
+        self.assertTrue(summary['passed'])
+        self.assertFalse(artifact.execution_summary(log + 'Executed 1 test, with 0 failures\n', 0, result, 1)['passed'])
+
     def test_runner_cleanup_only_targets_this_artifact(self):
         host = self.root / 'Runner.app'
         executable = str(host / 'Contents/MacOS/Runner')

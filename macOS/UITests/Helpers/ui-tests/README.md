@@ -114,8 +114,8 @@ python3 macOS/UITests/Helpers/ui-tests/remote.py monterey-mini "$RUN_URL" \
 
 The launcher uses a unique remote directory, qualifies UI Automation with the native probe, uses
 the logged-in GUI session through SSH and fetches readiness/test results even after test failure.
-It gives the workload a disposable keychain instead of reading personal login items. Class setup
-unlocks that keychain in the GUI audit session as well as the launcher's SSH session: an SSH-only
+It gives the workload a disposable keychain instead of reading personal login items. A temporary
+Aqua agent selects and unlocks it in the GUI audit session as well as the launcher's SSH session: an SSH-only
 unlock can leave the sandboxed app waiting for a password before it creates a window. The wrapper
 restores the original default/search list after failure or success, removes only its own temporary
 keychain and deletes its password file before results are fetched. Run one UI workload per account.
@@ -136,7 +136,11 @@ The current candidate passed the native UI Automation probe on Monterey ARM/Xcod
 Sonoma Intel/Xcode 16.2. On Monterey, AddressBarSearchQueryEditingTests executed 26/26 methods
 on the first attempt, with one class reset followed by 25 methods retaining the class profile.
 Sonoma executed PrintingTests 7/7 with its installed XCTest 16, then the search-editing class
-and SaveCredentials regression test together passed 27/27. These are bounded qualification
+and SaveCredentials regression test together passed 27/27; its App Store sandbox class passed 2/2.
+Monterey also passed a mixed run with one executed test and one OS skip. The sandbox class on
+that Monterey image still blocks in FileProvider while General Settings reads the Downloads path;
+that file-permission/environment qualification is outstanding. The launcher does not grant privacy
+permissions. These are bounded qualification
 runs, not a full-suite or ARM Sonoma compatibility guarantee. Full CI remains required.
 
 ## Validation

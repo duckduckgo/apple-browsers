@@ -355,8 +355,12 @@ def stop_owned_app(host):
 def execution_summary(log, code, result, expected, retrying=False, allow_all_skipped=False):
     counts = re.findall(r'Executed (\d+) tests?, with (?:(\d+) tests? skipped and )?(\d+) failures?', log)
     count, skipped, failed = tuple(int(v or 0) for v in counts[-1]) if counts else (0, 0, 0)
-    skipped = max(skipped, len(re.findall(r'Test Case .* skipped(?: |\()', log)))
     count = max((int(item[0]) for item in counts), default=0)
+    # XCTest and our observer both report each skip, sometimes with different
+    # module qualification. Count methods, not duplicated log messages.
+    skipped_cases = {re.sub(r'^-\[(?:\w+\.)+', '-[', case)
+                     for case in re.findall(r"Test Case '([^']+)' skipped(?: |\()", log)}
+    skipped = max(max((int(item[1] or 0) for item in counts), default=0), len(skipped_cases))
     # XCTest's exit status accounts for successful retries across attempts. A textual
     # suite summary only describes one attempt and can still contain failures.
     passed = code == 0 and count >= expected and (count > skipped or allow_all_skipped) and (retrying or failed == 0) and result.is_dir()

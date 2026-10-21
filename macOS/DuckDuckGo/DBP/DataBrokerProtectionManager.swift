@@ -202,6 +202,9 @@ extension DataBrokerProtectionManager {
             guard debugLaunchTask == nil else { return true }
             debugLaunchTask = Task {
                 do {
+                    try saveDemoFixture(options.demoCaptureURL)
+                    // A capture-only launch leaves the agent and its data as they are.
+                    guard options.profileSetup != nil || options.startServer else { return }
                     try await runDebugLaunch(options)
                     Logger.dataBrokerProtection.log("PIR debug launch completed; agent event delivered.")
                 } catch {
@@ -220,9 +223,10 @@ extension DataBrokerProtectionManager {
     }
 
     private func runDebugLaunch(_ options: PIRDebugLaunchOptions) async throws {
+        guard let dataManager else { throw DebugLaunchError.unavailableDataManager }
+
         // 1. Decide whether to preserve, seed, or replace the stored profile.
         Logger.dataBrokerProtection.log("PIR debug launch: reading stored profile.")
-        guard let dataManager else { throw DebugLaunchError.unavailableDataManager }
         let existingProfile = try dataManager.fetchProfile()
         let shouldReset = options.profileSetup?.resetBeforeSeeding == true
         let profileToSave = existingProfile == nil || shouldReset ? options.profileSetup?.profile : nil
@@ -254,6 +258,7 @@ extension DataBrokerProtectionManager {
                 freemiumState.didActivate = true
             }
             try await dataManager.saveProfile(profileToSave)
+            try seedDemoFixture(options.demoSeed, into: dataManager)
         }
 
         // 5. Enable the background agent and wait for it to answer XPC.
@@ -273,13 +278,29 @@ extension DataBrokerProtectionManager {
         // 7. Notify the agent to process the saved or existing profile.
         Logger.dataBrokerProtection.log("PIR debug launch: delivering agent event.")
         let delivered = try await Self.debugReply { completion in
-            if profileToSave != nil {
+            // A seeded demo skips the initial scan; the seeded records are already there.
+            if profileToSave != nil, options.demoSeed == nil {
                 ipcClient.profileSaved { completion($0 == nil) }
             } else {
                 ipcClient.appLaunched { completion($0 == nil) }
             }
         }
         guard delivered else { throw DebugLaunchError.commandFailed }
+    }
+
+    private func saveDemoFixture(_ url: URL?) throws {
+        guard let url else { return }
+        guard let dataManager else { throw DebugLaunchError.unavailableDataManager }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(try dataManager.captureDemoFixture()).write(to: url)
+        Logger.dataBrokerProtection.log("PIR debug launch: saved demo fixture to \(url.path, privacy: .public).")
+    }
+
+    private func seedDemoFixture(_ fixture: PIRDemoFixture?, into dataManager: DataBrokerProtectionDataManager) throws {
+        guard let fixture else { return }
+        Logger.dataBrokerProtection.log("PIR debug launch: seeding \(fixture.records.count, privacy: .public) demo records.")
+        try dataManager.seedDemoFixture(fixture)
     }
 
     private func stopDebugAgent() async throws {

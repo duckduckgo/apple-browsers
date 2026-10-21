@@ -271,6 +271,13 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                        priorityDate: priorityDate,
                                        sortPredicate: jobDependencies.jobSortPredicate)
             .filter { jobData in
+                #if os(macOS) && DEBUG
+                if let optOutJobData = jobData as? OptOutJobData,
+                   let broker = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker,
+                   jobDependencies.executionConfig.needsUser(forBrokerAt: broker.url) {
+                    return PIRAssistedOptOuts.consumeStart(for: optOutJobData.extractedProfile.id)
+                }
+                #endif
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
                     return true
                 }

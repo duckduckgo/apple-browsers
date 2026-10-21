@@ -216,6 +216,15 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
         try database.deleteProfileData()
         communicator.invalidateCache()
     }
+
+    public func captureDemoFixture() throws -> PIRDemoFixture {
+        try PIRDemoFixture.capture(from: database)
+    }
+
+    public func seedDemoFixture(_ fixture: PIRDemoFixture) throws {
+        try fixture.seed(into: database)
+        communicator.invalidateCache()
+    }
 #endif
 
     public func removeAllData() throws {

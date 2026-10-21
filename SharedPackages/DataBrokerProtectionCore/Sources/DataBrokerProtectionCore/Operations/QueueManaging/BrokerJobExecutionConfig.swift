@@ -21,10 +21,22 @@ import Foundation
 public struct BrokerJobExecutionConfig {
 
     #if os(macOS) && DEBUG
-    /// PeopleFinders needs a person for its Turnstile, Spokeo uses the captcha and email backends,
-    /// and 411.com (with its child site PeopleSearch) submits without help.
-    public static let assistantDemoBrokerDomains: Set<String> = ["peoplefinders.com", "spokeo.com", "411.com", "peoplesearch.com"]
+    /// PeopleFinders needs a person for its Turnstile, and Glad I Know for its reCAPTCHA.
+    public static let assistantDemoBrokerDomains: Set<String> = ["peoplefinders.com", "gladiknow.com"]
     public var allowedBrokerDomains: Set<String>?
+
+    /// Opt-outs that need a person partway through. They wait in the preview until the user starts them.
+    public static let assistantDemoNeedsUserBrokerDomains: Set<String> = assistantDemoBrokerDomains
+    /// The user solves these brokers' captcha instead of the backend solver.
+    public static let assistantDemoUserCaptchaBrokerDomains: Set<String> = ["gladiknow.com"]
+
+    public func needsUser(forBrokerAt url: String) -> Bool {
+        Self.domain(of: url).map(Self.assistantDemoNeedsUserBrokerDomains.contains) ?? false
+    }
+
+    public func userSolvesCaptcha(forBrokerAt url: String) -> Bool {
+        Self.domain(of: url).map(Self.assistantDemoUserCaptchaBrokerDomains.contains) ?? false
+    }
 
     public func includesBroker(at url: String) -> Bool {
         guard let allowedBrokerDomains else { return true }

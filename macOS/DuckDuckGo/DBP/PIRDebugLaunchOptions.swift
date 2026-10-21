@@ -28,15 +28,21 @@ struct PIRDebugLaunchOptions {
 
     let profileSetup: ProfileSetup?
     let startServer: Bool
+    /// Saves the current scan results for the demo brokers to this file.
+    let demoCaptureURL: URL?
+    /// Seeds saved scan results instead of scanning, so the demo starts at "these sites need you".
+    let demoSeed: PIRDemoFixture?
 
     enum ParseError: LocalizedError {
         case invalidProfile
         case resetRequiresProfile
+        case invalidDemoSeed
 
         var errorDescription: String? {
             switch self {
             case .invalidProfile: return "Invalid PIR profile JSON or required profile fields."
             case .resetRequiresProfile: return "PIR reset requires valid profile JSON."
+            case .invalidDemoSeed: return "PIR demo seed file is missing or invalid."
             }
         }
     }
@@ -55,8 +61,16 @@ struct PIRDebugLaunchOptions {
         let startServer = value(argument: "pirDebugServer", environmentKey: "PIR_DEBUG_SERVER") == "true"
         let reset = value(argument: "pirResetBeforeSeeding", environmentKey: "PIR_RESET_BEFORE_SEEDING") == "true"
         let profileValue = value(argument: "pirProfileJSON", environmentKey: "PIR_PROFILE_JSON")
+        let demoCaptureURL = value(argument: "pirDemoCapture", environmentKey: "PIR_DEMO_CAPTURE").map { URL(fileURLWithPath: $0) }
+        let demoSeed = try value(argument: "pirDemoSeed", environmentKey: "PIR_DEMO_SEED").map { path in
+            guard let data = FileManager.default.contents(atPath: path),
+                  let fixture = try? JSONDecoder().decode(PIRDemoFixture.self, from: data) else { throw ParseError.invalidDemoSeed }
+            return fixture
+        }
         let profileSetup: PIRDebugLaunchOptions.ProfileSetup?
-        if let profileValue {
+        if let demoSeed {
+            profileSetup = ProfileSetup(profile: demoSeed.profile, resetBeforeSeeding: true)
+        } else if let profileValue {
             guard let profile = try? JSONDecoder().decode(DataBrokerProtectionProfile.self, from: Data(profileValue.utf8)) else {
                 throw ParseError.invalidProfile
             }
@@ -83,8 +97,9 @@ struct PIRDebugLaunchOptions {
             guard !reset else { throw ParseError.resetRequiresProfile }
             profileSetup = nil
         }
-        guard profileSetup != nil || startServer else { return nil }
-        return PIRDebugLaunchOptions(profileSetup: profileSetup, startServer: startServer)
+        guard profileSetup != nil || startServer || demoCaptureURL != nil else { return nil }
+        return PIRDebugLaunchOptions(profileSetup: profileSetup, startServer: startServer,
+                                     demoCaptureURL: demoCaptureURL, demoSeed: demoSeed)
     }
 }
 #endif

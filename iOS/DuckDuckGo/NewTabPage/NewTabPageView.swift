@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import DuckUI
 import RemoteMessaging
 import SwiftUI
@@ -60,7 +61,7 @@ struct NewTabPageView: View {
     var body: some View {
         if !viewModel.isOnboarding {
             mainView
-                .background(Color(designSystemColor: .background))
+                .background(viewModel.focusedContent == nil ? Color(designSystemColor: .background) : .clear)
                 .simultaneousGesture(
                     DragGesture()
                         .onChanged({ value in
@@ -75,7 +76,9 @@ struct NewTabPageView: View {
 
     @ViewBuilder
     private var mainView: some View {
-        if isShowingSections {
+        if let focusedContent = viewModel.focusedContent {
+            focusedScrollView(content: focusedContent)
+        } else if isShowingSections {
             sectionsView
         } else {
             emptyStateView
@@ -113,6 +116,39 @@ struct NewTabPageLayoutConfiguration {
 
 private extension NewTabPageView {
     // MARK: - Views
+    func focusedScrollView(content: LegacyFocusedNewTabPageContent) -> some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Color.clear.frame(height: 0).id(NewTabPageScrollToTop.topAnchor)
+                    VStack(spacing: layoutConfiguration.interSectionSpacing) {
+                        escapeHatchSectionView
+                        if let recentChats = content.recentChats {
+                            VStack(spacing: FocusedChromeView.Metrics.bottomInset) {
+                                if let syncPromo = content.syncPromo {
+                                    syncPromo
+                                }
+                                LegacyRecentChatsView(viewModel: recentChats,
+                                                      isAddressBarAtBottom: content.isAddressBarAtBottom)
+                            }
+                            .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                        } else {
+                            messagesSectionView
+                                .padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                            FavoritesView(model: favoritesViewModel)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(.top, contentTopInset(in: geometry))
+                    .padding(.bottom, sectionsViewPadding(in: geometry))
+                    .padding(.horizontal, sectionsViewHorizontalPadding(in: geometry))
+                }
+            }
+            .if(dismissKeyboardOnScroll) { $0.scrollDismissesKeyboardIfAvailable() }
+            .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
+        }
+    }
+
     @ViewBuilder
     private var sectionsView: some View {
         GeometryReader { proxy in
@@ -141,7 +177,9 @@ private extension NewTabPageView {
                 .padding(.bottom, sectionsViewPadding(in: proxy))
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
+                .id(NewTabPageScrollToTop.topAnchor)
             }
+            .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
             .if(dismissKeyboardOnScroll, transform: {
                 $0.scrollDismissesKeyboardIfAvailable()
             })
@@ -186,7 +224,9 @@ private extension NewTabPageView {
                     .padding(.top, contentTopInset(in: proxy))
                     .padding(.bottom, sectionsViewPadding(in: proxy))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
+                    .id(NewTabPageScrollToTop.topAnchor)
                 }
+                .modifier(NewTabPageScrollToTop(requests: viewModel.scrollToTopRequests))
                 .if(dismissKeyboardOnScroll, transform: {
                     $0.scrollDismissesKeyboardIfAvailable()
                 })
@@ -264,6 +304,20 @@ private extension NewTabPageView {
     }
 }
 
+private struct NewTabPageScrollToTop: ViewModifier {
+    static let topAnchor = "new-tab-page-top"
+    let requests: PassthroughSubject<TimeInterval, Never>
+
+    func body(content: Content) -> some View {
+        ScrollViewReader { proxy in
+            content.onReceive(requests) { duration in
+                withAnimation(duration > 0 && !UIAccessibility.isReduceMotionEnabled ? .easeInOut(duration: duration) : nil) {
+                    proxy.scrollTo(Self.topAnchor, anchor: .top)
+                }
+            }
+        }
+    }
+}
 
 private struct Metrics {
 

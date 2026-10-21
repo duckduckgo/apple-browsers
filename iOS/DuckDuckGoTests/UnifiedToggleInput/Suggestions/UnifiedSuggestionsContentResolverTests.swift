@@ -90,4 +90,123 @@ final class UnifiedSuggestionsContentResolverTests: XCTestCase {
             inputs(mode: .aiChat, isTyping: true, resultsPending: true), previous: nil)
         XCTAssertEqual(kind, .list(.duckAI))
     }
+
+    func test_legacyIdle_hatchIsEmbeddedInBothModesIncludingEmptyStates() {
+        let states = [
+            inputs(mode: .search),
+            inputs(mode: .search, hasFavorites: true),
+            inputs(mode: .search, hasMessages: true),
+            inputs(mode: .aiChat),
+            inputs(mode: .aiChat, hasRecents: true)
+        ]
+        for state in states {
+            let content = UnifiedSuggestionsContentResolver.resolve(state, previous: nil)
+            let placement = chromePlacement(mode: state.mode)
+
+            XCTAssertEqual(placement.escapeHatch, .embedded, "\(state)")
+            XCTAssertTrue(showsEmbeddedLegacyContent(content), "\(state)")
+        }
+    }
+
+    func test_syncPromo_isEmbeddedOnlyInLegacyDuckAI() {
+        XCTAssertEqual(chromePlacement(mode: .aiChat, showsSyncPromo: true).syncPromo, .embedded)
+        XCTAssertEqual(chromePlacement(mode: .search, showsSyncPromo: true).syncPromo, .hidden)
+        XCTAssertEqual(chromePlacement(mode: .aiChat, showsSyncPromo: false).syncPromo, .hidden)
+    }
+
+    func test_absentHatch_doesNotHideEligiblePromoOrEmptyScrollView() {
+        let placement = chromePlacement(mode: .aiChat, hasEscapeHatch: false, showsSyncPromo: true)
+
+        XCTAssertEqual(placement.escapeHatch, .hidden)
+        XCTAssertEqual(placement.syncPromo, .embedded)
+        XCTAssertTrue(showsEmbeddedLegacyContent(.logo))
+    }
+
+    func test_typing_hidesChromeInBothModesAndLayouts() {
+        for usesRedesign in [false, true] {
+            for mode in TextEntryMode.allCases {
+                let placement = chromePlacement(usesRedesign: usesRedesign, mode: mode, isTyping: true, showsSyncPromo: true)
+                let content = UnifiedSuggestionsContentResolver.resolve(inputs(mode: mode, isTyping: true), previous: nil)
+
+                XCTAssertEqual(placement.escapeHatch, .hidden)
+                XCTAssertEqual(placement.syncPromo, .hidden)
+                XCTAssertFalse(showsEmbeddedLegacyContent(content, usesRedesign: usesRedesign))
+            }
+        }
+    }
+
+    func test_fireTab_hidesChromeAndEmbeddedContentInBothLayouts() {
+        for usesRedesign in [false, true] {
+            for mode in TextEntryMode.allCases {
+                let placement = chromePlacement(usesRedesign: usesRedesign, mode: mode, isFireTab: true, showsSyncPromo: true)
+
+                XCTAssertEqual(placement.escapeHatch, .hidden)
+                XCTAssertEqual(placement.syncPromo, .hidden)
+            }
+            for content: UnifiedSuggestionsContentKind in [.favorites, .logo, .list(.recents), .list(.search), .list(.duckAI)] {
+                XCTAssertFalse(showsEmbeddedLegacyContent(content, usesRedesign: usesRedesign, isFireTab: true))
+            }
+        }
+    }
+
+    func test_redesignedLayout_preservesPinnedChromeExceptHatchInSearchModules() {
+        let emptySearch = chromePlacement(usesRedesign: true, mode: .search)
+        let searchModules = chromePlacement(usesRedesign: true, showsRedesignedSearchModules: true, mode: .search)
+        let duckAI = chromePlacement(usesRedesign: true, mode: .aiChat, showsSyncPromo: true)
+
+        XCTAssertEqual(emptySearch.escapeHatch, .pinned)
+        XCTAssertEqual(emptySearch.syncPromo, .hidden)
+        XCTAssertEqual(searchModules.escapeHatch, .embedded)
+        XCTAssertEqual(searchModules.syncPromo, .hidden)
+        XCTAssertEqual(duckAI.escapeHatch, .pinned)
+        XCTAssertEqual(duckAI.syncPromo, .pinned)
+        for content: UnifiedSuggestionsContentKind in [.favorites, .logo, .list(.recents), .list(.search), .list(.duckAI)] {
+            XCTAssertFalse(showsEmbeddedLegacyContent(content, usesRedesign: true))
+        }
+    }
+
+    func test_duckAITyping_pendingRecents_stayEmbeddedWithoutChromeUntilResultsArrive() {
+        let pending = inputs(mode: .aiChat, isTyping: true, hasRecents: true, resultsPending: true)
+        let pendingContent = UnifiedSuggestionsContentResolver.resolve(pending, previous: .list(.recents))
+        let placement = chromePlacement(mode: .aiChat, isTyping: pending.isTyping, showsSyncPromo: true)
+
+        XCTAssertEqual(pendingContent, .list(.recents))
+        XCTAssertTrue(showsEmbeddedLegacyContent(pendingContent))
+        XCTAssertEqual(placement.escapeHatch, .hidden)
+        XCTAssertEqual(placement.syncPromo, .hidden)
+
+        let settled = inputs(mode: .aiChat, isTyping: true, hasRecents: true, resultsPending: false)
+        let settledContent = UnifiedSuggestionsContentResolver.resolve(settled, previous: pendingContent)
+
+        XCTAssertEqual(settledContent, .list(.duckAI))
+        XCTAssertFalse(showsEmbeddedLegacyContent(settledContent))
+
+        let cleared = UnifiedSuggestionsContentResolver.resolve(inputs(mode: .aiChat, hasRecents: true), previous: settledContent)
+        XCTAssertTrue(showsEmbeddedLegacyContent(cleared))
+        XCTAssertEqual(chromePlacement(mode: .aiChat, showsSyncPromo: true).escapeHatch, .embedded)
+    }
+
+    private func chromePlacement(usesRedesign: Bool = false,
+                                 showsRedesignedSearchModules: Bool = false,
+                                 mode: TextEntryMode,
+                                 isTyping: Bool = false,
+                                 isFireTab: Bool = false,
+                                 hasEscapeHatch: Bool = true,
+                                 showsSyncPromo: Bool = false) -> (escapeHatch: FocusedContentPlacement, syncPromo: FocusedContentPlacement) {
+        UnifiedSuggestionsContentResolver.resolveChromePlacement(usesRedesignedNewTabPageLayout: usesRedesign,
+                                                                showsRedesignedSearchModules: showsRedesignedSearchModules,
+                                                                mode: mode,
+                                                                isTyping: isTyping,
+                                                                isFireTab: isFireTab,
+                                                                hasEscapeHatch: hasEscapeHatch,
+                                                                showsSyncPromo: showsSyncPromo)
+    }
+
+    private func showsEmbeddedLegacyContent(_ content: UnifiedSuggestionsContentKind,
+                                            usesRedesign: Bool = false,
+                                            isFireTab: Bool = false) -> Bool {
+        UnifiedSuggestionsContentResolver.showsEmbeddedLegacyContent(usesRedesignedNewTabPageLayout: usesRedesign,
+                                                                    isFireTab: isFireTab,
+                                                                    content: content)
+    }
 }

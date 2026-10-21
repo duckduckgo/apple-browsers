@@ -40,6 +40,8 @@ enum TabGroupAction: String, CaseIterable, Codable {
     case keep
     case close
     case moveToNewWindow
+    case bookmark
+    case addToFavorites
 }
 
 struct ProposedGroup: Identifiable, Equatable {

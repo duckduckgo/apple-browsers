@@ -57,8 +57,9 @@ final class AppleTabOrganizer: TabOrganizing {
     }
 
     private static let suggestionInstructions = """
-    You suggest short commands a person could give to tidy their open browser tabs. \
-    Each command starts with Close, Move, Keep or Find and names a topic or site that appears in the tabs.
+    You suggest ways a person could tidy their open browser tabs. \
+    Each suggestion is an action plus a broad category of tabs, like news, streaming, shopping, travel or work. \
+    Never name a single site or brand. Use a different category for each suggestion.
     """
 
     /// Commands tailored to the open tabs, shown as one-click suggestions.
@@ -66,9 +67,12 @@ final class AppleTabOrganizer: TabOrganizing {
         guard !tabs.isEmpty, case .available = SystemLanguageModel.default.availability else { return [] }
         let session = LanguageModelSession(instructions: Self.suggestionInstructions)
         let response = try await session.respond(to: "Tabs:\n\(Self.tabList(for: tabs))", generating: GeneratedSuggestions.self).content
-        return response.commands
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters)) }
-            .filter { !$0.isEmpty }
+        var seen = Set<String>()
+        return response.suggestions.compactMap { suggestion in
+            let category = suggestion.category.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard !category.isEmpty, seen.insert(category).inserted else { return nil }
+            return suggestion.verb.command(for: category)
+        }
     }
 
     /// One line per tab: "3. Title — host/path [pageType]: excerpt". Excerpts shrink until the list fits.
@@ -100,21 +104,53 @@ enum GeneratedTabAction {
     case keep
     case close
     case moveToNewWindow
+    case bookmark
+    case addToFavorites
 
     var contract: TabGroupAction {
         switch self {
         case .keep: return .keep
         case .close: return .close
         case .moveToNewWindow: return .moveToNewWindow
+        case .bookmark: return .bookmark
+        case .addToFavorites: return .addToFavorites
         }
     }
 }
 
 @available(macOS 26.0, *)
 @Generable
+enum GeneratedSuggestionVerb {
+    case close
+    case moveToNewWindow
+    case keepOnly
+    case find
+    case bookmark
+
+    func command(for category: String) -> String {
+        switch self {
+        case .close: return "Close \(category) tabs"
+        case .moveToNewWindow: return "Move \(category) tabs to a new window"
+        case .keepOnly: return "Keep only \(category) tabs"
+        case .find: return "Find \(category) tabs"
+        case .bookmark: return "Bookmark \(category) tabs"
+        }
+    }
+}
+
+@available(macOS 26.0, *)
+@Generable
+struct GeneratedSuggestion {
+    var verb: GeneratedSuggestionVerb
+    @Guide(description: "Broad category of several tabs, 1 or 2 lowercase words, like news, streaming, shopping, travel. Never a site or brand name")
+    var category: String
+}
+
+@available(macOS 26.0, *)
+@Generable
 struct GeneratedSuggestions {
-    @Guide(description: "Short commands of 2 to 5 words, each about different tabs, for example 'Close shopping tabs'", .count(4))
-    var commands: [String]
+    @Guide(description: "Suggestions about different categories, using a mix of actions", .count(5))
+    var suggestions: [GeneratedSuggestion]
 }
 
 @available(macOS 26.0, *)

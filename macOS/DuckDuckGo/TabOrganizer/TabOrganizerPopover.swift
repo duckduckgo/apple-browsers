@@ -31,7 +31,7 @@ enum TabOrganizerPopover {
         let popover = NSPopover()
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: TabOrganizerView(viewModel: viewModel))
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: button.isFlipped ? .maxY : .minY)
+        popover.show(positionedBelow: button)
         current = popover
     }
 }
@@ -190,9 +190,11 @@ final class TabOrganizerViewModel: ObservableObject {
     }
 
     var applySummary: String? {
-        let move = selectedTabIDs(for: .moveToNewWindow).count
-        let close = selectedTabIDs(for: .close).count
-        let parts = [move > 0 ? "move \(move)" : nil, close > 0 ? "close \(close)" : nil].compactMap { $0 }
+        let counts: [(TabGroupAction, String)] = [(.moveToNewWindow, "move"), (.close, "close"), (.bookmark, "bookmark"), (.addToFavorites, "favorite")]
+        let parts = counts.compactMap { action, verb in
+            let count = selectedTabIDs(for: action).count
+            return count > 0 ? "\(verb) \(count)" : nil
+        }
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
@@ -207,6 +209,8 @@ extension TabGroupAction {
         case .keep: return "Keep"
         case .close: return "Close"
         case .moveToNewWindow: return "New window"
+        case .bookmark: return "Bookmark"
+        case .addToFavorites: return "Add to favorites"
         }
     }
 }

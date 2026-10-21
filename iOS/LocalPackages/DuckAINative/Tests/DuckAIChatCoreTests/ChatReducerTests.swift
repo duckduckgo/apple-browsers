@@ -328,6 +328,20 @@ import Testing
         #expect(!state.canRedo)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func unsupportedProviderStopsAStreamingReply() throws {
+        var state = try Fixture.state()
+        _ = state.apply(.send("Hi", at: Fixture.time(0)))
+        _ = state.apply(.provider(.id(2), .textDelta("Hel"), at: Fixture.time(1)))
+
+        let effects = state.apply(.availabilityChanged(.unsupported(reason: "Unloaded")))
+
+        #expect(effects == [.requestStop(.id(2))])
+        #expect(state.assistantMessages.isEmpty)
+        #expect(state.status == .error(.modelUnavailable(reason: "Unloaded")))
+    }
+
     private func finishReply(_ id: MessageID, text: String, in state: inout ChatState) {
         _ = state.apply(.provider(id, .textDelta(text), at: Fixture.time(1)))
         _ = state.apply(.provider(id, .finished(nil), at: Fixture.time(2)))

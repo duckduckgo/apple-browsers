@@ -54,6 +54,92 @@ public enum PromptBuilder {
     ///   If it still does not fit, fail with `.conversationTooLong`.
     /// - `estimatedInputTokens`: estimate of instructions + history + input.
     public static func turn(conversation: ConversationID, messages: [Message], budget: PromptBudget) -> Result<ProviderTurn, ChatError> {
-        fatalError("not implemented")
+        guard let firstUser = messages.first(where: { if case .user = $0 { true } else { false } }),
+              case .user(let first) = firstUser,
+              let lastIndex = messages.lastIndex(where: { if case .user = $0 { true } else { false } }),
+              case .user(let last) = messages[lastIndex] else { return .failure(.conversationTooLong) }
+        let request = first.parts.compactMap { part -> ChatRequest? in
+            if case .context(.request(let request)) = part { request } else { nil }
+        }.first
+        let instructions: String
+        let maxOutputTokens: Int
+        switch request {
+        case .summarize:
+            instructions = "Summarize the provided content clearly and concisely."
+            maxOutputTokens = 512
+        case .translate(let language):
+            instructions = "Translate the provided content into \(language.name)."
+            let sourceCharacters = first.parts.reduce(0) { $0 + sourceLength($1) }
+            maxOutputTokens = min(4_096, max(256, sourceCharacters / 3 + 128))
+        case nil:
+            instructions = "You are a helpful assistant."
+            maxOutputTokens = 1_024
+        }
+
+        let input = renderedUser(last)
+        var history = messages[..<lastIndex].map { message -> ProviderMessage in
+            switch message {
+            case .user(let user):
+                ProviderMessage(role: .user, text: renderedUser(user))
+            case .assistant(let assistant):
+                ProviderMessage(role: .assistant, text: assistant.parts.compactMap { part in
+                    if case .text(let text) = part { text } else { nil }
+                }.joined())
+            }
+        }
+        var estimatedInputTokens = budget.estimatedTokens(instructions + history.map(\.text).joined() + input)
+        while estimatedInputTokens + maxOutputTokens > budget.contextWindowTokens {
+            guard let start = history.indices.dropFirst().first(where: { history[$0].role == .user }) else {
+                return .failure(.conversationTooLong)
+            }
+            let end = history.indices.dropFirst(start + 1).first(where: { history[$0].role == .user }) ?? history.endIndex
+            history.removeSubrange(start..<end)
+            estimatedInputTokens = budget.estimatedTokens(instructions + history.map(\.text).joined() + input)
+        }
+        return .success(ProviderTurn(conversation: conversation, instructions: instructions, history: history,
+                                     input: input, maxOutputTokens: maxOutputTokens, estimatedInputTokens: estimatedInputTokens))
     }
+}
+
+private func sourceLength(_ part: UserPart) -> Int {
+    switch part {
+    case .context(.page(let page)): page.content.count
+    case .context(.selection(let selection)): selection.content.count
+    case .context(.pastedText(let text)): text.count
+    default: 0
+    }
+}
+
+private func renderedSource(title: String, url: URL?, content: String) -> String {
+    var lines = ["Title: \(title)"]
+    if let url { lines.append("URL: \(url.absoluteString)") }
+    lines.append("Content: \(content)")
+    return lines.joined(separator: "\n")
+}
+
+private func renderedUser(_ message: UserMessage) -> String {
+    var requests: [String] = []
+    var pages: [String] = []
+    var selections: [String] = []
+    var pasted: [String] = []
+    var texts: [String] = []
+    for part in message.parts {
+        switch part {
+        case .context(.request(.summarize)):
+            requests.append("Summarize the following content.")
+        case .context(.request(.translate(let language))):
+            requests.append("Translate the following content into \(language.name).")
+        case .context(.page(let page)):
+            pages.append(renderedSource(title: page.title, url: page.url, content: page.content))
+        case .context(.selection(let selection)):
+            selections.append("Selection \(selections.count + 1):\n" + renderedSource(title: selection.title, url: selection.url, content: selection.content))
+        case .context(.pastedText(let text)):
+            pasted.append(text)
+        case .text(let text):
+            texts.append(text)
+        case .attachment:
+            break
+        }
+    }
+    return (requests + pages + selections + pasted + texts).joined(separator: "\n\n")
 }

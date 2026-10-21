@@ -76,6 +76,18 @@ final class DaxPetCoordinator: NSObject {
         window.contentView = NSHostingView(rootView: DaxPetView(model: model))
         window.delegate = self
         window.onCancel = { [weak model] in model?.endComposing() }
+        window.onMouseDown = { [weak model] event in
+            guard let character = model?.character,
+                  DaxPetView.Metrics.characterFrame().offsetBy(dx: character.strollOffset, dy: 0).contains(event.locationInWindow) else {
+                return false
+            }
+            if event.type == .rightMouseDown {
+                character.rightMouseDown(with: event)
+            } else {
+                character.mouseDown(with: event)
+            }
+            return true
+        }
 
         model.onHide = { [weak self] in self?.preferences.isEnabled = false }
         model.onNeedsKeyboard = { [weak window] in window?.makeKey() }
@@ -334,6 +346,9 @@ struct DaxAnswerTracker {
 final class DaxPetWindow: NSPanel {
 
     var onCancel: (() -> Void)?
+    /// Offered every mouse-down first; returns `true` when it took it. Without this, the first click on an
+    /// inactive panel only selects it, so Dax couldn't be dragged in one go.
+    var onMouseDown: ((NSEvent) -> Bool)?
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
@@ -356,6 +371,13 @@ final class DaxPetWindow: NSPanel {
 
     override func cancelOperation(_ sender: Any?) {
         onCancel?()
+    }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown || event.type == .rightMouseDown, onMouseDown?(event) == true {
+            return
+        }
+        super.sendEvent(event)
     }
 }
 

@@ -121,4 +121,27 @@ final class DaxPetCoordinatorTests: XCTestCase {
     func testWhenThereAreNoChatsThenThereIsNoLastChat() {
         XCTAssertNil(DaxPetPromptSubmitter.mostRecent([]))
     }
+
+    // MARK: - Window
+
+    private func mouseEvent(_ type: NSEvent.EventType, at point: NSPoint, in window: NSWindow) throws -> NSEvent {
+        try XCTUnwrap(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 0,
+                                         windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+    }
+
+    func testEveryMouseDownIsOfferedToDaxFirst() throws {
+        let window = DaxPetWindow(contentRect: NSRect(origin: .zero, size: DaxPetView.Metrics.windowSize))
+        var offered: [NSEvent.EventType] = []
+        window.onMouseDown = { event in
+            offered.append(event.type)
+            return true
+        }
+
+        window.sendEvent(try mouseEvent(.leftMouseDown, at: NSPoint(x: 10, y: 10), in: window))
+        window.sendEvent(try mouseEvent(.rightMouseDown, at: NSPoint(x: 10, y: 10), in: window))
+        window.sendEvent(try mouseEvent(.leftMouseUp, at: NSPoint(x: 10, y: 10), in: window))
+
+        XCTAssertEqual(offered, [.leftMouseDown, .rightMouseDown])
+        window.close()
+    }
 }

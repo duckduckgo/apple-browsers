@@ -1157,6 +1157,22 @@ final class IPadOmnibarAttachmentControllerPastedTextTests: XCTestCase {
         XCTAssertEqual(dismissals, 1)
     }
 
+    func testSavingAfterTheChipIsGoneReportsNoEdit() throws {
+        sut.addPastedText("pasted")
+        let id = try XCTUnwrap(strip.attachments.first?.id)
+        var dismissals = 0
+        sut.onPastedTextSheetDismissed = { dismissals += 1 }
+
+        sut.presentPastedTextSheet(id: id)
+        let sheet = try XCTUnwrap(window.rootViewController?.presentedViewController as? PastedTextSheetHostingController)
+        sut.resetSelection()
+        sheet.finish(.saved(AIChatPastedText(content: "edited")))
+
+        XCTAssertTrue(strip.attachments.isEmpty)
+        XCTAssertEqual(firedPixels.map(\.name), ["aichat_unified_input_pasted_text_attached", "aichat_unified_input_pasted_text_sheet_opened"])
+        XCTAssertEqual(dismissals, 1)
+    }
+
     func testTappingANonPastedChipOpensNothing() {
         strip.addAttachment(.file(AIChatFileAttachment(data: Data([1]), fileName: "doc.pdf", mimeType: "application/pdf")))
 

@@ -178,16 +178,17 @@ final class IPadOmnibarAttachmentController {
         PastedTextSheetPresenter.present(pastedText, mode: .editable(limit: limit), from: host) { [weak self] outcome in
             guard let self else { return }
             if case .saved(let edited) = outcome {
-                replaceAttachment(id: id, with: .pastedText(edited), in: draft)
-                firePastedTextPixel(.edited)
+                replacePastedText(id: id, with: edited, in: draft)
             }
             onPastedTextSheetDismissed?()
         }
     }
 
-    private func replaceAttachment(id: UUID, with attachment: UnifiedToggleInputAttachment, in draft: IPadOmnibarDraft) {
+    private func replacePastedText(id: UUID, with pastedText: AIChatPastedText, in draft: IPadOmnibarDraft) {
         guard draft.isValid, let index = draft.attachments.firstIndex(where: { $0.id == id }) else { return }
+        let attachment = UnifiedToggleInputAttachment.pastedText(pastedText)
         draft.attachments[index] = attachment
+        firePastedTextPixel(.edited)
         guard currentDraft === draft else { return }
         isRenderingDraft = true
         defer { isRenderingDraft = false }

@@ -21,6 +21,7 @@ import DuckAIChatCore
 import DuckAIChatMLX
 import DuckAIChatProviders
 import Foundation
+import UIKit
 
 /// One MLX provider for the app's lifetime, so a loaded model is shared by every surface.
 @MainActor
@@ -45,10 +46,16 @@ enum NativeChatProviderFactory {
         }
     }
 
+    private static var memoryWarningObserver: NSObjectProtocol?
+
     private static func mlxProvider() -> MLXProvider {
         if let mlx { return mlx }
         let provider = MLXProvider(store: modelStore)
         mlx = provider
+        memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification,
+                                                                       object: nil, queue: .main) { _ in
+            provider.unload()
+        }
         return provider
     }
 

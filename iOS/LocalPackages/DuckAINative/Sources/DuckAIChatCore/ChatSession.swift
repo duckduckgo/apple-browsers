@@ -72,11 +72,11 @@ public final class ChatSession {
     }
 
     /// Surface closing. Never cancels a provider stream: a draining MLX reply ends on its own.
+    /// Leaves the model loaded for the next chat; the app unloads it under memory pressure.
     public func close() {
         dispatch(.stop(at: now()))
         availabilityTask?.cancel()
         availabilityTask = nil
-        provider.unload()
     }
 
     private func dispatch(_ action: ChatAction) {

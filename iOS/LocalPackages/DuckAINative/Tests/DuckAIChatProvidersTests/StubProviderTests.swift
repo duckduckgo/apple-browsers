@@ -58,6 +58,20 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func theModelLoadsOnceUntilUnloaded() async throws {
+        let provider = fast()
+        let first = try await collect(provider.reply(to: turn, stop: StopSignal()))
+        let second = try await collect(provider.reply(to: turn, stop: StopSignal()))
+        provider.unload()
+        let third = try await collect(provider.reply(to: turn, stop: StopSignal()))
+
+        #expect(first.contains(.stage(.loadingModel(fraction: nil))))
+        #expect(!second.contains(.stage(.loadingModel(fraction: nil))))
+        #expect(third.contains(.stage(.loadingModel(fraction: nil))))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func aRaisedStopEndsTheStreamWithFinished() async throws {
         let stop = StopSignal()
         stop.raise()

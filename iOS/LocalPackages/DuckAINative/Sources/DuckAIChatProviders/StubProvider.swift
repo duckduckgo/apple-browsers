@@ -86,6 +86,7 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
     private let configuration: Configuration
     private let lock = NSLock()
     private var currentAvailability: ProviderAvailability
+    private var isLoaded = false
     private var subscribers: [UUID: AsyncStream<ProviderAvailability>.Continuation] = [:]
 
     public init(configuration: Configuration = Configuration()) {
@@ -115,18 +116,30 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
         publish(.ready)
     }
 
-    public func prepare() async {}
+    public func prepare() async {
+        await load()
+    }
 
-    public func unload() {}
+    public func unload() {
+        lock.withLock { isLoaded = false }
+    }
+
+    /// Loads once, like a real model, until `unload()`.
+    private func load() async {
+        guard !lock.withLock({ isLoaded }) else { return }
+        try? await Task.sleep(for: configuration.loadTime)
+        lock.withLock { isLoaded = true }
+    }
 
     public func reply(to turn: ProviderTurn, stop: StopSignal) -> AsyncThrowingStream<ProviderEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 var emitted = 0
                 do {
-                    if !stop.isRaised {
-                        try await Task.sleep(for: configuration.loadTime)
+                    let needsLoad = !self.lock.withLock { self.isLoaded }
+                    if needsLoad, !stop.isRaised {
                         continuation.yield(.stage(.loadingModel(fraction: nil)))
+                        await self.load()
                     }
                     if !stop.isRaised {
                         try await Task.sleep(for: configuration.readTime)
@@ -147,7 +160,7 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
                     }
                     if !stop.isRaised, let failure = configuration.failure { throw failure }
                     continuation.yield(.finished(GenerationStats(promptTokens: nil, generatedTokens: emitted,
-                                                                 loadTime: configuration.loadTime, promptTime: configuration.readTime,
+                                                                 loadTime: needsLoad ? configuration.loadTime : nil, promptTime: configuration.readTime,
                                                                  generateTime: started.duration(to: .now))))
                     continuation.finish()
                 } catch {

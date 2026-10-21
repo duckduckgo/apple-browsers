@@ -55,7 +55,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     /// collection view (which scrolls vertically), not the horizontally-paging `contentView`.
     private weak var scrollEdgeScrollView: UIScrollView?
     private weak var centerView: UIView?
-    private var glassCenterContainer: UIVisualEffectView?
+    private var glassCenterContainer: UIView?
     private var layoutConstraints: [NSLayoutConstraint] = []
     private var isFireModeEnabled = false
     private var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
@@ -239,26 +239,33 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         glassCenterContainer = nil
     }
 
-    /// Wraps the mode switcher in a glass capsule on iOS 26 so it stays legible over the
-    /// glass navigation bar (otherwise it washes out). Below iOS 26 the raw view is used.
+    /// Places a glass capsule behind the mode switcher on iOS 26 so it stays legible over the
+    /// navigation bar. Below iOS 26 the raw view is used.
     private func centerTitleView() -> UIView? {
         guard let centerView else { return nil }
         guard #available(iOS 26.0, *) else { return centerView }
 
         if let glassCenterContainer { return glassCenterContainer }
 
-        let effectView = UIVisualEffectView(effect: nil)
+        let containerView = UIView()
+        let effectView = UIVisualEffectView(effect: UIGlassEffect())
         effectView.cornerConfiguration = .capsule()
+        effectView.translatesAutoresizingMaskIntoConstraints = false
         centerView.translatesAutoresizingMaskIntoConstraints = false
-        effectView.contentView.addSubview(centerView)
+        containerView.addSubview(effectView)
+        containerView.addSubview(centerView)
         NSLayoutConstraint.activate([
-            centerView.topAnchor.constraint(equalTo: effectView.contentView.topAnchor),
-            centerView.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor),
-            centerView.leadingAnchor.constraint(equalTo: effectView.contentView.leadingAnchor),
-            centerView.trailingAnchor.constraint(equalTo: effectView.contentView.trailingAnchor),
+            effectView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            effectView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            effectView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            effectView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            centerView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            centerView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            centerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            centerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
         ])
-        glassCenterContainer = effectView
-        return effectView
+        glassCenterContainer = containerView
+        return containerView
     }
 
     func setTitle(_ title: String?) {

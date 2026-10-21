@@ -5487,7 +5487,7 @@ extension MainViewController: BrowserChromeDelegate {
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
             ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
                 barsVisibilityPercent: percent,
-                collapseStart: FloatingDomainCapsuleController.handoffStart
+                collapseStart: FloatingDomainCapsuleController.handoffEnd
               )
             : 0
         let panelHeight = toolbar.setButtonRowCollapseProgress(

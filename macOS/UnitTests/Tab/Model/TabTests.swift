@@ -95,6 +95,73 @@ final class TabTests: XCTestCase {
         }
     }
 
+    // MARK: - Web Extension Navigation
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionPagesNavigateThenEachOwningTabChanges() async {
+        let firstTab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let secondTab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let firstExtensionView = WebView(frame: .zero, configuration: schemeHandler.webViewConfiguration(), featureFlagger: MockFeatureFlagger())
+        let secondExtensionView = WebView(frame: .zero, configuration: schemeHandler.webViewConfiguration(), featureFlagger: MockFeatureFlagger())
+        firstExtensionView.uiDelegate = firstTab
+        secondExtensionView.uiDelegate = secondTab
+        firstTab.webExtensionPageWebView = firstExtensionView
+        secondTab.webExtensionPageWebView = secondExtensionView
+        let firstWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 64, height: 48),
+                                   styleMask: .borderless, backing: .buffered, defer: false)
+        let secondWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 64, height: 48),
+                                    styleMask: .borderless, backing: .buffered, defer: false)
+        firstWindow.contentView = firstExtensionView
+        secondWindow.contentView = secondExtensionView
+        let delegate = WebExtensionInternalSiteNavigationDelegate()
+        let firstFrame = WKFrameInfo.mock(for: firstExtensionView)
+        let firstAction = MockWKNavigationAction(request: URLRequest(url: urls.url1),
+                                                 targetFrame: firstFrame, sourceFrame: firstFrame)
+
+        let firstPolicy = await delegate.webView(firstExtensionView, decidePolicyFor: firstAction)
+
+        XCTAssertEqual(firstPolicy, .cancel)
+        XCTAssertEqual(firstTab.content, .url(urls.url1, source: .ui))
+        XCTAssertEqual(secondTab.content, .none)
+
+        let secondFrame = WKFrameInfo.mock(for: secondExtensionView)
+        let secondAction = MockWKNavigationAction(request: URLRequest(url: urls.url2),
+                                                  targetFrame: secondFrame, sourceFrame: secondFrame)
+        let secondPolicy = await delegate.webView(secondExtensionView, decidePolicyFor: secondAction)
+
+        XCTAssertEqual(secondPolicy, .cancel)
+        XCTAssertEqual(firstTab.content, .url(urls.url1, source: .ui))
+        XCTAssertEqual(secondTab.content, .url(urls.url2, source: .ui))
+        withExtendedLifetime((firstTab, secondTab, firstWindow, secondWindow)) {}
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionPageHasNoOwnerThenExternalNavigationIsCancelled() async {
+        let webView = WebView(frame: .zero, configuration: schemeHandler.webViewConfiguration(), featureFlagger: MockFeatureFlagger())
+        let frame = WKFrameInfo.mock(for: webView)
+        let action = MockWKNavigationAction(request: URLRequest(url: urls.url1), targetFrame: frame, sourceFrame: frame)
+
+        let policy = await WebExtensionInternalSiteNavigationDelegate().webView(webView, decidePolicyFor: action)
+
+        XCTAssertEqual(policy, .cancel)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionPageNavigatesInternallyThenNavigationIsAllowed() async {
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        let frame = WKFrameInfo.mock(for: tab.webView)
+        let url = URL(string: "webkit-extension://example/app.html")!
+        let action = MockWKNavigationAction(request: URLRequest(url: url), targetFrame: frame, sourceFrame: frame)
+
+        let policy = await WebExtensionInternalSiteNavigationDelegate().webView(tab.webView, decidePolicyFor: action)
+
+        XCTAssertEqual(policy, .allow)
+        XCTAssertEqual(tab.content, .none)
+    }
+
     // MARK: - Web Extension Snapshots
 
     func testExtensionAPIDelegatesHaveNoTrappingFailurePaths() throws {

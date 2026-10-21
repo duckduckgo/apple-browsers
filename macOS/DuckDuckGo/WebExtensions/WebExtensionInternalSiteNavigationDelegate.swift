@@ -29,9 +29,8 @@ final class WebExtensionInternalSiteNavigationDelegate: NSObject, WKNavigationDe
             return .allow
         }
 
-        guard let tabCollectionViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
-              let tab = tabCollectionViewModel.selectedTab else {
-            return .allow
+        guard let tab = webView.uiDelegate as? Tab else {
+            return .cancel
         }
 
         tab.setContent(.url(url, source: .ui))

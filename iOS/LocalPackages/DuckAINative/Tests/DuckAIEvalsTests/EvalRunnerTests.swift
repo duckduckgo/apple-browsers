@@ -51,7 +51,7 @@ import Testing
         #expect(turns[2].input.contains("Mallards dabble."))
         #expect(!turns[2].input.contains("Ducks are waterfowl"))
         #expect(turns[3].instructions.contains("French") || turns[3].input.contains("French"))
-        #expect(turns[4].maxOutputTokens == 160)
+        #expect(turns[4].maxOutputTokens == 80)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -17,12 +17,14 @@
 //
 
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
 enum TabOrganizerPopover {
 
     private static var current: NSPopover?
+    private static var stateCancellable: AnyCancellable?
 
     static func show(relativeTo button: NSView, tabCollectionViewModel: TabCollectionViewModel) {
         current?.close()
@@ -34,6 +36,14 @@ enum TabOrganizerPopover {
         // Sized up front: positioning happens before SwiftUI reports its size.
         popover.contentSize = TabOrganizerView.size
         viewModel.onApplied = { [weak popover] in popover?.close() }
+        // A click elsewhere must not throw away a request that is still running.
+        stateCancellable = viewModel.$state.sink { [weak popover] state in
+            if case .loading = state {
+                popover?.behavior = .applicationDefined
+            } else {
+                popover?.behavior = .transient
+            }
+        }
         popover.show(positionedBelow: button)
         current = popover
     }
@@ -68,6 +78,7 @@ final class TabOrganizerViewModel: ObservableObject {
     var onApplied: (() -> Void)?
     private let tabCollectionViewModel: TabCollectionViewModel
     private var task: Task<Void, Never>?
+    private var lastRequest: TabOrganizerRequest?
 
     init(tabCollectionViewModel: TabCollectionViewModel) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -128,7 +139,12 @@ final class TabOrganizerViewModel: ObservableObject {
         state = .idle
     }
 
+    func retry() {
+        lastRequest.map(organize)
+    }
+
     private func organize(_ request: TabOrganizerRequest) {
+        lastRequest = request
         guard #available(macOS 26.0, *) else {
             state = .failed("Organizing tabs needs macOS 26 or later with Apple Intelligence.")
             return
@@ -338,10 +354,17 @@ struct TabOrganizerView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .failed(let message):
-            Text(message)
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .multilineTextAlignment(.center)
+            VStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle").font(.title2).foregroundColor(.secondary)
+                Text(message)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                HStack {
+                    Button("Start over", action: viewModel.startOver)
+                    Button("Try again", action: viewModel.retry)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .results:
             results
         }

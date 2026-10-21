@@ -30,11 +30,41 @@ final class TabOrganizerDebugMenu: NSMenu {
             NSMenuItem(title: "Group by Topic", action: #selector(groupByTopic)).targetting(self)
             NSMenuItem(title: "Group by Topic (with Page Content)", action: #selector(groupByTopicWithContent)).targetting(self)
             NSMenuItem(title: "Instruction…", action: #selector(instruction)).targetting(self)
+            NSMenuItem.separator()
+            NSMenuItem(title: "Open Demo Tabs", action: #selector(openDemoTabs)).targetting(self)
         }
     }
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    /// A fixed mix of topics, plus duplicates and an empty tab, so every rehearsal starts the same.
+    static let demoURLs = [
+        "https://www.japan-guide.com/e/e2158.html",
+        "https://www.jrailpass.com/",
+        "https://www.japan-guide.com/e/e3013.html",
+        "https://www.timeout.com/tokyo/restaurants/best-ramen-in-tokyo",
+        "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/",
+        "https://developer.apple.com/documentation/testing",
+        "https://github.com/duckduckgo/apple-browsers",
+        "https://github.com/duckduckgo/apple-browsers/pulls",
+        "https://www.rtings.com/headphones/reviews/best/by-type/noise-cancelling",
+        "https://www.amazon.com/s?k=noise+cancelling+headphones",
+        "https://www.bestbuy.com/site/searchpage.jsp?st=headphones",
+        "https://www.bbc.com/news",
+        "https://www.nytimes.com/",
+        "https://www.netflix.com/",
+        "https://www.disneyplus.com/",
+        "https://www.bbc.com/news",
+        "https://www.nytimes.com/"
+    ]
+
+    @MainActor @objc private func openDemoTabs() {
+        let tabs = Self.demoURLs.compactMap(URL.init(string:)).map { Tab(content: .contentFromURL($0, source: .ui)) }
+            + [Tab(content: .newtab)]
+        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs, isPopup: false))
+        NSApp.delegateTyped.windowControllersManager.openNewWindow(with: collection, showWindow: true)
     }
 
     @MainActor @objc private func groupByTopic() {

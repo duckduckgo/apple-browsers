@@ -612,15 +612,13 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            modelId: String?,
                                            tools: [AIChatRAGTool]?,
                                            reasoningEffort: AIChatReasoningEffort?,
-                                           images: [AIChatNativePrompt.NativePromptImage]?,
-                                           files: [AIChatNativePrompt.NativePromptFile]?,
+                                           attachments: AIChatPromptAttachments,
                                            termsAccepted: Bool) {
         onPromptSent?()
         guard claimFirstPromptSubmission() else { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,
-                                                   images: images,
-                                                   files: files,
+                                                   attachments: attachments,
                                                    modelId: modelId,
                                                    tools: tools,
                                                    pageContext: chipViewModel.pendingAttachedContextData,
@@ -655,7 +653,10 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
 
 // MARK: - Duck.ai Wide Event
 
-extension AIChatContextualUTIHost {
+extension AIChatContextualUTIHost: ContextualDuckAIPromptFlowReporting {
+
+    /// Unified Input receives chat status through its own user-script binding.
+    func chatStatusChanged(_ status: AIChatStatusValue) {}
 
     func sheetDismissed() {
         duckAIWideEventInstrumentation.sheetDismissedDuringGeneration(scope: duckAIWideEventFlowScope)

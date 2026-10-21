@@ -125,11 +125,19 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User clicks the Duck.ai button in the tab bar to open a new chat tab.
     case aiChatTabbarButtonClicked
 
-    /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button (or middle-clicks the pill).
+    /// Event Trigger: User picks "New Chat" from the tab-bar Duck.ai menu button.
     case aiChatNewChatTitleBarMenu
 
     /// Event Trigger: User picks "Chats" from the tab-bar Duck.ai menu button.
     case aiChatChatsTitleBarMenu
+
+    /// Event Trigger: User clicks the tab-bar Duck.ai menu button and its menu opens.
+    /// `sidebarEntry` is the sidebar item the menu offers.
+    case aiChatTitleBarMenuShown(sidebarEntry: AIChatMenuButtonSidebarEntry)
+
+    /// Event Trigger: User middle-clicks or ⌘-clicks the tab-bar Duck.ai menu button, which opens a new chat
+    /// tab without showing the menu.
+    case aiChatTitleBarMiddleClickNewChat
 
     // MARK: - Summarization
 
@@ -672,6 +680,10 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_new_chat_title_bar_menu"
         case .aiChatChatsTitleBarMenu:
             return "aichat_chats_title_bar_menu"
+        case .aiChatTitleBarMenuShown:
+            return "aichat_title_bar_menu_shown_macos"
+        case .aiChatTitleBarMiddleClickNewChat:
+            return "aichat_title_bar_middle_click_new_chat_macos"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizeSourceLinkClicked:
@@ -999,6 +1011,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
                 .aiChatChatsTitleBarMenu,
+                .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
@@ -1209,6 +1222,8 @@ enum AIChatPixel: PixelKit.Event {
             return params
         case .aiChatSidebarClosed(let source):
             return ["source": source.rawValue]
+        case .aiChatTitleBarMenuShown(let sidebarEntry):
+            return ["sidebarEntry": sidebarEntry.rawValue]
         case .aiChatSidebarResized(let width):
             return ["width": String(width)]
         case .aiChatSummarizeText(let source):
@@ -1263,6 +1278,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatTabbarButtonClicked,
                 .aiChatNewChatTitleBarMenu,
                 .aiChatChatsTitleBarMenu,
+                .aiChatTitleBarMenuShown,
+                .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
@@ -1421,6 +1438,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatDuckAIDirectNavigation,
                 .aiChatEntryPoint,
                 .aiChatSettingsState,
+                .aiChatTitleBarMenuShown,
+                .aiChatTitleBarMiddleClickNewChat,
                 .aiChatScreenshotPermissionNeeded,
                 .aiChatScreenshotPermissionAlertAccepted,
                 .aiChatScreenshotPermissionConverted:
@@ -1486,7 +1505,40 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
     case attachSelection = "attach-selection"
     case tabbarButton = "tabbar-button"
     case askAboutPage = "ask-about-page"
+    /// The tab-bar menu's sidebar item on a page that can't be attached, where it reads "Open Sidebar".
+    case openSidebar = "open-sidebar"
     case mainMenuAskAboutPage = "main-menu-ask-about-page"
+}
+
+/// The sidebar item the tab-bar Duck.ai menu offers. Resolved once per menu, so the item's title, its
+/// action and `aiChatTitleBarMenuShown` can't disagree.
+enum AIChatMenuButtonSidebarEntry: String, CaseIterable {
+    case askAboutPage = "ask-about-page"
+    case openSidebar = "open-sidebar"
+    case closeSidebar = "close-sidebar"
+
+    enum Action: Equatable {
+        case open(AIChatSidebarOpenSource)
+        case close
+    }
+
+    /// A presented chat, docked or floating, can only be closed. Otherwise "Ask About Page" needs a
+    /// page to attach; without one the same item just opens the sidebar.
+    init(isChatPresented: Bool, isPageAttachable: Bool) {
+        if isChatPresented {
+            self = .closeSidebar
+        } else {
+            self = isPageAttachable ? .askAboutPage : .openSidebar
+        }
+    }
+
+    var action: Action {
+        switch self {
+        case .askAboutPage: .open(.askAboutPage)
+        case .openSidebar: .open(.openSidebar)
+        case .closeSidebar: .close
+        }
+    }
 }
 
 /// Where an entry point opened Duck.ai, as `aiChatEntryPoint` reports it.

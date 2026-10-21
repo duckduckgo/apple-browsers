@@ -66,7 +66,7 @@ public struct AutoRestoreReadyView: View {
                     .padding(.bottom, 8)
 
                     Button {
-                        model.startAutoRestoreSecondaryAction()
+                        Task { await model.startAutoRestoreSecondaryAction() }
                     } label: {
                         Text(UserText.autoRestoreReadyScanCodeLink)
                     }

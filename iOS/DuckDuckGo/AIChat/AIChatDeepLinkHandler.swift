@@ -33,12 +33,12 @@ protocol AIChatDeepLinkPresenting: UIViewController {
         tools: [AIChatRAGTool]?,
         modelId: String?,
         reasoningEffort: AIChatReasoningEffort?,
-        images: [AIChatNativePrompt.NativePromptImage]?,
-        files: [AIChatNativePrompt.NativePromptFile]?,
+        attachments: AIChatPromptAttachments,
         reportsNewTab: Bool?,
         forcesNewTab: Bool,
         fromDeepLink: Bool,
-        termsAccepted: Bool
+        termsAccepted: Bool,
+        nativePromptFlow: DuckAIPromptFlowStart?
     )
 }
 
@@ -54,12 +54,12 @@ extension AIChatDeepLinkPresenting {
             tools: nil,
             modelId: nil,
             reasoningEffort: nil,
-            images: nil,
-            files: nil,
+            attachments: .none,
             reportsNewTab: nil,
             forcesNewTab: false,
             fromDeepLink: fromDeepLink,
-            termsAccepted: false
+            termsAccepted: false,
+            nativePromptFlow: nil
         )
     }
     

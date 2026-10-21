@@ -78,7 +78,7 @@ struct ImportPromotionHeaderView: View {
             .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
         .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-            .foregroundColor(Color(singleUseColor: .groupedListContentBackground))
+            .foregroundColor(Color(designSystemColor: .surfaceTertiary))
         )
         .onAppear {
             isAnimating = true

@@ -31,13 +31,20 @@ struct BookmarksBarSyncPromoLegacySettings: StoringKeys {
     let legacyFirstPresentedDate = StorageKey<Date>(UserDefaultsKeys.bookmarksBarSyncPromoFirstPresentedDate, assertionHandler: { _ in })
 }
 
-protocol BookmarksBarSyncPromoPresenting: AnyObject {
+protocol SyncDeviceButtonPromoPresenting: AnyObject {
     var isPromoActivePublisher: AnyPublisher<Bool, Never> { get }
     @MainActor func syncSetupStarted()
+    @MainActor func syncButtonDismissed()
+    @MainActor func syncButtonSurfaceClosed()
+}
+
+extension SyncDeviceButtonPromoPresenting {
+    @MainActor func syncButtonDismissed() {}
+    @MainActor func syncButtonSurfaceClosed() {}
 }
 
 /// Shows the "Sync Bookmarks" button in the bookmarks bar through the promo queue.
-final class BookmarksBarSyncPromoDelegate: InternalPromoDelegate, BookmarksBarSyncPromoPresenting {
+final class BookmarksBarSyncPromoDelegate: InternalPromoDelegate, SyncDeviceButtonPromoPresenting {
 
     private static let legacyPresentationDays = 7
 
@@ -141,7 +148,7 @@ final class BookmarksBarSyncPromoDelegate: InternalPromoDelegate, BookmarksBarSy
         guard authState == .active || authState == .addingNewDevice, didStartSetupFromPromo else { return }
         // The queue may already have hidden the promo as ineligible; recording `.actioned` still applies to it.
         didStartSetupFromPromo = false
-        recordResult(PromoServiceFactory.bookmarksBarSyncPromoID, .actioned)
+        recordResult(PromoServiceFactory.bookmarksBarSyncPromoID, .actioned())
     }
 
     // MARK: - Promo queue display
@@ -184,6 +191,11 @@ final class BookmarksBarSyncPromoDelegate: InternalPromoDelegate, BookmarksBarSy
     func syncSetupStarted() {
         // Tapping the CTA alone doesn't resolve the promo; it's actioned only if sync turns on.
         didStartSetupFromPromo = true
+    }
+
+    @MainActor
+    func syncButtonDismissed() {
+        resolve(with: .ignored())
     }
 
     @MainActor

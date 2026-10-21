@@ -41,6 +41,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController)
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController)
+    func tabsBarDidRequestNewChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController)
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController)
@@ -87,6 +88,12 @@ class TabsBarViewController: UIViewController {
 
     private var addTabButtonLeadingConstraint: NSLayoutConstraint?
     private var currentLayout: TabsBarLayout?
+    private var draggedTabOriginalFrame: CGRect?
+    private var draggedTabGrabOffset: CGFloat = 0
+    private weak var draggedTabCell: TabsBarCell?
+    private weak var reorderDropSession: UIDropSession?
+    private weak var tabAwaitingSelection: Tab?
+    private var animatesSelectionReveal = false
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
@@ -203,6 +210,9 @@ class TabsBarViewController: UIViewController {
         decorate()
         enableInteractionsWithPointer()
         registerForAIChatSettingsChanges()
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in self?.refreshVisibleCellStyles() }
+            .store(in: &cancellables)
     }
 
     private func setUpSubviews() {
@@ -210,9 +220,13 @@ class TabsBarViewController: UIViewController {
         collectionView.clipsToBounds = true
         collectionView.delegate = self
         collectionView.dataSource = self
+        (collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)?.currentIndex = { [weak self] in self?.currentIndex }
         collectionView.dragDelegate = self
         collectionView.dropDelegate = self
         collectionView.dragInteractionEnabled = true
+        let tabClick = UITapGestureRecognizer(target: self, action: #selector(selectTabWithPointer))
+        tabClick.delegate = self
+        collectionView.addGestureRecognizer(tabClick)
         // Prefetching can drop a still-visible cell during a fast scroll and not re-display it
         // (a gap). Prefetching gains are marginal here and on top of that we're not handling it properly (no willDisplay).
         collectionView.isPrefetchingEnabled = false
@@ -272,6 +286,11 @@ class TabsBarViewController: UIViewController {
         tabSwitcherButton.layoutSubviews()
         reloadData()
         updateAIChatButtonVisibility()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        tabAwaitingSelection = nil
     }
 
     private func registerForAIChatSettingsChanges() {
@@ -416,9 +435,19 @@ class TabsBarViewController: UIViewController {
             return
         }
         self.tabsModel = tabsModel
-        refreshVisibleCellStyles()
+        if animatesSelectionReveal, let currentIndex {
+            // The page has already switched; animate only the strip's new selection and reveal.
+            UIView.animate(withDuration: UIAccessibility.isReduceMotionEnabled ? 0 : 0.18,
+                           delay: 0, options: [.curveEaseOut, .beginFromCurrentState, .allowUserInteraction]) {
+                self.refreshVisibleCellStyles()
+                if scrollToSelected { self.scrollToTab(at: IndexPath(item: currentIndex, section: 0), animated: false) }
+                self.collectionView.layoutIfNeeded()
+            }
+        } else {
+            refreshVisibleCellStyles()
+            if scrollToSelected { scrollToSelectedTab() }
+        }
         refreshTabSwitcherButton()
-        if scrollToSelected { scrollToSelectedTab() }
     }
 
     /// Deletes one cell instead of reloading, so surviving cells keep their pointer state. Must run
@@ -451,8 +480,15 @@ class TabsBarViewController: UIViewController {
     private func scrollToSelectedTab() {
         DispatchQueue.main.async {
             guard let currentIndex = self.currentIndex else { return }
-            self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
+            self.scrollToTab(at: IndexPath(row: currentIndex, section: 0))
         }
+    }
+
+    private func scrollToTab(at indexPath: IndexPath, animated: Bool = true) {
+        // Reveal the tab's original position with a glimpse of any neighbors beyond it.
+        guard let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
+              let frame = layout.frameForRevealingItem(at: indexPath) else { return }
+        collectionView.scrollRectToVisible(frame, animated: animated)
     }
 
     /// After a resize/rotation reflows the strip, nudge the current tab fully into view, but only if
@@ -463,13 +499,18 @@ class TabsBarViewController: UIViewController {
             guard let currentIndex = self.currentIndex else { return }
             let indexPath = IndexPath(row: currentIndex, section: 0)
             guard self.isPartiallyClipped(at: indexPath) else { return }
-            self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
+            self.scrollToTab(at: indexPath)
         }
     }
 
     /// Excludes the sticky button's reserved contentInset, else a tab under it reads as "visible".
     private func isPartiallyClipped(at indexPath: IndexPath) -> Bool {
         guard let attributes = collectionView.layoutAttributesForItem(at: indexPath) else { return false }
+        if indexPath.item != currentIndex,
+           let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
+           layout.unpinnedFrameForItem(at: indexPath) != attributes.frame {
+            return true
+        }
         let visibleSize = CGSize(
             width: collectionView.bounds.width - collectionView.contentInset.right,
             height: collectionView.bounds.height
@@ -539,8 +580,10 @@ class TabsBarViewController: UIViewController {
     }
 
     private func reloadData() {
+        tabAwaitingSelection = nil
         collectionView.reloadData()
         refreshTabSwitcherButton()
+        collectionView.layoutIfNeeded()
         flareBackground.update()
     }
 
@@ -574,11 +617,11 @@ class TabsBarViewController: UIViewController {
         case .currentMode:
             delegate?.tabsBarDidRequestNewTab(self)
         }
-        DispatchQueue.main.async {
-            if let currentIndex = self.currentIndex {
-                self.collectionView.scrollToItem(at: IndexPath(row: currentIndex, section: 0), at: [], animated: true)
-            }
-        }
+        scrollToSelectedTab()
+    }
+
+    private func requestNewChat() {
+        delegate?.tabsBarDidRequestNewChat(self)
     }
 
     private func configureTabSwitcherLongPressMenu() {
@@ -591,31 +634,12 @@ class TabsBarViewController: UIViewController {
             return
         }
 
-        let menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
-                    PixelParameters.source: "tabs_bar"
-                ]))
-                completion([
-                    UIAction(title: UserText.actionNewFireTab,
-                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
-                                     PixelParameters.source: "tabs_bar"
-                                 ]))
-                                 self?.requestNewTab(type: .fire)
-                             },
-                    UIAction(title: UserText.actionNewTab,
-                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                                 PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
-                                     PixelParameters.source: "tabs_bar"
-                                 ]))
-                                 self?.requestNewTab(type: .normal)
-                             }
-                ])
-            }
-        ])
-
-        addTabButton.menu = menu
+        addTabButton.menu = NewTabLongPressMenu.make(source: .tabsBar, actions: .init(
+            onNewFireTab: { [weak self] in self?.requestNewTab(type: .fire) },
+            onNewTab: { [weak self] in self?.requestNewTab(type: .normal) },
+            onNewChat: { [weak self] in self?.requestNewChat() },
+            isNewChatAvailable: { [weak self] in self?.isNewChatAvailable ?? false }
+        ))
         addTabButton.showsMenuAsPrimaryAction = false
     }
 
@@ -718,22 +742,95 @@ extension TabsBarViewController: TabSwitcherButtonDelegate {
     func launchNewFireTab(_ button: TabSwitcherButton) {
         requestNewTab(type: .fire)
     }
+
+    func launchNewChat(_ button: TabSwitcherButton) {
+        requestNewChat()
+    }
+
+    var isNewChatAvailable: Bool {
+        aiChatSettings?.isAIChatEnabled ?? false
+    }
+}
+
+extension TabsBarViewController: UIGestureRecognizerDelegate {
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive event: UIEvent) -> Bool {
+        // Use the click itself, so a finger tap still reveals first while a pointer is hovering.
+        event.buttonMask == .primary
+    }
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let cell = tabCell(at: gestureRecognizer.location(in: collectionView)),
+              collectionView.indexPath(for: cell)?.item != currentIndex else { return false }
+        return cell.visiblePointerRect(in: cell).width <= cell.bounds.width / 2 + 0.001
+    }
+
+    @objc func selectTabWithPointer(_ recognizer: UITapGestureRecognizer) {
+        guard recognizer.state == .ended,
+              let cell = tabCell(at: recognizer.location(in: collectionView)),
+              let indexPath = collectionView.indexPath(for: cell) else { return }
+        collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+        collectionView(collectionView, didSelectItemAt: indexPath)
+    }
+
+    private func tabCell(at point: CGPoint) -> TabsBarCell? {
+        collectionView.visibleCells.compactMap { $0 as? TabsBarCell }.first {
+            $0.visiblePointerRect(in: collectionView).contains(point)
+        }
+    }
 }
 
 extension TabsBarViewController: UICollectionViewDelegate {
 
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        tabAwaitingSelection = nil
+        let pan = scrollView.panGestureRecognizer
+        let location = pan.location(in: view)
+        let translation = pan.translation(in: view)
+        let start = CGPoint(x: location.x - translation.x, y: location.y - translation.y)
+        flareBackground.beginScrolling(at: pan.numberOfTouches > 0 ? collectionView.convert(start, from: view) : nil)
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        flareBackground.endScrolling()
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // Apply the pinned cell frames before positioning the selection background.
+        collectionView.layoutIfNeeded()
+        flareBackground.update()
+    }
+
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        tabAwaitingSelection = nil
+        if indexPath.item != currentIndex, let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell {
+            let exposedWidth = cell.visiblePointerRect(in: cell).width
+            animatesSelectionReveal = exposedWidth < cell.bounds.width - 0.001
+        }
+        defer { animatesSelectionReveal = false }
         PixelKit.fire(Pixel.Event.tabBarTabSelected, frequency: .dailyAndCount)
         delegate?.tabsBar(self, didSelectTabAtIndex: indexPath.row)
     }
 
     func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-        return true
+        guard let tab = tabsModel?.get(tabAt: indexPath.item) else { return false }
+        let wasRevealed = tab == tabAwaitingSelection
+        tabAwaitingSelection = nil
+        guard tab != tabsModel?.currentTab, !wasRevealed,
+              let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell,
+              cell.bounds.width > 0,
+              cell.visiblePointerRect(in: cell).width <= cell.bounds.width / 2 + 0.001 else { return true }
+
+        // A second tap can select even when a narrow window cannot expose the entire tab.
+        tabAwaitingSelection = tab
+        scrollToTab(at: indexPath)
+        return false
     }
 
     func collectionView(_ collectionView: UICollectionView,
                         contextMenuConfigurationForItemAt indexPath: IndexPath,
                         point: CGPoint) -> UIContextMenuConfiguration? {
+        tabAwaitingSelection = nil
         guard tabsModel?.get(tabAt: indexPath.row) != nil else { return nil }
 
         return UIContextMenuConfiguration(identifier: NSNumber(value: indexPath.row), previewProvider: nil) { [weak self] _ in
@@ -784,16 +881,14 @@ extension TabsBarViewController: UICollectionViewDelegate {
         return UITargetedPreview(view: cell, parameters: parameters)
     }
 
-    /// Half-opaque so an inactive tab (clear cell) reads as a card, not transparent, when lifted.
+    /// Gives the lifted tab a card background.
     private var tabLiftBackgroundColor: UIColor {
-        ThemeManager.shared.currentTheme.omniBarBackgroundColor.withAlphaComponent(0.5)
+        ThemeManager.shared.currentTheme.omniBarBackgroundColor.withAlphaComponent(0.9)
     }
 
     private func applyTabLiftStyle(to parameters: UIPreviewParameters, cell: UICollectionViewCell, backgroundColor: UIColor) {
         parameters.backgroundColor = backgroundColor
-        parameters.visiblePath = UIBezierPath(roundedRect: cell.bounds,
-                                              byRoundingCorners: [.topLeft, .topRight],
-                                              cornerRadii: CGSize(width: TabsBarCell.cornerRadius, height: TabsBarCell.cornerRadius))
+        parameters.visiblePath = UIBezierPath(roundedRect: cell.bounds, cornerRadius: TabsBarCell.cornerRadius)
         parameters.shadowPath = UIBezierPath()
     }
 
@@ -802,12 +897,17 @@ extension TabsBarViewController: UICollectionViewDelegate {
 extension TabsBarViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard tabsModel?.get(tabAt: indexPath.row) != nil else { return [] }
+        tabAwaitingSelection = nil
+        guard tabsModel?.get(tabAt: indexPath.row) != nil,
+              let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell else { return [] }
         // Don't start a reorder drag from the close button.
-        if let cell = collectionView.cellForItem(at: indexPath) as? TabsBarCell,
-           cell.removeButton.bounds.contains(session.location(in: cell.removeButton)) {
+        if cell.removeButton.bounds.contains(session.location(in: cell.removeButton)) {
             return []
         }
+        // Capture before UIKit moves the source cell to make room for an insertion slot.
+        draggedTabOriginalFrame = (collectionView.collectionViewLayout as? TabsBarCollectionViewLayout)?.unpinnedFrameForItem(at: indexPath)
+        draggedTabCell = cell
+        draggedTabGrabOffset = session.location(in: cell).x
         let item = UIDragItem(itemProvider: NSItemProvider())
         item.localObject = indexPath
         return [item]
@@ -818,10 +918,24 @@ extension TabsBarViewController: UICollectionViewDragDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
-        flareBackground.beginReorder()
+        collectionView.collectionViewLayout.invalidateLayout()
+        flareBackground.beginReorder { [weak self] elapsedTime in
+            self?.scrollDuringReorder(elapsedTime: elapsedTime)
+        }
+        let isInsideStrip = collectionView.bounds.contains(session.location(in: collectionView))
+        draggedTabCell?.setDragPlaceholderHidden(isInsideStrip, animated: false)
+        // A context-menu lift can become a drag after the finger has already left the strip.
+        if !isInsideStrip, let frame = draggedTabOriginalFrame {
+            collectionView.scrollRectToVisible(frame, animated: !UIAccessibility.isReduceMotionEnabled)
+        }
     }
 
     func collectionView(_ collectionView: UICollectionView, dragSessionDidEnd session: UIDragSession) {
+        reorderDropSession = nil
+        draggedTabCell?.setDragPlaceholderHidden(false, animated: false)
+        draggedTabCell = nil
+        draggedTabOriginalFrame = nil
+        collectionView.collectionViewLayout.invalidateLayout()
         flareBackground.endReorder()
     }
 
@@ -844,29 +958,78 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
         return tabDragPreviewParameters(at: indexPath, backgroundColor: .clear)
     }
 
+    func collectionView(_ collectionView: UICollectionView, dropSessionDidEnter session: UIDropSession) {
+        guard session.localDragSession != nil, draggedTabOriginalFrame != nil else { return }
+        reorderDropSession = session
+        draggedTabCell?.setDragPlaceholderHidden(true, animated: true)
+    }
+
     func collectionView(_ collectionView: UICollectionView,
                         dropSessionDidUpdate session: UIDropSession,
                         withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+        if session.localDragSession != nil, draggedTabOriginalFrame != nil {
+            reorderDropSession = session
+        }
         return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
     }
 
+    func collectionView(_ collectionView: UICollectionView, dropSessionDidExit session: UIDropSession) {
+        reorderDropSession = nil
+        guard session.localDragSession != nil, let frame = draggedTabOriginalFrame else { return }
+        draggedTabCell?.setDragPlaceholderHidden(false, animated: true)
+        collectionView.scrollRectToVisible(frame, animated: !UIAccessibility.isReduceMotionEnabled)
+    }
+
     func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+        reorderDropSession = nil
         guard let item = coordinator.items.first,
               let sourceIndexPath = item.sourceIndexPath,
-              let destinationIndexPath = coordinator.destinationIndexPath,
+              let proposedDestination = coordinator.destinationIndexPath,
               let tabsModel,
               let tab = tabsModel.get(tabAt: sourceIndexPath.row) else { return }
 
+        draggedTabCell?.setDragPlaceholderHidden(false, animated: false)
+        draggedTabOriginalFrame = nil
+        let destinationIndexPath = IndexPath(item: min(proposedDestination.item, tabsModel.count - 1), section: 0)
         collectionView.performBatchUpdates({
             tabsModel.move(tab: tab, to: destinationIndexPath.row)
             collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)
         }, completion: { [weak self] _ in
             self?.refreshVisibleCellStyles()
         })
-        coordinator.drop(item.dragItem, toItemAt: destinationIndexPath)
+        coordinator.drop(item.dragItem, toItemAt: destinationIndexPath).addCompletion { [weak self] position in
+            guard position == .end else { return }
+            DispatchQueue.main.async {
+                guard let self, let index = self.tabsModel?.indexOf(tab: tab) else { return }
+                self.scrollToTab(at: IndexPath(item: index, section: 0))
+            }
+        }
+    }
+
+    func scrollDuringReorder(elapsedTime: TimeInterval) {
+        guard let session = reorderDropSession,
+              let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout else { return }
+        let location = session.location(in: collectionView)
+        guard collectionView.bounds.contains(location) else { return }
+        let visibleBounds = collectionView.bounds.inset(by: collectionView.adjustedContentInset)
+        let tabWidth = layout.itemSize.width
+        guard tabWidth > 0, visibleBounds.width > 0 else { return }
+        let draggedMinX = location.x - draggedTabGrabOffset
+        let draggedMaxX = draggedMinX + tabWidth
+        // Look ahead from the dragged tab's edge by one full tab and a third of its neighbor.
+        let lookahead = min(tabWidth * 4 / 3, max(0, (visibleBounds.width - tabWidth) / 2))
+        let leading = max(0, visibleBounds.minX + lookahead - draggedMinX)
+        let trailing = max(0, draggedMaxX + lookahead - visibleBounds.maxX)
+        let distance = (trailing - leading) * elapsedTime / 0.25
+        guard distance != 0 else { return }
+        let minimum = -collectionView.adjustedContentInset.left
+        let maximum = max(minimum, collectionView.contentSize.width - collectionView.bounds.width + collectionView.adjustedContentInset.right)
+        collectionView.contentOffset.x = (collectionView.contentOffset.x + distance).clamped(to: minimum...maximum)
     }
 
     private func refreshVisibleCellStyles() {
+        tabAwaitingSelection = nil
+        collectionView.collectionViewLayout.invalidateLayout()
         let theme = ThemeManager.shared.currentTheme
         let current = currentIndex
         let hidesInactiveCloseButton = isStripOverflowing
@@ -877,6 +1040,8 @@ extension TabsBarViewController: UICollectionViewDropDelegate {
                                    hidesInactiveCloseButton: hidesInactiveCloseButton,
                                    withTheme: theme)
         }
+        // Selection unfolds the tab; apply its new frame before moving the flare.
+        collectionView.layoutIfNeeded()
         flareBackground.update()
     }
 
@@ -952,7 +1117,7 @@ extension TabsBarViewController: UICollectionViewDataSource {
             let indexPath = IndexPath(row: tabIndex, section: 0)
             // Reveal a not-fully-visible tab instead of closing it, guards against accidental taps.
             guard !self.isPartiallyClipped(at: indexPath) else {
-                self.collectionView.scrollToItem(at: indexPath, at: [], animated: true)
+                self.scrollToTab(at: indexPath)
                 return
             }
             self.closeTab(at: tabIndex)
@@ -974,6 +1139,7 @@ extension TabsBarViewController {
         addTabButtonBackground.backgroundColor = theme.tabsBarBackgroundColor
 
         collectionView.reloadData()
+        collectionView.layoutIfNeeded()
         flareBackground.update()
     }
 
@@ -997,13 +1163,14 @@ extension MainViewController: TabsBarDelegate {
         
         selectTab(tab)
         if switchesTab {
+            recordDirectTabSelection(of: tab)
             showKeyboardOnNewTabPageIfAllowed()
         }
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
         if let tab = tabManager.currentTabsModel.get(tabAt: index) {
-            closeTab(tab, refreshInPlace: true)
+            closeTabOnUserRequest(tab, refreshInPlace: true)
         }
     }
 
@@ -1050,6 +1217,7 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController) {
+        recordUserOpenedTab()
         newTab()
     }
     
@@ -1070,14 +1238,21 @@ extension MainViewController: TabsBarDelegate {
 
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
         recordDuckAISessionPendingExit(.fireTabOpened)
+        recordUserOpenedTab()
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
 
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
         recordDuckAISessionPendingExit(.newTabOpened)
+        recordUserOpenedTab()
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
+    }
+
+    func tabsBarDidRequestNewChat(_ controller: TabsBarViewController) {
+        recordUserOpenedTab()
+        openNewChatTabFromLongPressMenu()
     }
 
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {

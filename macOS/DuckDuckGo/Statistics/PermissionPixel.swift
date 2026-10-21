@@ -41,7 +41,7 @@ enum PermissionPixel: PixelKit.Event {
      *
      * Parameters:
      * - permissionType: The type of permission (camera, microphone, geolocation, etc.)
-     * - action: What the prompt resolved to (always, allow_once, never, deny_once, cancel)
+     * - action: What the prompt resolved to (always, allow-once, never, deny-once, cancel)
      */
     case authorizationAction(permissionType: PermissionType, action: AuthorizationAction)
 
@@ -177,12 +177,12 @@ extension PermissionPixel {
         }
     }
 
-    /// What the Website Permissions prompt resolved to, named as on Windows
+    /// What the Website Permissions prompt resolved to, named as on Windows but with dashes, since pixel validation splits suffixes on underscores
     enum AuthorizationAction: String {
         case always
-        case allowOnce = "allow_once"
+        case allowOnce = "allow-once"
         case never
-        case denyOnce = "deny_once"
+        case denyOnce = "deny-once"
         case cancel
 
         /// A choice that can't be saved for `permissionType` only applies to this visit, as on Windows

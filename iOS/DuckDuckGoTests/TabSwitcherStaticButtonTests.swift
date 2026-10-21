@@ -61,5 +61,59 @@ class TabSwitcherStaticButtonTests: XCTestCase {
         button.tabCount = 99
         XCTAssertEqual("99", button.text)
     }
-    
+
+    func testWhenResizedDuringCountAnimationThenIconRemainsCentered() throws {
+        let button = TabSwitcherStaticButton(showMenuOnLongPress: false)
+        let icon = try XCTUnwrap(button.subviews.first { $0 is TabSwitcherStaticView })
+        button.layoutIfNeeded()
+
+        for _ in 0..<3 {
+            icon.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)
+            button.bounds.size = CGSize(width: 44, height: 0)
+            button.layoutIfNeeded()
+            button.bounds.size = CGSize(width: 34, height: 44)
+            button.layoutIfNeeded()
+            icon.transform = .identity
+            button.layoutIfNeeded()
+
+            XCTAssertEqual(icon.center.x, button.bounds.midX, accuracy: 0.001)
+            XCTAssertEqual(icon.center.y, button.bounds.midY, accuracy: 0.001)
+            XCTAssertEqual(icon.bounds.size, button.bounds.size)
+        }
+    }
+
+    func testWhenNewChatAvailableThenLongPressMenuStartsWithNewChat() {
+        XCTAssertEqual(newTabLongPressMenuTitles(isNewChatAvailable: true),
+                       [UserText.actionNewAIChat, UserText.actionNewFireTab, UserText.actionNewTab])
+    }
+
+    func testWhenNewChatUnavailableThenLongPressMenuHasOnlyTabItems() {
+        XCTAssertEqual(newTabLongPressMenuTitles(isNewChatAvailable: false),
+                       [UserText.actionNewFireTab, UserText.actionNewTab])
+    }
+
+    func testLongPressMenuPixelsKeepTheirNamesAndCarryMenuSource() {
+        let sources: [(NewTabLongPressMenu.Source, String)] = [(.toolbar, "toolbar"), (.tabSwitcher, "tab_switcher"), (.tabsBar, "tabs_bar")]
+        for (source, expected) in sources {
+            let pixels: [(NewTabLongPressMenuPixel, String)] = [
+                (.displayed(source: source), "m_tab_long_press_menu_displayed"),
+                (.newFireTab(source: source), "m_tab_long_press_menu_new_fire_tab"),
+                (.newNormalTab(source: source), "m_tab_long_press_menu_new_normal_tab"),
+                (.newChat(source: source), "tab_long_press_menu_new_chat")
+            ]
+            for (pixel, name) in pixels {
+                XCTAssertEqual(pixel.name, name)
+                XCTAssertEqual(pixel.parameters, ["source": expected])
+            }
+        }
+    }
+
+    private func newTabLongPressMenuTitles(isNewChatAvailable: Bool) -> [String] {
+        let actions = NewTabLongPressMenu.Actions(onNewFireTab: {},
+                                                  onNewTab: {},
+                                                  onNewChat: {},
+                                                  isNewChatAvailable: { isNewChatAvailable })
+        return NewTabLongPressMenu.items(source: .toolbar, actions: actions, pixelFiring: nil).map(\.title)
+    }
+
 }

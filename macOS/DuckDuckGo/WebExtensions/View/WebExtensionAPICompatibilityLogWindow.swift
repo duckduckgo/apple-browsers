@@ -194,7 +194,7 @@ enum WebExtensionAPICompatibilityLogWindowPresenter {
         let window = NSWindow(contentViewController: LogViewController(
             rootView: WebExtensionAPICompatibilityLogView(viewModel: WebExtensionAPICompatibilityLogViewModel())))
         window.identifier = identifier
-        window.title = "JavaScript API Compatibility Log"
+        window.title = "Extension Compatibility Log"
         window.isReleasedWhenClosed = false
         window.center()
         return window

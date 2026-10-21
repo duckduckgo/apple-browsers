@@ -56,6 +56,40 @@ final class PromoCoordinationServiceAppRatingPromptTests {
         presenter.presentedViewController = nil
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("App rating is counted once when requested in either coordination mode", .timeLimit(.minutes(1)), arguments: [false, true])
+    func appRatingExposureIsReportedOnlyForTheRequest(coordinated: Bool) {
+        let reporter = MockPromptExposureReporter()
+        let provider = MockModalPromptProvider(shouldReturnPrompt: false)
+        provider.presentationKindToReturn = .deferred
+        let modalManager = ModalPromptCoordinationManager(
+            providers: [provider],
+            cooldownManager: MockPromptCooldownManager(),
+            onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
+            promptExposureReporter: reporter
+        )
+        ratingCoordinator.isCoordinationEnabled = coordinated
+        ratingCoordinator.uncoordinatedDecision = true
+        let service = PromoCoordinationService(
+            launchSourceManager: launchSourceManager,
+            modalPromptCoordinationManager: modalManager,
+            mode: coordinated ? .coordinated : .legacy,
+            promoQueueLeaseArbiter: arbiter,
+            promoQueueCooldownPolicy: cooldownPolicy,
+            appRatingPromptCoordinator: ratingCoordinator,
+            promptExposureReporter: reporter
+        )
+        service.presentModalPromptIfNeeded(from: presenter)
+        #expect(service.shouldRequestAppRatingPrompt())
+        #expect(reporter.shownPrompts.isEmpty)
+        #expect(reporter.finishedPrompts == (coordinated ? [.modal] : []))
+
+        service.didRequestAppRatingPrompt()
+
+        #expect(reporter.shownPrompts == [.appRatingPrompt])
+        #expect(ratingCoordinator.didRequestRatingCallCount == 1)
+    }
+
     // MARK: - Usage registration
 
     @available(iOS 16, *)
@@ -157,7 +191,8 @@ final class PromoCoordinationServiceAppRatingPromptTests {
             mode: mode,
             promoQueueLeaseArbiter: arbiter,
             promoQueueCooldownPolicy: cooldownPolicy,
-            appRatingPromptCoordinator: ratingCoordinator
+            appRatingPromptCoordinator: ratingCoordinator,
+            promptExposureReporter: MockPromptExposureReporter()
         )
     }
 }

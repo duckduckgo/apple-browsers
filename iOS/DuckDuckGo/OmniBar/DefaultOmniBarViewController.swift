@@ -86,8 +86,8 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             selectedModelId: modelPickerController?.currentModelId,
             selectedReasoningEffort: reasoningPickerController?.selectedReasoningEffort,
             selectedTools: toolPickerController?.selectedToolsForSubmission,
-            selectedImages: attachmentController?.encodedImages,
-            selectedFiles: attachmentController?.encodedFiles
+            selectedAttachments: attachmentController?.encodedAttachments ?? .none,
+            userTier: modelPickerController?.modelStore.subscriptionState.userTier ?? .free
         )
     }
 
@@ -145,7 +145,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         if selectedTextEntryMode == .aiChat {
             omniBarView.aiChatTextView.insertText("\n")
         } else {
-            setSelectedTextEntryMode(.aiChat)
+            selectTextEntryModeFromUser(.aiChat)
         }
     }
 
@@ -368,6 +368,14 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         syncInputOutcomeMeasurement()
     }
 
+    override func endEditingInSearchMode() {
+        guard dependencies.aiChatAddressBarExperience.shouldShowModeToggle else {
+            super.endEditingInSearchMode()
+            return
+        }
+        dismissIPadDuckAIMode()
+    }
+
     override func endEditing() {
         saveIPadDraftText()
         if omniBarView.isSearchAreaExpanded {
@@ -396,6 +404,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         iPadDraft.text = ""
         modeToggleTextModel.updateText("")
         super.onClearButtonPressed()
+    }
+
+    /// Goes through the iPad Duck.ai submit, so its prompt pixels and wide event fire.
+    override func submitAIChatQuery(_ query: String) {
+        omniBarView.aiChatTextView.text = query
+        submitIPadDuckAIText(from: omniBarView.aiChatTextView, sentWithAsk: false)
     }
 
     override func consumeAIChatControlValues() -> IPadDuckAIControlValues {
@@ -929,7 +943,9 @@ extension DefaultOmniBarViewController {
             surface: .addressBar,
             pageType: omniDelegate?.currentPromptPageType() ?? .unknown,
             origin: .ipadTogglePrompt,
-            isFirstPromptNewInstall: isFirstPromptNewInstall
+            defaultMode: dependencies.aiChatSettings.defaultOmnibarMode,
+            isFirstPromptNewInstall: isFirstPromptNewInstall,
+            usageContext: omniDelegate?.currentUsageContext()
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,

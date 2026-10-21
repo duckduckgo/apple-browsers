@@ -455,8 +455,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     // MARK: - NSTextViewDelegate
 
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-        // Mention picker takes first crack at arrow up/down/Enter/Esc when it's on screen.
-        // The arrow / Enter cases need a real (non-empty-state) selection, so they're gated
+        // Mention picker takes first crack at arrow up/down/Enter/Tab/Esc when it's on screen.
+        // Tab accepts like Enter, as in most autocomplete UIs; otherwise it would move focus
+        // away and close the picker.
+        // The arrow / Enter / Tab cases need a real (non-empty-state) selection, so they're gated
         // on `canHandleKeyCommands`; Esc dismisses regardless so the user can keep typing
         // without the panel covering content. The picker only matters when it has already
         // been instantiated and presented — bind once via `if let` so we don't lazy-allocate
@@ -472,11 +474,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             case #selector(NSResponder.moveUp(_:)) where coordinator.canHandleKeyCommands:
                 coordinator.moveHighlightUp()
                 return true
-            case #selector(insertNewline(_:)), #selector(insertNewlineIgnoringFieldEditor(_:)):
+            case #selector(insertNewline(_:)), #selector(insertNewlineIgnoringFieldEditor(_:)), #selector(NSResponder.insertTab(_:)):
                 if coordinator.canHandleKeyCommands, coordinator.acceptHighlighted() {
                     return true
                 }
-                // No real selection — fall through to the normal Enter path below.
+                // No real selection — fall through to the normal Enter / Tab path below.
             default:
                 break
             }

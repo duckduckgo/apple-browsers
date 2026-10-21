@@ -67,6 +67,17 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet { updateSubmitButtonAppearance() }
     }
 
+    var isSubmitBlockedByMissingPromptText = false {
+        didSet { updateSubmitButtonAppearance() }
+    }
+
+    var isPreparingInitialPrompt = false {
+        didSet {
+            guard oldValue != isPreparingInitialPrompt else { return }
+            updateSubmitButtonAppearance()
+        }
+    }
+
     /// A spent allowance blocks the voice button too: it opens a chat the allowance can't pay for.
     var isInputBlockedByUsageLimit: Bool = false {
         didSet {
@@ -462,6 +473,20 @@ final class UnifiedToggleInputToolbarView: UIView {
         return button
     }()
 
+    private lazy var preparationIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        indicator.color = UIColor(designSystemColor: .iconsSecondary)
+        indicator.isAccessibilityElement = false
+        submitButton.addSubview(indicator)
+        NSLayoutConstraint.activate([
+            indicator.centerXAnchor.constraint(equalTo: submitButton.centerXAnchor),
+            indicator.centerYAnchor.constraint(equalTo: submitButton.centerYAnchor),
+        ])
+        return indicator
+    }()
+
     private lazy var submitButtonWidthConstraint: NSLayoutConstraint = {
         let constraint = submitButton.widthAnchor.constraint(equalToConstant: Constants.toolButtonSize)
         constraint.isActive = true
@@ -777,7 +802,7 @@ private extension UnifiedToggleInputToolbarView {
 
     /// The "Ask" or "Create" label replaces the voice button too, disabled until the user types.
     private var showsVoiceButton: Bool {
-        isAIVoiceChatActive && !isSubmitEnabled && !isEditing
+        isAIVoiceChatActive && !isSubmitEnabled && !isEditing && !isSubmitBlockedByMissingPromptText && !isPreparingInitialPrompt
             && (preservedTermsOfServiceSendButton ?? termsOfServiceSendButton) == nil
     }
 
@@ -795,18 +820,18 @@ private extension UnifiedToggleInputToolbarView {
         }()
         // Kept through the dismissal: the submit that starts it also clears the tool the label names.
         let labelTitle = showVoice ? nil : (preservedTermsOfServiceSendButton ?? termsOfServiceSendButton)?.title
-        submitButton.setImage(labelTitle == nil ? icon : nil, for: .normal)
-        submitButton.setTitle(labelTitle, for: .normal)
+        submitButton.setImage(isPreparingInitialPrompt || labelTitle != nil ? nil : icon, for: .normal)
+        submitButton.setTitle(isPreparingInitialPrompt ? nil : labelTitle, for: .normal)
         submitButton.accessibilityLabel = labelTitle ?? UserText.aiChatToolbarSubmitButtonAccessibilityLabel
         submitButtonWidthConstraint.constant = labelTitle.map {
             AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Constants.toolButtonSize)
         } ?? Constants.toolButtonSize
-        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard
-        let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit
+        let submitAllowed = isSubmitEnabled && !isSubmitBlockedByRecoveryCard && !isSubmitBlockedByMissingPromptText
+        let isActive = (submitAllowed || showVoice) && !isInputBlockedByUsageLimit && !isPreparingInitialPrompt
         submitButton.isEnabled = isActive
         // The blocked button and a disabled "Ask" take the inactive submit fill: the voice and
         // return-key styles have no disabled state of their own.
-        if isInputBlockedByUsageLimit || (labelTitle != nil && !isActive) {
+        if isPreparingInitialPrompt || isInputBlockedByUsageLimit || isSubmitBlockedByMissingPromptText || (labelTitle != nil && !isActive) {
             submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
         } else if labelTitle != nil {
             // An enabled "Ask" is the disclaimer's call to action, so it keeps the primary fill in every style.
@@ -817,6 +842,11 @@ private extension UnifiedToggleInputToolbarView {
             submitButton.applyReturnKeyStyle()
         } else {
             submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
+        }
+        if isPreparingInitialPrompt {
+            preparationIndicator.startAnimating()
+        } else {
+            preparationIndicator.stopAnimating()
         }
         // The labels the row reserves come and go with the terms state, not with what the button shows.
         setNeedsLayout()
@@ -853,6 +883,7 @@ private extension UnifiedToggleInputToolbarView {
         onReasoningPickerShown?()
     }
     @objc private func submitTapped() {
+        guard !isSubmitBlockedByMissingPromptText, !isPreparingInitialPrompt else { return }
         if showsVoiceButton {
             onVoiceTapped?()
         } else {

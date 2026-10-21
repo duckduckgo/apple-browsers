@@ -1222,7 +1222,9 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             pageContextConsumedSubject.send()
             // Selections were consumed by the prompt; clear the pull-store so a later init doesn't resurrect them.
             messageHandling.clearSelectionContexts()
-            firePromptPixel(windowSurface: windowSurface) { surface, isFirstPromptNewInstall in
+            // PixelKit dedupes the daily copy on the name alone, so it reports the source of the day's
+            // first new chat.
+            firePromptPixel(windowSurface: windowSurface, frequency: .dailyAndStandard) { surface, isFirstPromptNewInstall in
                 AIChatPixel.aiChatMetricStartNewConversation(source: pixelConversationSource,
                                                              hasPageContext: hasAttachedPageContext,
                                                              surface: surface,
@@ -1239,7 +1241,7 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
             markDuckAIActivatedIfNeeded(metric)
             pageContextConsumedSubject.send()
             messageHandling.clearSelectionContexts()
-            firePromptPixel(windowSurface: windowSurface) { surface, isFirstPromptNewInstall in
+            firePromptPixel(windowSurface: windowSurface, frequency: .standard) { surface, isFirstPromptNewInstall in
                 AIChatPixel.aiChatMetricSentPromptOngoingChat(source: pixelConversationSource,
                                                               hasPageContext: hasAttachedPageContext,
                                                               surface: surface,
@@ -1296,10 +1298,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
 
     /// Reads the install's first-prompt flag before marking it, so only the first prompt ever reports it.
     private func firePromptPixel(windowSurface: AIChatPromptSurface,
+                                 frequency: PixelKit.Frequency,
                                  _ makePixel: (AIChatPromptSurface, Bool) -> AIChatPixel) {
         let surface = consumePendingNativePromptSurface() ?? windowSurface
         let isFirstPromptNewInstall = !featureDiscovery.wasUsedBefore(.duckAIPrompt)
-        pixelFiring?.fire(makePixel(surface, isFirstPromptNewInstall), frequency: .standard)
+        pixelFiring?.fire(makePixel(surface, isFirstPromptNewInstall), frequency: frequency)
         featureDiscovery.setWasUsedBefore(.duckAIPrompt)
     }
 

@@ -187,7 +187,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         self.cardView = cardView
 
         installChromeSnapshots(of: mainViewController, in: window)
-        keepToolbarSnapshotForReturn(of: mainViewController, in: window)
         UIView.animate(withDuration: 0.1, delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
             self.chromeSnapshots.forEach {
                 $0.alpha = 0
@@ -206,13 +205,14 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         }
     }
 
-    /// The live toolbar is hidden under the tab switcher and can't be snapshotted reliably while it is (its glass
-    /// samples the wrong backdrop), so keep a copy now for the way back to the same tab.
     func takeReturnToolbarSnapshot() -> (tab: Tab, view: UIView)? {
         defer { returnToolbarSnapshot = nil }
         return returnToolbarSnapshot
     }
 
+    /// The live toolbar is hidden under the tab switcher and can't be snapshotted reliably while it is (its glass
+    /// samples the wrong backdrop), so keep a copy for the way back to the same tab. Taken as late as possible:
+    /// at the start of the transition, the tab switcher button would still be drawn pressed.
     private func keepToolbarSnapshotForReturn(of mainViewController: MainViewController, in window: UIView) {
         returnToolbarSnapshot = nil
         guard let tab = mainViewController.tabManager.currentTabsModel.currentTab,
@@ -464,6 +464,9 @@ extension TabSwitcherSwipeUpTransition: UIViewControllerAnimatedTransitioning, U
         host.superview?.bringSubviewToFront(host)
 
         if let mainViewController {
+            if let window = mainViewController.view.window {
+                keepToolbarSnapshotForReturn(of: mainViewController, in: window)
+            }
             mainViewController.beginTabSwitcherToolbarOwnership()
             mainViewController.viewCoordinator.toolbar.alpha = 0
         }

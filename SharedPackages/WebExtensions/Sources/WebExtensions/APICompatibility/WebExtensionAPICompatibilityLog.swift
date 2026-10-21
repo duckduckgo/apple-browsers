@@ -45,18 +45,12 @@ public enum WebExtensionAPICompatibilityLog {
     public static let category = "APICompatibility"
 
     static let logger = Logger(subsystem: subsystem, category: category)
-    private static let nativeReporter = WebExtensionAPICompatibilityReporter()
-
     /// Unsupported host APIs are extension errors, never assertions in the browser process.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     public static func unsupportedAPI(_ api: String, in context: WKWebExtensionContext) -> NSError {
-        if !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest),
-           let issue = WebExtensionAPICompatibilityClassifier.issue(kind: .missing, reportedAPI: api) {
-            nativeReporter.report(kind: issue.kind, api: issue.api,
-                                  extensionName: sanitizedField(context.webExtension.displayName),
-                                  version: sanitizedField(context.webExtension.version))
-        }
+        let manager = context.webExtensionController?.delegate as? WebExtensionManager
+        manager?.reportUnsupportedAPI(api, for: context)
         return NSError(domain: "WebExtensionUnsupportedAPI", code: 1,
                        userInfo: [NSLocalizedDescriptionKey: "Unsupported extension API: \(api)"])
     }

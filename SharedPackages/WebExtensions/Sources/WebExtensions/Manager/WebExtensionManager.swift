@@ -141,7 +141,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     var unloadGuard: WebExtensionUnloadGuard
 
     /// Receives the API compatibility reports of extension pages.
-    private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
+    private let apiCompatibilityHandler: WebExtensionAPICompatibilityMessageHandler
 
 #if os(macOS)
     /// The keyboard shortcuts the user picked for extension commands. `nil` without a key-value store.
@@ -152,8 +152,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let privacySettings: WebExtensionPrivacySettingsStore?
 #endif
 
-    /// Records the Chrome pages extensions try to open, which the browser doesn't have.
-    private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
+    /// Deduplicates compatibility issues reported by JavaScript and native extension APIs.
+    private let compatibilityReporter: WebExtensionAPICompatibilityReporter
 
 #if os(macOS)
     /// Answers `chrome.idle.queryState` for extension pages.
@@ -240,6 +240,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL },
                 now: @escaping () -> Date = Date.init) {
+        let compatibilityReporter = WebExtensionAPICompatibilityReporter()
+        self.compatibilityReporter = compatibilityReporter
+        self.apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler(reporter: compatibilityReporter)
         let controllerConfiguration = controllerConfiguration ?? WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
@@ -1307,6 +1310,19 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             return .other
         }
         return .catalog(entry)
+    }
+
+    /// Native unsupported APIs use the same log and gap accounting as extension-page reports.
+    @MainActor
+    func reportUnsupportedAPI(_ api: String, for context: WKWebExtensionContext) {
+        guard !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest),
+              let issue = WebExtensionAPICompatibilityClassifier.issue(kind: .missing, reportedAPI: api) else { return }
+        compatibilityReporter.report(kind: issue.kind, api: issue.api,
+                                     extensionName: WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.displayName),
+                                     version: WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.version))
+#if os(macOS)
+        recordAPICompatibilityIssue(issue, for: context.uniqueIdentifier)
+#endif
     }
 
 #if os(macOS)

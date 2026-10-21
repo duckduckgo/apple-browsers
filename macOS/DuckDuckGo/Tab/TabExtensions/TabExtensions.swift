@@ -192,6 +192,12 @@ extension TabExtensionsBuilder {
                                     tld: dependencies.privacyFeatures.contentBlocking.tld)
         }
 
+        if dependencies.featureFlagger.isFeatureOn(.readerMode) {
+            add {
+                ReaderModeTabExtension(webViewPublisher: args.webViewFuture, contentPublisher: args.contentPublisher)
+            }
+        }
+
         if dependencies.featureFlagger.isFeatureOn(.webNotifications) {
             add {
                 WebNotificationsTabExtension(

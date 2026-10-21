@@ -89,6 +89,8 @@ extension Tab: NavigationResponder {
             // Find In Page
             .weak(nullable: self.findInPage),
 
+            .weak(nullable: self.readerMode),
+
             // Tab Snapshots
             .weak(nullable: self.tabSnapshots),
 

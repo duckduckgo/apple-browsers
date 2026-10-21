@@ -31,6 +31,10 @@ extension Tab: NavigationResponder {
                                  newWindowPolicyDecisionMakers: inout [NewWindowPolicyDecisionMaking]?,
                                  args: TabExtensionsBuilderArguments) {
         navigationDelegate.setResponders(
+            // Must stay first: the first responder to return a challenge disposition wins,
+            // so no later responder (e.g. an SSL error bypass) can accept a forbidden certificate chain.
+            .struct(ForbiddenCertificatesNavigationResponder()),
+
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 

@@ -69,7 +69,7 @@ final class TabOrganizerDebugMenu: NSMenu {
     ]
 
     @MainActor @objc private func openDemoTabs() {
-        let tabs = Self.demoURLs.compactMap(URL.init(string:)).map { Tab(content: .contentFromURL($0, source: .ui)) }
+        let tabs = Self.demoURLs.compactMap(URL.init(string:)).map { Tab(content: .contentFromURL($0, source: .ui), shouldLoadInBackground: true) }
             + [Tab(content: .newtab)]
         let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs, isPopup: false))
         NSApp.delegateTyped.windowControllersManager.openNewWindow(with: collection, showWindow: true)

@@ -26,9 +26,13 @@ final class AppleTabOrganizer: TabOrganizing {
     static let maxPromptCharacters = 10_000
 
     private static let topicInstructions = """
-    You sort a person's open browser tabs into a few broad topics. \
-    Tabs about the same trip, project or purchase share one topic. \
-    Give every tab in the list exactly one label.
+    You find the few broad topics a person's open browser tabs are about. \
+    Topics are general categories like Dogs, News, Shopping, Travel, Coding or Streaming, \
+    never a single site, product or breed. Each topic should cover several tabs.
+    """
+
+    private static let assignInstructions = """
+    You sort a person's open browser tabs into given topics. Judge each tab by its title and site.
     """
 
     private static let instructionInstructions = """
@@ -61,39 +65,66 @@ final class AppleTabOrganizer: TabOrganizing {
     """
 
     static let topicBatchSize = 10
+    static let otherTopic = "Other"
 
-    /// The model is reliable on short lists only, so tabs go in batches of 10. Each batch sees the topics
-    /// found so far and reuses them or adds new ones; one last pass catches tabs any batch skipped.
+    /// Two phases, because the model is reliable on short outputs only: first it names a few broad topics
+    /// for the whole window, then it assigns tabs to exactly those topics in batches of 10.
     private func topicLabels(for tabs: [TabSnapshot]) async throws -> TopicResponse {
+        let topics = try await broadTopics(for: tabs)
+        guard !topics.isEmpty else { return TopicResponse(labels: []) }
+
         var labels: [TopicResponse.Label] = []
         let numbers = Array(1...tabs.count)
         for start in stride(from: 0, to: numbers.count, by: Self.topicBatchSize) {
             let batch = Array(numbers[start..<min(start + Self.topicBatchSize, numbers.count)])
-            labels += try await labelTopics(for: batch, in: tabs, existingTopics: Self.topics(in: labels))
+            labels += try await assign(batch, in: tabs, to: topics)
         }
         let labelled = Set(labels.map(\.tabNumber))
         let skipped = numbers.filter { !labelled.contains($0) }
         if !skipped.isEmpty {
-            labels += try await labelTopics(for: skipped, in: tabs, existingTopics: Self.topics(in: labels))
+            labels += try await assign(skipped, in: tabs, to: topics)
         }
-        return TopicResponse(labels: labels)
+        // "Other" is a choice, not a topic: leaving those tabs unlabelled puts them in the builder's Other group.
+        return TopicResponse(labels: labels.filter { $0.topic != Self.otherTopic })
     }
 
-    private func labelTopics(for numbers: [Int], in tabs: [TabSnapshot], existingTopics: [String]) async throws -> [TopicResponse.Label] {
-        var prompt = ""
-        if !existingTopics.isEmpty {
-            prompt += "Existing topics: \(existingTopics.joined(separator: ", "))\n"
-            prompt += "Reuse an existing topic when a tab fits it. Only add a new topic when none fits.\n\n"
-        }
-        prompt += "Tabs:\n\(Self.tabList(for: numbers.map { tabs[$0 - 1] }, numbers: numbers))"
+    private func broadTopics(for tabs: [TabSnapshot]) async throws -> [String] {
         let session = LanguageModelSession(instructions: Self.topicInstructions)
-        return try await session.respond(to: prompt, generating: GeneratedTopicResponse.self).content.contract.labels
+        let response = try await session.respond(to: "Tabs:\n\(Self.tabList(for: tabs))", generating: GeneratedTopicList.self).content
+        var seen = Set<String>()
+        return response.topics
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && $0.caseInsensitiveCompare(Self.otherTopic) != .orderedSame && seen.insert($0.lowercased()).inserted }
     }
 
-    /// Topics in order of first use, case-insensitively unique.
-    private static func topics(in labels: [TopicResponse.Label]) -> [String] {
-        var seen = Set<String>()
-        return labels.map(\.topic).filter { seen.insert($0.lowercased()).inserted }
+    /// The topic is constrained to the given list with a dynamic schema, so the model can't invent new ones.
+    private func assign(_ numbers: [Int], in tabs: [TabSnapshot], to topics: [String]) async throws -> [TopicResponse.Label] {
+        let topicSchema = DynamicGenerationSchema(name: "Topic", anyOf: topics + [Self.otherTopic])
+        let labelSchema = DynamicGenerationSchema(name: "Label", properties: [
+            DynamicGenerationSchema.Property(name: "tabNumber", schema: DynamicGenerationSchema(type: Int.self)),
+            DynamicGenerationSchema.Property(name: "topic", schema: DynamicGenerationSchema(referenceTo: "Topic"))
+        ])
+        let rootSchema = DynamicGenerationSchema(name: "Labels", properties: [
+            DynamicGenerationSchema.Property(name: "labels",
+                                             description: "Exactly one entry for every tab in the list",
+                                             schema: DynamicGenerationSchema(arrayOf: DynamicGenerationSchema(referenceTo: "Label")))
+        ])
+        let schema = try GenerationSchema(root: rootSchema, dependencies: [topicSchema, labelSchema])
+
+        let prompt = """
+        Topics: \(topics.joined(separator: ", "))
+        Put every tab into the topic it is about. Use \(Self.otherTopic) only when no topic fits.
+
+        Tabs:
+        \(Self.tabList(for: numbers.map { tabs[$0 - 1] }, numbers: numbers))
+        """
+        let session = LanguageModelSession(instructions: Self.assignInstructions)
+        let content = try await session.respond(to: prompt, schema: schema).content
+        return try content.value([GeneratedContent].self, forProperty: "labels").compactMap { label in
+            guard let number = try? label.value(Int.self, forProperty: "tabNumber"),
+                  let topic = try? label.value(String.self, forProperty: "topic") else { return nil }
+            return TopicResponse.Label(tabNumber: number, topic: topic)
+        }
     }
 
     /// Commands tailored to the open tabs, shown as one-click suggestions.
@@ -187,6 +218,13 @@ struct GeneratedSuggestion {
 struct GeneratedSuggestions {
     @Guide(description: "Suggestions about different categories, using a mix of actions", .count(5))
     var suggestions: [GeneratedSuggestion]
+}
+
+@available(macOS 26.0, *)
+@Generable
+struct GeneratedTopicList {
+    @Guide(description: "3 to 7 broad topics, 1 or 2 words each, each covering several tabs", .count(3...7))
+    var topics: [String]
 }
 
 @available(macOS 26.0, *)

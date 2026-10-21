@@ -32,7 +32,7 @@ enum TabOrganizerPopover {
 
         let viewModel = TabOrganizerViewModel(tabCollectionViewModel: tabCollectionViewModel)
         let popover = NSPopover()
-        popover.behavior = .transient
+        popover.behavior = .semitransient
         popover.contentViewController = NSHostingController(rootView: TabOrganizerView(viewModel: viewModel))
         // Sized up front: positioning happens before SwiftUI reports its size.
         popover.contentSize = TabOrganizerView.size
@@ -42,7 +42,7 @@ enum TabOrganizerPopover {
             if case .loading = state {
                 popover?.behavior = .applicationDefined
             } else {
-                popover?.behavior = .transient
+                popover?.behavior = .semitransient
             }
         }
         popover.show(positionedBelow: button)

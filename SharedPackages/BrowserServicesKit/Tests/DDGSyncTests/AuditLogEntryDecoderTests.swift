@@ -17,11 +17,12 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 
 @testable import DDGSync
 
-final class AuditLogEntryDecoderTests: XCTestCase {
+@Suite("Sync audit log entry decoder")
+struct AuditLogEntryDecoderTests {
 
     private let accountSecretKey = Data(repeating: 0x01, count: 32)
     private let account = SyncAccount(deviceId: "local-device",
@@ -33,6 +34,8 @@ final class AuditLogEntryDecoderTests: XCTestCase {
                                       token: "token",
                                       state: .active)
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Login and logout entries map device snapshots", .timeLimit(.minutes(1)))
     func testWhenDecodingLoginAndLogoutThenMapsDeviceSnapshots() async throws {
         let fixture = try makeFixture()
         let deviceInfoCodec = DeviceInfoCodec()
@@ -50,21 +53,24 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(try fixture.entry(payload: Data(payload.utf8)), for: account)
 
         guard case .decoded(let event) = result else {
-            return XCTFail("Expected a decoded logout event")
+            Issue.record("Expected a decoded logout event")
+            return
         }
-        XCTAssertEqual(event.type, .logout)
-        XCTAssertEqual(event.id, "audit-entry")
-        XCTAssertEqual(event.device.id, "logged-out")
-        XCTAssertEqual(event.device.name, "Unified Mac")
-        XCTAssertEqual(event.device.type, "desktop")
-        XCTAssertEqual(event.actor?.id, "actor")
-        XCTAssertEqual(event.actor?.name, "Actor iPhone")
-        XCTAssertEqual(event.actor?.type, "mobile")
+        #expect(event.type == .logout)
+        #expect(event.id == "audit-entry")
+        #expect(event.device.id == "logged-out")
+        #expect(event.device.name == "Unified Mac")
+        #expect(event.device.type == "desktop")
+        #expect(event.actor?.id == "actor")
+        #expect(event.actor?.name == "Actor iPhone")
+        #expect(event.actor?.type == "mobile")
         let expectedTimestamp = ISO8601DateFormatter()
         expectedTimestamp.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        XCTAssertEqual(event.occurredAt, expectedTimestamp.date(from: "2026-09-02T14:03:11.123Z"))
+        #expect(event.occurredAt == expectedTimestamp.date(from: "2026-09-02T14:03:11.123Z"))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Unknown event types remain skippable with future schemas", .timeLimit(.minutes(1)))
     func testWhenEventTypeIsUnknownThenReturnsUnknownEvenIfSchemaHasChanged() async throws {
         let fixture = try makeFixture()
         let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
@@ -73,10 +79,13 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(try fixture.entry(payload: Data(#"{"type":"future_event"}"#.utf8)), for: account)
 
         guard case .unknownType(id: "audit-entry", type: "future_event") = result else {
-            return XCTFail("Expected unknown event type to be preserved")
+            Issue.record("Expected unknown event type to be preserved")
+            return
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Unsupported versions do not load the account key", .timeLimit(.minutes(1)))
     func testWhenVersionIsUnsupportedThenDoesNotLoadKey() async throws {
         let fixture = try makeFixture()
         let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
@@ -86,11 +95,14 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(entry, for: account)
 
         guard case .unsupportedVersion(id: "audit-entry", version: "2") = result else {
-            return XCTFail("Expected unsupported version outcome")
+            Issue.record("Expected unsupported version outcome")
+            return
         }
-        XCTAssertTrue(fixture.keyManager.loadKeyCalls.isEmpty)
+        #expect(fixture.keyManager.loadKeyCalls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Unavailable account keys produce an unreadable outcome", .timeLimit(.minutes(1)))
     func testWhenKeyIsUnavailableThenReturnsUnreadableOutcome() async throws {
         let fixture = try makeFixture()
         fixture.keyManager.loadKeyError = AccountInfoKeyManagerError.missingProtectedKey
@@ -100,24 +112,26 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
 
         guard case .unreadable(id: "audit-entry", reason: .keyUnavailable) = result else {
-            return XCTFail("Expected key unavailable outcome")
+            Issue.record("Expected key unavailable outcome")
+            return
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Key loading cancellation propagates", .timeLimit(.minutes(1)))
     func testWhenLoadingKeyIsCancelledThenPropagatesCancellation() async throws {
         let fixture = try makeFixture()
         fixture.keyManager.loadKeyError = CancellationError()
         let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
                                            deviceMapper: RegisteredDeviceMappingTestDouble())
 
-        do {
-            _ = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
-            XCTFail("Expected cancellation to propagate")
-        } catch is CancellationError {
-            // Expected.
+        await #expect(throws: CancellationError.self) {
+            try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A stale key refreshes before decrypting", .timeLimit(.minutes(1)))
     func testWhenCachedKeyDoesNotMatchThenRefreshesAndDecrypts() async throws {
         let fixture = try makeFixture()
         let otherKey = try makeFixture()
@@ -130,12 +144,15 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(try fixture.entry(payload: payload), for: account)
 
         guard case .decoded(let event) = result else {
-            return XCTFail("Expected refreshed key to decrypt the entry")
+            Issue.record("Expected refreshed key to decrypt the entry")
+            return
         }
-        XCTAssertEqual(event.type, .login)
-        XCTAssertEqual(fixture.keyManager.refreshKeyCalls.count, 1)
+        #expect(event.type == .login)
+        #expect(fixture.keyManager.refreshKeyCalls.count == 1)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A refreshed key with the wrong ID remains a mismatch", .timeLimit(.minutes(1)))
     func testWhenRefreshedKeyStillHasWrongKidThenPreservesMismatchOutcome() async throws {
         let fixture = try makeFixture()
         let otherKey = try makeFixture()
@@ -147,10 +164,66 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
 
         guard case .unreadable(id: "audit-entry", reason: .keyIDMismatch) = result else {
-            return XCTFail("Expected key ID mismatch after refresh")
+            Issue.record("Expected key ID mismatch after refresh")
+            return
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A JWE without a key ID does not refresh keys", .timeLimit(.minutes(1)))
+    func testWhenAuditLogJWEHasNoKeyIDThenDoesNotRefresh() async throws {
+        let fixture = try makeFixture()
+        let keyedToken = try fixture.entry(payload: Data("{}".utf8)).payload
+        let components = keyedToken.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
+        let header = Base64URL.encode(Data(#"{"alg":"RSA-OAEP-256","enc":"A256GCM"}"#.utf8))
+        let tokenWithoutKeyID = ([header] + components.dropFirst()).joined(separator: ".")
+        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+                                           deviceMapper: RegisteredDeviceMappingTestDouble())
+
+        let result = try await decoder.decode(AuditLogEntry(id: "no-kid", version: "1", payload: tokenWithoutKeyID), for: account)
+
+        guard case .unreadable(id: "no-kid", reason: .missingKeyID) = result else {
+            Issue.record("Expected missing key ID to remain explicitly unreadable")
+            return
+        }
+        #expect(fixture.keyManager.loadKeyCalls.isEmpty)
+        #expect(fixture.keyManager.refreshKeyCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Malformed JWE is rejected before checking key availability", .timeLimit(.minutes(1)))
+    func testWhenAuditLogJWEIsMalformedThenRejectsBeforeCheckingKeyAvailability() async throws {
+        let fixture = try makeFixture()
+        fixture.keyManager.loadKeyError = AccountInfoKeyManagerError.missingProtectedKey
+        let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
+                                           deviceMapper: RegisteredDeviceMappingTestDouble())
+
+        let result = try await decoder.decode(AuditLogEntry(id: "malformed", version: "1", payload: "not-a-jwe"), for: account)
+
+        guard case .unreadable(id: "malformed", reason: .decryptionFailed) = result else {
+            Issue.record("Expected malformed JWE to remain a decryption failure")
+            return
+        }
+        #expect(fixture.keyManager.loadKeyCalls.isEmpty)
+        #expect(fixture.keyManager.refreshKeyCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Malformed JWE is rejected without a key provider", .timeLimit(.minutes(1)))
+    func testWhenAuditLogJWEIsMalformedWithoutKeyProviderThenReturnsDecryptionFailure() async throws {
+        let decoder = AuditLogEntryDecoder(accountInfoKeys: nil,
+                                           deviceMapper: RegisteredDeviceMappingTestDouble())
+
+        let result = try await decoder.decode(AuditLogEntry(id: "malformed", version: "1", payload: "not-a-jwe"), for: account)
+
+        guard case .unreadable(id: "malformed", reason: .decryptionFailed) = result else {
+            Issue.record("Expected malformed JWE to be identified before missing keys")
+            return
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A matching refreshed key ID with the wrong key fails decryption", .timeLimit(.minutes(1)))
     func testWhenRefreshedKidMatchesButPrivateKeyIsWrongThenReportsDecryptionFailure() async throws {
         let fixture = try makeFixture()
         let otherKey = try makeFixture()
@@ -164,10 +237,13 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
 
         guard case .unreadable(id: "audit-entry", reason: .decryptionFailed) = result else {
-            return XCTFail("Expected decryption failure when refreshed key id matches but private key does not")
+            Issue.record("Expected decryption failure when refreshed key id matches but private key does not")
+            return
         }
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A matching key ID with the wrong private key fails decryption", .timeLimit(.minutes(1)))
     func testWhenJWEKidMatchesButPrivateKeyIsWrongThenReportsDecryptionFailure() async throws {
         let fixture = try makeFixture()
         let otherKey = try makeFixture()
@@ -180,11 +256,14 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(try fixture.entry(payload: Data("{}".utf8)), for: account)
 
         guard case .unreadable(id: "audit-entry", reason: .decryptionFailed) = result else {
-            return XCTFail("Expected decryption failure when the matching kid has the wrong private key")
+            Issue.record("Expected decryption failure when the matching kid has the wrong private key")
+            return
         }
-        XCTAssertTrue(fixture.keyManager.refreshKeyCalls.isEmpty)
+        #expect(fixture.keyManager.refreshKeyCalls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Snapshots without readable fields use the device-list placeholder", .timeLimit(.minutes(1)))
     func testWhenSnapshotHasNoReadableFieldsThenUsesDeviceListPlaceholder() async throws {
         let fixture = try makeFixture()
         let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
@@ -197,56 +276,17 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         let result = try await decoder.decode(try fixture.entry(payload: payload), for: account)
 
         guard case .decoded(let event) = result else {
-            return XCTFail("Expected unreadable device details to retain the audit event")
+            Issue.record("Expected unreadable device details to retain the audit event")
+            return
         }
-        XCTAssertEqual(event.device.id, "lost-device")
-        XCTAssertEqual(event.device.name, "Unknown")
-        XCTAssertEqual(event.device.type, "unknown")
-        XCTAssertEqual(event.device.credentialId, SyncCredentialID.defaultCredential)
+        #expect(event.device.id == "lost-device")
+        #expect(event.device.name == "Unknown")
+        #expect(event.device.type == "unknown")
+        #expect(event.device.credentialId == SyncCredentialID.defaultCredential)
     }
 
-    func testAccountManagerDebugDecodeUsesEncryptedAuditEntryAndConfiguredDeviceMapper() async throws {
-        let fixture = try makeFixture()
-        let deviceInfoCodec = DeviceInfoCodec()
-        let encryptedInfo = try deviceInfoCodec.encrypt(DeviceInfo(name: "Decoded Mac", type: "desktop"),
-                                                        using: fixture.protectedKey)
-        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
-                                            accountInfoKeys: fixture.keyManager,
-                                            deviceInfoCodec: deviceInfoCodec,
-                                            isScopedAccessCredentialsEnabled: { false },
-                                            canReadUnifiedDeviceList: { true })
-        let manager = AccountManager(endpoints: Endpoints(baseURL: URL(string: "https://dev.null")!),
-                                     api: RemoteAPIRequestCreatingMock(),
-                                     crypter: CryptingMock(),
-                                     registeredDeviceMapper: mapper,
-                                     accountInfoKeys: fixture.keyManager,
-                                     isScopedAccessCredentialsEnabled: { false })
-        let payload = Data(#"{"type":"login","occurred_at":"2026-09-02T14:03:11Z","device":{"id":"logged-in","info":"\#(encryptedInfo)"}}"#.utf8)
-
-        let results = try await manager.decodeAuditLogEntriesForDebug([try fixture.entry(payload: payload)], for: account)
-
-        guard case .decoded(let event) = try XCTUnwrap(results.first) else {
-            return XCTFail("Expected production AccountManager decode path to decrypt the audit entry")
-        }
-        XCTAssertEqual(event.id, "audit-entry")
-        XCTAssertEqual(event.device.name, "Decoded Mac")
-        XCTAssertEqual(event.deviceMapping?.source, .deviceInfo)
-    }
-
-    func testAccountManagerDebugDecodeWithoutKeyManagerReturnsExplicitKeyUnavailable() async throws {
-        let manager = AccountManager(endpoints: Endpoints(baseURL: URL(string: "https://dev.null")!),
-                                     api: RemoteAPIRequestCreatingMock(),
-                                     crypter: CryptingMock(),
-                                     isScopedAccessCredentialsEnabled: { false })
-        let entry = AuditLogEntry(id: "audit-entry", version: "1", payload: "encrypted-payload")
-
-        let results = try await manager.decodeAuditLogEntriesForDebug([entry], for: account)
-
-        guard case .unreadable(id: "audit-entry", reason: .keyUnavailable) = try XCTUnwrap(results.first) else {
-            return XCTFail("Expected missing key manager to be reported as unreadable")
-        }
-    }
-
+    @available(iOS 16, macOS 13, *)
+    @Test("Malformed JWE and known payloads remain unreadable", .timeLimit(.minutes(1)))
     func testWhenJWEOrKnownPayloadIsMalformedThenReturnsUnreadableOutcome() async throws {
         let fixture = try makeFixture()
         let decoder = AuditLogEntryDecoder(accountInfoKeys: fixture.keyManager,
@@ -259,43 +299,21 @@ final class AuditLogEntryDecoderTests: XCTestCase {
         guard case .unreadable(id: "bad-jwe", reason: .decryptionFailed) = malformedJWE,
               case .unreadable(id: "audit-entry", reason: .invalidPayload) = malformedJSON,
               case .unreadable(id: "audit-entry", reason: .invalidPayload) = malformedTimestamp else {
-            return XCTFail("Expected malformed entry outcomes")
+            Issue.record("Expected malformed entry outcomes")
+            return
         }
     }
 
-    private func makeFixture() throws -> Fixture {
-        let crypter = CryptingMock()
-        let protectedKey = try XCTUnwrap(DefaultAccountInfoKeyFactory(crypter: crypter)
-            .makeProtectedKeys(accountSecretKey: accountSecretKey)
-            .first)
-        let encryptedPrivateKey = try XCTUnwrap(Base64URL.decode(protectedKey.encryptedPrivateKey))
-        let privateKeyData = try crypter.decryptData(encryptedPrivateKey, using: accountSecretKey)
-        let key = AccountInfoKey(kid: protectedKey.kid,
-                                 publicKey: try RSAKeyImporter.makePublicKey(from: protectedKey.publicKey),
-                                 privateKey: try RSAKeyImporter.makePrivateKey(fromPKCS8: privateKeyData))
-        let keyManager = AccountInfoKeyManagingMock()
-        keyManager.loadKeyStub = key
-        return Fixture(protectedKey: protectedKey, key: key, keyManager: keyManager)
-    }
-
-    private struct Fixture {
-        let protectedKey: ProtectedKey
-        let key: AccountInfoKey
-        let keyManager: AccountInfoKeyManagingMock
-
-        func entry(payload: Data) throws -> AuditLogEntry {
-            let token = try JWECompactCodec().encryptRSAOAEP256(payload: payload,
-                                                                recipientPublicKey: key.publicKey,
-                                                                kid: key.kid)
-            return AuditLogEntry(id: "audit-entry", version: "1", payload: token)
-        }
+    private func makeFixture() throws -> AuditLogTestFixture {
+        try AuditLogTestFixture.make(accountSecretKey: accountSecretKey)
     }
 }
 
 private struct RegisteredDeviceMappingTestDouble: RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
-                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
+                                          isUnifiedReadEnabled: Bool,
+                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?) async -> RegisteredDeviceMappingResult {
         let devices = entries.map { RegisteredDevice(id: $0.id, name: $0.name ?? "Unknown", type: $0.type ?? "unknown") }
         return RegisteredDeviceMappingResult(devices: devices, needsCurrentDeviceInfoRepair: false)
     }

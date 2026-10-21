@@ -50,7 +50,8 @@ struct RegisteredDeviceMappingResult {
 protocol RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
-                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult
+                                          isUnifiedReadEnabled: Bool,
+                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?) async -> RegisteredDeviceMappingResult
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice?
     func registeredDevice(fromDefaultCredentialLoginEntryWithID id: String,
                           encryptedName: String,
@@ -59,6 +60,15 @@ protocol RegisteredDeviceMapping {
 }
 
 extension RegisteredDeviceMapping {
+    func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
+                                          account: SyncAccount,
+                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
+        await registeredDevicesWithRepairState(from: entries,
+                                               account: account,
+                                               isUnifiedReadEnabled: isUnifiedReadEnabled,
+                                               accountInfoKeyProvider: nil)
+    }
+
     func registeredDevices(from entries: [RegisteredDeviceEntry],
                            account: SyncAccount,
                            isUnifiedReadEnabled: Bool) async -> [RegisteredDevice] {
@@ -171,10 +181,13 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
-                                          isUnifiedReadEnabled: Bool) async -> RegisteredDeviceMappingResult {
+                                          isUnifiedReadEnabled: Bool,
+                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?) async -> RegisteredDeviceMappingResult {
+        let effectiveAccountInfoKeyProvider = accountInfoKeyProvider ?? self.accountInfoKeys
         let accountInfoKeyResolution = await accountInfoKeyIfNeeded(for: entries,
                                                                     account: account,
-                                                                    isUnifiedReadEnabled: isUnifiedReadEnabled)
+                                                                    isUnifiedReadEnabled: isUnifiedReadEnabled,
+                                                                    accountInfoKeyProvider: effectiveAccountInfoKeyProvider)
         let initialMappings = entries.map {
             registeredDevice(from: $0,
                              account: account,
@@ -186,9 +199,9 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         var wasAccountInfoKeyRefreshCancelled = false
         var accountInfoKeyRefreshFailureReason: UnifiedDeviceListEvent.AccountInfoKeyUnavailableReason?
         if initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
-           let accountInfoKeys {
+           let effectiveAccountInfoKeyProvider {
             do {
-                let refreshedAccountInfoKey = try await accountInfoKeys.refreshKey(for: account)
+                let refreshedAccountInfoKey = try await effectiveAccountInfoKeyProvider.refreshKey(for: account)
                 Logger.sync.debug("Sync-UnifiedDevices: refreshed account_info key after stale device_info")
                 finalMappings = entries.map {
                     registeredDevice(from: $0,
@@ -509,16 +522,18 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     private func accountInfoKeyIfNeeded(for entries: [RegisteredDeviceEntry],
                                         account: SyncAccount,
-                                        isUnifiedReadEnabled: Bool) async -> AccountInfoKeyResolution {
+                                        isUnifiedReadEnabled: Bool,
+                                        accountInfoKeyProvider: (any AccountInfoKeyProviding)?) async -> AccountInfoKeyResolution {
         guard isUnifiedReadEnabled,
               entries.contains(where: { $0.info != nil }) else {
             return .notNeeded
         }
-        guard let accountInfoKeys else {
+        guard let accountInfoKeyProvider else {
             return .unavailable(.keysFetchFailed)
         }
         do {
-            return .available(try await accountInfoKeys.loadKey(for: account))
+            let key = try await accountInfoKeyProvider.loadKey(for: account)
+            return .available(key)
         } catch is CancellationError {
             return .cancelled
         } catch {

@@ -34,10 +34,13 @@ enum AccountInfoKeyManagerError: Error, Equatable {
     case publicKeyMismatch
 }
 
-protocol AccountInfoKeyManaging {
+protocol AccountInfoKeyProviding {
     func loadKey(for account: SyncAccount) async throws -> AccountInfoKey
-    func preloadKey(from protectedKeys: [ProtectedKey], accessCredentials: [AccessCredential], for account: SyncAccount) async throws
     func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey
+}
+
+protocol AccountInfoKeyManaging: AccountInfoKeyProviding {
+    func preloadKey(from protectedKeys: [ProtectedKey], accessCredentials: [AccessCredential], for account: SyncAccount) async throws
     func clearCachedKey(for account: SyncAccount) async
 }
 

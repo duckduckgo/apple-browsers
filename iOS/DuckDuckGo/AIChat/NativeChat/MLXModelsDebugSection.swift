@@ -23,7 +23,6 @@ import SwiftUI
 
 /// Demo branch: pick the MLX model the native chat uses, and download or delete each one.
 struct MLXModelsDebugSection: View {
-    @ObservedObject var settings: DuckAINativeSettings
     @State private var states: [String: ModelState] = [:]
     @State private var refresh = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
@@ -37,28 +36,19 @@ struct MLXModelsDebugSection: View {
         } header: {
             Text("MLX models")
         } footer: {
-            Text("Used when the provider is MLX, or Automatic on a device. Without a choice, the app picks by device memory. Fits: \(ModelCatalog.recommended(physicalMemory: ProcessInfo.processInfo.physicalMemory).displayName).")
+            Text("Download a model to use it for a job. Fits this device: \(NativeChatProviderFactory.recommendedMLXModel.displayName).")
         }
         .onReceive(refresh) { _ in states = store.states }
         .onAppear { states = store.states }
     }
 
     private func row(for model: Model) -> some View {
-        let isSelected = NativeChatProviderFactory.selectedMLXModel.id == model.id
-        return HStack {
-            Button {
-                settings.mlxModelID = model.id
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(model.displayName)
-                    Text(detail(for: model)).font(.caption).foregroundStyle(.secondary)
-                }
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(model.displayName)
+                Text(detail(for: model)).font(.caption).foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
             Spacer()
-            if isSelected {
-                Image(systemName: "checkmark").foregroundStyle(.tint)
-            }
             action(for: model)
         }
     }

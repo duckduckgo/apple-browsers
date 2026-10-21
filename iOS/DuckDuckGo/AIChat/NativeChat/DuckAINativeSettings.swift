@@ -25,14 +25,7 @@ import PrivacyConfig
 
 final class DuckAINativeSettings: ObservableObject {
 
-    enum ProviderChoice: String, CaseIterable {
-        case automatic
-        case stub
-        case foundationModels
-        case mlx
-    }
-
-    /// The jobs a local model does. Chat uses `provider` and `mlxModelID`; the others can each pick their own model.
+    /// The jobs a local model does. Each picks its own model.
     enum LocalTask: String, CaseIterable {
         case chat
         case summarize
@@ -41,7 +34,8 @@ final class DuckAINativeSettings: ObservableObject {
     }
 
     enum TaskModel: Hashable {
-        case sameAsChat
+        /// Chat: the MLX model that fits this device, or the stub on the simulator. Other jobs: whatever chat uses.
+        case automatic
         case stub
         case foundationModels
         case mlx(id: String)
@@ -51,13 +45,13 @@ final class DuckAINativeSettings: ObservableObject {
             case "stub": self = .stub
             case "foundationModels": self = .foundationModels
             case let value where value.hasPrefix("mlx:"): self = .mlx(id: String(value.dropFirst(4)))
-            default: self = .sameAsChat
+            default: self = .automatic
             }
         }
 
         var storedValue: String {
             switch self {
-            case .sameAsChat: "sameAsChat"
+            case .automatic: "automatic"
             case .stub: "stub"
             case .foundationModels: "foundationModels"
             case .mlx(let id): "mlx:\(id)"
@@ -69,15 +63,6 @@ final class DuckAINativeSettings: ObservableObject {
 
     @Published var routing: DuckAIRouting {
         didSet { save(routing) }
-    }
-
-    @Published var provider: ProviderChoice {
-        didSet { defaults.set(provider.rawValue, forKey: Keys.provider) }
-    }
-
-    /// Nil picks a model by device memory.
-    @Published var mlxModelID: String? {
-        didSet { defaults.set(mlxModelID, forKey: Keys.mlxModel) }
     }
 
     @Published var taskModels: [LocalTask: TaskModel] {
@@ -104,10 +89,8 @@ final class DuckAINativeSettings: ObservableObject {
             pageActions: defaults.string(forKey: Keys.pageActions).flatMap(DuckAIRouting.Action.init) ?? .web,
             selectionActions: defaults.string(forKey: Keys.selectionActions).flatMap(DuckAIRouting.Action.init) ?? .web
         )
-        provider = defaults.string(forKey: Keys.provider).flatMap(ProviderChoice.init) ?? .automatic
-        mlxModelID = defaults.string(forKey: Keys.mlxModel)
         suggestionsBudgetSeconds = defaults.object(forKey: Keys.suggestionsBudget) as? Double ?? 1.5
-        taskModels = Dictionary(uniqueKeysWithValues: LocalTask.allCases.filter { $0 != .chat }.map { task in
+        taskModels = Dictionary(uniqueKeysWithValues: LocalTask.allCases.map { task in
             (task, TaskModel(storedValue: defaults.string(forKey: Keys.taskModel(task)) ?? ""))
         })
     }
@@ -143,8 +126,6 @@ final class DuckAINativeSettings: ObservableObject {
         static let suggestedPrompts = "duckAINative.suggestedPrompts"
         static let pageActions = "duckAINative.pageActions"
         static let selectionActions = "duckAINative.selectionActions"
-        static let provider = "duckAINative.provider"
-        static let mlxModel = "duckAINative.mlxModel"
         static let suggestionsBudget = "duckAINative.suggestionsBudget"
 
         static func taskModel(_ task: LocalTask) -> String {

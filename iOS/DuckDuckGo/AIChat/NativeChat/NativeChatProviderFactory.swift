@@ -29,34 +29,38 @@ enum NativeChatProviderFactory {
     static let modelStore = ModelStore()
     private static var mlxProviders: [String: MLXProvider] = [:]
 
-    /// The provider for one job. Jobs set to "Same as chat" follow the chat's provider and model.
+    /// The provider for one job. A job on Automatic follows chat; chat on Automatic picks by device.
     static func makeProvider(for task: DuckAINativeSettings.LocalTask) -> any ChatProvider {
-        let model = task == .chat ? .sameAsChat : DuckAINativeSettings.shared.taskModels[task] ?? .sameAsChat
-        let provider: any ChatProvider
-        switch model {
-        case .sameAsChat: provider = chatProvider()
-        case .stub: provider = StubProvider()
-        case .foundationModels: provider = foundationModels() ?? StubProvider()
-        case .mlx(let id): provider = mlxProvider(ModelCatalog.model(withID: id) ?? selectedMLXModel)
-        }
-        return task == .suggestedPrompts && provider is StubProvider ? suggestionsStub() : provider
+        provider(for: resolvedModel(for: task), task: task)
     }
 
-    private static func chatProvider(_ choice: DuckAINativeSettings.ProviderChoice = DuckAINativeSettings.shared.provider) -> any ChatProvider {
-        switch choice {
-        case .stub:
+    static func provider(for model: DuckAINativeSettings.TaskModel, task: DuckAINativeSettings.LocalTask) -> any ChatProvider {
+        switch model {
+        case .automatic, .stub:
+            if task == .suggestedPrompts { return suggestionsStub() }
             return StubProvider()
         case .foundationModels:
             return foundationModels() ?? StubProvider()
-        case .mlx:
-            return mlxProvider(selectedMLXModel)
-        case .automatic:
-#if targetEnvironment(simulator)
-            return StubProvider()
-#else
-            return mlxProvider(selectedMLXModel)
-#endif
+        case .mlx(let id):
+            return mlxProvider(ModelCatalog.model(withID: id) ?? recommendedMLXModel)
         }
+    }
+
+    static func resolvedModel(for task: DuckAINativeSettings.LocalTask) -> DuckAINativeSettings.TaskModel {
+        let models = DuckAINativeSettings.shared.taskModels
+        if let model = models[task], model != .automatic { return model }
+        if task != .chat, let chat = models[.chat], chat != .automatic { return chat }
+#if targetEnvironment(simulator)
+        return .stub
+#else
+        return .mlx(id: recommendedMLXModel.id)
+#endif
+    }
+
+    static var isFoundationModelsAvailable: Bool {
+        guard let provider = foundationModels() else { return false }
+        if case .unsupported = provider.availability { return false }
+        return true
     }
 
     /// The stub answers suggestion requests in the shape a suggestions model would, so the local path can be seen
@@ -75,9 +79,8 @@ enum NativeChatProviderFactory {
 
     private static var memoryWarningObserver: NSObjectProtocol?
 
-    static var selectedMLXModel: Model {
-        DuckAINativeSettings.shared.mlxModelID.flatMap(ModelCatalog.model(withID:))
-            ?? ModelCatalog.recommended(physicalMemory: ProcessInfo.processInfo.physicalMemory)
+    static var recommendedMLXModel: Model {
+        ModelCatalog.recommended(physicalMemory: ProcessInfo.processInfo.physicalMemory)
     }
 
     private static func mlxProvider(_ model: Model) -> MLXProvider {

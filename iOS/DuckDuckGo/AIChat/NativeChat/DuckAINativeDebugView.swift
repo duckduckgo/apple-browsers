@@ -42,7 +42,7 @@ struct DuckAINativeDebugView: View {
                 }
                 Picker("Suggested prompts", selection: $settings.routing.suggestedPrompts) {
                     Text("Static").tag(DuckAIRouting.SuggestedPrompts.staticCatalog)
-                    Text("Local model").tag(DuckAIRouting.SuggestedPrompts.localModel)
+                    Text("Local").tag(DuckAIRouting.SuggestedPrompts.localModel)
                 }
                 Picker("Page actions", selection: $settings.routing.pageActions) {
                     Text("Web").tag(DuckAIRouting.Action.web)
@@ -53,7 +53,7 @@ struct DuckAINativeDebugView: View {
                     Text("Local").tag(DuckAIRouting.Action.local)
                 }
             } header: {
-                Text("Answered by a local model")
+                Text("Web or local")
             } footer: {
                 Text("Page and selection actions are Summarize and Translate. Chat covers typed prompts, other suggestions and Duck.ai entry points. Applies to new chats.")
             }
@@ -91,7 +91,7 @@ struct DuckAINativeDebugView: View {
             } header: {
                 Text("Evals")
             } footer: {
-                Text("Runs every case through the selected provider, keeps the device awake, and saves report.json and cases.json for scripts/duckai-native-evals/judge.py.")
+                Text("Runs every case through the model picked for its job, keeps the device awake, and saves report.json and cases.json for scripts/duckai-native-evals/judge.py.")
             }
             Section("Suggested prompts: last run") {
                 if let last = suggestions.last {
@@ -104,11 +104,11 @@ struct DuckAINativeDebugView: View {
                         Text(last.raw).font(.caption.monospaced()).textSelection(.enabled)
                     }
                 } else {
-                    Text("No run yet. Turn on Suggested prompts: Local model, then open the sheet on a page.")
+                    Text("No run yet. Set Suggested prompts to Local, then open the sheet on a page.")
                         .font(.caption)
                 }
             }
-            Section("Suggested prompts budget") {
+            Section {
                 Picker("Budget", selection: $settings.suggestionsBudgetSeconds) {
                     Text("1.5 s").tag(1.5)
                     Text("3 s").tag(3.0)
@@ -116,41 +116,32 @@ struct DuckAINativeDebugView: View {
                     Text("10 s").tag(10.0)
                 }
                 .pickerStyle(.segmented)
+            } header: {
+                Text("Suggested prompts budget")
+            } footer: {
+                Text("How long the sheet waits for local suggestions before it shows the static ones. Loading the model doesn't count, so the first open after launch still gets a chance.")
             }
             Section {
-                taskModelPicker("Summarize", task: .summarize)
-                taskModelPicker("Translate", task: .translate)
-                taskModelPicker("Suggested prompts", task: .suggestedPrompts)
+                TaskModelPicker(title: "Chat", task: .chat, settings: settings)
+                TaskModelPicker(title: "Summarize", task: .summarize, settings: settings)
+                TaskModelPicker(title: "Translate", task: .translate, settings: settings)
+                TaskModelPicker(title: "Suggested prompts", task: .suggestedPrompts, settings: settings)
             } header: {
                 Text("Model per job")
             } footer: {
-                Text("Chat uses the provider below and the checked MLX model. A tiny model often suits suggested prompts.")
+                Text("Download an MLX model below before picking it. Automatic: chat uses the model that fits this device (the stub on the simulator), and the other jobs use chat's model.")
             }
-            MLXModelsDebugSection(settings: settings)
-            Section("Provider") {
-                Picker("Provider", selection: $settings.provider) {
-                    Text("Automatic").tag(DuckAINativeSettings.ProviderChoice.automatic)
-                    Text("Stub").tag(DuckAINativeSettings.ProviderChoice.stub)
-                    Text("Apple Foundation Models").tag(DuckAINativeSettings.ProviderChoice.foundationModels)
-                    Text("MLX").tag(DuckAINativeSettings.ProviderChoice.mlx)
-                }
-                .pickerStyle(.inline)
-                .labelsHidden()
+            Section {
+                NavigationLink("Compare models") { NativeModelComparisonView() }
+                    .accessibilityIdentifier("NativeChatDebug.CompareModels")
+            } header: {
+                Text("Diagnostics")
+            } footer: {
+                Text("Runs one job on the same page through several models and shows load time, first token, speed, memory and output side by side.")
             }
+            MLXModelsDebugSection()
         }
         .navigationTitle("Native Duck.ai (demo)")
-    }
-
-    private func taskModelPicker(_ title: String, task: DuckAINativeSettings.LocalTask) -> some View {
-        Picker(title, selection: Binding(get: { settings.taskModels[task] ?? .sameAsChat },
-                                         set: { settings.taskModels[task] = $0 })) {
-            Text("Same as chat").tag(DuckAINativeSettings.TaskModel.sameAsChat)
-            Text("Stub").tag(DuckAINativeSettings.TaskModel.stub)
-            Text("Apple Foundation Models").tag(DuckAINativeSettings.TaskModel.foundationModels)
-            ForEach(ModelCatalog.all) { model in
-                Text(model.displayName).tag(DuckAINativeSettings.TaskModel.mlx(id: model.id))
-            }
-        }
     }
 
     private static let presenter = NativeChatPresenter()

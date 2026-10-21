@@ -80,7 +80,6 @@ protocol SharedColorPaletteDefinition {
     static var buttonsPrimaryPressed: DynamicColor { get }
     static var buttonsPrimaryDisabled: DynamicColor { get }
     static var buttonsPrimaryText: DynamicColor { get }
-    static var buttonsPrimaryTextDisabled: DynamicColor { get }
 
     // MARK: - Buttons/SecondaryFill
     static var buttonsSecondaryFillDefault: DynamicColor { get }

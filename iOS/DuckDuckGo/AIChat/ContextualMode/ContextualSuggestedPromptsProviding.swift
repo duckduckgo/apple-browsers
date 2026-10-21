@@ -33,13 +33,19 @@ struct ResolvePageSuggestionsInput {
     let uiLocale: String
     let scope: Scope
     let isDocument: Bool
+    /// Demo branch: the page itself, for suggestions written by a local model.
+    let pageTitle: String?
+    let pageContent: String?
 
-    init(pageTypeSignals: AIChatPageTypeSignals?, url: String?, uiLocale: String, scope: Scope = .page, isDocument: Bool = false) {
+    init(pageTypeSignals: AIChatPageTypeSignals?, url: String?, uiLocale: String, scope: Scope = .page, isDocument: Bool = false,
+         pageTitle: String? = nil, pageContent: String? = nil) {
         self.pageTypeSignals = pageTypeSignals
         self.url = url
         self.uiLocale = uiLocale
         self.scope = scope
         self.isDocument = isDocument
+        self.pageTitle = pageTitle
+        self.pageContent = pageContent
     }
 }
 

@@ -202,7 +202,7 @@ final class AIChatContextualChatSessionState {
     init(aiChatSettings: AIChatSettingsProvider,
          pixelHandler: AIChatContextualModePixelFiring,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         suggestedPromptsProvider: ContextualSuggestedPromptsProviding = DefaultContextualSuggestedPromptsProvider(),
+         suggestedPromptsProvider: ContextualSuggestedPromptsProviding = LocalSuggestedPromptsProvider(),
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
          isCurrentPageAttachable: @escaping () -> Bool = { true }) {
         self.aiChatSettings = aiChatSettings
@@ -992,7 +992,9 @@ private extension AIChatContextualChatSessionState {
             url: context?.contextData.url,
             uiLocale: Locale.current.identifier,
             scope: attachedSelections.isEmpty ? .page : .selection,
-            isDocument: context?.contextData.mimeType == AIChatPageContextData.pdfMIMEType
+            isDocument: context?.contextData.mimeType == AIChatPageContextData.pdfMIMEType,
+            pageTitle: context?.contextData.title,
+            pageContent: context?.contextData.content
         )
 
         suggestionsResolveTask?.cancel()

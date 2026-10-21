@@ -24,6 +24,7 @@ import UIKit
 struct DuckAINativeDebugView: View {
 
     @ObservedObject var settings: DuckAINativeSettings
+    @StateObject private var evals = NativeEvalRunModel()
 
     init(settings: DuckAINativeSettings = .shared) {
         self.settings = settings
@@ -63,6 +64,32 @@ struct DuckAINativeDebugView: View {
                     DuckAINativeDebugView.open(opening: .prompt("Tell me about ducks"))
                 }
                 .accessibilityIdentifier("NativeChatDebug.OpenWithPrompt")
+            }
+            Section {
+                switch evals.state {
+                case .idle, .failed:
+                    Button("Run eval set") { evals.run() }
+                        .accessibilityIdentifier("NativeChatDebug.RunEvals")
+                case .fetching:
+                    LabeledContent("Fetching articles", value: "…")
+                case .running(let done, let total):
+                    SwiftUI.ProgressView(value: Double(done), total: Double(Swift.max(total, 1))) {
+                        Text("Running \(done) of \(total)")
+                    }
+                case .finished(let files):
+                    ShareLink("Share report and cases", items: files)
+                    Button("Run again") { evals.run() }
+                }
+                if evals.isRunning {
+                    Button("Cancel", role: .destructive) { evals.cancel() }
+                }
+                if case .failed(let message) = evals.state {
+                    Text(message).foregroundStyle(.red)
+                }
+            } header: {
+                Text("Evals")
+            } footer: {
+                Text("Runs every case through the selected provider, keeps the device awake, and saves report.json and cases.json for scripts/duckai-native-evals/judge.py.")
             }
             Section("Provider") {
                 Picker("Provider", selection: $settings.provider) {

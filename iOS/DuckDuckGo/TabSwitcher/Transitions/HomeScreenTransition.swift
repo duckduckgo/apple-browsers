@@ -22,6 +22,20 @@ import Core
 protocol HomeScreenTransitionSource: AnyObject {
     var snapshotView: UIView { get }
     var rootContainerView: UIView { get }
+
+    var transitionLogo: HomeScreenTransitionLogo? { get }
+}
+
+extension HomeScreenTransitionSource {
+    var transitionLogo: HomeScreenTransitionLogo? { nil }
+}
+
+/// The Dax a page shows, so a transition can carry it to and from the tab switcher cell's logo.
+struct HomeScreenTransitionLogo {
+    /// Dax's circle, in window coordinates.
+    let circle: CGRect
+    /// What the page draws behind Dax, to hide it in a snapshot of the page.
+    let background: UIImage?
 }
 
 class HomeScreenTransition: TabSwitcherTransition {
@@ -134,9 +148,10 @@ class FromHomeScreenTransition: HomeScreenTransition {
             return
         }
 
+        TabSwitcherCellFrameCache.store(tabSwitcherCellFrame(for: layoutAttr), row: rowIndex, in: tabSwitcherViewController)
+
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
-        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
                                                      transitionContext: transitionContext,
@@ -173,7 +188,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
             prepareListChrome(for: cell, initiallyVisible: false)
         }
         
-        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
+        TabSwitcherTransition.Spring.present.animateKeyframes(animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
@@ -277,10 +292,20 @@ class ToHomeScreenTransition: HomeScreenTransition {
         mainViewController.view.alpha = 1
 
         let isFloating = mainViewController.isFloatingUIEnabled
-        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
         if isFloating {
             mainViewController.chromeManager.reset(animated: false)
             concealLiveFloatingToolbar(of: mainViewController)
+        }
+
+        if TabSwitcherTransition.usesCardTransition(for: mainViewController),
+           tab.viewed,
+           animateCardDismiss(using: transitionContext,
+                              mainViewController: mainViewController,
+                              homeScreen: homeScreen,
+                              tab: tab,
+                              rowIndex: rowIndex,
+                              layoutAttr: layoutAttr) {
+            return
         }
 
         let theme = ThemeManager.shared.currentTheme
@@ -315,7 +340,10 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
         
-        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
+        let toolbarSnapshot = installReturningToolbarSnapshot(for: tab,
+                                                              in: transitionContext.containerView,
+                                                              response: TabSwitcherTransition.Spring.dismiss.response)
+        TabSwitcherTransition.Spring.dismiss.animateKeyframes(animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
@@ -368,8 +396,46 @@ class ToHomeScreenTransition: HomeScreenTransition {
         }, completion: { _ in
             self.removeTransitionViews()
             self.settingsButtonSnapshot?.removeFromSuperview()
-            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
+            self.revealLiveToolbar(of: mainViewController, replacing: toolbarSnapshot)
+            toolbarSnapshot?.removeFromSuperview()
             transitionContext.completeTransition(true)
         })
+    }
+
+    /// The cell grows back into the page while its logo travels to where the page draws it.
+    /// Returns false when the page shows no logo.
+    private func animateCardDismiss(using transitionContext: UIViewControllerContextTransitioning,
+                                    mainViewController: MainViewController,
+                                    homeScreen: any NewTabPage,
+                                    tab: Tab,
+                                    rowIndex: Int,
+                                    layoutAttr: UICollectionViewLayoutAttributes) -> Bool {
+        let containerView = transitionContext.containerView
+        mainViewController.view.layoutIfNeeded()
+        guard let logo = homeScreen.transitionLogo,
+              let snapshot = homeScreen.snapshotView.snapshotView(afterScreenUpdates: false) else { return false }
+
+        let pageColor = homeScreen.view.backgroundColor ?? ThemeManager.shared.currentTheme.backgroundColor
+        let cardView = TabSwitcherCardView(content: snapshot,
+                                           contentFrameInScreen: homeScreen.snapshotView.convert(homeScreen.snapshotView.bounds,
+                                                                                                 to: containerView),
+                                           contentCropTop: 0,
+                                           screenBounds: containerView.bounds,
+                                           screenCornerRadius: TabSwitcherTransition.screenCornerRadius(for: containerView),
+                                           screenBackgroundColor: pageColor)
+        // The page may not have drawn yet, so Dax travels as the cell draws it.
+        cardView.installDax(circleInScreen: containerView.convert(logo.circle, from: nil),
+                            pageDax: nil,
+                            pageBackground: logo.background,
+                            cellImage: TabViewCell.logoImage(for: tab))
+        runCardDismiss(cardView,
+                       rowIndex: rowIndex,
+                       layoutAttributes: layoutAttr,
+                       pageColor: pageColor,
+                       using: transitionContext,
+                       mainViewController: mainViewController,
+                       tab: tab,
+                       whenPageReady: { $0() })
+        return true
     }
 }

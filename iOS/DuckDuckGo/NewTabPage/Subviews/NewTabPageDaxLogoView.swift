@@ -23,6 +23,8 @@ import SwiftUI
 struct NewTabPageDaxLogoView: View {
     @Environment(\.colorScheme) private var colorScheme
 
+    var daxAnchor: NewTabPageDaxAnchor?
+
     private var animationName: String {
         colorScheme == .dark ? "duckduckgo-ai-transition-dark.json" : "duckduckgo-ai-transition.json"
     }
@@ -31,7 +33,20 @@ struct NewTabPageDaxLogoView: View {
         Lottie.LottieView(animation: LottieAnimation.named(animationName))
             .playbackMode(.paused(at: .progress(0)))
             .frame(height: 162)
+            .reportingDaxCircle(to: daxAnchor, circle: Self.daxCircle(inAnimationFrame:))
             .id(animationName)
+    }
+
+    /// Where the duck's circle is drawn within the aspect-fitted animation. Every variant of the
+    /// animation shares the same composition: a 2100×1620 canvas with the circle (radius 470) centred
+    /// at (1058, 630).
+    static func daxCircle(inAnimationFrame frame: CGRect) -> CGRect {
+        let canvas = CGSize(width: 2100, height: 1620)
+        let scale = min(frame.width / canvas.width, frame.height / canvas.height)
+        let center = CGPoint(x: frame.midX + (1058 - canvas.width / 2) * scale,
+                             y: frame.midY + (630 - canvas.height / 2) * scale)
+        let radius = 470 * scale
+        return CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
     }
 }
 

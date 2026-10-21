@@ -812,6 +812,7 @@
 		CB019FD3300A000100000002 /* OverlayWindowPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */; };
 		CB18A3662E2790C700BE9D8D /* UserAgentConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB18A3652E2790C700BE9D8D /* UserAgentConfigurationTests.swift */; };
 		CB27DAE92FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */; };
+		7A46D9DE1A253F82033E90F0 /* TabSwitcherSwipeUpGeometryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6718D40034C1475A9578BE2 /* TabSwitcherSwipeUpGeometryTests.swift */; };
 		CB3B4D4E2D63910B006DAD63 /* LaunchActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D4D2D63910B006DAD63 /* LaunchActionHandlerTests.swift */; };
 		CB3B4D502D63957F006DAD63 /* UIInteractionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D4F2D63957F006DAD63 /* UIInteractionManagerTests.swift */; };
 		CB3B4D522D63CDA0006DAD63 /* AppStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D512D63CDA0006DAD63 /* AppStateMachineTests.swift */; };
@@ -1456,6 +1457,7 @@
 		CB019FD3300A000100000001 /* OverlayWindowPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowPresenterTests.swift; sourceTree = "<group>"; };
 		CB18A3652E2790C700BE9D8D /* UserAgentConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAgentConfigurationTests.swift; sourceTree = "<group>"; };
 		CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewTransitionGeometryTests.swift; sourceTree = "<group>"; };
+		A6718D40034C1475A9578BE2 /* TabSwitcherSwipeUpGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherSwipeUpGeometryTests.swift; sourceTree = "<group>"; };
 		CB3B4D4D2D63910B006DAD63 /* LaunchActionHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchActionHandlerTests.swift; sourceTree = "<group>"; };
 		CB3B4D4F2D63957F006DAD63 /* UIInteractionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInteractionManagerTests.swift; sourceTree = "<group>"; };
 		CB3B4D512D63CDA0006DAD63 /* AppStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateMachineTests.swift; sourceTree = "<group>"; };
@@ -2593,6 +2595,7 @@
 				67C1B79A6F0FEF318078C85A /* TabViewControllerFindInPageTests.swift */,
 				CB6EF0502FE020D6000C75BA /* IPadOmnibarFocusModelTests.swift */,
 				CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */,
+				A6718D40034C1475A9578BE2 /* TabSwitcherSwipeUpGeometryTests.swift */,
 				A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */,
 				A8452A0101C0DE0000000005 /* BrowserToolbarViewTests.swift */,
 			);
@@ -4697,6 +4700,7 @@
 				C0DE55010000000000000004 /* SettingsSitePermissionsViewModelTests.swift in Sources */,
 				C0DE55010000000000000006 /* SitePermissionsFaviconStoreTests.swift in Sources */,
 				CB27DAE92FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift in Sources */,
+				7A46D9DE1A253F82033E90F0 /* TabSwitcherSwipeUpGeometryTests.swift in Sources */,
 				A8452A0101C0DE0000000004 /* HomeScreenTransitionGeometryTests.swift in Sources */,
 				A8452A0101C0DE0000000006 /* BrowserToolbarViewTests.swift in Sources */,
 				F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,

@@ -169,7 +169,7 @@ private extension NewTabPageView {
                 // lands at screen.midY - 72 — the splash storyboard's resting position. The
                 // dynamic offset compensates for the NTP body's centerY shifting based on top vs
                 // bottom omnibar chrome.
-                NewTabPageDaxLogoView()
+                NewTabPageDaxLogoView(daxAnchor: viewModel.daxAnchor)
                     .offset(y: (UIScreen.main.bounds.midY - 55) - proxy.frame(in: .global).midY)
                     .opacity(shouldShowLogoInEmptyState ? 1 : 0)
                     .allowsHitTesting(false)

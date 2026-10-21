@@ -385,6 +385,16 @@ extension NewTabPageViewController: HomeScreenTransitionSource {
     var rootContainerView: UIView {
         view
     }
+
+    var transitionLogo: HomeScreenTransitionLogo? {
+        guard isShowingLogo, view.window != nil, let circle = newTabPageViewModel.daxAnchor.circle else { return nil }
+        let circleInView = view.convert(circle, from: nil)
+        let background = UIGraphicsImageRenderer(bounds: circleInView).image { context in
+            UIColor(designSystemColor: .background).setFill()
+            context.fill(circleInView)
+        }
+        return HomeScreenTransitionLogo(circle: circle, background: background)
+    }
 }
 
 extension NewTabPageViewController: NewTabPageOnboardingHosting {

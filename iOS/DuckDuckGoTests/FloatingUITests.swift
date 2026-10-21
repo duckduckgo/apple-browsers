@@ -1900,7 +1900,115 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
     }
 }
 
+final class BrowserKeyboardLayoutTests: XCTestCase {
+
+    func testHardwareKeyboardAccessoryUsesLayoutGuideWhenNotificationReportsNoKeyboard() {
+        let frame = BrowserKeyboardLayout.webInputFrame(notificationFrame: CGRect(x: 0, y: 874, width: 402, height: 0),
+                                                        layoutGuideFrame: CGRect(x: 0, y: 806, width: 402, height: 68),
+                                                        viewBounds: CGRect(x: 0, y: 0, width: 402, height: 874),
+                                                        safeAreaFrame: CGRect(x: 0, y: 62, width: 402, height: 778))
+        XCTAssertEqual(frame, CGRect(x: 0, y: 806, width: 402, height: 68))
+    }
+
+    func testKeyboardDismissalIgnoresLayoutGuideWithinBottomSafeArea() {
+        let bounds = CGRect(x: 0, y: 0, width: 402, height: 874)
+        let safeArea = CGRect(x: 0, y: 62, width: 402, height: 778)
+        for notificationFrame in [CGRect.zero, CGRect(x: 0, y: 874, width: 402, height: 338)] {
+            let frame = BrowserKeyboardLayout.webInputFrame(notificationFrame: notificationFrame,
+                                                            layoutGuideFrame: CGRect(x: 0, y: 840, width: 402, height: 34),
+                                                            viewBounds: bounds,
+                                                            safeAreaFrame: safeArea)
+            XCTAssertEqual(frame, .zero)
+        }
+    }
+
+    func testWebInputFrameCoversKeyboardDuringLayoutGuideTransitionAndIgnoresUndockedKeyboard() {
+        let bounds = CGRect(x: 0, y: 0, width: 402, height: 874)
+        let safeArea = CGRect(x: 0, y: 62, width: 402, height: 778)
+        let keyboard = CGRect(x: 0, y: 536, width: 402, height: 338)
+        let restingGuide = CGRect(x: 0, y: 840, width: 402, height: 34)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: keyboard,
+                                                           layoutGuideFrame: restingGuide,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), keyboard)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: .zero,
+                                                           layoutGuideFrame: keyboard,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), keyboard)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: CGRect(x: 40, y: 300, width: 300, height: 250),
+                                                           layoutGuideFrame: restingGuide,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), .zero)
+    }
+
+    func testKeyboardOverlapReplacesCoveredChromeAndRestoresItAfterDismissal() {
+        let bounds = CGRect(x: 0, y: 0, width: 400, height: 900)
+        let chromeInsets = UIEdgeInsets(top: 100, left: 0, bottom: 140, right: 0)
+
+        let visible = BrowserKeyboardLayout.obscuredInsets(
+            chromeInsets: chromeInsets,
+            keyboardFrame: CGRect(x: 0, y: 550, width: 400, height: 350),
+            viewBounds: bounds
+        )
+        XCTAssertEqual(visible, UIEdgeInsets(top: 100, left: 0, bottom: 350, right: 0))
+        for dismissedFrame in [CGRect.zero, CGRect(x: 0, y: 900, width: 400, height: 350)] {
+            XCTAssertEqual(BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
+                                                              keyboardFrame: dismissedFrame,
+                                                              viewBounds: bounds), chromeInsets)
+        }
+    }
+
+    func testKeyboardOverlapUsesViewBoundsInsteadOfKeyboardHeight() {
+        let insets = BrowserKeyboardLayout.obscuredInsets(
+            chromeInsets: UIEdgeInsets(top: 60, left: 0, bottom: 40, right: 0),
+            keyboardFrame: CGRect(x: 0, y: 500, width: 400, height: 400),
+            viewBounds: CGRect(x: 0, y: 100, width: 400, height: 600)
+        )
+        XCTAssertEqual(insets, UIEdgeInsets(top: 60, left: 0, bottom: 200, right: 0))
+    }
+
+    func testUndockedAndNonOverlappingKeyboardsKeepChromeInsets() {
+        let chromeInsets = UIEdgeInsets(top: 60, left: 0, bottom: 140, right: 0)
+        let bounds = CGRect(x: 0, y: 0, width: 400, height: 900)
+        for frame in [CGRect(x: 40, y: 300, width: 300, height: 250),
+                      CGRect(x: 500, y: 550, width: 400, height: 350),
+                      CGRect(x: 0, y: 850, width: 400, height: 50)] {
+            XCTAssertEqual(BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
+                                                              keyboardFrame: frame,
+                                                              viewBounds: bounds), chromeInsets)
+        }
+    }
+}
+
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
+
+    @available(iOS 26, *)
+    func testKeyboardLayoutUpdatesInsetsDuringChromeTransitionOnlyWithFloatingUIEnabled() {
+        for isEnabled in [false, true] {
+            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger())
+            tab.floatingUIManager = FloatingUIManager(
+                isFloatingUIFeatureEnabled: isEnabled,
+                isPadProvider: { false },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            )
+            tab.loadViewIfNeeded()
+            let chrome = DuckPlayerBrowserChromeDelegateMock()
+            tab.chromeDelegate = chrome
+            chrome.obscuredContentInsets = UIEdgeInsets(top: 90, left: 0, bottom: 140, right: 0)
+            tab.updateWebViewBottomAnchor(for: 1)
+            let restingInsets = tab.webView.obscuredContentInsets
+            chrome.currentBarsVisibilityOverride = 0.5
+            let keyboardInsets = UIEdgeInsets(top: 90, left: 0, bottom: 350, right: 0)
+            chrome.obscuredContentInsets = keyboardInsets
+
+            tab.updateWebViewLayoutForKeyboard()
+
+            XCTAssertEqual(tab.webView.obscuredContentInsets, isEnabled ? keyboardInsets : restingInsets)
+            if isEnabled {
+                XCTAssertEqual(tab.webView.scrollView.contentInset, keyboardInsets)
+            }
+        }
+    }
 
     @available(iOS 26, *)
     func testFloatingChromeKeepsWebKitAndScrollInsetsStableUntilEachEndpoint() {

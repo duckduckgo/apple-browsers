@@ -156,7 +156,8 @@ extension MainViewController {
         ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
             isLargeWidth: AppWidthObserver.shared.isLargeWidth,
-            isInMinimalChromeLayout: isInMinimalChromeLayout
+            isInMinimalChromeLayout: isInMinimalChromeLayout,
+            isFloatingWebInputEditing: viewCoordinator.isWebInputEditing
         ))
     }
 

@@ -22,6 +22,7 @@ xcrun xcodebuild build-for-testing \
     -configuration Review \
     -derivedDataPath "$derived_data" \
     -destination 'platform=macOS' \
+    -enableCodeCoverage NO \
     -onlyUsePackageVersionsFromResolvedFile \
     -skipPackagePluginValidation -skipMacroValidation \
     ONLY_ACTIVE_ARCH=NO 'ARCHS=arm64 x86_64' \

@@ -135,13 +135,10 @@ final class CPMAppIntegrationHarness {
             await app.webExtensionLifecycleCoordinator?.loadAndSync().value
             if embeddedEnabled {
                 try await wait("embedded context", timeout: 20) { self.app.webExtensionManager?.isAutoconsentExtensionLoaded == true }
-                if awaitBackgroundLoad {
-                    await manager.loadEmbeddedExtensionBackgroundContent()
-                } else {
-                    // Request the real load without retaining a suspended async task. The research
-                    // caller separately checks the diagnostics observer's bounded readiness result.
-                    context?.loadBackgroundContent { _ in }
-                }
+                // WebKit error 6 can omit this callback. Observe the real load through the bounded
+                // diagnostics join instead of leaving a test suspended indefinitely during setup.
+                context?.loadBackgroundContent { _ in }
+                if awaitBackgroundLoad { try await waitForBackgroundReady() }
             }
         }
     }
@@ -434,6 +431,7 @@ final class CPMAppIntegrationHarness {
             }.map(\.webView)
         }
         let remainingViews = ownedViews.map { view in { [weak view] in view } }
+        let windowAlive = windows.map { window in { [weak window] in window != nil } }
         let browserAlive = autoreleasepool {
             windows.compactMap { $0.windowController as? MainWindowController }.map { controller in
                 { [weak browser = controller.mainViewController.browserTabViewController] in browser != nil }
@@ -487,8 +485,8 @@ final class CPMAppIntegrationHarness {
             failureRecorders.removeAll()
         }
         do {
-            try await wait("owned Tab and browser controllers deallocate", timeout: 5) {
-                tabAlive.allSatisfy { !$0() } && browserAlive.allSatisfy { !$0() }
+            try await wait("owned windows, Tab and browser controllers deallocate", timeout: 5) {
+                windowAlive.allSatisfy { !$0() } && tabAlive.allSatisfy { !$0() } && browserAlive.allSatisfy { !$0() }
             }
         } catch { XCTFail("Owned app objects still retain their pages: \(error)") }
         autoreleasepool {
@@ -553,13 +551,28 @@ class CPMAppIntegrationTestCase: XCTestCase {
         harness = try CPMAppIntegrationHarness()
     }
 
-    override func tearDown() async throws {
+    override func tearDownWithError() throws {
         if let harness {
             try harness.attach(to: self)
-            await harness.stop()
+            // XCTest's async invocation keeps one autorelease pool alive while it waits. AppKit
+            // places closed windows in that pool, so awaiting deallocation inside async tearDown
+            // prevents the very release being checked. Drain UI callbacks on each run-loop turn.
+            var finished = false
+            let cleanup = Task { @MainActor in
+                await harness.stop()
+                finished = true
+            }
+            let deadline = Date().addingTimeInterval(90)
+            while !finished && Date() < deadline {
+                autoreleasepool {
+                    _ = RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.01))
+                }
+            }
+            if !finished { cleanup.cancel() }
+            XCTAssertTrue(finished, "Owned CPM environment cleanup did not complete")
         }
         harness = nil
-        try await super.tearDown()
+        try super.tearDownWithError()
     }
 
     func start(mainEnabled: Bool = true, embeddedEnabled: Bool = true) async throws -> CPMAppIntegrationHarness {

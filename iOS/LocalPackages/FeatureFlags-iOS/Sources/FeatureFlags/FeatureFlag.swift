@@ -619,6 +619,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219240727858123?focus=true
     case aiChatLimitExtensionPromo
 
+    /// Tapping the microphone in the address bar transcribes speech inline into the field
+    /// instead of opening the full-screen voice search UI.
+    case inlineVoiceToText
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1051,6 +1055,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
         case .aiChatLimitExtensionPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
+        case .inlineVoiceToText:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.inlineVoiceToText))
         }
     }
 

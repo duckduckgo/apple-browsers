@@ -344,6 +344,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private let featureFlagger: FeatureFlagger
+    private let makeSpeechRecognizer: () -> SpeechRecognizerProtocol
+    private var inlineVoiceSession: InlineVoiceToTextSession?
 
     private let attachmentsChangeSubject = PassthroughSubject<Void, Never>()
     var attachmentsChangePublisher: AnyPublisher<Void, Never> {
@@ -402,6 +404,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        makeSpeechRecognizer: @escaping () -> SpeechRecognizerProtocol = { SpeechRecognizer() },
         floatingUIManager: FloatingUIManaging? = nil,
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
@@ -417,6 +420,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
+        self.makeSpeechRecognizer = makeSpeechRecognizer
         self.scheduleOmnibarFocus = scheduleOmnibarFocus
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.featureDiscovery = featureDiscovery
@@ -616,6 +620,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToCustomizeResponsesTap()
         subscribeToTextInputFocus()
         subscribeToVoiceSearchTap()
+        subscribeToInlineVoiceToTextActions()
         subscribeToAIVoiceChatTap()
         subscribeToClearButtonTap()
         subscribeToAttachmentUsageChanges()
@@ -1204,6 +1209,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
+        stopInlineVoiceToText()
         endEditMode(collapses: false)
         cancelPendingOmnibarFocus()
         keyboardMonitor.disarm()
@@ -1380,6 +1386,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @discardableResult
     func completeOmnibarDeactivation(resetView: Bool = true) -> Bool {
         guard isOmnibarSession else { return false }
+        stopInlineVoiceToText()
         cancelPendingOmnibarFocus()
         inputMode = committedInputMode
         keyboardMonitor.disarm()
@@ -1627,6 +1634,44 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func stopGeneratingButtonTapped() {
         viewController.handler.stopGeneratingButtonTapped()
+    }
+
+    // MARK: - Inline Voice To Text
+
+    /// The address bar's microphone transcribes speech straight into the field rather than opening voice search.
+    var isInlineVoiceToTextAvailable: Bool {
+        host == .omnibar
+            && isOmnibarSession
+            && featureFlagger.isFeatureOn(.inlineVoiceToText)
+    }
+
+    var isInlineVoiceToTextActive: Bool { inlineVoiceSession != nil }
+
+    /// Starts transcribing into the field, after what is already typed. Microphone access must already be granted.
+    func startInlineVoiceToText() {
+        guard inlineVoiceSession == nil, isInlineVoiceToTextAvailable, !isOnboardingLocked else { return }
+
+        let session = InlineVoiceToTextSession(baseText: currentText, speechRecognizer: makeSpeechRecognizer())
+        session.onTextChange = { [weak self] text in
+            self?.textModel.setText(text)
+        }
+        session.onEnd = { [weak self] text, _ in
+            self?.finishInlineVoiceToText(with: text)
+        }
+        inlineVoiceSession = session
+
+        // The field keeps its caret but gives the keyboard's room to the listening row.
+        viewController.softwareKeyboardSuppression = .suppressed
+        if !viewController.isInputFirstResponder {
+            viewController.activateInput()
+        }
+        viewController.setInlineVoiceListening(true)
+        session.start()
+    }
+
+    /// Ends listening and keeps what was transcribed.
+    func stopInlineVoiceToText() {
+        inlineVoiceSession?.stop()
     }
 
     // MARK: - External Submissions
@@ -2220,6 +2265,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didSubmitText text: String, mode: TextEntryMode, trigger: TextSubmissionTrigger) {
         if mode == .aiChat, let currentTabUID, tabsPreparingInitialPrompt.contains(currentTabUID) { return }
+        stopInlineVoiceToText()
         commitCurrentToggleState()
 
         switch mode {
@@ -2898,6 +2944,28 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
+    func subscribeToInlineVoiceToTextActions() {
+        viewController.onInlineVoiceStopTapped = { [weak self] in
+            self?.stopInlineVoiceToText()
+        }
+        viewController.onInlineVoiceSubmitTapped = { [weak self] in
+            guard let self else { return }
+            stopInlineVoiceToText()
+            submitCurrentInputFromCoordinator()
+        }
+    }
+
+    func finishInlineVoiceToText(with text: String) {
+        guard inlineVoiceSession != nil else { return }
+        inlineVoiceSession = nil
+        if text != currentText {
+            textModel.setText(text)
+        }
+        viewController.setInlineVoiceListening(false)
+        // The result stays on screen without the keyboard until the user touches the field to edit it.
+        viewController.softwareKeyboardSuppression = viewController.isInputFirstResponder ? .suppressedUntilTouch : .none
+    }
+
     func subscribeToAIVoiceChatTap() {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
@@ -2933,6 +3001,7 @@ private extension UnifiedToggleInputCoordinator {
         NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.stopInlineVoiceToText()
                 self?.endEditMode()
                 self?.inputOutcomeMeasurement.inputClosed()
             }

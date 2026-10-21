@@ -152,4 +152,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
     case fastTrackingParameterFilter
+
+    /// Inline voice-to-text in the address bar.
+    case inlineVoiceToText
 }

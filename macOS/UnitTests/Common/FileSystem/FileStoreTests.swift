@@ -17,6 +17,7 @@
 //
 
 import CryptoKit
+import Foundation
 import SharedTestUtilities
 import Testing
 import Utilities

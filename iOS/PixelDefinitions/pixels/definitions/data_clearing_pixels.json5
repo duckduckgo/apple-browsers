@@ -33,32 +33,12 @@
         ]
     },
     "fire_burn-outlasted-animation": {
-        "description": "Fires immediately when an accepted manual burn is still running after its animation finishes naturally, including burns that never complete. The daily leg counts affected devices; the count leg counts occurrences. Compare with fire_animation-completed on matching app versions and form factors. Daily parameters describe the first occurrence that day.",
+        "description": "Fires immediately when an accepted manual burn is still running after its animation finishes naturally, including burns that never complete. The daily leg counts affected devices; the count leg counts occurrences. Compare with fire_animation-completed on matching app versions and form factors.",
         "owners": ["brindy"],
         "expires": "2027-01-20",
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "scope",
-                "description": "Scope of the accepted manual burn",
-                "type": "string",
-                "enum": ["tab", "fire_mode", "normal_mode", "all"]
-            },
-            {
-                "key": "source",
-                "description": "Where the accepted manual burn was requested",
-                "type": "string",
-                "enum": ["browsing", "escapeHatch", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "chatSuggestions"]
-            },
-            {
-                "key": "animation",
-                "description": "The animation that finished playing",
-                "type": "string",
-                "enum": ["fireRising", "fireRisingLegacy", "waterSwirl", "airstream"]
-            }
-        ]
+        "parameters": ["appVersion"]
     },
     "fire_post-animation-burn-completed": {
         "description": "Fires when a manual burn that outlasted its naturally completed animation eventually returns. Reports bucketed wall time from animation completion to burn return, including any time spent in the background. Does not fire for burns that never return; use fire_burn-outlasted-animation to include those.",
@@ -68,24 +48,6 @@
         "suffixes": ["platform", "form_factor"],
         "parameters": [
             "appVersion",
-            {
-                "key": "scope",
-                "description": "Scope of the accepted manual burn",
-                "type": "string",
-                "enum": ["tab", "fire_mode", "normal_mode", "all"]
-            },
-            {
-                "key": "source",
-                "description": "Where the accepted manual burn was requested",
-                "type": "string",
-                "enum": ["browsing", "escapeHatch", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "chatSuggestions"]
-            },
-            {
-                "key": "animation",
-                "description": "The animation that finished playing",
-                "type": "string",
-                "enum": ["fireRising", "fireRisingLegacy", "waterSwirl", "airstream"]
-            },
             {
                 "key": "elapsed",
                 "description": "Upper-inclusive bucketed seconds from animation completion until the burn returned; more means over 300 seconds",

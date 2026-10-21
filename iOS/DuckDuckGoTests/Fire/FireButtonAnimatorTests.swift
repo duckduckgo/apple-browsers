@@ -46,8 +46,7 @@ final class FireButtonAnimatorTests: XCTestCase {
         pixels.expectedFireCalls = [
             .init(pixel: FireAnimationPixels.animationCompleted(
                 scope: "all", source: "browsing", animation: "fireRising", burnInProgress: true), frequency: .dailyAndCount),
-            .init(pixel: FireAnimationPixels.burnOutlastedAnimation(
-                scope: "all", source: "browsing", animation: "fireRising"), frequency: .dailyAndCount)
+            .init(pixel: FireAnimationPixels.burnOutlastedAnimation, frequency: .dailyAndCount)
         ]
         XCTAssertEqual(pixels.actualFireCalls, pixels.expectedFireCalls)
     }

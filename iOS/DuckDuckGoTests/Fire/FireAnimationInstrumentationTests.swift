@@ -67,8 +67,7 @@ final class FireAnimationInstrumentationTests: XCTestCase {
         pixels.expectedFireCalls = [
             animationCompleted(burnInProgress: true),
             burnOutlastedAnimation(),
-            .init(pixel: FireAnimationPixels.burnCompletedAfterAnimation(
-                scope: "all", source: "browsing", animation: "fireRising", elapsed: .lessThan5), frequency: .standard)
+            .init(pixel: FireAnimationPixels.burnCompletedAfterAnimation(elapsed: .lessThan5), frequency: .standard)
         ]
         XCTAssertEqual(pixels.actualFireCalls, pixels.expectedFireCalls)
     }
@@ -119,19 +118,20 @@ final class FireAnimationInstrumentationTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, pixels.expectedFireCalls)
     }
 
-    func testScopeSourceAndAnimationAreReported() {
+    func testScopeSourceAndAnimationAreOnlyReportedAtAnimationCompletion() {
         let request = FireRequest(options: .all, trigger: .manualFire, scope: .fireMode, source: .escapeHatch)
-        let instrumentation = DefaultFireAnimationInstrumentation(request: request, pixelFiring: pixels)
+        let instrumentation = DefaultFireAnimationInstrumentation(request: request, pixelFiring: pixels, timeProvider: { 0 })
         instrumentation.burnDidStart()
         instrumentation.animationDidFinish(animation: .waterSwirl)
+        instrumentation.burnDidFinish()
 
-        XCTAssertEqual(pixels.actualFireCalls.first?.pixel.name, "fire_animation-completed")
-        XCTAssertEqual(pixels.actualFireCalls.first?.pixel.parameters, [
-            "scope": "fire_mode", "source": "escapeHatch", "animation": "waterSwirl", "burn_in_progress": "true"
+        XCTAssertEqual(pixels.actualFireCalls.map { $0.pixel.name }, [
+            "fire_animation-completed", "fire_burn-outlasted-animation", "fire_post-animation-burn-completed"
         ])
-        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, "fire_burn-outlasted-animation")
-        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.parameters, [
-            "scope": "fire_mode", "source": "escapeHatch", "animation": "waterSwirl"
+        XCTAssertEqual(pixels.actualFireCalls.map { $0.pixel.parameters }, [
+            ["scope": "fire_mode", "source": "escapeHatch", "animation": "waterSwirl", "burn_in_progress": "true"],
+            nil,
+            ["elapsed": "1"]
         ])
     }
 
@@ -147,7 +147,6 @@ final class FireAnimationInstrumentationTests: XCTestCase {
     }
 
     private func burnOutlastedAnimation() -> ExpectedFireCall {
-        .init(pixel: FireAnimationPixels.burnOutlastedAnimation(
-            scope: "all", source: "browsing", animation: "fireRising"), frequency: .dailyAndCount)
+        .init(pixel: FireAnimationPixels.burnOutlastedAnimation, frequency: .dailyAndCount)
     }
 }

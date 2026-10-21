@@ -22,8 +22,8 @@ import PixelKit
 
 enum FireAnimationPixels: PixelKit.Event {
     case animationCompleted(scope: String, source: String, animation: String, burnInProgress: Bool)
-    case burnOutlastedAnimation(scope: String, source: String, animation: String)
-    case burnCompletedAfterAnimation(scope: String, source: String, animation: String, elapsed: DataClearingPixels.ElapsedBucket)
+    case burnOutlastedAnimation
+    case burnCompletedAfterAnimation(elapsed: DataClearingPixels.ElapsedBucket)
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
@@ -39,23 +39,18 @@ enum FireAnimationPixels: PixelKit.Event {
     }
 
     var parameters: [String: String]? {
-        let scope: String
-        let source: String
-        let animation: String
-        var parameters: [String: String] = [:]
         switch self {
-        case .animationCompleted(let eventScope, let eventSource, let eventAnimation, let burnInProgress):
-            (scope, source, animation) = (eventScope, eventSource, eventAnimation)
-            parameters["burn_in_progress"] = String(burnInProgress)
-        case .burnOutlastedAnimation(let eventScope, let eventSource, let eventAnimation):
-            (scope, source, animation) = (eventScope, eventSource, eventAnimation)
-        case .burnCompletedAfterAnimation(let eventScope, let eventSource, let eventAnimation, let elapsed):
-            (scope, source, animation) = (eventScope, eventSource, eventAnimation)
-            parameters["elapsed"] = elapsed.rawValue
+        case .animationCompleted(let scope, let source, let animation, let burnInProgress):
+            return [
+                "scope": scope,
+                "source": source,
+                "animation": animation,
+                "burn_in_progress": String(burnInProgress)
+            ]
+        case .burnOutlastedAnimation:
+            return nil
+        case .burnCompletedAfterAnimation(let elapsed):
+            return ["elapsed": elapsed.rawValue]
         }
-        parameters["scope"] = scope
-        parameters["source"] = source
-        parameters["animation"] = animation
-        return parameters
     }
 }

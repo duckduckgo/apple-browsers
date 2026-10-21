@@ -37,7 +37,7 @@ final class DefaultFireAnimationInstrumentation: FireAnimationInstrumentation {
     private let isManualBurn: Bool
     private var burnStarted = false
     private var burnFinished = false
-    private var completedAnimation: FireButtonAnimationType?
+    private var animationFinished = false
     private var animationEndTime: CFTimeInterval?
 
     init(request: FireRequest,
@@ -63,21 +63,19 @@ final class DefaultFireAnimationInstrumentation: FireAnimationInstrumentation {
     func burnDidFinish() {
         guard burnStarted, !burnFinished else { return }
         burnFinished = true
-        guard let animationEndTime, let completedAnimation else { return }
+        guard let animationEndTime else { return }
         pixelFiring?.fire(FireAnimationPixels.burnCompletedAfterAnimation(
-            scope: scope, source: source, animation: completedAnimation.rawValue,
             elapsed: .init(seconds: timeProvider() - animationEndTime)), frequency: .standard)
     }
 
     func animationDidFinish(animation: FireButtonAnimationType) {
-        guard burnStarted, completedAnimation == nil else { return }
-        completedAnimation = animation
+        guard burnStarted, !animationFinished else { return }
+        animationFinished = true
         pixelFiring?.fire(FireAnimationPixels.animationCompleted(
             scope: scope, source: source, animation: animation.rawValue, burnInProgress: !burnFinished),
             frequency: .dailyAndCount)
         guard !burnFinished else { return }
         animationEndTime = timeProvider()
-        pixelFiring?.fire(FireAnimationPixels.burnOutlastedAnimation(
-            scope: scope, source: source, animation: animation.rawValue), frequency: .dailyAndCount)
+        pixelFiring?.fire(FireAnimationPixels.burnOutlastedAnimation, frequency: .dailyAndCount)
     }
 }

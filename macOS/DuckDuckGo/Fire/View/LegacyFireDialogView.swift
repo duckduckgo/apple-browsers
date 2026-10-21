@@ -213,7 +213,7 @@ struct LegacyFireDialogView: ModalView {
             containerCornerRadius: style.segmentedControlCornerRadius,
             segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: style.selectedForeground,
-            unselectedForeground: Color(designSystemColor: .controlsBase),
+            unselectedForeground: Color(designSystemColor: .textPrimary),
             selectedIconBackground: style.selectedIconBackground,
             selectedSegmentFill: Color(designSystemColor: .surfaceTertiary),
             selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),

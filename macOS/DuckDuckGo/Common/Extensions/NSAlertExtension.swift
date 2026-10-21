@@ -45,18 +45,6 @@ extension NSAlert {
         return alert
     }
 
-    /// Shown when a Duck.ai screenshot needs Screen Recording. `.OK` is Continue, which asks macOS, or once
-    /// macOS has been asked, Open System Settings.
-    static func screenRecordingPermission(asksMacOS: Bool) -> NSAlert {
-        let alert = NSAlert()
-        alert.icon = NSImage(resource: DesignSystemRebrand.isAppRebranded() ? .duckDuckGoResponseQuestion96 : .daxResponse)
-        alert.messageText = UserText.screenRecordingPermissionTitle
-        alert.informativeText = asksMacOS ? UserText.screenRecordingPermissionMessage : UserText.screenRecordingPermissionSettingsMessage
-        alert.addButton(withTitle: asksMacOS ? UserText.continue : UserText.screenRecordingPermissionOpenSettings, response: .OK)
-        alert.addButton(withTitle: UserText.notNow, response: .cancel, keyEquivalent: .escape)
-        return alert
-    }
-
     static func fireproofAlert(with domain: String) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.fireproofConfirmationTitle(domain: domain)

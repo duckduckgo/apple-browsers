@@ -295,8 +295,8 @@ def specification(root, target, host, legacy, developer, identifiers, plan, mode
         environment['CODE'] = os.environ['CODE']
     data['EnvironmentVariables'] = environment
     data['CommandLineArguments'] = [item['argument'] for item in plan.get('defaultOptions', {}).get('commandLineArgumentEntries', []) if item.get('enabled', True)]
-    if plan.get('defaultOptions', {}).get('performanceAntipatternCheckerEnabled'):
-        data['UITargetAppPerformanceAntipatternCheckerEnabled'] = True
+    # Producer Xcode defaults must not enable app diagnostics for a different consumer test plan.
+    data['UITargetAppPerformanceAntipatternCheckerEnabled'] = bool(plan.get('defaultOptions', {}).get('performanceAntipatternCheckerEnabled', False))
     data['UITargetAppEnvironmentVariables'] = {k: v for k, v in target.get('UITargetAppEnvironmentVariables', {}).items() if not k.startswith(('DYLD_', '__'))}
     if legacy:
         allowed = ('BlueprintName', 'ProductModuleName', 'IsUITestBundle', 'IsXCTRunnerHostedTestBundle', 'TestHostPath',

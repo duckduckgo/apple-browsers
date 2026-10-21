@@ -82,6 +82,13 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(artifact.targets(data)[0]['BlueprintName'], 'UI Tests')
         self.assertNotIn('DependentProductPaths', artifact.targets(data)[0])
 
+    def test_ui_plan_does_not_inherit_producer_performance_diagnostics(self):
+        self.target['UITargetAppPerformanceAntipatternCheckerEnabled'] = True
+        for plan in ({}, {'defaultOptions': {'performanceAntipatternCheckerEnabled': False}}):
+            data = artifact.specification(self.root, self.target, self.root / 'runner.app', None,
+                                          self.root / 'Developer', ['First/testOne'], plan, 'production')
+            self.assertFalse(artifact.targets(data)[0]['UITargetAppPerformanceAntipatternCheckerEnabled'])
+
     def test_legacy_methods_preserve_class_state(self):
         app = self.root / 'Products/Review' / self.metadata['app']
         app.mkdir(parents=True)

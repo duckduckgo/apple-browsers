@@ -46,6 +46,11 @@ on:
 
 jobs:
   run-ui-test:
+    # Match whole-class availability guards: YouTube/DuckPlayer need 15.4, new permissions need 26.
+    # Do not schedule an unsupported class and turn that expected skip into a zero-execution failure.
+    if: >-
+      ${{ !(inputs.os-version == '14' && (inputs.test == 'DuckPlayerTests' || inputs.test == 'YouTubeAdBlockingUITests')) &&
+          !((inputs.os-version == '14' || inputs.os-version == '15') && inputs.test == 'NewPermissionViewTests') }}
     # Avoid '/' in the job name: GitHub joins the reusable-workflow job name onto the caller with
     # ' / ' and the UI splits that path on ' / ', so a '/' here would break the name into fake tree
     # nodes. It is also used to build the report filename, where '/' is a path separator.

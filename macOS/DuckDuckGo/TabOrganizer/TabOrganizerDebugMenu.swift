@@ -56,6 +56,13 @@ final class TabOrganizerDebugMenu: NSMenu {
         "https://www.nytimes.com/",
         "https://www.netflix.com/",
         "https://www.disneyplus.com/",
+        "https://en.wikipedia.org/wiki/Dachshund",
+        "https://www.akc.org/dog-breeds/dachshund/",
+        "https://www.reddit.com/r/Dachshund/",
+        "https://www.etsy.com/search?q=dachshund",
+        "https://en.wikipedia.org/wiki/Poodle",
+        "https://www.akc.org/dog-breeds/poodle-standard/",
+        "https://www.reddit.com/r/poodles/",
         "https://www.bbc.com/news",
         "https://www.nytimes.com/"
     ]

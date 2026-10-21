@@ -74,7 +74,7 @@ public struct PIRLivePreviewChecklist: Sendable, Equatable {
                                    person: "\(profileQuery.firstName) \(profileQuery.lastName)",
                                    place: "\(profileQuery.city), \(profileQuery.state)")
         // The first half already happened in an earlier run; show it as done so this reads as the same request.
-        var items: [String] = isConfirmation ? ["Submit your removal request", "Get \(brokerName)\u{2019}s confirmation email"] : []
+        var items: [String] = isConfirmation ? ["Submit request", "Get \(brokerName)\u{2019}s confirmation email"] : []
         var itemIndexForAction: [Int] = []
         for (index, action) in actions.enumerated() {
             // Forms with an email field fetch one on the side, without a generateEmail action of their own.
@@ -114,13 +114,13 @@ public struct PIRLivePreviewChecklist: Sendable, Equatable {
             let fields = (action as? FillFormAction)?.elements.compactMap { fieldName(for: $0.type) } ?? []
             var unique: [String] = []
             for field in fields where !unique.contains(field) { unique.append(field) }
-            guard let last = unique.last else { return "Fill in the form" }
+            guard let last = unique.last else { return "Filling in the form" }
             let list = unique.count == 1 ? last : unique.dropLast().joined(separator: ", ") + " and " + last
-            return "Enter your " + list
+            return "Entering your " + list
         case .click:
             if context.isOptOut {
-                guard isLastClick else { return "Continue to the next step" }
-                return context.isConfirmation ? "Confirm your removal request" : "Submit your removal request"
+                guard isLastClick else { return "Continue" }
+                return context.isConfirmation ? "Confirm request" : "Submit request"
             }
             return "Run the search"
         case .extract: return "Check the results against your profile"
@@ -333,6 +333,8 @@ public final class PIRLivePreview {
     public var manualControlStarted: (() -> Void)?
     /// Where the preview last showed on screen, so the take-control window can open in the same place.
     public var anchorFrame: CGRect?
+    /// The run was started from the dashboard, which shows the preview itself, so the menu bar popover stays closed.
+    public var presentsInApp = false
     public var automationResumed: (() -> Void)?
 
     public var isManualControlActive: Bool {

@@ -41,6 +41,9 @@ public protocol DataBrokerProtectionAgentDebugCommands {
     func stopDebugServer()
 #if DEBUG
     func getLivePreview() async throws -> DBPLivePreviewFrame?
+    func takeControlOfLivePreview(operationID: String) async throws -> Bool
+    /// Starts an opt-out the user picked from Needs you. `anchorFrame` is the screen frame the preview shows in.
+    func startAssistedOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64, anchorFrame: CGRect?) async throws
 #endif
 }
 
@@ -51,5 +54,7 @@ public protocol DataBrokerProtectionAppToAgentInterface: AnyObject, DataBrokerPr
 #if DEBUG
 public extension DataBrokerProtectionAgentDebugCommands {
     func getLivePreview() async throws -> DBPLivePreviewFrame? { nil }
+    func takeControlOfLivePreview(operationID: String) async throws -> Bool { false }
+    func startAssistedOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64, anchorFrame: CGRect?) async throws {}
 }
 #endif

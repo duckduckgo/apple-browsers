@@ -336,8 +336,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             // Open where the preview was, so the page grows out of it rather than jumping to the middle of the screen.
             let size = manualWindow.frame.size
             let visible = screen.visibleFrame
-            manualWindow.setFrameOrigin(CGPoint(x: min(max(anchor.maxX - size.width, visible.minX), visible.maxX - size.width),
-                                                y: min(max(anchor.maxY - size.height, visible.minY), visible.maxY - size.height)))
+            // Centered over the dashboard it came from; under the menu bar popover, lined up with its trailing edge.
+            let preferredX = PIRLivePreview.shared.presentsInApp ? anchor.midX - size.width / 2 : anchor.maxX - size.width
+            let preferredY = PIRLivePreview.shared.presentsInApp ? anchor.midY - size.height / 2 : anchor.maxY - size.height
+            manualWindow.setFrameOrigin(CGPoint(x: min(max(preferredX, visible.minX), visible.maxX - size.width),
+                                                y: min(max(preferredY, visible.minY), visible.maxY - size.height)))
         } else {
             manualWindow.center()
         }

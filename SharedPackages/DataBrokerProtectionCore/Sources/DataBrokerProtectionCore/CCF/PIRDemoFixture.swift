@@ -146,9 +146,13 @@ public enum PIRAssistedOptOuts {
     }
 
     public static func start(_ optOut: PIRAssistedOptOut, in database: DataBrokerProtectionRepository) throws {
-        try database.updatePreferredRunDate(Date(), brokerId: optOut.brokerId, profileQueryId: optOut.profileQueryId,
-                                            extractedProfileId: optOut.extractedProfileId)
-        _ = lock.withLock { started.insert(optOut.extractedProfileId) }
+        try start(brokerId: optOut.brokerId, profileQueryId: optOut.profileQueryId, extractedProfileId: optOut.extractedProfileId, in: database)
+    }
+
+    public static func start(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64,
+                             in database: DataBrokerProtectionRepository) throws {
+        try database.updatePreferredRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+        _ = lock.withLock { started.insert(extractedProfileId) }
     }
 
     /// Lets a started opt-out run once; a failed attempt waits for the user again instead of retrying.

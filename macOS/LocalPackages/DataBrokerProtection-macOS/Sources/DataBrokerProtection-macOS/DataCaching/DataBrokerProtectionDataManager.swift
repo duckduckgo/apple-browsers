@@ -221,6 +221,10 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
         try PIRDemoFixture.capture(from: database)
     }
 
+    public func assistedOptOuts() throws -> [PIRAssistedOptOut] {
+        try PIRAssistedOptOuts.pending(in: database)
+    }
+
     public func seedDemoFixture(_ fixture: PIRDemoFixture) throws {
         try fixture.seed(into: database)
         communicator.invalidateCache()

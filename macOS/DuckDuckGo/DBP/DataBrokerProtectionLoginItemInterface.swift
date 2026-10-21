@@ -131,6 +131,15 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
     func getLivePreview() async throws -> DBPLivePreviewFrame? {
         try await ipcClient.getLivePreview()
     }
+
+    func takeControlOfLivePreview(operationID: String) async throws -> Bool {
+        try await ipcClient.takeControlOfLivePreview(operationID: operationID)
+    }
+
+    func startAssistedOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64, anchorFrame: CGRect?) async throws {
+        try await ipcClient.startAssistedOptOut(brokerId: brokerId, profileQueryId: profileQueryId,
+                                                extractedProfileId: extractedProfileId, anchorFrame: anchorFrame)
+    }
 #endif
 
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {

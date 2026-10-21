@@ -122,6 +122,11 @@ protocol XPCServerInterface {
     func stopDebugServer()
 #if DEBUG
     func getLivePreview(completion: @escaping (DBPLivePreviewFrame?, Error?) -> Void)
+    func takeControlOfLivePreview(operationID: String, completion: @escaping (Bool, Error?) -> Void)
+    // swiftlint:disable:next function_parameter_count
+    func startAssistedOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64,
+                             anchorX: Double, anchorY: Double, anchorWidth: Double, anchorHeight: Double,
+                             completion: @escaping (Error?) -> Void)
 #endif
 }
 
@@ -242,6 +247,32 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
                 completion(frame, nil)
             } catch {
                 completion(nil, error)
+            }
+        }
+    }
+
+    func takeControlOfLivePreview(operationID: String, completion: @escaping (Bool, Error?) -> Void) {
+        Task {
+            do {
+                completion(try await serverDelegate?.takeControlOfLivePreview(operationID: operationID) ?? false, nil)
+            } catch {
+                completion(false, error)
+            }
+        }
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    func startAssistedOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64,
+                             anchorX: Double, anchorY: Double, anchorWidth: Double, anchorHeight: Double,
+                             completion: @escaping (Error?) -> Void) {
+        let anchor = anchorWidth > 0 ? CGRect(x: anchorX, y: anchorY, width: anchorWidth, height: anchorHeight) : nil
+        Task {
+            do {
+                try await serverDelegate?.startAssistedOptOut(brokerId: brokerId, profileQueryId: profileQueryId,
+                                                              extractedProfileId: extractedProfileId, anchorFrame: anchor)
+                completion(nil)
+            } catch {
+                completion(error)
             }
         }
     }

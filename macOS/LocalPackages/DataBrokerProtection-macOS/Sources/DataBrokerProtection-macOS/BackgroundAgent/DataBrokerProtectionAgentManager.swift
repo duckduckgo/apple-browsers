@@ -584,14 +584,16 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
         return try await PIRLivePreview.shared.takeControl(operationID: id)
     }
 
-    public func assistedOptOuts() throws -> [PIRAssistedOptOut] {
-        try PIRAssistedOptOuts.pending(in: jobDependencies.database)
-    }
-
     /// Starts one held opt-out right away; it pauses for the user when the broker needs a person.
-    public func startAssistedOptOut(_ optOut: PIRAssistedOptOut) async throws {
-        try PIRAssistedOptOuts.start(optOut, in: jobDependencies.database)
-        await startScheduledOperations()
+    public func startAssistedOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64, anchorFrame: CGRect?) async throws {
+        await MainActor.run {
+            PIRLivePreview.shared.presentsInApp = anchorFrame != nil
+            if let anchorFrame { PIRLivePreview.shared.anchorFrame = anchorFrame }
+        }
+        try PIRAssistedOptOuts.start(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId,
+                                     in: jobDependencies.database)
+        // Reply now; the run reports its progress through the preview.
+        Task { await self.startScheduledOperations() }
     }
 
     @MainActor

@@ -210,6 +210,33 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
             })
         }
     }
+
+    public func takeControlOfLivePreview(operationID: String) async throws -> Bool {
+        try await withCheckedThrowingContinuation { continuation in
+            xpc.execute(call: { server in
+                server.takeControlOfLivePreview(operationID: operationID) { taken, error in
+                    if let error { continuation.resume(throwing: error) } else { continuation.resume(returning: taken) }
+                }
+            }, xpcReplyErrorHandler: { error in
+                continuation.resume(throwing: error)
+            })
+        }
+    }
+
+    public func startAssistedOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64, anchorFrame: CGRect?) async throws {
+        let anchor = anchorFrame ?? .zero
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            xpc.execute(call: { server in
+                server.startAssistedOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId,
+                                           anchorX: anchor.minX, anchorY: anchor.minY,
+                                           anchorWidth: anchor.width, anchorHeight: anchor.height) { error in
+                    if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+                }
+            }, xpcReplyErrorHandler: { error in
+                continuation.resume(throwing: error)
+            })
+        }
+    }
 #endif
 
     public func stopDebugServer() {

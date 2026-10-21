@@ -145,8 +145,6 @@ extension SharedColorPaletteDefinition {
             return buttonsSecondaryFillDefault
         case .buttonsSecondaryFillPressed:
             return buttonsSecondaryFillPressed
-        case .buttonsSecondaryFillDisabled:
-            return buttonsSecondaryFillDisabled
         case .buttonsSecondaryFillText:
             return buttonsSecondaryFillText
 

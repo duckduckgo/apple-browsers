@@ -452,6 +452,16 @@
 		319FCFF32CC81D54004F9288 /* AIChatRemoteSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319FCFF12CC81D54004F9288 /* AIChatRemoteSettings.swift */; };
 		319FCFF52CC83007004F9288 /* AIChatDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319FCFF42CC83003004F9288 /* AIChatDebugMenu.swift */; };
 		319FCFF62CC83007004F9288 /* AIChatDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319FCFF42CC83003004F9288 /* AIChatDebugMenu.swift */; };
+		572E42C646DBD89763EB04FF /* TabOrganizerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5273963E8AABCE4D3382A5 /* TabOrganizerModels.swift */; };
+		D449FA96F66093C3698618D5 /* TabOrganizerProposalBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F62C3A7DDBF1C4550C7E170 /* TabOrganizerProposalBuilder.swift */; };
+		7F8E3C4EC269962CF7BE4604 /* TabSnapshotProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BA6E9AD0574ACDE19C5A51 /* TabSnapshotProvider.swift */; };
+		29F4D27D3D66B84E637C12C2 /* AppleTabOrganizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8735F7586E33D0D2F98652B5 /* AppleTabOrganizer.swift */; };
+		5B00B8E09E208BA016D88554 /* TabOrganizerDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */; };
+		9A5E22049423068CB0691679 /* TabOrganizerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5273963E8AABCE4D3382A5 /* TabOrganizerModels.swift */; };
+		C19D608D6BB5148A49931EBC /* TabOrganizerProposalBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F62C3A7DDBF1C4550C7E170 /* TabOrganizerProposalBuilder.swift */; };
+		DF88409E633D91C839952C70 /* TabSnapshotProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BA6E9AD0574ACDE19C5A51 /* TabSnapshotProvider.swift */; };
+		C2D6987C39A72F30D493678E /* AppleTabOrganizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8735F7586E33D0D2F98652B5 /* AppleTabOrganizer.swift */; };
+		A8A9D4496E78CB9C385CB66C /* TabOrganizerDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */; };
 		31A2FD172BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A2FD162BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift */; };
 		31A2FD182BAB43BA00D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A2FD162BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift */; };
 		31A83FB52BE28D7D00F74E67 /* UserText+DBP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A83FB42BE28D7D00F74E67 /* UserText+DBP.swift */; };
@@ -5450,6 +5460,11 @@
 		3199C6FC2AF97367002A7BA1 /* DataBrokerProtectionAppEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionAppEvents.swift; sourceTree = "<group>"; };
 		319FCFF12CC81D54004F9288 /* AIChatRemoteSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatRemoteSettings.swift; sourceTree = "<group>"; };
 		319FCFF42CC83003004F9288 /* AIChatDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatDebugMenu.swift; sourceTree = "<group>"; };
+		BC5273963E8AABCE4D3382A5 /* TabOrganizerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerModels.swift; sourceTree = "<group>"; };
+		7F62C3A7DDBF1C4550C7E170 /* TabOrganizerProposalBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerProposalBuilder.swift; sourceTree = "<group>"; };
+		30BA6E9AD0574ACDE19C5A51 /* TabSnapshotProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSnapshotProvider.swift; sourceTree = "<group>"; };
+		8735F7586E33D0D2F98652B5 /* AppleTabOrganizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTabOrganizer.swift; sourceTree = "<group>"; };
+		043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerDebugMenu.swift; sourceTree = "<group>"; };
 		31A2FD162BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionFeatureGatekeeperTests.swift; sourceTree = "<group>"; };
 		31A83FB42BE28D7D00F74E67 /* UserText+DBP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserText+DBP.swift"; sourceTree = "<group>"; };
 		31AA6B962B960B870025014E /* DataBrokerProtectionLoginItemPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionLoginItemPixels.swift; sourceTree = "<group>"; };
@@ -11733,6 +11748,7 @@
 				5629846D2AC460DF00AC20EB /* Sync */,
 				AA92ACAE24EFE1F5005F41C9 /* Tab */,
 				AAC9C01224CAFBB700AD1325 /* TabBar */,
+				3A41E698B9EF531C6C9A60C0 /* TabOrganizer */,
 				B6CA4822298CDC0B0067ECCE /* TabExtensionsTests */,
 				1D8C2FE72B70F51A005E4BBD /* TabPreview */,
 				4BE344EC2B2376AE003FC223 /* UnifiedFeedbackForm */,
@@ -12404,6 +12420,18 @@
 				AAC6881A28626C1900D54247 /* RecentlyClosedWindow.swift */,
 			);
 			path = Model;
+			sourceTree = "<group>";
+		};
+		3A41E698B9EF531C6C9A60C0 /* TabOrganizer */ = {
+			isa = PBXGroup;
+			children = (
+				BC5273963E8AABCE4D3382A5 /* TabOrganizerModels.swift */,
+				7F62C3A7DDBF1C4550C7E170 /* TabOrganizerProposalBuilder.swift */,
+				30BA6E9AD0574ACDE19C5A51 /* TabSnapshotProvider.swift */,
+				8735F7586E33D0D2F98652B5 /* AppleTabOrganizer.swift */,
+				043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */,
+			);
+			path = TabOrganizer;
 			sourceTree = "<group>";
 		};
 		AAC9C01224CAFBB700AD1325 /* TabBar */ = {
@@ -16390,6 +16418,11 @@
 				848648A22C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */,
 				3706FB4A293F65D500E42796 /* PasswordManagementNoteModel.swift in Sources */,
 				319FCFF62CC83007004F9288 /* AIChatDebugMenu.swift in Sources */,
+				9A5E22049423068CB0691679 /* TabOrganizerModels.swift in Sources */,
+				C19D608D6BB5148A49931EBC /* TabOrganizerProposalBuilder.swift in Sources */,
+				DF88409E633D91C839952C70 /* TabSnapshotProvider.swift in Sources */,
+				C2D6987C39A72F30D493678E /* AppleTabOrganizer.swift in Sources */,
+				A8A9D4496E78CB9C385CB66C /* TabOrganizerDebugMenu.swift in Sources */,
 				3706FB4C293F65D500E42796 /* SharingMenu.swift in Sources */,
 				3706FB4D293F65D500E42796 /* GrammarFeaturesManager.swift in Sources */,
 				37E3E8022DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */,
@@ -19361,6 +19394,11 @@
 				37A6A8F62AFCCA59008580A3 /* FaviconsFetcherOnboardingViewController.swift in Sources */,
 				5677A9372C9812E800DA7B0A /* TrackerMessageProvider.swift in Sources */,
 				319FCFF52CC83007004F9288 /* AIChatDebugMenu.swift in Sources */,
+				572E42C646DBD89763EB04FF /* TabOrganizerModels.swift in Sources */,
+				D449FA96F66093C3698618D5 /* TabOrganizerProposalBuilder.swift in Sources */,
+				7F8E3C4EC269962CF7BE4604 /* TabSnapshotProvider.swift in Sources */,
+				29F4D27D3D66B84E637C12C2 /* AppleTabOrganizer.swift in Sources */,
+				5B00B8E09E208BA016D88554 /* TabOrganizerDebugMenu.swift in Sources */,
 				EE098E772C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,
 				25FCC6C5DD9571F521AA50F2 /* AutofillImportPromoObserver.swift in Sources */,
 				3199AF6F2C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift in Sources */,

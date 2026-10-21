@@ -109,6 +109,8 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem(title: "Browser Tools Panel", action: #selector(showBrowserToolsPanel))
                 .targetting(self)
+
+            NSMenuItem(title: "Tab Organizer").submenu(TabOrganizerDebugMenu())
 #endif
         }
     }

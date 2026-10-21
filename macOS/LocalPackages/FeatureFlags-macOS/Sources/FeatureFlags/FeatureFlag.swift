@@ -654,6 +654,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolSwitchToTab
 
+    /// Hack days: AI tab organizer. Local override only.
+    case aiTabOrganizer
+
     /// Gates the `readTabContent` browser tool.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolReadTabContent
@@ -1098,6 +1101,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchHistory), category: .duckAI)
         case .aiChatBrowserToolSwitchToTab:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.switchToTab), category: .duckAI)
+        case .aiTabOrganizer:
+            Config(source: .disabled, category: .duckAI)
         case .aiChatBrowserToolReadTabContent:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.readTabContent), category: .duckAI)
         case .aiChatBrowserToolFindInPage:

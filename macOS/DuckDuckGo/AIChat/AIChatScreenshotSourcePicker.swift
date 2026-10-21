@@ -430,6 +430,7 @@ struct AIChatScreenshotSourcePickerView: View {
     private func tile(for source: AIChatScreenshotSource) -> some View {
         let isSelected = model.selectedID == source.id
         let shape = RoundedRectangle(cornerRadius: 8)
+        let borderWidth: CGFloat = isSelected ? 3 : 1
         return VStack(spacing: 0) {
             // Fills the tile and crops the overflow, centered.
             Color.clear
@@ -447,7 +448,10 @@ struct AIChatScreenshotSourcePickerView: View {
         }
         .background(Color(nsColor: .controlBackgroundColor))
         .clipShape(shape)
-        .overlay(shape.strokeBorder(isSelected ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isSelected ? 3 : 1))
+        // Outside the tile, as designed, so the selection ring doesn't eat into the label's padding.
+        .overlay(RoundedRectangle(cornerRadius: 8 + borderWidth)
+            .strokeBorder(isSelected ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: borderWidth)
+            .padding(-borderWidth))
         .contentShape(shape)
         .help(source.subtitle.map { "\($0) — \(source.title)" } ?? source.title)
         .accessibilityElement(children: .ignore)

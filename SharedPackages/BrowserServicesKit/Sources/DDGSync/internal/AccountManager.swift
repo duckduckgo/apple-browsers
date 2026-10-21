@@ -241,8 +241,21 @@ struct AccountManager: AccountManaging {
             throw SyncError.noResponseBody
         }
 
-        guard let response = try? JSONDecoder.snakeCaseKeys.decode(FetchAuditLogResult.self, from: body) else {
-            throw SyncError.unableToDecodeResponse("Failed to decode audit log")
+        let response: FetchAuditLogResult
+        do {
+            response = try JSONDecoder.snakeCaseKeys.decode(FetchAuditLogResult.self, from: body)
+        } catch let error as DecodingError {
+            Logger.sync.debug("Failed to decode audit log response: \(String(reflecting: error), privacy: .private)")
+            throw AuditLogError.responseDecodingFailed
+        }
+        switch cursor {
+        case .before?:
+            // Backward pages may omit `after`; the next `before` cursor is also optional at the start of history.
+            break
+        case .after?, nil:
+            guard response.auditLog.after != nil else {
+                throw AuditLogError.missingRequiredAfterCursor
+            }
         }
         return response.auditLog
     }
@@ -513,9 +526,14 @@ enum AuditLogCursor {
     case before(String)
 }
 
+enum AuditLogError: Error, Equatable {
+    case responseDecodingFailed
+    case missingRequiredAfterCursor
+}
+
 struct AuditLogPage: Decodable {
     let entries: [AuditLogEntry]
-    let after: String
+    let after: String?
     let before: String?
 }
 

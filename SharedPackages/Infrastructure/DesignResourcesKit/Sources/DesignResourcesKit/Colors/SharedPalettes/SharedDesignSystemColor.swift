@@ -62,9 +62,6 @@ public enum SharedDesignSystemColor {
     case accentAltTextSecondary
     case accentAltTextTertiary
 
-    // Shield
-    case shieldPrivacy
-
     // Status
     case statusGray
     case statusGreen

@@ -98,10 +98,6 @@ extension SharedColorPaletteDefinition {
         case .accentAltTextTertiary:
             return accentAltTextTertiary
 
-        /// Shield
-        case .shieldPrivacy:
-            return shieldPrivacy
-
         /// Status
         case .statusGray:
             return statusGray

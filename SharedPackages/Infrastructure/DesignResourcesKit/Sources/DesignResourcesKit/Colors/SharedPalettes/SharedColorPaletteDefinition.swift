@@ -75,9 +75,6 @@ protocol SharedColorPaletteDefinition {
     static var accentFireTextSecondary: DynamicColor { get }
     static var accentFireTextTertiary: DynamicColor { get }
 
-    // MARK: - Shield
-    static var shieldPrivacy: DynamicColor { get }
-
     // MARK: - Buttons/Primary
     static var buttonsPrimaryDefault: DynamicColor { get }
     static var buttonsPrimaryPressed: DynamicColor { get }

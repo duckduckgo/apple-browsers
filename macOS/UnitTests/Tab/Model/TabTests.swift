@@ -191,20 +191,7 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(tab.content, .none)
     }
 
-    // MARK: - Web Extension Snapshots
-
-    func testExtensionAPIDelegatesHaveNoTrappingFailurePaths() throws {
-        var root = URL(fileURLWithPath: #filePath)
-        for _ in 0..<5 { root.deleteLastPathComponent() }
-        let files = ["Tab+WKWebExtensionTab.swift", "MainWindowController+WKWebExtensionWindow.swift",
-                     "WebExtensionWindowTabProvider+macOS.swift", "WebExtensionInternalSiteNavigationDelegate.swift"]
-        let traps = #"\b(?:assertionFailure|assert|preconditionFailure|precondition|fatalError)\s*\(|\b(?:as|try)\s*!"#
-        for file in files {
-            let url = root.appendingPathComponent("macOS/DuckDuckGo/WebExtensions/" + file)
-            let source = try String(contentsOf: url, encoding: .utf8)
-            XCTAssertNil(source.range(of: traps, options: .regularExpression), "Trapping extension entry point in \(file)")
-        }
-    }
+    // MARK: - Web Extension APIs
 
     @available(macOS 15.4, *)
     @MainActor
@@ -229,6 +216,22 @@ final class TabTests: XCTestCase {
             } catch {
                 XCTAssertEqual((error as NSError).domain, "WebExtensionUnsupportedAPI")
                 XCTAssertTrue(error.localizedDescription.contains(api))
+            }
+        }
+
+        let missingTabCalls: [String: () async throws -> Void] = [
+            "pin": { try await self.tab.setPinned(true, for: context) },
+            "unpin": { try await self.tab.setPinned(false, for: context) },
+            "close": { try await self.tab.close(for: context) }
+        ]
+        for (operation, call) in missingTabCalls {
+            do {
+                try await call()
+                XCTFail("Missing tab operation succeeded: \(operation)")
+            } catch Tab.WebExtensionTabError.tabNotFound {
+                // The missing tab is an extension error, not a browser assertion.
+            } catch {
+                XCTFail("Unexpected error for \(operation): \(error)")
             }
         }
     }

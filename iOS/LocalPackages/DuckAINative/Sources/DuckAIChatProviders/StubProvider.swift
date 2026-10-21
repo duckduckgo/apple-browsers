@@ -83,31 +83,85 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
                                                supportsImages: false,
                                                contextWindowTokens: 8_192)
 
+    private let configuration: Configuration
+    private let lock = NSLock()
+    private var currentAvailability: ProviderAvailability
+    private var subscribers: [UUID: AsyncStream<ProviderAvailability>.Continuation] = [:]
+
     public init(configuration: Configuration = Configuration()) {
-        fatalError("not implemented")
+        self.configuration = configuration
+        currentAvailability = configuration.availability
     }
 
     public var availability: ProviderAvailability {
-        fatalError("not implemented")
+        lock.withLock { currentAvailability }
     }
 
     public func availabilityUpdates() -> AsyncStream<ProviderAvailability> {
-        fatalError("not implemented")
+        AsyncStream { continuation in
+            let id = UUID()
+            lock.withLock { subscribers[id] = continuation }
+            continuation.onTermination = { [weak self] _ in
+                self?.lock.withLock { self?.subscribers[id] = nil }
+            }
+        }
     }
 
     public func download() async throws {
-        fatalError("not implemented")
+        for step in 0...4 {
+            publish(.downloading(fraction: Double(step) / 4))
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        publish(.ready)
     }
 
-    public func prepare() async {
-        fatalError("not implemented")
-    }
+    public func prepare() async {}
 
-    public func unload() {
-        fatalError("not implemented")
-    }
+    public func unload() {}
 
     public func reply(to turn: ProviderTurn, stop: StopSignal) -> AsyncThrowingStream<ProviderEvent, Error> {
-        fatalError("not implemented")
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                var emitted = 0
+                do {
+                    if !stop.isRaised {
+                        try await Task.sleep(for: configuration.loadTime)
+                        continuation.yield(.stage(.loadingModel(fraction: nil)))
+                    }
+                    if !stop.isRaised {
+                        try await Task.sleep(for: configuration.readTime)
+                        continuation.yield(.stage(.readingInput(estimatedTokens: turn.estimatedInputTokens, fraction: nil)))
+                    }
+                    let words = try configuration.reply.ranges(of: Regex("\\s*\\S+\\s*|\\s+")).map { String(configuration.reply[$0]) }
+                    let started = ContinuousClock.now
+                    for word in words {
+                        guard !stop.isRaised else { break }
+                        if let failure = configuration.failure, emitted >= words.count / 2 {
+                            throw failure
+                        }
+                        let rate = configuration.wordsPerSecond > 0 ? configuration.wordsPerSecond : 25
+                        try await Task.sleep(for: .seconds(1 / rate))
+                        guard !stop.isRaised else { break }
+                        continuation.yield(.textDelta(word))
+                        if word.contains(where: { !$0.isWhitespace }) { emitted += 1 }
+                    }
+                    if !stop.isRaised, let failure = configuration.failure { throw failure }
+                    continuation.yield(.finished(GenerationStats(promptTokens: nil, generatedTokens: emitted,
+                                                                 loadTime: configuration.loadTime, promptTime: configuration.readTime,
+                                                                 generateTime: started.duration(to: .now))))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func publish(_ availability: ProviderAvailability) {
+        lock.withLock {
+            currentAvailability = availability
+            for subscriber in subscribers.values { subscriber.yield(availability) }
+        }
     }
 }

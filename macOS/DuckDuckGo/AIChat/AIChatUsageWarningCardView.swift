@@ -714,6 +714,7 @@ final class AIChatUsageWarningCardView: NSView {
         NSAppearance.withAppearance(appearance) {
             tintView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
                 .withAlphaComponent(Constants.tintAlpha)
+            ringView.trackColor = NSColor(designSystemColor: .surfaceDecorationPrimary)
         }
         // Re-assert last, or an appearance change repaints a fill the style had hidden.
         apply(backgroundStyle)

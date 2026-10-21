@@ -66,6 +66,9 @@ final class AIChatSuggestionsView: NSView {
     private var viewAllChatsRowView: AIChatViewAllChatsRowView?
 
     var isBurner: Bool = false
+    var separatorColor: NSColor = NSColor(designSystemColor: .surfaceDecorationPrimary) {
+        didSet { updateSeparatorColor() }
+    }
     var canDeleteSuggestions: Bool = false
     var onSuggestionClicked: ((AIChatSuggestion) -> Void)?
     var onSuggestionDeleted: ((AIChatSuggestion) -> Void)?
@@ -108,7 +111,7 @@ final class AIChatSuggestionsView: NSView {
 
     private func updateSeparatorColor() {
         NSAppearance.withAppearance(appearance) {
-            separatorView.layer?.backgroundColor = NSColor(designSystemColor: .surfaceDecorationPrimary).cgColor
+            separatorView.layer?.backgroundColor = separatorColor.cgColor
         }
     }
 

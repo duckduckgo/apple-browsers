@@ -2776,6 +2776,8 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         reasoningPickerButton.focusRingColor = focusRingColor
         modelPickerButton.tintColor = toolButtonTintColor
         modelPickerButton.focusRingColor = focusRingColor
+        modelPickerButton.borderColor = NSColor(designSystemColor: .surfaceDecorationPrimary)
+        suggestionsView.separatorColor = NSColor(designSystemColor: .surfaceDecorationPrimary)
 
         // The two borders read as one crisp edge over an opaque fill, but split into a visible
         // double outline over a translucent one.

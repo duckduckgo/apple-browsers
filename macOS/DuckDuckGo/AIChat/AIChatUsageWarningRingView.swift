@@ -40,6 +40,10 @@ final class AIChatUsageWarningRingView: NSView {
     private var progress: Double = 0
     private var severity: DuckAiUsageSeverity = .info
 
+    var trackColor: NSColor = NSColor(designSystemColor: .surfaceDecorationPrimary) {
+        didSet { applyColors() }
+    }
+
     override var intrinsicContentSize: NSSize {
         NSSize(width: Constants.size, height: Constants.size)
     }
@@ -113,7 +117,7 @@ final class AIChatUsageWarningRingView: NSView {
     private func applyColors() {
         // `CGColor` resolves once, so the drawing appearance has to be current when it is read.
         effectiveAppearance.performAsCurrentDrawingAppearance {
-            trackLayer.strokeColor = NSColor(designSystemColor: .surfaceDecorationPrimary).cgColor
+            trackLayer.strokeColor = trackColor.cgColor
             progressLayer.strokeColor = NSColor(designSystemColor: Self.progressColor(for: severity)).cgColor
         }
     }

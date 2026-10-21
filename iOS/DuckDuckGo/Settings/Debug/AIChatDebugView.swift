@@ -24,13 +24,16 @@ import AIChat
 import AIChatDebugServer
 import os.log
 import DebugServer
+import PrivacyConfig
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let featureFlagger: FeatureFlagger?
 
-    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) {
+    init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil, featureFlagger: FeatureFlagger? = nil) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.featureFlagger = featureFlagger
     }
 
     var body: some View {
@@ -44,6 +47,12 @@ struct AIChatDebugView: View {
                 }
                 NavigationLink(destination: AIChatUsageWarningsDebugView(duckAiNativeStorageHandler: duckAiNativeStorageHandler)) {
                     Text(verbatim: "Duck.ai Usage Warnings")
+                }
+            }
+
+            Section(header: Text(verbatim: "Boost Offer")) {
+                NavigationLink(destination: AIChatBoostOfferDebugView(featureFlagger: featureFlagger)) {
+                    Text(verbatim: "Duck.ai Boost Offer")
                 }
             }
 #endif

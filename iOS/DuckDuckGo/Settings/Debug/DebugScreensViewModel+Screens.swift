@@ -101,7 +101,8 @@ extension DebugScreensViewModel {
                 AdBlockingDebugView(keyValueStore: d.keyValueStore)
             }),
             .view(title: "AI Chat", { dependencies in
-                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler)
+                AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+                                featureFlagger: AppDependencyProvider.shared.featureFlagger)
             }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()

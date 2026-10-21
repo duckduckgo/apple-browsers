@@ -21,8 +21,11 @@ import Foundation
 public struct BrokerJobExecutionConfig {
 
     #if os(macOS) && DEBUG
-    /// PeopleFinders needs a person for its Turnstile, and Glad I Know for its reCAPTCHA.
-    public static let assistantDemoBrokerDomains: Set<String> = ["peoplefinders.com", "gladiknow.com"]
+    /// PeopleFinders needs a person for its Turnstile, Glad I Know for its reCAPTCHA, and SpyFly's scan for a Turnstile
+    /// before it emails a verification code.
+    public static let assistantDemoBrokerDomains: Set<String> = ["peoplefinders.com", "gladiknow.com", "spyfly.com"]
+    /// Scans that also wait for the user to start them, because the broker needs a person partway through.
+    public static let assistantDemoAssistedScanBrokerDomains: Set<String> = ["spyfly.com"]
     public var allowedBrokerDomains: Set<String>?
 
     /// Opt-outs that need a person partway through. They wait in the preview until the user starts them.
@@ -32,6 +35,10 @@ public struct BrokerJobExecutionConfig {
 
     public func needsUser(forBrokerAt url: String) -> Bool {
         Self.domain(of: url).map(Self.assistantDemoNeedsUserBrokerDomains.contains) ?? false
+    }
+
+    public func holdsScan(forBrokerAt url: String) -> Bool {
+        Self.domain(of: url).map(Self.assistantDemoAssistedScanBrokerDomains.contains) ?? false
     }
 
     public func userSolvesCaptcha(forBrokerAt url: String) -> Bool {

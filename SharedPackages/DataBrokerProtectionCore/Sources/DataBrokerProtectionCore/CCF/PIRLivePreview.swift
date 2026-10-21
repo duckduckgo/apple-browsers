@@ -69,6 +69,7 @@ public struct PIRLivePreviewChecklist: Sendable, Equatable {
          isConfirmation: Bool = false) {
         let isOptOut = stepType == .optOut
         let lastClickIndex = actions.lastIndex { $0.actionType == .click }
+        let firstClickIndex = actions.firstIndex { $0.actionType == .click }
         let firstNavigationIndex = actions.firstIndex { $0.actionType == .navigate }
         let context = LabelContext(isOptOut: isOptOut, isConfirmation: isConfirmation, brokerName: brokerName,
                                    person: "\(profileQuery.firstName) \(profileQuery.lastName)",
@@ -82,7 +83,8 @@ public struct PIRLivePreviewChecklist: Sendable, Equatable {
                 items.append(Self.createEmailLabel)
             }
             if let label = Self.label(for: action, context: context, isFirstNavigation: index == firstNavigationIndex,
-                                      isLastClick: index == lastClickIndex), label != items.last {
+                                      isFirstClick: index == firstClickIndex, isLastClick: index == lastClickIndex),
+               label != items.last {
                 items.append(label)
             }
             itemIndexForAction.append(max(items.count - 1, 0))
@@ -103,7 +105,7 @@ public struct PIRLivePreviewChecklist: Sendable, Equatable {
         let place: String
     }
 
-    private static func label(for action: Action, context: LabelContext, isFirstNavigation: Bool, isLastClick: Bool) -> String? {
+    private static func label(for action: Action, context: LabelContext, isFirstNavigation: Bool, isFirstClick: Bool, isLastClick: Bool) -> String? {
         switch action.actionType {
         case .navigate:
             guard isFirstNavigation else { return "Go to the next page" }
@@ -122,10 +124,10 @@ public struct PIRLivePreviewChecklist: Sendable, Equatable {
                 guard isLastClick else { return "Continue" }
                 return context.isConfirmation ? "Confirm request" : "Submit request"
             }
-            return "Run the search"
+            return isFirstClick ? "Run the search" : "Continue"
         case .extract: return "Check the results against your profile"
         case .getCaptchaInfo, .solveCaptcha: return "Prove you\u{2019}re human"
-        case .generateEmail: return createEmailLabel
+        case .generateEmail: return context.isOptOut ? createEmailLabel : "Create a private email for \(context.brokerName)"
         case .getEmailData: return "Wait for \(context.brokerName)\u{2019}s email"
         case .emailConfirmation: return "Confirm the request from your email"
         case .expectation:

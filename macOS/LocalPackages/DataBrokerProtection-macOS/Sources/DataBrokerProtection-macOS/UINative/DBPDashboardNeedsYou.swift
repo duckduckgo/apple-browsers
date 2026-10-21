@@ -87,17 +87,20 @@ final class DBPDashboardNeedsYou: NSObject, WKScriptMessageHandlerWithReply {
 
     private func needsYouJSON() -> [[String: Any]] {
         let pending = (try? dataManager?.assistedOptOuts()) ?? []
+        // One row per broker and kind: a scan to run, or records to remove.
         var order: [String] = []
-        var byBroker: [String: [PIRAssistedOptOut]] = [:]
-        for optOut in pending {
-            if byBroker[optOut.brokerURL] == nil { order.append(optOut.brokerURL) }
-            byBroker[optOut.brokerURL, default: []].append(optOut)
+        var byRow: [String: [PIRAssistedOptOut]] = [:]
+        for item in pending {
+            let row = item.brokerURL + (item.extractedProfileId == nil ? "#scan" : "#opt-out")
+            if byRow[row] == nil { order.append(row) }
+            byRow[row, default: []].append(item)
         }
-        return order.compactMap { url in
-            guard let records = byBroker[url], let first = records.first else { return nil }
-            loadFavicon(for: url)
-            return ["brokerName": first.brokerName, "brokerURL": url, "recordCount": records.count, "favicon": favicons[url] ?? "",
-                    "brokerId": first.brokerId, "profileQueryId": first.profileQueryId, "extractedProfileId": first.extractedProfileId]
+        return order.compactMap { row in
+            guard let items = byRow[row], let first = items.first else { return nil }
+            loadFavicon(for: first.brokerURL)
+            return ["brokerName": first.brokerName, "brokerURL": first.brokerURL, "recordCount": items.count,
+                    "isScan": first.extractedProfileId == nil, "favicon": favicons[first.brokerURL] ?? "",
+                    "brokerId": first.brokerId, "profileQueryId": first.profileQueryId, "extractedProfileId": first.extractedProfileId ?? -1]
         }
     }
 
@@ -153,8 +156,9 @@ final class DBPDashboardNeedsYou: NSObject, WKScriptMessageHandlerWithReply {
       const section = document.createElement('section');
       section.id = 'pir-needs-you';
       section.hidden = true;
-      section.innerHTML = '<div class="head"><h2 class="pill">Needs you</h2><p class="sub">These sites need a person to finish the requests. We\\u2019ll do most of it.</p></div><ul></ul>';
+      section.innerHTML = '<div class="head"><h2 class="pill">Needs you</h2><p class="sub"></p></div><ul></ul>';
       const list = section.querySelector('ul');
+      const sub = section.querySelector('.sub');
 
       // As in the design: under the scan progress and stat cards, above the site tabs. Only on the dashboard
       // itself; onboarding and settings pages have no such slot.
@@ -182,9 +186,11 @@ final class DBPDashboardNeedsYou: NSObject, WKScriptMessageHandlerWithReply {
           const logo = Object.assign(document.createElement('img'), { className: 'logo', alt: '' });
           if (item.favicon) logo.src = item.favicon; else logo.style.visibility = 'hidden';
           const text = Object.assign(document.createElement('div'), { className: 'text' });
+          const meta = item.isScan ? 'Search for your records \\u00b7 about 2 min with our help'
+            : item.recordCount + (item.recordCount === 1 ? ' record' : ' records') + ' \\u00b7 about 1 min with our help';
           text.append(Object.assign(document.createElement('div'), { className: 'name', textContent: item.brokerName }),
-                      Object.assign(document.createElement('div'), { className: 'meta', textContent: item.recordCount + (item.recordCount === 1 ? ' record' : ' records') + ' \\u00b7 about 1 min with our help' }));
-          const button = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Start request' });
+                      Object.assign(document.createElement('div'), { className: 'meta', textContent: meta }));
+          const button = Object.assign(document.createElement('button'), { type: 'button', textContent: item.isScan ? 'Start scan' : 'Start request' });
           button.onclick = async () => {
             button.disabled = true;
             try { await post({ action: 'start', ...item }); } catch (e) { button.disabled = false; }
@@ -192,6 +198,9 @@ final class DBPDashboardNeedsYou: NSObject, WKScriptMessageHandlerWithReply {
           row.append(logo, text, button);
           list.appendChild(row);
         });
+        sub.textContent = items.some(item => item.isScan)
+          ? 'These sites need a person to finish a search or a removal. We\\u2019ll do most of it.'
+          : 'These sites need a person to finish the requests. We\\u2019ll do most of it.';
         section.hidden = items.length === 0;
       };
 

@@ -590,7 +590,9 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
             PIRLivePreview.shared.presentsInApp = anchorFrame != nil
             if let anchorFrame { PIRLivePreview.shared.anchorFrame = anchorFrame }
         }
-        try PIRAssistedOptOuts.start(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId,
+        // XPC carries a scan's missing record as -1.
+        try PIRAssistedOptOuts.start(brokerId: brokerId, profileQueryId: profileQueryId,
+                                     extractedProfileId: extractedProfileId < 0 ? nil : extractedProfileId,
                                      in: jobDependencies.database)
         // Reply now; the run reports its progress through the preview.
         Task { await self.startScheduledOperations() }

@@ -94,8 +94,14 @@ public struct PIRDemoFixture: Codable {
     /// Call after saving `profile`. Marks every scan as run and adds the records with opt-outs held for the user.
     public func seed(into database: DataBrokerProtectionRepository, now: Date = Date()) throws {
         let queryData = try database.fetchActiveBrokerProfileQueryData()
+        let config = BrokerJobExecutionConfig()
         for data in queryData {
             guard let brokerId = data.dataBroker.id, let profileQueryId = data.profileQuery.id else { continue }
+            // Assisted scans stay unrun, so they wait in Needs you.
+            if config.holdsScan(forBrokerAt: data.dataBroker.url) {
+                try database.updatePreferredRunDate(nil, brokerId: brokerId, profileQueryId: profileQueryId)
+                continue
+            }
             let matches = records.filter { $0.brokerURL == data.dataBroker.url && $0.query.matches(data.profileQuery) }
             try database.updateLastRunDate(now, brokerId: brokerId, profileQueryId: profileQueryId)
             try database.updatePreferredRunDate(now.addingTimeInterval(30 * 24 * 60 * 60), brokerId: brokerId, profileQueryId: profileQueryId)
@@ -112,11 +118,12 @@ public struct PIRDemoFixture: Codable {
     }
 }
 
-/// An opt-out that waits for the user to start it, because the broker needs a person partway through.
+/// An opt-out, or a scan, that waits for the user to start it, because the broker needs a person partway through.
 public struct PIRAssistedOptOut: Sendable, Hashable {
     public let brokerId: Int64
     public let profileQueryId: Int64
-    public let extractedProfileId: Int64
+    /// The record to remove; nil for a scan.
+    public let extractedProfileId: Int64?
     public let brokerName: String
     public let brokerURL: String
     public let recordName: String?
@@ -125,7 +132,11 @@ public struct PIRAssistedOptOut: Sendable, Hashable {
 /// Opt-outs for brokers that need a person run only when the user starts them, once per start.
 public enum PIRAssistedOptOuts {
     private static let lock = NSLock()
-    private static var started = Set<Int64>()
+    private static var started = Set<String>()
+
+    private static func key(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64?) -> String {
+        extractedProfileId.map { "opt-out-\($0)" } ?? "scan-\(brokerId)-\(profileQueryId)"
+    }
 
     public static func pending(in database: DataBrokerProtectionRepository,
                                config: BrokerJobExecutionConfig = BrokerJobExecutionConfig()) throws -> [PIRAssistedOptOut] {
@@ -133,7 +144,11 @@ public enum PIRAssistedOptOuts {
             .filter { config.needsUser(forBrokerAt: $0.dataBroker.url) && !$0.dataBroker.performsOptOutWithinParent() }
             .flatMap { data -> [PIRAssistedOptOut] in
                 guard let brokerId = data.dataBroker.id, let profileQueryId = data.profileQuery.id else { return [] }
-                return data.optOutJobData
+                let scan = config.holdsScan(forBrokerAt: data.dataBroker.url) && data.scanJobData.lastRunDate == nil
+                    ? [PIRAssistedOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: nil,
+                                         brokerName: data.dataBroker.name, brokerURL: data.dataBroker.url, recordName: nil)]
+                    : []
+                return scan + data.optOutJobData
                     .filter { $0.submittedSuccessfullyDate == nil && $0.extractedProfile.removedDate == nil }
                     .compactMap { job in
                         job.extractedProfile.id.map {
@@ -149,16 +164,20 @@ public enum PIRAssistedOptOuts {
         try start(brokerId: optOut.brokerId, profileQueryId: optOut.profileQueryId, extractedProfileId: optOut.extractedProfileId, in: database)
     }
 
-    public static func start(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64,
+    public static func start(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64?,
                              in database: DataBrokerProtectionRepository) throws {
-        try database.updatePreferredRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
-        _ = lock.withLock { started.insert(extractedProfileId) }
+        if let extractedProfileId {
+            try database.updatePreferredRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+        } else {
+            try database.updatePreferredRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId)
+        }
+        _ = lock.withLock { started.insert(key(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)) }
     }
 
-    /// Lets a started opt-out run once; a failed attempt waits for the user again instead of retrying.
-    static func consumeStart(for extractedProfileId: Int64?) -> Bool {
-        guard let extractedProfileId else { return false }
-        return lock.withLock { started.remove(extractedProfileId) != nil }
+    /// Lets a started opt-out or scan run once; a failed attempt waits for the user again instead of retrying.
+    static func consumeStart(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64?) -> Bool {
+        let key = key(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+        return lock.withLock { started.remove(key) != nil }
     }
 }
 #endif

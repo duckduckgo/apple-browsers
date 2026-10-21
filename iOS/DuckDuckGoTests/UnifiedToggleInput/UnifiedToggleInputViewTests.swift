@@ -943,7 +943,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         prepareForFitting(sut, height: 48)
         applyFittingHeight(to: sut, height: 48)
 
-        let placeholderLabel = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        let placeholderLabel = try XCTUnwrap(sut.subviews.compactMap { $0 as? UILabel }.first)
         let leadingPadding = placeholderLabel.frame.minX
         let trailingPadding = sut.bounds.width - placeholderLabel.frame.maxX
 

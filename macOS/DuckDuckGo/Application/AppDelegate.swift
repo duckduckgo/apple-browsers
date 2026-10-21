@@ -89,7 +89,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
 #if DEBUG
-    static func prepareIntegrationTestsKeyValueStoresLocation() {
+    /// Called before the key-value stores are created: `URL.sandboxApplicationSupportURL` needs `NSApp`.
+    private static func prepareIntegrationTestsKeyValueStoresLocation() {
         guard AppVersion.runType == .integrationTests else { return }
         let location = keyValueStoresLocation
         try? FileManager.default.removeItem(at: location)
@@ -722,6 +723,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
         }
 
+#if DEBUG
+        Self.prepareIntegrationTestsKeyValueStoresLocation()
+#endif
         do {
             keyValueStore = try KeyValueFileStore(location: Self.keyValueStoresLocation, name: "AppKeyValueStore")
             // perform a dummy read to ensure that KVS is accessible

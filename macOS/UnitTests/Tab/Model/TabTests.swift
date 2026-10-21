@@ -99,6 +99,158 @@ final class TabTests: XCTestCase {
 
     @available(macOS 15.4, *)
     @MainActor
+    func testWhenExtensionOriginCaseChangesThenRegisteredOriginIsUsed() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try #"{"manifest_version":3,"name":"Navigation Test","version":"1.0"}"#
+            .write(to: directory.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
+        for page in ["intro.html", "tutorial.html"] {
+            let title = page == "intro.html" ? "Intro" : "Tutorial"
+            try "<html><body>\(title)</body></html>".write(to: directory.appendingPathComponent(page), atomically: true, encoding: .utf8)
+        }
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        let controller = WKWebExtensionController(configuration: .nonPersistent())
+        let foreignContext = WKWebExtensionContext(for: webExtension)
+        foreignContext.baseURL = URL(string: "webkit-extension://foreign-extension/")!
+        try controller.load(foreignContext)
+        defer { try? controller.unload(foreignContext) }
+
+        for host in ["owner-lower", "OWNER-UPPER"] {
+            let context = WKWebExtensionContext(for: webExtension)
+            context.baseURL = URL(string: "webkit-extension://\(host)/")!
+            try controller.load(context)
+            defer { try? controller.unload(context) }
+            let configuration = try XCTUnwrap(context.webViewConfiguration)
+            let webView = WebView(frame: .zero, configuration: configuration, featureFlagger: MockFeatureFlagger())
+            let delegate = WebExtensionInternalSiteNavigationDelegate()
+            webView.navigationDelegate = delegate
+            var components = try XCTUnwrap(URLComponents(url: context.baseURL.appendingPathComponent("intro.html"), resolvingAgainstBaseURL: false))
+            components.scheme = "WEBKIT-EXTENSION"
+            components.host = host == host.lowercased() ? host.uppercased() : host.lowercased()
+            let ownerURL = try XCTUnwrap(components.url)
+            tab = Tab(content: .webExtensionUrl(ownerURL), webViewConfiguration: schemeHandler.webViewConfiguration())
+            webView.uiDelegate = tab
+            let frame = WKFrameInfo.mock(for: webView)
+            XCTAssertNil(webView.url)
+
+            let initialAction = MockWKNavigationAction(request: URLRequest(url: ownerURL), targetFrame: frame, sourceFrame: frame)
+            let initialPolicy = await delegate.webView(webView, decidePolicyFor: initialAction)
+            let introLoaded = keyValueObservingExpectation(for: webView, keyPath: "loading", expectedValue: false)
+            await fulfillment(of: [introLoaded], timeout: 5)
+            XCTAssertEqual(initialPolicy, .cancel)
+            XCTAssertEqual(webView.url, context.baseURL.appendingPathComponent("intro.html"))
+
+            components.percentEncodedPath = "/tutorial.html"
+            components.percentEncodedQuery = "type=practice%2Ftest&value=a+b"
+            components.percentEncodedFragment = "step%2F1"
+            let action = MockWKNavigationAction(request: URLRequest(url: try XCTUnwrap(components.url)), targetFrame: frame, sourceFrame: frame)
+            let policy = await delegate.webView(webView, decidePolicyFor: action)
+            let tutorialLoaded = keyValueObservingExpectation(for: webView, keyPath: "loading", expectedValue: false)
+            await fulfillment(of: [tutorialLoaded], timeout: 5)
+
+            components.scheme = context.baseURL.scheme
+            components.host = context.baseURL.host
+            XCTAssertEqual(policy, .cancel)
+            XCTAssertEqual(webView.url?.absoluteString, components.url?.absoluteString)
+            let body: String? = try await webView.evaluateJavaScript("document.body.textContent")
+            XCTAssertEqual(body, "Tutorial")
+
+            let allowedURLs = [
+                try XCTUnwrap(components.url),
+                URL(string: "webkit-extension://FOREIGN-EXTENSION/tutorial.html")!,
+                URL(string: "webkit-extension://\(host):1234/tutorial.html")!,
+                URL(string: "webkit-extension://\(host).foreign-extension/tutorial.html")!,
+                URL(string: "webkit-extension://\(host)@FOREIGN-EXTENSION/tutorial.html")!
+            ]
+            for allowedURL in allowedURLs {
+                let allowedAction = MockWKNavigationAction(request: URLRequest(url: allowedURL), targetFrame: frame, sourceFrame: frame)
+                let allowedPolicy = await delegate.webView(webView, decidePolicyFor: allowedAction)
+                XCTAssertEqual(allowedPolicy, .allow, allowedURL.absoluteString)
+                XCTAssertEqual(webView.url?.absoluteString, components.url?.absoluteString)
+            }
+            webView.uiDelegate = nil
+            let ownerlessPolicy = await delegate.webView(webView, decidePolicyFor: action)
+            XCTAssertEqual(ownerlessPolicy, .allow)
+            XCTAssertEqual(webView.url?.absoluteString, components.url?.absoluteString)
+        }
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenExtensionPageSubmitsToCurrentURLThenOriginalRequestIsLoaded() async throws {
+        var requests: [URLRequest] = []
+        schemeHandler.middleware = [{ request in
+            requests.append(request)
+            return .ok(.html("<html><body>Submitted</body></html>"))
+        }]
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
+        let extensionView = WebView(frame: .zero, configuration: schemeHandler.webViewConfiguration(), featureFlagger: MockFeatureFlagger())
+        extensionView.uiDelegate = tab
+        let frame = WKFrameInfo.mock(for: extensionView)
+        let delegate = WebExtensionInternalSiteNavigationDelegate()
+
+        let initialNavigation = expectation(description: "initial GET finished")
+        let initialCancellable = tab.webViewDidFinishNavigationPublisher.first().sink { initialNavigation.fulfill() }
+        tab.setContent(.url(urls.url1, source: .ui))
+        await fulfillment(of: [initialNavigation], timeout: 5)
+        initialCancellable.cancel()
+
+        for submission in 1...2 {
+            var request = URLRequest(url: urls.url1, cachePolicy: .reloadIgnoringLocalCacheData)
+            request.httpMethod = "POST"
+            request.httpBody = Data("submission=\(submission)".utf8)
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            request.setValue("extension-form", forHTTPHeaderField: "X-Test-Source")
+            let action = MockWKNavigationAction(request: request, targetFrame: frame, sourceFrame: frame)
+            let finished = expectation(description: "POST \(submission) finished")
+            let cancellable = tab.webViewDidFinishNavigationPublisher.first().sink { finished.fulfill() }
+
+            let policy = await delegate.webView(extensionView, decidePolicyFor: action)
+            await fulfillment(of: [finished], timeout: 5)
+            cancellable.cancel()
+
+            XCTAssertEqual(policy, .cancel)
+            XCTAssertEqual(requests.count, submission + 1)
+            let received = try XCTUnwrap(requests.last)
+            XCTAssertEqual(received.httpMethod, "POST")
+            XCTAssertEqual(received.httpBody, request.httpBody)
+            XCTAssertEqual(received.value(forHTTPHeaderField: "Content-Type"), request.value(forHTTPHeaderField: "Content-Type"))
+            XCTAssertEqual(received.value(forHTTPHeaderField: "X-Test-Source"), "extension-form")
+            XCTAssertEqual(received.cachePolicy, request.cachePolicy)
+            XCTAssertEqual(tab.content, .url(urls.url1, source: .ui))
+        }
+    }
+
+    @MainActor
+    func testWhenRequestDoesNotMatchContentThenTabStaysUnchanged() {
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        tab.title = "Original title"
+
+        let navigation = tab.setContent(.url(urls.url1, source: .ui), request: URLRequest(url: urls.url2))
+
+        XCTAssertNil(navigation)
+        XCTAssertEqual(tab.content, .none)
+        XCTAssertEqual(tab.title, "Original title")
+        XCTAssertNil(tab.webView.url)
+        XCTAssertFalse(tab.webView.isLoading)
+    }
+
+    @MainActor
+    func testWhenContentChangesAreDisabledThenExplicitRequestIsNotLoaded() {
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
+        tab.contentChangeEnabled = false
+
+        let navigation = tab.setContent(.url(urls.url1, source: .ui), request: URLRequest(url: urls.url1))
+
+        XCTAssertNil(navigation)
+        XCTAssertEqual(tab.content, .none)
+        XCTAssertNil(tab.webView.url)
+        XCTAssertFalse(tab.webView.isLoading)
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
     func testWhenExtensionPagesNavigateThenEachOwningTabChanges() async {
         let firstTab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let secondTab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())

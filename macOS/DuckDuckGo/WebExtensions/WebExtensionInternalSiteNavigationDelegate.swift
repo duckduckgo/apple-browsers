@@ -28,15 +28,37 @@ final class WebExtensionInternalSiteNavigationDelegate: NSObject, WKNavigationDe
         guard let url = navigationAction.request.url else {
             return .allow
         }
-        if url.isWebExtensionUrl {
-            return .allow
+        if url.scheme?.caseInsensitiveCompare("webkit-extension") == .orderedSame {
+            // Resolve the tab's owner, not the destination, so a foreign extension cannot supply the replacement origin.
+            guard let ownerURL = (webView.uiDelegate as? Tab)?.content.urlForWebView,
+                  let controller = webView.configuration.webExtensionController else { return .allow }
+            let matchingContexts = controller.extensionContexts.filter { context in
+                ownerURL.scheme?.caseInsensitiveCompare(context.baseURL.scheme ?? "") == .orderedSame
+                    && ownerURL.host?.caseInsensitiveCompare(context.baseURL.host ?? "") == .orderedSame
+                    && ownerURL.port == context.baseURL.port
+            }
+            guard let context = controller.extensionContext(for: ownerURL) ?? (matchingContexts.count == 1 ? matchingContexts.first : nil),
+                  url.scheme?.caseInsensitiveCompare(context.baseURL.scheme ?? "") == .orderedSame,
+                  url.host?.caseInsensitiveCompare(context.baseURL.host ?? "") == .orderedSame,
+                  url.port == context.baseURL.port,
+                  var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return .allow }
+
+            // WebKit requires the registered spelling even when an extension uppercases its origin.
+            components.scheme = context.baseURL.scheme
+            components.host = context.baseURL.host
+            components.port = context.baseURL.port
+            guard let canonicalURL = components.url, canonicalURL.absoluteString != url.absoluteString else { return .allow }
+            var request = navigationAction.request
+            request.url = canonicalURL
+            webView.load(request)
+            return .cancel
         }
 
         guard let tab = webView.uiDelegate as? Tab else {
             return .cancel
         }
 
-        tab.setContent(.url(url, source: .ui))
+        tab.setContent(.url(url, source: .ui), request: navigationAction.request)
         return .cancel
     }
 

@@ -444,19 +444,19 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatNtpAttachMoreTabs
 
     /// Duck.ai "Add Screenshot" in the address bar and prompt bar attach menus.
-    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
     case aiChatOmnibarScreenshot
 
     /// Duck.ai "Add Screenshot" in the New Tab Page omnibar.
-    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
     case aiChatNtpScreenshot
 
     /// Duck.ai: pasting images and copied files into the address bar and prompt bar prompt.
-    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
     case aiChatPasteImages
 
     /// Duck.ai: pasting images and copied files into the New Tab Page omnibar.
-    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
     case aiChatNtpPasteImages
 
     /// Enables deleting recent AI chats from the New Tab Page omnibar

@@ -265,8 +265,8 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         CATransaction.flush()
 
         // The presentation can be refused (another one is in flight, say); don't strand the card on screen.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-            guard let self, self.isActive, self.transitionContext == nil else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self, weak cardView] in
+            guard let self, let cardView, self.cardView === cardView, self.transitionContext == nil else { return }
             self.commitAnimators.forEach { $0.stopAnimation(true) }
             self.commitAnimators = []
             self.tearDownOverlay()

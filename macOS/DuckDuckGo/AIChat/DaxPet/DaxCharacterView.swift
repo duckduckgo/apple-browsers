@@ -68,6 +68,10 @@ final class DaxCharacterView: NSView {
 
     var onClick: (() -> Void)?
     var onRightClick: ((NSEvent) -> Void)?
+    var onDrop: ((NSPasteboard) -> Void)?
+
+    /// Something Dax could take is being dragged over him.
+    private(set) var isAnticipatingDrop = false
     var onDragEnded: (() -> Void)?
 
     private let rig: DaxRig?
@@ -123,6 +127,7 @@ final class DaxCharacterView: NSView {
         super.init(frame: NSRect(origin: .zero, size: Self.preferredSize))
         wantsLayer = true
         setUpAnimationView()
+        registerForDraggedTypes([.fileURL, .URL, .string])
     }
 
     required init?(coder: NSCoder) {
@@ -168,6 +173,34 @@ final class DaxCharacterView: NSView {
 
     override func rightMouseDown(with event: NSEvent) {
         onRightClick?(event)
+    }
+
+    // MARK: - Drops
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard !DaxPetDroppedItem.items(from: sender.draggingPasteboard).isEmpty else { return [] }
+        anticipateDrop()
+        return .copy
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        isAnticipatingDrop ? .copy : []
+    }
+
+    override func draggingExited(_ sender: NSDraggingInfo?) {
+        isAnticipatingDrop = false
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        isAnticipatingDrop = false
+        onDrop?(sender.draggingPasteboard)
+        return true
+    }
+
+    /// Ooh, what's that?
+    func anticipateDrop() {
+        isAnticipatingDrop = true
+        bounce()
     }
 
     /// He's picked up: from here on, his window moving means he's being carried.
@@ -482,7 +515,7 @@ final class DaxCharacterView: NSView {
                 return
             }
         }
-        if isBeingDragged {
+        if isBeingDragged || isAnticipatingDrop {
             // Whoa!
             face.eyelids = -0.25
             return

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -23,12 +24,15 @@ import XCTest
 @MainActor
 private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
     var submittedPrompts: [String] = []
+    var submittedPayloads: [AIChatNativePrompt?] = []
+    var capabilities = DaxPetAttachmentCapabilities.unknown
     var openDuckAICount = 0
     var showBrowserCount = 0
     var onSubmit: (() -> Void)?
 
-    func submit(prompt: String) {
+    func submit(prompt: String, payload: AIChatNativePrompt?) {
         submittedPrompts.append(prompt)
+        submittedPayloads.append(payload)
         onSubmit?()
     }
 
@@ -46,6 +50,10 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
     func summarizeCurrentPage() async -> Bool {
         summarizeCount += 1
         return summarizeResult
+    }
+
+    func attachmentCapabilities() async -> DaxPetAttachmentCapabilities {
+        capabilities
     }
 
     var continueResult = true
@@ -314,6 +322,58 @@ final class DaxPetViewModelTests: XCTestCase {
 
         submitter.canSummarizeCurrentPage = true
         XCTAssertTrue(model.canSummarizeCurrentPage)
+    }
+
+    // MARK: - Drops
+
+    func testWhenTextIsDroppedThenDaxAsksAboutItWithThePromptOpen() async {
+        await model.receive([.text("Ducks can sleep with one eye open.")])
+
+        XCTAssertTrue(model.isComposing)
+        XCTAssertEqual(model.attachments.count, 1)
+        XCTAssertEqual(model.speech, UserText.daxPetDropQuestion)
+    }
+
+    func testWhenADroppedItemIsRefusedThenDaxSaysWhyAndStaysPut() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).zip")
+        try "PK".write(to: url, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        await model.receive([.file(url)])
+
+        XCTAssertFalse(model.isComposing)
+        XCTAssertTrue(model.attachments.isEmpty)
+        XCTAssertNotNil(model.speech)
+    }
+
+    func testWhenAPromptIsSentWithDroppedTextThenTheTextGoesWithIt() async {
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        await model.receive([.text("Quack")])
+        model.prompt = "Translate"
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertEqual(submitter.submittedPrompts, ["Translate\n\nQuack"])
+        XCTAssertTrue(model.attachments.isEmpty)
+    }
+
+    func testWhenAttachmentsAreRemovedThenThePromptStaysOpen() async {
+        await model.receive([.text("Quack")])
+
+        model.removeAttachments()
+
+        XCTAssertTrue(model.attachments.isEmpty)
+        XCTAssertTrue(model.isComposing)
+    }
+
+    func testWhenComposingEndsThenDroppedItemsAreDropped() async {
+        await model.receive([.text("Quack")])
+
+        model.endComposing()
+
+        XCTAssertTrue(model.attachments.isEmpty)
     }
 
     // MARK: - Typing

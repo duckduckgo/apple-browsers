@@ -32,6 +32,14 @@ struct DaxPetView: View {
         static let toolbarSize = CGSize(width: 106, height: 32)
         static let composingWidth: CGFloat = 320
         static let promptLeadingInset: CGFloat = 14
+        static let attachmentChipSize: CGFloat = 22
+        static let maxVisibleAttachments = 3
+
+        /// Room the attachment chips take before the prompt text.
+        static func attachmentsWidth(count: Int) -> CGFloat {
+            guard count > 0 else { return 0 }
+            return CGFloat(min(count, maxVisibleAttachments) + 1) * (attachmentChipSize + 2)
+        }
 
         static let windowSize = CGSize(width: composingWidth + padding * 2,
                                        height: padding * 2 + bubbleAreaHeight + spacing * 2
@@ -92,6 +100,45 @@ struct DaxPetView: View {
         .frame(width: Metrics.windowSize.width, height: Metrics.windowSize.height)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.speech)
         .animation(.easeInOut(duration: 0.6), value: model.isAsleep)
+    }
+}
+
+/// What was dropped on Dax, one icon each (named in its tooltip), and a button to drop them all.
+private struct AttachmentChips: View {
+    let attachments: [DaxPetAttachment]
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(attachments.prefix(DaxPetView.Metrics.maxVisibleAttachments)) { attachment in
+                Image(nsImage: icon(for: attachment))
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                    .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
+                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+                    .help(attachment.name)
+                    .accessibilityLabel(attachment.name)
+            }
+            Button(action: onRemove) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(UserText.daxPetRemoveAttachments)
+            .accessibilityLabel(UserText.daxPetRemoveAttachments)
+        }
+    }
+
+    private func icon(for attachment: DaxPetAttachment) -> NSImage {
+        switch attachment {
+        case .text: return DesignSystemImages.Glyphs.Size16.note
+        case .link: return DesignSystemImages.Glyphs.Size16.link
+        case .image: return DesignSystemImages.Glyphs.Size16.image
+        case .file: return DesignSystemImages.Glyphs.Size16.attach
+        }
     }
 }
 
@@ -260,13 +307,17 @@ private struct PromptField: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            if !model.attachments.isEmpty {
+                AttachmentChips(attachments: model.attachments, onRemove: model.removeAttachments)
+                    .padding(.leading, 8)
+            }
             TextField(UserText.daxPetPromptPlaceholder, text: $model.prompt)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .focused($isFocused)
                 .onSubmit { model.submit() }
                 .onExitCommand { model.endComposing() }
-                .padding(.leading, DaxPetView.Metrics.promptLeadingInset)
+                .padding(.leading, model.attachments.isEmpty ? DaxPetView.Metrics.promptLeadingInset : 0)
 
             Button(action: model.submit) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.arrowUp)

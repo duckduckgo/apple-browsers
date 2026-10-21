@@ -2857,7 +2857,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                         ),
                                                         historySettings: AIChatHistorySettings(privacyConfig: privacyConfig)
                                                     )
-                                                }))
+                                                },
+                                                capabilitiesProvider: DaxPetAttachmentCapabilitiesProvider(
+                                                    subscriptionManager: subscriptionManager,
+                                                    preferences: aiChatPreferencesPersistor
+                                                )))
         coordinator.start()
         daxPetCoordinator = coordinator
     }

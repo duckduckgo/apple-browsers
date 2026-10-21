@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Combine
 
 @MainActor
 protocol DaxPetPromptSubmitting {
-    func submit(prompt: String)
+    /// `payload` carries attachments and is applied once Duck.ai is open, as the address bar does.
+    func submit(prompt: String, payload: AIChatNativePrompt?)
     func openDuckAI()
     /// Brings the browser forward, where Duck.ai's answer is waiting.
     func showBrowser()
@@ -32,6 +34,9 @@ protocol DaxPetPromptSubmitting {
     func summarizeCurrentPage() async -> Bool
     /// Reopens the most recent Duck.ai chat; `false` when there are none.
     func continueLastChat() async -> Bool
+
+    /// What the selected Duck.ai model accepts, to check items dropped on Dax against.
+    func attachmentCapabilities() async -> DaxPetAttachmentCapabilities
 }
 
 @MainActor
@@ -42,6 +47,8 @@ final class DaxPetViewModel: ObservableObject {
     @Published private(set) var isAsleep = false
     /// Changes each time hearts should pop out of Dax; `nil` when there are none.
     @Published private(set) var heartBurst: Int?
+    /// Items dropped on Dax, going along with the prompt.
+    @Published private(set) var attachments: [DaxPetAttachment] = []
     @Published var prompt = "" {
         didSet { promptDidChange(from: oldValue) }
     }
@@ -68,6 +75,7 @@ final class DaxPetViewModel: ObservableObject {
     private let submitter: DaxPetPromptSubmitting
     private var speechWork: DispatchWorkItem?
     private var answerTimeoutWork: DispatchWorkItem?
+    private var attachmentCapabilities = DaxPetAttachmentCapabilities.unknown
 
     init(submitter: DaxPetPromptSubmitting, character: DaxCharacterView? = nil) {
         self.submitter = submitter
@@ -116,6 +124,7 @@ final class DaxPetViewModel: ObservableObject {
         guard isComposing else { return }
         isComposing = false
         prompt = ""
+        attachments = []
         character.mood = isAwaitingAnswer ? .thinking : .idle
         character.lookTarget = nil
         say(nil)
@@ -129,15 +138,17 @@ final class DaxPetViewModel: ObservableObject {
     func submit() {
         let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty else { return }
+        let (query, payload) = DaxPetAttachmentLoader.prompt(prompt, attachments: attachments, capabilities: attachmentCapabilities)
         isComposing = false
         self.prompt = ""
+        attachments = []
         character.lookTarget = nil
         character.mood = .thinking
         say(UserText.daxPetThinking)
 
         DispatchQueue.main.asyncAfter(deadline: .now() + submissionDelay) { [weak self] in
             guard let self else { return }
-            submitter.submit(prompt: prompt)
+            submitter.submit(prompt: query, payload: payload)
             say(nil)
             // He keeps thinking until Duck.ai is done, or gives up if it never says it started.
             isAwaitingAnswer = true
@@ -200,6 +211,33 @@ final class DaxPetViewModel: ObservableObject {
         onHide?()
     }
 
+    // MARK: - Drops
+
+    /// Takes what was dropped on him, as far as the selected model allows, and asks what to do with it.
+    func receive(_ items: [DaxPetDroppedItem]) async {
+        guard !items.isEmpty else { return }
+        let capabilities = await submitter.attachmentCapabilities()
+        attachmentCapabilities = capabilities
+        let (accepted, rejection) = DaxPetAttachmentLoader.load(items, adding: attachments, capabilities: capabilities)
+        hasUnseenAnswer = false
+        if !accepted.isEmpty {
+            startComposing()
+            attachments += accepted
+            character.hop()
+            updateLookTarget()
+        }
+        if let rejection {
+            say(rejection, for: 5)
+        } else if !accepted.isEmpty {
+            say(UserText.daxPetDropQuestion)
+        }
+    }
+
+    func removeAttachments() {
+        attachments = []
+        updateLookTarget()
+    }
+
     // MARK: - Quick actions
 
     var canSummarizeCurrentPage: Bool { submitter.canSummarizeCurrentPage }
@@ -246,7 +284,7 @@ final class DaxPetViewModel: ObservableObject {
 
     private func updateLookTarget() {
         let width = (prompt as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 13)]).width
-        character.lookTarget = caretLocation?(width)
+        character.lookTarget = caretLocation?(width + DaxPetView.Metrics.attachmentsWidth(count: attachments.count))
     }
 
     private func showHearts() {

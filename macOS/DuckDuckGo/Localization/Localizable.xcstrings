@@ -34043,6 +34043,18 @@
         }
       }
     },
+    "duckai.dax-pet.attachments.remove" : {
+      "comment" : "Tooltip of the button that removes the items dropped on Dax, the DuckDuckGo mascot, from the question being typed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Attachments"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.continue.no-chat" : {
       "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when he's asked to continue the last Duck.ai chat but there are none",
       "extractionState" : "extracted_with_value",
@@ -34051,6 +34063,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "No chats yet. Ask me something!"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.drop.question" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when text, a link, an image or a file is dropped on him, before the user types a question about it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ooh! What would you like to know about this?"
           }
         }
       }

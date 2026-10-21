@@ -84,6 +84,10 @@ final class DaxPetCoordinator: NSObject {
         }
         model.character.onClick = { [weak model] in model?.characterClicked() }
         model.character.onRightClick = { [weak self] event in self?.showMenu(for: event) }
+        model.character.onDrop = { [weak model] pasteboard in
+            let items = DaxPetDroppedItem.items(from: pasteboard)
+            Task { await model?.receive(items) }
+        }
         model.character.onDragEnded = { [weak self] in
             self?.keepOnScreen()
             self?.savePosition()
@@ -313,17 +317,27 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
     private let aiChatTabOpener: AIChatTabOpening
     private let windowControllersManager: WindowControllersManagerProtocol
     private let makeSuggestionsReader: () -> AIChatSuggestionsReading
+    private let capabilitiesProvider: DaxPetAttachmentCapabilitiesProviding
+    private let promptHandler: AIChatPromptHandler
 
     init(aiChatTabOpener: AIChatTabOpening,
          windowControllersManager: WindowControllersManagerProtocol,
-         makeSuggestionsReader: @escaping () -> AIChatSuggestionsReading) {
+         makeSuggestionsReader: @escaping () -> AIChatSuggestionsReading,
+         capabilitiesProvider: DaxPetAttachmentCapabilitiesProviding,
+         promptHandler: AIChatPromptHandler = .shared) {
         self.aiChatTabOpener = aiChatTabOpener
         self.windowControllersManager = windowControllersManager
         self.makeSuggestionsReader = makeSuggestionsReader
+        self.capabilitiesProvider = capabilitiesProvider
+        self.promptHandler = promptHandler
     }
 
-    func submit(prompt: String) {
+    func submit(prompt: String, payload: AIChatNativePrompt?) {
         aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: .newTab(selected: true))
+        // The opener seeds a plain query, so the attachments have to land after it.
+        if let payload {
+            promptHandler.setData(payload)
+        }
         // Dax never activates the app, so handing off is what brings the browser forward.
         NSApp.activate(ignoringOtherApps: true)
     }
@@ -335,6 +349,10 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     func showBrowser() {
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    func attachmentCapabilities() async -> DaxPetAttachmentCapabilities {
+        await capabilitiesProvider.capabilities()
     }
 
     /// The window the user was last in, and the page it shows when that's a web page.

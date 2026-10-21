@@ -81,7 +81,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_history_autoclear_enabled": {
         "description": "Fired when user enables the setting to auto-clear Duck.ai chat history in Data Clearing preferences",

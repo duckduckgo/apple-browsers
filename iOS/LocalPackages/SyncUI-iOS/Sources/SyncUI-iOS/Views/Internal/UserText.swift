@@ -56,9 +56,9 @@ public struct UserText {
 
     // Recovery Section
     static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
-    static let deviceActivityTitle = NSLocalizedString("sync.device.activity.title", bundle: Bundle.module, value: "Device Activity", comment: "Sync device activity screen and settings row title")
-    static let deviceActivityIntro = NSLocalizedString("sync.device.activity.intro", bundle: Bundle.module, value: "Recently synced or removed devices:", comment: "Description shown above device activity history")
-    static let deviceActivityEmpty = NSLocalizedString("sync.device.activity.empty", bundle: Bundle.module, value: "You have no recent activity", comment: "Empty state shown when there is no device activity")
+    static let deviceActivityTitle = NotLocalizedString("sync.device.activity.title", bundle: Bundle.module, value: "Device Activity", comment: "Sync device activity screen and settings row title")
+    static let deviceActivityIntro = NotLocalizedString("sync.device.activity.intro", bundle: Bundle.module, value: "Recently synced or removed devices:", comment: "Description shown above device activity history")
+    static let deviceActivityEmpty = NotLocalizedString("sync.device.activity.empty", bundle: Bundle.module, value: "You have no recent activity", comment: "Empty state shown when there is no device activity")
 
     // Auto-Restore
     static let autoRestoreSettingsRowLabel = NSLocalizedString("auto.restore.settings.row.label", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore Settings Row - Label")

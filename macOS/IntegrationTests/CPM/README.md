@@ -103,3 +103,32 @@ the VM host SSD has recorded I/O errors. Natural iOS reproduction remains unveri
 The final raw xcresults, JSON evidence and hash checks are retained under
 `/private/tmp/cpm-p3-vm27-20261020/research-v9-acceptance-results` and
 `/private/tmp/cpm-p3-vm27-20261020/research-v9-crash-results`.
+
+
+## Error 6 across two real app processes
+
+`testBackgroundError6AcrossAppRelaunch` is deliberately outside the ten-method selection.
+Build once with `build-for-testing`, then run the dedicated driver in a graphical login session:
+
+```sh
+python3 macOS/IntegrationTests/CPM/run-relaunch.py \
+  --products /private/tmp/cpm-p3-review/Build/Products \
+  --plan '/private/tmp/cpm-p3-review/Build/Products/CPM Integration Tests_macosx27.0-arm64.xctestrun' \
+  --output /private/tmp/cpm-p3-relaunch-results
+```
+
+Use the actual generated xctestrun filename for your SDK and a new output directory. The runner
+compares signed app/XCTest hashes before and after each phase; for a transferred bundle, pass
+`--manifest` with the trusted host's `bundle-before.json`.
+
+For each explicit P3 flag state, prepare kills only the owned background PID with SIGKILL and
+navigates through the real content script. Native recovery can succeed; the bounded attempts
+must observe a real WebKit error 6 notification to qualify this scenario. No synthetic error
+or recovery callback is injected. P1/P2 recovery stays disabled, so no reload can mask the bug.
+Prepare verifies the stored next origin without mutating or replacing the live context, and
+preserves only the owned registry, extension resources and website store. The first app process
+must exit. Resume starts a different app PID against the same installation/store and verifies a
+fresh origin, native/page replies and real browser.storage.local persistence. It then removes
+the owned store and registry. Window, Tab and browser-controller deallocation guards remain on.
+Both phases must pass for ON and OFF. Missing error 6 is a failed reproduction, never a pass.
+A failed prepare that never reaches the checkpoint cannot count as a reproduced metadata bug.

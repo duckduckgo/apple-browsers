@@ -209,3 +209,11 @@ enum UnifiedToggleInputAttachment: Identifiable {
     }
 
 }
+
+extension Sequence where Element == UnifiedToggleInputAttachment {
+
+    /// The prompt wide event's `attachments_selected` on iPhone and iPad. A paste is prompt text, so it doesn't count.
+    var hasAttachmentsSelected: Bool {
+        contains { $0.pastedText == nil }
+    }
+}

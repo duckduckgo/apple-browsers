@@ -38,23 +38,36 @@ final class UTIPromptLengthGateTests: XCTestCase {
                 attachmentLimits: { [unowned self] in attachmentLimits },
                 isEnabled: { [unowned self] in isEnabled }
             ),
-            outputs: .init(
-                onOverLimitChanged: { [unowned self] in events.append("footer:\($0.map { "\($0.count)/\($0.limit)" } ?? "nil")") },
-                onPromptOverLimitChanged: { [unowned self] in events.append("over:\($0)") }
-            )
+            onOverLimitChanged: { [unowned self] in events.append($0.map { "\($0.count)/\($0.limit)" } ?? "nil") }
         )
     }
 
     private func text(_ count: Int) -> String { String(repeating: "a", count: count) }
 
-    func testOverLimitReportsTheFooterBeforeTheInput() {
+    func testOverLimitReportsTheLength() {
         let gate = makeGate()
         promptText = text(16_001)
 
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:16001/16000", "over:true"])
-        XCTAssertTrue(gate.isSubmitBlocked)
+        XCTAssertEqual(events, ["16001/16000"])
+    }
+
+    func testSubmissionMeasuresTheSentTextNotTheLastRefreshedDraft() {
+        let gate = makeGate()
+        attachments = [.pastedText(AIChatPastedText(content: text(6_000)))]
+        promptText = text(10)
+        gate.refresh()
+
+        XCTAssertTrue(gate.blocksSubmission(of: text(10_001)))
+        XCTAssertFalse(gate.blocksSubmission(of: text(10_000)))
+
+        promptText = text(16_001)
+        gate.refresh()
+        XCTAssertFalse(gate.blocksSubmission(of: text(10)))
+
+        isEnabled = false
+        XCTAssertFalse(gate.blocksSubmission(of: text(16_001)))
     }
 
     func testTypingWhileOverReportsTheNewCount() {
@@ -66,7 +79,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
         promptText = text(16_002)
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:16002/16000", "over:true"])
+        XCTAssertEqual(events, ["16002/16000"])
     }
 
     func testClearingTheDraftReleasesEverything() {
@@ -78,8 +91,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
         promptText = ""
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:nil", "over:false"])
-        XCTAssertFalse(gate.isSubmitBlocked)
+        XCTAssertEqual(events, ["nil"])
     }
 
     func testPastesCountTowardsTheLimitAndImagesLowerIt() {
@@ -90,7 +102,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
 
         gate.refresh()
 
-        XCTAssertEqual(events.first, "footer:4501/4500")
+        XCTAssertEqual(events, ["4501/4500"])
     }
 
     func testFilesDoNotLowerTheLimit() {
@@ -101,8 +113,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
 
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:nil", "over:false"])
-        XCTAssertEqual(gate.promptLength?.limit, 16_000)
+        XCTAssertEqual(events, ["nil"])
     }
 
     func testDisabledGateReportsNothingAndReleasesAnEarlierBlock() {
@@ -114,8 +125,7 @@ final class UTIPromptLengthGateTests: XCTestCase {
         isEnabled = false
         gate.refresh()
 
-        XCTAssertEqual(events, ["footer:nil", "over:false"])
-        XCTAssertNil(gate.promptLength)
+        XCTAssertEqual(events, ["nil"])
     }
 
     func testSheetLimitIsWhatThePasteMayGrowToAndNeverNegative() {

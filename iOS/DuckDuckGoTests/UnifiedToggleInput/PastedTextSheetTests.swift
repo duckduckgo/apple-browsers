@@ -124,6 +124,33 @@ final class PastedTextSheetTests: XCTestCase {
         XCTAssertEqual(UserText.aiChatPastedTextOverLimitCount(count: 16800, limit: 16000), "16800/16000 characters", "No grouping separators, as in the footer")
     }
 
+    func testOnlyChangedTextInAnEditableSheetIsAnUnsavedEdit() {
+        let editable = PastedTextSheetRules(original: original, mode: .editable(limit: 100))
+        let viewOnly = PastedTextSheetRules(original: original, mode: .viewOnly)
+
+        XCTAssertFalse(editable.hasUnsavedEdits("original text"))
+        XCTAssertTrue(editable.hasUnsavedEdits("original text!"))
+        XCTAssertFalse(viewOnly.hasUnsavedEdits("original text!"))
+    }
+
+    func testSheetRefusesInteractiveDismissalOnlyWhileItHasUnsavedEdits() throws {
+        let host = UIViewController()
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        PastedTextSheetPresenter.present(original, mode: .editable(limit: 100), from: host) { _ in }
+        let sheet = try XCTUnwrap(host.presentedViewController as? PastedTextSheetHostingController)
+        XCTAssertFalse(sheet.isModalInPresentation)
+
+        sheet.rootView.onUnsavedEditsChanged(true)
+        XCTAssertTrue(sheet.isModalInPresentation)
+
+        sheet.rootView.onUnsavedEditsChanged(false)
+        XCTAssertFalse(sheet.isModalInPresentation)
+    }
+
     func testPresenterPresentsFromTheTopmostControllerAboveTheHost() {
         let host = UIViewController()
         let presented = UIViewController()

@@ -34139,6 +34139,18 @@
         }
       }
     },
+    "duckai.dax-pet.glance.ask" : {
+      "comment" : "Button in the speech bubble where Dax, the DuckDuckGo mascot, sums up the page open in the browser; it asks Duck.ai to summarize the page in full",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask Duck.ai"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.greeting" : {
       "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when the user opens the field to ask him a question",
       "extractionState" : "extracted_with_value",

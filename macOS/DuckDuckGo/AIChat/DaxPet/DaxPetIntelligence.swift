@@ -25,12 +25,16 @@ import PDFKit
 /// Real answers stay with Duck.ai.
 @MainActor
 protocol DaxPetIntelligence {
+    /// Whether the on-device model is there at all.
+    var isOnDevice: Bool { get }
     /// A few short questions the user might ask Duck.ai about what they dropped on Dax.
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String]
     /// Other ways for Dax to say `line`, meaning the same.
     func variations(of line: String) async -> [String]
     /// What kind of thing was dropped, when there's text to tell from.
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind?
+    /// A one-sentence gist of a web page.
+    func pageSummary(title: String, content: String) async -> String?
 }
 
 enum DaxPetIntelligenceFactory {
@@ -46,6 +50,8 @@ enum DaxPetIntelligenceFactory {
 }
 
 struct DaxPetNoIntelligence: DaxPetIntelligence {
+    var isOnDevice: Bool { false }
+    func pageSummary(title: String, content: String) async -> String? { nil }
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String] { [] }
     func variations(of line: String) async -> [String] { [] }
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? { nil }
@@ -57,6 +63,8 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
 
     /// The model only sees the start of long content.
     static let contentLimit = 3000
+
+    var isOnDevice: Bool { true }
 
     @Generable
     struct Suggestions {
@@ -129,6 +137,24 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
         case .message: return .message
         case .other: return .other
         }
+    }
+
+    @Generable
+    struct PageSummary {
+        @Guide(description: "What the page is about, in one plain sentence of at most fifteen words")
+        var summary: String
+    }
+
+    func pageSummary(title: String, content: String) async -> String? {
+        let session = LanguageModelSession(instructions: """
+            You are Dax, the DuckDuckGo duck. Tell the user in one short, plain sentence what the web page \
+            they're reading is about. Only use what's on the page. Reply in \(Self.userLanguage).
+            """)
+        let page = "Title: \(title)\n\n\(content.prefix(Self.contentLimit))"
+        guard let response = try? await session.respond(to: page, generating: PageSummary.self,
+                                                        options: GenerationOptions(temperature: 0.3)) else { return nil }
+        let summary = response.content.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        return summary.isEmpty ? nil : summary
     }
 
     /// The user's language, by its English name, for the model to answer in.

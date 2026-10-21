@@ -37,6 +37,15 @@ protocol DaxPetPromptSubmitting {
 
     /// What the selected Duck.ai model accepts, to check items dropped on Dax against.
     func attachmentCapabilities() async -> DaxPetAttachmentCapabilities
+
+    /// The text of the web page open in the browser, if there is one.
+    func currentPageContent() async -> DaxPetPageContent?
+}
+
+struct DaxPetPageContent: Equatable {
+    let url: String
+    let title: String
+    let text: String
 }
 
 @MainActor
@@ -53,6 +62,14 @@ final class DaxPetViewModel: ObservableObject {
     @Published private(set) var suggestions: [String] = []
     /// What Dax guesses the user wants done with the drop; the prompt field's hint, sent on a bare Return.
     @Published private(set) var dropAction: DaxPetDropAction?
+    /// The on-device gist of the page open in the browser, offered when the pointer rests on Dax.
+    @Published private(set) var glance: String?
+
+    /// Dax won't sum up the same page again for this long.
+    var glanceCooldown: TimeInterval = 600
+    var now: () -> Date = Date.init
+    private var lastGlance: (url: String, time: Date)?
+    private var glanceWork: DispatchWorkItem?
 
     var promptPlaceholder: String {
         dropAction?.prompt ?? UserText.daxPetPromptPlaceholder
@@ -128,6 +145,7 @@ final class DaxPetViewModel: ObservableObject {
     func startComposing() {
         guard !isComposing else { return }
         hasUnseenAnswer = false
+        clearGlance()
         isComposing = true
         character.mood = .listening
         character.wave()
@@ -286,6 +304,38 @@ final class DaxPetViewModel: ObservableObject {
     private func clearSuggestions() {
         suggestions = []
         dropAction = nil
+    }
+
+    // MARK: - Page glance
+
+    /// With the pointer resting on him, Dax reads the open page on the device and sums it up in a bubble.
+    func glanceAtPage() async {
+        guard intelligence.isOnDevice, !isComposing, !isAsleep, !isAwaitingAnswer, speech == nil, glance == nil,
+              suggestions.isEmpty, let page = await submitter.currentPageContent(), !page.text.isEmpty else { return }
+        if let last = lastGlance, last.url == page.url, now().timeIntervalSince(last.time) < glanceCooldown { return }
+        lastGlance = (page.url, now())
+
+        character.mood = .thinking
+        let summary = await intelligence.pageSummary(title: page.title, content: page.text)
+        guard character.mood == .thinking, !isAwaitingAnswer else { return }
+        character.mood = .idle
+        guard let summary, !isComposing, speech == nil else { return }
+        glance = summary
+        let work = DispatchWorkItem { [weak self] in self?.glance = nil }
+        glanceWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: work)
+    }
+
+    /// From the gist to the full story: Duck.ai summarizes the page beside it.
+    func askAboutGlance() async {
+        clearGlance()
+        await summarizePage()
+    }
+
+    private func clearGlance() {
+        glanceWork?.cancel()
+        glanceWork = nil
+        glance = nil
     }
 
     // MARK: - Debug

@@ -27,7 +27,7 @@ struct DaxPetView: View {
     enum Metrics {
         static let padding: CGFloat = 8
         static let spacing: CGFloat = 6
-        static let bubbleAreaHeight: CGFloat = 56
+        static let bubbleAreaHeight: CGFloat = 72
         static let controlsHeight: CGFloat = 36
         static let toolbarSize = CGSize(width: 106, height: 32)
         static let composingWidth: CGFloat = 320
@@ -73,6 +73,9 @@ struct DaxPetView: View {
                 if !model.suggestions.isEmpty {
                     SuggestionChips(suggestions: model.suggestions, onSelect: model.useSuggestion)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
+                } else if let glance = model.glance {
+                    GlanceBubble(text: glance) { Task { await model.askAboutGlance() } }
+                        .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 } else if let speech = model.speech {
                     SpeechBubble(text: speech)
                         .id(speech)
@@ -106,6 +109,7 @@ struct DaxPetView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.speech)
         .animation(.easeInOut(duration: 0.6), value: model.isAsleep)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.suggestions)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.glance)
     }
 }
 
@@ -264,6 +268,41 @@ private struct DaxCharacterRepresentable: NSViewRepresentable {
 
     func makeNSView(context: Context) -> DaxCharacterView { character }
     func updateNSView(_ nsView: DaxCharacterView, context: Context) {}
+}
+
+/// The gist of the open page, with a way to ask Duck.ai for the whole of it.
+private struct GlanceBubble: View {
+    let text: String
+    let onAsk: () -> Void
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(text)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(action: onAsk) {
+                Text(UserText.daxPetGlanceAsk)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: 280)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color(designSystemColor: .surfacePrimary))
+                .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
+        )
+    }
 }
 
 private struct SpeechBubble: View {

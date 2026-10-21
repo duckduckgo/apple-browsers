@@ -35,6 +35,10 @@ final class DaxPetCoordinator: NSObject {
     private var enabledCancellable: AnyCancellable?
     private var pointerTimer: Timer?
     private var isPointerOverCharacter = false
+    /// When the pointer came to rest on Dax, for the page glance, and whether this rest already asked for one.
+    private var pointerRestStartTime: Date?
+    private var hasGlancedThisRest = false
+    static let glanceRestDuration: TimeInterval = 1.5
     private let notificationCenter: NotificationCenter
     private let isBrowserActive: @MainActor () -> Bool
     private var responseStateCancellable: AnyCancellable?
@@ -278,7 +282,7 @@ final class DaxPetCoordinator: NSObject {
         let characterFrame = DaxPetView.Metrics.characterFrame().offsetBy(dx: model.character.strollOffset, dy: 0)
         let isOverCharacter = characterFrame.contains(point)
         var interactiveFrames = [characterFrame, DaxPetView.Metrics.controlsFrame(isComposing: model.isComposing)]
-        if model.speech != nil || !model.suggestions.isEmpty {
+        if model.speech != nil || !model.suggestions.isEmpty || model.glance != nil {
             interactiveFrames.append(DaxPetView.Metrics.bubbleFrame())
         }
         // A press in progress (e.g. dragging Dax) keeps its window.
@@ -292,6 +296,21 @@ final class DaxPetCoordinator: NSObject {
             model.characterHovered()
         }
         isPointerOverCharacter = isOverCharacter
+        updatePointerRest(isOverCharacter: isOverCharacter, model: model)
+    }
+
+    /// A pointer resting on Dax, not petting or pressing, asks him for a glance at the page.
+    private func updatePointerRest(isOverCharacter: Bool, model: DaxPetViewModel) {
+        guard isOverCharacter, NSEvent.pressedMouseButtons == 0, !model.character.isBeingPetted else {
+            pointerRestStartTime = nil
+            hasGlancedThisRest = false
+            return
+        }
+        let restStart = pointerRestStartTime ?? now()
+        pointerRestStartTime = restStart
+        guard !hasGlancedThisRest, now().timeIntervalSince(restStart) >= Self.glanceRestDuration else { return }
+        hasGlancedThisRest = true
+        Task { [weak model] in await model?.glanceAtPage() }
     }
 
     /// Dropped hanging off a screen, he slides back onto it.
@@ -451,6 +470,12 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     func attachmentCapabilities() async -> DaxPetAttachmentCapabilities {
         await capabilitiesProvider.capabilities()
+    }
+
+    func currentPageContent() async -> DaxPetPageContent? {
+        guard let (_, tab) = currentPage, let context = await AIChatUserScriptHandler.extractPageContext(from: tab),
+              context.attachable != false else { return nil }
+        return DaxPetPageContent(url: context.url, title: context.title, text: context.content)
     }
 
     /// The window the user was last in, and the page it shows when that's a web page.

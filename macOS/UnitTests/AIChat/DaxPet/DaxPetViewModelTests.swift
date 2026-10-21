@@ -56,6 +56,11 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
         capabilities
     }
 
+    var page: DaxPetPageContent?
+    func currentPageContent() async -> DaxPetPageContent? {
+        page
+    }
+
     var continueResult = true
     var continueCount = 0
     func continueLastChat() async -> Bool {
@@ -70,6 +75,14 @@ private final class StubDaxPetIntelligence: DaxPetIntelligence {
     var onSuggest: (() -> Void)?
     var variations: [String: [String]] = [:]
     var kind: DaxPetDropKind?
+    var isOnDevice = true
+    var pageSummary: String?
+    var pageSummaryCount = 0
+
+    func pageSummary(title: String, content: String) async -> String? {
+        pageSummaryCount += 1
+        return pageSummary
+    }
 
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? {
         kind
@@ -513,6 +526,88 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertNil(model.dropAction)
         XCTAssertEqual(model.promptPlaceholder, UserText.daxPetPromptPlaceholder)
         XCTAssertFalse(model.canSubmit)
+    }
+
+    // MARK: - Page glance
+
+    private let page = DaxPetPageContent(url: "https://duckduckgo.com/about", title: "About", text: "We protect your privacy.")
+
+    func testWhenThePointerRestsOnDaxThenHeSumsUpTheOpenPage() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageSummary = "DuckDuckGo explains how it protects privacy."
+        submitter.page = page
+
+        await model.glanceAtPage()
+
+        XCTAssertEqual(model.glance, "DuckDuckGo explains how it protects privacy.")
+        XCTAssertEqual(model.character.mood, .idle)
+    }
+
+    func testDaxDoesNotSumUpTheSamePageTwiceInAWhile() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageSummary = "A page."
+        submitter.page = page
+        var now = Date()
+        model.now = { now }
+        await model.glanceAtPage()
+        model.startComposing()
+        model.endComposing()
+
+        await model.glanceAtPage()
+        XCTAssertEqual(intelligence.pageSummaryCount, 1)
+
+        now += model.glanceCooldown
+        await model.glanceAtPage()
+        XCTAssertEqual(intelligence.pageSummaryCount, 2)
+    }
+
+    func testWithoutTheOnDeviceModelOrAPageThereIsNoGlance() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageSummary = "A page."
+
+        await model.glanceAtPage()
+        XCTAssertNil(model.glance)
+
+        submitter.page = page
+        intelligence.isOnDevice = false
+        await model.glanceAtPage()
+        XCTAssertNil(model.glance)
+        XCTAssertEqual(intelligence.pageSummaryCount, 0)
+    }
+
+    func testWhenDaxIsBusyThereIsNoGlance() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageSummary = "A page."
+        submitter.page = page
+        model.startComposing()
+
+        await model.glanceAtPage()
+
+        XCTAssertNil(model.glance)
+        XCTAssertEqual(intelligence.pageSummaryCount, 0)
+    }
+
+    func testAskingForMoreHandsThePageToDuckAI() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageSummary = "A page."
+        submitter.page = page
+        await model.glanceAtPage()
+
+        await model.askAboutGlance()
+
+        XCTAssertNil(model.glance)
+        XCTAssertEqual(submitter.summarizeCount, 1)
+    }
+
+    func testOpeningThePromptPutsTheGlanceAway() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageSummary = "A page."
+        submitter.page = page
+        await model.glanceAtPage()
+
+        model.startComposing()
+
+        XCTAssertNil(model.glance)
     }
 
     // MARK: - Varied lines

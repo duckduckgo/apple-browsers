@@ -260,6 +260,26 @@ cleanup_ui_test_packaging() {
 	fi
 }
 
+sign_sparkle_helpers() {
+	local framework="${app_path}/Contents/Frameworks/Sparkle.framework"
+	[[ -d "$framework" ]] || return 0
+	# Code Sign on Copy signs only the outer framework. Export used to sign these helpers.
+	# https://sparkle-project.org/documentation/sandboxing/#code-signing
+	local certificate_prefix="${workdir}/ui-app-signing-"
+	codesign --display --extract-certificates "$certificate_prefix" "${app_path}"
+	local identity
+	identity=$(shasum -a 1 "${certificate_prefix}0" | awk '{print $1}')
+	local helper
+	for helper in XPCServices/Installer.xpc Autoupdate Updater.app; do
+		codesign --force --sign "$identity" --options runtime --timestamp "${framework}/Versions/B/${helper}"
+	done
+	# Preserve Downloader's own sandbox entitlements; never use --deep when signing Sparkle.
+	codesign --force --sign "$identity" --options runtime --timestamp --preserve-metadata=entitlements \
+		"${framework}/Versions/B/XPCServices/Downloader.xpc"
+	codesign --force --sign "$identity" --timestamp --preserve-metadata=identifier,entitlements,flags "$framework"
+	codesign --force --sign "$identity" --timestamp --preserve-metadata=identifier,entitlements,flags "${app_path}"
+}
+
 build_app_and_ui_tests() {
 	local distribution=dmg
 	[[ "${release_type}" == "sandbox-review" ]] && distribution=appstore
@@ -275,6 +295,9 @@ build_app_and_ui_tests() {
 	# Review is already Developer ID signed by its target configuration. Release/Alpha keep the archive/export path.
 	local products="${derived_data}/Build/Products"
 	ditto "${products}/Review/${app_name}.app" "${app_path}"
+	if [[ "$distribution" == dmg ]]; then
+		sign_sparkle_helpers
+	fi
 	codesign --verify --deep --strict "${app_path}"
 	dsym_path="${workdir}/dSYMs"
 	mkdir -p "$dsym_path"

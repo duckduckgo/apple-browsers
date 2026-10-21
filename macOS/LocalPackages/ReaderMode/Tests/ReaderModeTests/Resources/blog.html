@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>
+       Swift 6.2 Released | Swift.org 
+    </title>
+    
+    <meta name="author" content="Apple Inc." />
+    <meta name="viewport" content="width=device-width initial-scale=1" />
+    
+    <meta
+      name="description"
+      content="We’re excited to announce Swift 6.2, a release aimed at making every Swift developer more productive, regardless of where or how you write code. From improved tooling and libraries to enhancements in concurrency and performance, Swift 6.2 delivers a broad set of features designed for real-world development at every layer of the software stack.
+"
+    />
+     
+    <link rel="license" href="/LICENSE.txt" />
+    <link
+      rel="stylesheet"
+      media="all"
+      href="/assets/stylesheets/new-stylesheets/application.css"
+    />
+    <script src="/assets/javascripts/new-javascripts/color-scheme-toggle.js"></script>
+    
+    <link
+      rel="shortcut icon"
+      sizes="16x16 24x24 32x32 48x48 64x64"
+      type="image/vnd.microsoft.icon"
+      href="/favicon.ico"
+    />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link
+      rel="apple-touch-icon"
+      sizes="57x57"
+      href="/apple-touch-icon-57x57.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="72x72"
+      href="/apple-touch-icon-72x72.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="76x76"
+      href="/apple-touch-icon-76x76.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="114x114"
+      href="/apple-touch-icon-114x114.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="120x120"
+      href="/apple-touch-icon-120x120.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="144x144"
+      href="/apple-touch-icon-144x144.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/apple-touch-icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/apple-touch-icon-180x180.png"
+    />
+    <link
+      rel="mask-icon"
+      href="/assets/images/icon-swift.svg"
+      color="#F05339"
+    />
+    <link
+      rel="alternate"
+      type="application/atom+xml"
+      title="Swift.org (Atom Feed)"
+      href="/atom.xml"
+    />
+
+    
+    <link rel="canonical" href="https://www.swift.org/blog/swift-6.2-released/" />
+    
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@SwiftLang" />
+    
+    <meta name="twitter:title" content="Swift 6.2 Released" />
+    <meta
+      name="twitter:description"
+      content="We’re excited to announce Swift 6.2, a release aimed at making every Swift developer more productive, regardless of where or how you write code. From improved tooling and libraries to enhancements in concurrency and performance, Swift 6.2 delivers a broad set of features designed for real-world development at every layer of the software stack.
+"
+    />
+    
+
+    <meta property="og:site_name" content="Swift.org" />
+    <meta
+      property="og:image"
+      content="https://www.swift.org/apple-touch-icon-180x180.png"
+    />
+     
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="Swift 6.2 Released" />
+    <meta property="og:url" content="https://www.swift.org/blog/swift-6.2-released/" />
+    <meta
+      property="og:description"
+      content="We’re excited to announce Swift 6.2, a release aimed at making every Swift developer more productive, regardless of where or how you write code. From improved tooling and libraries to enhancements in concurrency and performance, Swift 6.2 delivers a broad set of features designed for real-world development at every layer of the software stack.
+"
+    />
+    <meta
+      property="article:published_time"
+      content="2025-09-15T06:00:00-04:00"
+    />
+    <meta
+      property="article:modified_time"
+      content="2026-10-21T04:31:03-04:00"
+    />
+    
+  </head>
+
+  <body>
+    <script>
+      // Set theme before body content to avoid flash of light styles in dark mode
+      setColorScheme(getStoredScheme())
+    </script>
+    <main>
+      <header class="site-navigation">
+    <div class="wrapper">
+      <h1 class="logo">
+        <a href="/" title="Swift.org"> <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 191.186 59.391"><path fill="#F05138" d="M59.387 16.45a82.463 82.463 0 0 0-.027-1.792c-.035-1.301-.112-2.614-.343-3.9-.234-1.307-.618-2.523-1.222-3.71a12.464 12.464 0 0 0-5.453-5.452C51.156.992 49.941.609 48.635.374c-1.288-.232-2.6-.308-3.902-.343a85.714 85.714 0 0 0-1.792-.027C42.23 0 41.52 0 40.813 0H18.578c-.71 0-1.419 0-2.128.004-.597.004-1.195.01-1.792.027-.325.009-.651.02-.978.036-.978.047-1.959.133-2.924.307-.98.176-1.908.436-2.811.81A12.503 12.503 0 0 0 3.89 3.89a12.46 12.46 0 0 0-2.294 3.158C.992 8.235.61 9.45.374 10.758c-.231 1.286-.308 2.599-.343 3.9a85.767 85.767 0 0 0-.027 1.792C-.001 17.16 0 17.869 0 18.578v22.235c0 .71 0 1.418.004 2.128.004.597.01 1.194.027 1.791.035 1.302.112 2.615.343 3.901.235 1.307.618 2.523 1.222 3.71a12.457 12.457 0 0 0 5.453 5.453c1.186.603 2.401.986 3.707 1.22 1.287.232 2.6.31 3.902.344.597.016 1.195.023 1.793.027.709.005 1.417.004 2.127.004h22.235c.709 0 1.418 0 2.128-.004.597-.004 1.194-.011 1.792-.027 1.302-.035 2.614-.112 3.902-.343 1.306-.235 2.521-.618 3.707-1.222a12.461 12.461 0 0 0 5.453-5.452c.604-1.187.987-2.403 1.222-3.71.231-1.286.308-2.6.343-3.9.016-.598.023-1.194.027-1.792.004-.71.004-1.419.004-2.129V18.578c0-.71 0-1.419-.004-2.128z"/><path fill="#FFF" d="m47.06 36.66-.004-.004c.066-.224.134-.446.191-.675 2.465-9.821-3.55-21.432-13.731-27.546 4.461 6.048 6.434 13.374 4.681 19.78-.156.571-.344 1.12-.552 1.653-.225-.148-.51-.316-.89-.527 0 0-10.127-6.252-21.103-17.312-.288-.29 5.852 8.777 12.822 16.14-3.284-1.843-12.434-8.5-18.227-13.802.712 1.187 1.558 2.33 2.489 3.43C17.573 23.932 23.882 31.5 31.44 37.314c-5.31 3.25-12.814 3.502-20.285.003a30.646 30.646 0 0 1-5.193-3.098c3.162 5.058 8.033 9.423 13.96 11.97 7.07 3.039 14.1 2.833 19.336.05l-.004.007c.024-.016.055-.032.08-.047.214-.116.428-.234.636-.358 2.516-1.306 7.485-2.63 10.152 2.559.654 1.27 2.041-5.46-3.061-11.74z"/><path id="logotype" d="M81.93 38.542c.465 4.12 4.394 6.822 9.852 6.822 5.185 0 8.924-2.701 8.924-6.44 0-3.22-2.265-5.185-7.478-6.495l-5.048-1.282c-7.26-1.801-10.534-5.077-10.534-10.48 0-6.658 5.813-11.27 14.082-11.27 8.022 0 13.726 4.639 13.917 11.325h-5.32c-.41-4.093-3.74-6.604-8.734-6.604-4.94 0-8.378 2.538-8.378 6.249 0 2.892 2.13 4.612 7.369 5.95l4.202 1.09c8.133 1.993 11.462 5.159 11.462 10.863 0 7.259-5.759 11.816-14.928 11.816-8.514 0-14.327-4.53-14.763-11.543h5.376zM140.049 49.43h-5.35l-6.249-21.776h-.109L122.12 49.43h-5.348l-7.914-28.518h5.184l5.513 22.896h.11l6.221-22.896h5.021l6.277 22.896h.11l5.512-22.896h5.13L140.05 49.43zM151.39 13.244c0-1.718 1.419-3.11 3.138-3.11 1.746 0 3.165 1.392 3.165 3.11 0 1.72-1.419 3.139-3.165 3.139a3.157 3.157 0 0 1-3.139-3.139zm.545 7.669h5.213V49.43h-5.213V20.913zM191.186 25.116v-4.204h-5.513v-6.821h-5.185v6.821h-9.964v-2.51c.027-2.538 1.01-3.603 3.357-3.603.764 0 1.528.083 2.156.192v-4.094a18.193 18.193 0 0 0-2.756-.218c-5.568 0-7.915 2.32-7.915 7.642v2.591h-3.983v4.204h3.983V49.43h5.185V25.116H180.488v16.838c0 5.512 2.101 7.64 7.559 7.64 1.174 0 2.51-.082 3.111-.218v-4.257c-.355.055-1.392.137-1.965.137-2.428 0-3.52-1.147-3.52-3.712V25.116h5.513z"/></svg> </a>
+      </h1>
+  
+      <!-- desktop-navigation -->
+      <nav class="desktop-navigation" role="navigation">
+        <ul class="navigation-items">
+  
+  <li class="nav-item ">
+    <a href="https://docs.swift.org/latest/documentation/" data-text="Docs"><span>Docs</span></a>
+  </li>
+  
+  <li class="nav-item ">
+    <a href="/community/" data-text="Community"><span>Community</span></a>
+  </li>
+  
+  <li class="nav-item ">
+    <a href="/packages/" data-text="Packages"><span>Packages</span></a>
+  </li>
+  
+  <li class="nav-item ">
+    <a href="/blog/" data-text="Blog"><span>Blog</span></a>
+  </li>
+  
+  <li class="border">
+    <span />
+  </li>
+  <li class="nav-item ">
+    <a href="/install" data-text="Install"><span>Install <span>(6.4.1)</span></span></a>
+  </li>
+</ul>
+      </nav>
+  
+      <!-- toggle -->
+      <button
+        id="menu-toggle"
+        class="menu-item menu-toggle open"
+        aria-expanded="false"
+        aria-label="Toggle Navigation Menu"
+      />
+    </div>
+  
+    <!-- mobile-navigation -->
+    <nav class="mobile-navigation" role="navigation">
+        <ul class="navigation-items">
+  
+  <li class="nav-item ">
+    <a href="https://docs.swift.org/latest/documentation/" data-text="Docs"><span>Docs</span></a>
+  </li>
+  
+  <li class="nav-item ">
+    <a href="/community/" data-text="Community"><span>Community</span></a>
+  </li>
+  
+  <li class="nav-item ">
+    <a href="/packages/" data-text="Packages"><span>Packages</span></a>
+  </li>
+  
+  <li class="nav-item ">
+    <a href="/blog/" data-text="Blog"><span>Blog</span></a>
+  </li>
+  
+  <li class="border">
+    <span />
+  </li>
+  <li class="nav-item ">
+    <a href="/install" data-text="Install"><span>Install <span>(6.4.1)</span></span></a>
+  </li>
+</ul>
+    </nav>
+  </header>
+   <section id="post" class="section">
+  <div class="swoop swoop-1"></div>
+
+  <div class="content">
+    <h1 class="title-0">Swift 6.2 Released</h1>
+
+    
+
+    
+    
+    <div class="authors fullwidth">
+  
+    
+    
+      <div class="author">
+        <div class="byline">
+          <img
+            
+              src="https://www.gravatar.com/avatar/b3e284dd808123c26f476d75da0b5b3c?s=64&d=mp"
+            
+            alt="Holly Borla"
+            title=""
+            />
+          <span class="author">
+            
+              <a href="https://github.com/hborla/" rel="nofollow" title="Holly Borla (@hborla) on GitHub">Holly Borla</a>
+            
+          </span>
+        </div>
+        
+          
+          
+            <div class="about">Holly Borla is a member of the Swift Core Team and Language Steering Group, and the engineering manager of the Swift language team at Apple.</div>
+          
+        
+      </div>
+    
+  
+</div>
+
+    <time pubdate datetime="2025-09-15T06:00:00-04:00"
+      >September 15, 2025</time
+    >
+      
+    <img
+      class="featured hide-dark"
+      src="/assets/images/6.2-blog/blog-posts-hero@2x.png"
+      alt="Featured blog image with the Swift Logo over a white to orange gradient background."
+    />
+     
+    <img
+      class="featured hide-light"
+      src="/assets/images/6.2-blog/blog-posts-hero-dark@2x.png"
+      alt="Featured blog image with the Swift Logo over a white to black gradient background."
+    />
+    
+    <div class="details">
+      <p>We’re excited to announce Swift 6.2, a release aimed at making every Swift developer more productive, regardless of where or how you write code. From improved tooling and libraries to enhancements in concurrency and performance, Swift 6.2 delivers a broad set of features designed for real-world development at every layer of the software stack.</p>
+
+<p>Read on for a deep dive into changes to the language, libraries, workflows, platform support, and next steps for getting started with Swift 6.2.</p>
+
+<h2 id="approachable-concurrency" class="header-with-anchor">Approachable Concurrency <a title="Permalink for Approachable Concurrency section" href="#approachable-concurrency">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h2>
+
+<p>Swift 6.2 lowers the barrier to concurrent programming with a set of changes designed to reduce boilerplate and let you write safe concurrent code more naturally:</p>
+
+<ul>
+  <li><strong>Single-threaded by default:</strong> Run your code on the main thread without explicit <code class="language-plaintext highlighter-rouge">@MainActor</code> annotations using the new option to isolate code to the main actor by default. This option is ideal for scripts, UI code, and other executable targets.</li>
+  <li><strong>Intuitive <code class="language-plaintext highlighter-rouge">async</code> functions:</strong> Write async code without concurrent access to mutable state. Previously, <code class="language-plaintext highlighter-rouge">nonisolated async</code> methods always switched to the global executor that manages the concurrent thread pool, which made it difficult to write async methods for class types without data-race safety errors. In Swift 6.2, you can migrate to an <a href="https://docs.swift.org/compiler/documentation/diagnostics/nonisolated-nonsending-by-default/">upcoming feature</a> where <code class="language-plaintext highlighter-rouge">async</code> functions run in the caller’s execution context, even when called on the main actor.</li>
+  <li><strong>Opting into concurrency with <code class="language-plaintext highlighter-rouge">@concurrent</code>:</strong> Introduce code that runs concurrently using the new <code class="language-plaintext highlighter-rouge">@concurrent</code> attribute. This makes it clear when you want code to remain serialized on actor, and when code may run in parallel.</li>
+</ul>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// In '-default-isolation MainActor' mode</span>
+
+<span class="kd">struct</span> <span class="kt">Image</span> <span class="p">{</span>
+  <span class="c1">// The image cache is safe because it's protected</span>
+  <span class="c1">// by the main actor.</span>
+  <span class="kd">static</span> <span class="k">var</span> <span class="nv">cachedImage</span><span class="p">:</span> <span class="p">[</span><span class="kt">URL</span><span class="p">:</span> <span class="kt">Image</span><span class="p">]</span> <span class="o">=</span> <span class="p">[:]</span>
+
+  <span class="kd">static</span> <span class="kd">func</span> <span class="nf">create</span><span class="p">(</span><span class="n">from</span> <span class="nv">url</span><span class="p">:</span> <span class="kt">URL</span><span class="p">)</span> <span class="k">async</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Image</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="k">let</span> <span class="nv">image</span> <span class="o">=</span> <span class="n">cachedImage</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="n">image</span>
+    <span class="p">}</span>
+
+    <span class="k">let</span> <span class="nv">image</span> <span class="o">=</span> <span class="k">try</span> <span class="k">await</span> <span class="nf">fetchImage</span><span class="p">(</span><span class="nv">at</span><span class="p">:</span> <span class="n">url</span><span class="p">)</span>
+
+    <span class="n">cachedImage</span><span class="p">[</span><span class="n">url</span><span class="p">]</span> <span class="o">=</span> <span class="n">image</span>
+    <span class="k">return</span> <span class="n">image</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Fetch the data from the given URL and decode it.</span>
+  <span class="c1">// This is performed on the concurrent thread pool to</span>
+  <span class="c1">// keep the main actor free while decoding large images.</span>
+  <span class="kd">@concurrent</span>
+  <span class="kd">static</span> <span class="kd">func</span> <span class="nf">fetchImage</span><span class="p">(</span><span class="n">at</span> <span class="nv">url</span><span class="p">:</span> <span class="kt">URL</span><span class="p">)</span> <span class="k">async</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Image</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="p">(</span><span class="nv">data</span><span class="p">,</span> <span class="nv">_</span><span class="p">)</span> <span class="o">=</span> <span class="k">try</span> <span class="k">await</span> <span class="kt">URLSession</span><span class="o">.</span><span class="n">shared</span><span class="o">.</span><span class="nf">data</span><span class="p">(</span><span class="nv">from</span><span class="p">:</span> <span class="n">url</span><span class="p">)</span>
+    <span class="k">return</span> <span class="k">await</span> <span class="nf">decode</span><span class="p">(</span><span class="nv">data</span><span class="p">:</span> <span class="n">data</span><span class="p">)</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Together, these improvements let you write data-race free code with less annotation overhead, provide more predictable behavior for async code, while still allowing you to introduce concurrency when you need it.</p>
+
+<h2 id="safe-systems-programming" class="header-with-anchor">Safe Systems Programming <a title="Permalink for Safe Systems Programming section" href="#safe-systems-programming">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h2>
+
+<p>Swift 6.2 includes features designed to maximize performance without compromising safety. These features help you write safe, low-level code with predictable performance and minimal overhead.</p>
+
+<p><a href="https://developer.apple.com/documentation/swift/inlinearray"><code class="language-plaintext highlighter-rouge">InlineArray</code></a> is a new fixed-size array with inline storage for elements, which can be stored on the stack or directly within other types without additional heap allocation. You can introduce an inline array by writing the size in angle brackets before the element, or by using the <code class="language-plaintext highlighter-rouge">of</code> shorthand syntax:</p>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">struct</span> <span class="kt">Game</span> <span class="p">{</span>
+  <span class="c1">// Shorthand for InlineArray&lt;40, Sprite&gt;</span>
+  <span class="k">var</span> <span class="nv">bricks</span><span class="p">:</span> <span class="p">[</span><span class="mi">40</span> <span class="n">of</span> <span class="kt">Sprite</span><span class="p">]</span>
+
+  <span class="nf">init</span><span class="p">(</span><span class="n">_</span> <span class="nv">brickSprite</span><span class="p">:</span> <span class="kt">Sprite</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">bricks</span> <span class="o">=</span> <span class="o">.</span><span class="nf">init</span><span class="p">(</span><span class="nv">repeating</span><span class="p">:</span> <span class="n">brickSprite</span><span class="p">)</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The new <a href="https://developer.apple.com/documentation/swift/span?changes=_8"><code class="language-plaintext highlighter-rouge">Span</code></a> type offers safe, direct access to contiguous memory. Span maintains memory safety by ensuring the memory remains valid while you’re using it. These guarantees are checked at compile time with no runtime overhead, and define away the memory safety problems inherent to pointers, such as use-after-free bugs.</p>
+
+<p>Swift 6.2 enhances its capabilities for low-level and security-critical projects beyond new APIs:</p>
+
+<ul>
+  <li><strong>Embedded Swift:</strong> Embedded Swift now includes Swift’s full <code class="language-plaintext highlighter-rouge">String</code> APIs, <code class="language-plaintext highlighter-rouge">any</code> types for class-constrained protocols, and the new <code class="language-plaintext highlighter-rouge">InlineArray</code> and <code class="language-plaintext highlighter-rouge">Span</code> types.</li>
+  <li><strong>Safe C++ interoperability:</strong> Projects that mix Swift and C++ can <a href="/documentation/cxx-interop/safe-interop/">take advantage of Swift’s safe abstractions</a> like <code class="language-plaintext highlighter-rouge">Span</code> for C++ APIs through header annotations.</li>
+  <li><strong>Opt-in strict memory safety:</strong> Swift has provided memory safety since its inception, while allowing use of unsafe constructs like unsafe pointers when needed, such as using a C API that accepts pointers. Swift 6.2 introduces <em>opt-in strict memory safety</em>, which flags uses of unsafe constructs, so you can replace them with safe alternatives or explicitly acknowledge them in source code. It’s opt-in because the majority of projects don’t need this level of enforcement — strict memory safety is best left for projects with the strongest security requirements.</li>
+</ul>
+
+<h2 id="streamlined-workflows" class="header-with-anchor">Streamlined Workflows <a title="Permalink for Streamlined Workflows section" href="#streamlined-workflows">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h2>
+
+<p>Beyond language improvements, Swift 6.2 smooths the day-to-day iteration cycle of editing, building, and debugging code.</p>
+
+<h3 id="vs-code-swift-extension" class="header-with-anchor">VS Code Swift extension <a title="Permalink for VS Code Swift extension section" href="#vs-code-swift-extension">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>The <a href="https://marketplace.visualstudio.com/items?itemName=swiftlang.swift-vscode">Swift extension for VS Code</a> is now officially verified and distributed by Swift.org. The latest version of the extension includes:</p>
+
+<ul>
+  <li><strong>Background indexing by default:</strong> Write code with fast, always-up-to-date editor features like jump-to-definition and code completion.</li>
+  <li><strong>Built-in LLDB debugging:</strong> Step through Swift code, set breakpoints, and inspect state using LLDB right inside VS Code.</li>
+  <li><strong>Swift project panel:</strong> Navigate your Swift project’s targets, dependencies, and tasks in the Explorer view.</li>
+  <li><strong>Live DocC preview:</strong> Preview your rendered documentation side-by-side with your code, updated live as you type.</li>
+</ul>
+
+<p>These workflow improvements make it easier to work on Swift projects in your environment of choice with first-class tooling.</p>
+
+<h3 id="precise-warning-control" class="header-with-anchor">Precise warning control <a title="Permalink for Precise warning control section" href="#precise-warning-control">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>Swift 6.2 enhances how you manage compiler warnings by allowing control at the <em>diagnostic group</em> level. A diagnostic group is a category of warnings identified by a name. You can specify the desired behavior of warnings in a diagnostic group in a Swift package manifest using the <a href="https://docs.swift.org/swiftpm/documentation/packagedescription/swiftsetting/treatwarning(_:as:_:)/"><code class="language-plaintext highlighter-rouge">treatWarning</code></a> method on <code class="language-plaintext highlighter-rouge">SwiftSetting</code>, or promote all warnings to errors using the <a href="https://docs.swift.org/swiftpm/documentation/packagedescription/swiftsetting/treatallwarnings(as:_:)"><code class="language-plaintext highlighter-rouge">treatAllWarnings</code></a> method. For example, you can promote all warnings to errors except for warnings about uses of deprecated APIs:</p>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">.</span><span class="nf">target</span><span class="p">(</span>
+  <span class="nv">name</span><span class="p">:</span> <span class="s">"MyLibrary"</span><span class="p">,</span>
+  <span class="nv">swiftSettings</span><span class="p">:</span> <span class="p">[</span>
+    <span class="o">.</span><span class="nf">treatAllWarnings</span><span class="p">(</span><span class="nv">as</span><span class="p">:</span> <span class="o">.</span><span class="n">error</span><span class="p">),</span>
+    <span class="o">.</span><span class="nf">treatWarning</span><span class="p">(</span><span class="s">"DeprecatedDeclaration"</span><span class="p">,</span> <span class="nv">as</span><span class="p">:</span> <span class="o">.</span><span class="n">warning</span><span class="p">),</span>
+  <span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="macro-build-performance" class="header-with-anchor">Macro build performance <a title="Permalink for Macro build performance section" href="#macro-build-performance">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>Swift 6.2 significantly improves clean build times for projects that use macro-based APIs. Previously, the build system had to first fetch and build the swift-syntax package from source before building the macro project, which noticeably lengthened compile times, especially in CI environments. SwiftPM now supports pre-built swift-syntax dependencies, completely eliminating an expensive build step.</p>
+
+<h3 id="enhanced-async-debugging" class="header-with-anchor">Enhanced async debugging <a title="Permalink for Enhanced async debugging section" href="#enhanced-async-debugging">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>Swift 6.2 makes it much easier to follow what’s happening in concurrent code when debugging with LLDB:</p>
+
+<ul>
+  <li><strong>Robust <code class="language-plaintext highlighter-rouge">async</code> stepping:</strong> Reliably step into asynchronous functions in LLDB, even when the async call requires switching threads.</li>
+  <li><strong>Surfacing task context:</strong> See which task a piece of code is running on when stopped at a breakpoint and when viewing the backtrace for the current thread.</li>
+  <li><strong>Named tasks:</strong> Assign human-readable names when creating tasks, which are surfaced in the task context in debugging and profiling tools.</li>
+</ul>
+
+<h3 id="migration-to-upcoming-features" class="header-with-anchor">Migration to upcoming features <a title="Permalink for Migration to upcoming features section" href="#migration-to-upcoming-features">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>Swift 6.2 includes <em>migration tooling</em> to help you adopt upcoming language features:</p>
+
+<ul>
+  <li><strong>Identify source incompatibility:</strong> Identify code patterns that will no longer compile or change behavior when the upcoming feature is enabled through warnings from migration tooling.</li>
+  <li><strong>Automate code changes:</strong> Apply fix-its to update your code to preserve its existing behavior.</li>
+</ul>
+
+<p>This streamlines the process of enabling upcoming features by eliminating the tedious task of manual code changes. You can learn more about migration tooling in the <a href="/migration/documentation/swift-6-concurrency-migration-guide/featuremigration">Swift migration guide</a>.</p>
+
+<h2 id="core-library-updates" class="header-with-anchor">Core Library Updates <a title="Permalink for Core Library Updates section" href="#core-library-updates">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h2>
+
+<p>Whether you’re managing external processes, reacting to state changes, or writing test suites, the Swift 6.2 libraries are evolving to help you write cleaner and safer code.</p>
+
+<h3 id="subprocess" class="header-with-anchor">Subprocess <a title="Permalink for Subprocess section" href="#subprocess">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>Swift 6.2 introduces a new <code class="language-plaintext highlighter-rouge">Subprocess</code> package that offers a streamlined, concurrency‑friendly API for launching and managing external processes. This includes APIs built with async/await, fine-grained control over process execution, platform-specific configuration, and more—ideal for scripting, automation, and server‑side tasks:</p>
+
+<div class="language-swift highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">import</span> <span class="kt">Subprocess</span>
+
+<span class="k">let</span> <span class="nv">swiftPath</span> <span class="o">=</span> <span class="kt">FilePath</span><span class="p">(</span><span class="s">"/usr/bin/swift"</span><span class="p">)</span>
+<span class="k">let</span> <span class="nv">result</span> <span class="o">=</span> <span class="k">try</span> <span class="k">await</span> <span class="nf">run</span><span class="p">(</span>
+  <span class="o">.</span><span class="nf">path</span><span class="p">(</span><span class="n">swiftPath</span><span class="p">),</span>
+  <span class="nv">arguments</span><span class="p">:</span> <span class="p">[</span><span class="s">"--version"</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="k">let</span> <span class="nv">swiftVersion</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">standardOutput</span>
+</code></pre></div></div>
+
+<p>Explore the full API surface for version 0.1 in the <a href="https://github.com/swiftlang/swift-subprocess">swift-subprocess repository</a>, and feedback from your adoption will inform the API that is released in version 1.0.</p>
+
+<h3 id="foundation" class="header-with-anchor">Foundation <a title="Permalink for Foundation section" href="#foundation">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>In Swift 6.2, the Foundation library includes a modern <code class="language-plaintext highlighter-rouge">NotificationCenter</code> API that uses concrete notification types instead of relying on strings and untyped dictionaries for notification names and payloads. This means you can define a notification struct with stored properties, and observers can use the type without error-prone indexing and dynamic casting. Notification types also specify whether they’re posted synchronously on the main actor or asynchronously through a conformance to <a href="https://developer.apple.com/documentation/foundation/notificationcenter/mainactormessage"><code class="language-plaintext highlighter-rouge">MainActorMessage</code></a> or <a href="https://developer.apple.com/documentation/foundation/notificationcenter/asyncmessage"><code class="language-plaintext highlighter-rouge">AsyncMessage</code></a>, which eliminates concurrency errors when working with main actor notifications.</p>
+
+<h3 id="observation" class="header-with-anchor">Observation <a title="Permalink for Observation section" href="#observation">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>Swift 6.2 enables streaming transactional state changes of observable types using the new <a href="https://developer.apple.com/documentation/observation/observations"><code class="language-plaintext highlighter-rouge">Observations</code></a> async sequence type. Updates include all synchronous changes to the observable properties, and the transaction ends at the next <code class="language-plaintext highlighter-rouge">await</code> that suspends. This avoids redundant UI updates, improves performance, and ensures that your code reacts to a consistent snapshot of the value.</p>
+
+<h3 id="swift-testing" class="header-with-anchor">Swift Testing <a title="Permalink for Swift Testing section" href="#swift-testing">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h3>
+
+<p>Swift Testing in Swift 6.2 adds new APIs for enhanced expressivity in your tests and test results:</p>
+
+<ul>
+  <li><a href="https://developer.apple.com/documentation/testing/exit-testing"><strong>Exit testing</strong></a> lets you verify that code terminates under specific conditions, such as a failed precondition. Your exit tests run in a new process and validate that the exit behavior is what you expect, making it possible to exercise critical failure paths like you would in any other test.</li>
+  <li><a href="https://developer.apple.com/documentation/testing/attachments"><strong>Attachments</strong></a> let you include additional context in test results, including  strings, images, logs, and other artifacts, surfaced in test reports or written to disk. This makes it easier to diagnose failures with concrete evidence—whether that’s a screenshot of a UI state, a JSON payload, or a trace of steps leading up to the issue.</li>
+  <li>
+    <p><a href="https://github.com/swiftlang/swift-evolution/blob/main/proposals/0451-escaped-identifiers.md"><strong>Raw identifier display names</strong></a> let you customize the names of test functions and suite types with less code:</p>
+
+    <div class="language-diff highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  -@Test("square() returns x * x")
+  -func squareIsXTimesX() {
+  +@Test func `square() returns x * x`() {
+     #expect(square(4) == 4 * 4)
+   }
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h2 id="webassembly-support" class="header-with-anchor">WebAssembly Support <a title="Permalink for WebAssembly Support section" href="#webassembly-support">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h2>
+
+<p>Swift 6.2 gains support for WebAssembly, also known as Wasm. WebAssembly is a virtual machine platform focused on portability, security, and high performance. You can build both client and server applications for Wasm and deploy to the browser or other runtimes. Learn more about Wasm in the <a href="https://github.com/swiftlang/swift-evolution/blob/main/visions/webassembly.md">vision for WebAssembly support in Swift</a>.</p>
+
+<h2 id="thank-you" class="header-with-anchor">Thank you <a title="Permalink for Thank you section" href="#thank-you">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h2>
+
+<p>Thank you to everyone who shared their experiences, frustrations, and insights that guided the design of Swift 6.2, especially the approachable concurrency model. Your feedback made it clear where the language could be friendlier, where safety needed to feel more natural, and where the tools could make you more productive. The improvements in Swift 6.2 are only possible because of your voices.</p>
+
+<p>If you’re excited about where Swift is headed, there’s no better time to get involved in the Swift community. From participating in Swift Evolution, to contributing code on GitHub, or sharing feedback on how the language feels in real-world projects, every voice helps shape Swift’s future. Whether you’re a seasoned programmer or just starting out, our community thrives on collaboration and welcomes new perspectives. Join in, learn from others, and help make Swift a better language.</p>
+
+<h2 id="next-steps" class="header-with-anchor">Next Steps <a title="Permalink for Next Steps section" href="#next-steps">
+            <?xml version="1.0" encoding="utf-8"?> <svg width="18px" height="18px" viewBox="0 0 14 14" role="img" focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path d="m 11.58824,9.823529 q 0,-0.294117 -0.20589,-0.499999 L 9.85294,7.794118 q -0.20588,-0.205883 -0.5,-0.205883 -0.30882,0 -0.52941,0.235295 0.0221,0.02206 0.13971,0.136029 0.11764,0.113971 0.15808,0.158088 0.0404,0.04412 0.1103,0.139706 0.0698,0.09559 0.0956,0.1875 0.0257,0.09191 0.0257,0.202206 0,0.294117 -0.20588,0.5 -0.20588,0.205882 -0.5,0.205882 -0.1103,0 -0.20221,-0.02573 Q 8.35293,9.301471 8.25733,9.231621 8.16173,9.161771 8.11763,9.121327 8.07353,9.080887 7.95954,8.963238 7.84557,8.845591 7.82351,8.823533 7.58086,9.051474 7.58086,9.360297 q 0,0.294118 0.20588,0.5 l 1.51471,1.522059 q 0.19853,0.19853 0.5,0.19853 0.29412,0 0.5,-0.191177 l 1.08088,-1.073529 q 0.20589,-0.205883 0.20589,-0.492648 z M 6.41912,4.639706 q 0,-0.294118 -0.20588,-0.5 L 4.69853,2.617647 q -0.20588,-0.205882 -0.5,-0.205882 -0.28677,0 -0.5,0.198529 L 2.61765,3.683823 q -0.20589,0.205883 -0.20589,0.492648 0,0.294117 0.20589,0.499999 l 1.52941,1.529412 q 0.19853,0.19853 0.5,0.19853 0.30882,0 0.52941,-0.227942 Q 5.15437,6.15441 5.03676,6.040441 4.91912,5.92647 4.87868,5.882353 4.83828,5.838233 4.76838,5.742647 q -0.0698,-0.09559 -0.0956,-0.1875 -0.0257,-0.09191 -0.0257,-0.202206 0,-0.294117 0.20588,-0.5 0.20588,-0.205882 0.5,-0.205882 0.1103,0 0.20221,0.02573 0.0919,0.02573 0.1875,0.09559 0.0956,0.06985 0.1397,0.110294 0.0441,0.04044 0.15809,0.158089 Q 6.15443,5.154409 6.17649,5.176467 6.41914,4.948526 6.41914,4.639703 z M 13,9.823529 q 0,0.882353 -0.625,1.492647 l -1.08088,1.07353 Q 10.68382,13 9.80147,13 q -0.88971,0 -1.5,-0.625 L 6.78676,10.852941 Q 6.17647,10.242647 6.17647,9.360294 q 0,-0.904412 0.64706,-1.536764 L 6.17647,7.176471 Q 5.54412,7.82353 4.64706,7.82353 q -0.88235,0 -1.5,-0.617648 L 1.617647,5.676471 Q 1,5.058824 1,4.176471 1,3.294118 1.625,2.683824 L 2.70588,1.610294 Q 3.31618,1 4.19853,1 q 0.88971,0 1.5,0.625 l 1.51471,1.522059 q 0.61029,0.610294 0.61029,1.492647 0,0.904412 -0.64706,1.536764 L 7.82353,6.823529 Q 8.45588,6.17647 9.35294,6.17647 q 0.88235,0 1.5,0.617648 l 1.52941,1.529411 Q 13,8.941176 13,9.823529 z"/></svg>
+          </a></h2>
+
+<p>You can find a complete list of language proposals that were accepted through the <a href="https://github.com/swiftlang/swift-evolution">Swift Evolution</a> process and implemented in Swift 6.2 on the <a href="/swift-evolution/#?version=6.2">Swift Evolution dashboard</a>.</p>
+
+<p>Ready to upgrade? Install the latest toolchain using Swiftly <code class="language-plaintext highlighter-rouge">swiftly install 6.2</code> or <a href="/install">Swift.org/install</a> and start exploring Swift 6.2 today.</p>
+ 
+
+      <hr />
+
+      <h2>Continue Reading</h2>
+
+      
+      <nav class="section card-grid">
+        <div class="content">
+          <ul class="content-card-grid">
+            
+            <li>
+              
+<div class="content-card">
+  <span class="content-card-title title-4">Redesigned Swift.org is now live</span>
+  
+  <time
+    class="content-card-date body"
+    pubdate
+    datetime="2025-06-04T06:00:00-04:00"
+    >June 4, 2025</time
+  >
+  
+  <p class="content-card-excerpt body">Over the past few months, the website workgroup has been redesigning Swift.org. On behalf of the website workgroup, I’m pleased to announce that we have merged the initial changes.
+</p>
+  <a class="content-card-cta body" href="/blog/redesigned-swift-org-is-now-live/"
+    >Read more</a
+  >
+</div>
+
+            </li>
+             
+            <li>
+              
+<div class="content-card">
+  <span class="content-card-title title-4">The Growth of the Swift Server Ecosystem</span>
+  
+  <time
+    class="content-card-date body"
+    pubdate
+    datetime="2025-09-23T13:00:00-04:00"
+    >September 23, 2025</time
+  >
+  
+  <p class="content-card-excerpt body">Nearly ten years ago, Swift was open sourced and an official runtime for Linux was released. I’ve been involved with Swift on the server since almost the very beginning, originally picking it up as a way to use a language I really enjoyed for backend development. In that time Swift has come a long way, with stability across platforms, a burgeoning ecosystem and many success stories. It’s matured into a great option for highly-scalable server applications, websites, and lambdas. In this post, I’ll cover how Swift:
+</p>
+  <a class="content-card-cta body" href="/blog/swift-on-the-server-ecosystem/"
+    >Read more</a
+  >
+</div>
+
+            </li>
+            
+          </ul>
+        </div>
+      </nav>
+      
+    </div>
+  </div>
+</section>
+ <footer class="global-footer">
+  <div class="container">
+    <div class="footer-navigation-container">
+      <nav aria-label="Main">
+    <a class="logo" href="/" title="Swift.org"> <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 191.186 59.391"><path fill="#F05138" d="M59.387 16.45a82.463 82.463 0 0 0-.027-1.792c-.035-1.301-.112-2.614-.343-3.9-.234-1.307-.618-2.523-1.222-3.71a12.464 12.464 0 0 0-5.453-5.452C51.156.992 49.941.609 48.635.374c-1.288-.232-2.6-.308-3.902-.343a85.714 85.714 0 0 0-1.792-.027C42.23 0 41.52 0 40.813 0H18.578c-.71 0-1.419 0-2.128.004-.597.004-1.195.01-1.792.027-.325.009-.651.02-.978.036-.978.047-1.959.133-2.924.307-.98.176-1.908.436-2.811.81A12.503 12.503 0 0 0 3.89 3.89a12.46 12.46 0 0 0-2.294 3.158C.992 8.235.61 9.45.374 10.758c-.231 1.286-.308 2.599-.343 3.9a85.767 85.767 0 0 0-.027 1.792C-.001 17.16 0 17.869 0 18.578v22.235c0 .71 0 1.418.004 2.128.004.597.01 1.194.027 1.791.035 1.302.112 2.615.343 3.901.235 1.307.618 2.523 1.222 3.71a12.457 12.457 0 0 0 5.453 5.453c1.186.603 2.401.986 3.707 1.22 1.287.232 2.6.31 3.902.344.597.016 1.195.023 1.793.027.709.005 1.417.004 2.127.004h22.235c.709 0 1.418 0 2.128-.004.597-.004 1.194-.011 1.792-.027 1.302-.035 2.614-.112 3.902-.343 1.306-.235 2.521-.618 3.707-1.222a12.461 12.461 0 0 0 5.453-5.452c.604-1.187.987-2.403 1.222-3.71.231-1.286.308-2.6.343-3.9.016-.598.023-1.194.027-1.792.004-.71.004-1.419.004-2.129V18.578c0-.71 0-1.419-.004-2.128z"/><path fill="#FFF" d="m47.06 36.66-.004-.004c.066-.224.134-.446.191-.675 2.465-9.821-3.55-21.432-13.731-27.546 4.461 6.048 6.434 13.374 4.681 19.78-.156.571-.344 1.12-.552 1.653-.225-.148-.51-.316-.89-.527 0 0-10.127-6.252-21.103-17.312-.288-.29 5.852 8.777 12.822 16.14-3.284-1.843-12.434-8.5-18.227-13.802.712 1.187 1.558 2.33 2.489 3.43C17.573 23.932 23.882 31.5 31.44 37.314c-5.31 3.25-12.814 3.502-20.285.003a30.646 30.646 0 0 1-5.193-3.098c3.162 5.058 8.033 9.423 13.96 11.97 7.07 3.039 14.1 2.833 19.336.05l-.004.007c.024-.016.055-.032.08-.047.214-.116.428-.234.636-.358 2.516-1.306 7.485-2.63 10.152 2.559.654 1.27 2.041-5.46-3.061-11.74z"/><path id="logotype" d="M81.93 38.542c.465 4.12 4.394 6.822 9.852 6.822 5.185 0 8.924-2.701 8.924-6.44 0-3.22-2.265-5.185-7.478-6.495l-5.048-1.282c-7.26-1.801-10.534-5.077-10.534-10.48 0-6.658 5.813-11.27 14.082-11.27 8.022 0 13.726 4.639 13.917 11.325h-5.32c-.41-4.093-3.74-6.604-8.734-6.604-4.94 0-8.378 2.538-8.378 6.249 0 2.892 2.13 4.612 7.369 5.95l4.202 1.09c8.133 1.993 11.462 5.159 11.462 10.863 0 7.259-5.759 11.816-14.928 11.816-8.514 0-14.327-4.53-14.763-11.543h5.376zM140.049 49.43h-5.35l-6.249-21.776h-.109L122.12 49.43h-5.348l-7.914-28.518h5.184l5.513 22.896h.11l6.221-22.896h5.021l6.277 22.896h.11l5.512-22.896h5.13L140.05 49.43zM151.39 13.244c0-1.718 1.419-3.11 3.138-3.11 1.746 0 3.165 1.392 3.165 3.11 0 1.72-1.419 3.139-3.165 3.139a3.157 3.157 0 0 1-3.139-3.139zm.545 7.669h5.213V49.43h-5.213V20.913zM191.186 25.116v-4.204h-5.513v-6.821h-5.185v6.821h-9.964v-2.51c.027-2.538 1.01-3.603 3.357-3.603.764 0 1.528.083 2.156.192v-4.094a18.193 18.193 0 0 0-2.756-.218c-5.568 0-7.915 2.32-7.915 7.642v2.591h-3.983v4.204h3.983V49.43h5.185V25.116H180.488v16.838c0 5.512 2.101 7.64 7.559 7.64 1.174 0 2.51-.082 3.111-.218v-4.257c-.355.055-1.392.137-1.965.137-2.428 0-3.52-1.147-3.52-3.712V25.116h5.513z"/></svg> </a>
+
+    <ul>
+        
+        <li class="item ">
+            <a href="https://docs.swift.org/latest/documentation/" data-text="Docs">Docs</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/community/" data-text="Community">Community</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/packages/" data-text="Packages">Packages</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/blog/" data-text="Blog">Blog</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/install/" data-text="Install">Install</a>
+        </li>
+        
+    </ul>
+</nav>
+
+      <nav aria-label="Tools">
+    <h3>Tools</h3>
+    <ul>
+        
+        <li class="item ">
+            <a href="https://developer.apple.com/xcode/" data-text="Xcode">Xcode</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/documentation/articles/getting-started-with-vscode-swift.html" data-text="Visual Studio Code">Visual Studio Code</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/documentation/articles/zero-to-swift-emacs.html" data-text="Emacs">Emacs</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/documentation/articles/zero-to-swift-nvim.html" data-text="Neovim">Neovim</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/documentation/articles/getting-started-with-cursor-swift.html" data-text="Cursor">Cursor</a>
+        </li>
+        
+        <li class="item ">
+            <a href="https://github.com/swiftlang/sourcekit-lsp/tree/main/Documentation/Editor%20Integration.md" data-text="Other Editors">Other Editors</a>
+        </li>
+        
+    </ul>
+</nav>
+
+      <nav aria-label="Community">
+    <h3>Community</h3>
+    <ul>
+        
+        <li class="item ">
+            <a href="/community/" data-text="Overview">Overview</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/swift-evolution/" data-text="Swift Evolution">Swift Evolution</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/diversity/" data-text="Diversity">Diversity</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/mentorship/" data-text="Mentorship">Mentorship</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/contributing/" data-text="Contributing">Contributing</a>
+        </li>
+        
+    </ul>
+</nav>
+
+      <nav class="governance" aria-label="Governance">
+    <h3>Governance</h3>
+    <ul>
+        
+        <li class="item ">
+            <a href="/code-of-conduct/" data-text="Code of Conduct">Code of Conduct</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/legal/license.html" data-text="License">License</a>
+        </li>
+        
+        <li class="item ">
+            <a href="/security/" data-text="Security">Security</a>
+        </li>
+        
+    </ul>
+
+      <form
+  class="color-scheme-toggle"
+  role="radiogroup"
+  tabindex="0"
+  id="color-scheme-toggle"
+>
+  <legend class="visuallyhidden">Color scheme preference</legend>
+  <label class="scheme-light" for="scheme-light">
+    <input
+      id="scheme-light"
+      type="radio"
+      name="color-scheme-preference"
+      value="light"
+    />
+    <span class="color-scheme-toggle-label">Light</span>
+  </label>
+  <label class="scheme-dark" for="scheme-dark">
+    <input
+      id="scheme-dark"
+      type="radio"
+      name="color-scheme-preference"
+      value="dark"
+    />
+    <span class="color-scheme-toggle-label">Dark</span>
+  </label>
+  <label class="scheme-auto-wrapper" for="scheme-auto" id="scheme-auto-wrapper">
+    <input
+      id="scheme-auto"
+      type="radio"
+      name="color-scheme-preference"
+      value="auto"
+    />
+    <span class="color-scheme-toggle-label">Auto</span>
+  </label>
+</form>
+</nav>
+    </div>
+
+    <div class="sub-navigation">
+      <div class="legals">
+        <div class="copyright">
+    
+    <p>
+      Copyright © 2026 Apple Inc. All rights reserved.
+    </p>
+    <p>
+      Swift and the Swift logo are trademarks of Apple Inc.
+    </p>
+    
+</div>
+        <nav aria-label="Legals">
+    <ul>
+        
+            <li class="item ">
+                <a href="//www.apple.com/privacy/privacy-policy/">Privacy Policy</a>
+            </li>
+        
+            <li class="item ">
+                <a href="//www.apple.com/legal/privacy/en-ww/cookies/">Cookies</a>
+            </li>
+        
+            <li class="item ">
+                <a href="/openapi">API</a>
+            </li>
+        
+    </ul>
+</nav>
+      </div>
+
+      <nav class="socials" aria-label="Socials">
+    <ul>
+        
+            <li class="item ">
+                <a href="https://x.com/swiftlang" rel="me" title="Follow @SwiftLang on X"><i class="x"></i></a>
+            </li>
+        
+            <li class="item ">
+                <a href="https://bsky.app/profile/swift.org" rel="me" title="Follow @swift.org on Bluesky"><i class="bluesky"></i></a>
+            </li>
+        
+            <li class="item ">
+                <a href="https://mastodon.social/@swiftlang" rel="me" title="Follow @swiftLang on Mastodon"><i class="mastodon"></i></a>
+            </li>
+        
+            <li class="item ">
+                <a href="/atom.xml" rel="me" title="Subscribe to Site Updates"><i class="feed"></i></a>
+            </li>
+        
+    </ul>
+</nav>
+
+    </div>
+  </div>
+</footer>
+
+    </main>
+
+    <script src="/assets/javascripts/new-javascripts/application.js"></script>
+     
+    <!-- metrics -->
+    <script>
+      /* RSID: */
+      var s_account = 'awdswiftorg'
+    </script>
+    
+    <script src="https://developer.apple.com/assets/metrics/scripts/analytics.js"></script>
+    <script>
+      s.pageName = AC && AC.Tracking && AC.Tracking.pageName()
+
+      /************* DO NOT ALTER ANYTHING BELOW THIS LINE ! **************/
+      var s_code = s.t()
+      if (s_code) document.write(s_code)
+    </script>
+    
+    <!-- /metrics -->
+  </body>
+</html>

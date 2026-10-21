@@ -288,6 +288,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isModelChipHidden = newValue }
     }
 
+    var isNativeChatMode: Bool {
+        get { inputBarView.isNativeChatMode }
+        set { inputBarView.isNativeChatMode = newValue }
+    }
+
     var isModelChipMenuIndicatorHidden: Bool {
         get { inputBarView.isModelChipMenuIndicatorHidden }
         set { inputBarView.isModelChipMenuIndicatorHidden = newValue }

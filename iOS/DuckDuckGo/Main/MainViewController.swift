@@ -5124,6 +5124,7 @@ class MainViewController: UIViewController {
         if let unifiedToggleInputCoordinator {
             chat.attach(to: unifiedToggleInputCoordinator)
         }
+        aiChatTabChatHeaderView?.setNativeChatTitle(chat.title)
     }
 
     private func openAIChatOnWeb(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {

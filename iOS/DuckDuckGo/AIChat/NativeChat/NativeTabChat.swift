@@ -21,6 +21,7 @@ import AIChat
 import Combine
 import DuckAINative
 import Observation
+import SwiftUI
 import UIKit
 
 /// A native chat shown in a Duck.ai tab in place of its web view. The tab keeps its normal AI-tab chrome; while the
@@ -29,7 +30,8 @@ import UIKit
 final class NativeTabChat: NativeChatDelegate {
     let session: ChatSession
     private(set) lazy var viewController: UIViewController = DuckAINative.makeChatViewController(
-        session: session, surface: .tab, showsComposer: false, delegate: self)
+        session: session, surface: .tab, showsComposer: false,
+        emptyState: ChatEmptyState(image: Image(.duckAIDefault), title: "All chats are private"), delegate: self)
     var onContinueInWeb: (() -> Void)?
 
     private weak var input: UnifiedToggleInputCoordinator?
@@ -38,6 +40,13 @@ final class NativeTabChat: NativeChatDelegate {
 
     init(context: ChatContext) {
         session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider(for: .chat))
+    }
+
+    /// The header title: which model answers, on this device.
+    var title: String {
+        let descriptor = session.descriptor
+        let name = descriptor.displayName == "MLX" ? descriptor.modelName.replacingOccurrences(of: " (4-bit)", with: "") : descriptor.displayName
+        return "\(name) · On device"
     }
 
     static func newChat() -> NativeTabChat? {
@@ -49,6 +58,7 @@ final class NativeTabChat: NativeChatDelegate {
         if Self.attached !== self { Self.attached?.detach() }
         Self.attached = self
         input.unbind()
+        input.viewController.isNativeChatMode = true
         self.input = input
         stopSubscription = input.didPressStopGeneratingButton.sink { [weak self] in self?.session.stop() }
         observeStatus()
@@ -57,6 +67,7 @@ final class NativeTabChat: NativeChatDelegate {
     func detach() {
         stopSubscription = nil
         input?.aiChatStatus = .ready
+        input?.viewController.isNativeChatMode = false
         input = nil
         if Self.attached === self { Self.attached = nil }
     }

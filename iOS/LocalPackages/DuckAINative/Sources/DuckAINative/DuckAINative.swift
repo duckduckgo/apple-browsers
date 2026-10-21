@@ -36,10 +36,12 @@ public enum DuckAINative {
     public static func makeChatViewController(session: ChatSession,
                                               surface: ChatSurface,
                                               showsComposer: Bool = true,
+                                              emptyState: ChatEmptyState? = nil,
                                               delegate: NativeChatDelegate) -> UIViewController {
         let actions = ChatActions(close: { [weak delegate] in delegate?.nativeChatDidRequestClose() },
                                   continueInWeb: { [weak delegate] in delegate?.nativeChatDidRequestContinueInWeb($0) })
-        let view = ChatView(session: session, surface: surface, actions: actions, showsComposer: showsComposer)
+        let view = ChatView(session: session, surface: surface, actions: actions, showsComposer: showsComposer,
+                            emptyState: emptyState)
         return NativeChatHostingController(session: session, rootView: view)
     }
 }

@@ -38,19 +38,33 @@ public struct ChatActions {
     }
 }
 
+/// What a chat with no messages yet shows, like the frontend's welcome.
+public struct ChatEmptyState {
+    public var image: Image
+    public var title: String
+
+    public init(image: Image, title: String) {
+        self.image = image
+        self.title = title
+    }
+}
+
 public struct ChatView: View {
     @Bindable var session: ChatSession
     let surface: ChatSurface
     let actions: ChatActions
     let showsComposer: Bool
+    let emptyState: ChatEmptyState?
     @State private var draft = ""
 
     /// `showsComposer` is false when the host app drives the session from its own input.
-    public init(session: ChatSession, surface: ChatSurface, actions: ChatActions, showsComposer: Bool = true) {
+    public init(session: ChatSession, surface: ChatSurface, actions: ChatActions, showsComposer: Bool = true,
+                emptyState: ChatEmptyState? = nil) {
         self.session = session
         self.surface = surface
         self.actions = actions
         self.showsComposer = showsComposer
+        self.emptyState = emptyState
     }
 
     public var body: some View {
@@ -58,7 +72,11 @@ public struct ChatView: View {
             if surface == .fullScreen {
                 header
             }
-            transcript
+            if let emptyState, session.state.messages.isEmpty, session.state.liveReply == nil {
+                welcome(emptyState)
+            } else {
+                transcript
+            }
             if showsComposer {
                 composer
             }
@@ -88,6 +106,28 @@ public struct ChatView: View {
         }
         .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
         .padding(.horizontal, DuckAIChatTokens.Spacing.s8)
+    }
+
+    private func welcome(_ emptyState: ChatEmptyState) -> some View {
+        VStack(spacing: DuckAIChatTokens.Spacing.s12) {
+            Spacer()
+            emptyState.image
+                .resizable()
+                .scaledToFit()
+                .frame(width: 72, height: 72)
+            Text(emptyState.title)
+                .font(DuckAIChatTokens.Typography.h3.font)
+                .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
+            Text("Answered on this device by \(modelName)")
+                .font(DuckAIChatTokens.Typography.subtitle.font)
+                .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
+            Spacer()
+            Spacer()
+        }
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, DuckAIChatTokens.Spacing.s16)
+        .frame(maxWidth: .infinity)
+        .accessibilityIdentifier("NativeChat.Welcome")
     }
 
     private var transcript: some View {

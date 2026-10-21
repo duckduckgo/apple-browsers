@@ -265,7 +265,8 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isReasoningButtonHidden: Bool {
         get { reasoningButton.isHidden }
         set {
-            reasoningButton.isHidden = newValue
+            reasoningButtonExplicitlyHidden = newValue
+            reasoningButton.isHidden = newValue || isNativeChatMode
             setNeedsLayout()
         }
     }
@@ -273,10 +274,25 @@ final class UnifiedToggleInputToolbarView: UIView {
     var isImageButtonHidden: Bool {
         get { imageButton.isHidden }
         set {
-            imageButton.isHidden = newValue
+            imageButtonExplicitlyHidden = newValue
+            imageButton.isHidden = newValue || isNativeChatMode
             setNeedsLayout()
         }
     }
+
+    /// Demo branch: a native Duck.ai chat answers on device, so the web chat's model, tools, reasoning and
+    /// attachment controls don't apply.
+    var isNativeChatMode = false {
+        didSet {
+            guard oldValue != isNativeChatMode else { return }
+            reasoningButton.isHidden = reasoningButtonExplicitlyHidden || isNativeChatMode
+            imageButton.isHidden = imageButtonExplicitlyHidden || isNativeChatMode
+            updateChipVisibility()
+            setNeedsLayout()
+        }
+    }
+    private var reasoningButtonExplicitlyHidden = false
+    private var imageButtonExplicitlyHidden = false
 
     var isImageButtonEnabled: Bool {
         get { imageButton.isEnabled }
@@ -786,8 +802,8 @@ private extension UnifiedToggleInputToolbarView {
 
     private func updateChipVisibility() {
         let mergesTools = compactLevel >= .mergedTools && selectedTool != nil
-        modelChipButton.isHidden = modelChipExplicitlyHidden
-        toolsButton.isHidden = toolsButtonExplicitlyHidden || mergesTools
+        modelChipButton.isHidden = modelChipExplicitlyHidden || isNativeChatMode
+        toolsButton.isHidden = toolsButtonExplicitlyHidden || mergesTools || isNativeChatMode
         selectedToolChipView.isHidden = (selectedTool == nil)
         selectedToolClearButton.isHidden = mergesTools
         selectedToolMenuButton.isHidden = !mergesTools

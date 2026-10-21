@@ -875,9 +875,11 @@ private extension MainViewController {
     func bindAITabIfPossible(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator, hasExistingChat: Bool) {
         if let nativeChat = tab.nativeChat {
             nativeChat.attach(to: coordinator)
+            aiChatTabChatHeaderView?.setNativeChatTitle(nativeChat.title)
             return
         }
         NativeTabChat.detachCurrent()
+        aiChatTabChatHeaderView?.setNativeChatTitle(nil)
         if let userScript = tab.userScripts?.aiChatUserScript {
             coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
             if hasExistingChat, let chatID = tab.webView.url?.duckAIChatID {

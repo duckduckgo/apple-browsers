@@ -72,6 +72,8 @@ final class AIChatTabChatHeaderView: UIView {
         var isOnboardingLocked: Bool = false
         /// Visibility of the enclosing Duck.ai tab-header container.
         var isContainerVisible: Bool = false
+        /// Demo branch: the title shown while a native, on-device chat fills the tab.
+        var nativeChatTitle: String?
     }
 
     private var state = ViewState() {
@@ -86,7 +88,7 @@ final class AIChatTabChatHeaderView: UIView {
 
     /// `nil` subscription state means unresolved, not free — hence the explicit `== false`.
     private var isTitleContainerVisible: Bool {
-        !state.isOnboardingLocked && state.isSubscriptionActive == false && state.allowsSubscriptionUpsell
+        !state.isOnboardingLocked && state.isSubscriptionActive == false && state.allowsSubscriptionUpsell && state.nativeChatTitle == nil
     }
 
     private var isTitleHolderVisible: Bool {
@@ -399,6 +401,10 @@ final class AIChatTabChatHeaderView: UIView {
         state = updatedState
     }
 
+    func setNativeChatTitle(_ title: String?) {
+        state.nativeChatTitle = title
+    }
+
     func setAllowsSubscriptionUpsell(_ allowed: Bool) {
         state.allowsSubscriptionUpsell = allowed
     }
@@ -434,7 +440,8 @@ final class AIChatTabChatHeaderView: UIView {
         // During fire onboarding, hide the free/upgrade title to avoid distraction.
         titleContainer.isHidden = !isTitleContainerVisible
         let showsNeutralTitle = state.isSubscriptionActive == false && !state.allowsSubscriptionUpsell && !state.isOnboardingLocked
-        paidTitleStack.isHidden = state.isSubscriptionActive != true && !showsNeutralTitle
+        paidTitleStack.isHidden = state.isSubscriptionActive != true && !showsNeutralTitle && state.nativeChatTitle == nil
+        titleLabel.text = state.nativeChatTitle ?? UserText.aiChatHeaderPaidTitle
         titleContainer.accessibilityElementsHidden = !isTitleContainerVisible
         let voiceActive = state.voiceBackgroundColor != nil
         applyVoiceSessionAppearance(state.voiceBackgroundColor)

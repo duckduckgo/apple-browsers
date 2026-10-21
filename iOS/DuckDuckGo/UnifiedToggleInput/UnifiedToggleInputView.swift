@@ -327,6 +327,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.isModelChipHidden = newValue }
     }
 
+    var isNativeChatMode: Bool {
+        get { toolsToolbar.isNativeChatMode }
+        set { toolsToolbar.isNativeChatMode = newValue }
+    }
+
     var isModelChipMenuIndicatorHidden: Bool {
         get { toolsToolbar.isModelChipMenuIndicatorHidden }
         set { toolsToolbar.isModelChipMenuIndicatorHidden = newValue }

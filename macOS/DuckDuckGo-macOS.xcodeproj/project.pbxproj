@@ -4997,6 +4997,8 @@
 		FEE12B412E520E4D00AD9809 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FFA1DFE4967209A9C47D7160 /* QuitSurveyPromoObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03DA09FC744669CD57C604C /* QuitSurveyPromoObserverTests.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
+		68FEB6F45BE15139FFAB4F73 /* ui-tests in Resources */ = {isa = PBXBuildFile; fileRef = 47846FF7AA15E03798D522CF /* ui-tests */; };
+		6ED47284C4FEF142D56785C7 /* ui-tests in Resources */ = {isa = PBXBuildFile; fileRef = 47846FF7AA15E03798D522CF /* ui-tests */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -7657,6 +7659,7 @@
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		FE6295B8821741B1BF7FDCF6 /* BookmarksBarPromptViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarPromptViewModelTests.swift; sourceTree = "<group>"; };
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
+		47846FF7AA15E03798D522CF /* ui-tests */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ui-tests; path = UITests/Helpers/ui-tests; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -11504,6 +11507,7 @@
 		AA585D75248FD31100E9A3E2 = {
 			isa = PBXGroup;
 			children = (
+				47846FF7AA15E03798D522CF /* ui-tests */,
 				378B5886295CF2A4002C0CC0 /* Configuration */,
 				AA585D80248FD31100E9A3E2 /* DuckDuckGo */,
 				9D9AE9132AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgent */,
@@ -15266,6 +15270,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6ED47284C4FEF142D56785C7 /* ui-tests in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -15356,6 +15361,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68FEB6F45BE15139FFAB4F73 /* ui-tests in Resources */,
 				8409BD782ED878C400E39FA7 /* popup-delayed.html in Resources */,
 				8409BD792ED878C400E39FA7 /* popup-servicenow.html in Resources */,
 				8409BD7A2ED878C400E39FA7 /* popup-links.html in Resources */,

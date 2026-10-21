@@ -95,7 +95,8 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      build-arm64-only: true # UI Test runners are Apple Silicon, so their prebuilt app does not need x86_64.
+      build-ui-tests: true
+      build-arm64-only: false # The same artifact also supports Intel Monterey workers.
     secrets: inherit
 
   # The App Store sandbox test case (AppStoreSandboxUITests) runs along every full (unfiltered) DMG run,
@@ -112,7 +113,8 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      build-arm64-only: true # UI Test runners are Apple Silicon, so their prebuilt app does not need x86_64.
+      build-ui-tests: true
+      build-arm64-only: false # The same artifact also supports Intel Monterey workers.
     secrets: inherit
 
   # This job sets up the matrix strategy arguments for the ui-tests jobs
@@ -124,7 +126,7 @@ jobs:
     if: needs.should-run-checks.outputs.should_run == 'true'
 
     outputs:
-      # One object per runner configuration: {"runner": [labels], "os-version", "xcode-version"}.
+      # One object per runner configuration: {"runner": [labels], "os-version"}.
       # The ui-tests jobs multiply this list by the test list to build their matrix.
       config: ${{ steps.define-runners.outputs.config }}
       test: ${{ steps.list-tests.outputs.test }}
@@ -161,14 +163,14 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
             config=$(jq -c <<< '[
-              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "26", "xcode-version": "27.0"}
+              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "26"}
             ]')
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
-              {"runner": ["macos-14-xlarge"], "os-version": "14", "xcode-version": "16.2"},
-              {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
-              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "27", "xcode-version": "27.0"}
+              {"runner": ["macos-14-xlarge"], "os-version": "14"},
+              {"runner": ["macos-15-xlarge"], "os-version": "15"},
+              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "27"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -281,7 +283,6 @@ jobs:
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
-      xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: production
       build-type: ${{ inputs.build-type || 'dmg' }}
@@ -304,7 +305,6 @@ jobs:
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
-      xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: internal
       build-type: ${{ inputs.build-type || 'dmg' }}
@@ -326,7 +326,6 @@ jobs:
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
-      xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: production
       build-type: appstore

@@ -1,0 +1,37 @@
+{
+  "configurations": [
+    {
+      "id": "C17B6599-17B5-4BBC-8FE5-9409FB08FA7E",
+      "name": "Test Scheme Action",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "environmentVariableEntries": [
+      {
+        "key": "CI",
+        "value": "$(CI)"
+      },
+      {
+        "key": "UITEST_LIFECYCLE_SCRIPT",
+        "value": "$(PROJECT_DIR)/UITests/Helpers/ui-tests/pre-run.sh"
+      }
+    ],
+    "targetForVariableExpansion": {
+      "containerPath": "container:DuckDuckGo-macOS.xcodeproj",
+      "identifier": "376113C82B29CD5B00E794BB",
+      "name": "SyncE2EUITests App Store"
+    }
+  },
+  "testTargets": [
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:DuckDuckGo-macOS.xcodeproj",
+        "identifier": "376113C82B29CD5B00E794BB",
+        "name": "SyncE2EUITests App Store"
+      }
+    }
+  ],
+  "version": 1
+}

@@ -21,10 +21,6 @@ on:
         description: "macOS version of the runner (e.g. '26'). Used for names and conditional steps."
         required: true
         type: string
-      xcode-version:
-        description: "Xcode version override; defaults to the checked-out .xcode-version file"
-        required: false
-        type: string
       test:
         description: "The UITestCase class to run"
         required: true
@@ -69,11 +65,9 @@ jobs:
     timeout-minutes: 120
 
     env:
-      scheme: ${{ inputs.build-type == 'appstore' && 'macOS UI Tests App Store CI' || 'macOS UI Tests CI' }}
       app-name: ${{ inputs.build-type == 'appstore' && 'DuckDuckGo App Store Review' || 'DuckDuckGo Review' }}
       app-bundle-id: ${{ inputs.build-type == 'appstore' && 'com.duckduckgo.mobile.ios.review' || 'com.duckduckgo.macos.browser.review' }}
       release-type: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
-      extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
       # Keeps artifact names of the App Store legs apart from the DMG ones when both run in the same workflow run
       artifact-suffix: ${{ inputs.build-type == 'appstore' && '-appstore' || '' }}
       # Job identity for result markers. notify-failure in macos_ui_tests.yml parses these names
@@ -82,13 +76,6 @@ jobs:
       TEST_PLAN: ${{ inputs.test-plan }}
 
     steps:
-    - name: Register SSH keys for private repos
-      uses: webfactory/ssh-agent@v0.10.0
-      with:
-        ssh-private-key: |
-          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
-
     - name: Check out the code
       uses: actions/checkout@v6
       with:
@@ -97,35 +84,9 @@ jobs:
     - name: Print macOS version
       run: sw_vers
 
-    - name: Initialize submodules with retry
-      run: |
-        max_attempts=3
-        retry_delay=15
-        for attempt in $(seq 1 $max_attempts); do
-          echo "Submodule init attempt $attempt of $max_attempts"
-          if git submodule update --init --recursive; then
-            echo "Submodules initialized successfully"
-            exit 0
-          fi
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Failed, retrying in ${retry_delay}s..."
-            sleep $retry_delay
-          fi
-        done
-        echo "All submodule init attempts failed"
-        exit 1
-
     - name: Install screenresolution
       if: inputs.os-version != '14'
       run: brew install screenresolution
-
-    - name: Ensure GNU timeout is available
-      shell: bash
-      timeout-minutes: 5
-      run: |
-        if ! command -v gtimeout >/dev/null && ! command -v timeout >/dev/null; then
-          brew install coreutils
-        fi
 
     - name: Change screen resolution
       if: inputs.os-version != '14'
@@ -140,58 +101,22 @@ jobs:
     - name: Create Default Keychain
       run: bundle exec fastlane create_keychain_ui_tests
 
-    - name: Sync code signing assets
-      id: sync-signing-first-attempt
-      continue-on-error: true
-      env:
-        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      run: |
-        bundle exec fastlane sync_signing_ci
-
-    - name: Retry sync code signing assets
-      if: steps.sync-signing-first-attempt.outcome == 'failure'
-      env:
-        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      run: |
-        echo "First attempt to sync code signing assets failed. Retrying..."
-        bundle exec fastlane sync_signing_ci
-
     - name: Download app artifact
       uses: actions/download-artifact@v7
       with:
         pattern: DuckDuckGo-${{ env.release-type }}-*.app.tar.xz
+        merge-multiple: true
         path: ${{ github.workspace }}/macOS
 
-    - name: Set cache key hash
-      run: |
-        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
-        if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
-        else
-          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
-        fi
-
-    - name: Cache SPM
-      if: env.cache_key_hash
-      uses: actions/cache@v5
+    - name: Download UI test bundle
+      uses: actions/download-artifact@v7
       with:
-        path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
-        restore-keys: |
-          ${{ runner.os }}-macos-
+        pattern: DuckDuckGo-ui-tests-${{ env.release-type }}-*.tar.gz
+        path: macOS/test-artifact
+        merge-multiple: true
 
-    - name: Select Xcode
-      uses: ./.github/actions/select-xcode-version
-      with:
-        xcode-version: ${{ inputs.xcode-version }}
+    - name: Select installed runtime Xcode
+      run: python3 UITests/Helpers/ui-tests/latest-xcode.py
 
     - name: Configure system logging
       working-directory: SharedPackages/BrowserServicesKit
@@ -205,140 +130,25 @@ jobs:
         log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner" OR process == "tests-server" OR (process == "logger" AND eventMessage CONTAINS "[tests-server]")' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
-    - name: Resolve package dependencies
-      id: resolve-packages
-      working-directory: macOS
-      shell: bash
-      timeout-minutes: 30
-      env:
-        RESOLVE_SCHEME: ${{ env.scheme }}
+    - name: Extract app and test artifacts
       run: |
-        max_attempts=5
-        retry_delay=10
-        TIMEOUT_BIN="$(command -v gtimeout || command -v timeout)"
-
-        for attempt in $(seq 1 $max_attempts); do
-          attempt_directory="package-resolution/attempt-${attempt}"
-          mkdir -p "$attempt_directory"
-          echo "Attempt $attempt of $max_attempts"
-          if "$TIMEOUT_BIN" --verbose --kill-after=10s 5m \
-            xcodebuild -resolvePackageDependencies \
-            -scheme "$RESOLVE_SCHEME" \
-            -derivedDataPath DerivedData \
-            2>&1 | tee "$attempt_directory/resolve.log"; then
-            echo "Package resolution succeeded"
-            exit 0
-          else
-            status=$?
-            echo "Package resolution exited with status $status (attempt $attempt)"
-            if [[ $status -eq 130 || $status -eq 143 ]]; then
-              exit "$status"
-            fi
-          fi
-
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Package resolution failed (attempt $attempt), retrying in ${retry_delay}s..."
-            sleep $retry_delay
-          fi
-        done
-        echo "Package resolution failed after $max_attempts attempts"
-        exit 1
-
-    - name: Upload package resolution logs
-      if: always() && steps.resolve-packages.outcome != 'skipped'
-      uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: "package-resolution-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
-        path: macOS/package-resolution/
-        retention-days: 7
-
-    - name: Restore Xcode Compilation Cache
-      if: runner.environment != 'self-hosted'
-      uses: actions/cache/restore@v5
-      with:
-        path: macOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ui-tests
-        restore-keys: |
-          xcode-compilation-cache-ui-tests-
-
-    - name: Build for testing
-      working-directory: macOS
-      run: |
-        test_plan_args=()
-        if [[ -n "$TEST_PLAN" ]]; then
-          test_plan_args=(-testPlan "$TEST_PLAN")
-        fi
-        set -o pipefail && xcodebuild build-for-testing \
-          -scheme "${{ env.scheme }}" \
-          "${test_plan_args[@]}" \
-          -derivedDataPath DerivedData \
-          -skipPackagePluginValidation \
-          -skipMacroValidation \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          ${{ env.extra-xcargs }} \
-        | tee xcodebuild.log \
-        | xcbeautify
-
-    - name: Compute Compilation Cache hash
-      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
-      id: compilation-cache-hash
-      run: |
-        if [ -d "DerivedData/CompilationCache.noindex" ]; then
-          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=${hash}" >> $GITHUB_OUTPUT
-        else
-          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
-        fi
-
-    - name: Save Xcode Compilation Cache
-      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v5
-      with:
-        path: macOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
-
-    - name: Extract and Copy app to DerivedData
-      working-directory: macOS
-      run: |
+        set -euo pipefail
         tar -xf DuckDuckGo-*.app.tar.xz
-
-        # Find the extracted app bundle and rename if needed
-        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
-        if [[ -n "${extracted_app}" ]]; then
-          extracted_app_name=$(basename "${extracted_app}")
-          if [[ "${extracted_app_name}" != "${{ env.app-name }}.app" ]]; then
-            echo "Renaming extracted app from '${extracted_app_name}' to '${{ env.app-name }}.app'"
-            mv "${extracted_app}" "${{ env.app-name }}.app"
-          fi
-        fi
-
-        mv -f "${{ env.app-name }}.app" "DerivedData/Build/Products/Review/${{ env.app-name }}.app"
+        tar -xzf test-artifact/*.tar.gz
+        app=$(find . -maxdepth 1 -type d -name '*.app' -print -quit)
+        ditto "$app" "ui-tests/Products/Review/${{ env.app-name }}.app"
 
     - name: Run UI Tests
       id: run-ui-tests
-      working-directory: macOS
+      env:
+        TEST_CLASS: ${{ inputs.test }}
+        USER_MODE: ${{ inputs.user-mode }}
       run: |
-        defaults write ${{ env.app-bundle-id }} moveToApplicationsFolderAlertSuppress 1
-        test_plan_args=()
-        if [[ -n "$TEST_PLAN" ]]; then
-          test_plan_args=(-testPlan "$TEST_PLAN")
-        fi
-        set -o pipefail && xcodebuild test-without-building \
-          -scheme "${{ env.scheme }}" \
-          "${test_plan_args[@]}" \
-          -derivedDataPath DerivedData \
-          -resultBundlePath "DerivedData/Logs/Test/macOS-UI-Tests.xcresult" \
-          -skipPackagePluginValidation \
-          -skipMacroValidation \
-          -test-iterations 2 \
-          -retry-tests-on-failure \
-          -test-repetition-relaunch-enabled YES \
-          '-only-testing:UI Tests/${{ inputs.test }}' \
-          ${{ env.extra-xcargs }} \
-          "TEST_RUNNER_INTERNAL_USER_MODE=${{ inputs.user-mode == 'internal' && 'true' || 'false' }}" \
-        | tee -a xcodebuild.log \
-        | tee ui-tests.log
+        set -o pipefail
+        python3 ui-tests/Scripts/artifact.py run ui-tests --suite ui \
+          --only "$TEST_CLASS" --plan "$TEST_PLAN" --user-mode "$USER_MODE" \
+          --result DerivedData/Logs/Test/portable-results \
+          | tee -a xcodebuild.log | tee ui-tests.log
 
     - name: Stop log stream
       if: always()
@@ -387,7 +197,7 @@ jobs:
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
-        path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        path: "macOS/DerivedData/Logs/Test/**/*.xcresult"
         retention-days: 1
 
     - name: Upload app console log (passed on retry)

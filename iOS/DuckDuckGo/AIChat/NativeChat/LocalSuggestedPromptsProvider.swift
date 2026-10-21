@@ -42,13 +42,13 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
               input.scope == .page,
               let content = input.pageContent, !content.isEmpty else { return resolved }
 
-        let provider = await NativeChatProviderFactory.makeProvider()
+        let provider = await NativeChatProviderFactory.makeSuggestionsProvider()
         let generator = SuggestedPromptsGenerator(provider: provider,
                                                   uiLanguageName: ContextualSuggestionsMatcher.languageDisplayName(input.uiLocale))
         let page = PageSnapshot(title: input.pageTitle ?? "", url: input.url.flatMap(URL.init(string:)), content: content, language: nil)
         let started = ContinuousClock.now
         let result = await generator.suggestions(for: page)
-        Self.logger.info("Local suggested prompts: \(String(describing: result), privacy: .public) in \(started.duration(to: .now), privacy: .public)")
+        Self.logger.notice("Local suggested prompts: \(String(describing: result), privacy: .public) in \(started.duration(to: .now), privacy: .public)")
 
         guard case .generated(let prompts, _) = result else { return resolved }
         let actions = resolved.suggestions.filter { Self.actionSuggestionIDs.contains($0.id) }

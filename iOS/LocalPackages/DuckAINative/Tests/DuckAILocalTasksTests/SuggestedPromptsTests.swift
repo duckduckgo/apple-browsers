@@ -87,6 +87,25 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func returnsAsSoonAsEnoughSuggestionsHaveArrived() async {
+        let lines = "What do ducks eat?\nHow long do ducks live?\nWhy do ducks quack?\nWhere do ducks nest?\n"
+        let rambling = lines + String(repeating: "and then some more text ", count: 100)
+        let generator = SuggestedPromptsGenerator(provider: stub(rambling, wordsPerSecond: 40),
+                                                  budget: .seconds(20), uiLanguageName: "English")
+        let started = ContinuousClock.now
+
+        let result = await generator.suggestions(for: page)
+
+        guard case .generated(let suggestions, _) = result else {
+            Issue.record("expected suggestions, got \(result)")
+            return
+        }
+        #expect(suggestions.map(\.text) == ["What do ducks eat?", "How long do ducks live?", "Why do ducks quack?", "Where do ducks nest?"])
+        #expect(started.duration(to: .now) < .seconds(3))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func aSlowModelTimesOutWithinTheBudget() async {
         let generator = SuggestedPromptsGenerator(provider: stub(String(repeating: "word ", count: 200), wordsPerSecond: 5),
                                                   budget: .milliseconds(150), uiLanguageName: "English")

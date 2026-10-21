@@ -46,6 +46,22 @@ enum NativeChatProviderFactory {
         }
     }
 
+    /// Suggested prompts use the chat's provider, except that the stub answers in the shape a suggestions model would,
+    /// so the local path can be seen working without a device.
+    static func makeSuggestionsProvider(_ choice: DuckAINativeSettings.ProviderChoice = DuckAINativeSettings.shared.provider) -> any ChatProvider {
+        let provider = makeProvider(choice)
+        guard provider is StubProvider else { return provider }
+        let reply = """
+        What are the key points of this page?
+        Who is this page written for?
+        Can you explain the main idea simply?
+        What should I read next on this topic?
+
+        """
+        return StubProvider(configuration: .init(reply: reply, wordsPerSecond: 60,
+                                                 loadTime: .milliseconds(200), readTime: .milliseconds(200)))
+    }
+
     private static var memoryWarningObserver: NSObjectProtocol?
 
     private static func mlxProvider() -> MLXProvider {

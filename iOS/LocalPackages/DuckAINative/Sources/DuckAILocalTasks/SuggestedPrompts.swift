@@ -73,7 +73,7 @@ public struct SuggestedPromptsGenerator: Sendable {
         self.uiLanguageName = uiLanguageName
     }
 
-    /// Streams one reply and parses it. When `budget` elapses first, raises the reply's `StopSignal` and returns
+    /// Streams one reply and parses it, returning as soon as `maxSuggestions` whole lines have arrived. When `budget` elapses first, raises the reply's `StopSignal` and returns
     /// `.timedOut` at once; the provider drains on its own (Core's stop contract). Never throws.
     public func suggestions(for page: PageSnapshot) async -> SuggestedPromptsResult {
         let stop = StopSignal()
@@ -106,7 +106,16 @@ public struct SuggestedPromptsGenerator: Sendable {
         do {
             for try await event in provider.reply(to: turn, stop: stop) {
                 switch event {
-                case .textDelta(let text): raw += text
+                case .textDelta(let text):
+                    raw += text
+                    // Models often keep writing past the suggestions; stop as soon as enough whole lines have arrived.
+                    if let lastNewline = raw.lastIndex(of: "\n") {
+                        let complete = SuggestedPromptsPrompt.parse(String(raw[..<lastNewline]), max: maxSuggestions)
+                        if complete.count == maxSuggestions {
+                            stop.raise()
+                            return .generated(complete, stats: nil)
+                        }
+                    }
                 case .refusal: refused = true
                 case .finished(let generationStats): stats = generationStats
                 case .stage, .reasoningDelta: break

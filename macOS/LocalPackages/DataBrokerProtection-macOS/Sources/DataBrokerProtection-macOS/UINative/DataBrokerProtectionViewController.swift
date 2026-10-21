@@ -39,6 +39,9 @@ final public class DataBrokerProtectionViewController: NSViewController {
 
     private let openURLHandler: (URL?) -> Void
     private var reloadObserver: NSObjectProtocol?
+#if DEBUG
+    private let needsYou: DBPDashboardNeedsYou
+#endif
 
     public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
                 vpnBypassService: VPNBypassFeatureProvider,
@@ -54,6 +57,9 @@ final public class DataBrokerProtectionViewController: NSViewController {
         self.webUISettings = webUISettings
         self.pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
         self.webUIPixel = DataBrokerProtectionWebUIPixels(pixelHandler: pixelHandler, isUserSubscribed: isUserSubscribed)
+#if DEBUG
+        self.needsYou = DBPDashboardNeedsYou(agentInterface: agentInterface, dataManager: dataManager)
+#endif
 
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
@@ -98,10 +104,22 @@ final public class DataBrokerProtectionViewController: NSViewController {
     override public func loadView() {
         guard let configuration = webUIViewModel.setupCommunicationLayer() else { return }
 
+#if DEBUG
+        needsYou.install(in: configuration)
+#endif
         webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 1024, height: 768), configuration: configuration)
         webView?.uiDelegate = self
         webView?.navigationDelegate = self
+#if DEBUG
+        // The demo's preview overlay sits above the page, so the tab hosts both in one container.
+        let container = NSView(frame: webView!.frame)
+        webView!.autoresizingMask = [.width, .height]
+        container.addSubview(webView!)
+        needsYou.attach(to: container)
+        view = container
+#else
         view = webView!
+#endif
 
         addLoadingIndicator()
 

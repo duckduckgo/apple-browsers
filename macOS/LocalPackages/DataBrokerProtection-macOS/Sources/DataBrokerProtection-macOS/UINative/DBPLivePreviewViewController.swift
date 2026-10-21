@@ -26,14 +26,10 @@ import DesignResourcesKitIcons
 public final class DBPLivePreviewViewController: NSViewController {
     public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
                 hidesWhenIdle: Bool = true,
-                takeControl: (@MainActor (String) async throws -> Bool)? = nil,
-                assistedOptOuts: (@MainActor () throws -> [PIRAssistedOptOut])? = nil,
-                startAssistedOptOut: (@MainActor (PIRAssistedOptOut) async throws -> Void)? = nil) {
+                takeControl: (@MainActor (String) async throws -> Bool)? = nil) {
         self.agentInterface = agentInterface
         self.hidesWhenIdle = hidesWhenIdle
         self.takeControl = takeControl
-        self.assistedOptOuts = assistedOptOuts
-        self.startAssistedOptOut = startAssistedOptOut
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -41,19 +37,15 @@ public final class DBPLivePreviewViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Side of the square snapshot of the agent's square web view.
-    public static let previewSide: CGFloat = 560
-    private static let sidebarWidth: CGFloat = 300
-    private static let browserBarHeight: CGFloat = 32
-    public static let contentSize = NSSize(width: previewSide + sidebarWidth + 48, height: previewSide + browserBarHeight + 24)
+    /// The design's modal: the broker page on the left under a browser bar, the steps panel on the right.
+    public static let maximumSize = NSSize(width: 1385, height: 784)
+    private static let sidebarWidth: CGFloat = 480
+    private static let browserBarHeight: CGFloat = 40
 
     public override func loadView() {
         let card = PreviewCardView()
-        card.material = .popover
-        card.blendingMode = .withinWindow
-        card.state = .active
         card.wantsLayer = true
-        card.layer?.cornerRadius = 16
+        card.layer?.cornerRadius = 24
         card.layer?.masksToBounds = true
         card.alphaValue = hidesWhenIdle ? 0 : 1
         view = card
@@ -61,19 +53,13 @@ public final class DBPLivePreviewViewController: NSViewController {
         browserBar.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(browserBar)
 
-        imageView.imageScaling = .scaleProportionallyUpOrDown
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.wantsLayer = true
-        imageView.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
-        imageView.layer?.cornerRadius = 10
-        imageView.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        imageView.layer?.masksToBounds = true
         view.addSubview(imageView)
 
         overlay.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(overlay)
 
-        placeholderLabel.font = .systemFont(ofSize: 12)
+        placeholderLabel.font = .systemFont(ofSize: 14)
         placeholderLabel.textColor = .secondaryLabelColor
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(placeholderLabel)
@@ -88,23 +74,30 @@ public final class DBPLivePreviewViewController: NSViewController {
         snapshotButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(snapshotButton)
 
+        let divider = NSBox()
+        divider.boxType = .separator
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(divider)
+
         sidebar.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(sidebar)
 
         NSLayoutConstraint.activate([
-            browserBar.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
-            browserBar.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
-            browserBar.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
+            browserBar.topAnchor.constraint(equalTo: view.topAnchor),
+            browserBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            browserBar.trailingAnchor.constraint(equalTo: divider.leadingAnchor),
             browserBar.heightAnchor.constraint(equalToConstant: Self.browserBarHeight),
             imageView.topAnchor.constraint(equalTo: browserBar.bottomAnchor),
-            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -12),
-            imageView.widthAnchor.constraint(equalToConstant: Self.previewSide),
-            imageView.heightAnchor.constraint(equalToConstant: Self.previewSide),
-            sidebar.topAnchor.constraint(equalTo: browserBar.topAnchor),
-            sidebar.bottomAnchor.constraint(equalTo: imageView.bottomAnchor),
-            sidebar.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 12),
-            sidebar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: divider.leadingAnchor),
+            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            divider.topAnchor.constraint(equalTo: view.topAnchor),
+            divider.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            divider.widthAnchor.constraint(equalToConstant: 1),
+            sidebar.topAnchor.constraint(equalTo: view.topAnchor),
+            sidebar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            sidebar.leadingAnchor.constraint(equalTo: divider.trailingAnchor),
+            sidebar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             sidebar.widthAnchor.constraint(equalToConstant: Self.sidebarWidth),
             overlay.topAnchor.constraint(equalTo: imageView.topAnchor),
             overlay.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
@@ -141,16 +134,17 @@ public final class DBPLivePreviewViewController: NSViewController {
 
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
     private let takeControl: (@MainActor (String) async throws -> Bool)?
-    private let assistedOptOuts: (@MainActor () throws -> [PIRAssistedOptOut])?
-    private let startAssistedOptOut: (@MainActor (PIRAssistedOptOut) async throws -> Void)?
-    private var assistedOptOutsCheckedAt: Date?
-    private var pendingAssistedOptOuts: [PIRAssistedOptOut] = []
+    /// Reports when a broker page starts or stops showing, so a host can show or hide the preview.
+    var activityChanged: ((Bool) -> Void)?
+    /// Reports when the user takes over the page in its own window, and when the agent takes it back.
+    var userControlChanged: ((Bool) -> Void)?
+    private var isUserControlling = false
     private let snapshotButton = NSButton()
     private var controlRequestInProgress = false
     private var operationID: String?
     private let hidesWhenIdle: Bool
     private let placeholderLabel = NSTextField(labelWithString: "Waiting for a broker page")
-    private let imageView = NSImageView()
+    private let imageView = SnapshotView()
     private let browserBar = PIRBrowserBarView()
     private let overlay = PIRAgentOverlayView()
     private let sidebar = PIRStepsSidebarView(width: DBPLivePreviewViewController.sidebarWidth)
@@ -198,14 +192,22 @@ public final class DBPLivePreviewViewController: NSViewController {
 
     private func display(_ frame: DBPLivePreviewFrame?) {
         guard let frame else {
-            // Clear once when the last page finishes; clearing on every poll would rebuild the Needs you list.
-            if operationID != nil { clearFrame() }
-            showAssistedOptOuts()
+            if operationID != nil {
+                clearFrame()
+                activityChanged?(false)
+            }
+            if isUserControlling {
+                isUserControlling = false
+                userControlChanged?(false)
+            }
             return
         }
-        assistedOptOutsCheckedAt = nil
-        pendingAssistedOptOuts = []
         let image = NSImage(data: frame.imageData).flatMap { $0.size.width > 0 && $0.size.height > 0 ? $0 : nil }
+        if operationID == nil { activityChanged?(true) }
+        if frame.isManualControl != isUserControlling {
+            isUserControlling = frame.isManualControl
+            userControlChanged?(frame.isManualControl)
+        }
         operationID = frame.operationID
         snapshotButton.isEnabled = frame.canTakeControl && takeControl != nil && !controlRequestInProgress
         imageView.image = image
@@ -239,21 +241,11 @@ public final class DBPLivePreviewViewController: NSViewController {
         placeholderLabel.isHidden = false
     }
 
-    /// While nothing runs, list the opt-outs that wait for the user to start them.
-    private func showAssistedOptOuts() {
-        guard let assistedOptOuts else { return }
-        if Date().timeIntervalSince(assistedOptOutsCheckedAt ?? .distantPast) > 2 {
-            assistedOptOutsCheckedAt = Date()
-            pendingAssistedOptOuts = (try? assistedOptOuts()) ?? []
-        }
-        placeholderLabel.stringValue = pendingAssistedOptOuts.isEmpty ? "Waiting for a broker page" : "Choose a site to start"
-        sidebar.showNeedsYou(pendingAssistedOptOuts) { [weak self] optOut in
-            guard let self, let startAssistedOptOut = self.startAssistedOptOut else { return }
-            self.sidebar.showNotice("Starting \(optOut.brokerName)\u{2026}")
-            Task { @MainActor in
-                do { try await startAssistedOptOut(optOut) } catch { self.sidebar.showNotice("Could not start \(optOut.brokerName).") }
-            }
-        }
+    /// Shown between Start request and the broker's first page.
+    func showStarting(brokerName: String?) {
+        let name = brokerName ?? "the site"
+        sidebar.showNotice("Starting \(name)\u{2026}")
+        placeholderLabel.stringValue = "Opening \(name)\u{2026}"
     }
 
     @objc private func takeControlPressed() {
@@ -322,7 +314,7 @@ private final class PIRAgentOverlayView: NSView {
     private let labelIcon = CALayer()
     private let labelText = CATextLayer()
     private let ripple = CAShapeLayer()
-    private let labelFont = NSFont.systemFont(ofSize: 11, weight: .bold)
+    private let labelFont = NSFont.systemFont(ofSize: 14, weight: .bold)
     private var highlights: [CAShapeLayer] = []
     private var typedFields: [CATextLayer] = []
     private var highlightedIndexes: [Int] = []
@@ -565,11 +557,13 @@ private final class PIRAgentOverlayView: NSView {
 
     private var reducesMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
+    /// Where the page snapshot sits: full width and top anchored, matching `SnapshotView`.
     private var imageRect: CGRect {
-        guard imageSize.width > 0, imageSize.height > 0, bounds.width > 0, bounds.height > 0 else { return bounds }
-        let scale = min(bounds.width / imageSize.width, bounds.height / imageSize.height)
-        let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-        return CGRect(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2, width: size.width, height: size.height)
+        SnapshotView.pageRect(for: imageSize, in: bounds)
+    }
+
+    private var visiblePageRect: CGRect {
+        imageRect.intersection(bounds)
     }
 
     /// Maps a viewport-fraction rect onto the snapshot, dropping elements scrolled out of view.
@@ -578,7 +572,7 @@ private final class PIRAgentOverlayView: NSView {
         let page = imageRect
         let fraction = rects[index]
         let rect = CGRect(x: page.minX + fraction.minX * page.width, y: page.minY + fraction.minY * page.height,
-                          width: fraction.width * page.width, height: fraction.height * page.height).intersection(page)
+                          width: fraction.width * page.width, height: fraction.height * page.height).intersection(visiblePageRect)
         return rect.isNull || rect.width < 1 || rect.height < 1 ? nil : rect
     }
 
@@ -606,7 +600,7 @@ private final class PIRAgentOverlayView: NSView {
     }
 
     private func drawPageOutline() {
-        let page = imageRect.insetBy(dx: 2, dy: 2)
+        let page = visiblePageRect.insetBy(dx: 2, dy: 2)
         pageOutline.path = CGPath(roundedRect: page, cornerWidth: 10, cornerHeight: 10, transform: nil)
         pageOutline.opacity = pageOutlineStyle == nil ? 0 : 1
         applyColors()
@@ -643,11 +637,12 @@ private final class PIRAgentOverlayView: NSView {
         // A plain move needs no label; the pill only names what the cursor is doing.
         labelPill.isHidden = label.isEmpty
         let size = (label as NSString).size(withAttributes: [.font: labelFont])
-        let height: CGFloat = 22
-        labelPill.frame = CGRect(x: 18, y: 14, width: ceil(size.width) + 32, height: height)
+        // The design's tag: 4pt around a 16pt icon, 12pt after the text, offset from the arrow's tip.
+        let height: CGFloat = 24
+        labelPill.frame = CGRect(x: 21.5, y: 11.5, width: ceil(size.width) + 36, height: height)
         labelPill.path = Self.pillPath(labelPill.bounds)
-        labelIcon.frame = CGRect(x: 3, y: 3, width: 16, height: 16)
-        labelText.frame = CGRect(x: 22, y: (height - ceil(size.height)) / 2, width: ceil(size.width) + 1, height: ceil(size.height))
+        labelIcon.frame = CGRect(x: 4, y: 4, width: 16, height: 16)
+        labelText.frame = CGRect(x: 24, y: (height - ceil(size.height)) / 2, width: ceil(size.width) + 1, height: ceil(size.height))
         labelText.string = label
         CATransaction.commit()
     }
@@ -726,11 +721,14 @@ private final class PIRBrowserBarView: NSView {
         super.init(frame: frameRect)
         lock.contentTintColor = .secondaryLabelColor
         address.lineBreakMode = .byTruncatingTail
+        address.usesSingleLineMode = true
         address.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         dax.imageScaling = .scaleProportionallyUpOrDown
         status.lineBreakMode = .byTruncatingTail
         let leading = NSStackView(views: [lock, address])
         leading.spacing = 6
+        // A long address gives way first; the status always shows in full.
+        leading.setClippingResistancePriority(.defaultLow, for: .horizontal)
         let trailing = NSStackView(views: [dax, status])
         trailing.spacing = 6
         for stack in [leading, trailing] {
@@ -744,10 +742,10 @@ private final class PIRBrowserBarView: NSView {
             lock.heightAnchor.constraint(equalToConstant: 14),
             dax.widthAnchor.constraint(equalToConstant: 16),
             dax.heightAnchor.constraint(equalToConstant: 16),
-            leading.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            leading.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             leading.centerYAnchor.constraint(equalTo: centerYAnchor),
             trailing.leadingAnchor.constraint(greaterThanOrEqualTo: leading.trailingAnchor, constant: 12),
-            trailing.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            trailing.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             trailing.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
         reset()
@@ -760,31 +758,29 @@ private final class PIRBrowserBarView: NSView {
     override var wantsUpdateLayer: Bool { true }
 
     override func updateLayer() {
-        layer?.cornerRadius = 10
-        layer?.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        // The design's #f8f8f8 bar over a white page, kept relative to the label color for dark mode.
+        layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.03).cgColor
     }
 
     func update(pageURL: URL?, brokerName: String, isOptOut: Bool, needsAssistance: Bool, isManualControl: Bool) {
         let host = pageURL?.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 }
+        let truncating = NSMutableParagraphStyle()
+        truncating.lineBreakMode = .byTruncatingTail
         let text = NSMutableAttributedString(string: host ?? "Opening \(brokerName)\u{2026}",
-                                             attributes: [.font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: NSColor.labelColor])
+                                             attributes: [.font: NSFont.systemFont(ofSize: 14, weight: .bold), .foregroundColor: NSColor.labelColor])
         if let path = pageURL?.path, host != nil, path.count > 1 {
             text.append(NSAttributedString(string: " " + path,
-                                           attributes: [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: NSColor.secondaryLabelColor]))
+                                           attributes: [.font: NSFont.systemFont(ofSize: 14), .foregroundColor: NSColor.secondaryLabelColor]))
         }
+        text.addAttribute(.paragraphStyle, value: truncating, range: NSRange(location: 0, length: text.length))
         address.attributedStringValue = text
         lock.isHidden = pageURL?.scheme != "https"
         dax.isHidden = false
 
-        let state = isManualControl ? "you have control" : needsAssistance ? "is waiting for you" : isOptOut ? "is filling this in" : "is searching"
-        let statusText = NSMutableAttributedString(string: "DuckDuckGo ",
-                                                   attributes: [.font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: NSColor.labelColor])
-        statusText.append(NSAttributedString(string: state, attributes: [
-            .font: NSFont.systemFont(ofSize: 12),
-            .foregroundColor: needsAssistance ? NSColor.systemOrange : NSColor.secondaryLabelColor
-        ]))
-        status.attributedStringValue = statusText
+        status.stringValue = isManualControl ? "You have control" : needsAssistance ? "Waiting for you"
+            : isOptOut ? "Filling in the opt-out form" : "Searching for your records"
+        status.font = .systemFont(ofSize: 14, weight: needsAssistance ? .bold : .regular)
+        status.textColor = needsAssistance ? .systemOrange : .secondaryLabelColor
     }
 
     func reset() {
@@ -821,27 +817,27 @@ private final class PIRStepsSidebarView: NSView {
 
         favicon.imageScaling = .scaleProportionallyUpOrDown
         favicon.wantsLayer = true
-        favicon.layer?.cornerRadius = 24
+        favicon.layer?.cornerRadius = 32
         favicon.layer?.masksToBounds = true
         favicon.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 19, weight: .medium)
+        titleLabel.font = .systemFont(ofSize: 24)
         titleLabel.alignment = .center
-        titleLabel.preferredMaxLayoutWidth = width - 40
-        subtitleLabel.font = .systemFont(ofSize: 14)
+        titleLabel.preferredMaxLayoutWidth = width - 80
+        subtitleLabel.font = .systemFont(ofSize: 20)
         subtitleLabel.textColor = .secondaryLabelColor
         subtitleLabel.alignment = .center
-        subtitleLabel.preferredMaxLayoutWidth = width - 40
+        subtitleLabel.preferredMaxLayoutWidth = width - 80
         let headerContent = NSStackView(views: [favicon, titleLabel, subtitleLabel])
         headerContent.orientation = .vertical
         headerContent.alignment = .centerX
-        headerContent.spacing = 8
-        headerContent.setCustomSpacing(16, after: favicon)
+        headerContent.spacing = 16
+        headerContent.setCustomSpacing(24, after: favicon)
         headerContent.translatesAutoresizingMaskIntoConstraints = false
         headerCard.addSubview(headerContent)
 
         steps.orientation = .vertical
         steps.alignment = .leading
-        steps.spacing = 14
+        steps.spacing = 16
         steps.translatesAutoresizingMaskIntoConstraints = false
         // Long steps, such as SpyFly's scan, scroll within the sidebar.
         let stepsDocument = FlippedView()
@@ -861,15 +857,15 @@ private final class PIRStepsSidebarView: NSView {
         addSubview(stepsScroll)
 
         NSLayoutConstraint.activate([
-            favicon.widthAnchor.constraint(equalToConstant: 48),
-            favicon.heightAnchor.constraint(equalToConstant: 48),
-            headerContent.topAnchor.constraint(equalTo: headerCard.topAnchor, constant: 28),
-            headerContent.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
-            headerContent.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20),
-            headerContent.bottomAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: -20),
-            headerCard.topAnchor.constraint(equalTo: topAnchor),
-            headerCard.leadingAnchor.constraint(equalTo: leadingAnchor),
-            headerCard.trailingAnchor.constraint(equalTo: trailingAnchor),
+            favicon.widthAnchor.constraint(equalToConstant: 64),
+            favicon.heightAnchor.constraint(equalToConstant: 64),
+            headerContent.topAnchor.constraint(equalTo: headerCard.topAnchor, constant: 40),
+            headerContent.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 24),
+            headerContent.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -24),
+            headerContent.bottomAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: -24),
+            headerCard.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            headerCard.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            headerCard.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             stepsScroll.topAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: 12),
             stepsScroll.leadingAnchor.constraint(equalTo: leadingAnchor),
             stepsScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -877,10 +873,10 @@ private final class PIRStepsSidebarView: NSView {
             stepsDocument.topAnchor.constraint(equalTo: stepsScroll.contentView.topAnchor),
             stepsDocument.leadingAnchor.constraint(equalTo: stepsScroll.contentView.leadingAnchor),
             stepsDocument.widthAnchor.constraint(equalTo: stepsScroll.contentView.widthAnchor),
-            steps.topAnchor.constraint(equalTo: stepsDocument.topAnchor, constant: 8),
-            steps.leadingAnchor.constraint(equalTo: stepsDocument.leadingAnchor, constant: 12),
-            steps.trailingAnchor.constraint(equalTo: stepsDocument.trailingAnchor, constant: -12),
-            steps.bottomAnchor.constraint(equalTo: stepsDocument.bottomAnchor, constant: -8)
+            steps.topAnchor.constraint(equalTo: stepsDocument.topAnchor, constant: 16),
+            steps.leadingAnchor.constraint(equalTo: stepsDocument.leadingAnchor, constant: 24),
+            steps.trailingAnchor.constraint(equalTo: stepsDocument.trailingAnchor, constant: -24),
+            steps.bottomAnchor.constraint(equalTo: stepsDocument.bottomAnchor, constant: -16)
         ])
         reset()
     }
@@ -915,7 +911,7 @@ private final class PIRStepsSidebarView: NSView {
         } else if isConfirmation {
             subtitleLabel.stringValue = "\(brokerName) emailed a confirmation link. We\u{2019}re following it to finish your request."
         } else {
-            subtitleLabel.stringValue = isOptOut ? "We\u{2019}re filling in \(brokerName)\u{2019}s form for you. You\u{2019}ll only need to step in if it asks for a person."
+            subtitleLabel.stringValue = isOptOut ? "We\u{2019}re filling in \(brokerName)\u{2019}s form for you. You\u{2019}ll only need to step in once."
                 : "We\u{2019}re checking whether \(brokerName) has a record of you."
         }
 
@@ -926,14 +922,14 @@ private final class PIRStepsSidebarView: NSView {
             let phase: StepRow.Phase = index < checklist.currentIndex ? .done
                 : index > checklist.currentIndex ? .pending
                 : needsAssistance || isManualControl ? .waiting : .current
-            let row = StepRow(title: item, phase: phase, width: width - 24)
+            let row = StepRow(title: item, phase: phase, width: width - 48)
             steps.addArrangedSubview(row)
             if index == checklist.currentIndex { focus = row }
             if phase == .waiting {
                 // The "Your turn" box is its own checklist item, right after the step that needs the user.
-                let callout = YourTurnCallout(width: width - 24)
+                let callout = YourTurnCallout(width: width - 48)
                 steps.addArrangedSubview(callout)
-                callout.widthAnchor.constraint(equalToConstant: width - 24).isActive = true
+                callout.widthAnchor.constraint(equalToConstant: width - 48).isActive = true
                 focus = callout
             }
         }
@@ -943,34 +939,8 @@ private final class PIRStepsSidebarView: NSView {
         }
     }
 
-    private var needsYou: [PIRAssistedOptOut] = []
-
-    /// The artifact's "Needs you" group: one row per broker, each started with its own button.
-    func showNeedsYou(_ optOuts: [PIRAssistedOptOut], start: @escaping (PIRAssistedOptOut) -> Void) {
-        guard state == nil, optOuts != needsYou else { return }
-        needsYou = optOuts
-        steps.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        guard !optOuts.isEmpty else {
-            reset()
-            return
-        }
-        titleLabel.stringValue = "Needs you"
-        subtitleLabel.stringValue = "These sites need a person to finish the requests. We\u{2019}ll do most of it."
-        var brokerOrder: [String] = []
-        var byBroker: [String: [PIRAssistedOptOut]] = [:]
-        for optOut in optOuts {
-            if byBroker[optOut.brokerName] == nil { brokerOrder.append(optOut.brokerName) }
-            byBroker[optOut.brokerName, default: []].append(optOut)
-        }
-        for broker in brokerOrder {
-            guard let records = byBroker[broker], let first = records.first else { continue }
-            steps.addArrangedSubview(NeedsYouRow(brokerName: broker, recordCount: records.count, width: width - 24) { start(first) })
-        }
-    }
-
     func reset(message: String? = nil) {
         state = nil
-        needsYou = []
         setFavicon(nil)
         titleLabel.stringValue = "Personal Information Removal"
         subtitleLabel.stringValue = message ?? "We\u{2019}ll show each broker here while we work on it."
@@ -988,46 +958,7 @@ private final class SidebarHeaderCard: NSView {
 
     override func updateLayer() {
         layer?.cornerRadius = 16
-        layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.04).cgColor
-    }
-}
-
-@MainActor
-private final class NeedsYouRow: NSStackView {
-    private let onStart: () -> Void
-
-    init(brokerName: String, recordCount: Int, width: CGFloat, onStart: @escaping () -> Void) {
-        self.onStart = onStart
-        super.init(frame: .zero)
-        orientation = .horizontal
-        alignment = .centerY
-        spacing = 12
-
-        let name = NSTextField(labelWithString: brokerName)
-        name.font = .systemFont(ofSize: 15, weight: .medium)
-        let meta = NSTextField(wrappingLabelWithString: "\(recordCount) record\(recordCount == 1 ? "" : "s") \u{00b7} about 1 min with our help")
-        meta.font = .systemFont(ofSize: 12)
-        meta.textColor = .secondaryLabelColor
-        meta.preferredMaxLayoutWidth = width - 130
-        let text = NSStackView(views: [name, meta])
-        text.orientation = .vertical
-        text.alignment = .leading
-        text.spacing = 2
-        let button = NSButton(title: "Start request", target: self, action: #selector(startPressed))
-        button.bezelStyle = .rounded
-        button.setContentHuggingPriority(.required, for: .horizontal)
-        addArrangedSubview(text)
-        addArrangedSubview(button)
-        widthAnchor.constraint(equalToConstant: width).isActive = true
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    @objc private func startPressed(_ sender: NSButton) {
-        sender.isEnabled = false
-        onStart()
+        layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.015).cgColor
     }
 }
 
@@ -1045,25 +976,26 @@ private final class StepRow: NSStackView {
         orientation = .horizontal
         alignment = .centerY
         spacing = 12
+        edgeInsets = NSEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
 
         let indicator: NSView
         if phase == .done {
-            let image = NSImageView(image: DesignSystemImages.Glyphs.Size16.checkCircle)
-            image.contentTintColor = .controlAccentColor
+            let image = NSImageView(image: DesignSystemImages.Glyphs.Size24.checkCircle)
+            image.contentTintColor = .labelColor
             indicator = image
         } else {
             indicator = StepRing(phase: phase)
         }
         indicator.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            indicator.widthAnchor.constraint(equalToConstant: 20),
-            indicator.heightAnchor.constraint(equalToConstant: 20)
+            indicator.widthAnchor.constraint(equalToConstant: 24),
+            indicator.heightAnchor.constraint(equalToConstant: 24)
         ])
 
         let label = NSTextField(wrappingLabelWithString: title)
-        label.font = .systemFont(ofSize: 14, weight: phase == .current || phase == .waiting ? .semibold : .regular)
-        label.textColor = phase == .pending ? .secondaryLabelColor : .labelColor
-        label.preferredMaxLayoutWidth = width - 32
+        label.font = .systemFont(ofSize: 16, weight: phase == .current || phase == .waiting ? .bold : .regular)
+        label.textColor = .labelColor
+        label.preferredMaxLayoutWidth = width - 68
         addArrangedSubview(indicator)
         addArrangedSubview(label)
     }
@@ -1079,26 +1011,24 @@ private final class StepRing: NSView {
 
     init(phase: StepRow.Phase) {
         self.phase = phase
-        super.init(frame: NSRect(x: 0, y: 0, width: 20, height: 20))
+        super.init(frame: NSRect(x: 0, y: 0, width: 24, height: 24))
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // The design's plain ring: faint while pending, full strength for the step in progress.
     override func draw(_ dirtyRect: NSRect) {
-        let ring = NSBezierPath(ovalIn: bounds.insetBy(dx: 1.5, dy: 1.5))
-        ring.lineWidth = 1.5
+        let ring = NSBezierPath(ovalIn: bounds.insetBy(dx: 3, dy: 3))
+        ring.lineWidth = 1.25
         switch phase {
         case .pending:
             NSColor.tertiaryLabelColor.setStroke()
             ring.stroke()
         case .current, .waiting:
-            let color = phase == .waiting ? NSColor.systemOrange : NSColor.controlAccentColor
-            color.setStroke()
+            NSColor.labelColor.setStroke()
             ring.stroke()
-            color.setFill()
-            NSBezierPath(ovalIn: bounds.insetBy(dx: 6, dy: 6)).fill()
         case .done:
             break
         }
@@ -1111,26 +1041,26 @@ private final class YourTurnCallout: NSView {
     init(width: CGFloat) {
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.cornerRadius = 12
+        layer?.cornerRadius = 16
         layer?.borderWidth = 1.5
 
         let title = NSTextField(labelWithString: "Your turn")
-        title.font = .systemFont(ofSize: 15, weight: .semibold)
-        let body = NSTextField(wrappingLabelWithString: "Click the page to open it, then complete the security check. We\u{2019}ll continue as soon as it clears.")
-        body.font = .systemFont(ofSize: 12)
+        title.font = .systemFont(ofSize: 20)
+        let body = NSTextField(wrappingLabelWithString: "Click the page and complete the check. We\u{2019}ll finish the rest.")
+        body.font = .systemFont(ofSize: 16)
         body.textColor = .secondaryLabelColor
-        body.preferredMaxLayoutWidth = width - 28
+        body.preferredMaxLayoutWidth = width - 40
         let content = NSStackView(views: [title, body])
         content.orientation = .vertical
         content.alignment = .leading
-        content.spacing = 4
+        content.spacing = 8
         content.translatesAutoresizingMaskIntoConstraints = false
         addSubview(content)
         NSLayoutConstraint.activate([
-            content.topAnchor.constraint(equalTo: topAnchor, constant: 12),
-            content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
-            content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
-            content.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
+            content.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            content.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16)
         ])
     }
 
@@ -1141,12 +1071,40 @@ private final class YourTurnCallout: NSView {
     override var wantsUpdateLayer: Bool { true }
 
     override func updateLayer() {
-        layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.1).cgColor
-        layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.6).cgColor
+        // The design's pollen tones: a pale yellow fill inside a warm yellow outline.
+        layer?.backgroundColor = NSColor.systemYellow.withAlphaComponent(0.08).cgColor
+        layer?.borderColor = NSColor.systemYellow.withAlphaComponent(0.6).cgColor
     }
 }
 
-private final class PreviewCardView: NSVisualEffectView {
+/// The page snapshot at the pane's full width, top anchored like a browser window; the bottom of the page crops.
+private final class SnapshotView: NSView {
+    var image: NSImage? {
+        didSet { needsDisplay = true }
+    }
+
+    override var isFlipped: Bool { true }
+
+    static func pageRect(for imageSize: CGSize, in bounds: CGRect) -> CGRect {
+        guard imageSize.width > 0, imageSize.height > 0, bounds.width > 0 else { return bounds }
+        return CGRect(x: 0, y: 0, width: bounds.width, height: imageSize.height * bounds.width / imageSize.width)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.textBackgroundColor.setFill()
+        bounds.fill()
+        guard let image else { return }
+        image.draw(in: Self.pageRect(for: image.size, in: bounds), from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+    }
+}
+
+private final class PreviewCardView: NSView {
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
+    }
+
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard alphaValue > 0, super.hitTest(point) != nil else { return nil }
         let hit = super.hitTest(point)

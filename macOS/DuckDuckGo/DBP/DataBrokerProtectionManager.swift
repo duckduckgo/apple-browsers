@@ -301,6 +301,8 @@ extension DataBrokerProtectionManager {
         guard let fixture else { return }
         Logger.dataBrokerProtection.log("PIR debug launch: seeding \(fixture.records.count, privacy: .public) demo records.")
         try dataManager.seedDemoFixture(fixture)
+        // A dashboard tab restored at launch loaded before the seed and would stay on onboarding.
+        NotificationCenter.default.post(name: DataBrokerProtectionNotifications.shouldReloadUI, object: nil)
     }
 
     private func stopDebugAgent() async throws {

@@ -11,7 +11,8 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        .library(name: "DuckAINative", targets: ["DuckAINative", "DuckAIChatUI", "DuckAIChatCore", "DuckAIChatProviders"]),
+        .library(name: "DuckAINative", targets: ["DuckAINative", "DuckAIChatUI", "DuckAIChatCore", "DuckAIChatProviders",
+                                                 "DuckAILocalTasks", "DuckAIEvals"]),
         .library(name: "DuckAIChatMLX", targets: ["DuckAIChatMLX"])
     ],
     dependencies: [
@@ -33,9 +34,13 @@ let package = Package(
             swiftSettings: v5
         ),
         .target(name: "DuckAIChatUI", dependencies: ["DuckAIChatCore"], swiftSettings: v5),
+        .target(name: "DuckAILocalTasks", dependencies: ["DuckAIChatCore"], swiftSettings: v5),
+        .target(name: "DuckAIEvals", dependencies: ["DuckAIChatCore", "DuckAILocalTasks"], swiftSettings: v5),
         .target(name: "DuckAINative", dependencies: ["DuckAIChatCore", "DuckAIChatUI", "DuckAIChatProviders"], swiftSettings: v5),
         .testTarget(name: "DuckAIChatCoreTests", dependencies: ["DuckAIChatCore"], swiftSettings: v5),
         .testTarget(name: "DuckAIChatProvidersTests", dependencies: ["DuckAIChatCore", "DuckAIChatProviders"], swiftSettings: v5),
-        .testTarget(name: "DuckAIChatUITests", dependencies: ["DuckAIChatUI"], swiftSettings: v5)
+        .testTarget(name: "DuckAIChatUITests", dependencies: ["DuckAIChatUI"], swiftSettings: v5),
+        .testTarget(name: "DuckAILocalTasksTests", dependencies: ["DuckAIChatCore", "DuckAIChatProviders", "DuckAILocalTasks"], swiftSettings: v5),
+        .testTarget(name: "DuckAIEvalsTests", dependencies: ["DuckAIChatCore", "DuckAIChatProviders", "DuckAIEvals"], swiftSettings: v5)
     ]
 )

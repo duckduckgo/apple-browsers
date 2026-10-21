@@ -24,6 +24,7 @@ import UIKit
 import AppKit
 #endif
 
+/// Mirrors the Duck.ai web frontend's own tokens so the native chat matches it; these are not DRK colors.
 public enum DuckAIChatTokens {
 
     public enum Color {

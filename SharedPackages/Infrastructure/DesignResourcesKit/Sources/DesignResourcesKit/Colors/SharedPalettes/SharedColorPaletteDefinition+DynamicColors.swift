@@ -136,14 +136,6 @@ extension SharedColorPaletteDefinition {
         case .buttonsPrimaryText:
             return buttonsPrimaryText
 
-        /// Buttons/SecondaryFill
-        case .buttonsSecondaryFillDefault:
-            return buttonsSecondaryFillDefault
-        case .buttonsSecondaryFillPressed:
-            return buttonsSecondaryFillPressed
-        case .buttonsSecondaryFillText:
-            return buttonsSecondaryFillText
-
         /// Container Colors
         case .containerFillPrimary:
             return containerFillPrimary

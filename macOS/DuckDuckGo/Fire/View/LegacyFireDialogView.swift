@@ -213,7 +213,7 @@ struct LegacyFireDialogView: ModalView {
             containerCornerRadius: style.segmentedControlCornerRadius,
             segmentCornerRadius: style.segmentedControlItemCornerRadius,
             selectedForeground: style.selectedForeground,
-            unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
+            unselectedForeground: Color(designSystemColor: .controlsBase),
             selectedIconBackground: style.selectedIconBackground,
             selectedSegmentFill: Color(designSystemColor: .surfaceTertiary),
             selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),
@@ -492,8 +492,8 @@ struct LegacyFireDialogView: ModalView {
                             topPadding: 3,
                             bottomPadding: 3,
                             horizontalPadding: 12,
-                            backgroundColor: Color(designSystemColor: .buttonsSecondaryFillDefault),
-                            backgroundPressedColor: Color(designSystemColor: .buttonsSecondaryFillPressed)
+                            backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                            backgroundPressedColor: Color(designSystemColor: .controlsFillTertiary)
                         )
                     )
                     .fixedSize(horizontal: true, vertical: true)
@@ -545,10 +545,10 @@ struct LegacyFireDialogView: ModalView {
                         Group {
                             if AppVersion.isLiquidGlassSupported {
                                 Capsule(style: .continuous)
-                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                                    .fill(Color(designSystemColor: .controlsFillPrimary))
                             } else {
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                                    .fill(Color(designSystemColor: .controlsFillPrimary))
                             }
                         }
                     )

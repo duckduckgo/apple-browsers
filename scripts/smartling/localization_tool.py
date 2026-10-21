@@ -39,6 +39,7 @@ class SubmitResult:
     """Machine-readable result for automated job submission."""
     outcome: str
     job_id: str = ""
+    job_name: str = ""
     total_strings: int = 0
     max_usd: str = ""
     reason: str = ""
@@ -47,6 +48,7 @@ class SubmitResult:
         return {
             'outcome': self.outcome,
             'job_id': self.job_id,
+            'job_name': self.job_name,
             'total_strings': self.total_strings,
             'max_usd': self.max_usd,
             'reason': self.reason,
@@ -353,21 +355,21 @@ def parse_estimate(report: Dict) -> tuple[int, Decimal]:
 async def run_submit(client: SmartlingClient,
                      files: List[Path],
                      job_name: str,
-                     job_prefix: str,
+                     pending_job_prefix: str,
                      file_uri_prefix: str,
-                     threshold: Decimal,
+                     auto_authorize_max_usd: Decimal,
                      sleep=asyncio.sleep) -> SubmitResult:
-    """Submit files to a new job and authorize it if the estimate is within the threshold."""
+    """Submit files to a new job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd."""
     job_id = ""
     try:
         pending_jobs = await client.list_jobs(
-            job_prefix,
+            pending_job_prefix,
             ['AWAITING_AUTHORIZATION']
         )
         pending_job = next(
             (
                 job for job in pending_jobs
-                if job.get('jobName', '').startswith(job_prefix)
+                if job.get('jobName', '').startswith(pending_job_prefix)
             ),
             None
         )
@@ -376,6 +378,7 @@ async def run_submit(client: SmartlingClient,
             return SubmitResult(
                 outcome='review_required',
                 job_id=job_id,
+                job_name=pending_job['jobName'],
                 reason=f"'{pending_job['jobName']}' is still awaiting authorization, so no new job was created"
             )
 
@@ -388,6 +391,7 @@ async def run_submit(client: SmartlingClient,
             return SubmitResult(
                 outcome='skipped_existing_job',
                 job_id=existing_job.get('translationJobUid') or existing_job.get('jobUid', ''),
+                job_name=job_name,
                 reason=f"A job named '{job_name}' already exists"
             )
 
@@ -411,26 +415,29 @@ async def run_submit(client: SmartlingClient,
             process_id = await client.cancel_job(job_id)
             await wait_for_job_cancellation(client, job_id, process_id, sleep)
             await client.delete_job(job_id)
-            return SubmitResult(outcome='no_content')
-        if max_usd <= threshold:
+            return SubmitResult(outcome='no_new_strings')
+        if max_usd <= auto_authorize_max_usd:
             await client.authorize_job(job_id)
             return SubmitResult(
                 outcome='authorized',
                 job_id=job_id,
+                job_name=job_name,
                 total_strings=total_strings,
                 max_usd=format(max_usd, 'f')
             )
         return SubmitResult(
             outcome='review_required',
             job_id=job_id,
+            job_name=job_name,
             total_strings=total_strings,
             max_usd=format(max_usd, 'f'),
-            reason=f"Maximum USD estimate exceeds {format(threshold, 'f')}"
+            reason=f"Maximum USD estimate exceeds {format(auto_authorize_max_usd, 'f')}"
         )
     except Exception as error:  # pylint: disable=broad-except
         return SubmitResult(
             outcome='review_required',
             job_id=job_id,
+            job_name=job_name if job_id else "",
             reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
         )
 
@@ -503,22 +510,22 @@ async def upload_command(args):
 
 
 async def submit_command(args):
-    """Create a translation job and authorize it if the estimate is within the threshold."""
+    """Create a translation job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd."""
     try:
         files = [Path(file_path) for file_path in args.files]
         missing_files = [str(file_path) for file_path in files if not file_path.exists()]
         if missing_files:
             raise RuntimeError(f"Missing export files: {', '.join(missing_files)}")
 
-        threshold = Decimal(args.threshold)
+        auto_authorize_max_usd = Decimal(args.auto_authorize_max_usd)
         async with SmartlingClient(get_credentials(args)) as client:
             result = await run_submit(
                 client,
                 files,
                 args.job_name,
-                args.job_prefix,
+                args.pending_job_prefix,
                 args.file_uri_prefix,
-                threshold
+                auto_authorize_max_usd
             )
     except Exception as error:  # pylint: disable=broad-except
         result = SubmitResult(
@@ -530,6 +537,7 @@ async def submit_command(args):
     result_path.write_text(json.dumps(result.as_dict()), encoding='utf-8')
     print(f"OUTCOME={result.outcome}")
     print(f"JOB_ID={result.job_id}")
+    print(f"JOB_NAME={result.job_name}")
     print(f"TOTAL_STRINGS={result.total_strings}")
     print(f"MAX_USD={result.max_usd}")
     print(f"REASON={result.reason}")
@@ -645,12 +653,12 @@ def main():
     # Submit
     submit_parser = subparsers.add_parser('submit')
     submit_parser.add_argument('--job-name', required=True)
-    submit_parser.add_argument('--job-prefix', required=True,
+    submit_parser.add_argument('--pending-job-prefix', required=True,
                                help='Skip submission while a job with this name prefix awaits authorization')
     submit_parser.add_argument('--file-uri-prefix', required=True,
                                help='Smartling file URIs become <prefix>/<file name>, e.g. main or release/ios/7.200.0')
     submit_parser.add_argument('--files', nargs='+', required=True)
-    submit_parser.add_argument('--threshold', default='500.00',
+    submit_parser.add_argument('--auto-authorize-max-usd', default='500.00',
                                help='Authorize the job when its maximum USD estimate is at most this amount')
     submit_parser.add_argument('--result-file', default='submit_result.json')
 

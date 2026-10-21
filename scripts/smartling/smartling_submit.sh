@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # Submits a platform's exported strings to a new Smartling job and authorizes it
-# when the maximum USD estimate is within the threshold.
-# Writes outcome, job_id, total_strings, max_usd and reason to GITHUB_OUTPUT.
+# when the maximum USD estimate is at most --auto-authorize-max-usd.
+# Writes job_name, outcome, job_id, total_strings, max_usd and reason to GITHUB_OUTPUT.
 
 usage() {
-	echo "Usage: $0 <iOS|macOS> --job-name <name> --job-prefix <prefix> --file-uri-prefix <prefix> [--threshold <usd>]" >&2
-	echo "  e.g. $0 iOS --job-name 'Release iOS 7.200.0' --job-prefix 'Release iOS ' --file-uri-prefix release/ios/7.200.0" >&2
+	echo "Usage: $0 <iOS|macOS> --job-name <name> --pending-job-prefix <prefix> --file-uri-prefix <prefix> [--auto-authorize-max-usd <usd>]" >&2
+	echo "  e.g. $0 iOS --job-name 'Release iOS 7.200.0' --pending-job-prefix 'Release iOS ' --file-uri-prefix release/ios/7.200.0" >&2
 	exit 1
 }
 
@@ -15,16 +15,16 @@ PLATFORM="${1:-}"
 shift || true
 
 JOB_NAME=""
-JOB_PREFIX=""
+PENDING_JOB_PREFIX=""
 FILE_URI_PREFIX=""
-THRESHOLD="500.00"
+AUTO_AUTHORIZE_MAX_USD="500.00"
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--job-name) JOB_NAME="${2:-}"; shift 2 ;;
-		--job-prefix) JOB_PREFIX="${2:-}"; shift 2 ;;
+		--pending-job-prefix) PENDING_JOB_PREFIX="${2:-}"; shift 2 ;;
 		--file-uri-prefix) FILE_URI_PREFIX="${2:-}"; shift 2 ;;
-		--threshold) THRESHOLD="${2:-}"; shift 2 ;;
+		--auto-authorize-max-usd) AUTO_AUTHORIZE_MAX_USD="${2:-}"; shift 2 ;;
 		*) usage ;;
 	esac
 done
@@ -44,7 +44,7 @@ case "$PLATFORM" in
 		;;
 esac
 
-if [ -z "$JOB_NAME" ] || [ -z "$JOB_PREFIX" ] || [ -z "$FILE_URI_PREFIX" ] || [ -z "$THRESHOLD" ]; then
+if [ -z "$JOB_NAME" ] || [ -z "$PENDING_JOB_PREFIX" ] || [ -z "$FILE_URI_PREFIX" ] || [ -z "$AUTO_AUTHORIZE_MAX_USD" ]; then
 	usage
 fi
 
@@ -52,20 +52,22 @@ RESULT_FILE="${RUNNER_TEMP:-/tmp}/smartling-submit-${PLATFORM}.json"
 
 ./scripts/smartling/loc_tool.sh submit \
 	--job-name "$JOB_NAME" \
-	--job-prefix "$JOB_PREFIX" \
+	--pending-job-prefix "$PENDING_JOB_PREFIX" \
 	--file-uri-prefix "$FILE_URI_PREFIX" \
 	--files "${FILES[@]}" \
-	--threshold "$THRESHOLD" \
+	--auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD" \
 	--result-file "$RESULT_FILE"
 
 outcome="$(jq -r '.outcome' "$RESULT_FILE")"
 job_id="$(jq -r '.job_id' "$RESULT_FILE")"
+job_name="$(jq -r '.job_name' "$RESULT_FILE")"
 total_strings="$(jq -r '.total_strings' "$RESULT_FILE")"
 max_usd="$(jq -r '.max_usd' "$RESULT_FILE")"
 reason="$(jq -r '.reason' "$RESULT_FILE")"
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
 	{
+		echo "job_name=$job_name"
 		echo "outcome=$outcome"
 		echo "job_id=$job_id"
 		echo "total_strings=$total_strings"
@@ -79,10 +81,10 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
 		echo "## $PLATFORM Smartling job: $JOB_NAME"
 		echo
 		echo "- Outcome: \`$outcome\`"
-		echo "- Job ID: \`${job_id:-none}\`"
+		echo "- Job: \`${job_name:-none}\` (\`${job_id:-none}\`)"
 		echo "- Untranslated strings: \`$total_strings\`"
 		echo "- Maximum USD estimate: \`${max_usd:-unavailable}\`"
-		echo "- Threshold: \`$THRESHOLD\`"
+		echo "- Authorized automatically up to: \`$AUTO_AUTHORIZE_MAX_USD USD\`"
 		[ -z "$reason" ] || echo "- Reason: $reason"
 	} >> "$GITHUB_STEP_SUMMARY"
 fi

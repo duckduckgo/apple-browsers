@@ -94,9 +94,9 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
             client=client,
             files=[Path('en.xliff')],
             job_name='Nightly iOS - 2026-08-04',
-            job_prefix='Nightly iOS - ',
+            pending_job_prefix='Nightly iOS - ',
             file_uri_prefix='main',
-            threshold=Decimal('500.00'),
+            auto_authorize_max_usd=Decimal('500.00'),
             sleep=no_sleep
         )
 
@@ -108,7 +108,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
 
         result = await self.run_submit(client)
 
-        self.assertEqual(result.outcome, 'no_content')
+        self.assertEqual(result.outcome, 'no_new_strings')
         self.assertEqual(client.deleted_jobs, ['job-123'])
         self.assertEqual(client.authorized_jobs, [])
         self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
@@ -197,6 +197,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.outcome, 'review_required')
         self.assertEqual(result.job_id, 'pending-job')
+        self.assertEqual(result.job_name, 'Nightly iOS - 2026-08-03')
         self.assertIn('Nightly iOS - 2026-08-03', result.reason)
         self.assertEqual(client.created_jobs, [])
 

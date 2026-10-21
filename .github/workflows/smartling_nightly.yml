@@ -17,8 +17,8 @@ on:
         description: "Create Smartling jobs, authorizing them if the cost estimate is within budget"
         type: boolean
         default: false
-      threshold:
-        description: "Maximum USD estimate to authorize automatically (0 never authorizes)"
+      auto_authorize_max_usd:
+        description: "Authorize jobs whose maximum USD estimate is at most this (0 never authorizes)"
         type: string
         default: "500.00"
 
@@ -31,7 +31,7 @@ concurrency:
 
 env:
   SUBMIT_TO_SMARTLING: ${{ github.event_name == 'schedule' || inputs.submit_to_smartling }}
-  THRESHOLD: ${{ inputs.threshold || '500.00' }}
+  AUTO_AUTHORIZE_MAX_USD: ${{ inputs.auto_authorize_max_usd || '500.00' }}
 
 jobs:
   smartling:
@@ -117,7 +117,7 @@ jobs:
         if: env.SUBMIT_TO_SMARTLING != 'true'
         run: echo "Export completed. Smartling writes were disabled."
 
-      - name: Create and evaluate ${{ matrix.platform }} Smartling job
+      - name: Submit ${{ matrix.platform }} strings to Smartling
         id: submit
         if: env.SUBMIT_TO_SMARTLING == 'true'
         env:
@@ -125,13 +125,13 @@ jobs:
         run: |
           ./scripts/smartling/smartling_submit.sh "$PLATFORM" \
             --job-name "Nightly $PLATFORM - $(date -u +%Y-%m-%d)" \
-            --job-prefix "Nightly $PLATFORM - " \
+            --pending-job-prefix "Nightly $PLATFORM - " \
             --file-uri-prefix main \
-            --threshold "$THRESHOLD"
+            --auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD"
 
       # TODO: Assign the task to this week's maintenance DRI once we know where to look them up.
       # Until then it lands unassigned in the platform's app project.
-      - name: Create ${{ matrix.platform }} estimate review task
+      - name: Open ${{ matrix.platform }} Smartling review task
         if: >-
           always() && env.SUBMIT_TO_SMARTLING == 'true' &&
           steps.write_branch_check.outcome != 'failure' &&
@@ -141,13 +141,13 @@ jobs:
           action: create-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-project: ${{ env.ASANA_PROJECT_ID }}
-          asana-task-name: Smartling nightly job needs review - ${{ matrix.platform }} - ${{ steps.submit.outputs.job_id || github.sha }}
+          asana-task-name: "Smartling job needs review: ${{ steps.submit.outputs.job_name || format('Nightly {0} (no job created)', matrix.platform) }}"
           asana-task-description: >-
             The ${{ matrix.platform }} nightly Smartling job could not be automatically authorized.
             Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}.
             Maximum USD estimate: ${{ steps.submit.outputs.max_usd || 'unavailable' }}.
             Untranslated strings: ${{ steps.submit.outputs.total_strings || 'unavailable' }}.
             Reason: ${{ steps.submit.outputs.reason || 'Localization export or Smartling submission failed' }}.
-            Threshold: $${{ env.THRESHOLD }}.
+            Authorized automatically up to: $${{ env.AUTO_AUTHORIZE_MAX_USD }}.
             Commit: ${{ github.sha }}.
             Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

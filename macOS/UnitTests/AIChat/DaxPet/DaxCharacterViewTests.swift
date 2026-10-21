@@ -231,4 +231,101 @@ final class DaxCharacterViewTests: XCTestCase {
 
         XCTAssertEqual(character.wallProximity, 0)
     }
+    // MARK: - Poses
+
+    private func makeLivelyCharacter() -> DaxCharacterView {
+        DaxCharacterView(reduceMotion: { false },
+                         idleTime: { [unowned self] in idleTime },
+                         mouseLocation: { [unowned self] in mouseLocation })
+    }
+
+    func testWhenThinkingThenDaxPondersUntilHeIsDone() {
+        character = makeLivelyCharacter()
+
+        character.mood = .thinking
+        XCTAssertTrue(character.isPondering)
+
+        character.mood = .idle
+        XCTAssertFalse(character.isPondering)
+    }
+
+    func testWhenMotionIsReducedThenDaxThinksWithoutTheWing() {
+        character.mood = .thinking
+
+        XCTAssertFalse(character.isPondering)
+    }
+
+    func testWhenCelebratingThenDaxFlapsForAMoment() {
+        character = makeLivelyCharacter()
+
+        character.celebrate()
+        XCTAssertTrue(character.isCelebrating)
+
+        for _ in 0..<40 { character.step() }
+        XCTAssertFalse(character.isCelebrating)
+    }
+
+    func testWhenPettedLongEnoughThenDaxAlsoFlaps() {
+        character = makeLivelyCharacter()
+        let frame = showCharacter()
+
+        pet(frames: Int(DaxCharacterView.lovedPettingDuration * 30) + 10, over: frame)
+
+        XCTAssertTrue(character.isCelebrating)
+    }
+
+    // MARK: - Strolls
+
+    func testWhenStrollingThenDaxWalksOutAndComesBackToHisSpot() throws {
+        character = makeLivelyCharacter()
+        let start = try showCharacter(nearLeftEdgeBy: 300).origin
+        var ended = 0
+        character.onStrollEnded = { ended += 1 }
+
+        character.stroll(by: 30)
+        var furthest: CGFloat = 0
+        for _ in 0..<300 where character.isStrolling {
+            character.step()
+            furthest = max(furthest, (window?.frame.minX ?? 0) - start.x)
+        }
+
+        XCTAssertEqual(furthest, 30, accuracy: 0.5)
+        XCTAssertFalse(character.isStrolling)
+        XCTAssertEqual(window?.frame.origin, start)
+        XCTAssertEqual(ended, 1)
+    }
+
+    func testWhenStrollingLeftThenDaxWalksLeft() throws {
+        character = makeLivelyCharacter()
+        let start = try showCharacter(nearLeftEdgeBy: 300).origin
+
+        character.stroll(by: -30)
+        for _ in 0..<10 { character.step() }
+
+        XCTAssertLessThan(window?.frame.minX ?? 0, start.x)
+    }
+
+    func testWhenSomethingHappensMidStrollThenDaxStopsWhereHeIs() throws {
+        character = makeLivelyCharacter()
+        let start = try showCharacter(nearLeftEdgeBy: 300).origin
+        var ended = 0
+        character.onStrollEnded = { ended += 1 }
+        character.stroll(by: 60)
+        for _ in 0..<10 { character.step() }
+
+        character.mood = .listening
+        character.step()
+
+        XCTAssertFalse(character.isStrolling)
+        XCTAssertNotEqual(window?.frame.origin, start)
+        XCTAssertEqual(ended, 1)
+    }
+
+    func testWhenMotionIsReducedThenDaxNeverStrolls() throws {
+        _ = try showCharacter(nearLeftEdgeBy: 300)
+
+        character.stroll(by: 30)
+
+        XCTAssertFalse(character.isStrolling)
+    }
 }

@@ -21,7 +21,8 @@ import ConcurrencyExtensions
 import Lottie
 
 /// Dax, alive: his eyes follow a target, he blinks, breathes, turns to face the cursor, hops, waves,
-/// loves being petted and dozes off when the Mac is left alone.
+/// ponders with a wing at his chin, flaps for joy, takes the odd stroll, loves being petted and dozes off
+/// when the Mac is left alone.
 @MainActor
 final class DaxCharacterView: NSView {
 
@@ -43,8 +44,26 @@ final class DaxCharacterView: NSView {
     nonisolated static let sleepDelay: TimeInterval = 180
 
     var mood: Mood = .idle {
-        didSet { if mood != oldValue { lastTypingTime = nil } }
+        didSet {
+            guard mood != oldValue else { return }
+            lastTypingTime = nil
+            if mood == .thinking {
+                raiseWingToChin()
+            } else if oldValue == .thinking {
+                lowerWingFromChin()
+            }
+        }
     }
+
+    /// Wing at his chin, mulling it over.
+    private(set) var isPondering = false
+    /// Flapping for joy.
+    var isCelebrating: Bool { flapStartTime != nil }
+
+    /// Off for a little walk, and back.
+    var isStrolling: Bool { stroll != nil }
+    /// A stroll ended, back where he started or wherever it was cut short.
+    var onStrollEnded: (() -> Void)?
 
     private(set) var isAsleep = false {
         didSet { if isAsleep != oldValue { onSleepChange?(isAsleep) } }
@@ -111,6 +130,19 @@ final class DaxCharacterView: NSView {
     private var dragStartOrigin: NSPoint?
     private var lastDragOrigin: NSPoint?
     private var landingStartTime: TimeInterval?
+    private var flapStartTime: TimeInterval?
+    private var stroll: Stroll?
+    private var nextStrollTime: TimeInterval = .random(in: DaxCharacterView.strollInterval)
+    private var stepPhase: CGFloat = 0
+
+    private struct Stroll {
+        enum Leg { case out, pause, back }
+        let start: NSPoint
+        let distance: CGFloat
+        var leg = Leg.out
+        var travelled: CGFloat = 0
+        var pauseStartTime: TimeInterval?
+    }
 
     init(rig: DaxRig? = DaxRig(),
          reduceMotion: @escaping () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion },
@@ -231,7 +263,7 @@ final class DaxCharacterView: NSView {
     }
 
     func wave() {
-        guard !reduceMotion(), !isPlayingGesture, time - lastWaveTime > 4 else { return }
+        guard !reduceMotion(), !isPlayingGesture, !isPondering, time - lastWaveTime > 4 else { return }
         lastWaveTime = time
         isPlayingGesture = true
         animationView?.animationSpeed = 1
@@ -240,6 +272,113 @@ final class DaxCharacterView: NSView {
             guard finished else { return }
             self?.play(DaxRig.Frames.wave.upperBound, to: DaxRig.Frames.wave.lowerBound, speed: 1.6)
         }
+    }
+
+    // MARK: - Poses
+
+    /// A joyful flap of the wings, with a hop.
+    func celebrate() {
+        hop()
+        flapWings()
+    }
+
+    private func flapWings() {
+        guard !reduceMotion() else { return }
+        flapStartTime = time
+    }
+
+    /// Hand to chin: the wave is played as far as the raised wing, and held there.
+    private func raiseWingToChin() {
+        guard !reduceMotion(), let animationView else { return }
+        isPondering = true
+        isPlayingGesture = true
+        animationView.animationSpeed = 1
+        animationView.play(fromFrame: DaxRig.Frames.idle, toFrame: DaxRig.Frames.wingUp, loopMode: .playOnce) { [weak self] finished in
+            guard finished else { return }
+            self?.isPlayingGesture = false
+        }
+    }
+
+    private func lowerWingFromChin() {
+        guard isPondering else { return }
+        isPondering = false
+        play(DaxRig.Frames.wingUp, to: DaxRig.Frames.idle, speed: 1.6)
+    }
+
+    // MARK: - Strolls
+
+    /// How long he stands around between strolls.
+    nonisolated static let strollInterval: ClosedRange<TimeInterval> = 45...120
+    nonisolated static let strollSpeed: CGFloat = 28
+
+    /// Walks `distance` points along the floor (negative is left), looks around, and walks back.
+    func stroll(by distance: CGFloat) {
+        guard !reduceMotion(), let origin = window?.frame.origin, distance != 0 else { return }
+        stroll = Stroll(start: origin, distance: distance)
+        turn(left: distance < 0)
+    }
+
+    private var canStroll: Bool {
+        mood == .idle && !isAsleep && drowsiness < 0.1 && !isBeingDragged && !isBeingPetted && !isAnticipatingDrop
+    }
+
+    private func updateStroll() {
+        guard var current = stroll else {
+            if time >= nextStrollTime {
+                nextStrollTime = time + .random(in: Self.strollInterval)
+                if canStroll, let distance = strollDistance() { stroll(by: distance) }
+            }
+            stepPhase = 0
+            return
+        }
+        guard canStroll, let window else {
+            endStroll()
+            return
+        }
+
+        switch current.leg {
+        case .out, .back:
+            current.travelled = min(current.travelled + Self.strollSpeed / 30, abs(current.distance))
+            stepPhase += 2 * .pi * 2.2 / 30
+            // Placed from the start each time: windows snap to pixels, and the rounding would add up.
+            let offset = current.leg == .out ? current.travelled : abs(current.distance) - current.travelled
+            window.setFrameOrigin(NSPoint(x: current.start.x + offset * (current.distance > 0 ? 1 : -1), y: current.start.y))
+            if current.leg == .back, current.travelled >= abs(current.distance) {
+                stroll = current
+                endStroll()
+                return
+            }
+            if current.travelled >= abs(current.distance) {
+                current.leg = .pause
+                current.pauseStartTime = time
+                stepPhase = 0
+            }
+        case .pause:
+            if let start = current.pauseStartTime, time - start >= 1.5 {
+                current.leg = .back
+                current.travelled = 0
+                turn(left: current.distance > 0)
+            }
+        }
+        stroll = current
+    }
+
+    private func endStroll() {
+        stroll = nil
+        stepPhase = 0
+        onStrollEnded?()
+    }
+
+    /// A few steps towards the roomier side, if there's room for them on his screen.
+    private func strollDistance() -> CGFloat? {
+        guard let window, let screen = window.screen?.visibleFrame else { return nil }
+        let frame = window.convertToScreen(convert(bounds, to: nil))
+        let roomLeft = frame.minX - screen.minX - Self.wallDistance
+        let roomRight = screen.maxX - frame.maxX - Self.wallDistance
+        let room = max(roomLeft, roomRight)
+        guard room >= 30 else { return nil }
+        let distance = min(room, .random(in: 40...90))
+        return roomRight >= roomLeft ? distance : -distance
     }
 
     // MARK: - Typing
@@ -299,6 +438,26 @@ final class DaxCharacterView: NSView {
         addSubview(animationView)
 
         let face = self.face
+        animationView.setValueProvider(FloatValueProvider { frame in
+            rig.raisedWingRotation(at: frame) + face.raisedWingTilt
+        }, keypath: DaxRig.raisedWingRotationKeypath)
+        animationView.setValueProvider(PointValueProvider(DaxRig.backWingShoulder), keypath: DaxRig.backWingAnchorKeypath)
+        animationView.setValueProvider(PointValueProvider(CGPoint(x: rig.backWingPosition.x + DaxRig.backWingShoulder.x,
+                                                                  y: rig.backWingPosition.y + DaxRig.backWingShoulder.y)),
+                                       keypath: DaxRig.backWingPositionKeypath)
+        animationView.setValueProvider(FloatValueProvider { _ in face.backWingLift }, keypath: DaxRig.backWingRotationKeypath)
+        animationView.setValueProvider(FloatValueProvider { frame in
+            rig.hairRotation(at: frame) + face.hairDroop
+        }, keypath: DaxRig.hairRotationKeypath)
+        for (layers, isLeft) in [(DaxRig.leftFootLayers, true), (DaxRig.rightFootLayers, false)] {
+            for name in layers {
+                guard let base = rig.footPositions[name] else { continue }
+                animationView.setValueProvider(PointValueProvider { _ in
+                    CGPoint(x: base.x, y: base.y - (isLeft ? face.leftFootLift : face.rightFootLift))
+                }, keypath: AnimationKeypath(keypath: "\(name).Transform.Position"))
+            }
+        }
+
         animationView.setValueProvider(PointValueProvider(DaxRig.eyesPivot), keypath: DaxRig.eyesAnchorKeypath)
         animationView.setValueProvider(PointValueProvider { frame in
             let base = rig.eyesPosition(at: frame)
@@ -331,8 +490,10 @@ final class DaxCharacterView: NSView {
         updatePetting()
         updateDrag()
         updateWallProximity()
+        updateStroll()
         updateEyes()
         updateEyelids()
+        updatePose()
         updateBody()
 
         if face.snapshot != previousFace, animationView?.isAnimationPlaying == false {
@@ -360,6 +521,13 @@ final class DaxCharacterView: NSView {
         case .thinking:
             // Up and away, pondering.
             target = CGPoint(x: -0.6, y: 0.9)
+        case _ where stroll != nil && mood == .idle:
+            // Where he's headed, or a look around at the far end.
+            if stroll?.leg == .pause {
+                target = wander()
+            } else {
+                target = CGPoint(x: facingLeft ? -0.6 : 0.6, y: -0.1)
+            }
         case .listening, .idle:
             if let point = lookTarget ?? cursorTargetIfRecent() {
                 target = direction(towards: point)
@@ -473,6 +641,7 @@ final class DaxCharacterView: NSView {
 
         if let start = pettingStartTime, time - start >= Self.lovedPettingDuration, time - lastLovedPettingTime > 3 {
             lastLovedPettingTime = time
+            flapWings()
             onLovedPetting?()
         }
     }
@@ -556,6 +725,30 @@ final class DaxCharacterView: NSView {
         }
     }
 
+    private func updatePose() {
+        // Wing to chin once it's up beside his face.
+        let wingUp = isPondering && !isPlayingGesture
+        face.raisedWingTilt += ((wingUp ? -30 : 0) - face.raisedWingTilt) * 0.2
+
+        var lift: CGFloat = 0
+        if let start = flapStartTime {
+            let progress = (time - start) / 1.2
+            if progress >= 1 {
+                flapStartTime = nil
+            } else {
+                lift = sin(progress * .pi) * (25 + 20 * sin(progress * 2 * .pi * 6))
+            }
+        }
+        face.backWingLift = lift
+
+        // His tuft flops over as he dozes.
+        face.hairDroop = -35 * drowsiness
+
+        let stride = max(0, sin(stepPhase)), otherStride = max(0, -sin(stepPhase))
+        face.leftFootLift = stride * 30
+        face.rightFootLift = otherStride * 30
+    }
+
     private func updateBody() {
         guard let layer else { return }
         let motion = !reduceMotion()
@@ -568,7 +761,12 @@ final class DaxCharacterView: NSView {
             let progress = (time - start) / 0.25
             if progress >= 1 { bounceStartTime = nil } else { bounceHeight = sin(progress * .pi) * 4 }
         }
-        var sway = motion && mood == .thinking ? sin(time * 2 * .pi / 1.6) * 0.06 : 0
+        var sway = motion && mood == .thinking ? sin(time * 2 * .pi / 1.6) * (isPondering ? 0.03 : 0.06) : 0
+        // A waddle: rocking from foot to foot, bobbing with each step.
+        if stepPhase != 0 {
+            sway += sin(stepPhase) * 0.05
+            bounceHeight += abs(sin(stepPhase)) * 2
+        }
         if motion, isBeingPetted {
             sway += sin(time * 2 * .pi / 0.45) * 0.05 * min(petting, 1)
         }
@@ -608,8 +806,18 @@ private final class Face {
     var eyeOffset = CGPoint.zero
     /// 0 open, 1 shut.
     var eyelids: CGFloat = 0
+    /// Degrees added to the raised front wing, bringing it to his chin.
+    var raisedWingTilt: CGFloat = 0
+    /// Degrees the back wing is lifted from the shoulder.
+    var backWingLift: CGFloat = 0
+    /// Degrees the hair tuft flops over.
+    var hairDroop: CGFloat = 0
+    /// How far each foot is off the floor.
+    var leftFootLift: CGFloat = 0
+    var rightFootLift: CGFloat = 0
 
     var snapshot: [CGFloat] {
-        [(eyeOffset.x * 4).rounded(), (eyeOffset.y * 4).rounded(), (eyelids * 20).rounded()]
+        [(eyeOffset.x * 4).rounded(), (eyeOffset.y * 4).rounded(), (eyelids * 20).rounded(),
+         raisedWingTilt.rounded(), backWingLift.rounded(), hairDroop.rounded(), leftFootLift.rounded(), rightFootLift.rounded()]
     }
 }

@@ -88,6 +88,7 @@ final class DaxPetCoordinator: NSObject {
             let items = DaxPetDroppedItem.items(from: pasteboard)
             Task { await model?.receive(items) }
         }
+        model.character.onStrollEnded = { [weak self] in self?.savePosition() }
         model.character.onDragEnded = { [weak self] in
             self?.keepOnScreen()
             self?.savePosition()

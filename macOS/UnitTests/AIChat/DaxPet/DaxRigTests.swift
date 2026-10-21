@@ -45,4 +45,14 @@ final class DaxRigTests: XCTestCase {
         XCTAssertEqual(rig.eyesPosition(at: -10), rig.eyesPosition(at: 0))
         XCTAssertEqual(rig.eyesPosition(at: 500), rig.eyesPosition(at: 46))
     }
+
+    func testThePosableLayersAreFoundInTheSourceAnimation() throws {
+        let rig = try XCTUnwrap(DaxRig())
+
+        // The raised front wing's source keyframes are 69° at 31.571, -6.5° at 41 and 0° at 47.
+        XCTAssertEqual(rig.raisedWingRotation(at: 44), -6.5 * 0.5, accuracy: 0.001)
+        XCTAssertEqual(rig.hairRotation(at: 0), -24.239, accuracy: 0.001)
+        XCTAssertEqual(rig.backWingPosition, CGPoint(x: 129.324, y: -156.466))
+        XCTAssertEqual(Set(rig.footPositions.keys), Set(DaxRig.leftFootLayers + DaxRig.rightFootLayers))
+    }
 }

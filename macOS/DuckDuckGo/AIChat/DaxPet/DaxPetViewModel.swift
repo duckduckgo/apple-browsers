@@ -174,7 +174,7 @@ final class DaxPetViewModel: ObservableObject {
         stopAwaitingAnswer()
         guard !isComposing else { return }
         if succeeded {
-            character.hop()
+            character.celebrate()
             if !isBrowserActive {
                 hasUnseenAnswer = true
                 say(UserText.daxPetAnswerReady, for: 8)

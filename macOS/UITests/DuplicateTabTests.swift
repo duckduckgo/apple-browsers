@@ -210,6 +210,8 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
         setPinnedTabsMode(shared: false)
         openPage("Chain Original")
         duplicateFromWindowMenu()
+        assertCount(2, in: app.tabs)
+        assertTab("Chain Original", at: 1, in: app.tabs, selected: true)
         openPage("Chain Copy")
         app.pinCurrentTab()
         assertCount(1, in: app.pinnedTabs)
@@ -243,7 +245,7 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
     // MARK: - Helpers
 
     private func openPage(_ title: String) {
-        app.activateAddressBar()
+        _ = app.addressBarValueActivatingIfNeeded(waitingForPageLoad: true)
         app.openSite(pageTitle: title)
     }
 

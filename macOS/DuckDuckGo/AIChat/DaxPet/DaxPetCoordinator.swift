@@ -73,7 +73,10 @@ final class DaxPetCoordinator: NSObject {
             return NSPoint(x: fieldMinX + DaxPetView.Metrics.promptLeadingInset + min(promptWidth, fieldWidth - 60), y: fieldMidY)
         }
         model.character.onClick = { [weak model] in model?.characterClicked() }
-        model.character.onDragEnded = { [weak self] in self?.savePosition() }
+        model.character.onDragEnded = { [weak self] in
+            self?.keepOnScreen()
+            self?.savePosition()
+        }
 
         self.window = window
         self.model = model
@@ -126,6 +129,31 @@ final class DaxPetCoordinator: NSObject {
             model.characterHovered()
         }
         isPointerOverCharacter = isOverCharacter
+    }
+
+    /// Dropped hanging off a screen, he slides back onto it.
+    private func keepOnScreen() {
+        guard let window else { return }
+        let origin = Self.origin(keepingCharacterOnScreenFor: window.frame.origin,
+                                 visibleFrames: NSScreen.screens.map(\.visibleFrame))
+        guard origin != window.frame.origin else { return }
+        window.setFrame(NSRect(origin: origin, size: window.frame.size), display: true, animate: true)
+    }
+
+    /// Where the window must stand for Dax to be wholly on the screen he's mostly on.
+    static func origin(keepingCharacterOnScreenFor origin: NSPoint, visibleFrames: [NSRect]) -> NSPoint {
+        let character = DaxPetView.Metrics.characterFrame().offsetBy(dx: origin.x, dy: origin.y)
+        func overlap(_ screen: NSRect) -> CGFloat {
+            let intersection = screen.intersection(character)
+            return intersection.isNull ? 0 : intersection.width * intersection.height
+        }
+        let screen = visibleFrames.max { overlap($0) < overlap($1) }
+        guard let screen, !screen.contains(character) else { return origin }
+        let dx = character.minX < screen.minX ? screen.minX - character.minX
+            : character.maxX > screen.maxX ? screen.maxX - character.maxX : 0
+        let dy = character.minY < screen.minY ? screen.minY - character.minY
+            : character.maxY > screen.maxY ? screen.maxY - character.maxY : 0
+        return NSPoint(x: origin.x + dx, y: origin.y + dy)
     }
 
     private func savePosition() {

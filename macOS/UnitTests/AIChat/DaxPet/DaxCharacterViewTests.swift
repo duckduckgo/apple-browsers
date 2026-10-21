@@ -198,4 +198,37 @@ final class DaxCharacterViewTests: XCTestCase {
 
         XCTAssertFalse(character.isBeingPetted)
     }
+
+    // MARK: - Screen edges
+
+    private func showCharacter(nearLeftEdgeBy gap: CGFloat) throws -> NSRect {
+        let screen = try XCTUnwrap(NSScreen.main?.visibleFrame)
+        let frame = showCharacter()
+        window?.setFrameOrigin(NSPoint(x: screen.minX + gap, y: screen.minY + 100))
+        return window?.frame ?? frame
+    }
+
+    func testWhenStandingAgainstTheLeftEdgeThenDaxFeelsTheWall() throws {
+        _ = try showCharacter(nearLeftEdgeBy: 0)
+
+        character.step()
+
+        XCTAssertEqual(character.wallProximity, -1, accuracy: 0.001)
+    }
+
+    func testWhenStandingNearTheLeftEdgeThenDaxFeelsItLess() throws {
+        _ = try showCharacter(nearLeftEdgeBy: DaxCharacterView.wallDistance / 2)
+
+        character.step()
+
+        XCTAssertEqual(character.wallProximity, -0.5, accuracy: 0.001)
+    }
+
+    func testWhenStandingAwayFromTheEdgesThenDaxFeelsNoWall() throws {
+        _ = try showCharacter(nearLeftEdgeBy: 300)
+
+        character.step()
+
+        XCTAssertEqual(character.wallProximity, 0)
+    }
 }

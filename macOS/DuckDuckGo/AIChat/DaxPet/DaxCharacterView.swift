@@ -58,6 +58,9 @@ final class DaxCharacterView: NSView {
     /// How far he leans against the direction he's carried in, in radians.
     private(set) var dragTilt: CGFloat = 0
 
+    /// How close he stands to the side of his screen: -1 hard against the left edge, 1 against the right.
+    private(set) var wallProximity: CGFloat = 0
+
     /// Where Dax looks, in screen coordinates. `nil` lets the cursor lead.
     var lookTarget: NSPoint?
 
@@ -249,6 +252,7 @@ final class DaxCharacterView: NSView {
         updateSleep()
         updatePetting()
         updateDrag()
+        updateWallProximity()
         updateEyes()
         updateEyelids()
         updateBody()
@@ -281,6 +285,9 @@ final class DaxCharacterView: NSView {
         case .listening, .idle:
             if let point = lookTarget ?? cursorTargetIfRecent() {
                 target = direction(towards: point)
+            } else if abs(wallProximity) > 0.5 {
+                // Nothing to look at but the wall, so he turns his back to it.
+                target = CGPoint(x: wallProximity > 0 ? -0.8 : 0.8, y: wander().y)
             } else {
                 target = wander()
             }
@@ -398,6 +405,21 @@ final class DaxCharacterView: NSView {
         dragTilt += (desiredTilt - dragTilt) * (isBeingDragged ? 0.25 : 0.15)
     }
 
+    // MARK: - Screen edges
+
+    nonisolated static let wallDistance: CGFloat = 40
+
+    private func updateWallProximity() {
+        guard let window, let screen = window.screen?.visibleFrame else {
+            wallProximity = 0
+            return
+        }
+        let frame = window.convertToScreen(convert(bounds, to: nil))
+        let left = max(0, 1 - (frame.minX - screen.minX) / Self.wallDistance)
+        let right = max(0, 1 - (screen.maxX - frame.maxX) / Self.wallDistance)
+        wallProximity = min(right, 1) - min(left, 1)
+    }
+
     private func updateEyelids() {
         if let start = startleStartTime {
             // Eyes wide with surprise.
@@ -468,7 +490,8 @@ final class DaxCharacterView: NSView {
             let progress = (time - start) / 0.3
             if progress >= 1 { landingStartTime = nil } else { squash = sin(progress * .pi) * 0.14 }
         }
-        let tilt = motion ? dragTilt : 0
+        // Leaning away from a nearby wall.
+        let tilt = motion ? dragTilt + wallProximity * 0.06 : 0
 
         let pivot = CGPoint(x: bounds.midX, y: 0)
         var transform = CATransform3DMakeTranslation(pivot.x, pivot.y + bounceHeight, 0)

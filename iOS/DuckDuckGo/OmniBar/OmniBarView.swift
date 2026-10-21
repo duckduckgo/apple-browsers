@@ -18,10 +18,9 @@
 //
 
 import UIKit
-import DesignResourcesKitIcons
 
 enum OmniBarMetrics {
-    static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+    static let cornerRadius: CGFloat = 22
 
     /// The size of the omnibar's controls and leading icon slot.
     static let itemSize: CGFloat = 44

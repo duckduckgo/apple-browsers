@@ -298,6 +298,58 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(oldCompletionCalled)
     }
 
+    func testWebInputEditingHidesOnlyFloatingBottomNavigationContainer() {
+        for isFloatingUIEnabled in [false, true] {
+            for position in [AddressBarPosition.top, .bottom] {
+                let coordinator = makeCoordinator(position: position)
+                coordinator.setFloatingUIEnabled(isFloatingUIEnabled)
+
+                coordinator.setWebInputEditing(true)
+
+                XCTAssertEqual(coordinator.navigationBarContainer.isHidden, isFloatingUIEnabled && position.isBottom)
+                coordinator.setWebInputEditing(false)
+                XCTAssertFalse(coordinator.navigationBarContainer.isHidden)
+            }
+        }
+    }
+
+    func testWebInputEditingVisibilityFollowsAddressBarPositionChanges() {
+        let coordinator = makeCoordinator()
+        coordinator.setFloatingUIEnabled(true)
+        coordinator.setWebInputEditing(true)
+
+        for position in [AddressBarPosition.bottom, .top, .bottom] {
+            coordinator.addressBarPosition = position
+            XCTAssertEqual(coordinator.navigationBarContainer.isHidden, position.isBottom)
+        }
+
+        coordinator.setWebInputEditing(false)
+        XCTAssertFalse(coordinator.navigationBarContainer.isHidden)
+    }
+
+    func testEndingWebInputEditingPreservesNewTabPageNavigationSuppression() {
+        let coordinator = makeCoordinator(position: .bottom)
+        coordinator.setFloatingUIEnabled(true)
+        coordinator.setNewTabPageInputPresentation(.resting(usesUnifiedInput: true))
+        coordinator.setWebInputEditing(true)
+
+        coordinator.setWebInputEditing(false)
+
+        XCTAssertTrue(coordinator.navigationBarContainer.isHidden)
+    }
+
+    func testDisablingFloatingUIWhileWebInputIsEditingRestoresNavigationContainer() {
+        let coordinator = makeCoordinator(position: .bottom)
+        coordinator.setFloatingUIEnabled(true)
+        coordinator.setWebInputEditing(true)
+        XCTAssertTrue(coordinator.navigationBarContainer.isHidden)
+
+        coordinator.setFloatingUIEnabled(false)
+
+        XCTAssertFalse(coordinator.isWebInputEditing)
+        XCTAssertFalse(coordinator.navigationBarContainer.isHidden)
+    }
+
     private func makeCoordinator(position: AddressBarPosition = .top) -> MainViewCoordinator {
         let parent = UIViewController()
         let coordinator = MainViewCoordinator(parentController: parent)

@@ -286,15 +286,18 @@ final class UnifiedToggleInputHandler: SwitchBarHandling {
     private func updateButtonState() {
         let aiVoiceChatAvailable = !isExpanded && currentToggleState == .aiChat && !prefersDictationOverVoiceChat
         let voiceAvailable = !hidesVoiceButton && (isVoiceSearchEnabled || aiVoiceChatAvailable)
+        let showsAIChatShortcut = DuckAIInputShortcutVisibility.isShortcutShown(isShortcutAvailable: isAIChatShortcutAvailable,
+                                                                                isModeToggleEnabled: isToggleEnabled,
+                                                                                textEntryMode: currentToggleState)
         let nextButtonState: SwitchBarButtonState
 
         if isGenerating && !isExpanded && currentToggleState == .aiChat && !isOnboardingLocked {
             nextButtonState = .stopGeneratingOnly
-        } else if !currentText.isEmpty && !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+        } else if !currentText.isEmpty && showsAIChatShortcut {
             nextButtonState = .clearAndAIChatShortcut
         } else if !currentText.isEmpty {
             nextButtonState = .clearOnly
-        } else if !isToggleEnabled && currentToggleState == .search && isAIChatShortcutAvailable {
+        } else if showsAIChatShortcut {
             nextButtonState = voiceAvailable ? .voiceAndAIChatShortcut : .aiChatShortcutOnly
         } else if voiceAvailable {
             nextButtonState = .voiceOnly

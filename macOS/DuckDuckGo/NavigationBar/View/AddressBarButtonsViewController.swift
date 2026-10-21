@@ -1771,7 +1771,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updateAIChatDividerVisibility()
     }
 
-    private var isAskAIChatButtonExpanded: Bool = false
+    private(set) var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
         let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && aiChatSettings.isAIFeaturesEnabled
@@ -1902,8 +1902,11 @@ final class AddressBarButtonsViewController: NSViewController {
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
 
             askAIChatButtonWidthConstraint.animator().constant = theme.addressBarStyleProvider.addressBarButtonSize
-        } completionHandler: {
-            guard !self.isAskAIChatButtonExpanded else { return }
+        } completionHandler: { [weak self] in
+            // The completion is deferred until the animation finishes, which can be indefinitely
+            // while the display link is paused (e.g. the display is asleep), so it must not retain
+            // the controller and, through it, the window's object graph.
+            guard let self, !self.isAskAIChatButtonExpanded else { return }
             self.askAIChatButton.title = ""
         }
     }

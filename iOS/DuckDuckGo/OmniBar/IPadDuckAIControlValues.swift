@@ -33,11 +33,7 @@ protocol IPadDuckAIControlValues {
     /// selected or the picker is inactive.
     var selectedTools: [AIChatRAGTool]? { get }
 
-    /// The images attached in the iPad address-bar attach button, encoded for submission, or `nil`.
-    var selectedImages: [AIChatNativePrompt.NativePromptImage]? { get }
-
-    /// The files attached in the iPad address-bar attach button, encoded for submission, or `nil`.
-    var selectedFiles: [AIChatNativePrompt.NativePromptFile]? { get }
+    var selectedAttachments: AIChatPromptAttachments { get }
 
     /// The user's Duck.ai tier as the model picker last resolved it.
     var userTier: AIChatUserTier { get }
@@ -49,7 +45,6 @@ struct IPadDuckAIControlValuesSnapshot: IPadDuckAIControlValues {
     var selectedModelId: String?
     var selectedReasoningEffort: AIChatReasoningEffort?
     var selectedTools: [AIChatRAGTool]?
-    var selectedImages: [AIChatNativePrompt.NativePromptImage]?
-    var selectedFiles: [AIChatNativePrompt.NativePromptFile]?
+    var selectedAttachments: AIChatPromptAttachments = .none
     var userTier: AIChatUserTier = .free
 }

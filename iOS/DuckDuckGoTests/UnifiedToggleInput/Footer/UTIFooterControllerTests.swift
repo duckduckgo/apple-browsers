@@ -117,7 +117,7 @@ final class UTIFooterControllerTests: XCTestCase {
         let ids: [UTIFooterItem.ID] = [.highUsage, .usageWarning, .modelSwitch, .attachmentPrivacy]
         let all = ids.map { UTIFooterItem(id: $0, message: message) }
         XCTAssertEqual(UTIFooterItem.visible(from: all, isEditing: false).map(\.id), [.attachmentPrivacy])
-        let ordinary = all.filter { $0.type != .required }
+        let ordinary = all.filter { if case .required = $0.type { false } else { true } }
         XCTAssertEqual(UTIFooterItem.visible(from: ordinary, isEditing: false).map(\.id), [.modelSwitch])
         XCTAssertTrue(UTIFooterItem.visible(from: all, isEditing: true).isEmpty)
     }
@@ -1801,6 +1801,168 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertEqual(reported, [])
     }
 
+    func testVisibleMatchesThePreviousRuleForEveryCombinationOfTheEarlierMessages() {
+        let earlierIDs = UTIFooterItem.ID.allCases.filter { $0 != .promptTooLong }
+        XCTAssertEqual(earlierIDs.count, 7)
+        let message = UTIFooterMessageMapper().attachmentPrivacyMessage()
+        for mask in 0..<(1 << earlierIDs.count) {
+            let items = earlierIDs.enumerated()
+                .filter { mask & (1 << $0.offset) != 0 }
+                .map { UTIFooterItem(id: $0.element, message: message) }
+            for isEditing in [false, true] {
+                XCTAssertEqual(UTIFooterItem.visible(from: items.reversed(), isEditing: isEditing).map(\.id),
+                               previousVisibleIDs(from: items.map(\.id), isEditing: isEditing),
+                               "\(items.map(\.id)) editing: \(isEditing)")
+            }
+        }
+    }
+
+    func testPromptTooLongShowsAloneOverTheTermsAndTheTermsReturnWhenItClears() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.termsConsent])
+
+        sut.setPromptTooLong(overLimit)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
+        XCTAssertEqual(presenter.appliedStacks.last?.map(\.id), [.promptTooLong])
+
+        sut.setPromptTooLong(nil)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.termsConsent])
+        XCTAssertEqual(presenter.appliedStacks.last?.map(\.id), [.termsConsent])
+    }
+
+    func testPromptTooLongHidesTermsAndPrivacyAndBothReturnStackedWithPrivacyStillPresented() {
+        privacyKind = .image
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.termsConsent, .attachmentPrivacy])
+
+        sut.setPromptTooLong(overLimit)
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
+
+        sut.setPromptTooLong(nil)
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.termsConsent, .attachmentPrivacy])
+        XCTAssertEqual(privacyEvents, [.shown])
+    }
+
+    func testOutOfUsageStaysAndThePromptTooLongErrorWaitsBehindIt() {
+        limitsProvider.limits = weeklyReached()
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.setPromptTooLong(overLimit)
+
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.outOfUsage])
+    }
+
+    func testEditingShowsThePromptTooLongErrorAndNothingOnceItClears() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.setEditing(true)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+
+        sut.setPromptTooLong(overLimit)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
+
+        sut.setPromptTooLong(nil)
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+        XCTAssertEqual(presenter.appliedStacks.last?.map(\.id), [])
+    }
+
+    func testEditingWithOutOfUsageShowsNothingEvenOverTheLimit() {
+        limitsProvider.limits = weeklyReached()
+        sut.refresh()
+        sut.setEditing(true)
+
+        sut.setPromptTooLong(overLimit)
+
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+    }
+
+    func testTemporaryErrorNeverReplacesRequiredButOutranksActionAndInformational() {
+        let message = UTIFooterMessageMapper().promptTooLongMessage(count: 2, limit: 1)
+        let temporary: (UTIFooterItem) -> UTIFooterItem.MessageType = { $0.id == .promptTooLong ? .error(.temporary) : $0.type }
+        func visibleIDs(_ ids: [UTIFooterItem.ID]) -> [UTIFooterItem.ID] {
+            UTIFooterItem.visible(from: ids.map { UTIFooterItem(id: $0, message: message) },
+                                  isEditing: false, type: temporary).map(\.id)
+        }
+
+        XCTAssertEqual(visibleIDs([.promptTooLong, .termsConsent]), [.termsConsent])
+        XCTAssertEqual(visibleIDs([.promptTooLong]), [.promptTooLong])
+        XCTAssertEqual(visibleIDs([.multiTabPromotion, .modelSwitch, .promptTooLong]), [.promptTooLong])
+    }
+
+    func testCountChangeWhileOverTheLimitUpdatesOnlyTheCount() {
+        sut.showModelSwitchNotice(modelSwitchNotice())
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.setPromptTooLong(overLimit)
+        let appliedBefore = presenter.appliedStacks.count
+
+        sut.setPromptTooLong(AIChatPromptLength(count: 16_900, limit: 16_000))
+        sut.setPromptTooLong(AIChatPromptLength(count: 16_900, limit: 16_000))
+
+        XCTAssertEqual(presenter.appliedStacks.count, appliedBefore + 1)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
+        XCTAssertEqual(sut.currentMessage?.subtitle, "16900/16000")
+    }
+
+    func testTermsStayInEffectWhileThePromptTooLongErrorHidesThem() {
+        var reported: [(isVisible: Bool, isInEffect: Bool)] = []
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        let onScreenPresenter = OnScreenFooterPresenter(controller: sut)
+        sut.presenter = onScreenPresenter
+        sut.onTermsOfServiceVisibilityChanged = { [unowned self] in reported.append(($0, sut.isTermsOfServiceInEffect)) }
+        sut.refresh()
+
+        sut.setPromptTooLong(overLimit)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
+        XCTAssertTrue(sut.isTermsOfServiceInEffect)
+
+        sut.setPromptTooLong(nil)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.termsConsent])
+        XCTAssertEqual(reported.map(\.isVisible), [true, false, true])
+        XCTAssertEqual(reported.map(\.isInEffect), [true, true, true])
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    func testTermsAcceptedElsewhereWhileHiddenByTheErrorLeaveTermsMode() {
+        var reported: [Bool] = []
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.setPromptTooLong(overLimit)
+        sut.footerVisibilityChanged(isVisible: true)
+        sut.onTermsOfServiceVisibilityChanged = { reported.append($0) }
+
+        termsStore.recordWebReport()
+        sut.refresh()
+
+        XCTAssertFalse(sut.isTermsOfServiceInEffect)
+        XCTAssertEqual(reported, [false])
+    }
+
+    func testTermsAreNotInEffectWhileTheFooterIsOffScreen() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.setPromptTooLong(overLimit)
+
+        XCTAssertTrue(sut.isTermsOfServiceApplicable)
+        XCTAssertFalse(sut.isTermsOfServiceInEffect)
+    }
+
+    private var overLimit: AIChatPromptLength {
+        AIChatPromptLength(count: 16_800, limit: 16_000)
+    }
+
+    private func previousVisibleIDs(from ids: [UTIFooterItem.ID], isEditing: Bool) -> [UTIFooterItem.ID] {
+        guard !isEditing else { return [] }
+        let ordered = ids.sorted { $0.rawValue < $1.rawValue }
+        let required = ordered.filter { [.termsConsent, .outOfUsage, .attachmentPrivacy].contains($0) }
+        return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
+    }
+
     private var termsStore: DuckAiTermsOfServiceStore {
         DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults)
     }
@@ -1959,6 +2121,21 @@ private final class PrivacyDisplayStore: UTIAttachmentPrivacyNoticeDisplayStorin
     var hasShown = false
     func markShown() { hasShown = true }
     func reset() { hasShown = false }
+}
+
+@MainActor
+private final class OnScreenFooterPresenter: UTIFooterPresenting {
+    private unowned let controller: UTIFooterController
+
+    init(controller: UTIFooterController) {
+        self.controller = controller
+    }
+
+    func applyFooterMessages(_ messages: [UTIFooterItem]) {
+        controller.footerVisibilityChanged(visible: messages.map(\.id))
+    }
+
+    func clearPendingFooterMessage() {}
 }
 
 @MainActor

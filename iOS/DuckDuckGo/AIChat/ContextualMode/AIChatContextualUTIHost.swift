@@ -54,6 +54,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     /// The user accepted the offer to attach the page they navigated to.
     var onSuggestionAccepted: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
+    /// Demo branch: lets the native Duck.ai chat take the first prompt instead of the web chat.
+    var nativePromptHandler: ((String, AIChatPageContextData?) -> Bool)?
     /// Counted once per prompt: the user script echoes the first one back as a second delivery.
     var onPromptSent: (() -> Void)?
     /// Fires on every prompt delivery so the session state can mark context delivered and re-render the chip.
@@ -616,6 +618,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            termsAccepted: Bool) {
         onPromptSent?()
         guard claimFirstPromptSubmission() else { return }
+        if nativePromptHandler?(prompt, chipViewModel.pendingAttachedContextData) == true { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,
                                                    attachments: attachments,

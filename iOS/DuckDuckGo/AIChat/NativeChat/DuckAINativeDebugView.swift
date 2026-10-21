@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import DuckAINative
 import SwiftUI
+import UIKit
 
 struct DuckAINativeDebugView: View {
 
@@ -38,6 +40,16 @@ struct DuckAINativeDebugView: View {
             } footer: {
                 Text("Applies to new chats. Open chats keep their mode.")
             }
+            Section("Try it") {
+                Button("Open native chat") {
+                    DuckAINativeDebugView.open(opening: nil)
+                }
+                .accessibilityIdentifier("NativeChatDebug.Open")
+                Button("Open native chat with a prompt") {
+                    DuckAINativeDebugView.open(opening: .prompt("Tell me about ducks"))
+                }
+                .accessibilityIdentifier("NativeChatDebug.OpenWithPrompt")
+            }
             Section("Provider") {
                 Picker("Provider", selection: $settings.provider) {
                     Text("Automatic").tag(DuckAINativeSettings.ProviderChoice.automatic)
@@ -50,5 +62,18 @@ struct DuckAINativeDebugView: View {
             }
         }
         .navigationTitle("Native Duck.ai (demo)")
+    }
+
+    private static let presenter = NativeChatPresenter()
+
+    @MainActor
+    private static func open(opening: Opening?) {
+        let page = PageContext(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
+                               content: "Duck is the common name for many species of waterfowl in the family Anatidae.")
+        guard let context = try? ChatContext(page: page, selections: [], opening: opening),
+              let window = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first,
+              var top = window.rootViewController else { return }
+        while let next = top.presentedViewController { top = next }
+        presenter.present(context, from: top)
     }
 }

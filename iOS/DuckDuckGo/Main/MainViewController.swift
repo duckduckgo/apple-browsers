@@ -118,6 +118,8 @@ enum FloatingGlassAppearancePolicy {
 
 class MainViewController: UIViewController {
 
+    let nativeChatPresenter = NativeChatPresenter()
+
     /// iOS may deliver buffered accelerometer data as a spurious shake when returning from background.
     private static let shakeIgnoreIntervalAfterForeground: TimeInterval = 1.0
 
@@ -5090,6 +5092,18 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChat(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
+        let presentedNatively = nativeChatPresenter.present(request, from: self) { [weak self, weak originatingTab] in
+            guard let self, let originatingTab else { return }
+            self.openAIChatOnWeb(request, from: originatingTab)
+        }
+        if presentedNatively {
+            fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
+        } else {
+            openAIChatOnWeb(request, from: originatingTab)
+        }
+    }
+
+    private func openAIChatOnWeb(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
         fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
         // Record NTP use before ending the idle session.
         if !request.opensNewTab {

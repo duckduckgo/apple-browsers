@@ -311,12 +311,12 @@ struct ContextualSuggestionsMatcher {
 
     /// The UI locale is an Apple identifier (`en_US@rg=plzzzz`), not BCP-47, so use the native accessor
     /// rather than a `split("-")` that would mis-parse the underscore/extension format.
-    private static func uiLanguageSubtag(_ uiLocale: String) -> String {
+    static func uiLanguageSubtag(_ uiLocale: String) -> String {
         Locale(identifier: uiLocale).languageCode?.lowercased() ?? ""
     }
 
     /// Language name in the UI locale, mirroring `Intl.DisplayNames`; falls back to the subtag.
-    private static func languageDisplayName(_ uiLocale: String) -> String {
+    static func languageDisplayName(_ uiLocale: String) -> String {
         let locale = Locale(identifier: uiLocale)
         let subtag = uiLanguageSubtag(uiLocale)
         if let name = locale.localizedString(forLanguageCode: subtag), name.lowercased() != subtag {

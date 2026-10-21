@@ -128,6 +128,8 @@ public struct ChatView: View {
         HStack(alignment: .bottom, spacing: DuckAIChatTokens.Spacing.s8) {
             TextField("Ask anything", text: $draft, axis: .vertical)
                 .font(DuckAIChatTokens.Typography.body.font)
+                .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
+                .tint(DuckAIChatTokens.Color.accent)
                 .lineLimit(1...6)
                 .padding(.vertical, DuckAIChatTokens.Spacing.s12)
                 .padding(.leading, DuckAIChatTokens.Spacing.s16)
@@ -137,18 +139,19 @@ public struct ChatView: View {
                 Button(action: session.stop) {
                     Image(systemName: "stop.circle.fill").font(.system(size: 32))
                 }
+                .foregroundStyle(DuckAIChatTokens.Color.accent)
                 .accessibilityLabel("Stop")
                 .accessibilityIdentifier("NativeChat.Stop")
             } else {
                 Button(action: send) {
                     Image(systemName: "arrow.up.circle.fill").font(.system(size: 32))
                 }
+                .foregroundStyle(DuckAIChatTokens.Color.accent)
                 .disabled(!canSend)
                 .accessibilityLabel("Send")
                 .accessibilityIdentifier("NativeChat.Send")
             }
         }
-        .foregroundStyle(DuckAIChatTokens.Color.accent)
         .padding(.trailing, DuckAIChatTokens.Spacing.s8)
         .padding(.vertical, DuckAIChatTokens.Spacing.s4)
         .background(DuckAIChatTokens.Color.inputBackground, in: RoundedRectangle(cornerRadius: DuckAIChatTokens.Radius.input))

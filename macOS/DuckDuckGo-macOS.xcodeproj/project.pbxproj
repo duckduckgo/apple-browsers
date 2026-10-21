@@ -441,10 +441,12 @@
 		9987A46C3819AA1A434F4C0A /* DaxPetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */; };
 		9B632FDFD824EF7E7BF197B3 /* DaxPetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */; };
 		82FF8643CBC4FBCCBB3F47F9 /* DaxRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */; };
+		2B7DD651FC88FD590002E5A4 /* DaxPetScreenLooker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */; };
 		EAE27112E3CFF562E5D353CF /* DaxPetIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */; };
 		14A58F8FF88963953A4963FE /* DaxOutfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */; };
 		1B62F759DAAD005073A3188D /* DaxPetAttachments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */; };
 		FE26E80FE66AEAC6DF375F17 /* DaxRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */; };
+		91FF5CC5208E38A5F135437D /* DaxPetScreenLooker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */; };
 		66C6EF89FFB224FD20B95BE4 /* DaxPetIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */; };
 		E5C88507AE3ED17CB7CF72A7 /* DaxOutfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */; };
 		1AC6816D2971A01A294FECE4 /* DaxPetAttachments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */; };
@@ -5476,6 +5478,7 @@
 		4ACE48166DEDD9C28DCB47D0 /* DaxPetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetView.swift; sourceTree = "<group>"; };
 		74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetViewModel.swift; sourceTree = "<group>"; };
 		0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxRig.swift; sourceTree = "<group>"; };
+		04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetScreenLooker.swift; sourceTree = "<group>"; };
 		646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetIntelligence.swift; sourceTree = "<group>"; };
 		BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxOutfit.swift; sourceTree = "<group>"; };
 		4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetAttachments.swift; sourceTree = "<group>"; };
@@ -9453,6 +9456,7 @@
 				4ACE48166DEDD9C28DCB47D0 /* DaxPetView.swift */,
 				74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */,
 				0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */,
+				04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */,
 				646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */,
 				BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */,
 				4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */,
@@ -16659,6 +16663,7 @@
 				B3B7DAE0F3F0F6F1F7D2DC40 /* DaxPetView.swift in Sources */,
 				9B632FDFD824EF7E7BF197B3 /* DaxPetViewModel.swift in Sources */,
 				FE26E80FE66AEAC6DF375F17 /* DaxRig.swift in Sources */,
+				91FF5CC5208E38A5F135437D /* DaxPetScreenLooker.swift in Sources */,
 				66C6EF89FFB224FD20B95BE4 /* DaxPetIntelligence.swift in Sources */,
 				E5C88507AE3ED17CB7CF72A7 /* DaxOutfit.swift in Sources */,
 				1AC6816D2971A01A294FECE4 /* DaxPetAttachments.swift in Sources */,
@@ -19092,6 +19097,7 @@
 				2E58D022480CB93B7CF49DF0 /* DaxPetView.swift in Sources */,
 				9987A46C3819AA1A434F4C0A /* DaxPetViewModel.swift in Sources */,
 				82FF8643CBC4FBCCBB3F47F9 /* DaxRig.swift in Sources */,
+				2B7DD651FC88FD590002E5A4 /* DaxPetScreenLooker.swift in Sources */,
 				EAE27112E3CFF562E5D353CF /* DaxPetIntelligence.swift in Sources */,
 				14A58F8FF88963953A4963FE /* DaxOutfit.swift in Sources */,
 				1B62F759DAAD005073A3188D /* DaxPetAttachments.swift in Sources */,

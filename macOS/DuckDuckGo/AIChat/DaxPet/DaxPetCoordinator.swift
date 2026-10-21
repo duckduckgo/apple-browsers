@@ -79,7 +79,10 @@ final class DaxPetCoordinator: NSObject {
     private func show() {
         guard window == nil else { return }
 
-        let model = DaxPetViewModel(submitter: submitter, intelligence: intelligence)
+        let model = DaxPetViewModel(submitter: submitter,
+                                    intelligence: intelligence,
+                                    screenLooker: DaxPetScreenLooker(),
+                                    canSeeForegroundApp: { [preferences] in preferences.canSeeForegroundApp })
         let window = DaxPetWindow(contentRect: NSRect(origin: .zero, size: DaxPetView.Metrics.windowSize))
         window.contentView = NSHostingView(rootView: DaxPetView(model: model))
         window.delegate = self

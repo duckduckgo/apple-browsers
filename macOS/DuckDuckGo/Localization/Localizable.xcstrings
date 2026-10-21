@@ -34307,6 +34307,78 @@
         }
       }
     },
+    "duckai.dax-pet.screen.caption" : {
+      "comment" : "Caption under the setting that lets Dax, the DuckDuckGo mascot, take screenshots of the app in front",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "When you ask Dax about what's on your screen, like “what is this?”, he can take a screenshot of the app you're in for you to send to Duck.ai. Apple Intelligence decides on your Mac whether you're asking about the screen, and nothing is sent until you press Return. Needs Screen Recording permission."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.screen.file-name" : {
+      "comment" : "Name of the screenshot Dax, the DuckDuckGo mascot, takes of the app in front, shown in its tooltip. %@ is the app's name, e.g. Mail",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Screenshot of %@"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.screen.looking" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while he takes a screenshot of the app in front. %@ is the app's name, e.g. Mail",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Taking a look at %@…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.screen.no-permission" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when he couldn't take a screenshot of the app in front, usually for lack of permission. %@ is the app's name, e.g. Mail",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I couldn't see %@. Allow Screen Recording for DuckDuckGo in System Settings."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.screen.ready" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, once he has added a screenshot of the app in front to the question. %@ is the app's name, e.g. Mail",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Here's %@. Press Return to send it along, or ✕ to leave it out."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.screen.toggle" : {
+      "comment" : "Checkbox in Settings → AI Features, under the option to show Dax, the DuckDuckGo mascot. It lets him take a screenshot of the app in front when the user asks him about it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Let Dax look at the app you're using"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.send" : {
       "comment" : "Tooltip of the button that sends the question typed for Dax to Duck.ai",
       "extractionState" : "extracted_with_value",

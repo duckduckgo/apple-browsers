@@ -115,6 +115,14 @@ final class DaxPetPreferencesTests: XCTestCase {
         XCTAssertEqual(persistor.position, CGPoint(x: 120.5, y: 40))
     }
 
+    func testDaxCannotSeeTheAppInFrontUntilTheUserSaysSo() {
+        XCTAssertFalse(persistor.canSeeForegroundApp)
+
+        persistor.canSeeForegroundApp = true
+
+        XCTAssertTrue(persistor.canSeeForegroundApp)
+    }
+
     func testWhenNoOutfitWasChosenThenDaxDressesForTheSeason() {
         XCTAssertEqual(persistor.wardrobe, .seasonal)
     }

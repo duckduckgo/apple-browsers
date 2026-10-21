@@ -27,6 +27,11 @@ final class DaxPetPreferences: ObservableObject {
         didSet { persistor.isEnabled = isEnabled }
     }
 
+    /// Lets Dax take a screenshot of the app in front when the user asks about it. Off until chosen.
+    @Published var canSeeForegroundApp: Bool {
+        didSet { persistor.canSeeForegroundApp = canSeeForegroundApp }
+    }
+
     /// Whether the setting is offered at all.
     var isAvailable: Bool {
         featureFlagger.isFeatureOn(.aiChatDaxPet)
@@ -59,6 +64,7 @@ final class DaxPetPreferences: ObservableObject {
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
         isEnabled = persistor.isEnabled
+        canSeeForegroundApp = persistor.canSeeForegroundApp
     }
 }
 
@@ -67,6 +73,7 @@ protocol DaxPetPreferencesPersistor {
     /// Where Dax stands: the bottom-centre of his window, in screen coordinates.
     var position: CGPoint? { get set }
     var wardrobe: DaxWardrobe { get set }
+    var canSeeForegroundApp: Bool { get set }
 }
 
 struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
@@ -75,6 +82,7 @@ struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
         case isEnabled = "dax-pet.is-enabled"
         case position = "dax-pet.position"
         case wardrobe = "dax-pet.wardrobe"
+        case canSeeForegroundApp = "dax-pet.can-see-foreground-app"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -97,6 +105,11 @@ struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
         nonmutating set {
             try? keyValueStore.set(newValue.map { [Double($0.x), Double($0.y)] }, forKey: Key.position.rawValue)
         }
+    }
+
+    var canSeeForegroundApp: Bool {
+        get { (try? keyValueStore.object(forKey: Key.canSeeForegroundApp.rawValue) as? Bool) ?? false }
+        nonmutating set { try? keyValueStore.set(newValue, forKey: Key.canSeeForegroundApp.rawValue) }
     }
 
     var wardrobe: DaxWardrobe {

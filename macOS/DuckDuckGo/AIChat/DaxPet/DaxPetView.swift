@@ -236,11 +236,8 @@ private struct AttachmentChips: View {
     var body: some View {
         HStack(spacing: 2) {
             ForEach(attachments.prefix(DaxPetView.Metrics.maxVisibleAttachments)) { attachment in
-                Image(nsImage: icon(for: attachment))
-                    .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                chip(for: attachment)
                     .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
-                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
                     .help(attachment.name)
                     .accessibilityLabel(attachment.name)
             }
@@ -254,6 +251,25 @@ private struct AttachmentChips: View {
             .buttonStyle(.plain)
             .help(UserText.daxPetRemoveAttachments)
             .accessibilityLabel(UserText.daxPetRemoveAttachments)
+        }
+    }
+
+    /// Images show what they are, which matters most for a screenshot about to be sent.
+    @ViewBuilder
+    private func chip(for attachment: DaxPetAttachment) -> some View {
+        if case .image(let image) = attachment {
+            Image(nsImage: image.image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
+                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+        } else {
+            Image(nsImage: icon(for: attachment))
+                .renderingMode(.template)
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
+                .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
         }
     }
 

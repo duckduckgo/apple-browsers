@@ -80,6 +80,13 @@ private final class StubDaxPetIntelligence: DaxPetIntelligence {
     var pageGlance: DaxPetPageGlance?
     var pageSummaryCount = 0
 
+    var refersToScreen = false
+    var screenChecks: [String] = []
+    func refersToScreen(_ prompt: String, appName: String) async -> Bool {
+        screenChecks.append(prompt)
+        return refersToScreen
+    }
+
     func pageGlance(title: String, content: String) async -> DaxPetPageGlance? {
         pageSummaryCount += 1
         return pageGlance
@@ -96,6 +103,22 @@ private final class StubDaxPetIntelligence: DaxPetIntelligence {
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String] {
         onSuggest?()
         return suggestions
+    }
+}
+
+@MainActor
+private final class StubDaxPetScreenLooker: DaxPetScreenLooking {
+    var foregroundApp: DaxPetForegroundApp? = DaxPetForegroundApp(name: "Mail", processIdentifier: 42)
+    var screenshot: NSImage? = NSImage(size: NSSize(width: 40, height: 30), flipped: false) { rect in
+        NSColor.blue.setFill()
+        rect.fill()
+        return true
+    }
+    var captures = 0
+
+    func captureWindow(of app: DaxPetForegroundApp) async -> NSImage? {
+        captures += 1
+        return screenshot
     }
 }
 
@@ -623,6 +646,173 @@ final class DaxPetViewModelTests: XCTestCase {
         model.startComposing()
 
         XCTAssertNil(model.glance)
+    }
+
+    // MARK: - The app in front
+
+    private static let imageCapabilities = DaxPetAttachmentCapabilities(
+        model: AIChatModel(id: "model", name: "Model", provider: .openAI, supportsImageUpload: true,
+                           supportedImageFormats: ["png", "jpeg"], entityHasAccess: true),
+        limits: AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 10, maxTotalFileSizeBytes: 30_000_000, maxPagesPerFile: 100),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 10, maxInputCharsWithAttachments: 10_000)))
+
+    private func makeSeeingModel(canSee: Bool = true, refersToScreen: Bool = true)
+        -> (DaxPetViewModel, StubDaxPetIntelligence, StubDaxPetScreenLooker) {
+        let intelligence = StubDaxPetIntelligence()
+        intelligence.refersToScreen = refersToScreen
+        let looker = StubDaxPetScreenLooker()
+        submitter.capabilities = Self.imageCapabilities
+        let model = DaxPetViewModel(submitter: submitter, character: DaxCharacterView(reduceMotion: { true }),
+                                    intelligence: intelligence, screenLooker: looker, canSeeForegroundApp: { canSee })
+        model.submissionDelay = 0
+        return (model, intelligence, looker)
+    }
+
+    /// Lets the screen check, which runs in a task off `submit()`, finish; its stubs never suspend for long.
+    private func settle(_ model: DaxPetViewModel) async {
+        for _ in 0..<50 { await Task.yield() }
+    }
+
+    func testWhenAskedAboutTheScreenThenAScreenshotIsAddedAndNothingIsSentYet() async {
+        let (model, intelligence, looker) = makeSeeingModel()
+        model.startComposing()
+        model.prompt = "What is this?"
+
+        model.submit()
+        await settle(model)
+
+        XCTAssertEqual(intelligence.screenChecks, ["What is this?"])
+        XCTAssertEqual(looker.captures, 1)
+        XCTAssertEqual(model.attachments.map(\.name), [UserText.daxPetScreenFileName("Mail") + ".jpg"])
+        XCTAssertEqual(model.speech, UserText.daxPetScreenReady("Mail"))
+        XCTAssertTrue(model.isComposing)
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testTheNextReturnSendsTheQuestionWithTheScreenshot() async throws {
+        let (model, _, looker) = makeSeeingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        model.startComposing()
+        model.prompt = "What is this?"
+        model.submit()
+        await settle(model)
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertEqual(looker.captures, 1)
+        XCTAssertEqual(submitter.submittedPrompts, ["What is this?"])
+        guard case .query(let query) = try XCTUnwrap(submitter.submittedPayloads.last??.tool) else { return XCTFail("Expected a query") }
+        XCTAssertEqual(query.images?.count, 1)
+        XCTAssertEqual(query.images?.first?.format, "jpeg")
+    }
+
+    func testRemovingTheScreenshotSendsTheQuestionWithoutIt() async {
+        let (model, _, _) = makeSeeingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        model.startComposing()
+        model.prompt = "What is this?"
+        model.submit()
+        await settle(model)
+
+        model.removeAttachments()
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertEqual(submitter.submittedPrompts, ["What is this?"])
+        XCTAssertNil(submitter.submittedPayloads.last ?? nil)
+    }
+
+    func testAQuestionThatStandsOnItsOwnIsSentWithoutLooking() async {
+        let (model, intelligence, looker) = makeSeeingModel(refersToScreen: false)
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        model.startComposing()
+        model.prompt = "Write a poem about ducks"
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertEqual(intelligence.screenChecks, ["Write a poem about ducks"])
+        XCTAssertEqual(looker.captures, 0)
+        XCTAssertEqual(submitter.submittedPrompts, ["Write a poem about ducks"])
+    }
+
+    func testWithoutTheSettingDaxNeverLooks() async {
+        let (model, intelligence, looker) = makeSeeingModel(canSee: false)
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        model.startComposing()
+        model.prompt = "What is this?"
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertTrue(intelligence.screenChecks.isEmpty)
+        XCTAssertEqual(looker.captures, 0)
+    }
+
+    func testWhenSomethingWasDroppedDaxDoesNotLookAtTheScreen() async {
+        let (model, intelligence, _) = makeSeeingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        await model.receive([.text("Quack")])
+        model.prompt = "What is this?"
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertTrue(intelligence.screenChecks.isEmpty)
+    }
+
+    func testWhenTheModelCannotTakeImagesTheQuestionGoesWithoutAScreenshot() async {
+        let (model, _, looker) = makeSeeingModel()
+        submitter.capabilities = .unknown
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        model.startComposing()
+        model.prompt = "What is this?"
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertEqual(looker.captures, 0)
+        XCTAssertEqual(submitter.submittedPrompts, ["What is this?"])
+    }
+
+    func testWhenTheScreenCannotBeCapturedDaxSaysWhyAndTheNextReturnSendsAnyway() async {
+        let (model, _, looker) = makeSeeingModel()
+        looker.screenshot = nil
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        model.startComposing()
+        model.prompt = "What is this?"
+        model.submit()
+        await settle(model)
+
+        XCTAssertEqual(model.speech, UserText.daxPetScreenNoPermission("Mail"))
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(submitter.submittedPrompts, ["What is this?"])
+    }
+
+    func testWithNoOtherAppInFrontDaxDoesNotLook() async {
+        let (model, intelligence, looker) = makeSeeingModel()
+        looker.foregroundApp = nil
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        model.startComposing()
+        model.prompt = "What is this?"
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertTrue(intelligence.screenChecks.isEmpty)
     }
 
     // MARK: - Varied lines

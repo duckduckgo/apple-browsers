@@ -104,15 +104,26 @@ final class DaxPetViewModel: ObservableObject {
 
     private let submitter: DaxPetPromptSubmitting
     private let intelligence: DaxPetIntelligence
+    private let screenLooker: DaxPetScreenLooking?
+    private let canSeeForegroundApp: () -> Bool
+    /// The prompt the screen was last checked for, so the next Return sends rather than checks again.
+    private var screenCheckedPrompt: String?
+    private(set) var isCheckingScreen = false
     /// Rewordings of Dax's lines from the on-device model, by the line they replace.
     private var lineVariations: [String: [String]] = [:]
     private var speechWork: DispatchWorkItem?
     private var answerTimeoutWork: DispatchWorkItem?
     private var attachmentCapabilities = DaxPetAttachmentCapabilities.unknown
 
-    init(submitter: DaxPetPromptSubmitting, character: DaxCharacterView? = nil, intelligence: DaxPetIntelligence? = nil) {
+    init(submitter: DaxPetPromptSubmitting,
+         character: DaxCharacterView? = nil,
+         intelligence: DaxPetIntelligence? = nil,
+         screenLooker: DaxPetScreenLooking? = nil,
+         canSeeForegroundApp: @escaping () -> Bool = { false }) {
         self.submitter = submitter
         self.intelligence = intelligence ?? DaxPetNoIntelligence()
+        self.screenLooker = screenLooker
+        self.canSeeForegroundApp = canSeeForegroundApp
         self.character = character ?? DaxCharacterView()
         self.character.onSleepChange = { [weak self] isAsleep in
             self?.isAsleep = isAsleep
@@ -160,6 +171,7 @@ final class DaxPetViewModel: ObservableObject {
         isComposing = false
         prompt = ""
         attachments = []
+        screenCheckedPrompt = nil
         clearSuggestions()
         character.mood = isAwaitingAnswer ? .thinking : .idle
         character.lookTarget = nil
@@ -174,7 +186,12 @@ final class DaxPetViewModel: ObservableObject {
     func submit() {
         let typed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         let prompt = typed.isEmpty && !attachments.isEmpty ? dropAction?.prompt ?? "" : typed
-        guard !prompt.isEmpty else { return }
+        guard !prompt.isEmpty, !isCheckingScreen else { return }
+        if shouldCheckScreen(for: prompt), let screenLooker, let app = screenLooker.foregroundApp {
+            Task { await checkScreen(for: prompt, in: app, with: screenLooker) }
+            return
+        }
+        screenCheckedPrompt = nil
         let (query, payload) = DaxPetAttachmentLoader.prompt(prompt, attachments: attachments, capabilities: attachmentCapabilities)
         isComposing = false
         self.prompt = ""
@@ -192,6 +209,43 @@ final class DaxPetViewModel: ObservableObject {
             isAwaitingAnswer = true
             scheduleAnswerTimeout(after: answerStartTimeout)
         }
+    }
+
+    // MARK: - The app in front
+
+    /// Only typed questions, with the user's say-so and the on-device model to judge them, and only once each.
+    private func shouldCheckScreen(for prompt: String) -> Bool {
+        canSeeForegroundApp() && intelligence.isOnDevice && attachments.isEmpty && screenCheckedPrompt != prompt
+    }
+
+    /// When the question is about the app in front, a screenshot of it joins the prompt as a chip, and Dax
+    /// waits for another Return before anything is sent; otherwise the question goes as it is.
+    private func checkScreen(for prompt: String, in app: DaxPetForegroundApp, with screenLooker: DaxPetScreenLooking) async {
+        isCheckingScreen = true
+        screenCheckedPrompt = prompt
+        character.mood = .thinking
+        let refersToScreen = await intelligence.refersToScreen(prompt, appName: app.name)
+        let capabilities = refersToScreen ? await submitter.attachmentCapabilities() : attachmentCapabilities
+        isCheckingScreen = false
+        guard isComposing, screenCheckedPrompt == prompt else { return }
+        character.mood = .listening
+
+        let canSendImages = capabilities.validator(pendingImageCount: 0, pendingFiles: []).canAttachImages
+        guard refersToScreen, canSendImages else {
+            submit()
+            return
+        }
+        attachmentCapabilities = capabilities
+        say(UserText.daxPetScreenLooking(at: app.name))
+        guard let screenshot = await screenLooker.captureWindow(of: app), isComposing else {
+            say(UserText.daxPetScreenNoPermission(app.name), for: 6)
+            return
+        }
+        attachments.append(.image(AIChatImageAttachment(image: screenshot,
+                                                        fileName: UserText.daxPetScreenFileName(app.name) + ".jpg",
+                                                        skipResize: true)))
+        updateLookTarget()
+        say(UserText.daxPetScreenReady(app.name))
     }
 
     // MARK: - Duck.ai answers

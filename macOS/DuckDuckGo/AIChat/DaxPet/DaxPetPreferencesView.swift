@@ -27,6 +27,19 @@ struct DaxPetPreferencesView: View {
         if preferences.isAvailable {
             ToggleMenuItem(UserText.daxPetToggle, isOn: $preferences.isEnabled)
                 .accessibilityIdentifier("Preferences.AIChat.daxPetToggle")
+
+            if preferences.isEnabled, DaxPetScreenLooker.isSupported {
+                VStack(alignment: .leading, spacing: 2) {
+                    ToggleMenuItem(UserText.daxPetScreenToggle, isOn: $preferences.canSeeForegroundApp)
+                        .accessibilityIdentifier("Preferences.AIChat.daxPetScreenToggle")
+                    TextMenuItemCaption(UserText.daxPetScreenCaption)
+                }
+                .padding(.leading, 19)
+                .onChange(of: preferences.canSeeForegroundApp) { canSee in
+                    // macOS asks once; afterwards it's up to System Settings.
+                    if canSee { DaxPetScreenLooker.requestPermission() }
+                }
+            }
         }
     }
 }

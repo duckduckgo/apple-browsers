@@ -35,6 +35,8 @@ protocol DaxPetIntelligence {
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind?
     /// A one-sentence gist of a web page, and what the reader might want to ask about it next.
     func pageGlance(title: String, content: String) async -> DaxPetPageGlance?
+    /// Whether answering `prompt` needs to see what the user has open in `appName`.
+    func refersToScreen(_ prompt: String, appName: String) async -> Bool
 }
 
 struct DaxPetPageGlance: Equatable {
@@ -57,6 +59,7 @@ enum DaxPetIntelligenceFactory {
 struct DaxPetNoIntelligence: DaxPetIntelligence {
     var isOnDevice: Bool { false }
     func pageGlance(title: String, content: String) async -> DaxPetPageGlance? { nil }
+    func refersToScreen(_ prompt: String, appName: String) async -> Bool { false }
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String] { [] }
     func variations(of line: String) async -> [String] { [] }
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? { nil }
@@ -169,6 +172,28 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"“”"))) }
             .filter { !$0.isEmpty }
         return DaxPetPageGlance(summary: summary, followUps: followUps)
+    }
+
+    @Generable
+    struct ScreenReference {
+        @Guide(description: "In a few words, what the question points at, if anything")
+        var reason: String
+        @Guide(description: "True when the question points at something the user has open, rather than standing on its own")
+        var needsTheScreen: Bool
+    }
+
+    func refersToScreen(_ prompt: String, appName: String) async -> Bool {
+        let session = LanguageModelSession(instructions: """
+            The user is looking at \(appName) and asks an AI assistant something. Decide whether the question points \
+            at what they have open in \(appName). It does when it says "this", "that", "these" or "here" about \
+            something unnamed, or asks to act on what's open without naming it: "what is this?", "summarize", \
+            "summarize this email", "translate this", "what does this error mean?", "reply to this", "is this a scam?". \
+            It doesn't when the question stands on its own: "what's the capital of France?", "write a poem about \
+            ducks", "how do I boil an egg?", "help me write an email to my landlord".
+            """)
+        let response = try? await session.respond(to: "Question: \(prompt)", generating: ScreenReference.self,
+                                                  options: GenerationOptions(temperature: 0))
+        return response?.content.needsTheScreen ?? false
     }
 
     /// The user's language, by its English name, for the model to answer in.

@@ -762,6 +762,20 @@ struct UserText {
     static let daxPetActionReply = NSLocalizedString("duckai.dax-pet.action.reply", value: "Draft a reply to this", comment: "Request sent to Duck.ai about an email or message dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field")
     static let daxPetActionDescribeImage = NSLocalizedString("duckai.dax-pet.action.describe-image", value: "Describe this image", comment: "Request sent to Duck.ai about an image dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field")
     static let daxPetGlanceAsk = NSLocalizedString("duckai.dax-pet.glance.ask", value: "Ask Duck.ai", comment: "Button in the speech bubble where Dax, the DuckDuckGo mascot, sums up the page open in the browser; it asks Duck.ai to summarize the page in full")
+    static let daxPetScreenToggle = NSLocalizedString("duckai.dax-pet.screen.toggle", value: "Let Dax look at the app you're using", comment: "Checkbox in Settings → AI Features, under the option to show Dax, the DuckDuckGo mascot. It lets him take a screenshot of the app in front when the user asks him about it")
+    static let daxPetScreenCaption = NSLocalizedString("duckai.dax-pet.screen.caption", value: "When you ask Dax about what's on your screen, like “what is this?”, he can take a screenshot of the app you're in for you to send to Duck.ai. Apple Intelligence decides on your Mac whether you're asking about the screen, and nothing is sent until you press Return. Needs Screen Recording permission.", comment: "Caption under the setting that lets Dax, the DuckDuckGo mascot, take screenshots of the app in front")
+    static func daxPetScreenLooking(at app: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.screen.looking", value: "Taking a look at %@…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while he takes a screenshot of the app in front. %@ is the app's name, e.g. Mail"), app)
+    }
+    static func daxPetScreenReady(_ app: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.screen.ready", value: "Here's %@. Press Return to send it along, or ✕ to leave it out.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, once he has added a screenshot of the app in front to the question. %@ is the app's name, e.g. Mail"), app)
+    }
+    static func daxPetScreenNoPermission(_ app: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.screen.no-permission", value: "I couldn't see %@. Allow Screen Recording for DuckDuckGo in System Settings.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, when he couldn't take a screenshot of the app in front, usually for lack of permission. %@ is the app's name, e.g. Mail"), app)
+    }
+    static func daxPetScreenFileName(_ app: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.screen.file-name", value: "Screenshot of %@", comment: "Name of the screenshot Dax, the DuckDuckGo mascot, takes of the app in front, shown in its tooltip. %@ is the app's name, e.g. Mail"), app)
+    }
     static let daxPetPromptPlaceholder = NSLocalizedString("duckai.dax-pet.prompt.placeholder", value: "Ask Dax anything…", comment: "Placeholder of the text field used to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetAsk = NSLocalizedString("duckai.dax-pet.ask", value: "Ask Dax", comment: "Tooltip of the button that opens the field to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetSend = NSLocalizedString("duckai.dax-pet.send", value: "Send", comment: "Tooltip of the button that sends the question typed for Dax to Duck.ai")

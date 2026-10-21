@@ -172,12 +172,6 @@ git add -A -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstr
 git commit -m "Import $PLATFORM $VERSION translations from Smartling"
 git push --force origin "HEAD:refs/heads/$IMPORT_BRANCH"
 
-if [ -n "$OPEN_PR_URL" ]; then
-	PR_URL="$OPEN_PR_URL"
-	echo "✅ Updated $PR_URL"
-	finish pr_updated "The open translations pull request now has this import"
-fi
-
 if [ -n "$JOB_ID" ]; then
 	job_line="- Smartling job: [$JOB_NAME](https://dashboard.smartling.com/app/projects/$SMARTLING_PROJECT_ID/account-jobs/$SMARTLING_PROJECT_ID:$JOB_ID)"
 else
@@ -211,6 +205,14 @@ $workflow_line
 ---
 *Created automatically by the Smartling release import workflow*
 EOF
+
+if [ -n "$OPEN_PR_URL" ]; then
+	gh pr edit "$OPEN_PR_URL" --body-file "$PR_BODY_FILE"
+	rm -f "$PR_BODY_FILE"
+	PR_URL="$OPEN_PR_URL"
+	echo "✅ Updated $PR_URL"
+	finish pr_updated "The open translations pull request now has this import"
+fi
 
 PR_URL="$(gh pr create \
 	--base "$RELEASE_BRANCH" \

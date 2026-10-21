@@ -148,9 +148,6 @@ protocol SharedColorPaletteDefinition {
     static var unifiedInputTextPrimary: DynamicColor { get }
     static var unifiedInputTextSecondary: DynamicColor { get }
 
-    // MARK: - System
-    static var lines: DynamicColor { get }
-
     // MARK: - Shadow Colors
     static var shadowPrimary: DynamicColor { get }
     static var shadowSecondary: DynamicColor { get }

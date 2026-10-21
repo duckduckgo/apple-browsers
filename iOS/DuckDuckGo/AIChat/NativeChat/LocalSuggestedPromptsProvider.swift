@@ -38,9 +38,15 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
 
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions {
         let resolved = await base.resolveSuggestions(input)
-        guard await DuckAINativeSettings.shared.generatesSuggestedPromptsLocally,
-              input.scope == .page,
-              let content = input.pageContent, !content.isEmpty else { return resolved }
+        guard await DuckAINativeSettings.shared.generatesSuggestedPromptsLocally else { return resolved }
+        guard input.scope == .page else {
+            await LocalSuggestionsDiagnostics.shared.record(outcome: "Skipped: selection scope uses the catalog")
+            return resolved
+        }
+        guard let content = input.pageContent, !content.isEmpty else {
+            await LocalSuggestionsDiagnostics.shared.record(outcome: "Skipped: no page content when suggestions resolved")
+            return resolved
+        }
 
         let provider = await NativeChatProviderFactory.makeProvider(for: .suggestedPrompts)
         let budget = await DuckAINativeSettings.shared.suggestionsBudgetSeconds
@@ -48,15 +54,35 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
                                                   budget: .milliseconds(Int(budget * 1_000)),
                                                   uiLanguageName: ContextualSuggestionsMatcher.languageDisplayName(input.uiLocale))
         let page = PageSnapshot(title: input.pageTitle ?? "", url: input.url.flatMap(URL.init(string:)), content: content, language: nil)
-        let started = ContinuousClock.now
-        let result = await generator.suggestions(for: page)
-        Self.logger.notice("Local suggested prompts: \(String(describing: result), privacy: .public) in \(started.duration(to: .now), privacy: .public)")
+        let run = await generator.run(for: page)
+        let details = [
+            "Budget \(budget) s after loading",
+            "Load \(Self.seconds(run.loadTime)) · first word \(Self.seconds(run.timeToFirstText)) · total \(Self.seconds(run.total))",
+            "Page \(content.count) characters"
+        ]
+        Self.logger.notice("Local suggested prompts: \(String(describing: run.result), privacy: .public) \(details.joined(separator: " | "), privacy: .public)")
+        await LocalSuggestionsDiagnostics.shared.record(outcome: Self.outcome(run.result), modelName: provider.descriptor.modelName,
+                                                        details: details, raw: run.raw)
 
-        guard case .generated(let prompts, _) = result else { return resolved }
+        guard case .generated(let prompts, _) = run.result else { return resolved }
         let actions = resolved.suggestions.filter { Self.actionSuggestionIDs.contains($0.id) }
         let local = prompts.enumerated().map { index, prompt in
             ContextualSuggestedPrompt(id: "local-\(index)", label: prompt.text, prompt: prompt.text, icon: nil)
         }
         return ResolvedPageSuggestions(suggestions: actions + local, isSmart: true, pageType: resolved.pageType)
+    }
+
+    private static func outcome(_ result: SuggestedPromptsResult) -> String {
+        switch result {
+        case .generated(let prompts, _): "Generated \(prompts.count) prompts"
+        case .timedOut: "Fell back: timed out"
+        case .failed(let error): "Fell back: failed (\(error))"
+        case .unusable: "Fell back: nothing usable in the reply"
+        }
+    }
+
+    private static func seconds(_ duration: Duration?) -> String {
+        guard let duration else { return "–" }
+        return String(format: "%.2f s", Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18)
     }
 }

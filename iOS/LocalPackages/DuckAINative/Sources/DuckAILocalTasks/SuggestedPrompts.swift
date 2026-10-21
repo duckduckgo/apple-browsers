@@ -53,6 +53,17 @@ public enum SuggestedPromptsResult: Equatable, Sendable {
     case unusable(raw: String)
 }
 
+/// One generation, with what it produced and when, for diagnosing why suggestions fell back.
+public struct SuggestedPromptsRun: Sendable {
+    public let result: SuggestedPromptsResult
+    /// Everything the model wrote, including partial text when the run timed out.
+    public let raw: String
+    /// From the request until the model started reading the page.
+    public let loadTime: Duration?
+    public let timeToFirstText: Duration?
+    public let total: Duration
+}
+
 /// One-shot suggested prompts for the contextual sheet, from any `ChatProvider`.
 public struct SuggestedPromptsGenerator: Sendable {
     public static let defaultBudget: Duration = .milliseconds(1_500)
@@ -81,12 +92,17 @@ public struct SuggestedPromptsGenerator: Sendable {
     /// the model starts reading the page, so loading it does not count; `loadBudget` caps the wait before that. When a budget elapses first, raises the reply's `StopSignal` and returns
     /// `.timedOut` at once; the provider drains on its own (Core's stop contract). Never throws.
     public func suggestions(for page: PageSnapshot) async -> SuggestedPromptsResult {
+        await run(for: page).result
+    }
+
+    public func run(for page: PageSnapshot) async -> SuggestedPromptsRun {
+        let trace = RunTrace()
         let stop = StopSignal()
         let turn = SuggestedPromptsPrompt.turn(for: page, count: maxSuggestions, uiLanguageName: uiLanguageName)
         let (results, continuation) = AsyncStream<SuggestedPromptsResult>.makeStream()
         let (reading, readingContinuation) = AsyncStream<Void>.makeStream()
         Task.detached {
-            continuation.yield(await result(for: turn, stop: stop, onReading: { readingContinuation.finish() }))
+            continuation.yield(await result(for: turn, stop: stop, trace: trace, onReading: { readingContinuation.finish() }))
             continuation.finish()
             readingContinuation.finish()
         }
@@ -116,10 +132,10 @@ public struct SuggestedPromptsGenerator: Sendable {
         var iterator = results.makeAsyncIterator()
         let result = await iterator.next() ?? .timedOut
         timeout.cancel()
-        return result
+        return trace.run(result)
     }
 
-    private func result(for turn: ProviderTurn, stop: StopSignal, onReading: () -> Void) async -> SuggestedPromptsResult {
+    private func result(for turn: ProviderTurn, stop: StopSignal, trace: RunTrace, onReading: () -> Void) async -> SuggestedPromptsResult {
         var raw = ""
         var stats: GenerationStats?
         var refused = false
@@ -127,8 +143,11 @@ public struct SuggestedPromptsGenerator: Sendable {
             for try await event in provider.reply(to: turn, stop: stop) {
                 switch event {
                 case .stage(.readingInput):
+                    trace.markReading()
                     onReading()
                 case .textDelta(let text):
+                    trace.markReading()
+                    trace.append(text)
                     onReading()
                     raw += text
                     // Models often keep writing past the suggestions; stop as soon as enough whole lines have arrived.
@@ -190,10 +209,42 @@ public enum SuggestedPromptsPrompt {
             let text = line.trimmingCharacters(in: .whitespacesAndNewlines)
                 .replacingOccurrences(of: #"^(?:[-*•]\s*|\d+[.)]\s*)"#, with: "", options: .regularExpression)
                 .trimmingCharacters(in: surroundingCharacters)
+                .replacingOccurrences(of: #"^[*_`]+|[*_`]+$"#, with: "", options: .regularExpression)
+                .trimmingCharacters(in: surroundingCharacters)
             guard (8...80).contains(text.count), !text.hasSuffix(":"), seen.insert(text.lowercased()).inserted else { continue }
             suggestions.append(SuggestedPrompt(text))
             if suggestions.count == max { break }
         }
         return suggestions
+    }
+}
+
+private final class RunTrace: @unchecked Sendable {
+    private let lock = NSLock()
+    private let started = ContinuousClock.now
+    private var raw = ""
+    private var readingAt: ContinuousClock.Instant?
+    private var firstTextAt: ContinuousClock.Instant?
+
+    func markReading() {
+        lock.withLock {
+            if readingAt == nil { readingAt = .now }
+        }
+    }
+
+    func append(_ text: String) {
+        lock.withLock {
+            if firstTextAt == nil { firstTextAt = .now }
+            raw += text
+        }
+    }
+
+    func run(_ result: SuggestedPromptsResult) -> SuggestedPromptsRun {
+        lock.withLock {
+            SuggestedPromptsRun(result: result, raw: raw,
+                                loadTime: readingAt.map { started.duration(to: $0) },
+                                timeToFirstText: firstTextAt.map { started.duration(to: $0) },
+                                total: started.duration(to: .now))
+        }
     }
 }

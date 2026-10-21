@@ -26,6 +26,7 @@ struct DuckAINativeDebugView: View {
 
     @ObservedObject var settings: DuckAINativeSettings
     @StateObject private var evals = NativeEvalRunModel()
+    @ObservedObject private var suggestions = LocalSuggestionsDiagnostics.shared
 
     init(settings: DuckAINativeSettings = .shared) {
         self.settings = settings
@@ -91,6 +92,21 @@ struct DuckAINativeDebugView: View {
                 Text("Evals")
             } footer: {
                 Text("Runs every case through the selected provider, keeps the device awake, and saves report.json and cases.json for scripts/duckai-native-evals/judge.py.")
+            }
+            Section("Suggested prompts: last run") {
+                if let last = suggestions.last {
+                    LabeledContent(last.outcome, value: last.date.formatted(date: .omitted, time: .standard))
+                    if let model = last.modelName {
+                        LabeledContent("Model", value: model)
+                    }
+                    ForEach(last.details, id: \.self) { Text($0).font(.caption) }
+                    if !last.raw.isEmpty {
+                        Text(last.raw).font(.caption.monospaced()).textSelection(.enabled)
+                    }
+                } else {
+                    Text("No run yet. Turn on Suggested prompts: Local model, then open the sheet on a page.")
+                        .font(.caption)
+                }
             }
             Section("Suggested prompts budget") {
                 Picker("Budget", selection: $settings.suggestionsBudgetSeconds) {

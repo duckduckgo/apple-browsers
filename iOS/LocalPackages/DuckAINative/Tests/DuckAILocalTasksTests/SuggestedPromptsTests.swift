@@ -131,6 +131,32 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func aRunReportsWhatTheModelWroteAndWhenEvenOnATimeout() async {
+        let provider = StubProvider(configuration: .init(reply: "What do ducks eat " + String(repeating: "and more ", count: 100),
+                                                         wordsPerSecond: 20, loadTime: .milliseconds(200), readTime: .zero))
+        let generator = SuggestedPromptsGenerator(provider: provider, budget: .milliseconds(400), uiLanguageName: "English")
+
+        let run = await generator.run(for: page)
+
+        #expect(run.result == .timedOut)
+        #expect(run.raw.hasPrefix("What do ducks"))
+        #expect((run.loadTime ?? .zero) >= .milliseconds(150))
+        #expect(run.timeToFirstText != nil)
+        #expect(run.total >= run.loadTime ?? .zero)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func parseStripsMarkdownEmphasis() {
+        #expect(SuggestedPromptsPrompt.parse("1. **What do ducks eat?**\n- *How long do ducks live?*\n`Why do ducks quack?`", max: 4) == [
+            SuggestedPrompt("What do ducks eat?"),
+            SuggestedPrompt("How long do ducks live?"),
+            SuggestedPrompt("Why do ducks quack?")
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func aSlowModelTimesOutWithinTheBudget() async {
         let generator = SuggestedPromptsGenerator(provider: stub(String(repeating: "word ", count: 200), wordsPerSecond: 5),
                                                   budget: .milliseconds(150), uiLanguageName: "English")

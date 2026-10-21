@@ -91,6 +91,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         // Give the non-editable placeholder a VoiceOver action without intercepting trailing buttons.
         let activateButton = context.coordinator.activateButton
         activateButton.searchView = view
+        activateButton.accessibilityIdentifier = "searchEntry"
         view.addSubview(activateButton)
         activateButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([

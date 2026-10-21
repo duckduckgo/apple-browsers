@@ -284,6 +284,59 @@ final class CPMStableBaseURLIntegrationTests: CPMAppIntegrationTestCase {
         }
     }
 
+    /// Run twice with one owned fixture token, in separate test-host processes: prepare, then resume.
+    func testBackgroundError6AcrossAppRelaunch() async throws {
+        let harness = try XCTUnwrap(self.harness)
+        let token = try XCTUnwrap(harness.relaunchToken, "Use the dedicated two-process relaunch runner")
+        let phase = try XCTUnwrap(harness.relaunchPhase)
+        let checkpoint = phase == "resume" ? try harness.relaunchCheckpoint() : nil
+        try await harness.start()
+        let context = try XCTUnwrap(harness.context)
+        let tab = try XCTUnwrap(harness.openWindow().first)
+        let key = "cpm-relaunch-\(token.uuidString)"
+        if let checkpoint {
+            XCTAssertNotEqual(getpid(), checkpoint.hostPID, "Resume must run in a new app process")
+            XCTAssertEqual(context.uniqueIdentifier, checkpoint.installation)
+            XCTAssertNotEqual(context.baseURL, checkpoint.initialOrigin, "Relaunch must abandon the failed worker origin")
+            if ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION_DISABLE_STABLE_BASE_URL"] != "1" {
+                XCTAssertNotNil(checkpoint.savedOrigin)
+                XCTAssertEqual(context.baseURL, checkpoint.savedOrigin.flatMap { URL(string: "webkit-extension://\($0.uuidString.lowercased())/") })
+            }
+            assertHealthy(try await harness.navigate(tab, label: "relaunch-resumed"))
+            let value = try await storage(in: tab, harness: harness, key: key)
+            XCTAssertEqual(value, checkpoint.storageValue, "App relaunch must preserve extension settings")
+            harness.note(["relaunchPhase": phase, "previousHostPID": checkpoint.hostPID, "hostPID": getpid(),
+                          "initialOrigin": checkpoint.initialOrigin.absoluteString, "liveOrigin": context.baseURL.absoluteString])
+            return
+        }
+
+        assertHealthy(try await harness.navigate(tab, label: "relaunch-before-crash"))
+        let value = UUID().uuidString
+        let roundTrip = try await storage(in: tab, harness: harness, key: key, value: value)
+        XCTAssertEqual(roundTrip, value)
+        let before = try XCTUnwrap(harness.installationStore?.installedExtension(withUniqueIdentifier: context.uniqueIdentifier))
+        let liveOrigin = context.baseURL
+        harness.observeBackgroundLoadErrors(in: context)
+        let pid = try XCTUnwrap(CPMAppWebKit.process(CPMAppWebKit.background(context)))
+        XCTAssertEqual(kill(pid, SIGKILL), 0)
+        try await harness.wait("real error 6 after owned background SIGKILL", timeout: 12) {
+            harness.backgroundLoadErrorContexts.contains(ObjectIdentifier(context))
+        }
+        let after = try XCTUnwrap(harness.installationStore?.installedExtension(withUniqueIdentifier: context.uniqueIdentifier))
+        XCTAssertTrue(harness.context === context, "No recovery reload may mask the next-launch case")
+        XCTAssertEqual(context.baseURL, liveOrigin)
+        if ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION_DISABLE_STABLE_BASE_URL"] == "1" {
+            XCTAssertEqual(after.cpmOriginIdentifier, before.cpmOriginIdentifier, "OFF must veto error-triggered rotation")
+        } else {
+            XCTAssertNotNil(after.cpmOriginIdentifier)
+            XCTAssertNotEqual(after.cpmOriginIdentifier, before.cpmOriginIdentifier, "Persist before app termination, without waiting for reload")
+        }
+        try harness.preserveForRelaunch(.init(token: token, hostPID: getpid(), installation: context.uniqueIdentifier,
+                                            initialOrigin: liveOrigin, savedOrigin: after.cpmOriginIdentifier, storageValue: value))
+        harness.note(["relaunchPhase": phase, "hostPID": getpid(), "backgroundSIGKILL": pid,
+                      "initialOrigin": liveOrigin.absoluteString, "savedOrigin": after.cpmOriginIdentifier?.uuidString ?? "none"])
+    }
+
     func testBackgroundProcessCrashStillRecovers() async throws {
         let harness = try await start()
         // Keep the shipped error-6 retry and confirmed-hang fallback enabled. Other P3

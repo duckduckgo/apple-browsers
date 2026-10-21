@@ -21,6 +21,7 @@ import Foundation
 import ObjectiveC
 import FeatureFlags_macOS
 import PrivacyConfig
+import Persistence
 @testable import WebExtensions
 import WebKit
 import XCTest
@@ -160,22 +161,36 @@ final class CPMAppHandlerProvider: @preconcurrency WebExtensionHandlerProviding 
 
 @available(macOS 15.4, *)
 final class CPMAppInstallationStore: InstalledWebExtensionStoring {
-    private(set) var installedExtensions: [InstalledWebExtension] = []
+    private var records: [InstalledWebExtension] = []
+    private let persistent: InstalledWebExtensionStore?
+    var installedExtensions: [InstalledWebExtension] { persistent?.installedExtensions ?? records }
+
+    init(defaults: UserDefaults? = nil) {
+        persistent = defaults.map { InstalledWebExtensionStore(storage: $0.keyedStoring()) }
+    }
 
     func markInstalledVersionAsOutdated() {
-        installedExtensions = installedExtensions.map {
-            InstalledWebExtension(uniqueIdentifier: $0.uniqueIdentifier, filename: $0.filename,
-                                  name: $0.name, version: "2000.1.1", embeddedType: $0.embeddedType,
-                                  storeIdentity: $0.storeIdentity)
+        for record in installedExtensions {
+            update(InstalledWebExtension(uniqueIdentifier: record.uniqueIdentifier, filename: record.filename,
+                                        name: record.name, version: "2000.1.1", embeddedType: record.embeddedType,
+                                        storeIdentity: record.storeIdentity, cpmOriginIdentifier: record.cpmOriginIdentifier))
         }
     }
 
     func add(_ extension: InstalledWebExtension) {
-        installedExtensions.append(`extension`)
+        if let persistent { persistent.add(`extension`) } else { records.append(`extension`) }
     }
 
     func remove(uniqueIdentifier: String) {
-        installedExtensions.removeAll { $0.uniqueIdentifier == uniqueIdentifier }
+        if let persistent { persistent.remove(uniqueIdentifier: uniqueIdentifier) } else { records.removeAll { $0.uniqueIdentifier == uniqueIdentifier } }
+    }
+
+    func update(_ extension: InstalledWebExtension) {
+        if let persistent {
+            persistent.update(`extension`)
+        } else if let index = records.firstIndex(where: { $0.uniqueIdentifier == `extension`.uniqueIdentifier }) {
+            records[index] = `extension`
+        }
     }
 
     func installedExtension(withUniqueIdentifier identifier: String) -> InstalledWebExtension? {

@@ -32,6 +32,14 @@ import XCTest
 @available(macOS 15.4, *)
 @MainActor
 final class CPMAppIntegrationHarness {
+    struct RelaunchCheckpoint: Codable {
+        let token: UUID
+        let hostPID: Int32
+        let installation: String
+        let initialOrigin: URL
+        let savedOrigin: UUID?
+        let storageValue: String
+    }
     struct Probe {
         let label: String
         let url: URL
@@ -57,7 +65,11 @@ final class CPMAppIntegrationHarness {
     let native = CPMAppNativeRecorder()
     let server = CPMAppFixtureServer()
     private var ownedDataStore: WKWebsiteDataStore?
-    private let persistentStoreIdentifier = UUID()
+    private let persistentStoreIdentifier: UUID
+    let relaunchToken: UUID?
+    let relaunchPhase: String?
+    private let relaunchDefaults: UserDefaults?
+    private var preservesRelaunchFixture = false
     var dataStore: WKWebsiteDataStore { ownedDataStore! }
     let directory: URL
     private let flags: MockFeatureFlagger
@@ -92,14 +104,39 @@ final class CPMAppIntegrationHarness {
 
     init() throws {
         app = try XCTUnwrap(Application.appDelegate)
+        let environment = ProcessInfo.processInfo.environment
+        relaunchPhase = environment["CPM_APP_INTEGRATION_RELAUNCH_PHASE"]
+        relaunchToken = environment["CPM_APP_INTEGRATION_RELAUNCH_TOKEN"].flatMap(UUID.init(uuidString:))
+        if relaunchPhase != nil || environment["CPM_APP_INTEGRATION_RELAUNCH_TOKEN"] != nil {
+            guard relaunchToken != nil, ["prepare", "resume"].contains(relaunchPhase) else {
+                throw NSError(domain: "CPMAppIntegration", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid owned relaunch fixture configuration"])
+            }
+        }
+        persistentStoreIdentifier = relaunchToken ?? UUID()
+        relaunchDefaults = try relaunchToken.map { try XCTUnwrap(UserDefaults(suiteName: "com.duckduckgo.cpm-relaunch.\($0.uuidString)")) }
         ownedDataStore = WKWebsiteDataStore(forIdentifier: persistentStoreIdentifier)
         flags = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
         savedFlags = flags.featuresStub
         // TestRunHelper swizzles FileManager.temporaryDirectory to a shared folder and deletes
         // that folder from other test-host lifecycles. Keep extension resources outside it.
         directory = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("cpm-app-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            .appendingPathComponent(relaunchToken.map { "cpm-app-relaunch-\($0.uuidString)" } ?? "cpm-app-\(UUID().uuidString)")
+        if let relaunchToken {
+            let owner = directory.appendingPathComponent("owner.txt")
+            if relaunchPhase == "prepare" {
+                guard !FileManager.default.fileExists(atPath: directory.path) else {
+                    throw NSError(domain: "CPMAppIntegration", code: 3, userInfo: [NSLocalizedDescriptionKey: "Refusing to replace an existing relaunch fixture"])
+                }
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try relaunchToken.uuidString.write(to: owner, atomically: true, encoding: .utf8)
+            } else {
+                guard try String(contentsOf: owner, encoding: .utf8) == relaunchToken.uuidString else {
+                    throw NSError(domain: "CPMAppIntegration", code: 4, userInfo: [NSLocalizedDescriptionKey: "Relaunch fixture ownership mismatch"])
+                }
+            }
+        } else {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
         privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         (contentBlocking.privacyConfigurationManager.privacyConfig as? MockPrivacyConfiguration)?.isFeatureEnabledCheck = { _, _ in false }
         nativeConfiguration.currentConfigString = """
@@ -175,7 +212,7 @@ final class CPMAppIntegrationHarness {
             let handler = WebExtensionHandlerProvider(privacyConfigurationManager: nativeConfiguration,
                                                       autoconsentPreferences: Preferences(),
                                                       cpmMessagingHealthMonitor: monitor)
-            let installationStore = CPMAppInstallationStore()
+            let installationStore = CPMAppInstallationStore(defaults: relaunchDefaults)
             self.installationStore = installationStore
             let manager = WebExtensionManager(
                 configuration: WebExtensionConfigurationProvider(),
@@ -413,6 +450,19 @@ final class CPMAppIntegrationHarness {
 
     func note(_ value: [String: Any]) { observations.append(value) }
 
+    func preserveForRelaunch(_ checkpoint: RelaunchCheckpoint) throws {
+        XCTAssertEqual(checkpoint.token, relaunchToken)
+        try JSONEncoder().encode(checkpoint).write(to: directory.appendingPathComponent("checkpoint.json"), options: .atomic)
+        XCTAssertTrue(try XCTUnwrap(relaunchDefaults).synchronize(), "Flush only the owned fixture's persistent registry")
+        preservesRelaunchFixture = true
+    }
+
+    func relaunchCheckpoint() throws -> RelaunchCheckpoint {
+        let checkpoint = try JSONDecoder().decode(RelaunchCheckpoint.self, from: Data(contentsOf: directory.appendingPathComponent("checkpoint.json")))
+        XCTAssertEqual(checkpoint.token, relaunchToken)
+        return checkpoint
+    }
+
     func attach(to test: XCTestCase) throws {
         let events = pixels.events.compactMap { event -> [String: Any]? in
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return nil }
@@ -429,7 +479,7 @@ final class CPMAppIntegrationHarness {
 
     func stop() async {
         guard ownsEnvironment else {
-            try? FileManager.default.removeItem(at: directory)
+            if relaunchPhase != "resume" { try? FileManager.default.removeItem(at: directory) }
             return
         }
         var ownedViews = autoreleasepool {
@@ -466,6 +516,19 @@ final class CPMAppIntegrationHarness {
         for process in frozenProcesses { kill(process, SIGCONT) }
         frozenProcesses.removeAll()
         autoreleasepool {
+            if preservesRelaunchFixture {
+                // A real app exit must preserve worker data and the saved registry. Unload without
+                // invoking the Fire/data-clear path, which would rotate the origin and mask this test.
+                for manager in generations {
+                    for context in manager.contexts {
+                        do {
+                            try manager.loader.unloadExtension(identifier: context.uniqueIdentifier, from: manager.controller)
+                        } catch {
+                            XCTFail("Owned relaunch context unload failed: \(error)")
+                        }
+                    }
+                }
+            }
             app.configureWebExtensionsForIntegrationTests(factory: nil)
             for window in windows {
                 let controller = window.windowController as? MainWindowController
@@ -480,11 +543,13 @@ final class CPMAppIntegrationHarness {
             warmup = nil
             privacyFeatures = nil
         }
-        await dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
-        for manager in generations {
-            let types = WKWebExtensionController.allExtensionDataTypes
-            let records = await manager.controller.dataRecords(ofTypes: types)
-            await manager.controller.removeData(ofTypes: types, from: records)
+        if !preservesRelaunchFixture {
+            await dataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
+            for manager in generations {
+                let types = WKWebExtensionController.allExtensionDataTypes
+                let records = await manager.controller.dataRecords(ofTypes: types)
+                await manager.controller.removeData(ofTypes: types, from: records)
+            }
         }
         autoreleasepool {
             generations.removeAll()
@@ -512,7 +577,7 @@ final class CPMAppIntegrationHarness {
             ownedDataStore = nil
         }
         let deadline = Date().addingTimeInterval(10)
-        while true {
+        while !preservesRelaunchFixture {
             do {
                 try await WKWebsiteDataStore.remove(forIdentifier: persistentStoreIdentifier)
                 print("CPM APP REMOVED PERSISTENT STORE \(persistentStoreIdentifier)")
@@ -525,7 +590,12 @@ final class CPMAppIntegrationHarness {
         flags.featuresStub = savedFlags
         server.stop()
         try? await pause(0.2)
-        try? FileManager.default.removeItem(at: directory)
+        if preservesRelaunchFixture {
+            print("CPM APP PRESERVED RELAUNCH STORE \(persistentStoreIdentifier) HOST \(getpid())")
+        } else {
+            if let relaunchToken { relaunchDefaults?.removePersistentDomain(forName: "com.duckduckgo.cpm-relaunch.\(relaunchToken.uuidString)") }
+            try? FileManager.default.removeItem(at: directory)
+        }
     }
 
     func pause(_ seconds: TimeInterval) async throws {

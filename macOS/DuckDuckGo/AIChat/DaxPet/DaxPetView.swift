@@ -72,6 +72,13 @@ struct DaxPetView: View {
 
             DaxCharacterRepresentable(character: model.character)
                 .frame(width: DaxCharacterView.preferredSize.width, height: DaxCharacterView.preferredSize.height)
+                .overlay(alignment: .topTrailing) {
+                    if model.isAsleep {
+                        SleepingZs()
+                            .offset(x: 26, y: -18)
+                            .transition(.opacity)
+                    }
+                }
 
             Controls(model: model)
                 .frame(width: Metrics.composingWidth, height: Metrics.controlsHeight)
@@ -79,6 +86,33 @@ struct DaxPetView: View {
         .padding(Metrics.padding)
         .frame(width: Metrics.windowSize.width, height: Metrics.windowSize.height)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.speech)
+        .animation(.easeInOut(duration: 0.6), value: model.isAsleep)
+    }
+}
+
+/// Three z's drifting up and away from a sleeping Dax.
+private struct SleepingZs: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private let period: TimeInterval = 3
+
+    var body: some View {
+        TimelineView(.animation(paused: reduceMotion)) { context in
+            let time = context.date.timeIntervalSinceReferenceDate
+            ZStack(alignment: .bottomLeading) {
+                ForEach(0..<3) { index in
+                    let progress = reduceMotion ? 0.3 + Double(index) * 0.25
+                        : (time / period + Double(index) / 3).truncatingRemainder(dividingBy: 1)
+                    Text(verbatim: "z")
+                        .font(.system(size: 10 + progress * 8, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .offset(x: progress * 14 + sin(progress * .pi * 2) * 3, y: -progress * 30)
+                        .opacity(reduceMotion ? 1 : sin(progress * .pi))
+                }
+            }
+            .frame(width: 40, height: 44, alignment: .bottomLeading)
+        }
+        .accessibilityHidden(true)
     }
 }
 

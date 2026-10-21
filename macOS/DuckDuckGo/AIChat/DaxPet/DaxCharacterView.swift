@@ -20,7 +20,8 @@ import AppKit
 import ConcurrencyExtensions
 import Lottie
 
-/// Dax, alive: his eyes follow a target, he blinks, breathes, turns to face the cursor, hops and waves.
+/// Dax, alive: his eyes follow a target, he blinks, breathes, turns to face the cursor, hops, waves
+/// and dozes off when the Mac is left alone.
 @MainActor
 final class DaxCharacterView: NSView {
 
@@ -38,7 +39,15 @@ final class DaxCharacterView: NSView {
         return NSSize(width: DaxRig.bodyRect.width * scale, height: bodyHeight)
     }
 
+    /// How long the Mac sits untouched before Dax dozes off.
+    nonisolated static let sleepDelay: TimeInterval = 180
+
     var mood: Mood = .idle
+
+    private(set) var isAsleep = false {
+        didSet { if isAsleep != oldValue { onSleepChange?(isAsleep) } }
+    }
+    var onSleepChange: ((Bool) -> Void)?
 
     /// Where Dax looks, in screen coordinates. `nil` lets the cursor lead.
     var lookTarget: NSPoint?
@@ -51,6 +60,7 @@ final class DaxCharacterView: NSView {
     /// Read by the Lottie value-provider blocks on every render.
     private let face = Face()
     private let reduceMotion: () -> Bool
+    private let idleTime: () -> TimeInterval
 
     private var tick: Timer?
     private var time: TimeInterval = 0
@@ -65,11 +75,17 @@ final class DaxCharacterView: NSView {
     private var nextWanderTime: TimeInterval = 0
     private var isPlayingGesture = false
     private var lastWaveTime: TimeInterval = -.infinity
+    /// 0 wide awake, 1 fast asleep.
+    private var drowsiness: CGFloat = 0
+    private var startleStartTime: TimeInterval?
+    private var breathPhase: CGFloat = 0
 
     init(rig: DaxRig? = DaxRig(),
-         reduceMotion: @escaping () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }) {
+         reduceMotion: @escaping () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion },
+         idleTime: @escaping () -> TimeInterval = DaxCharacterView.systemIdleTime) {
         self.rig = rig
         self.reduceMotion = reduceMotion
+        self.idleTime = idleTime
         self.animationView = rig.map {
             LottieAnimationView(animation: $0.animation,
                                 configuration: LottieConfiguration(renderingEngine: .mainThread))
@@ -183,10 +199,12 @@ final class DaxCharacterView: NSView {
 
     // MARK: - Frame loop
 
-    private func step() {
+    /// Advances Dax by one frame; driven by a 30 fps timer while he's on screen.
+    func step() {
         time += 1 / 30
         let previousFace = face.snapshot
 
+        updateSleep()
         updateEyes()
         updateEyelids()
         updateBody()
@@ -205,6 +223,8 @@ final class DaxCharacterView: NSView {
 
         let target: CGPoint
         switch mood {
+        case _ where isAsleep:
+            target = CGPoint(x: 0, y: -0.4)
         case .thinking:
             // Up and away, pondering.
             target = CGPoint(x: -0.6, y: 0.9)
@@ -217,7 +237,7 @@ final class DaxCharacterView: NSView {
         }
 
         // Face whichever side the action is on, with some hysteresis so he doesn't flicker.
-        if mood != .thinking {
+        if mood != .thinking, !isAsleep {
             if target.x < -0.55, !facingLeft { turn(left: true) }
             if target.x > 0.55, facingLeft { turn(left: false) }
         }
@@ -256,22 +276,66 @@ final class DaxCharacterView: NSView {
         return wanderTarget
     }
 
+    // MARK: - Sleep
+
+    /// Seconds since the last keyboard, mouse or trackpad input anywhere on the Mac.
+    nonisolated static func systemIdleTime() -> TimeInterval {
+        CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0) ?? .null)
+    }
+
+    private func updateSleep() {
+        let idle = idleTime()
+        if isAsleep, idle < 1 || mood != .idle {
+            wakeUp()
+        } else if !isAsleep, mood == .idle, idle >= Self.sleepDelay {
+            isAsleep = true
+        }
+
+        // His eyes grow heavy in the last half minute, then he slowly nods off; waking is instant.
+        let target: CGFloat = isAsleep ? 1 : (mood == .idle && idle >= Self.sleepDelay - 30 ? 0.5 : 0)
+        drowsiness += (target - drowsiness) * (target > drowsiness ? 0.03 : 1)
+    }
+
+    private func wakeUp() {
+        isAsleep = false
+        drowsiness = 0
+        blinkStartTime = nil
+        guard !reduceMotion() else { return }
+        startleStartTime = time
+        hop()
+    }
+
     private func updateEyelids() {
+        if let start = startleStartTime {
+            // Eyes wide with surprise.
+            let progress = (time - start) / 0.5
+            if progress >= 1 {
+                startleStartTime = nil
+            } else {
+                face.eyelids = -0.25 * sin(progress * .pi)
+                return
+            }
+        }
+        let droop = drowsiness * 0.95
+        if isAsleep || droop > 0.4 {
+            face.eyelids = droop
+            return
+        }
         if blinkStartTime == nil, time >= nextBlinkTime {
             blinkStartTime = time
             // Now and then, a double blink.
             nextBlinkTime = time + (Int.random(in: 0..<5) == 0 ? 0.35 : .random(in: 2.5...6))
         }
         guard let start = blinkStartTime else {
-            face.eyelids = mood == .thinking ? 0.35 : 0
+            face.eyelids = max(mood == .thinking ? 0.35 : 0, droop)
             return
         }
         let progress = (time - start) / 0.2
         if progress >= 1 {
             blinkStartTime = nil
-            face.eyelids = 0
+            face.eyelids = droop
         } else {
-            face.eyelids = sin(progress * .pi)
+            face.eyelids = max(sin(progress * .pi), droop)
         }
     }
 
@@ -279,7 +343,9 @@ final class DaxCharacterView: NSView {
         guard let layer else { return }
         let motion = !reduceMotion()
 
-        let breathing = motion ? sin(time * 2 * .pi / 3.2) * 0.012 : 0
+        // Breaths slow and deepen as he falls asleep.
+        breathPhase += 2 * .pi / (3.2 + 2 * drowsiness) / 30
+        let breathing = motion ? sin(breathPhase) * (0.012 + 0.01 * drowsiness) : 0
         var bounceHeight: CGFloat = 0
         if let start = bounceStartTime {
             let progress = (time - start) / 0.25

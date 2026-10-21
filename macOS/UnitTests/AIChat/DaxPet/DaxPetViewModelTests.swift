@@ -150,6 +150,24 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertEqual(hideCount, 1)
     }
 
+    func testWhenDaxFallsAsleepThenTheViewShowsItAndHeStopsTalking() {
+        var idleTime: TimeInterval = 0
+        model = DaxPetViewModel(submitter: submitter,
+                                character: DaxCharacterView(reduceMotion: { true }, idleTime: { idleTime }))
+        model.sayHello()
+
+        idleTime = DaxCharacterView.sleepDelay
+        model.character.step()
+
+        XCTAssertTrue(model.isAsleep)
+        XCTAssertNil(model.speech)
+
+        idleTime = 0
+        model.character.step()
+
+        XCTAssertFalse(model.isAsleep)
+    }
+
     func testWhenOpenDuckAIIsTappedThenANewChatOpens() {
         model.openDuckAI()
 

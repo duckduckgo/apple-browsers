@@ -30,6 +30,7 @@ final class DaxPetViewModel: ObservableObject {
 
     @Published private(set) var isComposing = false
     @Published private(set) var speech: String?
+    @Published private(set) var isAsleep = false
     @Published var prompt = "" {
         didSet { promptDidChange(from: oldValue) }
     }
@@ -51,6 +52,10 @@ final class DaxPetViewModel: ObservableObject {
     init(submitter: DaxPetPromptSubmitting, character: DaxCharacterView? = nil) {
         self.submitter = submitter
         self.character = character ?? DaxCharacterView()
+        self.character.onSleepChange = { [weak self] isAsleep in
+            self?.isAsleep = isAsleep
+            if isAsleep { self?.say(nil) }
+        }
     }
 
     func sayHello() {

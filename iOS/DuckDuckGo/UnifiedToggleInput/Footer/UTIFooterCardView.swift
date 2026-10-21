@@ -53,6 +53,7 @@ final class UTIFooterCardView: UIView {
 
     private let usageRing = UTIFooterUsageRingView()
     private let alertIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.alertRecolorable)
+    private let errorIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.exclamationRecolorable.withRenderingMode(.alwaysOriginal))
     private let infoIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.info)
     private let modelSwitchIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.importExport)
     private let shieldIcon = UIImageView(image: DesignSystemImages.Glyphs.Size16.shieldCheck)
@@ -93,6 +94,8 @@ final class UTIFooterCardView: UIView {
             usageRing.setProgress(progress, severity: severity, animated: animateIcon)
         case .alert:
             visibleIcon = alertIcon
+        case .error:
+            visibleIcon = errorIcon
         case .info:
             visibleIcon = infoIcon
         case .modelSwitch:
@@ -167,7 +170,7 @@ final class UTIFooterCardView: UIView {
     }
 
     private var allIcons: [UIView] {
-        [usageRing, alertIcon, infoIcon, modelSwitchIcon, shieldIcon, giftIcon]
+        [usageRing, alertIcon, errorIcon, infoIcon, modelSwitchIcon, shieldIcon, giftIcon]
     }
 
     /// Assigning attributed text also sets `textColor` from its first run, so the base colour is restored every time.
@@ -232,11 +235,12 @@ private extension UTIFooterCardView {
         }
         usageRing.accessibilityIdentifier = "AIChat.Footer.Icon.UsageRing"
         alertIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Alert"
+        errorIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Error"
         infoIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Info"
         modelSwitchIcon.accessibilityIdentifier = "AIChat.Footer.Icon.ModelSwitch"
         shieldIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Shield"
         giftIcon.accessibilityIdentifier = "AIChat.Footer.Icon.Gift"
-        [alertIcon, infoIcon, modelSwitchIcon, shieldIcon, giftIcon].forEach {
+        [alertIcon, errorIcon, infoIcon, modelSwitchIcon, shieldIcon, giftIcon].forEach {
             $0.contentMode = .scaleAspectFit
             $0.isHidden = true
         }
@@ -324,6 +328,11 @@ private extension UTIFooterCardView {
             alertIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
             alertIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
             alertIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
+            errorIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            errorIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),
+            errorIcon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            errorIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             infoIcon.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             infoIcon.centerYAnchor.constraint(equalTo: textStack.centerYAnchor),

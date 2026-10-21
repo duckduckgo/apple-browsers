@@ -76,7 +76,7 @@ struct UTIFooterMessageMapper {
 
     func promptTooLongMessage(count: Int, limit: Int, containsPastedText: Bool = false) -> UTIFooterMessage {
         UTIFooterMessage(
-            icon: .alert,
+            icon: .error,
             title: containsPastedText ? UserText.aiChatPastedTextTooLongTitle : UserText.aiChatPromptTooLongTitle,
             subtitle: String(format: UserText.aiChatPromptTooLongCountFormat, count, limit),
             primaryAction: containsPastedText ? .init(title: UserText.aiChatPastedTextEditAction) : nil,

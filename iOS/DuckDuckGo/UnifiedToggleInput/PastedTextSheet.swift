@@ -98,64 +98,58 @@ struct PastedTextSheetView: View {
     private var isViewOnly: Bool { rules.mode == .viewOnly }
 
     var body: some View {
-        NavigationView {
+        VStack(spacing: 0) {
+            header
             Group {
                 if isViewOnly {
                     PastedTextReadOnlyView(text: text)
                 } else {
                     TextEditor(text: $text)
-                        .daxBodyRegular()
+                        .font(Font(PastedTextSheetMetrics.bodyFont()))
+                        .lineSpacing(PastedTextSheetMetrics.bodyLineSpacing())
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .modifier(HiddenScrollContentBackground())
                         .focused($isTextFocused)
                 }
             }
             .accessibilityIdentifier("PastedTextSheet.TextView")
-            .padding(.horizontal, 16)
-            .onAppear { isTextFocused = rules.opensWithKeyboard }
-            .navigationTitle(rules.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 0) {
-                        Text(rules.title)
-                            .daxHeadline()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Text(subtitle)
-                            .daxCaption()
-                            .accessibilityIdentifier("PastedTextSheet.Count")
-                    }
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(action: onCancel) {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                    }
-                    .accessibilityLabel(isViewOnly ? UserText.navigationTitleDone : UserText.actionCancel)
-                    .accessibilityIdentifier("PastedTextSheet.Cancel")
-                }
-                if !isViewOnly {
-                    ToolbarItem(placement: .confirmationAction) {
-                        saveButton
-                            .disabled(!rules.canSave(text))
-                            .accessibilityLabel(UserText.actionSave)
-                            .accessibilityIdentifier("PastedTextSheet.Save")
-                    }
-                }
-            }
+            .padding(.horizontal, PastedTextSheetMetrics.bodyHorizontalPadding)
+            .padding(.top, PastedTextSheetMetrics.bodyTopPadding)
         }
-        .navigationViewStyle(.stack)
+        .background(Color(designSystemColor: .backgroundTertiary).ignoresSafeArea())
+        .onAppear { isTextFocused = rules.opensWithKeyboard }
     }
 
-    @ViewBuilder
-    private var saveButton: some View {
-        let button = Button { onSave(text) } label: {
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
+    /// A solid header of its own rather than a navigation bar, so the text never scrolls under a blurred bar.
+    private var header: some View {
+        ZStack(alignment: .top) {
+            HStack {
+                PastedTextSheetCircleButton(glyph: DesignSystemImages.Glyphs.Size24.close, style: .plain, action: onCancel)
+                    .accessibilityLabel(isViewOnly ? UserText.navigationTitleDone : UserText.actionCancel)
+                    .accessibilityIdentifier("PastedTextSheet.Cancel")
+                Spacer()
+                if !isViewOnly {
+                    PastedTextSheetCircleButton(glyph: DesignSystemImages.Glyphs.Size24.check, style: .prominent) { onSave(text) }
+                        .disabled(!rules.canSave(text))
+                        .accessibilityLabel(UserText.actionSave)
+                        .accessibilityIdentifier("PastedTextSheet.Save")
+                }
+            }
+            VStack(spacing: 0) {
+                Text(rules.title)
+                    .daxButton()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .accessibilityAddTraits(.isHeader)
+                Text(subtitle)
+                    .daxCaption1()
+                    .accessibilityIdentifier("PastedTextSheet.Count")
+            }
+            .lineLimit(1)
+            .padding(.top, PastedTextSheetMetrics.titleTopPadding)
         }
-        if #available(iOS 26.0, *) {
-            button
-                .buttonStyle(.glassProminent)
-                .tint(Color(designSystemColor: .accentPrimary))
-        } else {
-            button
-        }
+        .padding(.horizontal, PastedTextSheetMetrics.headerHorizontalPadding)
+        .padding(.top, PastedTextSheetMetrics.grabberHeight)
+        .padding(.bottom, PastedTextSheetMetrics.headerBottomPadding)
     }
 
     private var subtitle: AttributedString {
@@ -176,6 +170,76 @@ struct PastedTextSheetView: View {
     }
 }
 
+private enum PastedTextSheetMetrics {
+    static let grabberHeight: CGFloat = 16
+    static let headerHorizontalPadding: CGFloat = 16
+    static let headerBottomPadding: CGFloat = 10
+    static let titleTopPadding: CGFloat = 5
+    static let buttonSize: CGFloat = 44
+    /// UITextView pads 8pt above the first line and 5pt before each line, so these land the text 16pt below the header and 32pt from the edges.
+    static let bodyHorizontalPadding: CGFloat = 27
+    static let bodyTopPadding: CGFloat = 8
+    static let bodyFontSize: CGFloat = 16
+    static let bodyLineHeight: CGFloat = 24
+
+    static func bodyFont() -> UIFont {
+        let font = UIFont(name: "DuckSansProduct-Regular", size: bodyFontSize) ?? .systemFont(ofSize: bodyFontSize)
+        return UIFontMetrics(forTextStyle: .body).scaledFont(for: font)
+    }
+
+    static func bodyLineSpacing() -> CGFloat {
+        max(0, UIFontMetrics(forTextStyle: .body).scaledValue(for: bodyLineHeight) - bodyFont().lineHeight)
+    }
+}
+
+private struct HiddenScrollContentBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content.scrollContentBackground(.hidden)
+        } else {
+            content
+        }
+    }
+}
+
+private struct PastedTextSheetCircleButton: View {
+    enum Style {
+        case plain
+        case prominent
+    }
+
+    let glyph: UIImage
+    let style: Style
+    let action: () -> Void
+    @Environment(\.isEnabled) private var isEnabled
+
+    private var isProminent: Bool { style == .prominent && isEnabled }
+
+    var body: some View {
+        Button(action: action) {
+            Image(uiImage: glyph)
+                .renderingMode(.template)
+                .foregroundColor(Color(designSystemColor: isProminent ? .accentContentPrimary : (isEnabled ? .icons : .iconsTertiary)))
+                .frame(width: PastedTextSheetMetrics.buttonSize, height: PastedTextSheetMetrics.buttonSize)
+                .modifier(PastedTextSheetCircleBackground(isProminent: isProminent))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct PastedTextSheetCircleBackground: ViewModifier {
+    let isProminent: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(isProminent ? .regular.tint(Color(designSystemColor: .accentPrimary)).interactive() : .regular.interactive(),
+                                in: Circle())
+        } else {
+            content.background(Circle().fill(Color(designSystemColor: isProminent ? .accentPrimary : .controlsFillPrimary)))
+        }
+    }
+}
+
 /// A disabled `TextEditor` cannot scroll, so the view-only sheet shows its text in a `UITextView` that scrolls and selects but never edits.
 private struct PastedTextReadOnlyView: UIViewRepresentable {
     let text: String
@@ -184,16 +248,19 @@ private struct PastedTextReadOnlyView: UIViewRepresentable {
         let textView = UITextView()
         textView.isEditable = false
         textView.isSelectable = true
-        textView.font = .daxBodyRegular()
-        textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
         return textView
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
-        if textView.text != text {
-            textView.text = text
-        }
+        guard textView.text != text else { return }
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineSpacing = PastedTextSheetMetrics.bodyLineSpacing()
+        textView.attributedText = NSAttributedString(string: text, attributes: [
+            .font: PastedTextSheetMetrics.bodyFont(),
+            .foregroundColor: UIColor(designSystemColor: .textPrimary),
+            .paragraphStyle: paragraph
+        ])
     }
 }
 

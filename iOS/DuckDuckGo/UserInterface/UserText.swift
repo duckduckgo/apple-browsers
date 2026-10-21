@@ -2524,12 +2524,12 @@ public struct UserText {
     public static let aiChatPastedTextEditAction = NotLocalizedString("aichat.pasted.text.edit", value: "Edit", comment: "Button on the Duck.ai too-long error that opens the pasted text so the user can shorten it")
     /// `formattedCount` is `count` written compactly, e.g. 1.2k.
     public static func aiChatPastedTextCharacterCount(_ count: Int, formattedCount: String) -> String {
-        let format = NotLocalizedString("aichat.pasted.text.character.count", value: count == 1 ? "%@ character" : "%@ characters", comment: "Subtitle of the Duck.ai pasted-text sheet giving the size of the pasted text, e.g. 1.2k characters. Not localized until complete locale-specific plural forms are available.")
+        let format = NotLocalizedString("aichat.pasted.text.character.count", value: count == 1 ? "%@ Character" : "%@ Characters", comment: "Subtitle of the Duck.ai pasted-text sheet giving the size of the pasted text, e.g. 1.2k Characters. Not localized until complete locale-specific plural forms are available.")
         return String(format: format, formattedCount)
     }
-    /// The counts are written compactly, e.g. 1.2k of 16k characters.
+    /// The counts are written compactly, e.g. 1.2k of 16k Characters.
     public static func aiChatPastedTextCharacterCount(formattedCount: String, limit: Int, formattedLimit: String) -> String {
-        let format = NotLocalizedString("aichat.pasted.text.character.count.of.limit", value: limit == 1 ? "%1$@ of %2$@ character" : "%1$@ of %2$@ characters", comment: "Subtitle of the Duck.ai pasted-text sheet, e.g. 1.2k of 16k characters. %1$@ is the size of the pasted text, %2$@ the most it may hold. Not localized until complete locale-specific plural forms are available.")
+        let format = NotLocalizedString("aichat.pasted.text.character.count.of.limit", value: limit == 1 ? "%1$@ of %2$@ Character" : "%1$@ of %2$@ Characters", comment: "Subtitle of the Duck.ai pasted-text sheet, e.g. 1.2k of 16k Characters. %1$@ is the size of the pasted text, %2$@ the most it may hold. Not localized until complete locale-specific plural forms are available.")
         return String(format: format, formattedCount, formattedLimit)
     }
 

@@ -22,6 +22,7 @@ import DesignResourcesKitIcons
 import os.log
 import ScreenCaptureKit
 import SwiftUI
+import SwiftUIExtensions
 
 /// Select Window or Display through our own picker. Listing windows needs Screen Recording.
 @MainActor
@@ -75,8 +76,13 @@ final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
     private func present() {
         let hostingController = NSHostingController(rootView: AIChatScreenshotSourcePickerView(model: model))
 
-        // Floating, it's non-activating so it takes key over the prompt bar without activating the app.
-        let styleMask: NSWindow.StyleMask = sheetParent == nil ? [.titled, .fullSizeContentView, .nonactivatingPanel] : [.titled, .fullSizeContentView]
+        // Floating, it's non-activating so it takes key over the prompt bar without activating the app, and its
+        // content runs under the hidden titlebar. A sheet draws no titlebar, so it needs no full-size content view.
+        let styleMask: NSWindow.StyleMask = sheetParent == nil ? [.titled, .fullSizeContentView, .nonactivatingPanel] : [.titled]
+        if sheetParent == nil, #available(macOS 13.3, *) {
+            // ponytail: before 13.3 SwiftUI keeps the titlebar's safe area, and the floating picker is 32 pt taller.
+            hostingController.safeAreaRegions = []
+        }
         let panel = AIChatScreenshotSourcePickerPanel(contentRect: .zero, styleMask: styleMask, backing: .buffered, defer: false)
         panel.onMoveSelection = { [weak model] in model?.moveSelection(by: $0) }
         panel.title = UserText.aiChatScreenshotSelectWindowOrDisplay
@@ -175,7 +181,7 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
     static let refreshInterval: UInt64 = 2_000_000_000
 
     @Published var tab: Tab = .window {
-        didSet { if tab != oldValue { selectedID = nil } }
+        didSet { if tab != oldValue { selectedID = sources.first?.id } }
     }
     @Published var selectedID: AIChatScreenshotSource.ID?
     @Published private(set) var windows: [AIChatScreenshotSource] = []
@@ -236,8 +242,9 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
         let sources = windows + screens
         let ids = Set(sources.map(\.id))
         thumbnails = thumbnails.filter { ids.contains($0.key) }
-        if let selectedID, !ids.contains(selectedID) {
-            self.selectedID = nil
+        // The front window starts picked; if the picked one goes away, the new front one takes over.
+        if selected == nil {
+            selectedID = self.sources.first?.id
         }
         for source in sources {
             guard !Task.isCancelled else { return }
@@ -339,9 +346,8 @@ struct AIChatScreenshotSourcePickerView: View {
 
                 grid
                     // Two rows of tiles.
-                    .frame(height: 362)
+                    .frame(height: 360)
 
-                Divider()
                 HStack(spacing: 10) {
                     Spacer()
                     Button(UserText.cancel) { model.cancel() }
@@ -352,6 +358,7 @@ struct AIChatScreenshotSourcePickerView: View {
                 }
                 .padding(.horizontal, 20)
                 .frame(height: 64)
+                .overlay(Divider(), alignment: .top)
             }
             .background(Color(nsColor: .controlBackgroundColor))
         }
@@ -367,7 +374,7 @@ struct AIChatScreenshotSourcePickerView: View {
         .padding(.top, 32)
         .padding(.horizontal, 10)
         .frame(width: 160)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .vibrancyEffect(material: .sidebar, blendingMode: .behindWindow)
     }
 
     private func sidebarItem(_ tab: AIChatScreenshotSourcePickerModel.Tab, title: String, icon: NSImage) -> some View {
@@ -429,7 +436,6 @@ struct AIChatScreenshotSourcePickerView: View {
                 .frame(height: Self.thumbnailHeight)
                 .overlay(thumbnail(for: source))
                 .clipped()
-            Divider()
             HStack(spacing: 6) {
                 icon(for: source)
                 Text(source.title)
@@ -437,6 +443,7 @@ struct AIChatScreenshotSourcePickerView: View {
             }
             .padding(.horizontal, 8)
             .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+            .overlay(Divider(), alignment: .top)
         }
         .background(Color(nsColor: .controlBackgroundColor))
         .clipShape(shape)

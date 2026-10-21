@@ -143,6 +143,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private(set) var buttonsContainer: NSStackView!
     private(set) var permissionCenterButton: AddressBarButton!
     private(set) var youTubeAdBlockButton: AddressBarButton!
+    private(set) var readerModeButton: AddressBarButton!
     private(set) var trailingButtonsContainer: NSStackView!
     private(set) var aiChatButton: AddressBarMenuButton!
     private(set) var askAIChatButton: AddressBarMenuButton!
@@ -178,6 +179,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private(set) var permissionCenterButtonHeightConstraint: NSLayoutConstraint!
     private(set) var youTubeAdBlockButtonWidthConstraint: NSLayoutConstraint!
     private(set) var youTubeAdBlockButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var readerModeButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var readerModeButtonHeightConstraint: NSLayoutConstraint!
     private(set) var askAIChatButtonHeightConstraint: NSLayoutConstraint!
     private(set) var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     private(set) var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
@@ -282,6 +285,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private var tabRemovalCancellables = Set<AnyCancellable>()
     private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
     private var videoPlaybackCancellable: AnyCancellable?
+    private var readerModeStateCancellable: AnyCancellable?
+    private var readerModeFeatureFlagCancellable: AnyCancellable?
     private var videoAutoplayCancellable: AnyCancellable?
 
     private struct TrackerAnimationDomainState {
@@ -463,8 +468,13 @@ final class AddressBarButtonsViewController: NSViewController {
         configureAddressBarButton(zoomButton, image: nil, cornerRadius: nil,
                                   action: #selector(zoomButtonAction(_:)))
 
+        readerModeButton = AddressBarButton(frame: .zero)
+        configureAddressBarButton(readerModeButton, image: Self.readerModeIcon, cornerRadius: nil,
+                                  action: #selector(readerModeButtonAction(_:)))
+        readerModeButton.isHidden = true
+
         buttonsContainer = NSStackView(views: [privacyDashboardButton, separator, imageButtonWrapper,
-                                               permissionCenterButton, youTubeAdBlockButton, zoomButton])
+                                               permissionCenterButton, youTubeAdBlockButton, zoomButton, readerModeButton])
         buttonsContainer.translatesAutoresizingMaskIntoConstraints = false
         buttonsContainer.orientation = .horizontal
         buttonsContainer.distribution = .equalSpacing
@@ -509,6 +519,8 @@ final class AddressBarButtonsViewController: NSViewController {
             .constraint(equalToConstant: LayoutConstants.buttonSide)
         zoomButtonWidthConstraint = zoomButton.widthAnchor.constraint(equalToConstant: LayoutConstants.narrowButtonWidth)
         zoomButtonHeightConstraint = zoomButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        readerModeButtonWidthConstraint = readerModeButton.widthAnchor.constraint(equalToConstant: LayoutConstants.narrowButtonWidth)
+        readerModeButtonHeightConstraint = readerModeButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
 
         NSLayoutConstraint.activate([
             animationWrapperView.widthAnchor.constraint(equalToConstant: LayoutConstants.animationWrapperSize.width),
@@ -560,6 +572,7 @@ final class AddressBarButtonsViewController: NSViewController {
             permissionCenterButtonWidthConstraint, permissionCenterButtonHeightConstraint,
             youTubeAdBlockButtonWidthConstraint, youTubeAdBlockButtonHeightConstraint,
             zoomButtonWidthConstraint, zoomButtonHeightConstraint,
+            readerModeButtonWidthConstraint, readerModeButtonHeightConstraint,
         ])
 
         self.view = view
@@ -647,6 +660,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToAIChatPreferences()
         subscribeToAIChatCoordinator()
         subscribeToChromeSidebarFeatureFlag()
+        subscribeToReaderModeFeatureFlag()
         subscribeToThemeChanges()
         subscribeToTabRemovals()
         subscribeToAIChatVoiceChatPermissionRequests()
@@ -689,6 +703,9 @@ final class AddressBarButtonsViewController: NSViewController {
         youTubeAdBlockButton.setAccessibilityIdentifier("AddressBarButtonsViewController.youTubeAdBlockButton")
         youTubeAdBlockButton.toolTip = UserText.youTubeAdBlockingTooltip
 
+        readerModeButton.sendAction(on: .leftMouseDown)
+        readerModeButton.setAccessibilityIdentifier("AddressBarButtonsViewController.readerModeButton")
+
         bookmarkButton.sendAction(on: .leftMouseDown)
         bookmarkButton.setAccessibilityIdentifier("AddressBarButtonsViewController.bookmarkButton")
         // bookmarkButton.accessibilityTitle is set in `updateBookmarkButtonImage`
@@ -713,6 +730,16 @@ final class AddressBarButtonsViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateButtons()
+            }
+    }
+
+    private func subscribeToReaderModeFeatureFlag() {
+        readerModeFeatureFlagCancellable = featureFlagger.updatesPublisher
+            .map { [featureFlagger] in featureFlagger.isFeatureOn(.readerMode) }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateReaderModeButton()
             }
     }
 
@@ -872,6 +899,7 @@ final class AddressBarButtonsViewController: NSViewController {
             subscribeToPermissions()
             subscribeToPrivacyEntryPointIconUpdateTrigger()
             subscribeToVideoPlayback()
+            subscribeToReaderModeState()
 
             updatePrivacyEntryPointIcon()
             updateAIChatButtonState()
@@ -1051,6 +1079,14 @@ final class AddressBarButtonsViewController: NSViewController {
             }
     }
 
+    private func subscribeToReaderModeState() {
+        readerModeStateCancellable = tabViewModel?.tab.readerMode?.statePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateReaderModeButton()
+            }
+    }
+
     private func subscribeToVideoPlayback() {
         videoPlaybackCancellable = tabViewModel?.tab.$mustDisplayAutoplayPolicy
             .receive(on: DispatchQueue.main)
@@ -1099,6 +1135,7 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.publisher(for: \.isHidden).asVoid()
             .merge(with: zoomButton.publisher(for: \.isHidden).asVoid())
             .merge(with: permissionCenterButton.publisher(for: \.isHidden).asVoid())
+            .merge(with: readerModeButton.publisher(for: \.isHidden).asVoid())
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.updateSeparator()
@@ -1513,7 +1550,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateSeparator() {
-        separator.isShown = privacyDashboardButton.isVisible && (permissionCenterButton.isVisible || zoomButton.isVisible)
+        separator.isShown = privacyDashboardButton.isVisible && (permissionCenterButton.isVisible || zoomButton.isVisible || readerModeButton.isVisible)
     }
 
     // MARK: - AI Chat Action Helpers
@@ -1622,6 +1659,7 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.setCornerRadius(cornerRadius)
         permissionCenterButton.setCornerRadius(cornerRadius)
         youTubeAdBlockButton.setCornerRadius(cornerRadius)
+        readerModeButton.setCornerRadius(cornerRadius)
 
         trailingButtonsBackground.setCornerRadius(cornerRadius)
     }
@@ -1645,6 +1683,8 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionCenterButtonHeightConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonWidthConstraint.constant = addressBarButtonSize
         youTubeAdBlockButtonHeightConstraint.constant = addressBarButtonSize
+        readerModeButtonWidthConstraint.constant = addressBarButtonSize
+        readerModeButtonHeightConstraint.constant = addressBarButtonSize
 
         privacyDashboardButton.overrideAnimationViewSize = theme.addressBarStyleProvider.addressBarPrivacyAnimationSize
     }
@@ -2307,6 +2347,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updateYouTubeAdBlockButtonAppearance()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
+        updateReaderModeButton()
         if !isToggleFeatureEnabled {
             updateAIChatButtonVisibility()
         }
@@ -2493,6 +2534,33 @@ final class AddressBarButtonsViewController: NSViewController {
             popover.close()
             youTubeAdBlockPopover = nil
         }
+    }
+
+    /// SF Symbol placeholder until a designed Reader glyph exists in DesignResourcesKitIcons.
+    private static let readerModeIcon = NSImage(systemSymbolName: "doc.plaintext", accessibilityDescription: nil)
+
+    private func updateReaderModeButton() {
+        let state = featureFlagger.isFeatureOn(.readerMode) ? tabViewModel?.tab.readerMode?.state : nil
+        let isEditingMode = controllerMode?.isEditing ?? false
+        let isTextFieldValueText = textFieldValue?.isText ?? false
+
+        let isActive = state?.isActive ?? false
+        readerModeButton.isShown = (state ?? .unavailable) != .unavailable
+        && !isAIChatPanelActive
+        && !isEditingMode
+        && !isTextFieldValueText
+        && !isTextFieldEditorFirstResponder
+
+        readerModeButton.normalTintColor = theme.colorsProvider.iconsColor
+        readerModeButton.backgroundColor = isActive ? NSColor(resource: .buttonMouseDown) : nil
+        readerModeButton.mouseOverColor = isActive ? nil : NSColor(resource: .buttonMouseOver)
+        let title = isActive ? UserText.readerModeHide : UserText.readerModeShow
+        readerModeButton.toolTip = title
+        readerModeButton.setAccessibilityTitle(title)
+    }
+
+    @objc func readerModeButtonAction(_ sender: Any) {
+        tabViewModel?.tab.readerMode?.toggle()
     }
 
     @objc func youTubeAdBlockButtonAction(_ sender: Any) {

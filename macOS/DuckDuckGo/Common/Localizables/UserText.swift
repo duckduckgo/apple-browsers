@@ -1676,6 +1676,8 @@ struct UserText {
     static let youTubeAdBlockingToggleFooter = NSLocalizedString("preferences.youtube-ad-blocking.toggle.footer", value: "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.", comment: "Description shown below the YouTube ad blocking toggle")
     static let youTubeAdBlockingLearnMoreButton = NSLocalizedString("preferences.youtube-ad-blocking.learn-more", value: "Learn More", comment: "Learn more button shown below the YouTube ad blocking toggle description")
     static let youTubeAdBlockingTooltip = NSLocalizedString("tooltip.youtube-ad-blocking.show", value: "YouTube Ad Blocking", comment: "Tooltip for the YouTube Ad Blocking address bar button")
+    static let readerModeShow = NSLocalizedString("reader.mode.show", value: "Show Reader", comment: "Address bar button tooltip and View menu item that shows the current article in Reader Mode")
+    static let readerModeHide = NSLocalizedString("reader.mode.hide", value: "Hide Reader", comment: "Address bar button tooltip and View menu item that leaves Reader Mode and shows the original page")
     static let about = NSLocalizedString("preferences.about", value: "About", comment: "Title of the option to show the About screen")
     static let aiFeatures = NSLocalizedString("preferences.aiFeatures", value: "AI Features", comment: "Title of the option to show AI features in preferences")
     static let duckAIShortcuts = NSLocalizedString("preferences.duck-ai-shortcuts", value: "Duck.ai Shortcuts", comment: "Title of a subsection in preferences containing shortcut preferences")

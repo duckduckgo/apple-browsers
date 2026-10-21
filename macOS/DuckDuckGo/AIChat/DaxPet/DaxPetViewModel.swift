@@ -131,10 +131,22 @@ final class DaxPetViewModel: ObservableObject {
         onHide?()
     }
 
+    /// A prompt this long makes Dax's eyes go wide.
+    static let longPromptLength = 200
+
     private func promptDidChange(from oldValue: String) {
         guard isComposing, prompt != oldValue else { return }
         if !prompt.isEmpty, speech != nil { say(nil) }
         updateLookTarget()
+
+        character.noticeTyping()
+        if prompt.count > oldValue.count, let last = prompt.last, last.isWhitespace || last.isPunctuation,
+           oldValue.last.map({ !$0.isWhitespace && !$0.isPunctuation }) == true {
+            character.nod()
+        }
+        if prompt.count >= Self.longPromptLength, oldValue.count < Self.longPromptLength {
+            character.marvel()
+        }
     }
 
     private func updateLookTarget() {

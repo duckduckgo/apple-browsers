@@ -179,6 +179,70 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertNotEqual(model.heartBurst, first)
     }
 
+    // MARK: - Typing
+
+    private func makeLivelyModel() -> DaxPetViewModel {
+        DaxPetViewModel(submitter: submitter, character: DaxCharacterView(reduceMotion: { false }, idleTime: { 0 }))
+    }
+
+    func testWhenAWordIsFinishedThenDaxNods() {
+        model = makeLivelyModel()
+        model.startComposing()
+
+        model.prompt = "Hello"
+        XCTAssertFalse(model.character.isNodding)
+
+        model.prompt = "Hello "
+        XCTAssertTrue(model.character.isNodding)
+    }
+
+    func testWhenDeletingBackToASpaceThenDaxDoesNotNod() {
+        model = makeLivelyModel()
+        model.startComposing()
+        model.prompt = "Hello w"
+
+        model.prompt = "Hello "
+
+        XCTAssertFalse(model.character.isNodding)
+    }
+
+    func testWhenThePromptGetsLongThenDaxMarvels() {
+        model = makeLivelyModel()
+        model.startComposing()
+        model.prompt = String(repeating: "a", count: DaxPetViewModel.longPromptLength - 1)
+        XCTAssertFalse(model.character.isMarveling)
+
+        model.prompt += "a"
+
+        XCTAssertTrue(model.character.isMarveling)
+    }
+
+    func testWhenTypingPausesThenDaxGivesOneSlowBlink() {
+        model = makeLivelyModel()
+        model.startComposing()
+        model.prompt = "Hello"
+
+        var slowBlinks = 0
+        var wasSlowBlinking = false
+        for _ in 0..<Int((DaxCharacterView.typingPause + 3) * 30) {
+            model.character.step()
+            if model.character.isSlowBlinking, !wasSlowBlinking { slowBlinks += 1 }
+            wasSlowBlinking = model.character.isSlowBlinking
+        }
+
+        XCTAssertEqual(slowBlinks, 1)
+    }
+
+    func testWhenNotComposingThenAPauseBringsNoSlowBlink() {
+        model = makeLivelyModel()
+        model.character.noticeTyping()
+
+        for _ in 0..<Int((DaxCharacterView.typingPause + 1) * 30) {
+            model.character.step()
+            XCTAssertFalse(model.character.isSlowBlinking)
+        }
+    }
+
     func testWhenOpenDuckAIIsTappedThenANewChatOpens() {
         model.openDuckAI()
 

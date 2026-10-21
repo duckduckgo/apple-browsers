@@ -42,7 +42,9 @@ final class DaxCharacterView: NSView {
     /// How long the Mac sits untouched before Dax dozes off.
     nonisolated static let sleepDelay: TimeInterval = 180
 
-    var mood: Mood = .idle
+    var mood: Mood = .idle {
+        didSet { if mood != oldValue { lastTypingTime = nil } }
+    }
 
     private(set) var isAsleep = false {
         didSet { if isAsleep != oldValue { onSleepChange?(isAsleep) } }
@@ -90,7 +92,11 @@ final class DaxCharacterView: NSView {
     private var lastWaveTime: TimeInterval = -.infinity
     /// 0 wide awake, 1 fast asleep.
     private var drowsiness: CGFloat = 0
-    private var startleStartTime: TimeInterval?
+    private var wideEyesStartTime: TimeInterval?
+    private var wideEyesDuration: TimeInterval = 0.5
+    private var blinkDuration: TimeInterval = 0.2
+    private var nodStartTime: TimeInterval?
+    private var lastTypingTime: TimeInterval?
     private var breathPhase: CGFloat = 0
     /// Builds up with each stroke and fades when the cursor rests or leaves.
     private var petting: CGFloat = 0
@@ -192,6 +198,36 @@ final class DaxCharacterView: NSView {
             guard finished else { return }
             self?.play(DaxRig.Frames.wave.upperBound, to: DaxRig.Frames.wave.lowerBound, speed: 1.6)
         }
+    }
+
+    // MARK: - Typing
+
+    var isNodding: Bool { nodStartTime != nil }
+    var isSlowBlinking: Bool { blinkStartTime != nil && blinkDuration > 0.2 }
+    var isMarveling: Bool { wideEyesStartTime != nil }
+
+    /// Pause this long mid-prompt and he gives a slow, patient blink.
+    nonisolated static let typingPause: TimeInterval = 1.5
+
+    /// Something was typed for him to read.
+    func noticeTyping() {
+        lastTypingTime = time
+    }
+
+    /// A word went by: a little nod of understanding.
+    func nod() {
+        guard !reduceMotion() else { return }
+        nodStartTime = time
+    }
+
+    /// That's a lot to take in.
+    func marvel() {
+        widenEyes(for: 0.9)
+    }
+
+    private func widenEyes(for duration: TimeInterval) {
+        wideEyesDuration = duration
+        wideEyesStartTime = time
     }
 
     /// A small bounce.
@@ -299,8 +335,14 @@ final class DaxCharacterView: NSView {
             if target.x > 0.55, facingLeft { turn(left: false) }
         }
 
+        var nodDip: CGFloat = 0
+        if let start = nodStartTime {
+            let progress = (time - start) / 0.3
+            if progress >= 1 { nodStartTime = nil } else { nodDip = sin(progress * .pi) * 6 }
+        }
+
         let maxOffset = CGSize(width: 13, height: 15)
-        let desired = CGPoint(x: target.x * flip * maxOffset.width, y: -target.y * maxOffset.height)
+        let desired = CGPoint(x: target.x * flip * maxOffset.width, y: -target.y * maxOffset.height + nodDip)
         face.eyeOffset.x += (desired.x - face.eyeOffset.x) * 0.3
         face.eyeOffset.y += (desired.y - face.eyeOffset.y) * 0.3
     }
@@ -358,7 +400,7 @@ final class DaxCharacterView: NSView {
         drowsiness = 0
         blinkStartTime = nil
         guard !reduceMotion() else { return }
-        startleStartTime = time
+        widenEyes(for: 0.5)
         hop()
     }
 
@@ -421,11 +463,11 @@ final class DaxCharacterView: NSView {
     }
 
     private func updateEyelids() {
-        if let start = startleStartTime {
+        if let start = wideEyesStartTime {
             // Eyes wide with surprise.
-            let progress = (time - start) / 0.5
+            let progress = (time - start) / wideEyesDuration
             if progress >= 1 {
-                startleStartTime = nil
+                wideEyesStartTime = nil
             } else {
                 face.eyelids = -0.25 * sin(progress * .pi)
                 return
@@ -446,7 +488,15 @@ final class DaxCharacterView: NSView {
             face.eyelids = droop
             return
         }
+        if blinkStartTime == nil, mood == .listening, let typed = lastTypingTime, time - typed >= Self.typingPause {
+            // Waiting patiently for the rest of the prompt; once per pause.
+            lastTypingTime = nil
+            blinkDuration = 0.7
+            blinkStartTime = time
+            nextBlinkTime = time + .random(in: 2.5...6)
+        }
         if blinkStartTime == nil, time >= nextBlinkTime {
+            blinkDuration = 0.2
             blinkStartTime = time
             // Now and then, a double blink.
             nextBlinkTime = time + (Int.random(in: 0..<5) == 0 ? 0.35 : .random(in: 2.5...6))
@@ -455,7 +505,7 @@ final class DaxCharacterView: NSView {
             face.eyelids = max(mood == .thinking ? 0.35 : 0, droop)
             return
         }
-        let progress = (time - start) / 0.2
+        let progress = (time - start) / blinkDuration
         if progress >= 1 {
             blinkStartTime = nil
             face.eyelids = droop

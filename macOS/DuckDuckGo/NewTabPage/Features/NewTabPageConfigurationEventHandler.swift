@@ -57,11 +57,11 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
 
             // Image and screenshot chips: the page owns them, so its telemetry is the only signal.
             case .newTabPageTelemetry(.omnibarImageAttached(let rawSource)):
-                guard let source = AIChatImageAttachmentSource(rawValue: rawSource) else { return }
+                guard let source = Self.pageImageSource(rawSource) else { return }
                 pixelFiring?.fire(AIChatPixel.aiChatNtpImageAttached(source: source), frequency: .dailyAndCount)
 
             case .newTabPageTelemetry(.omnibarImageRemoved(let rawSource)):
-                guard let source = AIChatImageAttachmentSource(rawValue: rawSource) else { return }
+                guard let source = Self.pageImageSource(rawSource) else { return }
                 pixelFiring?.fire(AIChatPixel.aiChatNtpImageRemoved(source: source), frequency: .dailyAndCount)
 
             case .newTabPageTelemetry(.omnibarScreenshotTaken(let rawKind)):
@@ -80,6 +80,11 @@ final class NewTabPageConfigurationEventHandler: EventMapping<NewTabPageConfigur
 
     override init(mapping: @escaping EventMapping<NewTabPageConfigurationEvent>.Mapping) {
         fatalError("Use init()")
+    }
+
+    /// The page reports drag and drop as `file`, so `drop` isn't one of its values and the NTP definitions reject it.
+    private static func pageImageSource(_ rawValue: String) -> AIChatImageAttachmentSource? {
+        AIChatImageAttachmentSource(rawValue: rawValue).flatMap { $0 == .drop ? nil : $0 }
     }
 
     private static func fireOmnibarPickerImpression(_ makePixel: (String) -> AIChatPixel,

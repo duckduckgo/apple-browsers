@@ -128,7 +128,8 @@ struct NewTabPageOmnibarScreenshotProviderTests {
             (.omnibarScreenshotTaken(kind: "window"), "aichat_ntp_screenshot_taken", ["kind": "window"]),
             (.omnibarScreenshotRemoved, "aichat_ntp_screenshot_removed", [:]),
             (.omnibarScreenshotFailed(reason: "denied"), "aichat_ntp_screenshot_failed", ["reason": "denied"]),
-            (.omnibarScreenshotFailed(reason: "unknown"), nil, [:])
+            (.omnibarScreenshotFailed(reason: "unknown"), nil, [:]),
+            (.omnibarImageAttached(source: "drop"), nil, [:])
         ]
         for testCase in cases {
             let pixels = PixelKitMock()

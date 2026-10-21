@@ -82,6 +82,35 @@ struct AIChatPastedContentTests {
     }
 
     @available(macOS 13, *)
+    @Test("Copy Image in a web view attaches the image, not the URL it also writes as text", .timeLimit(.minutes(1)))
+    func webViewCopyImageAttachesTheImage() {
+        let pasteboard = makePasteboard {
+            $0.setString("https://example.com/photo.png", forType: .URL)
+            $0.setString("https://example.com/photo.png", forType: .string)
+            $0.setData(Self.png, forType: .png)
+        }
+        defer { pasteboard.releaseGlobally() }
+
+        guard case .image = AIChatPastedContent.read(from: pasteboard) else {
+            Issue.record("expected an image")
+            return
+        }
+    }
+
+    @available(macOS 13, *)
+    @Test("Text other than the copied URL still wins over image data", .timeLimit(.minutes(1)))
+    func textOtherThanTheURLWins() {
+        let pasteboard = makePasteboard {
+            $0.setString("https://example.com", forType: .URL)
+            $0.setString("Have a look at example.com", forType: .string)
+            $0.setData(Self.png, forType: .png)
+        }
+        defer { pasteboard.releaseGlobally() }
+
+        #expect(AIChatPastedContent.read(from: pasteboard) == nil)
+    }
+
+    @available(macOS 13, *)
     @Test("Image data alone, or with blank text, attaches the image", .timeLimit(.minutes(1)), arguments: [nil, " \n"] as [String?])
     func imageDataAttaches(text: String?) {
         let pasteboard = makePasteboard {

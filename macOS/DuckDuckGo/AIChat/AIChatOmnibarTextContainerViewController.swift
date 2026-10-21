@@ -754,13 +754,21 @@ enum AIChatPastedContent {
     case image(CGImage)
 
     /// Copied files first: Finder also puts each file's icon and name on the pasteboard. Then text, since Office
-    /// apps and Notes put a picture of the copied content next to it. Image data last.
+    /// apps and Notes put a picture of the copied content next to it; but a web view's Copy Image also writes the
+    /// image's URL as text, and that alone isn't text to paste. Image data last.
     static func read(from pasteboard: NSPasteboard) -> AIChatPastedContent? {
         let fileURLs = attachableFileURLs(on: pasteboard)
         if !fileURLs.isEmpty { return .files(fileURLs) }
-        if pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false { return nil }
+        if let text = trimmedString(on: pasteboard, forType: .string), !text.isEmpty,
+           text != trimmedString(on: pasteboard, forType: .URL) {
+            return nil
+        }
         guard let image = NSImage(pasteboard: pasteboard)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
         return .image(image)
+    }
+
+    private static func trimmedString(on pasteboard: NSPasteboard, forType type: NSPasteboard.PasteboardType) -> String? {
+        pasteboard.string(forType: type)?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Images and PDFs, matching what the attach menu offers.

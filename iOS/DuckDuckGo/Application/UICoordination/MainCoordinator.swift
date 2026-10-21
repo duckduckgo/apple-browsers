@@ -678,7 +678,8 @@ final class MainCoordinator {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
                         dataStoreIDManager: dataStoreIDManager,
-                        featureFlagger: featureFlagger)
+                        featureFlagger: featureFlagger,
+                        memoryCacheCleaner: MemoryCacheCleaner())
     }
 
     // MARK: - Public API

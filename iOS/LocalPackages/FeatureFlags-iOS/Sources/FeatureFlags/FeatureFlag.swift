@@ -596,6 +596,10 @@ public enum FeatureFlag: String {
     case fastTrackingParameterFilter
 
     case singleTabBurnOptimization
+
+    /// Single-tab burn removes the memory cache in the background instead of waiting on every web view.
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1219652686297425
+    case deferredMemoryCacheDelete
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1018,6 +1022,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.singleTabBurnOptimization))
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
+        case .deferredMemoryCacheDelete:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
         }
     }
 

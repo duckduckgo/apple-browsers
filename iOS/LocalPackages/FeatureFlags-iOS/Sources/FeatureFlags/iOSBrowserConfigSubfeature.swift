@@ -150,4 +150,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case fastTrackingParameterFilter
 
     case singleTabBurnOptimization
+
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1219652686297425
+    case deferredMemoryCacheDelete
 }

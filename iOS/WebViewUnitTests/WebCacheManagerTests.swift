@@ -24,6 +24,7 @@ import WebKit
 @_spi(Testing) import Persistence
 import BrowserServicesKitTestsUtils
 import WKAbstractions
+import FeatureFlags_iOS
 
 @MainActor
 class WebCacheManagerTests: XCTestCase {
@@ -36,6 +37,7 @@ class WebCacheManagerTests: XCTestCase {
     let dataStoreCleaner = MockDataStoreCleaner()
     let observationsCleaner = MockObservationsCleaner()
     let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+    let memoryCacheCleaner = MockMemoryCacheCleaner()
 
     func test_whenClearingData_ThenCookiesAreRemoved() async {
         let cookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
@@ -197,7 +199,7 @@ class WebCacheManagerTests: XCTestCase {
     func test_WhenClearingForDomains_ThenFireproofableStepListsOnlyTheTypesItDeletes() async {
         let dataStore = MockWebsiteDataStore()
 
-        await makeWebCacheManager().clear(dataStore: dataStore, forDomains: ["example.com"])
+        await makeWebCacheManager().clear(dataStore: dataStore, forDomains: ["example.com"], isFireMode: false)
 
         XCTAssertEqual(dataStore.requestedDataRecordTypes.last, WebCacheManager.fireproofableDataTypesExceptCookies)
     }
@@ -223,7 +225,7 @@ class WebCacheManagerTests: XCTestCase {
             ])
             var completed = false
             let clear = Task {
-                _ = await manager.clear(dataStore: dataStore, forDomains: ["example.com", "protected.com"])
+                _ = await manager.clear(dataStore: dataStore, forDomains: ["example.com", "protected.com"], isFireMode: false)
                 completed = true
             }
 
@@ -267,7 +269,7 @@ class WebCacheManagerTests: XCTestCase {
             let before = await store.httpCookieStore.allCookies()
             XCTAssertEqual(before.count, cookies.count)
 
-            _ = await manager.clear(dataStore: WebsiteDataStoreWrapper(wrapped: store), forDomains: ["example.com", "protected.com"])
+            _ = await manager.clear(dataStore: WebsiteDataStoreWrapper(wrapped: store), forDomains: ["example.com", "protected.com"], isFireMode: false)
 
             let remaining = await store.httpCookieStore.allCookies()
             XCTAssertEqual(Set(remaining.map(\.name)), ["protected", "unrelated"])
@@ -312,7 +314,7 @@ class WebCacheManagerTests: XCTestCase {
         )
 
         let webCacheManager = makeWebCacheManager()
-        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "facebook.com"])
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "facebook.com"], isFireMode: false)
 
         // Verify data records were removed for specified domains only
         // Two calls: one for safelyRemovableWebsiteDataTypes, one for fireproofableDataTypesExceptCookies
@@ -346,7 +348,7 @@ class WebCacheManagerTests: XCTestCase {
         )
 
         let webCacheManager = makeWebCacheManager()
-        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "facebook.com"])
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "facebook.com"], isFireMode: false)
 
         // Verify only non-fireproofed domain data records were removed
         // Two calls: one for safelyRemovableWebsiteDataTypes, one for fireproofableDataTypesExceptCookies
@@ -384,7 +386,7 @@ class WebCacheManagerTests: XCTestCase {
 
         let webCacheManager = makeWebCacheManager()
         // User visited mail.amazon.com (a subdomain), but amazon.com is fireproofed
-        await webCacheManager.clear(dataStore: dataStore, forDomains: ["mail.amazon.com", "facebook.com"])
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["mail.amazon.com", "facebook.com"], isFireMode: false)
 
         // Two calls: safelyRemovableWebsiteDataTypes (for all visited) and fireproofableDataTypesExceptCookies (non-fireproofed only)
         XCTAssertEqual(2, dataStore.removedDataOfTypesForRecords.count)
@@ -423,7 +425,7 @@ class WebCacheManagerTests: XCTestCase {
 
         let webCacheManager = makeWebCacheManager()
         // User visited mail.amazon.com subdomain
-        await webCacheManager.clear(dataStore: dataStore, forDomains: ["mail.amazon.com"])
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["mail.amazon.com"], isFireMode: false)
 
         // Verify amazon.com data record WAS removed (not fireproofed)
         // Two calls: one for safelyRemovableWebsiteDataTypes, one for fireproofableDataTypesExceptCookies
@@ -453,7 +455,7 @@ class WebCacheManagerTests: XCTestCase {
 
         let webCacheManager = makeWebCacheManager()
         // Clear for domains that weren't visited
-        await webCacheManager.clear(dataStore: dataStore, forDomains: ["other.com"])
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["other.com"], isFireMode: false)
 
         // Verify no data records were actually removed (calls may still happen but with empty records)
         let totalRemovedRecords = dataStore.removedDataOfTypesForRecords.flatMap { $0.records }
@@ -478,7 +480,7 @@ class WebCacheManagerTests: XCTestCase {
         )
 
         let webCacheManager = makeWebCacheManager()
-        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "sub.test.com"])
+        await webCacheManager.clear(dataStore: dataStore, forDomains: ["example.com", "sub.test.com"], isFireMode: false)
 
         // Verify cookies for exact domain and dot-prefixed domain were removed
         // Note: .test.com cookie is matched when clearing sub.test.com because dot-prefixed cookies apply to subdomains
@@ -489,6 +491,51 @@ class WebCacheManagerTests: XCTestCase {
         XCTAssertFalse(mockCookieStore.cookiesThatWereDeleted.contains { $0.name == "Cookie4" })
     }
 
+    // MARK: - Deferred memory cache removal
+
+    func test_WhenClearingForDomains_AndDeferralIsOff_ThenMemoryCacheIsListedAndRemovedWithTheBurn() async {
+        let dataStore = MockWebsiteDataStore(httpCookieStore: MockHTTPCookieStore(),
+                                             dataRecordsOfTypesReturnValue: [MockWebsiteDataRecord(displayName: "example.com")])
+
+        await makeWebCacheManager().clear(dataStore: dataStore, forDomains: ["www.example.com"], isFireMode: false)
+
+        XCTAssertEqual(dataStore.requestedDataRecordTypes.first, WKWebsiteDataStore.allWebsiteDataTypes())
+        XCTAssertEqual(dataStore.removedDataOfTypesForRecords.first?.types, WebCacheManager.safelyRemovableWebsiteDataTypes)
+        XCTAssertTrue(memoryCacheCleaner.scheduledRemovals.isEmpty)
+    }
+
+    func test_WhenClearingForDomains_AndDeferralIsOn_ThenBurnSkipsMemoryCacheAndSchedulesItsSites() async {
+        featureFlagger.enabledFeatureFlags = [.deferredMemoryCacheDelete]
+        let dataStore = MockWebsiteDataStore(httpCookieStore: MockHTTPCookieStore(),
+                                             dataRecordsOfTypesReturnValue: [MockWebsiteDataRecord(displayName: "example.com")])
+
+        await makeWebCacheManager().clear(dataStore: dataStore, forDomains: ["www.example.com", "mail.test.com"], isFireMode: true)
+
+        let memoryCache: Set<String> = [WKWebsiteDataTypeMemoryCache]
+        XCTAssertEqual(dataStore.requestedDataRecordTypes.first, WKWebsiteDataStore.allWebsiteDataTypes().subtracting(memoryCache))
+        XCTAssertEqual(dataStore.removedDataOfTypesForRecords.first?.types, WebCacheManager.safelyRemovableWebsiteDataTypes.subtracting(memoryCache))
+        XCTAssertEqual(dataStore.removedDataOfTypesForRecords.first?.records.map(\.displayName), ["example.com"])
+        XCTAssertEqual(memoryCacheCleaner.scheduledRemovals.count, 1)
+        XCTAssertEqual(memoryCacheCleaner.scheduledRemovals.first?.sites, ["example.com", "test.com"])
+        XCTAssertEqual(memoryCacheCleaner.scheduledRemovals.first?.isFireMode, true)
+    }
+
+    func test_WhenClearingAllData_ThenQueuedMemoryCacheRemovalsAreCancelledAndMemoryCacheIsRemoved() async {
+        featureFlagger.enabledFeatureFlags = [.deferredMemoryCacheDelete]
+        let dataStore = MockWebsiteDataStore()
+
+        await makeWebCacheManager().clear(dataStore: dataStore)
+
+        XCTAssertEqual(memoryCacheCleaner.cancelledModes, [false])
+        XCTAssertEqual(dataStore.removedDataOfTypesModifiedSince.first?.types, WebCacheManager.safelyRemovableWebsiteDataTypes)
+    }
+
+    func test_WhenCancellingMemoryCacheCleanup_ThenCleanerWaitsForTheRunningRemoval() async {
+        await makeWebCacheManager().cancelMemoryCacheCleanup(isFireMode: true)
+
+        XCTAssertEqual(memoryCacheCleaner.cancelledAndWaitedModes, [true])
+    }
+
     @MainActor
     private func makeWebCacheManager() -> WebCacheManager {
         return WebCacheManager(
@@ -497,7 +544,8 @@ class WebCacheManagerTests: XCTestCase {
             dataStoreIDManager: dataStoreIDManager,
             dataStoreCleaner: dataStoreCleaner,
             observationsCleaner: observationsCleaner,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            memoryCacheCleaner: memoryCacheCleaner
         )
     }
 }

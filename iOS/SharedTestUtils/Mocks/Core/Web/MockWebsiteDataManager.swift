@@ -28,6 +28,8 @@ class MockWebsiteDataManager: WebsiteDataManaging {
     private(set) var clearCallCount = 0
     private(set) var clearWithDomainsCallCount = 0
     private(set) var clearCalledWithDomains: [String]?
+    private(set) var clearCalledWithFireMode: Bool?
+    private(set) var cancelMemoryCacheCleanupCalls: [Bool] = []
 
     func removeCookies(forDomains domains: [String], fromDataStore: any DDGWebsiteDataStore) async {}
     
@@ -38,10 +40,15 @@ class MockWebsiteDataManager: WebsiteDataManaging {
         return makeMockResult(includeContainerCleanup: true)
     }
 
-    func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async -> WebsiteDataClearingResult {
+    func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String], isFireMode: Bool) async -> WebsiteDataClearingResult {
         clearWithDomainsCallCount += 1
         clearCalledWithDomains = domains
+        clearCalledWithFireMode = isFireMode
         return makeMockResult(includeContainerCleanup: false)
+    }
+
+    func cancelMemoryCacheCleanup(isFireMode: Bool) async {
+        cancelMemoryCacheCleanupCalls.append(isFireMode)
     }
 
     private func makeMockResult(includeContainerCleanup: Bool) -> WebsiteDataClearingResult {
@@ -56,4 +63,23 @@ class MockWebsiteDataManager: WebsiteDataManaging {
         )
     }
 
+}
+
+final class MockMemoryCacheCleaner: MemoryCacheCleaning {
+
+    private(set) var scheduledRemovals: [(sites: Set<String>, isFireMode: Bool)] = []
+    private(set) var cancelledModes: [Bool] = []
+    private(set) var cancelledAndWaitedModes: [Bool] = []
+
+    func scheduleRemoval(ofSites sites: Set<String>, isFireMode: Bool) {
+        scheduledRemovals.append((sites, isFireMode))
+    }
+
+    func cancelRemovals(isFireMode: Bool) {
+        cancelledModes.append(isFireMode)
+    }
+
+    func cancelRemovalsAndWaitForRunningOne(isFireMode: Bool) async {
+        cancelledAndWaitedModes.append(isFireMode)
+    }
 }

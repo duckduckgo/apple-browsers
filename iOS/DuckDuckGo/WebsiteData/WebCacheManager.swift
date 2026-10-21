@@ -23,6 +23,7 @@ import FoundationExtensions
 import WebKit
 import os.log
 import PixelKit
+import FeatureFlags_iOS
 import WideEvent
 import PrivacyConfig
 
@@ -76,7 +77,10 @@ public protocol WebsiteDataManaging {
     func removeCookies(forDomains domains: [String], fromDataStore: any DDGWebsiteDataStore) async
     func consumeCookies(into httpCookieStore: DDGHTTPCookieStore) async
     func clear(dataStore: any DDGWebsiteDataStore) async -> WebsiteDataClearingResult
-    func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async -> WebsiteDataClearingResult
+    func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String], isFireMode: Bool) async -> WebsiteDataClearingResult
+
+    /// Stops the memory cache cleanup left by single-tab burns, so the data store can be removed.
+    func cancelMemoryCacheCleanup(isFireMode: Bool) async
 
 }
 
@@ -147,19 +151,22 @@ public class WebCacheManager: WebsiteDataManaging {
     let dataStoreCleaner: WebsiteDataStoreCleaning
     let observationsCleaner: ObservationsDataCleaning
     private let featureFlagger: FeatureFlagger
+    private let memoryCacheCleaner: MemoryCacheCleaning
 
-    public init(cookieStorage: MigratableCookieStorage,
-                fireproofing: Fireproofing,
-                dataStoreIDManager: DataStoreIDManaging,
-                dataStoreCleaner: WebsiteDataStoreCleaning = DefaultWebsiteDataStoreCleaner(),
-                observationsCleaner: ObservationsDataCleaning = DefaultObservationsDataCleaner(),
-                featureFlagger: FeatureFlagger) {
+    init(cookieStorage: MigratableCookieStorage,
+         fireproofing: Fireproofing,
+         dataStoreIDManager: DataStoreIDManaging,
+         dataStoreCleaner: WebsiteDataStoreCleaning = DefaultWebsiteDataStoreCleaner(),
+         observationsCleaner: ObservationsDataCleaning = DefaultObservationsDataCleaner(),
+         featureFlagger: FeatureFlagger,
+         memoryCacheCleaner: MemoryCacheCleaning) {
         self.cookieStorage = cookieStorage
         self.fireproofing = fireproofing
         self.dataStoreIDManager = dataStoreIDManager
         self.dataStoreCleaner = dataStoreCleaner
         self.observationsCleaner = observationsCleaner
         self.featureFlagger = featureFlagger
+        self.memoryCacheCleaner = memoryCacheCleaner
     }
 
     /// The previous version saved cookies externally to the data so we can move them between containers.  We now use
@@ -195,11 +202,13 @@ public class WebCacheManager: WebsiteDataManaging {
     }
 
     public func clear(dataStore: any DDGWebsiteDataStore) async -> WebsiteDataClearingResult {
+        // Burn all removes the whole memory cache itself, so queued single-tab removals are redundant.
+        memoryCacheCleaner.cancelRemovals(isFireMode: false)
 
         let count = await dataStoreCleaner.countContainers()
         await performMigrationIfNeeded(dataStoreIDManager: dataStoreIDManager, cookieStorage: cookieStorage, destinationStore: dataStore)
 
-        let result = await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: .all)
+        let result = await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: .all, excludedDataTypes: [])
 
         var removeContainersInterval = WideEvent.MeasuredInterval.startingNow()
         let removeContainersResult = await dataStoreCleaner.removeAllContainersAfterDelay(previousCount: count)
@@ -219,7 +228,7 @@ public class WebCacheManager: WebsiteDataManaging {
     /// Uses a data-store-first approach: iterates through data records (which have eTLD+1 as displayName),
     /// checks fireproofing on the displayName, then filters by whether the domain was visited.
     /// This matches the behavior of "Burn All" for consistency.
-    public func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async -> WebsiteDataClearingResult {
+    public func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String], isFireMode: Bool) async -> WebsiteDataClearingResult {
         let optimized = featureFlagger.isFeatureOn(.singleTabBurnOptimization)
 
         // Normalize visited domains to eTLD+1 upfront for matching against data records
@@ -236,7 +245,20 @@ public class WebCacheManager: WebsiteDataManaging {
 
         let scope = Scope.limited(dataRecords: dataRecordInScope, cookies: cookieInScope)
         await performMigrationIfNeeded(dataStoreIDManager: dataStoreIDManager, cookieStorage: cookieStorage, destinationStore: dataStore)
-        return await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: scope, optimized: optimized)
+        let excludedDataTypes = scheduleDeferredRemovalIfEnabled(ofSites: visitedETLDplus1, isFireMode: isFireMode)
+        return await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: scope, optimized: optimized, excludedDataTypes: excludedDataTypes)
+    }
+
+    public func cancelMemoryCacheCleanup(isFireMode: Bool) async {
+        await memoryCacheCleaner.cancelRemovalsAndWaitForRunningOne(isFireMode: isFireMode)
+    }
+
+    /// With the flag on, the burn skips the memory cache and the cleaner removes it for these sites right after;
+    /// everything else is still removed before the burn returns. Returns the data types the burn skips.
+    private func scheduleDeferredRemovalIfEnabled(ofSites sites: Set<String>, isFireMode: Bool) -> Set<String> {
+        guard featureFlagger.isFeatureOn(.deferredMemoryCacheDelete) else { return [] }
+        memoryCacheCleaner.scheduleRemoval(ofSites: sites, isFireMode: isFireMode)
+        return MemoryCacheCleaner.memoryCacheDataTypes
     }
 
 }
@@ -283,11 +305,15 @@ extension WebCacheManager {
     private func clearData(inDataStore dataStore: any DDGWebsiteDataStore,
                            withFireproofing fireproofing: Fireproofing,
                            scope: Scope,
-                           optimized: Bool = false) async -> WebsiteDataClearingResult {
+                           optimized: Bool = false,
+                           excludedDataTypes: Set<String>) async -> WebsiteDataClearingResult {
         let startTime = CACurrentMediaTime()
 
         var safelyRemovableInterval = WideEvent.MeasuredInterval.startingNow()
-        let safelyRemovableResult = await clearDataForSafelyRemovableDataTypes(fromStore: dataStore, scope: scope, optimized: optimized)
+        let safelyRemovableResult = await clearDataForSafelyRemovableDataTypes(fromStore: dataStore,
+                                                                               scope: scope,
+                                                                               optimized: optimized,
+                                                                               excludedDataTypes: excludedDataTypes)
         safelyRemovableInterval.complete()
 
         var fireproofableDataInterval = WideEvent.MeasuredInterval.startingNow()
@@ -327,17 +353,20 @@ extension WebCacheManager {
     @MainActor
     private func clearDataForSafelyRemovableDataTypes(fromStore dataStore: some DDGWebsiteDataStore,
                                                       scope: Scope,
-                                                      optimized: Bool) async -> Result<Void, Error> {
+                                                      optimized: Bool,
+                                                      excludedDataTypes: Set<String>) async -> Result<Void, Error> {
+        let removableTypes = Self.safelyRemovableWebsiteDataTypes.subtracting(excludedDataTypes)
         switch scope {
         case .all:
-            await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, modifiedSince: Date.distantPast)
+            await dataStore.removeData(ofTypes: removableTypes, modifiedSince: Date.distantPast)
         case .limited(let dataRecords, _):
+            // Listing the memory cache waits for every web view, so it's left out when the cleaner removes it.
             let types = optimized ? Self.safelyRemovableWebsiteDataTypes : WKWebsiteDataStore.allWebsiteDataTypes()
-            let allRecords = await dataStore.dataRecords(ofTypes: types)
+            let allRecords = await dataStore.dataRecords(ofTypes: types.subtracting(excludedDataTypes))
             let removableRecords = allRecords.filter { record in
                 dataRecords(record.displayName)
             }
-            await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, for: removableRecords)
+            await dataStore.removeData(ofTypes: removableTypes, for: removableRecords)
         }
         return .success(())
     }

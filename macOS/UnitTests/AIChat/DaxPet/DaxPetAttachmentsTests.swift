@@ -200,4 +200,45 @@ final class DaxPetAttachmentsTests: XCTestCase {
         XCTAssertEqual(query.files?.first?.mimeType, "application/pdf")
         XCTAssertEqual(query.modelId, "model")
     }
+
+    // MARK: - Guessed action
+
+    func testImagesAreDescribed() throws {
+        let image = try XCTUnwrap(DaxPetAttachmentLoader.load([.file(try pngFile())], adding: [], capabilities: Self.capabilities()).accepted.first)
+
+        XCTAssertEqual(DaxPetDropAction.guess(for: [image], kind: .code), .describeImage)
+    }
+
+    func testTheModelsKindDecidesForText() {
+        let text = DaxPetAttachment.text("Quack")
+
+        XCTAssertEqual(DaxPetDropAction.guess(for: [text], kind: .article), .summarize)
+        XCTAssertEqual(DaxPetDropAction.guess(for: [text], kind: .code), .explainCode)
+        XCTAssertEqual(DaxPetDropAction.guess(for: [text], kind: .message), .reply)
+    }
+
+    func testGibberishIsNotTakenForAnotherLanguage() {
+        XCTAssertNotEqual(DaxPetDropAction.guess(for: [.text(String(repeating: "a", count: 400))], kind: nil), .translate)
+    }
+
+    func testTextInAnotherLanguageIsTranslated() throws {
+        try XCTSkipUnless(DaxPetDropAction.userLanguageCode == "en", "Written for an English-speaking user")
+        let french = DaxPetAttachment.text("Bonjour à tous, la réunion de demain est reportée à jeudi à 14 heures.")
+        let english = DaxPetAttachment.text("Hello everyone, tomorrow's meeting has been moved to Thursday at 2 pm.")
+
+        XCTAssertEqual(DaxPetDropAction.guess(for: [french], kind: .message), .translate)
+        XCTAssertEqual(DaxPetDropAction.guess(for: [english], kind: .message), .reply)
+    }
+
+    func testWithoutTheModelDocumentsLinksAndLongTextAreSummarized() throws {
+        let link = try XCTUnwrap(URL(string: "https://duckduckgo.com"))
+
+        XCTAssertEqual(DaxPetDropAction.guess(for: [.link(link)], kind: nil), .summarize)
+        let longText = String(repeating: "Ducks can sleep with one eye open while the other half of their brain rests. ",
+                              count: DaxPetDropAction.summarizableLength / 70 + 1)
+        XCTAssertEqual(DaxPetDropAction.guess(for: [.text(longText)], kind: nil), .summarize)
+        XCTAssertNil(DaxPetDropAction.guess(for: [.text("Quack")], kind: nil))
+        XCTAssertNil(DaxPetDropAction.guess(for: [.text("Quack")], kind: .other))
+        XCTAssertNil(DaxPetDropAction.guess(for: [], kind: .article))
+    }
 }

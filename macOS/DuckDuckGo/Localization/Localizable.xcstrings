@@ -34007,6 +34007,66 @@
         }
       }
     },
+    "duckai.dax-pet.action.describe-image" : {
+      "comment" : "Request sent to Duck.ai about an image dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Describe this image"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.action.explain-code" : {
+      "comment" : "Request sent to Duck.ai about source code dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Explain this code"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.action.reply" : {
+      "comment" : "Request sent to Duck.ai about an email or message dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Draft a reply to this"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.action.summarize" : {
+      "comment" : "Request sent to Duck.ai about text, a page or a document dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Summarize this"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.action.translate" : {
+      "comment" : "Request sent to Duck.ai about foreign-language text dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field. %@ is the name of the user's language, e.g. English",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Translate this into %@"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.answer-failed" : {
       "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when Duck.ai couldn't answer the question",
       "extractionState" : "extracted_with_value",

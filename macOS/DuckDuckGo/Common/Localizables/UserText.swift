@@ -753,6 +753,14 @@ struct UserText {
     static let daxPetOutfitWitchHat = NSLocalizedString("duckai.dax-pet.outfit.witch-hat", value: "Witch Hat", comment: "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: a Halloween witch hat")
     static let daxPetOutfitSantaHat = NSLocalizedString("duckai.dax-pet.outfit.santa-hat", value: "Santa Hat", comment: "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: a red and white Christmas hat")
     static let daxPetOutfitPartyHat = NSLocalizedString("duckai.dax-pet.outfit.party-hat", value: "Party Hat", comment: "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: a cone-shaped New Year party hat")
+    static let daxPetActionSummarize = NSLocalizedString("duckai.dax-pet.action.summarize", value: "Summarize this", comment: "Request sent to Duck.ai about text, a page or a document dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field")
+    static func daxPetActionTranslate(into language: String) -> String {
+        let format = NSLocalizedString("duckai.dax-pet.action.translate", value: "Translate this into %@", comment: "Request sent to Duck.ai about foreign-language text dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field. %@ is the name of the user's language, e.g. English")
+        return String(format: format, language)
+    }
+    static let daxPetActionExplainCode = NSLocalizedString("duckai.dax-pet.action.explain-code", value: "Explain this code", comment: "Request sent to Duck.ai about source code dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field")
+    static let daxPetActionReply = NSLocalizedString("duckai.dax-pet.action.reply", value: "Draft a reply to this", comment: "Request sent to Duck.ai about an email or message dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field")
+    static let daxPetActionDescribeImage = NSLocalizedString("duckai.dax-pet.action.describe-image", value: "Describe this image", comment: "Request sent to Duck.ai about an image dropped on Dax, the DuckDuckGo mascot. Also shown as the hint in his prompt field")
     static let daxPetPromptPlaceholder = NSLocalizedString("duckai.dax-pet.prompt.placeholder", value: "Ask Dax anything…", comment: "Placeholder of the text field used to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetAsk = NSLocalizedString("duckai.dax-pet.ask", value: "Ask Dax", comment: "Tooltip of the button that opens the field to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetSend = NSLocalizedString("duckai.dax-pet.send", value: "Send", comment: "Tooltip of the button that sends the question typed for Dax to Duck.ai")

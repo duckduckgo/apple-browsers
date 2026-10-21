@@ -69,6 +69,11 @@ private final class StubDaxPetIntelligence: DaxPetIntelligence {
     var suggestions: [String] = []
     var onSuggest: (() -> Void)?
     var variations: [String: [String]] = [:]
+    var kind: DaxPetDropKind?
+
+    func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? {
+        kind
+    }
 
     func variations(of line: String) async -> [String] {
         variations[line] ?? []
@@ -449,6 +454,65 @@ final class DaxPetViewModelTests: XCTestCase {
         model.prompt = "T"
 
         XCTAssertTrue(model.suggestions.isEmpty)
+    }
+
+    // MARK: - Guessed action
+
+    func testWhenTheOnDeviceModelRecognizesCodeThenDaxOffersToExplainIt() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.kind = .code
+
+        await model.receive([.text("let quack = Duck()")])
+
+        XCTAssertEqual(model.dropAction, .explainCode)
+        XCTAssertEqual(model.promptPlaceholder, UserText.daxPetActionExplainCode)
+        XCTAssertTrue(model.canSubmit)
+    }
+
+    func testWhenReturnIsPressedWithNothingTypedThenTheGuessedActionIsSent() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.kind = .article
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        await model.receive([.text("Ducks can sleep with one eye open.")])
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertEqual(submitter.submittedPrompts, [UserText.daxPetActionSummarize + "\n\nDucks can sleep with one eye open."])
+    }
+
+    func testWhatTheUserTypesWinsOverTheGuess() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.kind = .article
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        await model.receive([.text("Quack")])
+        model.prompt = "Make it rhyme"
+
+        model.submit()
+        await fulfillment(of: [submitted], timeout: 1)
+
+        XCTAssertEqual(submitter.submittedPrompts, ["Make it rhyme\n\nQuack"])
+    }
+
+    func testWhenTypingIsDeletedThenTheGuessComesBack() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.kind = .message
+        await model.receive([.text("Hi Dax, are you free tomorrow?")])
+
+        model.prompt = "W"
+        model.prompt = ""
+
+        XCTAssertEqual(model.promptPlaceholder, UserText.daxPetActionReply)
+    }
+
+    func testWithNoDropThereIsNoGuessAndAnEmptyPromptCantBeSent() {
+        model.startComposing()
+
+        XCTAssertNil(model.dropAction)
+        XCTAssertEqual(model.promptPlaceholder, UserText.daxPetPromptPlaceholder)
+        XCTAssertFalse(model.canSubmit)
     }
 
     // MARK: - Varied lines

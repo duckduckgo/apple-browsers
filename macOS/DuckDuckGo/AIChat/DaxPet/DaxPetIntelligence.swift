@@ -29,6 +29,8 @@ protocol DaxPetIntelligence {
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String]
     /// Other ways for Dax to say `line`, meaning the same.
     func variations(of line: String) async -> [String]
+    /// What kind of thing was dropped, when there's text to tell from.
+    func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind?
 }
 
 enum DaxPetIntelligenceFactory {
@@ -46,6 +48,7 @@ enum DaxPetIntelligenceFactory {
 struct DaxPetNoIntelligence: DaxPetIntelligence {
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String] { [] }
     func variations(of line: String) async -> [String] { [] }
+    func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? { nil }
 }
 
 @available(macOS 26, *)
@@ -94,6 +97,38 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
         guard let response = try? await session.respond(to: "Line: \(line)", generating: Variations.self,
                                                         options: GenerationOptions(temperature: 0.7)) else { return [] }
         return response.content.lines
+    }
+
+    @Generable
+    enum Kind {
+        case article
+        case code
+        case message
+        case other
+    }
+
+    func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? {
+        let hasText = attachments.contains { attachment in
+            switch attachment {
+            case .text: return true
+            case .file(let file): return file.mimeType == "application/pdf"
+            case .link, .image: return false
+            }
+        }
+        guard hasText else { return nil }
+        let session = LanguageModelSession(instructions: """
+            Classify content the user dropped. article: prose meant to be read, like a news story, report, \
+            document or web page. code: source code, a stack trace or logs. message: an email or chat message written to the user. \
+            other: anything else, like a short note or a list.
+            """)
+        guard let response = try? await session.respond(to: Self.describe(attachments), generating: Kind.self,
+                                                        options: GenerationOptions(temperature: 0)) else { return nil }
+        switch response.content {
+        case .article: return .article
+        case .code: return .code
+        case .message: return .message
+        case .other: return .other
+        }
     }
 
     /// The user's language, by its English name, for the model to answer in.

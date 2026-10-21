@@ -339,7 +339,7 @@ private struct PromptField: View {
     @FocusState private var isFocused: Bool
 
     private var canSubmit: Bool {
-        !model.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        model.canSubmit
     }
 
     var body: some View {
@@ -348,7 +348,7 @@ private struct PromptField: View {
                 AttachmentChips(attachments: model.attachments, onRemove: model.removeAttachments)
                     .padding(.leading, 8)
             }
-            TextField(UserText.daxPetPromptPlaceholder, text: $model.prompt)
+            TextField(model.promptPlaceholder, text: $model.prompt)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .focused($isFocused)

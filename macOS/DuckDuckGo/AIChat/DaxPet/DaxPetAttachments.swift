@@ -18,6 +18,7 @@
 
 import AIChat
 import AppKit
+import NaturalLanguage
 import Subscription
 import UniformTypeIdentifiers
 
@@ -65,6 +66,84 @@ enum DaxPetAttachment: Identifiable {
         case .image(let image): return image.fileName
         case .file(let file): return file.fileName
         }
+    }
+}
+
+/// What a drop is, as far as the on-device model can tell.
+enum DaxPetDropKind: Equatable {
+    case article
+    case code
+    case message
+    case other
+}
+
+/// The request Dax guesses the user wants for a drop, offered as the prompt field's hint and sent if they
+/// just press Return.
+enum DaxPetDropAction: Equatable {
+    case summarize
+    case translate
+    case explainCode
+    case reply
+    case describeImage
+
+    /// Text this long is worth summarizing even without the on-device model's opinion.
+    static let summarizableLength = 400
+    /// Shorter text is too little to tell its language from.
+    static let recognizableLength = 20
+
+    var prompt: String {
+        switch self {
+        case .summarize: return UserText.daxPetActionSummarize
+        case .translate:
+            let code = Self.userLanguageCode
+            return UserText.daxPetActionTranslate(into: Locale.current.localizedString(forLanguageCode: code) ?? code)
+        case .explainCode: return UserText.daxPetActionExplainCode
+        case .reply: return UserText.daxPetActionReply
+        case .describeImage: return UserText.daxPetActionDescribeImage
+        }
+    }
+
+    static var userLanguageCode: String {
+        if #available(macOS 13, *) {
+            return Locale.current.language.languageCode?.identifier ?? "en"
+        }
+        return Locale.current.languageCode ?? "en"
+    }
+
+    /// Images are described and text in another language translated. Otherwise the on-device model's
+    /// `kind` decides when it has one, and documents, links and long text are summarized.
+    static func guess(for attachments: [DaxPetAttachment], kind: DaxPetDropKind?) -> DaxPetDropAction? {
+        guard !attachments.isEmpty else { return nil }
+        if attachments.allSatisfy({ if case .image = $0 { true } else { false } }) {
+            return .describeImage
+        }
+        if isInAnotherLanguage(attachments) {
+            return .translate
+        }
+        switch kind {
+        case .article: return .summarize
+        case .code: return .explainCode
+        case .message: return .reply
+        case .other, nil: break
+        }
+        let isSummarizable = attachments.contains { attachment in
+            switch attachment {
+            case .file, .link: return true
+            case .text(_, let text): return text.count >= summarizableLength
+            case .image: return false
+            }
+        }
+        return isSummarizable ? .summarize : nil
+    }
+
+    /// Recognized on the device by the NaturalLanguage framework, and only when it's sure.
+    private static func isInAnotherLanguage(_ attachments: [DaxPetAttachment]) -> Bool {
+        let text = attachments.compactMap { if case .text(_, let text) = $0 { text } else { nil } }.joined(separator: "\n")
+        guard text.count >= recognizableLength else { return false }
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        guard let (language, confidence) = recognizer.languageHypotheses(withMaximum: 1).first, confidence >= 0.8 else { return false }
+        return language.rawValue.prefix(2) != userLanguageCode.prefix(2)
     }
 }
 

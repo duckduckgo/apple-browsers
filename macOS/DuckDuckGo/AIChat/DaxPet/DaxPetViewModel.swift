@@ -51,6 +51,16 @@ final class DaxPetViewModel: ObservableObject {
     @Published private(set) var attachments: [DaxPetAttachment] = []
     /// Requests the on-device model came up with for what was dropped, offered as chips.
     @Published private(set) var suggestions: [String] = []
+    /// What Dax guesses the user wants done with the drop; the prompt field's hint, sent on a bare Return.
+    @Published private(set) var dropAction: DaxPetDropAction?
+
+    var promptPlaceholder: String {
+        dropAction?.prompt ?? UserText.daxPetPromptPlaceholder
+    }
+
+    var canSubmit: Bool {
+        !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (dropAction != nil && !attachments.isEmpty)
+    }
     @Published var prompt = "" {
         didSet { promptDidChange(from: oldValue) }
     }
@@ -143,7 +153,8 @@ final class DaxPetViewModel: ObservableObject {
     }
 
     func submit() {
-        let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let typed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prompt = typed.isEmpty && !attachments.isEmpty ? dropAction?.prompt ?? "" : typed
         guard !prompt.isEmpty else { return }
         let (query, payload) = DaxPetAttachmentLoader.prompt(prompt, attachments: attachments, capabilities: attachmentCapabilities)
         isComposing = false
@@ -260,14 +271,21 @@ final class DaxPetViewModel: ObservableObject {
     /// unless the user has moved on by then.
     private func suggestRequests() async {
         let attachments = self.attachments
-        let suggestions = await intelligence.suggestions(for: attachments)
-        guard isComposing, prompt.isEmpty, !suggestions.isEmpty, self.attachments.map(\.id) == attachments.map(\.id) else { return }
-        self.suggestions = Array(suggestions.prefix(3))
+        dropAction = DaxPetDropAction.guess(for: attachments, kind: nil)
+        async let kind = intelligence.kind(of: attachments)
+        async let suggestions = intelligence.suggestions(for: attachments)
+        let (guessedKind, suggested) = await (kind, suggestions)
+
+        guard isComposing, self.attachments.map(\.id) == attachments.map(\.id) else { return }
+        dropAction = DaxPetDropAction.guess(for: attachments, kind: guessedKind)
+        guard prompt.isEmpty, !suggested.isEmpty else { return }
+        self.suggestions = Array(suggested.prefix(3))
         say(nil)
     }
 
     private func clearSuggestions() {
         suggestions = []
+        dropAction = nil
     }
 
     // MARK: - Debug
@@ -335,7 +353,7 @@ final class DaxPetViewModel: ObservableObject {
     private func promptDidChange(from oldValue: String) {
         guard isComposing, prompt != oldValue else { return }
         if !prompt.isEmpty, speech != nil { say(nil) }
-        if !prompt.isEmpty { clearSuggestions() }
+        if !prompt.isEmpty { suggestions = [] }
         updateLookTarget()
 
         character.noticeTyping()

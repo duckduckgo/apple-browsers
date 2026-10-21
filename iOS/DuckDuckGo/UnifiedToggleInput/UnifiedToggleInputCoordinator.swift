@@ -1655,8 +1655,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         session.onTextChange = { [weak self] text in
             self?.textModel.setText(text)
         }
-        session.onEnd = { [weak self] text, _ in
+        session.onEnd = { [weak self, weak session] text, reason in
+            let heardSpeech = session?.transcript.isEmpty == false
             self?.finishInlineVoiceToText(with: text)
+            // Not an Ask tap, so the submission does not accept the Duck.ai Terms of Service.
+            if reason == .speechFinished, heardSpeech {
+                self?.submitCurrentInputFromCoordinator(trigger: .programmatic)
+            }
         }
         inlineVoiceSession = session
 
@@ -2610,7 +2615,7 @@ extension UnifiedToggleInputCoordinator {
 
 private extension UnifiedToggleInputCoordinator {
 
-    func submitCurrentInputFromCoordinator() {
+    func submitCurrentInputFromCoordinator(trigger: TextSubmissionTrigger = .sendButton) {
         if inputMode == .aiChat, let currentTabUID, tabsPreparingInitialPrompt.contains(currentTabUID) { return }
         let hasText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasValidAttachment = inputMode == .aiChat && viewController.currentAttachments.contains { !$0.isInvalid }
@@ -2631,7 +2636,7 @@ private extension UnifiedToggleInputCoordinator {
         if currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, inputMode == .aiChat {
             viewController.handler.submitAIChatAttachmentOnlyPrompt()
         } else {
-            viewController.handler.submitText(currentText, trigger: .sendButton)
+            viewController.handler.submitText(currentText, trigger: trigger)
         }
     }
 

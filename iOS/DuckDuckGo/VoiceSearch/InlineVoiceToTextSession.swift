@@ -29,7 +29,7 @@ final class InlineVoiceToTextSession {
         case speechFinished
         /// The user ended listening, keeping what was transcribed.
         case stopped
-        /// Recording failed or could not start.
+        /// Recording failed or could not start; what was heard before the failure is kept.
         case failed
     }
 
@@ -82,9 +82,9 @@ final class InlineVoiceToTextSession {
             transcript = text
             onTextChange?(composedText)
         }
-        if error != nil, transcript.isEmpty {
+        if error != nil {
             end(reason: .failed)
-        } else if speechDidFinish || error != nil {
+        } else if speechDidFinish {
             end(reason: .speechFinished)
         }
     }

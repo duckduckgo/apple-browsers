@@ -4339,7 +4339,7 @@ extension UnifiedToggleInputCoordinatorTests {
 
         recognizer.emit("Congratulate John on his new promotion", isFinal: true)
         await drainMainQueue()
-        XCTAssertEqual(coordinator.currentText, "Congratulate John on his new promotion")
+        XCTAssertEqual(mockDelegate.submittedPrompt, "Congratulate John on his new promotion")
         XCTAssertFalse(coordinator.isInlineVoiceToTextActive)
         XCTAssertFalse(coordinator.viewController.isInlineVoiceListening)
         XCTAssertEqual(recognizer.stopCount, 1)
@@ -4376,6 +4376,81 @@ extension UnifiedToggleInputCoordinatorTests {
 
         XCTAssertFalse(coordinator.isInlineVoiceToTextActive)
         XCTAssertEqual(mockDelegate.submittedQuery, "ducks")
+    }
+
+    func testWhenSpeechFinishesInSearchModeThenQueryIsSubmitted() async {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.inlineVoiceToText]),
+                                                     recognizer: recognizer)
+        coordinator.activateFromOmnibar(inputMode: .search)
+        coordinator.startInlineVoiceToText()
+
+        recognizer.emit("weather in Lisbon", isFinal: true)
+        await drainMainQueue()
+
+        XCTAssertFalse(coordinator.isInlineVoiceToTextActive)
+        XCTAssertEqual(mockDelegate.submittedQuery, "weather in Lisbon")
+    }
+
+    func testWhenSpeechFinishesInDuckAIModeThenPromptIsSubmittedWithoutAcceptingTerms() async {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.inlineVoiceToText]),
+                                                     recognizer: recognizer)
+        coordinator.activateFromOmnibar(inputMode: .aiChat)
+        coordinator.startInlineVoiceToText()
+
+        recognizer.emit("Congratulate John", isFinal: true)
+        await drainMainQueue()
+
+        XCTAssertEqual(mockDelegate.submittedPrompt, "Congratulate John")
+        XCTAssertEqual(mockDelegate.submittedTermsAccepted, false)
+    }
+
+    func testWhenUserTapsStopThenNothingIsSubmitted() async {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.inlineVoiceToText]),
+                                                     recognizer: recognizer)
+        coordinator.activateFromOmnibar(inputMode: .search)
+        coordinator.startInlineVoiceToText()
+        recognizer.emit("weather in")
+        await drainMainQueue()
+
+        coordinator.viewController.onInlineVoiceStopTapped?()
+        await drainMainQueue()
+
+        XCTAssertNil(mockDelegate.submittedQuery)
+    }
+
+    func testWhenSpeechFinishesWithoutWordsThenTypedTextIsNotSubmitted() async {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.inlineVoiceToText]),
+                                                     recognizer: recognizer)
+        coordinator.activateFromOmnibar(inputMode: .search)
+        coordinator.setText("weather")
+        coordinator.startInlineVoiceToText()
+
+        recognizer.emit(nil, isFinal: true)
+        await drainMainQueue()
+
+        XCTAssertFalse(coordinator.isInlineVoiceToTextActive)
+        XCTAssertEqual(coordinator.currentText, "weather")
+        XCTAssertNil(mockDelegate.submittedQuery)
+    }
+
+    func testWhenRecordingFailsAfterSpeechThenTextIsKeptAndNotSubmitted() async {
+        let recognizer = MockInlineSpeechRecognizer()
+        let coordinator = makeInlineVoiceCoordinator(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.inlineVoiceToText]),
+                                                     recognizer: recognizer)
+        coordinator.activateFromOmnibar(inputMode: .search)
+        coordinator.startInlineVoiceToText()
+        recognizer.emit("half a sen")
+        await drainMainQueue()
+
+        recognizer.emit(nil, error: NSError(domain: "test", code: 1), isFinal: true)
+        await drainMainQueue()
+
+        XCTAssertEqual(coordinator.currentText, "half a sen")
+        XCTAssertNil(mockDelegate.submittedQuery)
     }
 
     func testWhenAddressBarIsDismissedWhileListeningThenRecordingStops() {
@@ -4438,6 +4513,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedTools: [AIChatRAGTool]?
     var submittedReasoningEffort: AIChatReasoningEffort?
     var submittedAttachments: AIChatPromptAttachments?
+    var submittedTermsAccepted: Bool?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
     var onPromptSubmit: (() -> Void)?
@@ -4453,6 +4529,7 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
         submittedTools = tools
         submittedReasoningEffort = reasoningEffort
         submittedAttachments = attachments
+        submittedTermsAccepted = termsAccepted
         onPromptSubmit?()
     }
     func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,

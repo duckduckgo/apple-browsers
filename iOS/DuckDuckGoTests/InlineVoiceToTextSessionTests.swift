@@ -116,7 +116,7 @@ final class InlineVoiceToTextSessionTests: XCTestCase {
         XCTAssertTrue(changes.isEmpty)
     }
 
-    func testWhenRecordingFailsAfterSpeechThenKeepsWhatWasHeard() {
+    func testWhenRecordingFailsAfterSpeechThenEndsAsFailedKeepingWhatWasHeard() {
         let session = makeSession()
 
         session.start()
@@ -124,7 +124,7 @@ final class InlineVoiceToTextSessionTests: XCTestCase {
         recognizer.emit(nil, error: TestError.failed, isFinal: false)
 
         XCTAssertEqual(ends.first?.text, "half a sen")
-        XCTAssertEqual(ends.first?.reason, .speechFinished)
+        XCTAssertEqual(ends.first?.reason, .failed)
     }
 
     func testWhenStoppedThenCannotBeRestarted() {

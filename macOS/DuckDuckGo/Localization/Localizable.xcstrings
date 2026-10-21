@@ -61,6 +61,198 @@
         }
       }
     },
+    "aichat.attach-menu.add-screenshot" : {
+      "comment" : "Submenu in the Duck.ai omnibar add-attachment menu that captures a screenshot and attaches it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add Screenshot"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.screenshot.drag-to-select" : {
+      "comment" : "Add Screenshot submenu item: drag a rectangle on the screen to capture it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Drag to Select"
+          }
+        }
+      }
+    },
+    "aichat.attach-menu.screenshot.select-window-or-display" : {
+      "comment" : "Add Screenshot submenu item: pick a window or a display to capture",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select Window or Display"
+          }
+        }
+      }
+    },
+    "aichat.attachments.pasted-image-name" : {
+      "comment" : "Name of an image attachment pasted into the Duck.ai prompt",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pasted Image"
+          }
+        }
+      }
+    },
+    "aichat.attachments.screenshot-failed" : {
+      "comment" : "Error shown under the Duck.ai prompt when a screenshot capture fails",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't capture screenshot"
+          }
+        }
+      }
+    },
+    "aichat.attachments.screenshot-name" : {
+      "comment" : "Name of an image attachment captured with Add Screenshot",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Screenshot"
+          }
+        }
+      }
+    },
+    "aichat.screenshot.permission.message" : {
+      "comment" : "Body of the alert shown when a Duck.ai screenshot needs the macOS Screen Recording permission, before macOS asks for it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "macOS will ask for Screen Recording access. We only capture the image you choose to take, never video or audio."
+          }
+        }
+      }
+    },
+    "aichat.screenshot.permission.open-settings" : {
+      "comment" : "Button in the Duck.ai screenshot permission alert that opens the Screen Recording pane of System Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open System Settings"
+          }
+        }
+      }
+    },
+    "aichat.screenshot.permission.settings-message" : {
+      "comment" : "Body of the alert shown when a Duck.ai screenshot needs the macOS Screen Recording permission and macOS has already asked for it once. 'Screen & System Audio Recording' is the name of the macOS setting",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn on Screen & System Audio Recording for DuckDuckGo in System Settings. We only capture the image you choose to take, never video or audio."
+          }
+        }
+      }
+    },
+    "aichat.screenshot.permission.title" : {
+      "comment" : "Title of the alert shown when a Duck.ai screenshot needs the macOS Screen Recording permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow screenshots in Duck.ai?"
+          }
+        }
+      }
+    },
+    "aichat.screenshot.picker.capture" : {
+      "comment" : "Button in the Duck.ai screenshot picker that captures the selected window or display",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Capture"
+          }
+        }
+      }
+    },
+    "aichat.screenshot.picker.displays-tab" : {
+      "comment" : "Tab in the Duck.ai screenshot picker showing displays",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Displays"
+          }
+        }
+      }
+    },
+    "aichat.screenshot.picker.no-windows" : {
+      "comment" : "Shown in the Duck.ai screenshot picker when no window can be captured",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No windows to capture"
+          }
+        }
+      }
+    },
+    "aichat.screenshot.picker.select-display" : {
+      "comment" : "Title of the Duck.ai screenshot picker while it shows displays",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select Display"
+          }
+        }
+      }
+    },
+    "aichat.screenshot.picker.select-window" : {
+      "comment" : "Title of the Duck.ai screenshot picker while it shows open windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select Window"
+          }
+        }
+      }
+    },
+    "aichat.screenshot.picker.windows-tab" : {
+      "comment" : "Tab in the Duck.ai screenshot picker showing open windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Windows"
+          }
+        }
+      }
+    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {

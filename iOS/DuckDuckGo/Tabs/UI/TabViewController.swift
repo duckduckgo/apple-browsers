@@ -2132,7 +2132,7 @@ class TabViewController: UIViewController {
         pullToRefreshViewAdapter?.setNativeErrorPageVisible(isVisible)
     }
 
-    private func setErrorInfoImage(resource: ImageResource = AppRebrand.isAppRebranded() ? .daxAccident : .daxAccidentLegacy,
+    private func setErrorInfoImage(resource: ImageResource = .daxAccident,
                                    size: CGSize = CGSize(width: 296, height: 188)) {
         errorInfoImage.image = UIImage(resource: resource)
         errorInfoImageWidthConstraint.constant = size.width

@@ -69,7 +69,8 @@ import Testing
         #expect(turn.instructions.contains("4"))
         #expect(turn.instructions.contains("German"))
         #expect(turn.history.isEmpty)
-        #expect(turn.maxOutputTokens == 160)
+        #expect(turn.instructions.contains("at most 8 words"))
+        #expect(turn.maxOutputTokens == 80)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -177,16 +177,18 @@ public struct SuggestedPromptsGenerator: Sendable {
 /// The prompt and the parser, pure so they can be tested and evaluated without a model.
 public enum SuggestedPromptsPrompt {
     /// Page content beyond this is dropped: suggestions need the gist, and a short read keeps the first token fast.
-    public static let contentCharacterLimit = 2_000
+    public static let contentCharacterLimit = 1_200
 
-    /// Instructions ask for exactly `count` short questions or requests a reader of this page might ask an assistant,
-    /// one per line, no numbering, written in `uiLanguageName`. The input is "Title:", "URL:" (when known) and the first
-    /// `contentCharacterLimit` characters of content. `maxOutputTokens` is 160. `history` is empty.
+    /// Instructions ask for `count` questions or requests of at most 8 words, one per line, no numbering, written in
+    /// `uiLanguageName`. Small models write long questions unless told a word limit, and the parser drops lines over 80
+    /// characters. The input is "Title:", "URL:" (when known) and the first
+    /// `contentCharacterLimit` characters of content. `maxOutputTokens` is 80. `history` is empty.
     public static func turn(for page: PageSnapshot, count: Int, uiLanguageName: String,
                             conversation: ConversationID = ConversationID()) -> ProviderTurn {
         let instructions = """
-        Write exactly \(count) short questions or requests a reader of this page might ask an assistant.
-        Write in \(uiLanguageName), one suggestion per line, with no numbering, bullets or preamble.
+        Suggest \(count) things a reader of this page might ask an AI assistant about it.
+        Each one is a short question or request of at most 8 words, like a button label.
+        Write in \(uiLanguageName). One per line. No numbering, bullets, quotes or other text.
         """
         var lines = ["Title: \(page.title)"]
         if let url = page.url { lines.append("URL: \(url.absoluteString)") }
@@ -194,7 +196,7 @@ public enum SuggestedPromptsPrompt {
         let input = lines.joined(separator: "\n")
         let estimatedInputTokens = Int((Double((instructions + input).count) / 3.5).rounded(.up))
         return ProviderTurn(conversation: conversation, instructions: instructions, history: [], input: input,
-                            maxOutputTokens: 160, estimatedInputTokens: estimatedInputTokens)
+                            maxOutputTokens: 80, estimatedInputTokens: estimatedInputTokens)
     }
 
     /// Lenient: one suggestion per non-empty line. Strips bullets ("-", "*", "•"), numbering ("1.", "1)"), surrounding

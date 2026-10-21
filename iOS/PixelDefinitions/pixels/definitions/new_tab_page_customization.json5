@@ -1,0 +1,65 @@
+{
+    "new-tab-page_customization_opened": {
+        "description": "Fires when the user presses the customization button on the New Tab Page, measuring daily usage and total presses.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "new-tab-page_customization_favorites_toggled": {
+        "description": "Fires when the user changes the Favorites section toggle in the New Tab Page customization sheet.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "enabled",
+                "description": "Whether the toggle is on after the change: true or false",
+                "type": "boolean"
+            }
+        ]
+    },
+    "new-tab-page_customization_messages_toggled": {
+        "description": "Fires when the user changes the Messages section toggle in the New Tab Page customization sheet.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "new-tab-page_customization_keyboard_toggled": {
+        "description": "Fires when the user changes the Always Show Keyboard toggle in the New Tab Page customization sheet.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "enabled",
+                "description": "Whether the toggle is on after the change: true or false",
+                "type": "boolean"
+            }
+        ]
+    },
+    "new-tab-page_customization_all_settings_opened": {
+        "description": "Fires when the user selects All Settings in the New Tab Page customization sheet.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "new-tab-page_redesign_state": {
+        "description": "Fires once a day when the redesigned New Tab Page appears, reporting whether the user keeps the Favorites section visible.",
+        "owners": ["dus7"],
+        "triggers": ["new_tab"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "favorites_visible",
+                "description": "Whether the Favorites section is shown on the New Tab Page: true or false",
+                "type": "boolean"
+            }
+        ]
+    }
+}

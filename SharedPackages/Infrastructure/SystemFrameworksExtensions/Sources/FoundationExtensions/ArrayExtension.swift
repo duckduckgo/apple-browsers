@@ -1,0 +1,57 @@
+//
+//  ArrayExtension.swift
+//
+//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+public extension Array where Element: Hashable {
+
+    func removingDuplicates<T: Hashable>(byKey key: (Element) -> T) -> [Element] {
+         var result = [Element]()
+         var seen = Set<T>()
+         for value in self where seen.insert(key(value)).inserted {
+             result.append(value)
+         }
+         return result
+     }
+
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0 ..< Swift.min($0 + size, count)])
+        }
+    }
+
+}
+
+public extension Sequence {
+
+    func chunkedSequence(into size: Int) -> AnySequence<[Element]> {
+        precondition(size > 0, "size must be > 0")
+        var iterator = makeIterator()
+        return AnySequence {
+            return AnyIterator {
+                var buffer: [Element] = []
+                buffer.reserveCapacity(size)
+                while buffer.count < size, let next = iterator.next() {
+                    buffer.append(next)
+                }
+                return buffer.isEmpty ? nil : buffer
+            }
+        }
+    }
+
+}

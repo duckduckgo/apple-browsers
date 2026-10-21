@@ -16,10 +16,22 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Foundation
-import Navigation
+import HistoryView
+import DDGNavigation
 import Subscription
+
+enum DataBrokerProtectionTabContext: Equatable {
+    case subscribed
+    case freemium(FreemiumDBPEntryPoint)
+
+    var freemiumEntryPoint: FreemiumDBPEntryPoint? {
+        guard case let .freemium(entryPoint) = self else { return nil }
+        return entryPoint
+    }
+}
 
 extension Tab {
 
@@ -28,37 +40,53 @@ extension Tab {
         case url(URL, credential: URLCredential? = nil, source: URLSource)
         case settings(pane: PreferencePaneIdentifier?)
         case bookmarks
-        case history
+        case history(pane: HistoryPaneIdentifier?)
         case onboarding
         case none
-        case dataBrokerProtection
+        case dataBrokerProtection(DataBrokerProtectionTabContext)
         case subscription(URL)
         case identityTheftRestoration(URL)
         case releaseNotes
         case webExtensionUrl(URL)
-        case aiChat(URL)
+        case aiChat(URL, source: URLSource = .ui)
     }
     typealias TabContent = Tab.Content
 
 }
 typealias TabContent = Tab.Content
+typealias HistoryPaneIdentifier = HistoryView.DataModel.HistoryRange
 
 extension TabContent {
 
     enum URLSource: Equatable {
+        /// Used for TabContent instantiated by state restoration
         case pendingStateRestoration
+        /// Used to identify already loaded TabContent after state restoration
         case loadedByStateRestoration
+        /// Used for URLs entered by the user in the address bar
         case userEntered(String, downloadRequested: Bool = false)
+        /// Used for history entries opened from browser UI
         case historyEntry
+        /// Used for bookmarks opened from browser UI
         case bookmark(isFavorite: Bool)
+        /// Used for URLs opened from internal browser UI (mostly for URLs like email protection, duck.ai, duckduckgo.com, etc.)
         case ui
+        /// `.ui` that also names where a Duck.ai load came from, for surfaces that don't stamp the chat
+        /// themselves. Loads exactly like `.ui`.
+        case attributedUI(AIChatConversationSource)
+        /// Used for links opened from the web view
         case link
+        /// Used for URLs opened from an external application
         case appOpenUrl
+        /// Set to Tab Content being reloaded
         case reload
+        /// Dummy source for switching to an open tab already displaying the same URL
         case switchToOpenTab
 
+        /// Used for URLs whose change was triggered by the web view
         case webViewUpdated
 
+        /// Value actually entered by the user in the address bar at the moment of submission
         var userEnteredValue: String? {
             if case .userEntered(let userEnteredValue, _) = self {
                 userEnteredValue
@@ -67,10 +95,12 @@ extension TabContent {
             }
         }
 
+        /// Whether the URL was actually entered by the user in the address bar
         var isUserEnteredUrl: Bool {
             userEnteredValue != nil
         }
 
+        /// NavigationAction.navigationType that would be used to load this URLSource
         var navigationType: NavigationType {
             switch self {
             case .userEntered(_, downloadRequested: true):
@@ -87,7 +117,7 @@ extension TabContent {
                 .custom(.historyEntry)
             case .bookmark:
                 .custom(.bookmark)
-            case .ui:
+            case .ui, .attributedUI:
                 .custom(.ui)
             case .link:
                 .custom(.link)
@@ -98,14 +128,41 @@ extension TabContent {
             }
         }
 
+        /// Opening a URL from these first switches to a tab already showing it.
+        var switchesToOpenTab: Bool {
+            switch self {
+            case .appOpenUrl, .switchToOpenTab:
+                true
+            case .attributedUI(.duckAILink):
+                // Duck.ai's own links opened as `.switchToOpenTab` before they were attributed.
+                true
+            default:
+                false
+            }
+        }
+
+        /// URLRequest.CachePolicy that would be used to load this URLSource
         var cachePolicy: URLRequest.CachePolicy {
             switch self {
             case .pendingStateRestoration, .historyEntry:
                 .returnCacheDataElseLoad
             case .reload, .loadedByStateRestoration:
                 .reloadIgnoringCacheData
-            case .userEntered, .bookmark, .ui, .link, .appOpenUrl, .webViewUpdated, .switchToOpenTab:
+            case .userEntered, .bookmark, .ui, .attributedUI, .link, .appOpenUrl, .webViewUpdated, .switchToOpenTab:
                 .useProtocolCachePolicy
+            }
+        }
+
+        /// Duck.ai keeps only the sources that tell how it was reached, so every other load of it
+        /// (restoration, reload, web view updates) still behaves as `.ui` did. It never downloads the page.
+        fileprivate var aiChatSource: Self {
+            switch self {
+            case .userEntered(let value, downloadRequested: _):
+                .userEntered(value)
+            case .bookmark, .historyEntry, .appOpenUrl, .link, .attributedUI:
+                self
+            case .pendingStateRestoration, .loadedByStateRestoration, .ui, .reload, .switchToOpenTab, .webViewUpdated:
+                .ui
             }
         }
 
@@ -113,6 +170,7 @@ extension TabContent {
 }
 extension TabContent {
 
+    // swiftlint:disable:next cyclomatic_complexity
     static func contentFromURL(_ url: URL?, source: URLSource) -> TabContent {
         switch url {
         case URL.newtab, URL.Invalid.aboutNewtab, URL.Invalid.duckHome:
@@ -124,7 +182,7 @@ extension TabContent {
         case URL.bookmarks, URL.Invalid.aboutBookmarks:
             return .bookmarks
         case URL.dataBrokerProtection:
-            return .dataBrokerProtection
+            return .dataBrokerProtection(.subscribed)
         case URL.releaseNotes:
             return .releaseNotes
         case URL.Invalid.aboutHome:
@@ -132,8 +190,8 @@ extension TabContent {
                 return .newtab
             }
             return .url(customURL, source: source)
-        case let historyURL where historyURL?.isHistory == true:
-            return .history
+        case URL.history, URL.Invalid.aboutHistory:
+            return .anyHistoryPane
         default: break
         }
 
@@ -141,12 +199,11 @@ extension TabContent {
             if url.isWebExtensionUrl {
                 return .webExtensionUrl(url)
             }
-            if url.isDuckAIURL,
-               NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatSidebar) {
-                    return .aiChat(url)
+            if url.isDuckAIURL {
+                return .aiChat(url, source: source.aiChatSource)
             }
 
-            let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
+            let subscriptionManager = Application.appDelegate.subscriptionManager
             let environment = subscriptionManager.currentEnvironment.serviceEnvironment
             let subscriptionBaseURL = subscriptionManager.url(for: .baseURL)
             let identityTheftRestorationURL = subscriptionManager.url(for: .identityTheftRestoration)
@@ -162,6 +219,8 @@ extension TabContent {
 
         if let settingsPane = url.flatMap(PreferencePaneIdentifier.init(url:)) {
             return .settings(pane: settingsPane)
+        } else if let historyPane = url.flatMap(HistoryPaneIdentifier.init(url:)) {
+            return .history(pane: historyPane)
         } else if url?.isDuckPlayer == true, let (videoId, timestamp) = url?.youtubeVideoParams {
             return .url(.duckPlayer(videoId, timestamp: timestamp), credential: nil, source: source)
         } else if let url, let credential = url.basicAuthCredential {
@@ -187,6 +246,7 @@ extension TabContent {
     /// Convenience accessor for `.preferences` Tab Content with no particular pane selected,
     /// i.e. the currently selected pane is decided internally by `PreferencesViewController`.
     static let anySettingsPane: Self = .settings(pane: nil)
+    static let anyHistoryPane: Self = .history(pane: nil)
 
     var isDisplayable: Bool {
         switch self {
@@ -231,7 +291,28 @@ extension TabContent {
         }
     }
 
-    // !!! don‘t add `url` property to avoid ambiguity with the `.url` enum case
+    /// Resolves the display title for this content type.
+    ///
+    /// For content types with well-known titles (bookmarks, settings, etc.), returns those directly.
+    /// For URL-based content, falls back through: page title → host → file name → "Untitled".
+    func displayTitle(pageTitle: String?, pageURL: URL?) -> String {
+        if let title = self.title {
+            return title
+        }
+        if case .newtab = self {
+            return UserText.tabHomeTitle
+        }
+        if let tabTitle = pageTitle?.trimmingWhitespace(), !tabTitle.isEmpty {
+            return tabTitle
+        } else if let host = pageURL?.suggestedTitlePlaceholder, !host.isEmpty {
+            return host
+        } else if let pageURL, pageURL.isFileURL {
+            return pageURL.lastPathComponent
+        }
+        return UserText.tabUntitledTitle
+    }
+
+    // !!! don’t add `url` property to avoid ambiguity with the `.url` enum case
     // use `userEditableUrl` or `urlForWebView` instead.
 
     /// user-editable URL displayed in the address bar
@@ -247,7 +328,7 @@ extension TabContent {
     /// `real` URL loaded in the web view
     var urlForWebView: URL? {
         switch self {
-        case .url(let url, credential: _, source: _):
+        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url, source: _):
             return url
         case .newtab:
             return .newtab
@@ -257,7 +338,9 @@ extension TabContent {
             return .settings
         case .bookmarks:
             return .bookmarks
-        case .history:
+        case .history(pane: .some(let pane)):
+            return .historyPane(pane)
+        case .history(pane: .none):
             return .history
         case .onboarding:
             return URL.onboarding
@@ -265,10 +348,6 @@ extension TabContent {
             return .dataBrokerProtection
         case .releaseNotes:
             return .releaseNotes
-        case .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url):
-            return url
-        case .aiChat(let url):
-            return url
         case .none:
             return nil
         }
@@ -276,17 +355,33 @@ extension TabContent {
 
     var source: URLSource {
         switch self {
-        case .url(_, _, source: let source):
+        case .url(_, _, source: let source), .aiChat(_, source: let source):
             return source
         case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .dataBrokerProtection,
-                .subscription, .identityTheftRestoration, .webExtensionUrl, .none, .aiChat:
+                .subscription, .identityTheftRestoration, .webExtensionUrl, .none:
             return .ui
         }
     }
 
-    var isUrl: Bool {
+    /// URLRequest.CachePolicy for loading this content. Duck.ai always loads as `.ui` does, so a
+    /// history-entry open doesn't prefer stale cached data.
+    var cachePolicy: URLRequest.CachePolicy {
+        if case .aiChat = self {
+            return URLSource.ui.cachePolicy
+        }
+        return source.cachePolicy
+    }
+
+    /// Duck.ai content without the source of the navigation that opened it, for copies that load it
+    /// again later and must not count as that navigation.
+    var resettingAIChatSource: Self {
+        guard case .aiChat(let url, source: _) = self else { return self }
+        return .aiChat(url)
+    }
+
+    var isExternalUrl: Bool {
         switch self {
-        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat:
+        case .url, .subscription, .identityTheftRestoration, .aiChat:
             return true
         default:
             return false
@@ -306,6 +401,14 @@ extension TabContent {
         userEnteredValue != nil
     }
 
+    var isHistory: Bool {
+        if case .history = self { true } else { false }
+    }
+
+    var isDataBrokerProtection: Bool {
+        if case .dataBrokerProtection = self { true } else { false }
+    }
+
     var isUserRequestedPageDownload: Bool {
         if case .url(_, credential: _, source: .userEntered(_, downloadRequested: true)) = self {
             return true
@@ -315,7 +418,10 @@ extension TabContent {
     }
 
     var displaysContentInWebView: Bool {
-        isUrl
+        switch self {
+        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat: true
+        default: false
+        }
     }
 
     var usesExternalWebView: Bool {
@@ -329,7 +435,7 @@ extension TabContent {
 
     var canBeDuplicated: Bool {
         switch self {
-        case .settings, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes:
+        case .settings, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .onboarding:
             return false
         default:
             return true
@@ -338,10 +444,12 @@ extension TabContent {
 
     var canBePinned: Bool {
         switch self {
-        case .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .history:
+        case .subscription, .identityTheftRestoration, .dataBrokerProtection, .history, .settings, .newtab, .bookmarks:
+            return true
+        case .releaseNotes:
             return false
         default:
-            return isUrl
+            return isExternalUrl
         }
     }
 
@@ -352,5 +460,26 @@ extension TabContent {
         case .url, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl, .aiChat:
             return true
         }
+    }
+}
+extension HistoryPaneIdentifier {
+    init?(url: URL) {
+        // Try query parameter format first (duck://history?range=today)
+        if let rangeValue = url.getParameter(named: "range") {
+            self.init(rawValue: rangeValue)
+            return
+        }
+
+        // Fallback to path format (duck://history/today, about:history/today)
+        // Manually extract path because URLs such as "about:history" can't figure out their host or path
+        for urlPrefix in [URL.history, URL.Invalid.aboutHistory] {
+            let prefix = urlPrefix.absoluteString + "/"
+            guard url.absoluteString.hasPrefix(prefix) else { continue }
+
+            let path = url.absoluteString.dropping(prefix: prefix)
+            self.init(rawValue: path)
+            return
+        }
+        return nil
     }
 }

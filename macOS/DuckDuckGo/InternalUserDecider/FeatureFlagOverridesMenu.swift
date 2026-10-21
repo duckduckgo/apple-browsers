@@ -17,8 +17,9 @@
 //
 
 import AppKit
-import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
+import PrivacyConfig
+
 final class FeatureFlagOverridesMenu: NSMenu {
     let featureFlagger: FeatureFlagger
     let setInternalUserStateItem: NSMenuItem = {
@@ -30,31 +31,46 @@ final class FeatureFlagOverridesMenu: NSMenu {
         self.featureFlagger = featureFlagOverrides
         super.init(title: "")
 
-        buildItems {
-            internalUserStateMenuItem()
-            NSMenuItem.separator()
-
-            sectionHeader(title: "Legend")
-            legend(title: "- Category has overridden flags", icon: Self.categoryHasOverriddenFlagsIcon)
-            legend(title: "- Flag enabled by default", icon: Self.enabledByDefaultIcon)
-            legend(title: "- Flag disabled by default", icon: Self.disabledByDefaultIcon)
-            legend(title: "- Flag enabled by user", icon: Self.enabledByUserIcon)
-            legend(title: "- Flag disabled by user", icon: Self.disabledByUserIcon)
-            NSMenuItem.separator()
-
-            sectionHeader(title: "Feature Flags")
-            featureFlagMenuItems()
-            NSMenuItem.separator()
-
-            sectionHeader(title: "Experiments")
-            experimentFeatureMenuItems()
-            NSMenuItem.separator()
-            resetAllOverridesMenuItem()
-        }
+        buildItems()
     }
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    private func rebuildItemsIfInternalUserStateChanged() {
+        let internalUserStateChangedToOFF = !featureFlagger.internalUserDecider.isInternalUser && !items.contains(setInternalUserStateItem)
+        let internaluserStateChangedToON = featureFlagger.internalUserDecider.isInternalUser && items.contains(setInternalUserStateItem)
+        let internalUserStateChanged = internalUserStateChangedToOFF || internaluserStateChangedToON
+
+        if internalUserStateChanged {
+            buildItems()
+        }
+    }
+
+    private func buildItems() {
+        buildItems {
+            if !featureFlagger.internalUserDecider.isInternalUser {
+                internalUserStateMenuItem()
+            } else {
+                sectionHeader(title: "Legend")
+                legend(title: "- Category has overridden flags", icon: Self.categoryHasOverriddenFlagsIcon)
+                legend(title: "- Flag enabled by default", icon: Self.enabledByDefaultIcon)
+                legend(title: "- Flag disabled by default", icon: Self.disabledByDefaultIcon)
+                legend(title: "- Flag enabled by user", icon: Self.enabledByUserIcon)
+                legend(title: "- Flag disabled by user", icon: Self.disabledByUserIcon)
+                NSMenuItem.separator()
+
+                sectionHeader(title: "Feature Flags")
+                featureFlagMenuItems()
+                NSMenuItem.separator()
+
+                sectionHeader(title: "Experiments")
+                experimentFeatureMenuItems()
+                NSMenuItem.separator()
+                resetAllOverridesMenuItem()
+            }
+        }
     }
 
     // MARK: - Menu Item Builders
@@ -68,6 +84,11 @@ final class FeatureFlagOverridesMenu: NSMenu {
             .map { category in
                 let menuItem = NSMenuItem(title: category.rawValue)
                 menuItem.representedObject = category
+#if compiler(>=6.4)
+                if #available(macOS 27.0, *) {
+                    menuItem.preferredImageVisibility = .visible
+                }
+#endif
                 let submenu = NSMenu(title: category.rawValue)
                 menuItem.submenu = submenu
 
@@ -79,11 +100,18 @@ final class FeatureFlagOverridesMenu: NSMenu {
                     }
                     .sorted { $0.rawValue.lowercased() < $1.rawValue.lowercased() }
                     .map { flag in
-                        NSMenuItem(
+                        let item = NSMenuItem(
                             title: menuItemTitle(for: flag),
                             action: #selector(toggleFeatureFlag(_:)),
                             target: self,
-                            representedObject: flag)
+                            representedObject: flag
+                        )
+#if compiler(>=6.4)
+                        if #available(macOS 27.0, *) {
+                            item.preferredImageVisibility = .visible
+                        }
+#endif
+                        return item
                     }
 
                 submenu.items = flagItems
@@ -119,10 +147,16 @@ final class FeatureFlagOverridesMenu: NSMenu {
     override func update() {
         super.update()
         update(items)
-        setInternalUserStateItem.isHidden = featureFlagger.internalUserDecider.isInternalUser
     }
 
     private func update(_ items: [NSMenuItem]) {
+        rebuildItemsIfInternalUserStateChanged()
+
+        guard featureFlagger.internalUserDecider.isInternalUser else {
+            // Nothing to update if isInternalUser is OFF.
+            return
+        }
+
         for item in items {
             if let category = item.representedObject as? FeatureFlagCategory {
                 updateCategoryItem(item, category: category)
@@ -132,8 +166,6 @@ final class FeatureFlagOverridesMenu: NSMenu {
             guard let flag = item.representedObject as? FeatureFlag else {
                 continue
             }
-
-            item.isHidden = !featureFlagger.internalUserDecider.isInternalUser
 
             if flag.cohortType == nil {
                 updateFeatureFlagItem(item, flag: flag)
@@ -278,7 +310,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
         submenu.addItem(NSMenuItem.separator())
 
         // "Remove Override" only if an override exists
-        let removeOverrideItem = removeOverrideSubmenuItem(for: flag)
+        let removeOverrideItem = removeExperimentOverrideSubmenuItem(for: flag)
         removeOverrideItem.isHidden = currentOverride == nil
 
         submenu.addItem(removeOverrideItem)
@@ -296,6 +328,19 @@ final class FeatureFlagOverridesMenu: NSMenu {
         )
         removeOverrideItem.representedObject = flag
         removeOverrideItem.isHidden = featureFlagger.localOverrides?.override(for: flag) == nil
+        return removeOverrideItem
+    }
+
+    private func removeExperimentOverrideSubmenuItem(for flag: FeatureFlag) -> NSMenuItem {
+        let defaultCohortString = defaultExperimentValue(for: flag)
+
+        let removeOverrideItem = NSMenuItem(
+            title: "Reset to default: \(defaultCohortString)",
+            action: #selector(resetOverride(_:)),
+            target: self
+        )
+        removeOverrideItem.representedObject = flag
+        removeOverrideItem.isHidden = featureFlagger.localOverrides?.experimentOverride(for: flag) == nil
         return removeOverrideItem
     }
 
@@ -337,6 +382,11 @@ final class FeatureFlagOverridesMenu: NSMenu {
         legendItem.image = icon
         legendItem.isEnabled = false
         legendItem.indentationLevel = 1
+#if compiler(>=6.4)
+        if #available(macOS 27.0, *) {
+            legendItem.preferredImageVisibility = .visible
+        }
+#endif
         return legendItem
     }
 }

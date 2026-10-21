@@ -21,8 +21,11 @@ import Combine
 import WebKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
+import PrivacyConfig
 import DataBrokerProtectionCore
+import enum UserScript.UserScriptError
 
 protocol DBPUIScanOps: AnyObject {
     func updateCacheWithCurrentScans() async
@@ -40,6 +43,8 @@ public final class DBPUIViewModel {
     private var webView: WKWebView?
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    @MainActor private var freeScanEntryPoint: String?
+    @MainActor private var lastHandshakeFreeScanEntryPoint: String?
 
     public init(dataManager: DataBrokerProtectionDataManaging?,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
@@ -65,11 +70,20 @@ public final class DBPUIViewModel {
         guard let dataManager = dataManager else { return nil }
 
         let configuration = WKWebViewConfiguration()
-        configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
-                                              prefs: prefs,
-                                              delegate: dataManager.communicator,
-                                              webUISettings: webUISettings,
-                                              vpnBypassService: vpnBypassService)
+        do {
+            try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
+                                                      prefs: prefs,
+                                                      delegate: dataManager.communicator,
+                                                      handshakeDelegate: self,
+                                                      webUISettings: webUISettings,
+                                                      vpnBypassService: vpnBypassService)
+        } catch {
+            if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                Thread.sleep(forTimeInterval: 1.0) // give time for the pixel to be sent
+            }
+            fatalError("Failed to apply DBPUI configuration: \(error)")
+        }
         dataManager.communicator.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
@@ -79,11 +93,34 @@ public final class DBPUIViewModel {
 
         return configuration
     }
+
+    /// The handshake carries the value and runs once per document load, so an already-loaded UI
+    /// needs a reload to see a new entry point.
+    @MainActor func setFreeScanEntryPoint(_ entryPoint: String?, in webView: WKWebView?) {
+        guard freeScanEntryPoint != entryPoint else { return }
+        freeScanEntryPoint = entryPoint
+
+        guard lastHandshakeFreeScanEntryPoint != entryPoint, let webView, webView.url != nil else { return }
+        webView.reload()
+    }
+}
+
+extension DBPUIViewModel: DBPUIHandshakeDelegate {
+    @MainActor public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
+        let entryPoint = freeScanEntryPoint
+        lastHandshakeFreeScanEntryPoint = entryPoint
+        let userData = await dataManager?.communicator.getHandshakeUserData()
+        return DBPUIHandshakeUserData(isAuthenticatedUser: userData?.isAuthenticatedUser ?? true,
+                                      isUserEligibleForFreeTrial: userData?.isUserEligibleForFreeTrial ?? false,
+                                      freeScanEntryPoint: entryPoint)
+    }
 }
 
 extension DBPUIViewModel: DBPUIScanOps {
     func profileSaved() {
-        agentInterface.profileSaved()
+        Task {
+            await agentInterface.profileSaved()
+        }
     }
 
     func updateCacheWithCurrentScans() async {

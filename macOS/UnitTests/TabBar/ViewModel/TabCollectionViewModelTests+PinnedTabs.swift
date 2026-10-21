@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import History
 @testable import DuckDuckGo_Privacy_Browser
 
 // MARK: - Tests for TabCollectionViewModel with pinned tabs
@@ -117,6 +118,22 @@ extension TabCollectionViewModelTests {
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: 0))
     }
 
+    @MainActor
+    func test_WithPinnedTabs_WhenSelectIsInvokedWithUnpinnedTabThenSelectedTabIsUpdatedAccordingly() {
+        let demoTab0 = Tab(content: .url(.duckDuckGo, source: .link))
+        let demoTab1 = Tab(content: .url(.bookmarks, source: .link))
+
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        tabCollectionViewModel.insert(demoTab1)
+        tabCollectionViewModel.insert(demoTab0)
+
+        tabCollectionViewModel.select(at: .unpinned(2))
+        XCTAssertEqual(tabCollectionViewModel.selectedTab?.content, .newtab)
+
+        tabCollectionViewModel.select(tab: demoTab1)
+        XCTAssertEqual(tabCollectionViewModel.selectedTab, demoTab1)
+    }
+
     // MARK: - Insert
 
     @MainActor
@@ -134,7 +151,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenInsertChildOfPinnedTabAndNoOtherChildTabIsNearParent_ThenTabIsInsertedAsFirstUnpinnedTab() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
 
-        let parentPinnedTab = tabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs[0]
+        guard case .loaded(let parentPinnedTab) = tabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         let tab = Tab(parentTab: parentPinnedTab)
         tabCollectionViewModel.insert(tab, selected: false)
@@ -148,7 +165,7 @@ extension TabCollectionViewModelTests {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendNewTab()
 
-        let parentPinnedTab = tabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs[0]
+        guard case .loaded(let parentPinnedTab) = tabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         tabCollectionViewModel.insert(Tab(parentTab: parentPinnedTab), selected: false)
         tabCollectionViewModel.insert(Tab(parentTab: parentPinnedTab), selected: false)
@@ -166,7 +183,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenInsertOrAppendCalledPreferencesAreRespected() {
         let persistor = MockTabsPreferencesPersistor()
         var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-                                                            tabsPreferences: TabsPreferences(persistor: persistor))
+                                                            tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
         tabCollectionViewModel.appendPinnedTab()
 
         let index = tabCollectionViewModel.tabCollection.tabs.count
@@ -175,7 +192,7 @@ extension TabCollectionViewModelTests {
 
         persistor.newTabPosition = .nextToCurrent
         tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-                                                            tabsPreferences: TabsPreferences(persistor: persistor))
+                                                            tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
         tabCollectionViewModel.appendPinnedTab()
 
         tabCollectionViewModel.appendNewTab()
@@ -220,7 +237,7 @@ extension TabCollectionViewModelTests {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let lastPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs[2]
+        guard case .loaded(let lastPinnedTab) = tabCollectionViewModel.pinnedTabsCollection?.tabs[2] else { return XCTFail("Expected loaded tab") }
 
         tabCollectionViewModel.select(at: .pinned(2))
         tabCollectionViewModel.select(at: .pinned(1))
@@ -234,7 +251,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenSelectedLastPinnedTabIsRemovedThenFirstUnpinnedTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let firstUnpinnedTab = tabCollectionViewModel.tabCollection.tabs[0]
+        guard case .loaded(let firstUnpinnedTab) = tabCollectionViewModel.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         tabCollectionViewModel.select(at: .pinned(1))
         tabCollectionViewModel.remove(at: .pinned(1))
@@ -247,7 +264,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenLastTabIsRemoved_ThenLastPinnedTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let lastPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs[1]
+        guard case .loaded(let lastPinnedTab) = tabCollectionViewModel.pinnedTabsCollection?.tabs[1] else { return XCTFail("Expected loaded tab") }
 
         tabCollectionViewModel.select(at: .pinned(1))
         tabCollectionViewModel.remove(at: .unpinned(0))
@@ -274,7 +291,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenChildTabIsInsertedAndRemoved_ThenChildTabIsSelectedBackIfPresent() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
-        let parentTab = tabCollectionViewModel.pinnedTabsCollection!.tabs[0]
+        guard case .loaded(let parentTab) = tabCollectionViewModel.pinnedTabsCollection!.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
@@ -290,7 +307,7 @@ extension TabCollectionViewModelTests {
     @MainActor
     func test_WithPinnedTabs_WhenChildTabIsInsertedAndRemovedAndNoChildIsNear_ThenParentIsSelectedBack() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
-        let parentTab = tabCollectionViewModel.pinnedTabsCollection!.tabs[0]
+        guard case .loaded(let parentTab) = tabCollectionViewModel.pinnedTabsCollection!.tabs[0] else { return XCTFail("Expected loaded tab") }
 
         // Append two tabs that are not parent related
         tabCollectionViewModel.append(tab: Tab(), selected: true)
@@ -306,7 +323,7 @@ extension TabCollectionViewModelTests {
     }
 
     @MainActor
-    func test_WithPinnedTabs_RemoveSelected() {
+    func test_WithPinnedTabs_CloseSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendNewTab()
         tabCollectionViewModel.appendNewTab()
@@ -314,9 +331,17 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.select(at: .pinned(0))
         let selectedTab = tabCollectionViewModel.selectedTabViewModel?.tab
 
-        tabCollectionViewModel.removeSelected()
+        var closes = 0
+        selectedTab?.onClose = { closes += 1 }
+        tabCollectionViewModel.changesEnabled = false
+        _ = tabCollectionViewModel.closeSelected(forceChange: true)
+        XCTAssertEqual(closes, 0)
+        XCTAssertTrue(tabCollectionViewModel.pinnedTabsCollection!.contains(tab: selectedTab!))
+        tabCollectionViewModel.changesEnabled = true
+        _ = tabCollectionViewModel.closeSelected()
+        XCTAssertEqual(closes, 1)
 
-        XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.tabs.contains(selectedTab!))
+        XCTAssertFalse(tabCollectionViewModel.pinnedTabsCollection!.contains(tab: selectedTab!))
     }
 
     // MARK: - Duplicate
@@ -356,6 +381,139 @@ extension TabCollectionViewModelTests {
         XCTAssertEqual(events.count, 1)
         XCTAssertIdentical(events[0], tabCollectionViewModel.selectedTabViewModel)
     }
+
+    // MARK: - Pin / Unpin
+
+    @MainActor
+    func testWhenGettingWebExtensionIndicesThenPinnedTabsPrecedeUnpinnedTabs() {
+        let pinnedTabsManagerProvider = PinnedTabsManagerProvidingMock()
+        let firstUnpinnedTab = Tab(content: .newtab)
+        let secondUnpinnedTab = Tab(content: .newtab)
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [firstUnpinnedTab, secondUnpinnedTab]),
+            pinnedTabsManagerProvider: pinnedTabsManagerProvider)
+
+        tabCollectionViewModel.pinTab(at: 0)
+
+        XCTAssertEqual(tabCollectionViewModel.webExtensionIndex(of: firstUnpinnedTab), 0)
+        XCTAssertEqual(tabCollectionViewModel.webExtensionIndex(of: secondUnpinnedTab), 1)
+    }
+
+    @MainActor
+    func testWhenGettingWebExtensionIndicesThenUnloadedTabsAreExcluded() {
+        let unloadedPinnedTab = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let loadedPinnedTab = Tab(content: .newtab)
+        let pinnedTabsManager = PinnedTabsManager(tabCollection: TabCollection(tabs: [
+            .unloaded(unloadedPinnedTab),
+            .loaded(loadedPinnedTab),
+        ]))
+        let pinnedTabsManagerProvider = PinnedTabsManagerProvidingMock()
+        pinnedTabsManagerProvider.newPinnedTabsManager = pinnedTabsManager
+
+        let firstUnpinnedTab = Tab(content: .newtab)
+        let unloadedUnpinnedTab = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration))
+        let secondUnpinnedTab = Tab(content: .newtab)
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [
+                .loaded(firstUnpinnedTab),
+                .unloaded(unloadedUnpinnedTab),
+                .loaded(secondUnpinnedTab),
+            ]),
+            pinnedTabsManagerProvider: pinnedTabsManagerProvider)
+
+        XCTAssertNil(tabCollectionViewModel.webExtensionIndex(for: .pinned(0)))
+        XCTAssertEqual(tabCollectionViewModel.webExtensionIndex(of: loadedPinnedTab), 0)
+        XCTAssertEqual(tabCollectionViewModel.webExtensionIndex(of: firstUnpinnedTab), 1)
+        XCTAssertEqual(tabCollectionViewModel.webExtensionIndex(of: secondUnpinnedTab), 2)
+    }
+
+    @MainActor
+    func testWhenPinningAndUnpinningThenWebExtensionMovesAreReportedWithoutChangingIdentity() {
+        let firstTab = Tab(content: .newtab)
+        let movedTab = Tab(content: .newtab)
+        let delegate = TabCollectionViewModelDelegateMock()
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [firstTab, movedTab]),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        tabCollectionViewModel.delegate = delegate
+
+        tabCollectionViewModel.pinTab(at: 1)
+        XCTAssertIdentical(tabCollectionViewModel.pinnedTabs.first, movedTab)
+
+        tabCollectionViewModel.unpinTab(at: 0)
+
+        XCTAssertEqual(delegate.webExtensionTabMoves.map(\.oldIndex), [1, 0])
+        XCTAssertTrue(delegate.webExtensionTabMoves.allSatisfy { $0.tab === movedTab })
+        XCTAssertIdentical(tabCollectionViewModel.tabCollection.loadedTabs.first, movedTab)
+    }
+
+    @MainActor
+    func test_WithPinnedTabs_WhenPinningTabThenTabIsMovedWithoutCloseSideEffects() {
+        let historyExtension = HistoryTabExtensionMock()
+        let extensionBuilder = TestTabExtensionsBuilder(load: [HistoryTabExtensionMock.self]) { builder in { _, _ in
+            builder.override { historyExtension }
+        }}
+        let tab = Tab(content: .newtab, extensionsBuilder: extensionBuilder)
+        let tabCollection = TabCollection(tabs: [tab])
+        let tabCollectionViewModel = TabCollectionViewModel(
+            tabCollection: tabCollection,
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
+        )
+        historyExtension.localHistory.append(Visit(date: Date()))
+
+        tabCollectionViewModel.pinTab(at: 0)
+
+        XCTAssertTrue(tabCollection.localHistoryOfRemovedTabs.isEmpty)
+        XCTAssertIdentical(tabCollectionViewModel.pinnedTabs.first, tab)
+    }
+
+    @MainActor
+    func test_WithPinnedTabs_WhenUnpinningTabThenNewUnpinnedTabIsInserted() {
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+
+        let tabContent: TabContent = .url(.duckDuckGo, source: .link)
+        tabCollectionViewModel.appendPinnedTab(content: tabContent)
+
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 1)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
+
+        tabCollectionViewModel.unpinTab(at: 0)
+
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabs.count, 0)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 2)
+        XCTAssertEqual(tabCollectionViewModel.tabs.first?.content, tabContent)
+    }
+
+    // MARK: - Move
+
+    @MainActor
+    func test_WithPinnedTabs_WhenMovingPinnedTabsAcrossCollections_DestinationCollectionInsertsTheNewTabs() throws {
+        let sourceTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+        let destinationTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+
+        let sourceTabContent0: TabContent = .url(.duckDuckGo, source: .link)
+        let sourceTabContent1: TabContent = .url(.aboutDuckDuckGo, source: .link)
+
+        sourceTabCollectionViewModel.appendPinnedTab(content: sourceTabContent0)
+        sourceTabCollectionViewModel.appendPinnedTab(content: sourceTabContent1)
+
+        // Verify Initial Tabs Count: Account for the default `newtab`
+        XCTAssertEqual(sourceTabCollectionViewModel.allTabsCount, 3)
+        XCTAssertEqual(destinationTabCollectionViewModel.allTabsCount, 1)
+
+        // Move
+        sourceTabCollectionViewModel.moveTab(at: .pinned(0), to: destinationTabCollectionViewModel, at: .pinned(0))
+        sourceTabCollectionViewModel.moveTab(at: .pinned(0), to: destinationTabCollectionViewModel, at: .unpinned(0))
+
+        // Verify Final Tabs Count
+        XCTAssertEqual(sourceTabCollectionViewModel.allTabsCount, 1)
+        XCTAssertEqual(destinationTabCollectionViewModel.tabs.count, 2)
+        XCTAssertEqual(destinationTabCollectionViewModel.pinnedTabs.count, 1)
+
+        // Verify the new Tabs are at destination
+        XCTAssertEqual(destinationTabCollectionViewModel.pinnedTabs.first?.content, sourceTabContent0)
+        XCTAssertEqual(destinationTabCollectionViewModel.tabs.first?.content, sourceTabContent1)
+    }
 }
 
 fileprivate extension TabCollectionViewModel {
@@ -367,8 +525,10 @@ fileprivate extension TabCollectionViewModel {
         return vm
     }
 
-    func appendPinnedTab() {
-        pinnedTabsManager?.tabCollection.append(tab: .init(content: .url("https://duck.com".url!, source: .link), shouldLoadInBackground: false))
+    func appendPinnedTab(content: TabContent? = nil) {
+        let tabContent = content ?? .url("https://duck.com".url!, source: .link)
+        let tab = Tab(content: tabContent, shouldLoadInBackground: false)
+        pinnedTabsManager?.tabCollection.append(tab: tab)
     }
 }
 

@@ -17,9 +17,11 @@
 //
 
 import Foundation
-import ContentBlocking
 import Common
+import FoundationExtensions
+import ContentBlocking
 import os.log
+import PrivacyConfig
 
 public protocol AdClickAttributionLogicDelegate: AnyObject {
 

@@ -1,6 +1,7 @@
 # favorites.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---
@@ -48,32 +49,22 @@ tags:
 - inputText: "pri"
 
 # Wildcard because identifiers of list items contain suffix to make them unique
-- assertVisible: 
+- assertVisible:
     id: "Autocomplete.Suggestions.ListItem.Favorite-pri.*"
-- tapOn: "Cancel"
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 
 # Check favorites from bookmarks screen
 - assertVisible: "Browsing menu"
-- tapOn: "Browsing menu"
-- assertVisible: "Bookmarks"
-- tapOn: "Bookmarks"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Bookmarks"
 - assertVisible: "Privacy Test Pages - Home"
-- assertVisible: "Favorites"
-- tapOn: "Favorites"
-- assertVisible: "Privacy Test Pages - Home"
-
-# Remove favorites from bookmarks screen
-- assertVisible: "Manage"
-- tapOn: "Manage"
-- tapOn:
-    text: " "
-    index: 0
-    rightOf: "Privacy Test Pages - Home"
-- assertVisible: "No favorites added yet"
 
 # Remove bookmark from bookmarks screen
-- assertVisible: "Bookmarks"
-- tapOn: "Bookmarks"
+- assertVisible: "Edit"
+- tapOn: "Edit"
 - assertVisible: "Privacy Test Pages - Home"
 - assertVisible: "Remove Privacy Test Pages - Home"
 - tapOn: "Remove Privacy Test Pages - Home"

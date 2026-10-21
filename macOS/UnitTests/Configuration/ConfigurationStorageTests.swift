@@ -33,7 +33,7 @@ final class ConfigurationStorageTests: XCTestCase {
         configurationStore = nil
     }
 
-    func test_when_data_is_saved_for_config_then_it_can_be_loaded_correctly() {
+    func testWhenDataIsSavedForConfigThenItCanBeLoadedCorrectly() {
         for config in Configuration.allCases {
             let uuid = UUID().uuidString
             try? configurationStore.saveData(uuid.data(using: .utf8)!, for: config)
@@ -41,12 +41,19 @@ final class ConfigurationStorageTests: XCTestCase {
         }
     }
 
-    func test_when_etag_is_saved_for_config_then_it_can_be_loaded_correctly() {
+    func testWhenEtagIsSavedForConfigThenItCanBeLoadedCorrectly() {
         for config in Configuration.allCases {
             let etag = UUID().uuidString
             try? configurationStore.saveEtag(etag, for: config)
             XCTAssertEqual(etag, configurationStore.loadEtag(for: config))
         }
+    }
+
+    func testWhenLoadingEmbeddedEtagThenItMatchesProviderConstants() {
+        XCTAssertEqual(AppTrackerDataSetProvider.Constants.embeddedDataETag,
+                       configurationStore.loadEmbeddedEtag(for: .trackerDataSet))
+        XCTAssertEqual(AppPrivacyConfigurationDataProvider.Constants.embeddedDataETag,
+                       configurationStore.loadEmbeddedEtag(for: .privacyConfiguration))
     }
 
 }

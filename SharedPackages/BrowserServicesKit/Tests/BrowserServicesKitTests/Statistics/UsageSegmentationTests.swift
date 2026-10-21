@@ -26,6 +26,7 @@ final class UsageSegmentationTests: XCTestCase {
     var defaultCalculatorResult: [String: String]? = [:]
     var searchAtbs: [Atb] = []
     var appUseAtbs: [Atb] = []
+    var duckAIAtbs: [Atb] = []
 
     func testWhenActivitiesOccur_ThenAtbsStoredAccordingToType() {
         var pixelFired = false
@@ -85,6 +86,35 @@ final class UsageSegmentationTests: XCTestCase {
         XCTAssertEqual(searchAtbs, [installAtb, atb])
         XCTAssertFalse(pixelFired)
 
+    }
+
+    func testWhenDuckAIActivityOccurs_ThenAtbsStoredAccordingToType() {
+        var pixelFired = false
+        let pixelHandler = EventMapping<UsageSegmentationPixel> { event, error, params, onComplete in
+            if case .usageSegments = event {
+                pixelFired = true
+            }
+        }
+
+        let sut = makeSubject(pixelEvents: pixelHandler)
+        let installAtb = Atb(version: "v100-1", updateVersion: nil)
+        let todayAtb = Atb(version: "v100-2", updateVersion: nil)
+
+        // Initial DuckAI activity
+        sut.processATB(installAtb, withInstallAtb: installAtb, andActivityType: .duckAI)
+        XCTAssertEqual(duckAIAtbs, [installAtb])
+        XCTAssert(pixelFired)
+
+        // Next-day DuckAI activity
+        pixelFired = false
+        sut.processATB(todayAtb, withInstallAtb: installAtb, andActivityType: .duckAI)
+        XCTAssertEqual(duckAIAtbs, [installAtb, todayAtb])
+        XCTAssert(pixelFired)
+
+        pixelFired = false
+        sut.processATB(todayAtb, withInstallAtb: installAtb, andActivityType: .duckAI)
+        XCTAssertEqual(duckAIAtbs, [installAtb, todayAtb])
+        XCTAssertFalse(pixelFired)
     }
 
     func testWhenSearchATBReceivedWithSameInstallAtbThatHasVariant_ThenStoredAndPixelFired() {

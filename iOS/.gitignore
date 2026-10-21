@@ -77,7 +77,10 @@ fastlane/test_output
 # DuckDuckGo
 
 Configuration/ExternalDeveloper.xcconfig
+LocalOverrides.xcconfig
 scripts/assets
 
 DuckDuckGoTests/NetworkProtectionVPNLocationViewModelTests.swift*.plist
 *.profraw
+
+PixelDefinitions/pixels/pixel_processing_results

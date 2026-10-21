@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import WebKit
 
 extension WKNavigationAction: WebViewNavigationAction {
@@ -26,7 +27,8 @@ extension WKNavigationAction: WebViewNavigationAction {
     /// https://github.com/WebKit/WebKit/blob/c39358705b79ccf2da3b76a8be6334e7e3dfcfa6/Source/WebKit/UIProcess/WebPageProxy.cpp#L5708
     public var safeSourceFrame: WKFrameInfo? {
         _=WKNavigationAction.addSafetyCheckForSafeSourceFrameUsageOnce
-        return self.perform(#selector(getter: sourceFrame))?.takeUnretainedValue() as? WKFrameInfo
+        guard self.perform(#selector(getter: sourceFrame)) != nil else { return nil }
+        return sourceFrame
     }
 
     /// Make an empty URLRequest if `WKNavigationAction.request` returns nil
@@ -187,22 +189,11 @@ extension WKNavigationAction: WebViewNavigationAction {
 
         switch navigationType {
         case .linkActivated, .other:
-            let isSameDocumentNavigation = self.isRedirect != true && newURL.absoluteString.hashedSuffix != nil && currentURL.isSameDocument(newURL)
-            if #available(iOS 18.5, macOS 15.5, *) {
-                assert(!isSameDocumentNavigation || targetFrame?.webView?.committedURL?.absoluteString != targetFrame?.safeRequest?.url?.absoluteString,
-                """
-                If the issue is fixed in the future macOS/iOS versions,
-                please add version check to only use `targetFrame.webView?.committedURL`
-                in the `currentURL` property above when macOS >= 15.5 and less than the one where this was fixed
-                and iOS >= 18.5 and less than with the same WebKit version.
-                Otherwise we should just use `targetFrame.safeRequest?.url` which got broken for same-document navigations.
-                This assertion should be removed afterwards.
-                Also update NavigationAction.init checking source/target frames urls.
-                """)
-            }
-            return isSameDocumentNavigation
+            return self.isRedirect != true
+                && newURL.hasFragment
+                && currentURL.equals(newURL, by: .sameDocument)
         case .backForward:
-            return (newURL.absoluteString.hashedSuffix != nil || currentURL.absoluteString.hashedSuffix != nil) && currentURL.isSameDocument(newURL)
+            return (newURL.hasFragment || currentURL.hasFragment) && currentURL.equals(newURL, by: .sameDocument)
         case .reload, .formSubmitted, .formResubmitted:
             return false
         @unknown default:

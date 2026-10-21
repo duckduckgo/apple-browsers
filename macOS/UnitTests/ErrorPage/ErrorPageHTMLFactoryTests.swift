@@ -18,6 +18,7 @@
 
 import Foundation
 import MaliciousSiteProtection
+import PrivacyConfig
 import SpecialErrorPages
 import WebKit
 import XCTest
@@ -29,16 +30,18 @@ class ErrorPageHTMLFactoryTests: XCTestCase {
     func testPhishingErrorTemplate() {
         let url = URL(string: "https://example.com")!
         let error = MaliciousSiteError(code: .phishing, failingUrl: url)
-        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: error as NSError), featureFlagger: MockFeatureFlagger())
+        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: error as NSError), themeName: .default)
 
         XCTAssertNotNil(html)
         XCTAssertTrue(html.contains("Phishing")) // Check if the HTML contains "Phishing"
+        XCTAssertFalse(html.contains("window.configureErrorPageLink({"))
+        XCTAssertFalse(html.contains(URL.errorPageReportBrokenSite.absoluteString))
     }
 
     func testMalwareErrorTemplate() {
         let url = URL(string: "https://example.com")!
         let error = MaliciousSiteError(code: .malware, failingUrl: url)
-        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: error as NSError), featureFlagger: MockFeatureFlagger())
+        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: error as NSError), themeName: .default)
 
         XCTAssertNotNil(html)
         XCTAssertTrue(html.contains("Malware")) // Check if the HTML contains "Malware"
@@ -47,7 +50,7 @@ class ErrorPageHTMLFactoryTests: XCTestCase {
     func testScamErrorTemplate() {
         let url = URL(string: "https://example.com")!
         let error = MaliciousSiteError(code: .scam, failingUrl: url)
-        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: error as NSError), featureFlagger: MockFeatureFlagger())
+        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: error as NSError), themeName: .default)
 
         XCTAssertNotNil(html)
         XCTAssertTrue(html.contains("Scam")) // Check if the HTML contains "Scam"
@@ -56,7 +59,7 @@ class ErrorPageHTMLFactoryTests: XCTestCase {
     func testDefaultErrorTemplate() {
         let url = URL(string: "https://example.com")!
         let error = NSError(domain: "TestDomain", code: 999, userInfo: [NSURLErrorFailingURLErrorKey: url])
-        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: error as NSError), featureFlagger: MockFeatureFlagger(), header: "Custom Header")
+        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: error as NSError), header: "Custom Header", themeName: .default)
 
         XCTAssertNotNil(html)
         XCTAssertTrue(html.contains("Custom Header")) // Check if the custom header is included in the HTML
@@ -65,10 +68,51 @@ class ErrorPageHTMLFactoryTests: XCTestCase {
     func testDefaultErrorTemplate_WhenNetworkTimeoutError() {
         let url = URL(string: "https://example.com")!
         let networkTimeoutError = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [NSURLErrorFailingURLErrorKey: url])
-        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: networkTimeoutError as NSError), featureFlagger: MockFeatureFlagger())
+        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: networkTimeoutError as NSError), themeName: .default)
 
         XCTAssertNotNil(html)
         XCTAssertTrue(html.contains("NSURLErrorDomain")) // Check if the domain is included in the HTML
     }
 
+    func testThemeVariableGetsReplacedWithThemeName() {
+        let url = URL(string: "https://example.com")!
+        let networkTimeoutError = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [NSURLErrorFailingURLErrorKey: url])
+        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: networkTimeoutError as NSError), themeName: .violet)
+
+        XCTAssertNotNil(html)
+        XCTAssertTrue(html.contains("violet"))
+        XCTAssertFalse(html.contains("$THEME_VARIANT$"))
+    }
+
+    func testWhenErrorIsWebContentProcessTerminatedThenReportBrokenSiteLinkIsConfigured() {
+        let error = WKError(.webContentProcessTerminated)
+        let html = ErrorPageHTMLFactory.html(for: error, themeName: .violet)
+
+        XCTAssertTrue(html.contains("window.configureErrorPageLink({"))
+        XCTAssertTrue(html.contains(UserText.sendFeedback))
+        XCTAssertTrue(html.contains("window.location.href = '\(URL.errorPageReportBrokenSite.absoluteString)'"))
+        XCTAssertFalse(html.contains("$ERROR_PAGE_LINK_CONFIGURATION$"))
+        XCTAssertTrue(html.contains("violet"))
+        XCTAssertFalse(html.contains("$THEME_VARIANT$"))
+    }
+
+    func testWhenErrorIsNotWebContentProcessTerminatedThenReportBrokenSiteLinkIsNotConfigured() {
+        let error = WKError(.unknown)
+        let html = ErrorPageHTMLFactory.html(for: error, themeName: .default)
+
+        XCTAssertFalse(html.contains("window.configureErrorPageLink({"))
+        XCTAssertFalse(html.contains(URL.errorPageReportBrokenSite.absoluteString))
+    }
+
+    func testWhenLinkTextContainsJavaScriptControlCharactersThenItIsEscaped() {
+        let error = WKError(.webContentProcessTerminated)
+        let configuration = ErrorPageHTMLConfiguration(
+            linkText: "Send 'feedback'\n</script>\u{2028}&",
+            linkFunction: "function() {}"
+        )
+        let html = ErrorPageHTMLTemplate(error: error, header: "Header", configuration: configuration).makeHTMLFromTemplate()
+
+        XCTAssertTrue(html.contains("text: 'Send \\'feedback\\'\\n\\u003C/script\\u003E\\u2028\\u0026'"))
+        XCTAssertTrue(html.contains("onClick: function() {}"))
+    }
 }

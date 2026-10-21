@@ -22,6 +22,7 @@ CODE_SIGN_ENTITLEMENTS[config=CI][sdk=macosx*] =
 CODE_SIGN_ENTITLEMENTS[config=Debug][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Release][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension_SparkleDistribution.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Review][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension_SparkleDistribution.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Alpha][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension_SparkleDistribution.entitlements
 CODE_SIGN_STYLE[config=Debug][sdk=*] = Automatic
 
 CODE_SIGN_IDENTITY[sdk=macosx*] = Developer ID Application
@@ -53,6 +54,7 @@ PRODUCT_NAME[config=Review][sdk=*] = $(SYSEX_BUNDLE_ID)
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] =
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.network-extension macos
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.network-extension.review macos
+PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.network-extension.alpha macos
 
 SDKROOT = macosx
 SKIP_INSTALL = YES

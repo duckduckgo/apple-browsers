@@ -16,34 +16,46 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Common
+import AppUpdaterShared
 import Combine
-import BrowserServicesKit
-import FeatureFlags
+import Common
+import FoundationExtensions
+import FeatureFlags_macOS
+import os.log
+import Persistence
+import PixelKit
+import PrivacyConfig
+import SwiftUI
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = AboutPreferences(internalUserDecider: NSApp.delegateTyped.internalUserDecider)
-
-    private let internalUserDecider: InternalUserDecider
-    @Published var isInternalUser: Bool
+    let appVersionModel: AppVersionModel
     @Published var featureFlagOverrideToggle = false
-    private var internalUserCancellable: AnyCancellable?
     private let featureFlagger: FeatureFlagger
+    let windowControllersManager: WindowControllersManagerProtocol
     let supportedOSChecker: SupportedOSChecking
     private var cancellables = Set<AnyCancellable>()
+    private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
+    private let manualUpdateRemovalHandler: ManualUpdateRemovalHandling
 
-    private init(internalUserDecider: InternalUserDecider,
-                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                 supportedOSChecker: SupportedOSChecking? = nil) {
+    init(internalUserDecider: InternalUserDecider,
+         featureFlagger: FeatureFlagger,
+         manualUpdateRemovalHandler: ManualUpdateRemovalHandling? = nil,
+         windowControllersManager: WindowControllersManagerProtocol,
+         keyValueStore: ThrowingKeyValueStoring,
+         supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
-        self.internalUserDecider = internalUserDecider
-        self.isInternalUser = internalUserDecider.isInternalUser
+        self.windowControllersManager = windowControllersManager
+        let settings: any ThrowingKeyedStoring<UpdateControllerSettings> = keyValueStore.throwingKeyedStoring()
+        self.settings = settings
+        self.manualUpdateRemovalHandler = manualUpdateRemovalHandler
+            ?? ManualUpdateRemovalHandler(settings: settings, featureFlagger: featureFlagger)
+        self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
-        self.internalUserCancellable = internalUserDecider.isInternalUserPublisher
-            .sink { [weak self] in self?.isInternalUser = $0 }
+        internalUserDecider.isInternalUserPublisher
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
 
         subscribeToFeatureFlagOverrideChanges()
     }
@@ -61,18 +73,19 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             .store(in: &cancellables)
     }
 
-#if SPARKLE
-    var useLegacyAutoRestartLogic: Bool {
-        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
-    }
-
-    var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
-        !useLegacyAutoRestartLogic
+    var shouldHideManualUpdateOption: Bool {
+        manualUpdateRemovalHandler.shouldHideManualUpdateOption
     }
 
     @Published var updateState = UpdateState.upToDate
 
-    var updateController: UpdateControllerProtocol? {
+    func runUpdate() {
+        // Track Update DuckDuckGo button tapped in About preferences
+        PixelKit.fire(UpdateFlowPixels.updateDuckDuckGoButtonTapped)
+        updateController?.runUpdate()
+    }
+
+    var updateController: UpdateController? {
         return Application.appDelegate.updateController
     }
 
@@ -96,10 +109,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         updateController?.hasPendingUpdate == true
     }
 
-    private var isAtRestartCheckpoint: Bool {
-        updateController?.isAtRestartCheckpoint ?? false
-    }
-
     struct UpdateButtonConfiguration {
         let title: String
         let action: () -> Void
@@ -121,7 +130,8 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
                     title: UserText.restartToUpdate,
                     action: runUpdate,
                     enabled: true)
-            } else if hasPendingUpdate {
+            }
+            if hasPendingUpdate {
                 return UpdateButtonConfiguration(
                     title: UserText.runUpdate,
                     action: runUpdate,
@@ -144,43 +154,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
-#endif
-
-    let appVersion = AppVersion()
-
-    private var cancellable: AnyCancellable?
-
-    let displayableAboutURL: String = URL.aboutDuckDuckGo
-        .toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: false)
-
-    var osSupportWarning: OSSupportWarning? {
-        supportedOSChecker.supportWarning
-    }
-
-#if FEEDBACK
-    @MainActor
-    func openFeedbackForm() {
-        NSApp.delegateTyped.openFeedback(nil)
-    }
-#endif
-
-    func copy(_ value: String) {
-        NSPasteboard.general.copy(value)
-    }
-
-#if SPARKLE
-    func checkForUpdate(userInitiated: Bool) {
-        if userInitiated {
-            updateController?.checkForUpdateSkippingRollout()
-        } else {
-            updateController?.checkForUpdateRespectingRollout()
-        }
-    }
-
-    func runUpdate() {
-        updateController?.runUpdate()
-    }
-
     func subscribeToUpdateInfoIfNeeded() {
         guard let updateController, !subscribed else { return }
 
@@ -198,8 +171,49 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     private func refreshUpdateState() {
         guard let updateController else { return }
-        updateState = UpdateState(from: updateController.latestUpdate, progress: updateController.updateProgress)
+        let latestUpdate = updateController.latestUpdate
+        let progress = updateController.updateProgress
+        Logger.updates.log("🔍 AboutPreferences.refreshUpdateState: latestUpdate=\(latestUpdate != nil, privacy: .public), progress=\(progress, privacy: .public), hasPendingUpdate=\(updateController.hasPendingUpdate, privacy: .public)")
+        updateState = UpdateState(from: latestUpdate, progress: progress)
+        Logger.updates.log("🔍 AboutPreferences.refreshUpdateState: updateState=\(String(describing: self.updateState), privacy: .public)")
     }
-#endif
 
+    private var isAtRestartCheckpoint: Bool {
+        (updateController as? any SparkleUpdateControlling)?.isAtRestartCheckpoint ?? false
+    }
+
+    var customFeedURL: String? {
+        return try? settings.debugSparkleCustomFeedURL
+    }
+
+    private var cancellable: AnyCancellable?
+
+    let displayableAboutURL: String = URL.aboutDuckDuckGo
+        .toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: false)
+
+    var unsupportedMinVersion: String? {
+        supportedOSChecker.unsupportedMinVersion
+    }
+
+    var canUpgradeOS: Bool {
+        OSUpgradeCapabilityOverridePersistor()
+            .canUpgradeOS(default: supportedOSChecker.osUpgradeCapability.canUpgradeOS)
+    }
+
+    @MainActor
+    func openFeedbackForm() {
+        NSApp.delegateTyped.openFeedback(nil)
+    }
+
+    func copy(_ value: String) {
+        NSPasteboard.general.copy(value)
+    }
+
+    func checkForUpdate(userInitiated: Bool) {
+        if userInitiated {
+            updateController?.checkForUpdateSkippingRollout()
+        } else if let sparkleUpdateController = updateController as? any SparkleUpdateControlling {
+            sparkleUpdateController.checkForUpdateRespectingRollout()
+        }
+    }
 }

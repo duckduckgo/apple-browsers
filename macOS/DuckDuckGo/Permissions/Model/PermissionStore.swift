@@ -17,22 +17,40 @@
 //
 
 import Common
+import ConcurrencyExtensions
 import CoreData
 import Foundation
+import FoundationExtensions
 import Persistence
 
 protocol PermissionStore: AnyObject {
     func loadPermissions() throws -> [PermissionEntity]
-    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: ((Error?) -> Void)?)
-    func remove(objectWithId id: NSManagedObjectID, completionHandler: ((Error?) -> Void)?)
-    func add(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision) throws -> StoredPermission
 
-    func clear(except: [StoredPermission], completionHandler: ((Error?) -> Void)?)
+    /// Raw stored columns, for the debug-only permissions inspector page. The default implementation
+    /// re-encodes them from the decoded entities, which is enough for test doubles; `LocalPermissionStore`
+    /// reads the real columns so the page can't misreport a row the app didn't write itself.
+    func loadRawPermissions() throws -> [RawPermissionRow]
+    func update(
+        objectWithId id: NSManagedObjectID,
+        decision: PersistedPermissionDecision?,
+        lastModified: Date?,
+        completionHandler: (@MainActor (Error?) -> Void)?
+    )
+    func remove(objectWithId id: NSManagedObjectID, completionHandler: (@MainActor (Error?) -> Void)?)
+    func add(
+        domain: String,
+        permissionType: PermissionType,
+        decision: PersistedPermissionDecision,
+        lastModified: Date
+    ) throws -> StoredPermission
+
+    func clear(except: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?)
 }
 
 extension PermissionStore {
-    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?) {
-        update(objectWithId: id, decision: decision, completionHandler: nil)
+
+    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, lastModified: Date?) {
+        update(objectWithId: id, decision: decision, lastModified: lastModified, completionHandler: nil)
     }
     func remove(objectWithId id: NSManagedObjectID) {
         remove(objectWithId: id, completionHandler: nil)
@@ -54,7 +72,7 @@ final class LocalPermissionStore: PermissionStore {
     }
 
     func loadPermissions() throws -> [PermissionEntity] {
-        guard let context = context else { return [] }
+        guard let context else { return [] }
 
         var entities = [PermissionEntity]()
         var coreDataError: Error?
@@ -78,13 +96,21 @@ final class LocalPermissionStore: PermissionStore {
         return entities
     }
 
-    func update(objectWithId id: NSManagedObjectID, decision: PersistedPermissionDecision?, completionHandler: ((Error?) -> Void)?) {
-        guard let context = context else { return }
+    func update(
+        objectWithId id: NSManagedObjectID,
+        decision: PersistedPermissionDecision?,
+        lastModified: Date?,
+        completionHandler: (@MainActor (Error?) -> Void)?
+    ) {
         func mainQueueCompletion(error: Error?) {
             guard completionHandler != nil else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.asyncOrNow {
                 completionHandler?(error)
             }
+        }
+        guard let context else {
+            mainQueueCompletion(error: nil)
+            return
         }
 
         context.perform { [context] in
@@ -97,6 +123,7 @@ final class LocalPermissionStore: PermissionStore {
 
             if let decision = decision {
                 managedObject.decision = decision
+                managedObject.lastModified = lastModified
             } else {
                 context.delete(managedObject)
             }
@@ -111,17 +138,20 @@ final class LocalPermissionStore: PermissionStore {
         }
     }
 
-    func remove(objectWithId id: NSManagedObjectID, completionHandler: ((Error?) -> Void)?) {
-        update(objectWithId: id, decision: nil, completionHandler: completionHandler)
+    func remove(objectWithId id: NSManagedObjectID, completionHandler: (@MainActor (Error?) -> Void)?) {
+        update(objectWithId: id, decision: nil, lastModified: nil, completionHandler: completionHandler)
     }
 
-    func clear(except exceptions: [StoredPermission], completionHandler: ((Error?) -> Void)?) {
-        guard let context = context else { return }
+    func clear(except exceptions: [StoredPermission], completionHandler: (@MainActor (Error?) -> Void)?) {
         func mainQueueCompletion(error: Error?) {
             guard completionHandler != nil else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.asyncOrNow {
                 completionHandler?(error)
             }
+        }
+        guard let context else {
+             mainQueueCompletion(error: nil)
+            return
         }
 
         context.perform { [context] in
@@ -143,9 +173,12 @@ final class LocalPermissionStore: PermissionStore {
         }
     }
 
-    private func performAdd(domain: String,
-                            permissionType: PermissionType,
-                            decision: PersistedPermissionDecision) -> Result<NSManagedObjectID, Error>? {
+    private func performAdd(
+        domain: String,
+        permissionType: PermissionType,
+        decision: PersistedPermissionDecision,
+        lastModified: Date
+    ) -> Result<NSManagedObjectID, Error>? {
         guard let context = context else { return nil }
 
         var result: Result<NSManagedObjectID, Error>?
@@ -158,6 +191,7 @@ final class LocalPermissionStore: PermissionStore {
             managedObject.domainEncrypted = domain as NSString
             managedObject.permissionType = permissionType.rawValue
             managedObject.decision = decision
+            managedObject.lastModified = lastModified
 
             do {
                 try context.save()
@@ -169,17 +203,73 @@ final class LocalPermissionStore: PermissionStore {
         return result
     }
 
-    func add(domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision) throws -> StoredPermission {
-        let result = performAdd(domain: domain, permissionType: permissionType, decision: decision)
+    func add(domain: String,
+             permissionType: PermissionType,
+             decision: PersistedPermissionDecision,
+             lastModified: Date) throws -> StoredPermission {
+        let result = performAdd(domain: domain, permissionType: permissionType, decision: decision, lastModified: lastModified)
         switch result {
         case .success(let id):
-            return StoredPermission(id: id, decision: decision)
+            return StoredPermission(id: id, decision: decision, lastModified: lastModified)
         case .failure(let error):
             throw error
         case .none:
             struct InvalidManagedObject: Error {}
             throw InvalidManagedObject()
         }
+    }
+
+}
+
+extension PermissionStore {
+
+    func loadRawPermissions() throws -> [RawPermissionRow] {
+        try loadPermissions().map { entity in
+            RawPermissionRow(storageIdentifier: entity.domain + "|" + entity.type.rawValue,
+                             objectID: entity.permission.id,
+                             domain: entity.domain,
+                             permissionType: entity.type.rawValue,
+                             allow: entity.permission.decision == .allow,
+                             isRemoved: entity.permission.decision == .ask,
+                             lastModified: entity.permission.lastModified)
+        }
+    }
+}
+
+extension LocalPermissionStore {
+
+    func loadRawPermissions() throws -> [RawPermissionRow] {
+        guard let context else { return [] }
+
+        var rows = [RawPermissionRow]()
+        var coreDataError: Error?
+
+        context.performAndWait {
+            let fetchRequest = NSFetchRequest<PermissionManagedObject>(entityName: PermissionManagedObject.className())
+            fetchRequest.returnsObjectsAsFaults = false
+
+            do {
+                rows = try context.fetch(fetchRequest).compactMap { managedObject in
+                    guard let domain = managedObject.domainEncrypted as? String,
+                          let permissionType = managedObject.permissionType else { return nil }
+                    return RawPermissionRow(storageIdentifier: managedObject.objectID.uriRepresentation().absoluteString,
+                                            objectID: managedObject.objectID,
+                                            domain: domain,
+                                            permissionType: permissionType,
+                                            allow: managedObject.allow,
+                                            isRemoved: managedObject.isRemoved,
+                                            lastModified: managedObject.lastModified)
+                }
+            } catch {
+                coreDataError = error
+            }
+        }
+
+        if let coreDataError {
+            throw coreDataError
+        }
+
+        return rows
     }
 
 }

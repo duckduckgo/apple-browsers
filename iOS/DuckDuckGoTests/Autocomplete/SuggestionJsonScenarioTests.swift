@@ -20,12 +20,15 @@
 import Bookmarks
 import BrowserServicesKit
 import Common
+import ConcurrencyExtensions
 import Core
 import CoreData
-import InlineSnapshotTesting
+import FoundationExtensions
 import History
+import SnapshotTestingSupport
 import os.log
 import Persistence
+import PixelKit
 import Suggestions
 import XCTest
 
@@ -105,12 +108,11 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         assert(input.windows.count == 1, "iOS only supports 1 window")
         for tab in input.windows[0].tabs {
-            tabsModel.add(tab: Tab(uid: tab.tabId.uuidString, link: Link(title: tab.title, url: tab.url)))
+            tabsModel.insert(tab: Tab(uid: tab.tabId.uuidString, link: Link(title: tab.title, url: tab.url)), placement: .atEnd, selectNewTab: true)
         }
         
         // Set up feature flagger
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
         
         // Create the real data source with test dependencies
         let dataSource = AutocompleteSuggestionsDataSource(
@@ -137,7 +139,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         let sortedDataSource = SortingDataSourceWrapper(wrapping: dataSource)
 
         // Create a suggestion loader
-        let suggestionLoader = SuggestionLoader(urlFactory: { _ in return nil }, isUrlIgnored: testScenario.input.isURLIgnored)
+        let suggestionLoader = SuggestionLoader(shouldLoadSuggestionsForUserInput: { _ in return true }, isUrlIgnored: testScenario.input.isURLIgnored)
         var actualResults: SuggestionResult?
         var loadingError: Error?
 
@@ -152,7 +154,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         }
 
         // Wait for the expectation to be fulfilled with a timeout
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         // Check for errors
         if let loadingError = loadingError {
@@ -354,24 +356,26 @@ extension SuggestionJsonScenarioTests {
             didSet {
                 // Convert test entries to History.HistoryEntry when assigned
                 if let entries = testHistoryEntries {
-                    history = entries.map { testEntry in
-                        // Initialize HistoryEntry with all required parameters based on how it's done in HistoryStoreTests
-                        return History.HistoryEntry(
-                            identifier: testEntry.identifier,
-                            url: testEntry.url,
-                            title: testEntry.title,
-                            failedToLoad: testEntry.failedToLoad,
-                            numberOfTotalVisits: testEntry.numberOfVisits,
-                            lastVisit: testEntry.lastVisit,
-                            visits: Set<History.Visit>(),
-                            numberOfTrackersBlocked: 0,
-                            blockedTrackingEntities: Set<String>(),
-                            trackersFound: false
-                        )
+                    MainActor.assumeMainThread {
+                        history = entries.map { testEntry in
+                            // Initialize HistoryEntry with all required parameters based on how it's done in HistoryStoreTests
+                            return History.HistoryEntry(
+                                identifier: testEntry.identifier,
+                                url: testEntry.url,
+                                title: testEntry.title,
+                                failedToLoad: testEntry.failedToLoad,
+                                numberOfTotalVisits: testEntry.numberOfVisits,
+                                lastVisit: testEntry.lastVisit,
+                                visits: Set<History.Visit>(),
+                                numberOfTrackersBlocked: 0,
+                                blockedTrackingEntities: Set<String>(),
+                                trackersFound: false
+                            )
+                        }
+                        
+                        // Update history dictionary
+                        historyDictionary = Dictionary(uniqueKeysWithValues: (history ?? []).map { ($0.url, $0) })
                     }
-                    
-                    // Update history dictionary
-                    historyDictionary = Dictionary(uniqueKeysWithValues: (history ?? []).map { ($0.url, $0) })
                 }
             }
         }
@@ -392,7 +396,7 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func addVisit(of url: URL, at date: Date) -> History.Visit? {
+        func addVisit(of url: URL, at date: Date, tabID: String?) -> History.Visit? {
             return nil
         }
         
@@ -400,6 +404,9 @@ extension SuggestionJsonScenarioTests {
         }
         
         func trackerFound(on: URL) {
+        }
+        
+        func cookiePopupBlocked(on: URL) {
         }
         
         func updateTitleIfNeeded(title: String, url: URL) {
@@ -415,20 +422,37 @@ extension SuggestionJsonScenarioTests {
             return nil
         }
         
-        func burnAll(completion: @escaping () -> Void) {
-            completion()
+        func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+            MainActor.assumeMainThread {
+                completion(.success(()))
+            }
+        }
+
+        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
+            MainActor.assumeMainThread {
+                completion(.success([]))
+            }
+        }
+
+        func burnVisits(_ visits: [History.Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+            MainActor.assumeMainThread {
+                completion(.success(()))
+            }
         }
         
-        func burnDomains(_ baseDomains: Set<String>, tld: Common.TLD, completion: @escaping (Set<URL>) -> Void) {
-            completion([])
+        func burnVisits(for tabID: String) async throws {
         }
         
-        func burnVisits(_ visits: [History.Visit], completion: @escaping () -> Void) {
-            completion()
+        func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
+            MainActor.assumeMainThread {
+                completion?(nil)
+            }
         }
-        
-        func removeUrlEntry(_ url: URL, completion: (((any Error)?) -> Void)?) {
-            completion?(nil)
+
+        func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+            MainActor.assumeMainThread {
+                completion(.success(()))
+            }
         }
     }
     
@@ -447,10 +471,37 @@ extension SuggestionJsonScenarioTests {
             return historyFeatureEnabled
         }
         
-        func removeAllHistory() async {
+        func removeAllHistory() async -> Result<Void, Error> {
+            return .success(())
         }
         
         func deleteHistoryForURL(_ url: URL) async {
+        }
+        
+        @MainActor
+        var history: History.BrowsingHistory? {
+            historyCoordinator.history
+        }
+        
+        func addVisit(of url: URL, tabID: String?, fireTab: Bool = false) {
+        }
+        
+        func updateTitleIfNeeded(title: String, url: URL) {
+        }
+        
+        func commitChanges(url: URL) {
+        }
+        
+        func tabHistory(tabID: String) async throws -> [URL] {
+            return []
+        }
+        
+        func removeTabHistory(for tabIDs: [String]) async -> Result<Void, Error> {
+            return .success(())
+        }
+
+        func removeBrowsingHistory(tabID: String) async -> ActionResult? {
+            return ActionResult(result: .success(()), measuredInterval: .init(start: .now, end: .now))
         }
     }
 }
@@ -572,7 +623,7 @@ private extension Suggestion {
             return .init(type: .openTab, title: title, subtitle: subtitle, uri: url.absoluteString, tabId: tabId.flatMap(UUID.init(uuidString:)), score: score)
         case .internalPage(title: let title, url: let url, score: let score):
             return .init(type: .internalPage, title: title, subtitle: subtitle, uri: url.absoluteString, tabId: nil, score: score)
-        case .unknown:
+        case .unknown, .askAIChat:
             return nil
         }
     }

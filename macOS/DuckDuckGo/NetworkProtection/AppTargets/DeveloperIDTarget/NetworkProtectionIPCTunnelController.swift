@@ -16,13 +16,18 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 import VPN
 import NetworkProtectionIPC
 import PixelKit
+import WideEvent
 import UDSHelper
 import os.log
+import PrivacyConfig
+import VPNAppState
 
 /// VPN tunnel controller through IPC.
 ///
@@ -51,6 +56,17 @@ final class NetworkProtectionIPCTunnelController {
                 return [NSUnderlyingErrorKey: error as NSError]
             }
         }
+
+        var caseDescription: String {
+            switch self {
+            case .notAuthorizedToEnableLoginItem:
+                return "notAuthorizedToEnableLoginItem"
+            case .enableLoginItemError:
+                return "enableLoginItemError"
+            case .ipcControlError:
+                return "ipcControlError"
+            }
+        }
     }
 
     private let featureGatekeeper: VPNFeatureGatekeeper
@@ -59,14 +75,29 @@ final class NetworkProtectionIPCTunnelController {
     private let pixelKit: PixelFiring?
     private let errorRecorder: VPNOperationErrorRecorder
     private let knownFailureStore: NetworkProtectionKnownFailureStore
+    private let wideEvent: WideEventManaging
+    private let featureFlagger: FeatureFlagger
 
-    init(featureGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
+    // MARK: - User Defaults
+
+    @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
+    private var vpnConnectionWideEventBrowserStartTime: Date?
+
+    @UserDefaultsWrapper(key: .vpnConnectionWideEventOverallStartTime, defaultValue: nil, defaults: .netP)
+    private var vpnConnectionWideEventOverallStartTime: Date?
+
+    // MARK: - Wide Event
+    private var connectionWideEventData: VPNConnectionWideEventData?
+
+    init(featureGatekeeper: VPNFeatureGatekeeper,
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
          ipcClient: NetworkProtectionIPCClient,
          fileManager: FileManager = .default,
          pixelKit: PixelFiring? = PixelKit.shared,
          errorRecorder: VPNOperationErrorRecorder = VPNOperationErrorRecorder(),
-         knownFailureStore: NetworkProtectionKnownFailureStore = NetworkProtectionKnownFailureStore()) {
+         knownFailureStore: NetworkProtectionKnownFailureStore = NetworkProtectionKnownFailureStore(),
+         wideEvent: WideEventManaging = Application.appDelegate.wideEvent,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
 
         self.featureGatekeeper = featureGatekeeper
         self.loginItemsManager = loginItemsManager
@@ -74,12 +105,14 @@ final class NetworkProtectionIPCTunnelController {
         self.pixelKit = pixelKit
         self.errorRecorder = errorRecorder
         self.knownFailureStore = knownFailureStore
+        self.wideEvent = wideEvent
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Login Items Manager
 
     private func enableLoginItems() async throws {
-        try loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
+        try await loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 }
 
@@ -91,6 +124,7 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
     func start() async {
         errorRecorder.beginRecordingIPCStart()
         pixelKit?.fire(StartAttempt.begin)
+        setupAndStartConnectionWideEvent()
 
         func handleFailure(_ error: Error) {
             knownFailureStore.lastKnownFailure = KnownFailure(error)
@@ -100,28 +134,46 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
         }
 
         do {
+            connectionWideEventData?.browserStartDuration = WideEvent.MeasuredInterval.startingNow()
             guard try await featureGatekeeper.canStartVPN() else {
-                throw RequestError.notAuthorizedToEnableLoginItem
+                let noAuthError = RequestError.notAuthorizedToEnableLoginItem
+                completeAndCleanupConnectionWideEvent(with: noAuthError, description: noAuthError.caseDescription)
+                throw noAuthError
             }
 
             do {
                 try await enableLoginItems()
             } catch {
-                throw RequestError.enableLoginItemError(error)
+                let enableLoginError = RequestError.enableLoginItemError(error)
+                completeAndCleanupConnectionWideEvent(with: enableLoginError, description: enableLoginError.caseDescription)
+                throw enableLoginError
             }
 
             knownFailureStore.reset()
 
-            ipcClient.start { [pixelKit] error in
-                if let error {
-                    let error = RequestError.ipcControlError(error)
-                    handleFailure(error)
-                } else {
-                    pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
+            passthroughConnectionWideEventData()
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                ipcClient.start { error in
+                    if let error {
+                        let error = RequestError.ipcControlError(error)
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
                 }
             }
+
+            pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
+            discardWideEvent()
         } catch {
             handleFailure(error)
+
+            switch error {
+            case let requestError as RequestError:
+                completeAndCleanupConnectionWideEvent(with: requestError, description: requestError.caseDescription)
+            default:
+                completeAndCleanupConnectionWideEvent(with: error)
+            }
         }
     }
 
@@ -141,12 +193,15 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
                 throw RequestError.enableLoginItemError(error)
             }
 
-            ipcClient.stop { [pixelKit] error in
-                if let error {
-                    let error = RequestError.ipcControlError(error)
-                    handleFailure(error)
-                } else {
-                    pixelKit?.fire(StopAttempt.success, frequency: .legacyDailyAndCount)
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                ipcClient.stop { [pixelKit] error in
+                    if let error {
+                        let error = RequestError.ipcControlError(error)
+                        continuation.resume(throwing: error)
+                    } else {
+                        pixelKit?.fire(StopAttempt.success, frequency: .legacyDailyAndCount)
+                        continuation.resume()
+                    }
                 }
             }
         } catch {
@@ -188,7 +243,7 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
 
 extension NetworkProtectionIPCTunnelController {
 
-    enum StartAttempt: PixelKitEventV2 {
+    enum StartAttempt: PixelKit.Event {
         case begin
         case success
         case failure(_ error: Error)
@@ -210,15 +265,15 @@ extension NetworkProtectionIPCTunnelController {
             return nil
         }
 
-        var error: Error? {
+        var standardParameters: [PixelKitStandardParameter]? {
             switch self {
             case .begin,
-                    .success:
-                return nil
-            case .failure(let error):
-                return error
+                    .success,
+                    .failure:
+                return [.pixelSource]
             }
         }
+
     }
 }
 
@@ -226,7 +281,7 @@ extension NetworkProtectionIPCTunnelController {
 
 extension NetworkProtectionIPCTunnelController {
 
-    enum StopAttempt: PixelKitEventV2 {
+    enum StopAttempt: PixelKit.Event {
         case begin
         case success
         case failure(_ error: Error)
@@ -248,14 +303,58 @@ extension NetworkProtectionIPCTunnelController {
             return nil
         }
 
-        var error: Error? {
+        var standardParameters: [PixelKitStandardParameter]? {
             switch self {
             case .begin,
-                    .success:
-                return nil
-            case .failure(let error):
-                return error
+                    .success,
+                    .failure:
+                return [.pixelSource]
             }
         }
+
+    }
+}
+
+// MARK: - Wide Event
+
+private extension NetworkProtectionIPCTunnelController {
+
+    func setupAndStartConnectionWideEvent() {
+        let data = VPNConnectionWideEventData(
+            // Only the main tunnel controller can know whether a system extension is being used.
+            // At this step we don't know the type of extension yet
+            extensionType: .unknown,
+            startupMethod: .manualByMainApp,
+            isSetup: .unknown,
+            onboardingStatus: .unknown,
+            contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
+        )
+        self.connectionWideEventData = data
+        wideEvent.startFlow(data)
+        data.overallDuration = WideEvent.MeasuredInterval.startingNow()
+    }
+
+    func passthroughConnectionWideEventData() {
+        guard let data = self.connectionWideEventData else { return }
+        vpnConnectionWideEventBrowserStartTime = data.browserStartDuration?.start
+        vpnConnectionWideEventOverallStartTime = data.overallDuration?.start
+    }
+
+    func completeAndCleanupConnectionWideEvent(with error: Error, description: String? = nil) {
+        guard let data = self.connectionWideEventData else { return }
+        data.browserStartDuration?.complete()
+        data.overallDuration?.complete()
+        data.browserStartError = .init(error: error, description: description)
+        data.errorData = .init(error: error, description: description)
+        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+        self.connectionWideEventData = nil
+        vpnConnectionWideEventBrowserStartTime = nil
+        vpnConnectionWideEventOverallStartTime = nil
+    }
+
+    func discardWideEvent() {
+        guard let data = self.connectionWideEventData else { return }
+        wideEvent.discardFlow(data)
+        self.connectionWideEventData = nil
     }
 }

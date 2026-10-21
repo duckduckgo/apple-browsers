@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 
 public extension DataModel.HistoryRange {
@@ -137,7 +138,7 @@ public extension DataModel.HistoryRange {
         let referenceWeekday = calendar.component(.weekday, from: referenceDate)
 
         switch self {
-        case .all:
+        case .all, .allSites:
             return nil
         case .today, .older:
             return referenceWeekday
@@ -190,7 +191,7 @@ public extension DataModel.HistoryRange {
             return .thursday
         case .saturday:
             return .friday
-        case .older:
+        case .older, .allSites:
             return nil
         }
     }

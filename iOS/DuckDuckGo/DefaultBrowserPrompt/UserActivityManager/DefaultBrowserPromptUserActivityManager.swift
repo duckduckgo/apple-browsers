@@ -37,8 +37,6 @@ final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserAct
     private let dateProvider: () -> Date
     private let calendar: Calendar
 
-    private var notificationCancellable: AnyCancellable?
-
     /// Creates a new activity monitor with the specified configuration.
     ///
     /// The monitor immediately begins observing application lifecycle notifications to measure user activity. 
@@ -60,14 +58,19 @@ final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserAct
     func recordActivity() {
         let today = calendar.startOfDay(for: dateProvider())
 
-        var currentActivity = store.currentActivity()
+        let currentActivity = store.currentActivity()
 
         // If we already measured today, skip.
         if let lastActive = currentActivity.lastActiveDate, calendar.isDate(lastActive, inSameDayAs: today) {
             return
         }
 
-        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: currentActivity.numberOfActiveDays + 1, lastActiveDate: today)
+        // If last active date is nil it means that we run the code for the first time. In that case the last activity and second last activity should be the same day.
+        // The second last active day will be used to calculate the number of inactive days from `lastActiveDate`
+        let lastActiveDate = today
+        let secondLastActiveDate = currentActivity.lastActiveDate ?? lastActiveDate
+
+        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: currentActivity.numberOfActiveDays + 1, lastActiveDate: lastActiveDate, secondLastActiveDate: secondLastActiveDate)
         store.save(newActivity)
     }
 
@@ -75,9 +78,15 @@ final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserAct
         store.currentActivity().numberOfActiveDays
     }
 
+    func numberOfInactiveDays() -> Int {
+        let currentActivity = store.currentActivity()
+        guard let lastActiveDate = currentActivity.lastActiveDate, let secondLastActiveDate = currentActivity.secondLastActiveDate else { return 0 }
+        return calendar.numberOfDaysBetween(secondLastActiveDate, and: lastActiveDate) ?? 0
+    }
+
     func resetNumberOfActiveDays() {
         let currentActivity = store.currentActivity()
-        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentActivity.lastActiveDate)
+        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentActivity.lastActiveDate, secondLastActiveDate: currentActivity.secondLastActiveDate)
         store.save(newActivity)
     }
 }

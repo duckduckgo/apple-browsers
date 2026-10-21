@@ -22,23 +22,19 @@ import Foundation
 @MainActor
 final class TabDragAndDropManager {
 
-    static let shared = TabDragAndDropManager()
-
-    private init() { }
-
     struct Unit {
         weak var tabCollectionViewModel: TabCollectionViewModel?
-        var index: Int
+        var index: TabIndex
     }
 
     private(set) var sourceUnit: Unit?
     private(set) var destinationUnit: Unit?
 
-    func setSource(tabCollectionViewModel: TabCollectionViewModel, index: Int) {
+    func setSource(tabCollectionViewModel: TabCollectionViewModel, index: TabIndex) {
         sourceUnit = .init(tabCollectionViewModel: tabCollectionViewModel, index: index)
     }
 
-    func setDestination(tabCollectionViewModel: TabCollectionViewModel, index: Int) {
+    func setDestination(tabCollectionViewModel: TabCollectionViewModel, index: TabIndex) {
         // ignore dragged objects from other apps
         guard sourceUnit != nil else { return }
         destinationUnit = .init(tabCollectionViewModel: tabCollectionViewModel, index: index)
@@ -51,6 +47,7 @@ final class TabDragAndDropManager {
     @discardableResult
     func performDragAndDropIfNeeded() -> Bool {
         if let sourceUnit = sourceUnit,
+           sourceUnit.index.isPinnedTab == false,
            let destinationUnit = destinationUnit,
            sourceUnit.tabCollectionViewModel !== destinationUnit.tabCollectionViewModel,
            sourceUnit.tabCollectionViewModel?.isBurner == destinationUnit.tabCollectionViewModel?.isBurner {
@@ -70,8 +67,11 @@ final class TabDragAndDropManager {
             return
         }
 
-        let newIndex = min(destinationUnit.index, destinationTabCollectionViewModel.tabCollection.tabs.count)
-        sourceTabCollectionViewModel.moveTab(at: sourceUnit.index, to: destinationTabCollectionViewModel, at: newIndex)
+        let destinationCollection = destinationUnit.index.isPinnedTab ? destinationTabCollectionViewModel.pinnedTabsCollection : destinationTabCollectionViewModel.tabCollection
+        if let destinationCollection {
+            let newIndex = min(destinationUnit.index.item, destinationCollection.tabs.count)
+            sourceTabCollectionViewModel.moveTab(at: sourceUnit.index.item, to: destinationTabCollectionViewModel, at: newIndex)
+        }
     }
 
     func clear() {

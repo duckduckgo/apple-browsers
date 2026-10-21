@@ -18,6 +18,7 @@
 
 import BloomFilterWrapper
 import Common
+import FoundationExtensions
 import Foundation
 import CoreData
 import Persistence
@@ -55,6 +56,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     private let embeddedResources: EmbeddedBloomFilterResources
     private let errorEvents: EventMapping<ErrorEvents>?
     private let context: NSManagedObjectContext
+    private let storeQueue = DispatchQueue(label: "AppHTTPSUpgradeStore queue")
 
     public static var bundle: Bundle { .module }
     private let logger: Logger
@@ -71,13 +73,19 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         self.logger = logger
     }
 
-    var storedBloomFilterDataHash: String? {
+    private var storedBloomFilterDataHash: String? {
         return try? Data(contentsOf: bloomFilterDataURL).sha256
     }
 
     public func loadBloomFilter() -> BloomFilter? {
+        return onStoreAccessQueue {
+            loadBloomFilter_withoutStoreAccessQueue()
+        }
+    }
+
+    private func loadBloomFilter_withoutStoreAccessQueue() -> BloomFilter? {
         let specification: HTTPSBloomFilterSpecification
-        if let storedBloomFilterSpecification = self.loadStoredBloomFilterSpecification(),
+        if let storedBloomFilterSpecification = self.loadStoredBloomFilterSpecification_withoutStoreAccessQueue(),
            storedBloomFilterSpecification.sha256 == storedBloomFilterDataHash {
             specification = storedBloomFilterSpecification
         } else {
@@ -91,7 +99,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
             }
         }
 
-        assert(specification == loadStoredBloomFilterSpecification())
+        assert(specification == loadStoredBloomFilterSpecification_withoutStoreAccessQueue())
         assert(specification.sha256 == storedBloomFilterDataHash)
 
         logger.log("Loading data from \(bloomFilterDataURL.path) SHA: \(specification.sha256)")
@@ -102,6 +110,12 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     func loadStoredBloomFilterSpecification() -> HTTPSBloomFilterSpecification? {
+        return onStoreAccessQueue {
+            loadStoredBloomFilterSpecification_withoutStoreAccessQueue()
+        }
+    }
+
+    private func loadStoredBloomFilterSpecification_withoutStoreAccessQueue() -> HTTPSBloomFilterSpecification? {
         var specification: HTTPSBloomFilterSpecification?
         context.performAndWait {
             let request: NSFetchRequest<HTTPSStoredBloomFilterSpecification> = HTTPSStoredBloomFilterSpecification.fetchRequest()
@@ -127,20 +141,36 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         let excludedDomainsData = try Data(contentsOf: embeddedResources.excludedDomains)
         let excludedDomains = try JSONDecoder().decode(HTTPSExcludedDomains.self, from: excludedDomainsData)
 
-        try persistBloomFilter(specification: specification, data: bloomData)
-        try persistExcludedDomains(excludedDomains.data)
+        try persistBloomFilter_withoutStoreAccessQueue(specification: specification, data: bloomData)
+        try persistExcludedDomains_withoutStoreAccessQueue(excludedDomains.data)
 
         return EmbeddedBloomData(specification: specification, excludedDomains: excludedDomains.data)
     }
 
-    public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws {
-        guard data.sha256 == specification.sha256 else { throw Error.specMismatch }
-        logger.log("Persisting data SHA: \(specification.sha256)")
-        try persistBloomFilter(data: data)
-        try persistBloomFilterSpecification(specification)
+    @discardableResult
+    public func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
+        try onStoreAccessQueue {
+            try persistBloomFilter_withoutStoreAccessQueue(specification: specification, data: data)
+        }
     }
 
-    private func persistBloomFilter(data: Data) throws {
+    @discardableResult
+    private func persistBloomFilter_withoutStoreAccessQueue(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
+        let dataHash = data.sha256
+        guard dataHash == specification.sha256 else { throw Error.specMismatch }
+        let storedSpecification = loadStoredBloomFilterSpecification_withoutStoreAccessQueue()
+        guard specification != storedSpecification || dataHash != storedBloomFilterDataHash else {
+            logger.debug("Bloom filter is already persisted")
+            return false
+        }
+
+        logger.log("Persisting data SHA: \(specification.sha256)")
+        try persistBloomFilterData(data: data)
+        try persistBloomFilterSpecification_withoutStoreAccessQueue(specification)
+        return true
+    }
+
+    private func persistBloomFilterData(data: Data) throws {
         try data.write(to: bloomFilterDataURL, options: .atomic)
     }
 
@@ -149,6 +179,12 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     func persistBloomFilterSpecification(_ specification: HTTPSBloomFilterSpecification) throws {
+        try onStoreAccessQueue {
+            try persistBloomFilterSpecification_withoutStoreAccessQueue(specification)
+        }
+    }
+
+    private func persistBloomFilterSpecification_withoutStoreAccessQueue(_ specification: HTTPSBloomFilterSpecification) throws {
         var saveError: Swift.Error?
         context.performAndWait {
             deleteBloomFilterSpecification()
@@ -162,6 +198,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
             do {
                 try context.save()
             } catch {
+                context.rollback()
                 errorEvents?.fire(.dbSaveBloomFilterError, error: error)
                 saveError = error
             }
@@ -178,6 +215,12 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     public func hasExcludedDomain(_ domain: String) -> Bool {
+        return onStoreAccessQueue {
+            hasExcludedDomain_withoutStoreAccessQueue(domain)
+        }
+    }
+
+    private func hasExcludedDomain_withoutStoreAccessQueue(_ domain: String) -> Bool {
         var result = false
         context.performAndWait {
             let request: NSFetchRequest<HTTPSExcludedDomain> = HTTPSExcludedDomain.fetchRequest()
@@ -188,7 +231,21 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         return result
     }
 
-    public func persistExcludedDomains(_ domains: [String]) throws {
+    @discardableResult
+    public func persistExcludedDomains(_ domains: [String]) throws -> Bool {
+        try onStoreAccessQueue {
+            try persistExcludedDomains_withoutStoreAccessQueue(domains)
+        }
+    }
+
+    @discardableResult
+    private func persistExcludedDomains_withoutStoreAccessQueue(_ domains: [String]) throws -> Bool {
+        let normalizedDomains = domains.map { $0.lowercased() }.sorted()
+        guard normalizedDomains != loadExcludedDomains_withoutStoreAccessQueue() else {
+            logger.debug("Excluded domains are already persisted")
+            return false
+        }
+
         logger.debug("Persisting excluded \(domains.count) domains")
 
         var saveError: Swift.Error?
@@ -202,6 +259,7 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
             do {
                 try context.save()
             } catch {
+                context.rollback()
                 assertionFailure("Could not persist ExcludedDomains")
                 errorEvents?.fire(.dbSaveExcludedHTTPSDomainsError, error: error)
                 saveError = error
@@ -210,6 +268,21 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
         if let saveError {
             throw Error.saveError(saveError)
         }
+        return true
+    }
+
+    private func loadExcludedDomains_withoutStoreAccessQueue() -> [String]? {
+        var domains: [String]?
+        context.performAndWait {
+            do {
+                let storedDomains = try context.fetch(HTTPSExcludedDomain.fetchRequest())
+                guard storedDomains.allSatisfy({ $0.domain != nil }) else { return }
+                domains = storedDomains.compactMap(\.domain).sorted()
+            } catch {
+                logger.error("Could not load excluded domains: \(error.localizedDescription)")
+            }
+        }
+        return domains
     }
 
     private func deleteExcludedDomains() {
@@ -219,11 +292,17 @@ public struct AppHTTPSUpgradeStore: HTTPSUpgradeStore {
     }
 
     func reset() {
-        logger.log("Resetting")
+        onStoreAccessQueue {
+            logger.log("Resetting")
 
-        deleteBloomFilterSpecification()
-        deleteBloomFilter()
-        deleteExcludedDomains()
+            deleteBloomFilterSpecification()
+            deleteBloomFilter()
+            deleteExcludedDomains()
+        }
+    }
+
+    private func onStoreAccessQueue<T>(_ work: () throws -> T) rethrows -> T {
+        try storeQueue.sync(execute: work)
     }
 
 }

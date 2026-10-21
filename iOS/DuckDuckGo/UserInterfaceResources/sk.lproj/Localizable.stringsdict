@@ -1,0 +1,920 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>bol stiahnutý %1$d čet</string>
+			<key>few</key>
+			<string>boli stiahnuté %1$d čety</string>
+			<key>many</key>
+			<string>bolo stiahnutých %1$d četu</string>
+			<key>other</key>
+			<string>bolo stiahnutých %1$d četov</string>
+		</dict>
+	</dict>
+	<key>aiChat.history.deleteAll.confirmation.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Vymazať %1$d čet?</string>
+			<key>few</key>
+			<string>Vymazať %1$d čety?</string>
+			<key>many</key>
+			<string>Vymazať %1$d četu?</string>
+			<key>other</key>
+			<string>Vymazať %1$d četov?</string>
+		</dict>
+	</dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d karta a jej údaje boli odstránené</string>
+			<key>few</key>
+			<string>%1$d karty a ich údaje boli odstránené</string>
+			<key>many</key>
+			<string>%1$d kariet a ich údaje boli odstránené</string>
+			<key>other</key>
+			<string>%1$d kariet a ich údaje boli odstránené</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Odstrániť z %1$d webu. Môže ťa to odhlásiť z účtov.</string>
+			<key>few</key>
+			<string>Odstrániť z %1$d webov. Môže ťa to odhlásiť z účtov.</string>
+			<key>many</key>
+			<string>Odstrániť z %1$d webu. Môže ťa to odhlásiť z účtov.</string>
+			<key>other</key>
+			<string>Odstrániť z %1$d webov. Môže ťa to odhlásiť z účtov.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť kartu</string>
+			<key>few</key>
+			<string>Zatvoriť všetky %1$d karty</string>
+			<key>many</key>
+			<string>Zatvoriť všetkých %1$d kariet</string>
+			<key>other</key>
+			<string>Zatvoriť všetkých %1$d kariet</string>
+		</dict>
+	</dict>
+	<key>bookmark.deleteFolderAlert.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Naozaj chcete odstrániť tento priečinok a %1$d položku?</string>
+			<key>few</key>
+			<string>Naozaj chcete odstrániť tento priečinok a %1$d položky?</string>
+			<key>many</key>
+			<string>Naozaj chcete odstrániť tento priečinok a %1$d položky?</string>
+			<key>other</key>
+			<string>Naozaj chcete odstrániť tento priečinok a %1$d položiek?</string>
+		</dict>
+	</dict>
+	<key>dax.onboarding.browsing.multiple.trackers</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>*%2$@, %3$@* a *1 ďalší* sa vás tu pokúsili sledovať. 
+
+Boli zablokovaní!
+
+ ☝️Môžete skontrolovať panel s adresou a zistiť, kto sa vás snaží sledovať, keď navštívite novú webovú lokalitu.️</string>
+			<key>few</key>
+			<string>*%2$@, %3$@* a *%1$d ďalší* sa vás tu pokúsili sledovať. 
+
+Boli zablokovaní!
+
+ ☝️Môžete skontrolovať panel s adresou a zistiť, kto sa vás snaží sledovať, keď navštívite novú webovú lokalitu.️</string>
+			<key>many</key>
+			<string>*%2$@, %3$@* a *%1$d ďalší* sa vás tu pokúsili sledovať. 
+
+Boli zablokovaní!
+
+ ☝️Môžete skontrolovať panel s adresou a zistiť, kto sa vás snaží sledovať, keď navštívite novú webovú lokalitu.️</string>
+			<key>other</key>
+			<string>*%2$@, %3$@* a *%1$d ďalší* sa vás tu pokúsili sledovať. 
+
+Boli zablokovaní!
+
+ ☝️Môžete skontrolovať panel s adresou a zistiť, kto sa vás snaží sledovať, keď navštívite novú webovú lokalitu.️</string>
+		</dict>
+	</dict>
+	<key>contextual.onboarding.browsing.multiple.trackers</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>*%2$@, %3$@* a *%1$d ďalšia* sa vás tu pokúšala vystopovať. Zablokoval som ich!
+
+☝️ Klepnutím na štít zobrazíte ďalšie informácie.</string>
+			<key>few</key>
+			<string>*%2$@, %3$@* a *%1$d ďalšie* sa vás tu pokúšali vystopovať. Zablokoval som ich!
+
+☝️ Klepnutím na štít zobrazíte ďalšie informácie.</string>
+			<key>many</key>
+			<string>*%2$@, %3$@* a *%1$d ďalších* sa vás tu pokúšalo vystopovať. Zablokoval som ich!
+
+☝️ Klepnutím na štít zobrazíte ďalšie informácie.</string>
+			<key>other</key>
+			<string>*%2$@, %3$@* a *%1$d ďalších* sa vás tu pokúšalo vystopovať. Zablokoval som ich!
+
+☝️ Klepnutím na štít zobrazíte ďalšie informácie.</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.major.trackers.found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Našlo sa %1$d hlavné sledovacie zariadenie</string>
+			<key>few</key>
+			<string>Našli sa %1$d hlavné sledovacie zariadenia</string>
+			<key>many</key>
+			<string>Našla sa %1$d hlavných sledovacích zariadení</string>
+			<key>other</key>
+			<string>Našlo sa %1$d hlavných sledovacích zariadení</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.major.trackers.blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zablokovalo sa %1$d sledovacie zariadenie</string>
+			<key>few</key>
+			<string>Zablokovali sa %1$d sledovacie zariadenia</string>
+			<key>many</key>
+			<string>Zablokovala sa %1$d sledovacích zariadení</string>
+			<key>other</key>
+			<string>Zablokovalo sa %1$d sledovacích zariadení</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.trackers.found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Našlo sa %1$d sledovacie zariadenie</string>
+			<key>few</key>
+			<string>Našli sa %1$d sledovacie zariadenia</string>
+			<key>many</key>
+			<string>Našlo sa %1$d sledovacieho zariadenia</string>
+			<key>other</key>
+			<string>Našlo sa %1$d sledovacích zariadení</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.trackers.blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bolo zablokované %1$d načítanie sledovača</string>
+			<key>few</key>
+			<string>Boli zablokované %1$d načítania sledovačov</string>
+			<key>many</key>
+			<string>Bolo zablokovaných %1$d načítaní sledovačov</string>
+			<key>other</key>
+			<string>Bolo zablokovaných %1$d načítaní sledovačov</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Sledovanie</string>
+			<key>few</key>
+			<string>%1$d Sledovania</string>
+			<key>many</key>
+			<string>%1$d Sledovaní</string>
+			<key>other</key>
+			<string>%1$d Sledovaní</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bola načítaná %1$d ďalšia doména</string>
+			<key>few</key>
+			<string>Boli načítané %1$d ďalšie domény</string>
+			<key>many</key>
+			<string>Bolo načítaných %1$d ďalších domén</string>
+			<key>other</key>
+			<string>Bolo načítaných %1$d ďalších domén</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d %%d sledovač vlastnený touto stránkou (načítané)</string>
+			<key>few</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
+			<key>many</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
+			<key>other</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
+		</dict>
+	</dict>
+	<key>number.of.tabs</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d súkromná karta</string>
+			<key>few</key>
+			<string>%1$d súkromné karty</string>
+			<key>many</key>
+			<string>%1$d súkromných kariet</string>
+			<key>other</key>
+			<string>%1$d súkromných kariet</string>
+		</dict>
+	</dict>
+	<key>autofill.number.of.passwords</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d heslo</string>
+			<key>few</key>
+			<string>%1$d heslá</string>
+			<key>many</key>
+			<string>%1$d hesla</string>
+			<key>other</key>
+			<string>%1$d hesiel</string>
+		</dict>
+	</dict>
+	<key>autofill.delete.all.passwords.confirmation.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Naozaj chcete odstrániť %1$d heslo?</string>
+			<key>few</key>
+			<string>Naozaj chcete odstrániť %1$d heslá?</string>
+			<key>many</key>
+			<string>Naozaj chcete odstrániť %1$d hesla?</string>
+			<key>other</key>
+			<string>Naozaj chcete odstrániť %1$d hesiel?</string>
+		</dict>
+	</dict>
+	<key>autofill.delete.all.passwords.confirmation.body</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Vaše heslo bude odstránené z tohto zariadenia. Uistite sa, že stále máte prístup k svojim %2$#@accounts@.</string>
+			<key>few</key>
+			<string>Vaše heslá budú odstránené z tohto zariadenia. Uistite sa, že stále máte prístup k svojim %2$#@accounts@.</string>
+			<key>many</key>
+			<string>Vaše heslá budú odstránené z tohto zariadenia. Uistite sa, že stále máte prístup k svojim %2$#@accounts@.</string>
+			<key>other</key>
+			<string>Vaše heslá budú z tohto zariadenia vymazané. Uistite sa, že stále máte prístup k svojim %2$#@accounts@.</string>
+		</dict>
+		<key>accounts</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>účet</string>
+			<key>few</key>
+			<string>účty</string>
+			<key>many</key>
+			<string>účtu</string>
+			<key>other</key>
+			<string>účtov</string>
+		</dict>
+	</dict>
+	<key>autofill.delete.all.passwords.sync.confirmation.body</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Vaše heslo bude odstránené zo všetkých synchronizovaných zariadení. Uistite sa, že stále máte prístup k svojim%2$#@accounts@.</string>
+			<key>few</key>
+			<string>Vaše heslá budú odstránené zo všetkých synchronizovaných zariadení. Uistite sa, že stále máte prístup k svojim%2$#@accounts@.</string>
+			<key>many</key>
+			<string>Vaše heslá budú odstránené zo všetkých synchronizovaných zariadení. Uistite sa, že stále máte prístup k svojim%2$#@accounts@.</string>
+			<key>other</key>
+			<string>Vaše heslá budú odstránené zo všetkých synchronizovaných zariadení. Uistite sa, že stále máte prístup k svojim%2$#@accounts@.</string>
+		</dict>
+		<key>accounts</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>účet</string>
+			<key>few</key>
+			<string>účty</string>
+			<key>many</key>
+			<string>účtu</string>
+			<key>other</key>
+			<string>účtov</string>
+		</dict>
+	</dict>
+	<key>autofill.delete.all.passwords.completion</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bolo odstránené %1$d heslo</string>
+			<key>few</key>
+			<string>Boli odstránené %1$d heslá</string>
+			<key>many</key>
+			<string>Bolo odstránených %1$d hesiel</string>
+			<key>other</key>
+			<string>Bol odstránených %1$d hesiel</string>
+		</dict>
+	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť kartu</string>
+			<key>few</key>
+			<string>Zatvoriť karty</string>
+			<key>many</key>
+			<string>Zatvoriť karty</string>
+			<key>other</key>
+			<string>Zatvoriť karty</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zavrieť %1$d kartu</string>
+			<key>few</key>
+			<string>Zavrieť %1$d karty</string>
+			<key>many</key>
+			<string>Zavrieť %1$d karty</string>
+			<key>other</key>
+			<string>Zavrieť %1$d kariet</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť kartu</string>
+			<key>few</key>
+			<string>Zatvoriť všetky %1$d karty</string>
+			<key>many</key>
+			<string>Zatvoriť všetkých %1$d kariet</string>
+			<key>other</key>
+			<string>Zatvoriť všetkých %1$d kariet</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť kartu?</string>
+			<key>few</key>
+			<string>Zatvoriť %1$d karty?</string>
+			<key>many</key>
+			<string>Zatvoriť %1$d kariet?</string>
+			<key>other</key>
+			<string>Zatvoriť %1$d kariet?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť ďalšiu kartu?</string>
+			<key>few</key>
+			<string>Zatvoriť ďalšie %1$d karty?</string>
+			<key>many</key>
+			<string>Zatvoriť ďalších %1$d kariet?</string>
+			<key>other</key>
+			<string>Zatvoriť ďalších %1$d kariet?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Naozaj chceš zatvoriť túto kartu?</string>
+			<key>few</key>
+			<string>Naozaj chceš zatvoriť tieto karty?</string>
+			<key>many</key>
+			<string>Naozaj chceš zatvoriť tieto karty?</string>
+			<key>other</key>
+			<string>Naozaj chceš zatvoriť tieto karty?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť kartu?</string>
+			<key>few</key>
+			<string>Zatvoriť %1$d karty?</string>
+			<key>many</key>
+			<string>Zatvoriť %1$d karty?</string>
+			<key>other</key>
+			<string>Zatvoriť %1$d kariet?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Naozaj chceš zatvoriť túto kartu?</string>
+			<key>few</key>
+			<string>Naozaj chceš zatvoriť tieto karty?</string>
+			<key>many</key>
+			<string>Naozaj chceš zatvoriť tieto karty?</string>
+			<key>other</key>
+			<string>Naozaj chceš zatvoriť tieto karty?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť túto kartu?</string>
+			<key>few</key>
+			<string>Zatvoriť všetky %1$d karty?</string>
+			<key>many</key>
+			<string>Zatvoriť všetkých %1$d kariet?</string>
+			<key>other</key>
+			<string>Zatvoriť všetkých %1$d kariet?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Naozaj chceš zatvoriť túto kartu?</string>
+			<key>few</key>
+			<string>Naozaj chceš zatvoriť všetky karty?</string>
+			<key>many</key>
+			<string>Naozaj chceš zatvoriť všetky karty?</string>
+			<key>other</key>
+			<string>Naozaj chceš zatvoriť všetky karty?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Vybrať kartu</string>
+			<key>few</key>
+			<string>Vybrať karty</string>
+			<key>many</key>
+			<string>Vybrať karty</string>
+			<key>other</key>
+			<string>Vybrať karty</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriť ďalšiu kartu</string>
+			<key>few</key>
+			<string>Zatvoriť ďalšie karty</string>
+			<key>many</key>
+			<string>Zatvoriť ďalšie karty</string>
+			<key>other</key>
+			<string>Zatvoriť ďalšie karty</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zdieľať odkaz</string>
+			<key>few</key>
+			<string>Zdieľať %1$d odkazy</string>
+			<key>many</key>
+			<string>Zdieľať %1$d odkazov</string>
+			<key>other</key>
+			<string>Zdieľať %1$d odkazov</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zdieľať vybranú kartu</string>
+			<key>few</key>
+			<string>Zdieľať vybrané karty</string>
+			<key>many</key>
+			<string>Zdieľať vybrané karty</string>
+			<key>other</key>
+			<string>Zdieľať vybrané karty</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uložiť kartu medzi záložky</string>
+			<key>few</key>
+			<string>Uložiť %1$d karty medzi záložky</string>
+			<key>many</key>
+			<string>Uložiť %1$d kariet medzi záložky</string>
+			<key>other</key>
+			<string>Uložiť %1$d kariet medzi záložky</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bola pridaná jedna záložka</string>
+			<key>few</key>
+			<string>Boli pridané %1$d záložky</string>
+			<key>many</key>
+			<string>Bolo pridaných %1$d záložiek</string>
+			<key>other</key>
+			<string>Bolo pridaných %1$d záložiek</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uložiť vybranú kartu medzi záložky?</string>
+			<key>few</key>
+			<string>Uložiť %1$d karty medzi záložky?</string>
+			<key>many</key>
+			<string>Uložiť %1$d kariet medzi záložky?</string>
+			<key>other</key>
+			<string>Uložiť %1$d kariet medzi záložky?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uložiť vybranú kartu medzi záložky?</string>
+			<key>few</key>
+			<string>Uložiť %1$d karty medzi záložky?</string>
+			<key>many</key>
+			<string>Uložiť %1$d karty medzi záložky?</string>
+			<key>other</key>
+			<string>Uložiť %1$d kariet medzi záložky?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d vybraná</string>
+			<key>few</key>
+			<string>%1$d vybrané</string>
+			<key>many</key>
+			<string>%1$d vybraných</string>
+			<key>other</key>
+			<string>%1$d vybraných</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d vybraná karta</string>
+			<key>few</key>
+			<string>%1$d vybrané karty</string>
+			<key>many</key>
+			<string>%1$d vybraných kariet</string>
+			<key>other</key>
+			<string>%1$d vybraných kariet</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d lokalita bola vylúčená z vymazania</string>
+			<key>few</key>
+			<string>%1$d lokality boli vylúčené z vymazania</string>
+			<key>many</key>
+			<string>%1$d lokality bolo vylúčených z vymazania</string>
+			<key>other</key>
+			<string>%1$d lokalít bolo vylúčených z vymazania</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Sledovanie</string>
+			<key>few</key>
+			<string>%2$@ Sledovania</string>
+			<key>many</key>
+			<string>%2$@ Sledovaní</string>
+			<key>other</key>
+			<string>%2$@ Sledovaní</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

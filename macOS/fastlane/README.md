@@ -31,6 +31,14 @@ Fetches and updates certificates and provisioning profiles for App Store distrib
 
 Fetches and updates certificates and provisioning profiles for DMG distribution
 
+### mac sync_signing_dmg_alpha
+
+```sh
+[bundle exec] fastlane mac sync_signing_dmg_alpha
+```
+
+Fetches and updates certificates and provisioning profiles for DMG Alpha builds
+
 ### mac sync_signing_dmg_review
 
 ```sh
@@ -39,6 +47,14 @@ Fetches and updates certificates and provisioning profiles for DMG distribution
 
 Fetches and updates certificates and provisioning profiles for DMG Review builds
 
+### mac sync_signing_sandbox_review
+
+```sh
+[bundle exec] fastlane mac sync_signing_sandbox_review
+```
+
+Fetches and updates certificates and provisioning profiles for Sandbox Review builds
+
 ### mac sync_signing_ci
 
 ```sh
@@ -46,6 +62,14 @@ Fetches and updates certificates and provisioning profiles for DMG Review builds
 ```
 
 Fetches and updates certificates and provisioning profiles for CI builds
+
+### mac release_appstore
+
+```sh
+[bundle exec] fastlane mac release_appstore
+```
+
+Makes App Store release build and uploads it to App Store Connect
 
 ### mac release_testflight
 
@@ -61,7 +85,79 @@ Makes App Store release build and uploads it to TestFlight
 [bundle exec] fastlane mac release_testflight_review
 ```
 
-Makes App Store release build and uploads it to TestFlight
+Makes App Store Review build and uploads it to TestFlight
+
+### mac release_testflight_alpha
+
+```sh
+[bundle exec] fastlane mac release_testflight_alpha
+```
+
+Makes App Store Alpha build and uploads it to TestFlight
+
+### mac build_appstore
+
+```sh
+[bundle exec] fastlane mac build_appstore
+```
+
+Makes App Store release build
+
+### mac upload_appstore
+
+```sh
+[bundle exec] fastlane mac upload_appstore
+```
+
+Uploads App Store release build to App Store Connect
+
+### mac build_testflight
+
+```sh
+[bundle exec] fastlane mac build_testflight
+```
+
+Makes App Store release build
+
+### mac upload_testflight
+
+```sh
+[bundle exec] fastlane mac upload_testflight
+```
+
+Uploads App Store release build to TestFlight
+
+### mac build_testflight_review
+
+```sh
+[bundle exec] fastlane mac build_testflight_review
+```
+
+Makes App Store Review build
+
+### mac upload_testflight_review
+
+```sh
+[bundle exec] fastlane mac upload_testflight_review
+```
+
+Uploads App Store Review build to TestFlight
+
+### mac build_testflight_alpha
+
+```sh
+[bundle exec] fastlane mac build_testflight_alpha
+```
+
+Makes App Store Alpha build
+
+### mac upload_testflight_alpha
+
+```sh
+[bundle exec] fastlane mac upload_testflight_alpha
+```
+
+Uploads App Store Alpha build to TestFlight
 
 ### mac promote_latest_testflight_to_appstore
 
@@ -71,69 +167,13 @@ Makes App Store release build and uploads it to TestFlight
 
 Promotes the latest TestFlight build to App Store without submitting for review
 
-### mac release_appstore
+### mac upload_appstore_version_metadata
 
 ```sh
-[bundle exec] fastlane mac release_appstore
+[bundle exec] fastlane mac upload_appstore_version_metadata
 ```
 
-Makes App Store release build and uploads it to App Store Connect
-
-### mac upload_metadata
-
-```sh
-[bundle exec] fastlane mac upload_metadata
-```
-
-Updates App Store metadata
-
-### mac make_release_branch
-
-```sh
-[bundle exec] fastlane mac make_release_branch
-```
-
-Executes the release preparation work in the repository
-
-### mac code_freeze
-
-```sh
-[bundle exec] fastlane mac code_freeze
-```
-
-Executes the release preparation work in the repository
-
-### mac bump_internal_release
-
-```sh
-[bundle exec] fastlane mac bump_internal_release
-```
-
-Prepares new internal release on top of an existing one
-
-### mac prepare_hotfix
-
-```sh
-[bundle exec] fastlane mac prepare_hotfix
-```
-
-Executes the hotfix release preparation work in the repository
-
-### mac update_embedded_files
-
-```sh
-[bundle exec] fastlane mac update_embedded_files
-```
-
-Updates embedded files and pushes to remote.
-
-### mac set_version
-
-```sh
-[bundle exec] fastlane mac set_version
-```
-
-Executes the release preparation work in the repository
+Fetches latest App Store version and uploads metadata to CDN
 
 ### mac create_keychain_ui_tests
 

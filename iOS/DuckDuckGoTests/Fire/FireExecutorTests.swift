@@ -1,0 +1,1374 @@
+//
+//  FireExecutorTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+@_spi(Testing) import PixelKit
+@testable import DuckDuckGo
+@testable import Core
+import AIChat
+import AIChatTestingUtilities
+import BrowserServicesKit
+import WebKit
+import Bookmarks
+@_spi(Testing) import Persistence
+import SitePermissions
+import DDGSync
+import WKAbstractions
+import BrowserServicesKitTestsUtils
+@_spi(Testing) import WideEvent
+
+@MainActor
+final class FireExecutorTests: XCTestCase {
+    
+    // MARK: - Mocks
+    
+    class MockFireExecutorDelegate: FireExecutorDelegate {
+        private(set) var willStartBurningTabsCalled = false
+        private(set) var didFinishBurningTabsCalled = false
+        private(set) var willStartBurningDataCalled = false
+        private(set) var didFinishBurningDataCalled = false
+        private(set) var willStartBurningCalled = false
+        private(set) var willStartBurningFireRequest: FireRequest?
+        private(set) var didFinishBurningCalled = false
+        private(set) var didFinishBurningFireRequest: FireRequest?
+        
+        func willStartBurning(fireRequest: FireRequest) {
+            willStartBurningCalled = true
+            willStartBurningFireRequest = fireRequest
+        }
+        
+        func willStartBurningTabs(fireRequest: FireRequest) {
+            willStartBurningTabsCalled = true
+        }
+        
+        func didFinishBurningTabs(fireRequest: FireRequest) {
+            didFinishBurningTabsCalled = true
+        }
+        
+        func willStartBurningData(fireRequest: FireRequest) {
+            willStartBurningDataCalled = true
+        }
+        
+        func didFinishBurningData(fireRequest: FireRequest) {
+            didFinishBurningDataCalled = true
+        }
+        
+        func didFinishBurning(fireRequest: FireRequest) {
+            didFinishBurningCalled = true
+            didFinishBurningFireRequest = fireRequest
+        }
+    }
+    
+    class MockHistoryCleaner: HistoryCleaning {
+        var cleanAIChatHistoryResult: Result<Void, Error> = .success(())
+        private(set) var cleanAIChatHistoryCallCount = 0
+        
+        var deleteAIChatResult: Result<Void, Error> = .success(())
+        private(set) var deleteAIChatCalls: [String] = []
+
+        var lastWebsiteDataStore: WKWebsiteDataStore?
+        var lastIsFireMode: Bool?
+
+        var onCleanAIChatHistory: (() -> Void)?
+        var lastClearingReport: AIChatClearingReport?
+
+        func cleanAIChatHistory() async -> Result<Void, Error> {
+            cleanAIChatHistoryCallCount += 1
+            onCleanAIChatHistory?()
+            return cleanAIChatHistoryResult
+        }
+        
+        func deleteAIChat(chatID: String) async -> Result<Void, Error> {
+            deleteAIChatCalls.append(chatID)
+            return deleteAIChatResult
+        }
+
+        var deleteAIChatsResult: Result<Void, Error> = .success(())
+        private(set) var deleteAIChatsCalls: [[String]] = []
+
+        func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error> {
+            deleteAIChatsCalls.append(chatIDs)
+            return deleteAIChatsResult
+        }
+    }
+
+    class MockBookmarkDatabaseCleaner: BookmarkDatabaseCleaning {
+        private(set) var cleanUpDatabaseNowCalled = false
+
+        func cleanUpDatabaseNow() {
+            cleanUpDatabaseNowCalled = true
+        }
+        func scheduleRegularCleaning() {}
+        func cancelCleaningSchedule() {}
+    }
+
+    // MARK: - Setup
+    
+    private var mockTabManager: MockTabManager!
+    private var spyDownloadManager: SpyDownloadManager!
+    private var mockWebsiteDataManager: MockWebsiteDataManager!
+    private var mockDaxDialogsManager: MockDaxDialogsManager!
+    private var mockSyncService: MockDDGSyncing!
+    private var mockFireproofing: MockFireproofing!
+    private var mockTextZoomCoordinatorProvider: MockTextZoomCoordinatorProvider!
+    private var mockAutoconsentManagementProvider: MockAutoconsentManagementProvider!
+    private var mockHistoryManager: MockHistoryManager!
+    private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockPrivacyConfigurationManager: PrivacyConfigurationManagerMock!
+    private var mockHistoryCleaner: MockHistoryCleaner!
+    private let pixelKitMock = PixelKitMock()
+    private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
+    private var mockDelegate: MockFireExecutorDelegate!
+    private var mockAppSettings: AppSettingsMock!
+    private var mockAIChatSyncCleaner: MockAIChatSyncCleaning!
+    private var sitePermissionsStore: SitePermissionsStore!
+    private var wideEventMock: WideEventMock!
+    
+    private var normalTextZoomCoordinator: MockTextZoomCoordinator {
+        mockTextZoomCoordinatorProvider.normalCoordinator
+    }
+    
+    override func setUp() {
+        super.setUp()
+        mockTabManager = MockTabManager()
+        spyDownloadManager = SpyDownloadManager()
+        mockWebsiteDataManager = MockWebsiteDataManager()
+        mockDaxDialogsManager = MockDaxDialogsManager()
+        mockSyncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+        mockFireproofing = MockFireproofing(domains: [])
+        mockTextZoomCoordinatorProvider = MockTextZoomCoordinatorProvider()
+        mockAutoconsentManagementProvider = MockAutoconsentManagementProvider()
+        mockHistoryManager = MockHistoryManager()
+        mockFeatureFlagger = MockFeatureFlagger()
+        mockPrivacyConfigurationManager = PrivacyConfigurationManagerMock()
+        mockHistoryCleaner = MockHistoryCleaner()
+        mockBookmarkDatabaseCleaner = MockBookmarkDatabaseCleaner()
+        mockDelegate = MockFireExecutorDelegate()
+        mockAppSettings = AppSettingsMock()
+        mockAppSettings.autoClearAIChatHistory = true
+        mockAIChatSyncCleaner = MockAIChatSyncCleaning()
+        sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())
+        wideEventMock = WideEventMock()
+        clearSitePermissionsStorage()
+    }
+    
+    override func tearDown() {
+        UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
+        mockTabManager = nil
+        spyDownloadManager = nil
+        mockWebsiteDataManager = nil
+        mockDaxDialogsManager = nil
+        mockSyncService = nil
+        mockFireproofing = nil
+        mockTextZoomCoordinatorProvider = nil
+        mockAutoconsentManagementProvider = nil
+        mockHistoryManager = nil
+        mockFeatureFlagger = nil
+        mockPrivacyConfigurationManager = nil
+        mockHistoryCleaner = nil
+        mockBookmarkDatabaseCleaner = nil
+        mockDelegate = nil
+        mockAppSettings = nil
+        mockAIChatSyncCleaner = nil
+        wideEventMock = nil
+        clearSitePermissionsStorage()
+        sitePermissionsStore = nil
+        super.tearDown()
+    }
+    
+    private func makeFireExecutor(
+        syncService: DDGSyncing? = nil,
+        bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
+        fireproofing: Fireproofing? = nil,
+        dataStoreWarmUp: @escaping DataStoreWarmupWorker.WarmUp = { _, _ in true },
+        backgroundTask: FireBackgroundTasking = MockFireBackgroundTask(),
+        clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}
+    ) -> FireExecutor {
+        let executor = FireExecutor(
+            tabManager: mockTabManager,
+            downloadManager: spyDownloadManager,
+            websiteDataManager: mockWebsiteDataManager,
+            daxDialogsManager: mockDaxDialogsManager,
+            syncService: syncService ?? mockSyncService,
+            bookmarksDatabaseCleaner: bookmarksDatabaseCleaner ?? mockBookmarkDatabaseCleaner,
+            fireproofing: fireproofing ?? mockFireproofing,
+            favicons: Favicons(),
+            textZoomCoordinatorProvider: mockTextZoomCoordinatorProvider,
+            autoconsentManagementProvider: mockAutoconsentManagementProvider,
+            historyManager: mockHistoryManager,
+            featureFlagger: mockFeatureFlagger,
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            dataStore: MockWebsiteDataStore(),
+            historyCleanerProvider: { dataStore, isFireMode in
+                self.mockHistoryCleaner.lastWebsiteDataStore = dataStore
+                self.mockHistoryCleaner.lastIsFireMode = isFireMode
+                return self.mockHistoryCleaner
+            },
+            appSettings: mockAppSettings,
+            sitePermissionsStore: sitePermissionsStore,
+            aiChatSyncCleaner: mockAIChatSyncCleaner,
+            pixelFiring: pixelKitMock,
+            wideEvent: wideEventMock,
+            dataStoreWarmupWorker: DataStoreWarmupWorker(warmUp: dataStoreWarmUp),
+            backgroundTask: backgroundTask,
+            clearAppSwitcherSnapshots: clearAppSwitcherSnapshots
+        )
+        executor.delegate = mockDelegate
+        return executor
+    }
+    
+    private func makeFireRequest(
+        options: FireRequest.Options,
+        trigger: FireRequest.Trigger = .manualFire,
+        scope: FireRequest.Scope = .all,
+        source: FireRequest.Source = .browsing
+    ) -> FireRequest {
+        FireRequest(options: options, trigger: trigger, scope: scope, source: source)
+    }
+
+    private func makeSitePermissionKey(_ host: String) -> SitePermissionKey {
+        SitePermissionKey(committedURL: URL(string: "https://\(host)")!)!
+    }
+
+    private func storePermission(for host: String,
+                                 type: SitePermissionType = .camera,
+                                 decision: SitePermissionDecision = .allow) {
+        sitePermissionsStore.setPersistentDecision(decision, for: type, at: makeSitePermissionKey(host))
+    }
+
+    private func clearSitePermissionsStorage() {
+        sitePermissionsStore.clearSitePermissions()
+        sitePermissionsStore.resetGlobalDefaults()
+    }
+    
+    func testFireButtonBurnKeepsAttachmentPrivacyNoticeShown() async {
+        let store = UTIAttachmentPrivacyNoticeDisplayStore()
+        let wasShown = store.hasShown
+        defer { if !wasShown { store.reset() } }
+        store.markShown()
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .all, scope: .all), applicationState: .unknown)
+        XCTAssertTrue(store.hasShown)
+
+        await executor.burn(request: makeFireRequest(options: .all, scope: .fireMode), applicationState: .unknown)
+        XCTAssertTrue(store.hasShown)
+    }
+
+    private func makeTabViewModel() -> TabViewModel {
+        let tab = Tab(uid: "test-tab-uid")
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
+    private func makeAITabViewModel(chatID: String) -> TabViewModel {
+        let tab = Tab(uid: "test-ai-tab-uid")
+        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
+        tab.link = Link(title: nil, url: aiURL)
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
+    private func makeTabViewModelWithContextualChat(contextualChatID: String) -> TabViewModel {
+        let tab = Tab(uid: "test-tab-with-contextual-chat")
+        tab.contextualChatURL = "https://duckduckgo.com/?ia=chat&duckai=4&chatID=\(contextualChatID)"
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+
+    // MARK: - App Switcher Snapshot Tests
+
+    func testWhenSingleTabIsBurnedThenAppSwitcherSnapshotCleanupFollowsTabWorkAndPrecedesCompletion() async {
+        var didClearSnapshots = false
+        let executor = makeFireExecutor {
+            XCTAssertTrue(self.mockDelegate.didFinishBurningTabsCalled)
+            XCTAssertFalse(self.mockDelegate.didFinishBurningCalled)
+            didClearSnapshots = true
+        }
+
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel())), applicationState: .unknown)
+
+        XCTAssertTrue(didClearSnapshots)
+        XCTAssertTrue(mockDelegate.didFinishBurningCalled)
+    }
+
+    // MARK: - Data store warm-up
+
+    func testWhenOnlyAIChatsAreBurnedThenTheNormalStoreIsWarmedBeforeChatsAreCleared() async {
+        var steps: [String] = []
+        mockHistoryCleaner.onCleanAIChatHistory = { steps.append("clear chats") }
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            steps.append("warm up fireMode=\(fireMode)")
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(steps.first, "warm up fireMode=false")
+        XCTAssertEqual(steps.filter { $0 == "clear chats" }.count, 1)
+    }
+
+    func testWhenDataAndAIChatsAreBurnedThenTheNormalStoreIsWarmedOnce() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: [.data, .aiChats]), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 1)
+    }
+
+    func testWhenOnlyFireModeAIChatsAreBurnedThenTheFireModeStoreIsWarmedBeforeChatsAreCleared() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        var steps: [String] = []
+        mockHistoryCleaner.onCleanAIChatHistory = { steps.append("clear chats") }
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            steps.append("warm up fireMode=\(fireMode)")
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(steps, ["warm up fireMode=true", "clear chats"])
+    }
+
+    func testWhenTheWarmUpTimedOutThenTheNextBurnWarmsUpAgain() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return false
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 2)
+    }
+
+    func testWhenTheWarmUpCompletedThenTheNextBurnDoesNotWarmUpAgain() async {
+        var normalStoreWarmUps = 0
+        let executor = makeFireExecutor(dataStoreWarmUp: { _, fireMode in
+            if !fireMode { normalStoreWarmUps += 1 }
+            return true
+        })
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        XCTAssertEqual(normalStoreWarmUps, 1)
+    }
+
+    // MARK: - Background time
+
+    func testWhenBurningThenBackgroundTimeIsHeldForTheWholeBurn() async {
+        let backgroundTask = MockFireBackgroundTask()
+        var cleanedChatsWhileHeld: Bool?
+        mockHistoryCleaner.onCleanAIChatHistory = { cleanedChatsWhileHeld = backgroundTask.isHeld }
+        let executor = makeFireExecutor(backgroundTask: backgroundTask)
+
+        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
+
+        XCTAssertEqual(cleanedChatsWhileHeld, true)
+        XCTAssertEqual(backgroundTask.calls, ["begin", "end"])
+    }
+
+    func testWhenAppIsBackgroundedDuringBurnThenBackgroundedPixelFiresOnce() {
+        let pixelFiring = PixelKitMock()
+        let notificationCenter = NotificationCenter()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: notificationCenter, isInBackground: { false })
+
+        backgroundTask.begin()
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        backgroundTask.end()
+        notificationCenter.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["fire_burn_backgrounded"])
+    }
+
+    func testWhenBurnStartsInTheBackgroundThenBackgroundedPixelFires() {
+        let pixelFiring = PixelKitMock()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: NotificationCenter(), isInBackground: { true })
+
+        backgroundTask.begin()
+        backgroundTask.end()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), ["fire_burn_backgrounded"])
+    }
+
+    func testWhenBurnStaysInTheForegroundThenNoBackgroundPixelFires() {
+        let pixelFiring = PixelKitMock()
+        let backgroundTask = FireBackgroundTask(pixelFiring: pixelFiring, notificationCenter: NotificationCenter(), isInBackground: { false })
+
+        backgroundTask.begin()
+        backgroundTask.end()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
+        var cleanupCallCount = 0
+        let executor = makeFireExecutor {
+            cleanupCallCount += 1
+        }
+
+        _ = await executor.burnChat(chatID: "chat", isFireMode: false)
+        _ = await executor.burnChats(chatIDs: ["chat-1", "chat-2"], isFireMode: false)
+        _ = await executor.burnAllChats(isFireMode: false)
+
+        XCTAssertEqual(cleanupCallCount, 3)
+    }
+
+    func testWhenDirectAIChatBurnFailsThenAppSwitcherSnapshotsAreNotCleared() async {
+        mockHistoryCleaner.deleteAIChatResult = .failure(NSError(domain: "test", code: 1))
+        var didClearSnapshots = false
+        let executor = makeFireExecutor {
+            didClearSnapshots = true
+        }
+
+        _ = await executor.burnChat(chatID: "chat", isFireMode: false)
+
+        XCTAssertFalse(didClearSnapshots)
+    }
+
+    private func makeTabViewModel(chatID: String, fireTab: Bool) -> TabViewModel {
+        let tab = Tab(uid: "test-tab-\(fireTab ? "fire" : "normal")", fireTab: fireTab)
+        let aiURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=\(chatID)")!
+        tab.link = Link(title: nil, url: aiURL)
+        return TabViewModel(tab: tab, historyManager: mockHistoryManager)
+    }
+    
+    // MARK: - prepare Tests
+    
+    func testPrepareWithTabsOptionCallsPrepareForBurningTabs() {
+        // Given
+        let executor = makeFireExecutor()
+        
+        // When
+        executor.prepare(for: makeFireRequest(options: .tabs))
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareAllTabsExceptCurrentCalled)
+    }
+    
+    func testPrepareWithoutTabsOptionDoesNotCallPrepareForBurningTabs() {
+        // Given
+        let executor = makeFireExecutor()
+        
+        // When
+        executor.prepare(for: makeFireRequest(options: .data))
+        
+        // Then
+        XCTAssertFalse(mockTabManager.prepareAllTabsExceptCurrentCalled)
+    }
+    
+    func testPrepareWithTabScopeForNonCurrentTabCallsPrepareTab() {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = false
+        
+        // When
+        executor.prepare(for: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)))
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.prepareTabCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
+    func testPrepareWithTabScopeForCurrentTabDoesNotCallPrepareTab() {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = true
+        
+        // When
+        executor.prepare(for: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)))
+        
+        // Then
+        XCTAssertFalse(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
+    // MARK: - burn Tabs Tests
+    
+    func testBurnTabsCallsDelegateAndClearsTabs() async {
+        // Given
+        let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockDelegate.willStartBurningTabsCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningTabsCalled)
+        XCTAssertTrue(mockTabManager.prepareCurrentTabCalled)
+        XCTAssertTrue(mockTabManager.removeAllCalled)
+        // Downloads are only cancelled when both .tabs and .data are present
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
+    }
+    
+    func testBurnTabsWithTabScopeForCurrentTabCallsPrepareTab() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = true
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        XCTAssertEqual(mockTabManager.prepareTabCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
+    }
+    
+    func testBurnTabsWithTabScopeForNonCurrentTabDoesNotCallPrepareTab() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockTabManager.isCurrentTabReturnValue = false
+        
+        // When
+        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel))
+        executor.prepare(for: request)
+        
+        // Then
+        XCTAssertTrue(mockTabManager.prepareTabCalled)
+        
+        // When
+        mockTabManager.prepareTabCalled = false
+        await executor.burn(request: request, applicationState: .unknown)
+        
+        // Then
+        XCTAssertFalse(mockTabManager.prepareTabCalled)
+    }
+    
+    func testBurnTabsWithTabScopeClosesTabAndNavigatesToHomepage() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Tab is closed and navigates to homepage (reusing existing or creating new)
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
+    }
+
+    func testWhenRefinementsEnabledAndAITabBurnedThenOpensNewChat() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireButtonRefinements)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn")
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - AI tab is closed and a new chat is opened instead of homepage
+        XCTAssertTrue(mockTabManager.closeTabAndOpenNewChatCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndOpenNewChatCalledWith, tabViewModel.tab)
+        XCTAssertFalse(mockTabManager.closeTabAndNavigateToHomepageCalled)
+    }
+
+    func testWhenRefinementsDisabledAndAITabBurnedThenNavigatesToHomepage() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn")
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Without refinements, AI tab still navigates to homepage
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertFalse(mockTabManager.closeTabAndOpenNewChatCalled)
+    }
+
+    func testWhenSourceIsEscapeHatchAndAITabBurnedWithRefinementsThenNavigatesToHomepage() async {
+        // Given - the conditions that would normally trigger open-new-chat:
+        // refinements on + AI tab. Escape hatch must override that.
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireButtonRefinements)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "chat-to-burn-from-hatch")
+
+        // When
+        await executor.burn(
+            request: makeFireRequest(options: .tabs,
+                                     scope: .tab(viewModel: tabViewModel),
+                                     source: .escapeHatch),
+            applicationState: .unknown
+        )
+
+        // Then - Escape hatch short-circuits the AI+refinements path; no new chat.
+        XCTAssertTrue(mockTabManager.closeTabAndNavigateToHomepageCalled)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageCalledWith, tabViewModel.tab)
+        XCTAssertEqual(mockTabManager.closeTabAndNavigateToHomepageClearTabHistory, false)
+        XCTAssertFalse(mockTabManager.closeTabAndOpenNewChatCalled)
+    }
+
+    func testBurnTabsWithTabScopeCleansUpTabHistoryAfterBurnCompletes() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Tab history should be removed after burn completes
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 1)
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.first, [tabViewModel.tab.uid])
+    }
+    
+    func testWhenBurningDataAndAIChatsWithTabScopeThenTabHistoryIsNotRemoved() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        // When - Burn data and AI chats (but not tabs) for a specific tab
+        await executor.burn(request: makeFireRequest(options: [.data, .aiChats], scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Tab history should NOT be removed because the tab itself was not burned
+        XCTAssertEqual(mockHistoryManager.removeTabHistoryCalls.count, 0)
+    }
+    
+    // MARK: - burn Data Tests
+    
+    func testBurnDataCallsDelegateAndClearsData() async {
+        // Given
+        let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .data, trigger: .autoClearOnLaunch), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
+        // Downloads are only cancelled when both .tabs and .data are present
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
+    }
+    
+    func testBurnDataSkipsBookmarkCleanerWhenSyncActive() async {
+        // Given
+        let bookmarkCleaner = MockBookmarkDatabaseCleaner()
+        let activeSyncService = MockDDGSyncing(authState: .active, isSyncInProgress: false)
+        let executor = makeFireExecutor(
+            syncService: activeSyncService,
+            bookmarksDatabaseCleaner: bookmarkCleaner
+        )
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
+        
+        // Then
+        XCTAssertFalse(bookmarkCleaner.cleanUpDatabaseNowCalled)
+    }
+    
+    func testBurnDataCallsBookmarkCleanerWhenSyncInactive() async {
+        // Given
+        let bookmarkCleaner = MockBookmarkDatabaseCleaner()
+        let executor = makeFireExecutor(
+            syncService: mockSyncService,
+            bookmarksDatabaseCleaner: bookmarkCleaner
+        )
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(bookmarkCleaner.cleanUpDatabaseNowCalled)
+    }
+    
+    func testBurnDataPerformsAllCleanupActions() async {
+        // Given
+        let fireproofedDomains = ["example.com", "test.org"]
+        let fireproofing = MockFireproofing(domains: fireproofedDomains)
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
+
+        // Then - Verify delegate calls
+        XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
+
+        // Then - Verify website data is cleared
+        XCTAssertEqual(mockWebsiteDataManager.clearCallCount, 1)
+
+        // Then - Verify dax dialogs held URL data is cleared
+        XCTAssertEqual(mockDaxDialogsManager.clearHeldURLDataCallCount, 1)
+
+        // Then - Verify text zoom is reset with fireproofed domains excluded
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsCallCount, 1)
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsExcludingDomainsArg, fireproofedDomains)
+
+        // Then - Verify history is removed
+        XCTAssertEqual(mockHistoryManager.removeAllHistoryCallCount, 1)
+    }
+    
+    func testBurnDataForTabScopePerformsAllCleanupActions() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://test.com")!]
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Verify delegate calls
+        XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
+
+        // Then - Verify website data is cleared
+        XCTAssertEqual(mockWebsiteDataManager.clearWithDomainsCallCount, 1)
+        XCTAssertEqual(mockWebsiteDataManager.clearCalledWithDomains, ["test.com"])
+
+        // Then - Verify text zoom reset is called with visited domains and excluding domains
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains, ["test.com"])
+        XCTAssertNotNil(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains)
+
+        // Then - Verify browsing history is removed for the tab
+        XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.count, 1)
+        XCTAssertEqual(mockHistoryManager.removeBrowsingHistoryCalls.first, tabViewModel.tab.uid)
+    }
+
+    func testBurnDataForTabScope_PassesVisitedDomainsAndExcludingDomainsToZoomCoordinator() async {
+        // Given - amazon.com is fireproofed, user visited mail.amazon.com and facebook.com
+        let fireproofing = MockFireproofing(domains: ["amazon.com"])
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+        let tabViewModel = makeTabViewModel()
+
+        mockHistoryManager.tabHistoryResult = [
+            URL(string: "https://mail.amazon.com/inbox")!,
+            URL(string: "https://facebook.com/feed")!
+        ]
+
+        // When
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        // Then - Verify coordinator receives visited domains and excluding domains
+        // The S3 filtering logic happens inside the coordinator/storage
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedDomainsCallCount, 1)
+        let visitedDomains = Set(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedDomains ?? [])
+        XCTAssertTrue(visitedDomains.contains("mail.amazon.com"))
+        XCTAssertTrue(visitedDomains.contains("facebook.com"))
+        XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains, ["amazon.com"])
+    }
+
+    // MARK: - Site Permissions Fire Worker Tests
+
+    func testWhenBurningNormalModeDataThenFireproofedSitePermissionsSurvive() async {
+        for permissionType in SitePermissionType.allCases {
+            storePermission(for: "protected.example", type: permissionType)
+            storePermission(for: "cleared.example", type: permissionType, decision: .deny)
+        }
+        var permissionsDidChange = false
+        let subscription = sitePermissionsStore.changesPublisher.sink { permissionsDidChange = true }
+        defer { subscription.cancel() }
+        mockFireproofing.isAllowedFireproofDomainHandler = { $0 == "protected.example" }
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        for permissionType in SitePermissionType.allCases {
+            XCTAssertEqual(sitePermissionsStore.decision(for: permissionType, at: makeSitePermissionKey("protected.example")), .allow)
+            XCTAssertNil(sitePermissionsStore.decision(for: permissionType, at: makeSitePermissionKey("cleared.example")))
+        }
+        XCTAssertEqual(sitePermissionsStore.storedSites, [makeSitePermissionKey("protected.example")])
+        XCTAssertTrue(permissionsDidChange)
+    }
+
+    func testWhenBurningNormalModeDataThenFireproofedParentDomainProtectsItsSubdomain() async {
+        storePermission(for: "mail.amazon.com")
+        storePermission(for: "cleared.example")
+        let fireproofing = MockFireproofing(domains: ["amazon.com"])
+        fireproofing.isAllowedFireproofDomainHandler = { domain in
+            domain == "amazon.com" || domain.hasSuffix(".amazon.com")
+        }
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("mail.amazon.com")), .allow)
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+    }
+
+    func testWhenBurningNormalModeDataThenImplicitDuckDuckGoPermissionsSurvive() async {
+        storePermission(for: "duckduckgo.com")
+        storePermission(for: "duck.ai")
+        storePermission(for: "cleared.example")
+        mockFireproofing.isAllowedFireproofDomainHandler = { ["duckduckgo.com", "duck.ai"].contains($0) }
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("duckduckgo.com")), .allow)
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("duck.ai")), .allow)
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+    }
+
+    func testWhenBurningNormalModeDataThenGlobalPermissionDefaultsArePreserved() async {
+        storePermission(for: "cleared.example")
+        sitePermissionsStore.setGlobalDefault(.deny, for: .camera)
+        sitePermissionsStore.setGlobalDefault(.ask, for: .microphone)
+        sitePermissionsStore.setGlobalDefault(.deny, for: .location)
+        let defaultsKey = "site-permissions-global-defaults"
+        let defaultsBeforeBurn = UserDefaults.app.object(forKey: defaultsKey) as? [String: String]
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(UserDefaults.app.object(forKey: defaultsKey) as? [String: String], defaultsBeforeBurn)
+    }
+
+    func testWhenBurningFireModeDataThenSitePermissionsRemainUnchanged() async {
+        storePermission(for: "preserved.example")
+        storePermission(for: "preserved.example", type: .microphone, decision: .deny)
+        sitePermissionsStore.resetDecision(for: .location, at: makeSitePermissionKey("preserved.example"))
+        let original = sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example"))
+        sitePermissionsStore.setGlobalDefault(.deny, for: .microphone)
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example")), original)
+        XCTAssertEqual(sitePermissionsStore.globalDefault(for: .microphone), .deny)
+    }
+
+    func testWhenBurningFireModeTabDataThenSitePermissionsRemainUnchanged() async {
+        storePermission(for: "preserved.example")
+        storePermission(for: "preserved.example", type: .microphone, decision: .deny)
+        sitePermissionsStore.resetDecision(for: .location, at: makeSitePermissionKey("preserved.example"))
+        let original = sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example"))
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://preserved.example")!]
+        let executor = makeFireExecutor()
+        let tabViewModel = TabViewModel(tab: Tab(uid: "fire-tab-uid", fireTab: true), historyManager: mockHistoryManager)
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example")), original)
+    }
+
+    func testWhenSitePermissionsFeatureIsOffThenBurnStillClearsSitePermissions() async {
+        XCTAssertFalse(mockFeatureFlagger.enabledFeatureFlags.contains(.sitePermissions))
+        storePermission(for: "cleared.example")
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+    }
+
+    func testWhenBurningTabDataThenOnlyVisitedNonFireproofedSitePermissionsAreCleared() async {
+        storePermission(for: "mail.amazon.com")
+        storePermission(for: "cleared.example")
+        storePermission(for: "untouched.example")
+        let fireproofing = MockFireproofing(domains: ["amazon.com"])
+        fireproofing.isAllowedFireproofDomainHandler = { domain in
+            domain == "amazon.com" || domain.hasSuffix(".amazon.com")
+        }
+        let executor = makeFireExecutor(fireproofing: fireproofing)
+        let tabViewModel = makeTabViewModel()
+        mockHistoryManager.tabHistoryResult = [
+            URL(string: "https://mail.amazon.com/inbox")!,
+            URL(string: "https://www.cleared.example/path")!
+        ]
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("mail.amazon.com")), .allow)
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("cleared.example")))
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("untouched.example")), .allow)
+    }
+
+    func testWhenTabHistoryFetchFailsThenPermissionsRemainAndWideEventReportsFailure() async throws {
+        storePermission(for: "preserved.example")
+        let expectedError = NSError(domain: "FireExecutorTests.TabHistory", code: 1)
+        mockHistoryManager.tabHistoryError = expectedError
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(sitePermissionsStore.decision(for: .camera, at: makeSitePermissionKey("preserved.example")), .allow)
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearPermissionsStatus, .failure)
+        XCTAssertEqual(eventData.clearPermissionsError?.domain, expectedError.domain)
+        XCTAssertEqual(eventData.clearPermissionsError?.code, expectedError.code)
+    }
+
+    func testWhenAIChatClearWasRetriedThenWideEventRecordsTheRetryAndFirstAttempt() async throws {
+        let firstError = NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2)
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: firstError,
+            firstAttemptTimings: AIChatClearingTimings(pageLoadMilliseconds: 400, scriptReadyMilliseconds: 30, scriptReplyMilliseconds: 5000)
+        )
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearAIChatHistoryRetried, true)
+        XCTAssertEqual(eventData.clearAIChatHistoryFirstAttemptError?.domain, firstError.domain)
+        XCTAssertEqual(eventData.clearAIChatHistoryFirstAttemptError?.code, firstError.code)
+        XCTAssertEqual(eventData.clearAIChatHistoryPageLoadMilliseconds, 400)
+        XCTAssertEqual(eventData.clearAIChatHistoryScriptReadyMilliseconds, 30)
+        XCTAssertEqual(eventData.clearAIChatHistoryScriptReplyMilliseconds, 5000)
+    }
+
+    func testWhenAIChatClearWasRetriedThenDeletePixelCarriesSourceAndFirstAttemptCode() async throws {
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2),
+            firstAttemptTimings: AIChatClearingTimings()
+        )
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let call = try XCTUnwrap(pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.aiChatHistoryDeleteSuccessful.name })
+        XCTAssertEqual(call.additionalParameters?["source"], "fire_button")
+        XCTAssertEqual(call.additionalParameters?["retried"], "true")
+        XCTAssertEqual(call.additionalParameters?["first_attempt_error_code"], "2")
+    }
+
+    func testWhenAIChatClearFailedThenDeleteFailedPixelCarriesTheSource() async throws {
+        mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 5))
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(attempts: 1, firstAttemptError: nil, firstAttemptTimings: AIChatClearingTimings())
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, trigger: .autoClearOnLaunch), applicationState: .unknown)
+
+        let call = try XCTUnwrap(pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.aiChatHistoryDeleteFailed.name })
+        XCTAssertEqual(call.additionalParameters?["source"], "auto_clear")
+        XCTAssertEqual(call.additionalParameters?["retried"], "false")
+        XCTAssertNil(call.additionalParameters?["first_attempt_error_code"])
+    }
+
+    func testWhenAIChatsAreBurnedThenWideEventRecordsTheWarmupWait() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.clearAIChatHistoryWarmupWaitMilliseconds)
+    }
+
+    func testWhenDataIsBurnedThenWideEventRecordsTheWebsiteDataWarmupAsAStep() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.warmUpWebsiteDataStoreDuration?.end)
+    }
+
+    func testWhenBurnFinishesThenWideEventRecordsTheAppSwitcherSnapshotClearingAsAStep() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.clearAppSwitcherSnapshotsDuration?.end)
+    }
+
+    func testWhenAIChatClearSucceededFirstTimeThenWideEventRecordsNoRetry() async throws {
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(attempts: 1, firstAttemptError: nil, firstAttemptTimings: AIChatClearingTimings())
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearAIChatHistoryRetried, false)
+        XCTAssertNil(eventData.clearAIChatHistoryFirstAttemptError)
+    }
+
+    func testWhenTabHistoryIsEmptyThenWideEventReportsPermissionClearingSuccess() async throws {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearPermissionsStatus, .success)
+        XCTAssertNil(eventData.clearPermissionsError)
+    }
+
+    func testWhenBurningTabDataThenIPv6SitePermissionsAreCleared() async throws {
+        let ipv6URL = try XCTUnwrap(URL(string: "https://[::1]"))
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: ipv6URL))
+        sitePermissionsStore.setPersistentDecision(.allow, for: .camera, at: site)
+        mockHistoryManager.tabHistoryResult = [ipv6URL]
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertNil(sitePermissionsStore.decision(for: .camera, at: site))
+    }
+
+    // MARK: - Burn ongoing downloads
+    
+    func testBurnTabsAndDataCancelsDownloads() async {
+        // Given
+        let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: [.tabs, .data]), applicationState: .unknown)
+        
+        // Then
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
+    }
+    
+    func testTabScopeDoesntCancelDownloads() async {
+        // Given
+        let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
+        let tabViewModel = makeTabViewModel()
+        
+        // When
+        let request = makeFireRequest(options: [.tabs, .data], scope: .tab(viewModel: tabViewModel))
+        await executor.burn(request: request, applicationState: .unknown)
+        
+        // Then
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
+    }
+    
+    // MARK: - burn AI History Tests
+    
+    func testBurnAIHistoryNormalModeCallsCleanerOnSuccess() async {
+        // Given
+        let executor = makeFireExecutor()
+        mockHistoryCleaner.cleanAIChatHistoryResult = .success(())
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .normalMode), applicationState: .unknown)
+        
+        // Then
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+    }
+    
+    func testBurnAIHistoryNormalModeCallsCleanerOnFailure() async {
+        // Given
+        let executor = makeFireExecutor()
+        mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "test", code: 1))
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .normalMode), applicationState: .unknown)
+        
+        // Then
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+    }
+    
+    func testBurnAIHistoryBothModesCallsCleanerOnSuccess() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+        mockHistoryCleaner.cleanAIChatHistoryResult = .success(())
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .all), applicationState: .unknown)
+        
+        // Then
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 2)
+    }
+    
+    func testBurnAIHistoryBothModesCallsCleanerOnFailure() async {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+        mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "test", code: 1))
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .all), applicationState: .unknown)
+        
+        // Then
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 2)
+    }
+    
+    // MARK: - burn All Options Tests
+    
+    func testBurnAllOptionsBurnsEverything() async {
+        // Given
+        let executor = makeFireExecutor()
+        
+        // When
+        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockDelegate.willStartBurningCalled)
+        XCTAssertTrue(mockDelegate.willStartBurningTabsCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningTabsCalled)
+        XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningCalled)
+        XCTAssertTrue(mockTabManager.prepareCurrentTabCalled)
+        XCTAssertTrue(mockTabManager.removeAllCalled)
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+    }
+    
+    func testBurnMultipleOptionsIndividually() async {
+        // Given
+        let executor = makeFireExecutor()
+        
+        // When - Burn tabs and data separately
+        await executor.burn(request: makeFireRequest(options: [.tabs, .data]), applicationState: .unknown)
+        
+        // Then
+        XCTAssertTrue(mockDelegate.willStartBurningTabsCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningTabsCalled)
+        XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+    }
+    
+    // MARK: - Legacy AI Chats Setting Tests
+    
+    func testWhenTabAIChatClearWasRetriedThenWideEventRecordsTheRetry() async throws {
+        mockHistoryCleaner.lastClearingReport = AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 6),
+            firstAttemptTimings: AIChatClearingTimings(pageLoadMilliseconds: 500)
+        )
+        let executor = makeFireExecutor()
+        let tabViewModel = makeAITabViewModel(chatID: "test-chat-id-123")
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertEqual(eventData.clearAIChatHistoryRetried, true)
+        XCTAssertEqual(eventData.clearAIChatHistoryFirstAttemptError?.code, 6)
+        XCTAssertEqual(eventData.clearAIChatHistoryPageLoadMilliseconds, 500)
+    }
+
+    func testWhenScopeIsTabThenAIChatsAreClearedRegardlessOfUserSetting() async {
+        // Given
+        mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
+        let executor = makeFireExecutor()
+        let chatID = "test-chat-id-123"
+        let tabViewModel = makeAITabViewModel(chatID: chatID)
+        
+        // When - Burn AI chats for a specific tab
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - AI history should be cleared because scope is .tab (single chat burn)
+        // Verify deleteAIChat was called with the correct chatID (not cleanAIChatHistory)
+        XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [chatID])
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+        // Verify sync cleaner was notified of the chat deletion
+        XCTAssertEqual(mockAIChatSyncCleaner.recordChatDeletionCalls, [chatID])
+    }
+    
+    func testWhenScopeIsTabWithoutChatIDThenDeleteAIChatIsNotCalled() async {
+        // Given
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel() // Regular tab without chatID
+        
+        // When - Burn AI chats for a tab without chatID
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - deleteAIChat should not be called
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
+    }
+    
+    // MARK: - Contextual Chat Deletion Tests (Data Burn)
+    
+    func testWhenBurningDataForTabWithContextualChat_ThenContextualChatIsDeleted() async {
+        // Given
+        let contextualChatID = "contextual-chat-id-456"
+        let tabViewModel = makeTabViewModelWithContextualChat(contextualChatID: contextualChatID)
+        mockAppSettings.autoClearAIChatHistory = true
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab with contextual chat
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Contextual chat should be deleted
+        XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [contextualChatID])
+        XCTAssertEqual(mockAIChatSyncCleaner.recordChatDeletionCalls, [contextualChatID])
+    }
+    
+    func testWhenBurningDataForTabWithoutContextualChat_ThenNoContextualChatDeleted() async {
+        // Given
+        let tabViewModel = makeTabViewModel() // Regular tab without contextual chat
+        mockAppSettings.autoClearAIChatHistory = true
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab without contextual chat
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - No contextual chat should be deleted
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
+    }
+
+    func testWhenAutoClearAIChatHistoryDisabled_ThenContextualChatNotDeleted() async {
+        // Given
+        let contextualChatID = "contextual-chat-id-789"
+        let tabViewModel = makeTabViewModelWithContextualChat(contextualChatID: contextualChatID)
+        mockAppSettings.autoClearAIChatHistory = false // User has disabled auto-clear
+        let executor = makeFireExecutor()
+        
+        // When - Burn data for a tab with contextual chat but auto-clear disabled
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+        
+        // Then - Contextual chat should NOT be deleted because user setting is disabled
+        XCTAssertTrue(mockHistoryCleaner.deleteAIChatCalls.isEmpty)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty)
+    }
+    
+    // MARK: - Fire Mode Scope Tests
+
+    func testPrepareWithFireModeScopeCallsPrepareAllTabsWithFireBrowsingMode() {
+        let executor = makeFireExecutor()
+
+        executor.prepare(for: makeFireRequest(options: .tabs, scope: .fireMode))
+
+        XCTAssertTrue(mockTabManager.prepareAllTabsExceptCurrentCalled)
+        XCTAssertEqual(mockTabManager.prepareAllTabsExceptCurrentBrowsingMode, .fire)
+    }
+
+    func testBurnTabsWithFireModeScopeCallsPrepareCurrentAndRemoveAllWithFireBrowsingMode() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .tabs, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertTrue(mockTabManager.prepareCurrentTabCalled)
+        XCTAssertEqual(mockTabManager.prepareCurrentTabBrowsingMode, .fire)
+        XCTAssertTrue(mockTabManager.removeAllCalled)
+        XCTAssertEqual(mockTabManager.removeAllBrowsingMode, .fire)
+    }
+
+    // MARK: - Fire Mode AI History Tests
+
+    func testWhenBurningAIHistoryWithFireModeScope_ThenCleanerIsCalledAndSyncIsNotRecorded() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+        XCTAssertNotNil(mockHistoryCleaner.lastWebsiteDataStore, "Fire mode should use a non-default data store")
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, true, "Fire mode burn should request the fire-mode native storage handler")
+        XCTAssertTrue(mockAIChatSyncCleaner.recordLocalClearDates.isEmpty, "Fire mode burns should not record sync")
+    }
+
+    func testWhenBurningAIHistoryWithFireModeScopeAndFireModeDisabled_ThenFireModeAIHistoryIsSkipped() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 0, "Fire mode AI history should not be burned when fire mode is disabled")
+    }
+
+    func testWhenBurningAIHistoryWithAllScope_ThenBothNormalAndFireModeAreBurned() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .all), applicationState: .unknown)
+
+        XCTAssertGreaterThanOrEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 2, "Should burn both normal and fire mode AI history")
+    }
+
+    func testWhenBurningAIHistoryWithAllScopeAndFireModeDisabled_ThenOnlyNormalModeIsBurned() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .all), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1, "Only normal mode AI history should be burned when fire mode is disabled")
+    }
+
+    func testWhenBurningAIHistoryWithNormalModeScope_ThenSyncIsRecorded() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+        XCTAssertFalse(mockAIChatSyncCleaner.recordLocalClearDates.isEmpty, "Normal mode burns should record sync")
+    }
+
+    func testWhenBurningSingleFireTabAIHistory_ThenSyncIsNotRecorded() async {
+        let executor = makeFireExecutor()
+        let chatID = "fire-chat-123"
+        let tabViewModel = makeTabViewModel(chatID: chatID, fireTab: true)
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.deleteAIChatCalls, [chatID])
+        XCTAssertTrue(mockAIChatSyncCleaner.recordChatDeletionCalls.isEmpty, "Fire tab single chat deletion should not record sync")
+    }
+
+    func testWhenBurningSingleFireTabAIHistory_ThenCleanerRequestsFireModeHandler() async {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel(chatID: "fire-chat-456", fireTab: true)
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, true, "Single fire-tab burn must route through fire-mode native storage, not normal storage")
+    }
+
+    func testWhenBurningSingleNormalTabAIHistory_ThenCleanerRequestsNormalHandler() async {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel(chatID: "normal-chat-789", fireTab: false)
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Single normal-tab burn must route through normal native storage")
+    }
+
+    func testWhenBurningAIHistoryWithNormalModeScope_ThenCleanerRequestsNormalHandler() async {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .aiChats, scope: .normalMode), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Normal-mode burn must route through normal native storage")
+    }
+}
+
+@MainActor
+final class MockFireBackgroundTask: FireBackgroundTasking {
+    private(set) var calls: [String] = []
+    var isHeld: Bool { calls.last == "begin" }
+
+    nonisolated init() {}
+
+    func begin() { calls.append("begin") }
+    func end() { calls.append("end") }
+}

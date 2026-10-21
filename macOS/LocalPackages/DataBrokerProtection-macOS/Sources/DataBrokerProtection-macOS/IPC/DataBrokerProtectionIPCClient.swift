@@ -18,9 +18,11 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
-import XPCHelper
+import FoundationExtensions
 import os.log
+import XPCHelper
 
 /// This protocol describes the server-side IPC interface for controlling the tunnel
 ///
@@ -28,7 +30,7 @@ public protocol IPCClientInterface: AnyObject {
 }
 
 public protocol DBPLoginItemStatusChecker {
-    func doesHaveNecessaryPermissions() -> Bool
+    func doesHaveNecessaryPermissions() async -> Bool
     func isInCorrectDirectory() -> Bool
 }
 
@@ -146,6 +148,26 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
         })
     }
 
+    public func checkForEmailConfirmationData() {
+        xpc.execute(call: { server in
+            server.checkForEmailConfirmationData()
+        }, xpcReplyErrorHandler: { error in
+            Logger.dataBrokerProtection.error("Error checking for email confirmation data: \(error.localizedDescription)")
+            // Intentional no-op as there's no completion block
+            // If you add a completion block, please remember to call it here too!
+        })
+    }
+
+    public func runEmailConfirmationOperations(showWebView: Bool) {
+        xpc.execute(call: { server in
+            server.runEmailConfirmationOperations(showWebView: showWebView)
+        }, xpcReplyErrorHandler: { error in
+            Logger.dataBrokerProtection.error("Error running email confirmation operations: \(error.localizedDescription)")
+            // Intentional no-op as there's no completion block
+            // If you add a completion block, please remember to call it here too!
+        })
+    }
+
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         await withCheckedContinuation { continuation in
             xpc.execute(call: { server in
@@ -157,6 +179,27 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
                 continuation.resume(returning: nil)
             })
         }
+    }
+
+    public func startDebugServer() async -> Bool {
+        await withCheckedContinuation { continuation in
+            xpc.execute(call: { server in
+                server.startDebugServer { didStart in
+                    continuation.resume(returning: didStart)
+                }
+            }, xpcReplyErrorHandler: { error in
+                Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
+                continuation.resume(returning: false)
+            })
+        }
+    }
+
+    public func stopDebugServer() {
+        xpc.execute(call: { server in
+            server.stopDebugServer()
+        }, xpcReplyErrorHandler: { error in
+            Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
+        })
     }
 }
 

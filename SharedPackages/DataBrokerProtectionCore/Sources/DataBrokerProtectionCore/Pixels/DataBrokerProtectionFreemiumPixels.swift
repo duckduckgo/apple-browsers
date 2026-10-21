@@ -26,6 +26,17 @@ public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerPr
             switch event {
             case .subscription:
                 PixelKit.fire(event, frequency: .uniqueByName, withAdditionalParameters: params)
+            case .newTabScanImpressionCount,
+                    .newTabResultsImpressionCount,
+                    .newTabNoResultsImpressionCount,
+                    .newTabScanClickCount,
+                    .newTabResultsClickCount,
+                    .newTabNoResultsClickCount,
+                    .overFlowScanImpressionCount,
+                    .overFlowScanCount,
+                    .overFlowResultsImpressionCount,
+                    .overFlowResultsCount:
+                PixelKit.fire(event, frequency: .standard)
             default:
                 PixelKit.fire(event, frequency: .uniqueByName)
             }
@@ -38,23 +49,37 @@ public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerPr
     }
 }
 
-public enum DataBrokerProtectionFreemiumPixels: PixelKitEventV2 {
+public enum DataBrokerProtectionFreemiumPixels: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
 
     // Before the first scan
     case newTabScanImpression
+    case newTabScanImpressionCount
     case newTabScanClick
+    case newTabScanClickCount
     case newTabScanDismiss
     // When receiving results
     case newTabResultsImpression
+    case newTabResultsImpressionCount
     case newTabResultsClick
+    case newTabResultsClickCount
     case newTabResultsDismiss
     // When receiving no results
     case newTabNoResultsImpression
+    case newTabNoResultsImpressionCount
     case newTabNoResultsClick
+    case newTabNoResultsClickCount
     case newTabNoResultsDismiss
     // Overflow menu
+    case overFlowScanImpression
+    case overFlowScanImpressionCount
     case overFlowScan
+    case overFlowScanCount
+    case overFlowResultsImpression
+    case overFlowResultsImpressionCount
     case overFlowResults
+    case overFlowResultsCount
     // System notification
     case firstScanCompleteNotificationSent
     case firstScanCompleteNotificationClicked
@@ -65,26 +90,50 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEventV2 {
         switch self {
         case .newTabScanImpression:
             return "dbp-free_newtab_scan_impression_u"
+        case .newTabScanImpressionCount:
+            return "dbp-free_newtab_scan_impression_c"
         case .newTabScanClick:
             return "dbp-free_newtab_scan_click_u"
+        case .newTabScanClickCount:
+            return "dbp-free_newtab_scan_click_c"
         case .newTabScanDismiss:
             return "dbp-free_newtab_scan_dismiss_u"
         case .newTabResultsImpression:
             return "dbp-free_newtab_results_impression_u"
+        case .newTabResultsImpressionCount:
+            return "dbp-free_newtab_results_impression_c"
         case .newTabResultsClick:
             return "dbp-free_newtab_results_click_u"
+        case .newTabResultsClickCount:
+            return "dbp-free_newtab_results_click_c"
         case .newTabResultsDismiss:
             return "dbp-free_newtab_results_dismiss_u"
         case .newTabNoResultsImpression:
             return "dbp-free_newtab_no-results_impression_u"
+        case .newTabNoResultsImpressionCount:
+            return "dbp-free_newtab_no-results_impression_c"
         case .newTabNoResultsClick:
             return "dbp-free_newtab_no-results_click_u"
+        case .newTabNoResultsClickCount:
+            return "dbp-free_newtab_no-results_click_c"
         case .newTabNoResultsDismiss:
             return "dbp-free_newtab_no-results_dismiss_u"
+        case .overFlowScanImpression:
+            return "dbp-free_overflow_scan_impression_u"
+        case .overFlowScanImpressionCount:
+            return "dbp-free_overflow_scan_impression_c"
         case .overFlowScan:
             return "dbp-free_overflow_scan_u"
+        case .overFlowScanCount:
+            return "dbp-free_overflow_scan_c"
+        case .overFlowResultsImpression:
+            return "dbp-free_overflow_results_impression_u"
+        case .overFlowResultsImpressionCount:
+            return "dbp-free_overflow_results_impression_c"
         case .overFlowResults:
             return "dbp-free_overflow_results_u"
+        case .overFlowResultsCount:
+            return "dbp-free_overflow_results_c"
         case .firstScanCompleteNotificationSent:
             return "dbp-free_notification_sent_first_scan_complete_u"
         case .firstScanCompleteNotificationClicked:
@@ -94,11 +143,37 @@ public enum DataBrokerProtectionFreemiumPixels: PixelKitEventV2 {
         }
     }
 
-    public var parameters: [String: String]? {
-        return nil
-    }
+    public var parameters: [String: String]? { nil }
 
-    public var error: (any Error)? {
-        nil
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .newTabScanImpression,
+                .newTabScanImpressionCount,
+                .newTabScanClick,
+                .newTabScanClickCount,
+                .newTabScanDismiss,
+                .newTabResultsImpression,
+                .newTabResultsImpressionCount,
+                .newTabResultsClick,
+                .newTabResultsClickCount,
+                .newTabResultsDismiss,
+                .newTabNoResultsImpression,
+                .newTabNoResultsImpressionCount,
+                .newTabNoResultsClick,
+                .newTabNoResultsClickCount,
+                .newTabNoResultsDismiss,
+                .overFlowScanImpression,
+                .overFlowScanImpressionCount,
+                .overFlowScan,
+                .overFlowScanCount,
+                .overFlowResultsImpression,
+                .overFlowResultsImpressionCount,
+                .overFlowResults,
+                .overFlowResultsCount,
+                .firstScanCompleteNotificationSent,
+                .firstScanCompleteNotificationClicked,
+                .subscription:
+            return [.pixelSource]
+        }
     }
 }

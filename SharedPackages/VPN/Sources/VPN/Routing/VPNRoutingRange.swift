@@ -30,8 +30,19 @@ public enum VPNRoutingRange {
     public static let alwaysExcludedIPv6Range: [VPN.IPAddressRange] = [
         "fe80::/10",  /* link local */
         "ff00::/8",   /* multicast */
-        "fc00::/7",   /* local unicast */
         "::1/128",    /* loopback */
+    ]
+
+    public static let localIPv6NetworkRange: [VPN.IPAddressRange] = [
+        "fc00::/7",   /* fc00:: - fdff:: Unique Local Addresses (ULA) */
+    ]
+
+    /// RFC 6598 Carrier-Grade NAT (CGNAT). Used by cellular carriers and by mesh VPN
+    /// overlays (Tailscale, ZeroTier). Carved out of ``publicNetworkRange`` so the
+    /// resolver can include or exclude it on its own — included in the tunnel when
+    /// the CGNAT-exclude toggle is off (legacy behavior), explicitly excluded when on.
+    public static let cgnatRange: [VPN.IPAddressRange] = [
+        "100.64.0.0/10",  /* 100.64.0.0 - 100.127.255.255 */
     ]
 
     public static let localNetworkRangeWithoutDNS: [VPN.IPAddressRange] = [
@@ -56,7 +67,18 @@ public enum VPNRoutingRange {
         "12.0.0.0/6",       /* 12.0.0.0 - 15.255.255.255 */
         "16.0.0.0/4",       /* 16.0.0.0 - 31.255.255.255 */
         "32.0.0.0/3",       /* 32.0.0.0 - 63.255.255.255 */
-        "64.0.0.0/2",       /* 64.0.0.0 - 127.255.255.255 */
+        "64.0.0.0/3",       /* 64.0.0.0 - 95.255.255.255 */
+        "96.0.0.0/6",       /* 96.0.0.0 - 99.255.255.255 */
+        "100.0.0.0/10",     /* 100.0.0.0 - 100.63.255.255 */
+        /* 100.64.0.0/10       100.64.0.0 - 100.127.255.255   CGNAT (RFC 6598), see cgnatRange */
+        "100.128.0.0/9",    /* 100.128.0.0 - 100.255.255.255 */
+        "101.0.0.0/8",      /* 101.0.0.0 - 101.255.255.255 */
+        "102.0.0.0/7",      /* 102.0.0.0 - 103.255.255.255 */
+        "104.0.0.0/5",      /* 104.0.0.0 - 111.255.255.255 */
+        "112.0.0.0/5",      /* 112.0.0.0 - 119.255.255.255 */
+        "120.0.0.0/6",      /* 120.0.0.0 - 123.255.255.255 */
+        "124.0.0.0/7",      /* 124.0.0.0 - 125.255.255.255 */
+        "126.0.0.0/8",      /* 126.0.0.0 - 126.255.255.255 */
         /* 127.0.0.0            127.0.0.0/8 - 127.255.255.255   Loopback */
         "128.0.0.0/3",      /* 128.0.0.0 - 159.255.255.255 */
         "160.0.0.0/5",      /* 160.0.0.0 - 167.255.255.255 */
@@ -95,5 +117,6 @@ public enum VPNRoutingRange {
         "208.0.0.0/4",      /* 208.0.0.0 - 223.255.255.255 */
         /* 224.0.0.0            224.0.0.0/4 - 239.255.255.255   Multicast */
         /* 240.0.0.0            240.0.0.0/4 - 255.255.255.255   Class E */
+        "::/0" /* IPv6 */
     ]
 }

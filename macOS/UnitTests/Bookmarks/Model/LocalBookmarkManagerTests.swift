@@ -18,11 +18,13 @@
 
 import Bookmarks
 import Combine
+import ConcurrencyExtensions
 import Foundation
-import os.log
+@_spi(Testing) import SharedTestUtilities
 import Utilities
-
 import XCTest
+import os.log
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class LocalBookmarkManagerTests: XCTestCase {
@@ -920,7 +922,11 @@ fileprivate extension LocalBookmarkManagerTests {
     private func makeManager(@BookmarksBuilder with bookmarks: () -> [BookmarksBuilderItem]) -> (LocalBookmarkManager, BookmarkStoreMock) {
         let bookmarkStoreMock = BookmarkStoreMock(contextProvider: context.map { context in { context } }, bookmarks: bookmarks().build())
         foldersStore = BookmarkFolderStoreMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, foldersStore: foldersStore, appearancePreferences: .mock)
+        let bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: bookmarkStoreMock,
+            foldersStore: foldersStore,
+            appearancePreferences: .mock
+        )
         Logger.tests.debug("LocalBookmarkManagerTests.\(self.name).makeManager \(String(describing: bookmarkManager)) with \(bookmarkStoreMock.debugDescription, privacy: .public)")
 
         return (bookmarkManager, bookmarkStoreMock)

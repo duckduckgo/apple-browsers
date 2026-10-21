@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 
 struct FeatureError: Error {
@@ -62,6 +63,7 @@ final class SyncQueue {
     let syncHTTPRequestErrorPublisher: AnyPublisher<Error, Never>
     let crypter: Crypting
     let requestMaker: SyncRequestMaking
+    var customOperations: [any SyncCustomOperation] = []
 
     convenience init(dataProviders: [DataProviding], dependencies: SyncDependencies) {
         self.init(
@@ -154,7 +156,8 @@ final class SyncQueue {
             dataProviders: dataProviders,
             storage: storage,
             crypter: crypter,
-            requestMaker: requestMaker
+            requestMaker: requestMaker,
+            customOperations: customOperations
         )
         operation.didStart = { [weak self] in
             self?.syncDidStartSubject.send(())

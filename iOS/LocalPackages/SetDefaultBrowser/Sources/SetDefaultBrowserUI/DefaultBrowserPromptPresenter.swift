@@ -24,22 +24,31 @@ import SetDefaultBrowserCore
 
 @MainActor
 public protocol DefaultBrowserPromptPresenting: AnyObject {
-    func tryPresentDefaultModalPrompt(from viewController: UIViewController)
+    /// Returns a view controller and its prompt type when eligible, or nil otherwise.
+    func makePresentDefaultModalPrompt() -> (viewController: UIViewController, type: DefaultBrowserPromptPresentationType)?
 }
 
 @MainActor
 final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenting {
     private let coordinator: DefaultBrowserPromptCoordinating
+    private let uiProvider: any DefaultBrowserPromptUIProviding
 
-    init(coordinator: DefaultBrowserPromptCoordinating) {
+    init(coordinator: DefaultBrowserPromptCoordinating, uiProvider: any DefaultBrowserPromptUIProviding) {
         self.coordinator = coordinator
+        self.uiProvider = uiProvider
     }
 
-    public func tryPresentDefaultModalPrompt(from viewController: UIViewController) {
+    func makePresentDefaultModalPrompt() -> (viewController: UIViewController, type: DefaultBrowserPromptPresentationType)? {
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Attempting To Present Default Browser Prompt.")
-        // When prompt for inactive user is implemented check prompt type and present different view accordingly.
-        guard coordinator.getPrompt() != nil else { return }
-        presentDefaultDefaultBrowserPrompt(from: viewController)
+
+        guard let prompt = coordinator.getPrompt() else { return nil }
+
+        switch prompt {
+        case .activeUserModal:
+            return (makeDefaultDefaultBrowserPromptForActiveUser(), .activeUserModal)
+        case .inactiveUserModal:
+            return (makeDefaultBrowserPromptForInactiveUser(), .inactiveUserModal)
+        }
     }
 
 }
@@ -48,27 +57,53 @@ final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenti
 
 private extension DefaultBrowserModalPresenter {
 
-    func presentDefaultDefaultBrowserPrompt(from viewController: UIViewController) {
-        let rootView = DefaultBrowserPromptModalView(
-            closeAction: { [weak viewController, weak coordinator] in
-                coordinator?.dismissAction(shouldDismissPromptPermanently: false)
-                viewController?.dismiss(animated: true)
-            }, setAsDefaultAction: { [weak viewController, weak coordinator] in
-                coordinator?.setDefaultBrowserAction()
-                viewController?.dismiss(animated: true)
-            }, doNotAskAgainAction: { [weak viewController, weak coordinator] in
-                coordinator?.dismissAction(shouldDismissPromptPermanently: true)
-                viewController?.dismiss(animated: true)
+    func makeDefaultDefaultBrowserPromptForActiveUser() -> UIViewController {
+        let hostingController = UIHostingController(rootView: AnyView(EmptyView()))
+
+        let rootView = DefaultBrowserPromptActiveUserView(
+            closeAction: { [weak hostingController, weak coordinator] in
+                coordinator?.dismissAction(forPrompt: .activeUserModal, shouldDismissPromptPermanently: false)
+                hostingController?.dismiss(animated: true)
+            }, setAsDefaultAction: { [weak hostingController, weak coordinator] in
+                coordinator?.setDefaultBrowserAction(forPrompt: .activeUserModal)
+                hostingController?.dismiss(animated: true)
+            }, doNotAskAgainAction: { [weak hostingController, weak coordinator] in
+                coordinator?.dismissAction(forPrompt: .activeUserModal, shouldDismissPromptPermanently: true)
+                hostingController?.dismiss(animated: true)
             }
         )
-        let hostingController = UIHostingController(rootView: rootView)
+
+        hostingController.rootView = AnyView(rootView)
         hostingController.modalPresentationStyle = .pageSheet
         hostingController.modalTransitionStyle = .coverVertical
-        configurePresentationStyle(hostingController: hostingController, presentingController: viewController)
-        viewController.present(hostingController, animated: true)
+        configurePresentationStyle(hostingController: hostingController)
+
+        return hostingController
     }
 
-    func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptModalView>, presentingController: UIViewController) {
+    func makeDefaultBrowserPromptForInactiveUser() -> UIViewController {
+        let hostingController = PortraitHostingController(rootView: AnyView(EmptyView()))
+
+        let rootView = DefaultBrowserPromptInactiveUserView(
+            background: AnyView(uiProvider.makeBackground()),
+            browserComparisonChart: AnyView(uiProvider.makeBrowserComparisonChart()),
+            closeAction: { [weak hostingController, weak coordinator] in
+                coordinator?.dismissAction(forPrompt: .inactiveUserModal, shouldDismissPromptPermanently: false)
+                hostingController?.dismiss(animated: true)
+            },
+            setAsDefaultAction: { [weak hostingController, weak coordinator] in
+                coordinator?.setDefaultBrowserAction(forPrompt: .inactiveUserModal)
+                hostingController?.dismiss(animated: false)
+            }
+        )
+
+        hostingController.rootView = AnyView(rootView)
+        hostingController.modalPresentationStyle = .overFullScreen
+
+        return hostingController
+    }
+
+    func configurePresentationStyle(hostingController: UIHostingController<AnyView>) {
         guard let presentationController = hostingController.sheetPresentationController else { return }
 
         if #available(iOS 16.0, *) {
@@ -103,4 +138,17 @@ private extension DefaultBrowserModalPresenter {
         }
     }
 
+}
+
+final class PortraitHostingController<Content: View>: UIHostingController<Content> {
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            return .portrait
+        case .pad:
+            return .all
+        default:
+            return .all
+        }
+    }
 }

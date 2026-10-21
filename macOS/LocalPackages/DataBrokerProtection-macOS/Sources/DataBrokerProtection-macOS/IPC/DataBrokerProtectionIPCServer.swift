@@ -115,7 +115,11 @@ protocol XPCServerInterface {
     func startImmediateOperations(showWebView: Bool)
     func startScheduledOperations(showWebView: Bool)
     func runAllOptOuts(showWebView: Bool)
+    func checkForEmailConfirmationData()
+    func runEmailConfirmationOperations(showWebView: Bool)
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void)
+    func startDebugServer(completion: @escaping (Bool) -> Void)
+    func stopDebugServer()
 }
 
 protocol DataBrokerProtectionIPCServer: IPCClientInterface, XPCServerInterface {
@@ -167,12 +171,16 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
 
     func profileSaved(xpcMessageReceivedCompletion: @escaping (Error?) -> Void) {
         xpcMessageReceivedCompletion(nil)
-        serverDelegate?.profileSaved()
+        Task {
+            await serverDelegate?.profileSaved()
+        }
     }
 
     func appLaunched(xpcMessageReceivedCompletion: @escaping (Error?) -> Void) {
         xpcMessageReceivedCompletion(nil)
-        serverDelegate?.appLaunched()
+        Task {
+            await serverDelegate?.appLaunched()
+        }
     }
 
     // MARK: - DataBrokerProtectionAgentDebugCommands
@@ -193,10 +201,33 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
         serverDelegate?.runAllOptOuts(showWebView: showWebView)
     }
 
+    func checkForEmailConfirmationData() {
+        Task {
+            await serverDelegate?.checkForEmailConfirmationData()
+        }
+    }
+
+    func runEmailConfirmationOperations(showWebView: Bool) {
+        Task {
+            await serverDelegate?.runEmailConfirmationOperations(showWebView: showWebView)
+        }
+    }
+
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void) {
         Task {
             let metaData = await serverDelegate?.getDebugMetadata()
             completion(metaData)
         }
+    }
+
+    func startDebugServer(completion: @escaping (Bool) -> Void) {
+        Task {
+            let didStart = await serverDelegate?.startDebugServer() ?? false
+            completion(didStart)
+        }
+    }
+
+    func stopDebugServer() {
+        serverDelegate?.stopDebugServer()
     }
 }

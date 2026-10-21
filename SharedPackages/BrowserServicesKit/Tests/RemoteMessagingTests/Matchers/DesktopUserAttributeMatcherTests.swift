@@ -26,6 +26,7 @@ import XCTest
 class DesktopUserAttributeMatcherTests: XCTestCase {
 
     var mockStatisticsStore: MockStatisticsStore!
+    var mockFeatureDiscovery: MockFeatureDiscovery!
     var manager: MockVariantManager!
     var emailManager: EmailManager!
     var matcher: DesktopUserAttributeMatcher!
@@ -41,6 +42,8 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
         mockStatisticsStore.appRetentionAtb = "v105-44"
         mockStatisticsStore.searchRetentionAtb = "v105-88"
         mockStatisticsStore.installDate = dateYesterday
+
+        mockFeatureDiscovery = MockFeatureDiscovery()
 
         manager = MockVariantManager(isSupportedReturns: true,
                                          currentVariant: MockVariant(name: "zo", weight: 44, isIncluded: { return true }, features: [.dummy]))
@@ -145,6 +148,32 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    // MARK: - PIRCurrentUser
+
+    func testWhenIsCurrentPIRUserMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenIsCurrentPIRUserDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenIsNotCurrentPIRUserMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenIsNotCurrentPIRUserDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - DeprecatedMacRemoteMessage
 
     func testWhenNoDismissedMessageIdsAreProvidedThenReturnFail() throws {
@@ -175,23 +204,26 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
 
     // MARK: -
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], dismissedDeprecatedMacRemoteMessageIds: [String] = []) {
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], dismissedDeprecatedMacRemoteMessageIds: [String] = [], isCurrentPIRUser: Bool = false) {
         matcher = DesktopUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
+            featureDiscovery: mockFeatureDiscovery,
             variantManager: manager,
             emailManager: emailManager,
             bookmarksCount: 44,
             favoritesCount: 88,
             appTheme: "default",
             daysSinceNetPEnabled: 3,
-            isPrivacyProEligibleUser: true,
-            isPrivacyProSubscriber: true,
-            privacyProDaysSinceSubscribed: 5,
-            privacyProDaysUntilExpiry: 25,
-            privacyProPurchasePlatform: "apple",
-            isPrivacyProSubscriptionActive: true,
-            isPrivacyProSubscriptionExpiring: false,
-            isPrivacyProSubscriptionExpired: false,
+            isSubscriptionEligibleUser: true,
+            isDuckDuckGoSubscriber: true,
+            subscriptionDaysSinceSubscribed: 5,
+            subscriptionDaysUntilExpiry: 25,
+            subscriptionPurchasePlatform: "apple",
+            subscriptionTier: "pro",
+            isSubscriptionActive: true,
+            isSubscriptionExpiring: false,
+            isSubscriptionExpired: false,
+            subscriptionFreeTrialActive: false,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: [],
             pinnedTabsCount: 3,
@@ -199,8 +231,13 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
             isDuckPlayerOnboarded: true,
             isDuckPlayerEnabled: false,
             isCurrentFreemiumPIRUser: false,
+            isCurrentPIRUser: isCurrentPIRUser,
             dismissedDeprecatedMacRemoteMessageIds: dismissedDeprecatedMacRemoteMessageIds,
-            enabledFeatureFlags: []
+            enabledFeatureFlags: [],
+            isReturningUser: nil,
+            isAIChatEnabled: false,
+            triedAIChatDuringOnboarding: false,
+            isAIChatBoostActive: nil
         )
     }
 }

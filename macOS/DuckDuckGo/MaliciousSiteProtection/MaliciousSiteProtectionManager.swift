@@ -16,16 +16,19 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
-import FeatureFlags
+import FoundationExtensions
+import FeatureFlags_macOS
 import Foundation
 import MaliciousSiteProtection
 import Networking
 import os.log
 import PixelKit
+import PrivacyConfig
 
 extension MaliciousSiteProtectionManager {
 
@@ -50,13 +53,13 @@ extension MaliciousSiteProtectionManager {
     struct EmbeddedDataProvider: MaliciousSiteProtection.EmbeddedDataProviding {
 
         private enum Constants {
-            static let embeddedDataRevision = 1742170
-            static let phishingEmbeddedHashPrefixDataSHA = "e1019f97b3c9437d151e212b815068c06e823122d7808cc047c10161ea54f168"
-            static let phishingEmbeddedFilterSetDataSHA = "c8883871f1554e2f8bd61993b7a46a06b6817f9a6414df1ddb19e603d614d087"
-            static let malwareEmbeddedHashPrefixDataSHA = "40835fe9027cef98b7da610bb18435a9aa6af3db2257612579cbdbfea73f8d64"
-            static let malwareEmbeddedFilterSetDataSHA = "4dfff52cb6bc9cde961f54665323226d5f9562ea7659a952f7fae983852c8dc0"
-            static let scamEmbeddedHashPrefixDataSHA = "0c52947ca37957533cdd24b2c267a521a5e9c4a665ca4612e1d8df1f5c1cdcb0"
-            static let scamEmbeddedFilterSetDataSHA = "37624140fa6c2cbc25d1ed212f5054d9a21f70bde01dbaf0cde59560ecfe6309"
+            static let embeddedDataRevision = 1886037
+            static let phishingEmbeddedHashPrefixDataSHA = "4e32ce9753216dbcf633592f19411127603839544767649ff055ca3cd7abc112"
+            static let phishingEmbeddedFilterSetDataSHA = "0e3bd508b4ee68beef1cabd3f25d00d6ace291f9fb1a94711ba6457ad04dbde0"
+            static let malwareEmbeddedHashPrefixDataSHA = "a65a79e77a0355fb0e0a9e779d87cfeb601b828b9368b539403391e001ed5133"
+            static let malwareEmbeddedFilterSetDataSHA = "8ce16982f998fe11317c4effa94698e38a58f983cf065a5c7fffd9aeb8c1b343"
+            static let scamEmbeddedHashPrefixDataSHA = "252b99e65a3ff166c1639fbc11ab6b506e3d3a9000b4617289de3a0504796480"
+            static let scamEmbeddedFilterSetDataSHA = "e6f9296cfcad10ce4eff42c4ee949fd39f20e385cd7b2cd6bfd4dbb978a6e6f6"
         }
 
         func revision(for dataType: MaliciousSiteProtection.DataManager.StoredDataType) -> Int {
@@ -147,11 +150,8 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
             let isScamProtectionEnabled = featureFlagger.isFeatureOn(.scamSiteProtection)
             return isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
         }
-        let shouldRemoveWWWInCanonicalization = {
-            featureFlagger.isFeatureOn(.removeWWWInCanonicalizationInThreatProtection)
-        }
         let apiEnvironment = apiEnvironment ?? MaliciousSiteDetector.APIEnvironment.production
-        self.detector = detector ?? MaliciousSiteDetector(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, supportedThreatsProvider: supportedThreatsProvider, shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization)
+        self.detector = detector ?? MaliciousSiteDetector(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, supportedThreatsProvider: supportedThreatsProvider)
         self.updateManager = MaliciousSiteProtection.UpdateManager(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, updateIntervalProvider: updateIntervalProvider ?? Self.updateInterval, supportedThreatsProvider: supportedThreatsProvider)
         self.detectionPreferences = detectionPreferences
 
@@ -160,8 +160,10 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
 
     private static let debugEvents = EventMapping<MaliciousSiteProtection.Event> { event, _, _, _ in
         switch event {
-        case .errorPageShown,
-             .visitSite,
+        case .errorPageShown:
+            PixelKit.fire(event, frequency: .dailyAndStandard)
+        case .visitSite,
+             .leaveSite,
              .iframeLoaded,
              .settingToggled,
              .matchesApiTimeout:

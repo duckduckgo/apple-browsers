@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - privacy
 
 ---
@@ -31,22 +32,23 @@ tags:
 - tapOn: "Submit"
 
 # Fireproof the site
-- tapOn: "Browsing Menu"
-- tapOn: "Fireproof This Site"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Fireproof This Site"
 - tapOn: "Fireproof"
 - assertVisible: "setcookie.net is now Fireproof"
 
 # Fire Button - twice, just to be sure
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
-- assertVisible: "Cancel"
-- tapOn: "Cancel"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
+# Dismiss the focused address bar ("Cancel" classic / "Back" under the unified toggle input).
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 - assertVisible:
     id: "searchEntry"
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Validate Cookie was retained
 - tapOn: 
@@ -56,13 +58,14 @@ tags:
 - assertVisible: "TestName = TestValue"
 
 # Remove fireproofing
-- tapOn: "Browsing Menu"
-- tapOn: "Remove Fireproofing"
+- runFlow:
+    file: ../shared/open_browsing_menu_item.yaml
+    env:
+      ITEM: "Remove Fireproofing"
 
 # Fire Button
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Validate Cookie was removed
 - tapOn: 

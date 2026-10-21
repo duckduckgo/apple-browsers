@@ -24,7 +24,6 @@ import os.log
 import PixelKit
 import SystemExtensions
 import VPNAppState
-import VPNExtensionManagement
 
 /// Controller for ``TransparentProxyProvider``
 ///
@@ -286,7 +285,7 @@ extension TransparentProxyController {
         case stopped
     }
 
-    public enum StartAttemptStep: PixelKitEventV2 {
+    public enum StartAttemptStep: PixelKit.Event {
         /// Abnormal attempt to start the proxy when it wasn't needed
         case prevented(_ error: Error)
 
@@ -319,15 +318,15 @@ extension TransparentProxyController {
             return nil
         }
 
-        public var error: Error? {
+        public var standardParameters: [PixelKitStandardParameter]? {
             switch self {
-            case .begin,
-                    .success:
-                return nil
-            case .prevented(let error),
-                    .failure(let error):
-                return error
+            case .prevented,
+                    .begin,
+                    .success,
+                    .failure:
+                return [.pixelSource]
             }
         }
+
     }
 }

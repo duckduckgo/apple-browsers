@@ -5,7 +5,12 @@ set -eo pipefail
 if ! [[ $common_sh ]]; then
 	cwd="$(dirname "${BASH_SOURCE[0]}")"
 	source "${cwd}/helpers/common.sh"
-	execute_from_tmp "${BASH_SOURCE[0]}" "$@"
+
+	# If not running in CI, execute the script from a temporary directory
+	# to allow for changing the code while building the app.
+	if [[ -z $CI ]]; then
+		execute_from_tmp "${BASH_SOURCE[0]}" "$@"
+	fi
 fi
 
 developer_apple_id_keychain_identifier="developer-apple-id"
@@ -15,7 +20,7 @@ print_usage_and_exit() {
 
 	cat <<- EOF
 	Usage:
-	  $ $(basename "$0") <review|release|dbp> [-a <asana_task_url>] [-d] [-s] [-r] [-v <version>]
+	  $ $(basename "$0") <review|sandbox-review|release|alpha> [-a <asana_task_url>] [-d] [-s] [-r] [-v <version>]
 
 	Options:
 	 -a <asana_task_url>  Update Asana task after building the app (implies -d)
@@ -47,11 +52,24 @@ read_command_line_arguments() {
 			scheme="macOS Browser Review"
 			configuration="Review"
 			;;
+		sandbox-review)
+			release_type="sandbox-review"
+			app_name="DuckDuckGo App Store Review"
+			scheme="macOS Browser Review App Store"
+			configuration="Review"
+			extra_xcargs="UI_TESTS_TARGET_APP=sandbox"
+			;;
 		release)
 			release_type="release"
 			app_name="DuckDuckGo"
 			scheme="macOS Browser"
 			configuration="Release"
+			;;
+		alpha)
+			release_type="alpha"
+			app_name="DuckDuckGo Alpha"
+			scheme="macOS Browser Alpha"
+			configuration="Alpha"
 			;;
 		clear-keychain)
 			clear_keychain
@@ -181,9 +199,9 @@ get_developer_credentials() {
 				cat <<- EOF
 				Enter your Apple ID application-specific password (create one at https://appleid.apple.com).
 				It will be stored in keychain and you won't be asked for it the next time.
-				Alternatively set the password in XCODE_DEVELOPER_PASSWORD environment variable 
+				Alternatively set the password in XCODE_DEVELOPER_PASSWORD environment variable
 				to skip storing in keychain.
-				
+
 				EOF
 				read -srp "Password for ${developer_apple_id}: " developer_password
 				echo
@@ -233,7 +251,7 @@ archive_and_export() {
 
 	local derived_data="${workdir}/DerivedData"
 	rm -rf "${derived_data}"
-	
+
 	${filter_output} xcrun xcodebuild archive \
 		-scheme "${scheme}" \
 		-configuration "${configuration}" \
@@ -243,8 +261,20 @@ archive_and_export() {
 		MARKETING_VERSION="${app_version}" \
 		CURRENT_PROJECT_VERSION="${build_number}" \
 		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
+		${extra_xcargs:+"${extra_xcargs}"} \
+		${EXCLUDED_ARCHS:+"EXCLUDED_ARCHS=${EXCLUDED_ARCHS}"} \
 		2>&1 \
+		| tee "${workdir}/archive.log" \
 		| ${log_formatter}
+
+	if [[ "${release_type}" == "sandbox-review" ]]; then
+		# App Store entitlements (non-systemextension networkextension values) can't
+		# be re-signed with Developer ID provisioning profiles, so sandbox-review
+		# keeps the archived App Store signatures and is used unsigned-for-DMG
+		# purposes (local UI tests only; Gatekeeper will require manual approval).
+		copy_app_from_archive
+		return
+	fi
 
 	echo "Exporting archive ..."
 
@@ -256,8 +286,22 @@ archive_and_export() {
 		-exportOptionsPlist "${export_options_plist}" \
 		-configuration "${configuration}" \
 		-skipPackagePluginValidation -skipMacroValidation \
+		${extra_xcargs:+"${extra_xcargs}"} \
 		2>&1 \
+		| tee "${workdir}/export.log" \
 		| ${log_formatter}
+}
+
+copy_app_from_archive() {
+	local archived_app
+	archived_app=$(find "${archive}/Products/Applications" -maxdepth 1 -name "*.app" -type d | head -1)
+	if [[ -z "${archived_app}" ]]; then
+		die "Could not find .app bundle in ${archive}/Products/Applications"
+	fi
+
+	echo "Copying ${archived_app} to ${app_path}"
+	ditto "${archived_app}" "${app_path}"
+	xattr -dr com.apple.quarantine "${app_path}" 2>/dev/null || true
 }
 
 notarize() {
@@ -292,35 +336,35 @@ compress_app_and_dsym() {
 
 	# Change to workdir to avoid full path in tar archive
 	pushd "${workdir}" > /dev/null
-	
+
 	# Temporarily rename app bundle to include version for consistency in archive
 	local versioned_app_name="DuckDuckGo-${version_identifier}.app"
 	local original_app_name="${app_name}.app"
-	
+
 	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
 		echo "Temporarily renaming app bundle for archive: ${versioned_app_name}"
 		mv -f "${original_app_name}" "${versioned_app_name}"
 	fi
-	
+
 	# Create tar archive of the versioned app bundle
 	echo "Creating tar archive..."
-	tar -cvf "DuckDuckGo-${version_identifier}.app.tar" "${versioned_app_name}"
-	
+	tar -cf "DuckDuckGo-${version_identifier}.app.tar" "${versioned_app_name}"
+
 	# Rename app bundle back to original name for compatibility with other workflows
 	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
 		echo "Renaming app bundle back to original name: ${original_app_name}"
 		mv -f "${versioned_app_name}" "${original_app_name}"
 	fi
-	
+
 	# Compress with xz using maximum compression
 	echo "Compressing with xz (maximum compression)..."
 	xz -9 "DuckDuckGo-${version_identifier}.app.tar"
-	
+
 	popd > /dev/null
-	
+
 	# Create dSYM archive
 	ditto -c -k --keepParent "${dsym_path}" "${output_dsym_zip_path}"
-	
+
 	if [[ -f "${output_app_tar_xz_path}" ]]; then
 		echo "✅ App tar.xz archive created successfully: ${output_app_tar_xz_path}"
 		ls -lh "${output_app_tar_xz_path}"
@@ -328,7 +372,7 @@ compress_app_and_dsym() {
 		echo "❌ ERROR: App tar.xz archive was not created"
 		exit 1
 	fi
-	
+
 	if [[ -f "${output_dsym_zip_path}" ]]; then
 		echo "✅ dSYM archive created successfully: ${output_dsym_zip_path}"
 		ls -lh "${output_dsym_zip_path}"
@@ -375,10 +419,10 @@ main() {
 	# is required when parsing command-line arguments.
 	source "${cwd}/helpers/keychain.sh"
 	read_command_line_arguments "$@"
-	
+
 	# Check required dependencies
 	check_dependencies
-	
+
 	# Load Asana-related functions. This calls `_asana_preflight` which
 	# will check for Asana access token if needed (if asana task was passed to the script).
 	source "${cwd}/helpers/asana.sh"
@@ -395,8 +439,10 @@ main() {
 
 	clear_working_directory
 	archive_and_export
-	notarize
-	staple_notarized_app
+	if [[ "${release_type}" != "sandbox-review" ]]; then
+		notarize
+		staple_notarized_app
+	fi
 	compress_app_and_dsym
 
 	if [[ ${create_dmg} ]]; then

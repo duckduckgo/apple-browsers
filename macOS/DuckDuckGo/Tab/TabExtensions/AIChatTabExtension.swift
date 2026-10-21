@@ -16,39 +16,130 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 import Foundation
 import Combine
+import FeatureFlags_macOS
+import os.log
+import Persistence
+import PixelKit
+import PrivacyConfig
+import UserScript
 import WebKit
 import AIChat
+import BrowserServicesKit
 
 protocol AIChatUserScriptProvider {
     var aiChatUserScript: AIChatUserScript? { get }
+    var duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript? { get }
 }
 extension UserScripts: AIChatUserScriptProvider {}
 
 final class AIChatTabExtension {
 
     private var cancellables = Set<AnyCancellable>()
+    private var userScriptCancellables = Set<AnyCancellable>()
     private let isLoadedInSidebar: Bool
+    private let isTabBurner: Bool
+    private let burnerMode: BurnerMode
     private weak var webView: WKWebView?
+    private let featureDiscovery: FeatureDiscovery
+    private let featureFlagger: FeatureFlagger
+    private let bootstrapRefresher: DuckAiNativeStorageBootstrapScriptRefresher?
+    private let fireModeStorageProvider: () -> DuckAiFireModeStorage
+    private let attachmentPrivacyDisclosureProvider: () -> AttachmentPrivacyDisclosure
+    private let preferencesStorage: AIChatPreferencesStorage
+    private let pixelFiring: PixelFiring?
 
-    private(set) weak var aiChatUserScript: AIChatUserScript?
+    /// Source of the tab's latest content, for telling how a navigation to Duck.ai started.
+    private var latestContentSource: TabContent.URLSource?
+    /// The URL of an address-bar suggestion the user just picked, so its navigation isn't counted as typed.
+    private var addressBarSuggestionURL: URL?
+    /// How a navigation started when it landed on another page first, such as a link wrapper like
+    /// google.com/url, so that page's client redirect to Duck.ai still counts.
+    private var originForClientRedirect: DuckAINavigationOrigin?
+    /// Set when a page opened this tab for a user's link click (⌘-click, `target=_blank`): WebKit's
+    /// first load in a new tab carries neither the click nor the page it came from.
+    private var linkOpener: LinkOpener?
+    private struct LinkOpener {
+        let sourceURL: URL?
+    }
+    /// Set when the browser re-creates this tab from an earlier one (restore, reopen, duplicate):
+    /// its first load looks the same as a lazy load, a suspension wake or a native open.
+    private var pendingRecreationSource: AIChatConversationSource?
+
+    private(set) weak var aiChatUserScript: AIChatUserScript? {
+        didSet {
+            subscribeToUserScript()
+        }
+    }
 
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
-         isLoadedInSidebar: Bool) {
+         contentPublisher: some Publisher<TabContent, Never>,
+         isLoadedInSidebar: Bool,
+         isTabBurner: Bool,
+         burnerMode: BurnerMode = .regular,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         burnerDuckAiStorageRegistry: BurnerDuckAiStorageRegistry? = NSApp.delegateTyped.burnerDuckAiStorageRegistry,
+         aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil,
+         preferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.isLoadedInSidebar = isLoadedInSidebar
+        self.preferencesStorage = preferencesStorage
+        self.pixelFiring = pixelFiring
+        self.isTabBurner = isTabBurner
+        self.burnerMode = burnerMode
+        self.featureDiscovery = featureDiscovery
+        self.featureFlagger = featureFlagger
+        let debugSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
+        self.fireModeStorageProvider = { [burnerMode, weak burnerDuckAiStorageRegistry] in
+            .resolve(isFireMode: burnerMode.isBurner,
+                     handler: burnerDuckAiStorageRegistry?.handler(for: burnerMode))
+        }
+        self.attachmentPrivacyDisclosureProvider = {
+            AttachmentPrivacyDisclosure(
+                store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+                webKeySource: duckAiNativeStorageHandler,
+                featureFlagger: featureFlagger
+            )
+        }
+        self.bootstrapRefresher = Self.makeBootstrapRefresher(
+            featureFlagger: featureFlagger,
+            handler: duckAiNativeStorageHandler,
+            fireModeStorageProvider: self.fireModeStorageProvider,
+            aiChatDebugURLSettings: debugSettings
+        )
+        pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
+        pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
+        pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
+        chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
             self?.aiChatUserScript?.webView = webView
         }.store(in: &cancellables)
 
+        contentPublisher.sink { [weak self] content in
+            self?.latestContentSource = Self.navigationSource(of: content)
+        }.store(in: &cancellables)
+
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
                 self?.aiChatUserScript = scripts.aiChatUserScript
                 self?.aiChatUserScript?.webView = self?.webView
+                if let isTabBurner = self?.isTabBurner {
+                    self?.aiChatUserScript?.handler.isFireWindowProvider = { isTabBurner }
+                }
+                self?.aiChatUserScript?.handler.isSidebarProvider = { isLoadedInSidebar }
+                if let disclosureProvider = self?.attachmentPrivacyDisclosureProvider {
+                    self?.aiChatUserScript?.handler.attachmentPrivacyDisclosureProvider = disclosureProvider
+                }
+                if let provider = self?.fireModeStorageProvider {
+                    scripts.duckAiNativeStorageUserScript?.fireModeStorageProvider = provider
+                }
 
                 // Pass the handoff payload in case it was provided before the user script was loaded
                 if let payload = self?.temporaryAIChatNativeHandoffData {
@@ -61,13 +152,78 @@ final class AIChatTabExtension {
                     self?.temporaryAIChatRestorationData = nil
                 }
 
+                self?.applyBufferedDirectNavigationFallback()
+
                 if let prompt = self?.temporaryAIChatNativePrompt {
                     self?.aiChatUserScript?.handler.submitAIChatNativePrompt(prompt)
                     self?.temporaryAIChatNativePrompt = nil
                 }
+
+                if let pageContext = self?.temporaryPageContext {
+                    /// See the comment in `self.submitAIChatPageContext` for the explanation of why we're calling user script twice.
+                    self?.aiChatUserScript?.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
+                    self?.aiChatUserScript?.handler.submitAIChatPageContext(pageContext)
+                    self?.temporaryPageContext = nil
+                }
+
+                if let selections = self?.temporarySelectionContexts, !selections.isEmpty {
+                    selections.forEach {
+                        self?.aiChatUserScript?.handler.messageHandling.appendSelectionContext($0)
+                        self?.aiChatUserScript?.handler.submitAIChatSelectionContext($0)
+                    }
+                    self?.temporarySelectionContexts = []
+                }
+
+                if self?.temporaryOpenSettingsRequest == true {
+                    self?.aiChatUserScript?.requestOpenSettingsAction()
+                    self?.temporaryOpenSettingsRequest = false
+                }
             }
         }.store(in: &cancellables)
     }
+
+    private func subscribeToUserScript() {
+        userScriptCancellables.removeAll()
+        guard let aiChatUserScript else {
+            return
+        }
+
+        aiChatUserScript.handler.pageContextRequestedPublisher
+            .sink { [weak self] _ in
+                self?.pageContextRequestedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
+
+        aiChatUserScript.handler.pageContextConsumedPublisher
+            .sink { [weak self] _ in
+                self?.pageContextConsumedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
+
+        aiChatUserScript.handler.pageContextRemovedPublisher
+            .sink { [weak self] _ in
+                self?.pageContextRemovedSubject.send()
+            }
+            .store(in: &userScriptCancellables)
+
+        aiChatUserScript.handler.chatRestorationDataPublisher
+            .sink { [weak self] data in
+                self?.chatRestorationDataSubject.send(data)
+            }
+            .store(in: &userScriptCancellables)
+    }
+
+    private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
+    let pageContextRequestedPublisher: AnyPublisher<Void, Never>
+
+    private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
+    let pageContextConsumedPublisher: AnyPublisher<Void, Never>
+
+    private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
+    let pageContextRemovedPublisher: AnyPublisher<Void, Never>
+
+    private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+    let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
 
     private var temporaryAIChatNativeHandoffData: AIChatPayload?
     func setAIChatNativeHandoffData(payload: AIChatPayload) {
@@ -81,7 +237,7 @@ final class AIChatTabExtension {
     }
 
     private var temporaryAIChatRestorationData: AIChatRestorationData?
-    func setAIChatRestorationData(data: AIChatRestorationData) {
+    func setAIChatRestorationData(_ data: AIChatRestorationData?) {
         guard let aiChatUserScript else {
             // User script not yet loaded, store the payload and set when ready
             temporaryAIChatRestorationData = data
@@ -101,16 +257,132 @@ final class AIChatTabExtension {
 
         aiChatUserScript.handler.submitAIChatNativePrompt(prompt)
     }
+
+    private var temporaryDirectNavigationFallback: AIChatConversationSource?
+    private func setDirectNavigationFallback(_ source: AIChatConversationSource) {
+        guard let aiChatUserScript else {
+            // User script not yet loaded, store the fallback and set when ready
+            temporaryDirectNavigationFallback = source
+            return
+        }
+        aiChatUserScript.handler.directNavigationFallback = source
+    }
+
+    private func applyBufferedDirectNavigationFallback() {
+        guard let fallback = temporaryDirectNavigationFallback else { return }
+        aiChatUserScript?.handler.directNavigationFallback = fallback
+        temporaryDirectNavigationFallback = nil
+    }
+
+    func noteAddressBarSuggestionNavigation(to url: URL) {
+        addressBarSuggestionURL = url
+    }
+
+    func noteOpenedForLink(from sourceURL: URL?) {
+        linkOpener = LinkOpener(sourceURL: sourceURL)
+    }
+
+    func noteRecreated(as source: AIChatConversationSource) {
+        pendingRecreationSource = source
+    }
+
+    /// Many surfaces open duck.ai as plain `.url` content, so both carry the navigation's source.
+    private static func navigationSource(of content: TabContent) -> TabContent.URLSource? {
+        switch content {
+        case .url(_, credential: _, source: let source), .aiChat(_, source: let source):
+            source
+        default:
+            nil
+        }
+    }
+
+    private var temporaryOpenSettingsRequest = false
+    func requestOpenSettings() {
+        guard let aiChatUserScript else {
+            // User script not yet loaded — apply when it becomes available
+            temporaryOpenSettingsRequest = true
+            return
+        }
+        aiChatUserScript.requestOpenSettingsAction()
+    }
+
+    private var temporaryPageContext: AIChatPageContextData?
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
+        // Page Context functionality is only for the sidebar.
+        guard isLoadedInSidebar else {
+            return
+        }
+
+        guard let aiChatUserScript else {
+            // User script not yet loaded, store the payload and set when ready
+            temporaryPageContext = pageContext
+            return
+        }
+
+        ///
+        /// We're both making the data available for `getAIChatPageContext` (by storing it in the page context handler)
+        /// and calling `submitAIChatPageContext`, because when sidebar is just presented, it's not ready to receive
+        /// `submitAIChatPageContext` and will call `getAIChatPageContext` at a later time (when fully initialized).
+        /// After that it will exclusively use `submitAIChatPageContext`.
+        ///
+        /// This can be optimized later to only call one function, depending on whether `getAIChatPageContext`
+        /// was received by this user script.
+        ///
+        aiChatUserScript.handler.messageHandling.setData(pageContext, forMessageType: .pageContext)
+        aiChatUserScript.handler.submitAIChatPageContext(pageContext)
+    }
+
+    private var temporarySelectionContexts: [AIChatSelectionContextData] = []
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
+        // Selection context, like page context, is only for the sidebar.
+        guard isLoadedInSidebar else {
+            return
+        }
+
+        guard let aiChatUserScript else {
+            // User script not yet loaded — buffer and flush in order once it is.
+            temporarySelectionContexts.append(selection)
+            return
+        }
+
+        // Store for the `getAIChatSelectionContext` pull (covers the FE-not-ready-for-push race),
+        // then push for the already-live case. Mirrors `submitAIChatPageContext`.
+        aiChatUserScript.handler.messageHandling.appendSelectionContext(selection)
+        aiChatUserScript.handler.submitAIChatSelectionContext(selection)
+    }
 }
 
 extension AIChatTabExtension: NavigationResponder {
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        refreshNativeStorageBootstrapIfNeeded(for: navigationAction)
+
+        // Only handle sidebar, user-initiated, cross-document navigations; otherwise let them proceed normally
         guard isLoadedInSidebar,
               !navigationAction.navigationType.isSameDocumentNavigation,
-              navigationAction.isUserInitiated,
-              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
+              navigationAction.isUserInitiated
         else {
+            return .next
+        }
+
+        // Downloads must stay in the sidebar webview: a redirect drops the download intent and blob: URLs are unresolvable elsewhere.
+        if navigationAction.shouldDownload {
+            return .next
+        }
+
+        // Allow-list: also let certain hosts navigate inside the sidebar (e.g., duck.ai)
+        if navigationAction.url.isStandaloneDuckAIURL {
+            return .next
+        }
+
+        // Allow internal iframe navigations (e.g. about:srcdoc created by duck.ai JS)
+        if featureFlagger.isFeatureOn(.aiChatSidebarAboutSchemeNavigationFix),
+           navigationAction.url.scheme == "about" {
+            return .next
+        }
+
+        // For all other hosts, open in a new tab and cancel sidebar navigation
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             return .next
         }
 
@@ -118,13 +390,202 @@ extension AIChatTabExtension: NavigationResponder {
         tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link))
         return .cancel
     }
+
+    func navigationDidFinish(_ navigation: Navigation) {
+        if navigation.url.isDuckAIURL {
+            featureDiscovery.setWasUsedBefore(.aiChat)
+        }
+    }
+
+    func willStart(_ navigation: Navigation) {
+        guard !isLoadedInSidebar,
+              navigation.navigationAction.isForMainFrame,
+              !navigation.navigationAction.navigationType.isSameDocumentNavigation else { return }
+
+        let suggestionURL = addressBarSuggestionURL
+        addressBarSuggestionURL = nil
+        let inheritedOrigin = originForClientRedirect
+        originForClientRedirect = nil
+        let linkOpener = self.linkOpener
+        self.linkOpener = nil
+
+        if case .redirect(.client) = navigation.navigationAction.navigationType {
+            navigation.duckAIOrigin = inheritedOrigin
+        } else if let linkOpener {
+            navigation.duckAIOrigin = Self.linkOrigin(from: linkOpener.sourceURL)
+        } else {
+            navigation.duckAIOrigin = origin(of: navigation.navigationAction, suggestionURL: suggestionURL)
+        }
+    }
+
+    func didCommit(_ navigation: Navigation) {
+        aiChatUserScript?.handler.resetConversationSourceForNewDocument()
+
+        // Only the first commit may use it, so a later chat in this tab isn't labelled as re-created.
+        let recreationSource = pendingRecreationSource
+        pendingRecreationSource = nil
+
+        guard navigation.isCurrent else { return }
+        guard let origin = navigation.duckAIOrigin else {
+            if let recreationSource, navigation.url.isDuckAIURL, !navigation.url.isDuckAIOpenedFromHomepage {
+                setDirectNavigationFallback(recreationSource)
+            }
+            return
+        }
+        guard navigation.url.isDuckAIURL else {
+            originForClientRedirect = origin
+            return
+        }
+        guard !navigation.url.isDuckAIOpenedFromHomepage else { return }
+
+        if case .direct(let via) = origin {
+            let isDuckAIEnabled = preferencesStorage.isAIFeaturesEnabled
+            pixelFiring?.fire(AIChatPixel.aiChatDuckAIDirectNavigation(via: via,
+                                                                       duckAIEnabled: isDuckAIEnabled,
+                                                                       toggleEnabled: isDuckAIEnabled && preferencesStorage.showSearchAndDuckAIToggle),
+                              frequency: .dailyAndCount)
+        }
+        setDirectNavigationFallback(origin.conversationSource)
+    }
+
+    /// Only navigations the user started toward a URL count; loads the browser starts itself (its own
+    /// Duck.ai buttons, restoration, reloads) don't. A client redirect only carries on the navigation
+    /// that led to its page.
+    private func origin(of action: NavigationAction, suggestionURL: URL?) -> DuckAINavigationOrigin? {
+        switch action.navigationType {
+        case .custom(.userEnteredUrl):
+            guard case .userEntered = latestContentSource else { return nil }
+            return .direct(action.url == suggestionURL ? .suggestion : .typed)
+        case .custom(.bookmark):
+            guard case .bookmark(isFavorite: true) = latestContentSource else { return .direct(.bookmark) }
+            return .direct(.favorite)
+        case .custom(.historyEntry):
+            return .direct(.history)
+        case .custom(.appOpenUrl):
+            return .direct(.external)
+        case .custom(.ui):
+            // Every native surface loads as `.custom(.ui)`; only content that names its origin counts.
+            guard case .attributedUI(let source) = latestContentSource else { return nil }
+            return Self.origin(attributedTo: source)
+        case .custom(.link), .linkActivated:
+            return Self.linkOrigin(from: action.sourceFrame.url)
+        case .other where action.isUserInitiated:
+            return Self.linkOrigin(from: action.sourceFrame.url)
+        default:
+            return nil
+        }
+    }
+
+    /// A source that stands for a direct navigation, such as the New Tab Page search box, is reported as one.
+    private static func origin(attributedTo source: AIChatConversationSource) -> DuckAINavigationOrigin {
+        guard let via = AIChatDirectNavigationVia.allCases.first(where: { $0.conversationSource == source }) else {
+            return .attributed(source)
+        }
+        return .direct(via)
+    }
+
+    /// Duck.ai and duckduckgo.com link to Duck.ai themselves, which isn't a direct navigation. Duck.ai
+    /// goes first because duckduckgo.com/?ia=chat is both.
+    private static func linkOrigin(from sourceURL: URL?) -> DuckAINavigationOrigin {
+        if sourceURL?.isDuckAIURL == true {
+            return .attributed(.duckAILink)
+        }
+        if sourceURL?.isDuckDuckGo == true {
+            return .attributed(.duckDuckGoLink)
+        }
+        return .direct(.link)
+    }
+}
+
+/// How a navigation to Duck.ai started, when that names the chat's source.
+private enum DuckAINavigationOrigin {
+    /// Straight to Duck.ai, reported by the direct-navigation pixel.
+    case direct(AIChatDirectNavigationVia)
+    /// From a surface or page that names the chat's source but has no pixel of its own.
+    case attributed(AIChatConversationSource)
+
+    var conversationSource: AIChatConversationSource {
+        switch self {
+        case .direct(let via): via.conversationSource
+        case .attributed(let source): source
+        }
+    }
+}
+
+private extension Navigation {
+    private static var duckAIOriginKey: UInt8 = 0
+
+    /// How the navigation started, classified when it starts and read when it commits.
+    var duckAIOrigin: DuckAINavigationOrigin? {
+        get {
+            objc_getAssociatedObject(self, UnsafeRawPointer(&Self.duckAIOriginKey)) as? DuckAINavigationOrigin
+        }
+        set {
+            objc_setAssociatedObject(self, UnsafeRawPointer(&Self.duckAIOriginKey), newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+}
+
+// MARK: - Native Storage Bootstrap Refresh
+
+extension AIChatTabExtension {
+
+    @MainActor
+    fileprivate func refreshNativeStorageBootstrapIfNeeded(for navigationAction: NavigationAction) {
+        guard let bootstrapRefresher else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: refresher unavailable (flag off or handler nil)")
+            return
+        }
+        guard !navigationAction.navigationType.isSameDocumentNavigation else { return }
+        guard bootstrapRefresher.isInScope(url: navigationAction.url) else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: \(navigationAction.url.host ?? "<nil>") out of scope")
+            return
+        }
+        guard let webView else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: webView not yet available")
+            return
+        }
+        guard let userContentController = webView.configuration.userContentController as? UserContentController else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: user content controller cast failed")
+            return
+        }
+        let staticScripts = userContentController.contentBlockingAssets?.wkUserScripts ?? []
+        bootstrapRefresher.refresh(on: userContentController, staticScripts: staticScripts)
+    }
+
+    fileprivate static func makeBootstrapRefresher(
+        featureFlagger: FeatureFlagger,
+        handler: DuckAiNativeStorageHandling?,
+        fireModeStorageProvider: @escaping () -> DuckAiFireModeStorage,
+        aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
+    ) -> DuckAiNativeStorageBootstrapScriptRefresher? {
+        guard featureFlagger.isFeatureOn(.aiChatNativeStorage), let handler else { return nil }
+        var originRules: [HostnameMatchingRule] = [.exactOrSubdomain(hostname: "duck.ai")]
+        if let customHostname = aiChatDebugURLSettings.customURLHostname {
+            originRules.append(.exact(hostname: customHostname))
+        }
+        let refresher = DuckAiNativeStorageBootstrapScriptRefresher(handler: handler, originRules: originRules)
+        refresher.fireModeStorageProvider = fireModeStorageProvider
+        return refresher
+    }
 }
 
 protocol AIChatProtocol: AnyObject, NavigationResponder {
     var aiChatUserScript: AIChatUserScript? { get }
     func setAIChatNativeHandoffData(payload: AIChatPayload)
-    func setAIChatRestorationData(data: AIChatRestorationData)
+    func setAIChatRestorationData(_ data: AIChatRestorationData?)
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
+    func requestOpenSettings()
+    func noteAddressBarSuggestionNavigation(to url: URL)
+    func noteOpenedForLink(from sourceURL: URL?)
+    func noteRecreated(as source: AIChatConversationSource)
+
+    var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
+    var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

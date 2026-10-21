@@ -18,7 +18,7 @@
 
 import Foundation
 import Combine
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo_Privacy_Browser
 @testable import DDGSync
 
@@ -33,6 +33,45 @@ class MockDDGSyncing: DDGSyncing {
 
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
 
+    }
+
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String {
+        ""
+    }
+
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> [RegisteredDevice] {
+        []
+    }
+
+    var mainTokenRescopeResult: String?
+    var mainTokenRescopeError: Error?
+    private(set) var mainTokenRescopeScopes: [String] = []
+    func mainTokenRescope(to scope: String) async throws -> String? {
+        mainTokenRescopeScopes.append(scope)
+        if let mainTokenRescopeError {
+            throw mainTokenRescopeError
+        }
+        return mainTokenRescopeResult
+    }
+
+    func deleteAIChats(until: Date) async throws {
+    }
+
+    func deleteAIChats(chatIds: [String]) async throws {
+    }
+
+    func patchAIChats(updates: [AIChatUpdate]) async throws {
+    }
+
+    private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
+    func setAIChatHistoryEnabled(_ enabled: Bool) {
+        setAIChatHistoryEnabledCalls.append(enabled)
+        isAIChatHistoryEnabled = enabled
+    }
+
+    var isAIChatHistoryEnabled: Bool = false
+
+    func setCustomOperations(_ operations: [any SyncCustomOperation]) {
     }
 
     var registeredDevices = [RegisteredDevice(id: "1", name: "Device 1", type: "desktop"), RegisteredDevice(id: "2", name: "Device 2", type: "mobile"), RegisteredDevice(id: "3", name: "Device 1", type: "desktop")]
@@ -52,6 +91,10 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     var account: SyncAccount?
+    var recoveryCodeOverride: String?
+    var recoveryCode: String? {
+        recoveryCodeOverride ?? account?.legacyRecoveryCodeV1
+    }
 
     var scheduler: Scheduling
 
@@ -74,7 +117,25 @@ class MockDDGSyncing: DDGSyncing {
     func initializeIfNeeded() {
     }
 
+    func enableSyncFromPreservedAccount() async throws {
+    }
+
+    var removePreservedSyncAccountCallCount = 0
+    var removePreservedSyncAccountError: Error?
+    func removePreservedSyncAccount() throws {
+        removePreservedSyncAccountCallCount += 1
+        if let removePreservedSyncAccountError {
+            throw removePreservedSyncAccountError
+        }
+    }
+
+    var createAccountCallback: ((String, String) -> Void)?
+    var createAccountError: Error?
     func createAccount(deviceName: String, deviceType: String) async throws {
+        if let createAccountError {
+            throw createAccountError
+        }
+        createAccountCallback?(deviceName, deviceType)
     }
 
     var stubLogin: [RegisteredDevice] = []
@@ -102,18 +163,68 @@ class MockDDGSyncing: DDGSyncing {
         spyDisconnectCalled()
     }
 
+    var disconnectDeviceCallback: ((String) -> Void)?
+    var disconnectDeviceError: Error?
     func disconnect(deviceId: String) async throws {
+        if let disconnectDeviceError {
+            throw disconnectDeviceError
+        }
+        disconnectDeviceCallback?(deviceId)
     }
 
+    var fetchDevicesCallback: (() -> Void)?
     func fetchDevices() async throws -> [RegisteredDevice] {
+        fetchDevicesCallback?()
         return registeredDevices
     }
 
+    var updateDeviceNameCallback: ((String) -> Void)?
+    var updateDeviceNameError: Error?
     func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
+        if let updateDeviceNameError {
+            throw updateDeviceNameError
+        }
+        updateDeviceNameCallback?(name)
         return []
     }
 
+    var deleteAccountCallback: (() -> Void)?
+    var deleteAccountError: Error?
     func deleteAccount() async throws {
+        if let deleteAccountError {
+            throw deleteAccountError
+        }
+        deleteAccountCallback?()
+    }
+
+    func encryptAndBase64Encode(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    func base64DecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        values
+    }
+
+    var encryptAndBase64URLEncodeResult: [String]?
+    var encryptAndBase64URLEncodeError: Error?
+    private(set) var encryptAndBase64URLEncodeInputs: [[String]] = []
+    func encryptAndBase64URLEncode(_ values: [String]) throws -> [String] {
+        encryptAndBase64URLEncodeInputs.append(values)
+        if let encryptAndBase64URLEncodeError {
+            throw encryptAndBase64URLEncodeError
+        }
+        return encryptAndBase64URLEncodeResult ?? values
+    }
+
+    var base64URLDecodeAndDecryptResult: [String]?
+    var base64URLDecodeAndDecryptError: Error?
+    private(set) var base64URLDecodeAndDecryptInputs: [[String]] = []
+    func base64URLDecodeAndDecrypt(_ values: [String]) throws -> [String] {
+        base64URLDecodeAndDecryptInputs.append(values)
+        if let base64URLDecodeAndDecryptError {
+            throw base64URLDecodeAndDecryptError
+        }
+        return base64URLDecodeAndDecryptResult ?? values
     }
 
     var serverEnvironment: ServerEnvironment = .production
@@ -124,9 +235,9 @@ class MockDDGSyncing: DDGSyncing {
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
 
-    var cancelCalled: Bool = false
+    var cancelCalled = { }
     func cancel() async {
-        cancelCalled = true
+        cancelCalled()
     }
 
     var spyStartExchangeModelShouldGenerateURLBasedCode: Bool?
@@ -160,14 +271,14 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
 
     var syncCodeEnteredCalled: (String, Bool, SyncCodeSource) -> Void = { _, _, _ in }
     var spySyncCodeEnteredCode: String?
-    var spySyncCodeEnteredCanScanURLBarcodes: Bool?
+    var spySyncCodeEnteredCanScanLegacyURLBarcodes: Bool?
     var spySyncCodeEnteredCodeSource: SyncCodeSource?
     var stubSyncCodeEntered: Bool = true
-    func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
+    func syncCodeEntered(code: String, canScanLegacyURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
         spySyncCodeEnteredCode = code
-        spySyncCodeEnteredCanScanURLBarcodes = canScanURLBarcodes
+        spySyncCodeEnteredCanScanLegacyURLBarcodes = canScanLegacyURLBarcodes
         spySyncCodeEnteredCodeSource = codeSource
-        syncCodeEnteredCalled(code, canScanURLBarcodes, codeSource)
+        syncCodeEnteredCalled(code, canScanLegacyURLBarcodes, codeSource)
         return stubSyncCodeEntered
     }
 

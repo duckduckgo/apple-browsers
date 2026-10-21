@@ -1,13 +1,14 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - sync
 name: 01_create_account
 
 ---
 
-# Set up 
-- runFlow: 
-    file: ../shared/setup.yaml
+# Set up
+- runFlow:
+    file: ../shared/sync_setup.yaml
 
 # Set Internal User
 - tapOn: Browsing menu

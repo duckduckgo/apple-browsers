@@ -18,25 +18,13 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import UniformTypeIdentifiers
 
 extension String {
 
     // MARK: - General
-
-    func truncated(length: Int, trailing: String = "…") -> String {
-      return (self.count > length) ? self.prefix(length) + trailing : self
-    }
-
-    func truncated(length: Int, middle: String) -> String {
-        guard self.count > length else { return self }
-
-        let halfLength = length / 2
-        let start = self.prefix(halfLength).trimmingCharacters(in: .whitespaces)
-        let end = self.suffix(halfLength).trimmingCharacters(in: .whitespaces)
-        return "\(start)\(middle)\(end)"
-    }
 
     func escapedJavaScriptString() -> String {
         self.replacingOccurrences(of: "\\", with: "\\\\")
@@ -97,9 +85,7 @@ extension String {
     static let localhost = "localhost"
 
     func dropSubdomain() -> String? {
-        let parts = components(separatedBy: ".")
-        guard parts.count > 1 else { return nil }
-        return parts.dropFirst().joined(separator: ".")
+        TLD().domain(self)
     }
 
     static func uniqueFilename(for fileType: UTType? = nil) -> String {

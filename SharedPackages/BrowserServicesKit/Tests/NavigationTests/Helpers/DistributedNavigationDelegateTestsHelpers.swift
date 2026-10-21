@@ -16,8 +16,6 @@
 //  limitations under the License.
 //
 
-#if os(macOS)
-
 import Combine
 import Common
 import os.log
@@ -25,24 +23,32 @@ import Swifter
 import WebKit
 import XCTest
 
-@testable import Navigation
+@testable import DDGNavigation
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class DistributedNavigationDelegateTestsBase: XCTestCase {
+
+    let standardTimeout: TimeInterval = 15
+
+    // Counts how many tests have accumulated web content processes without a
+    // bulk termination.  We never kill the current test's process directly
+    // (avoids async IPC crash in resetStateAfterProcessTermination); instead
+    // we call _terminateAllWebContentProcesses on the pool once every ~10 tests.
+    private static var accumulatedWebViewCount = 0
 
     var navigationDelegateProxy: NavigationDelegateProxy!
 
     var navigationDelegate: DistributedNavigationDelegate { navigationDelegateProxy.delegate }
-    var testSchemeHandler: TestNavigationSchemeHandler! = TestNavigationSchemeHandler()
     var server: SafeHttpServer!
 
     var currentHistoryItemIdentityCancellable: AnyCancellable!
     var history = [UInt64: HistoryItemIdentity]()
 
     var _webView: WKWebView!
-    func withWebView<T>(do block: (WKWebView) throws -> T) rethrows -> T {
+    @discardableResult
+    func withWebView<T>(testURLSchemeHandler: TestNavigationSchemeHandler? = nil, do block: (WKWebView) throws -> T) rethrows -> T {
         let webView = _webView ?? {
-            let webView = makeWebView()
+            let webView = makeWebView(testURLSchemeHandler: testURLSchemeHandler)
             _webView = webView
             return webView
         }()
@@ -50,8 +56,6 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             try block(webView)
         }
     }
-    var usedWebViews = [WKWebView]()
-    var usedDelegates = [NavigationDelegateProxy]()
 
     static let data = DataSource()
     var data: DataSource { Self.data }
@@ -63,7 +67,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
         server?.stop()
         server = SafeHttpServer()
-        navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        navigationDelegateProxy = DistributedNavigationDelegateTestsBase.makeNavigationDelegateProxy()
         self.navigationDelegate.responders.forEach { responder in
             (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
                 XCTFail("[\(testName)] unexpected event received: \($0)")
@@ -72,7 +76,6 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
     }
 
     override func tearDown() {
-        self.testSchemeHandler = nil
         server.stop()
         server = nil
         self.navigationDelegate.responders.forEach { responder in
@@ -81,34 +84,52 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
             })
         }
         if let _webView {
-            usedWebViews.append(_webView)
-            self._webView = nil
-        }
-        self.usedDelegates.append(navigationDelegateProxy)
-        navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
-        currentHistoryItemIdentityCancellable = nil
+            if let navigationDelegateProxy {
+                let navigationDelegateProxyKey = UnsafeRawPointer(bitPattern: "navigationDelegateProxyKey".hashValue)!
+                objc_setAssociatedObject(_webView, navigationDelegateProxyKey, navigationDelegateProxy, .OBJC_ASSOCIATION_RETAIN)
+            }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            self?.usedWebViews = []
-            self?.usedDelegates = []
-            self?.navigationDelegateProxy = nil
-            self?.history.removeAll()
+            // Save the pool before releasing the webView so we can call
+            // _terminateAllWebContentProcesses on it after the webView is gone.
+            let processPool = _webView.configuration.processPool
+            // Nil the webView first: WebPageProxy.close() fires, removeWebPage()
+            // empties m_pageMap for this process.  Any subsequent IPC-close
+            // callback from _terminateAllWebContentProcesses finds no pages and
+            // returns early, never reaching resetStateAfterProcessTermination.
+            self._webView = nil
+
+            if Self.accumulatedWebViewCount > 10 {
+                Self.accumulatedWebViewCount = 0
+                processPool.perform(Selector(("_terminateAllWebContentProcesses")))
+            }
         }
+        navigationDelegateProxy = nil
+        currentHistoryItemIdentityCancellable = nil
+        history.removeAll()
+    }
+
+    func waitForExpectations() {
+        super.waitForExpectations(timeout: standardTimeout)
     }
 
 }
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 extension DistributedNavigationDelegateTestsBase {
 
     static func makeNavigationDelegateProxy() -> NavigationDelegateProxy {
         NavigationDelegateProxy(delegate: DistributedNavigationDelegate())
     }
 
-    func makeWebView() -> WKWebView {
+    func makeWebView(testURLSchemeHandler: TestNavigationSchemeHandler? = nil) -> WKWebView {
+        Self.accumulatedWebViewCount += 1
+
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
-        configuration.setURLSchemeHandler(testSchemeHandler, forURLScheme: TestNavigationSchemeHandler.scheme)
+        if let testURLSchemeHandler {
+            configuration.setURLSchemeHandler(testURLSchemeHandler, forURLScheme: TestNavigationSchemeHandler.scheme)
+        }
+        configuration.preferences.setValue(false, forKey: "safeBrowsingEnabled")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = navigationDelegateProxy
@@ -136,6 +157,8 @@ extension DistributedNavigationDelegateTestsBase {
         let local2 = URL(string: "http://localhost:8084/2")!
         let local3 = URL(string: "http://localhost:8084/3")!
         let local4 = URL(string: "http://localhost:8084/4")!
+        let local5 = URL(string: "http://localhost:8084/5")!
+        let local6 = URL(string: "http://localhost:8084/6")!
 
         let localHashed = URL(string: "http://localhost:8084#")!
         let localHashed1 = URL(string: "http://localhost:8084#navlink")!
@@ -441,16 +464,15 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func navAct(_ idx: UInt64, file: StaticString = #file, line: UInt = #line) -> NavAction {
-        return responder(at: 0).navigationActionsCache.dict[idx] ?? {
-            fatalError("No navigation action at index #\(idx): \(file):\(line)")
-        }()
+        return responder(at: 0).navigationActionsCache.dict[idx] ??
+            .init(.init(url: URL(string: "no-navigation-action-at-\(idx)")!), .other, src: .mainFrame(for: WKWebView()), targ: nil)
     }
     func resp(_ idx: Int) -> NavResponse {
         return responder(at: 0).navigationResponses[idx]
     }
 
     func response(matching url: URL) -> Int {
-        responder(at: 0).navigationResponses.firstIndex(where: { $0.url.matches(url) })!
+        responder(at: 0).navigationResponses.firstIndex(where: { $0.url.equals(url, by: .fuzzyIdentity) })!
     }
 
     // MARK: FrameInfo mocking
@@ -532,5 +554,3 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
 }
-
-#endif

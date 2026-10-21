@@ -1,0 +1,134 @@
+//
+//  OmniBar.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import PrivacyDashboard
+
+protocol OmniBar: AnyObject {
+    var barView: any OmniBarView { get }
+
+    var isBackButtonEnabled: Bool { get set }
+    var isForwardButtonEnabled: Bool { get set }
+
+    var omniDelegate: OmniBarDelegate? { get set }
+
+    var isExpandedPhone: Bool { get set }
+
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int)
+
+    var isTextFieldEditing: Bool { get }
+    var text: String? { get set }
+
+    // Updates text and calls a query update function
+    func updateQuery(_ query: String?)
+    func refreshText(forUrl url: URL?, forceFullURL: Bool)
+    func refreshFireMode(fireMode: Bool)
+
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?)
+    func endEditing()
+
+    func showSeparator()
+    func hideSeparator()
+    func moveSeparatorToTop()
+    func moveSeparatorToBottom()
+
+    func useSmallTopSpacing()
+    func useRegularTopSpacing()
+
+    func enterPhoneState()
+    func enterPadState()
+
+    func startBrowsing()
+    /// Use after a loading-state refresh has already rendered the current interface.
+    func startBrowsingIfNeeded()
+    func stopBrowsing()
+    func startLoading()
+    func stopLoading()
+    func cancel()
+
+    func removeTextSelection()
+    func selectTextToEnd(_ offset: Int)
+
+    func showOrScheduleCookiesManagedNotification(isCosmetic: Bool)
+    func showYouTubeAdBlockNotification()
+
+    func showOrScheduleOnboardingPrivacyIconAnimation()
+    func dismissOnboardingPrivacyIconAnimation()
+
+    func startTrackersAnimation(_ privacyInfo: PrivacyInfo, forDaxDialog: Bool)
+    func updatePrivacyIcon(for privacyInfo: PrivacyInfo?)
+    func hidePrivacyIcon()
+    func resetPrivacyIcon(for url: URL?)
+
+    func refreshCustomizableButton()
+
+    /// Sets the dynamic Dax Easter Egg logo URL for display in the omnibar privacy icon.
+    /// When a URL is provided, the privacy icon will load and display the dynamic logo image.
+    /// When nil is provided, the privacy icon resets to the default static Dax logo.
+    ///
+    /// - Parameter logoURL: Absolute URL string of the dynamic logo to display, or nil to reset to default
+    func setDaxEasterEggLogoURL(_ logoURL: String?)
+
+    func cancelAllAnimations()
+    func completeAnimationForDaxDialog()
+
+    /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
+    func enterAIChatMode()
+
+    /// Sets the selected text entry mode for the toggle (search or aiChat).
+    func setSelectedTextEntryMode(_ mode: TextEntryMode)
+
+    /// Switches to search and ends editing, without handing the keyboard to the search field.
+    func endEditingInSearchMode()
+
+    /// The values currently selected across the iPad address-bar Duck.ai controls
+    var iPadDuckAIControlValues: IPadDuckAIControlValues { get }
+
+    func bindIPadDraft(to tab: Tab?)
+
+    func prepareForMoveTransition()
+    func moveTransitionCompleted()
+
+}
+
+extension OmniBar {
+    func startBrowsingIfNeeded() {
+        startBrowsing()
+    }
+
+    var isInputFirstResponder: Bool {
+        barView.textField.isFirstResponder || (barView as? ExpandableOmniBarView)?.aiChatTextView.isFirstResponder == true
+    }
+
+    /// Begins editing without overriding the selected mode.
+    func beginEditing(animated: Bool) {
+        beginEditing(animated: animated, forTextEntryMode: nil)
+    }
+
+    func adjust(for position: AddressBarPosition) {
+        switch position {
+        case .bottom:
+            moveSeparatorToTop()
+            useSmallTopSpacing()
+        case .top:
+            moveSeparatorToBottom()
+            useRegularTopSpacing()
+        }
+    }
+}

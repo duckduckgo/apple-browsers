@@ -18,7 +18,9 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
+import PrivacyConfig
 
 public protocol AdClickAttributionDetectionDelegate: AnyObject {
 
@@ -60,6 +62,8 @@ public class AdClickAttributionDetection {
     public func onStartNavigation(url: URL?) {
         guard attributionFeature.isEnabled,
               let url = url, attributionFeature.isMatchingAttributionFormat(url) else { return }
+
+        NotificationCenter.default.post(name: .userDidSelectDDGAD, object: nil)
 
         Logger.contentBlocking.debug("Starting Attribution detection for \(url.host ?? "nil")")
 

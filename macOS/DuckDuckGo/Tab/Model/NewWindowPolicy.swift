@@ -19,7 +19,7 @@
 import Foundation
 import WebKit
 
-enum NewWindowPolicy {
+enum NewWindowPolicy: Equatable {
     case tab(selected: Bool, burner: Bool, contextMenuInitiated: Bool = false)
     case popup(origin: NSPoint?, size: NSSize?)
     case window(active: Bool, burner: Bool)
@@ -63,6 +63,10 @@ enum NewWindowPolicy {
         if case .tab(selected: true, burner: _, contextMenuInitiated: _) = self { return true }
         return false
     }
+    var isPopup: Bool {
+        if case .popup = self { return true }
+        return false
+    }
 
     /**
      * Forces selecting a tab if `true` is passed as argument.
@@ -75,7 +79,27 @@ enum NewWindowPolicy {
     }
 
 }
-
+extension NewWindowPolicy: CustomStringConvertible {
+    var description: String {
+        switch self {
+        case .tab(selected: let selected, burner: let burner, contextMenuInitiated: let contextMenuInitiated):
+            return "tab" + (selected || burner || contextMenuInitiated ? """
+            (\([selected ? "selected" : "", burner ? "burner" : "", contextMenuInitiated ? "contextMenuInitiated" : ""]
+            .filter { !$0.isEmpty }.joined(separator: ", "))
+            """ : "")
+        case .popup(origin: let origin, size: let size):
+            return "popup" + (origin != nil || size != nil ? """
+            (\([origin != nil ? "origin: \(origin!)" : "", size != nil ? "size: \(size!)" : ""]
+            .filter { !$0.isEmpty }.joined(separator: ", "))
+            """ : "")
+        case .window(active: let active, burner: let burner):
+            return "window" + (active || burner ? """
+            (\([active ? "active" : "", burner ? "burner" : ""]
+            .filter { !$0.isEmpty }.joined(separator: ", "))
+            """ : "")
+        }
+    }
+}
 extension WKWindowFeatures {
 
     var origin: NSPoint? {

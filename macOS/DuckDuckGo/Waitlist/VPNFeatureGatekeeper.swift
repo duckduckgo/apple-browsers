@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import Foundation
 import BrowserServicesKit
 import Combine
 import Common
-import NetworkExtension
+import FoundationExtensions
 import VPN
 import NetworkProtectionUI
 import LoginItems
@@ -27,7 +28,7 @@ import PixelKit
 import Subscription
 
 protocol VPNFeatureGatekeeper {
-    var isInstalled: Bool { get }
+    var isInstalled: Bool { get async }
 
     func canStartVPN() async throws -> Bool
     func isVPNVisible() -> Bool
@@ -39,18 +40,20 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     private static var subscriptionAuthTokenPrefix: String { "ddg:" }
     private let vpnUninstaller: VPNUninstalling
     private let defaults: UserDefaults
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
 
-    init(vpnUninstaller: VPNUninstalling = VPNUninstaller(),
+    init(vpnUninstaller: VPNUninstalling,
          defaults: UserDefaults = .netP,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionManager) {
         self.vpnUninstaller = vpnUninstaller
         self.defaults = defaults
         self.subscriptionManager = subscriptionManager
     }
 
     var isInstalled: Bool {
-        LoginItem.vpnMenu.status.isInstalled
+        get async {
+            await LoginItem.vpnMenu.status().isInstalled
+        }
     }
 
     /// Whether the user can start the VPN.

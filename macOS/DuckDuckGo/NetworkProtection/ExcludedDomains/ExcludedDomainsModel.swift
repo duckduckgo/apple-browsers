@@ -63,6 +63,8 @@ extension DefaultExcludedDomainsViewModel: ExcludedDomainsViewModel {
     @MainActor
     func askUserToReportIssues(withDomain domain: String, in window: NSWindow? = nil) async {
         let parentWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
-        await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow)
+        await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow) { view, window in
+            await presentAsAppModal(view, in: window)
+        }
     }
 }

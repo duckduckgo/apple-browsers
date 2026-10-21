@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKitIcons
 
 enum BookmarksEmptyStateContent {
     case noBookmarks
@@ -50,12 +51,24 @@ enum BookmarksEmptyStateContent {
 
     var image: NSImage? {
         switch self {
-        case .noBookmarks: .bookmarksEmpty
-        case .noSearchResults: .bookmarkEmptySearch
+        case .noBookmarks: NSImage(resource: .bookmarksImport128)
+        case .noSearchResults: NSImage(resource: .bookmarkEmptySearch)
         }
     }
 
+    /// Whether the promo queue controls this state's message and CTAs.
+    var isPromo: Bool {
+        self == .noBookmarks
+    }
+
     var shouldHideImportButton: Bool {
+        switch self {
+        case .noBookmarks: false
+        case .noSearchResults: true
+        }
+    }
+
+    var shouldHideSyncButton: Bool {
         switch self {
         case .noBookmarks: false
         case .noSearchResults: true

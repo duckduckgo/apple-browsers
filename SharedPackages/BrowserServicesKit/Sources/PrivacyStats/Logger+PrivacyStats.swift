@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var privacyStats = { Logger(subsystem: "Privacy Stats", category: "") }()
+    static let privacyStats = Logger(subsystem: "Privacy Stats", category: "")
 }

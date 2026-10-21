@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import Common
+import FoundationExtensions
 import Freemium
 import DataBrokerProtectionCore
 
@@ -62,16 +63,22 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
 
         do {
             let hasProfile = try dataManager.fetchProfile() != nil
-            let isAuthenticated = authenticationManager.isUserAuthenticated
+            let isAuthenticated = await authenticationManager.isUserAuthenticated
             let didActivateFreemium = freemiumDBPUserStateManager.didActivate
 
-            if !hasProfile || (!isAuthenticated && !didActivateFreemium) {
-                Logger.dataBrokerProtection.log("Prerequisites are invalid")
+            if !hasProfile {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid: no profile saved")
                 stopAgent()
                 return
             }
 
-            if satisfiesFreemiumPrerequisites() {
+            if !isAuthenticated && !didActivateFreemium {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid: Not authenticated and did not activate freemium")
+                stopAgent()
+                return
+            }
+
+            if await satisfiesFreemiumPrerequisites() {
                 Logger.dataBrokerProtection.log("User is Freemium")
                 return
             }
@@ -88,14 +95,15 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
     public func monitorEntitlementAndStopAgentIfEntitlementIsInvalidAndUserIsNotFreemium(interval: TimeInterval) {
         entitlementMonitor.start(checkEntitlementFunction: authenticationManager.hasValidEntitlement,
                                  interval: interval) { result in
-
-            if satisfiesFreemiumPrerequisites() { return }
-            stopAgentBasedOnEntitlementCheckResult(result)
+            Task {
+                if await satisfiesFreemiumPrerequisites() { return }
+                stopAgentBasedOnEntitlementCheckResult(result)
+            }
         }
     }
 
-    private func satisfiesFreemiumPrerequisites() -> Bool {
-        let isAuthenticated = authenticationManager.isUserAuthenticated
+    private func satisfiesFreemiumPrerequisites() async -> Bool {
+        let isAuthenticated = await authenticationManager.isUserAuthenticated
         let didActivateFreemium = freemiumDBPUserStateManager.didActivate
         return !isAuthenticated && didActivateFreemium
     }

@@ -20,7 +20,7 @@ import Foundation
 
 // MARK: - URLs, ex URL+Subscription
 
-public enum SubscriptionURL {
+public enum SubscriptionURL: Equatable {
 
     case baseURL
     case purchase
@@ -29,12 +29,20 @@ public enum SubscriptionURL {
     case privacyPolicy
     case helpPagesAddingEmail
     case activationFlow
+    case activationFlowThisDeviceEmailStep
+    case activationFlowThisDeviceActivateEmailStep
+    case activationFlowThisDeviceActivateEmailOTPStep
     case activationFlowAddEmailStep
     case activationFlowLinkViaEmailStep
     case activationFlowSuccess
     case manageEmail
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
+    case plans
+    case upgradeToTier(String)
+    case addEmail
+    case addEmailSuccess
+    case partnershipsHub
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -61,6 +69,12 @@ public enum SubscriptionURL {
                 StaticURLs.helpPagesAddingEmailURL
             case .activationFlow:
                 baseURL.appendingPathComponent("activation-flow")
+            case .activationFlowThisDeviceEmailStep:
+                baseURL.appendingPathComponent("activation-flow/this-device/email")
+            case .activationFlowThisDeviceActivateEmailStep:
+                baseURL.appendingPathComponent("activation-flow/this-device/activate-by-email")
+            case .activationFlowThisDeviceActivateEmailOTPStep:
+                baseURL.appendingPathComponent("activation-flow/this-device/activate-by-email/otp")
             case .activationFlowAddEmailStep:
                 baseURL.appendingPathComponent("activation-flow/another-device/add-email")
             case .activationFlowLinkViaEmailStep:
@@ -73,6 +87,18 @@ public enum SubscriptionURL {
                 StaticURLs.manageSubscriptionsInMacAppStoreURL
             case .identityTheftRestoration:
                 baseURL.replacing(path: "identity-theft-restoration")
+            case .plans:
+                baseURL.appendingPathComponent("plans")
+            case .upgradeToTier(let tier):
+                baseURL.appendingPathComponent("plans").appendingParameter(name: "tier", value: tier)
+            case .addEmail:
+                baseURL.appendingPathComponent("add-email")
+            case .addEmailSuccess:
+                baseURL.appendingPathComponent("add-email/success")
+            case .partnershipsHub:
+                // A top-level page, not a subscription page, so it replaces the base URL's path
+                // rather than extending it - the same shape as `.identityTheftRestoration`.
+                baseURL.replacing(path: "partner-benefits")
             }
         }()
 
@@ -91,6 +117,7 @@ public enum SubscriptionURL {
             true
         }
     }
+
 }
 
 extension SubscriptionURL {
@@ -115,6 +142,86 @@ extension SubscriptionURL {
             .appendingParameter(name: AttributionParameter.origin, value: origin)
         return URLComponents(url: url, resolvingAgainstBaseURL: false)
     }
+
+    /**
+     * Creates URL components for a subscription purchase URL with the specified origin and featurePage parameters.
+     *
+     * - Parameters:
+     *   - origin: A string identifying where the subscription request originated from (optional)
+     *   - featurePage: The feature page to highlight (optional)
+     *   - environment: The subscription environment to use (defaults to production)
+     *
+     * - Returns: URLComponents containing the subscription URL with the origin and featurePage parameters, or nil if the URL could not be parsed
+     */
+    public static func purchaseURLComponentsWithOriginAndFeaturePage(
+        origin: String?,
+        featurePage: String?,
+        environment: SubscriptionEnvironment.ServiceEnvironment = .production
+    ) -> URLComponents? {
+        var url = SubscriptionURL.purchase.subscriptionURL(environment: environment)
+        if let origin = origin {
+            url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
+        }
+        if let featurePage = featurePage {
+            url = url.appendingParameter(name: QueryParameter.featurePage, value: featurePage)
+        }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)
+    }
+
+    /**
+     * Creates URL components for the plans page with origin parameter
+     *
+     * - Parameters:
+     *   - origin: Attribution origin for analytics
+     *   - tier: If provided, includes tier=<value> parameter for direct upgrade flow to the specified tier.
+     *           The tier value should come from the backend's available upgrade tiers (e.g., "pro", "plus").
+     *   - environment: The subscription environment (production/staging)
+     *
+     * - Returns: URLComponents containing the plans URL with origin parameter
+     */
+    public static func plansURLComponents(_ origin: String, tier: String? = nil, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
+        var url = SubscriptionURL.plans
+            .subscriptionURL(environment: environment)
+            .appendingParameter(name: AttributionParameter.origin, value: origin)
+        if let tier {
+            url = url.appendingParameter(name: "tier", value: tier)
+        }
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)
+    }
+}
+
+public enum SubscriptionPurchaseFlowPath: String, CaseIterable {
+    case purchase = "/subscriptions"
+    case plans = "/subscriptions/plans"
+    case pro = "/pro"
+    case proPlans = "/pro/plans"
+
+    public static func contains(_ path: String) -> Bool {
+        allCases.contains { $0.rawValue == path }
+    }
+
+    public static func isPlansPath(_ path: String) -> Bool {
+        path == plans.rawValue || path == proPlans.rawValue
+    }
+}
+
+extension SubscriptionURL {
+    public enum FeaturePage {
+        public static let winback = "winback"
+    }
+
+    /// Query item names the subscription pages read off the URL they are opened with.
+    enum QueryParameter {
+        static let featurePage = "featurePage"
+        /// Whether the user is eligible for a free trial. Always stated on a pre-rendered paywall.
+        static let trial = "trial"
+        /// Only ever `false`, and only when the offering excludes Personal Information Removal.
+        static let personalInformationRemoval = "pir"
+
+        /// The names a pre-rendered paywall URL states for itself, and so drops from the URL it is
+        /// built from. Every other query item is carried over.
+        static let rewritten = [featurePage, trial, personalInformationRemoval]
+    }
 }
 
 fileprivate extension URL {
@@ -138,7 +245,17 @@ extension URL {
         }
 
         if let queryItems = components.queryItems, !queryItems.isEmpty {
-            components.queryItems = queryItems.filter { !["environment", "origin", "using"].contains($0.name) }
+            // `experiment_mobileannualtrials2_ios` is the monthly free-trial experiment cohort param;
+            // like `origin` it's appended to loaded URLs and must be ignored when matching screens.
+            // `trial` and `pir` pick what a pre-rendered paywall reveals, not which page it is.
+            let ignoredNames = ["environment",
+                                "origin",
+                                "using",
+                                "experiment_mobileannualtrials2_ios",
+                                "experiment_perfpaywall",
+                                SubscriptionURL.QueryParameter.trial,
+                                SubscriptionURL.QueryParameter.personalInformationRemoval]
+            components.queryItems = queryItems.filter { !ignoredNames.contains($0.name) }
             if components.queryItems?.isEmpty ?? true {
                 components.queryItems = nil
             }

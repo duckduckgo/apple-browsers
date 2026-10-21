@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import TrackerRadarKit
 import WebKit
 import XCTest
-import BrowserServicesKit
-import TrackerRadarKit
 
 struct AutofillTestHelper {
 

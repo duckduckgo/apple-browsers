@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -45,6 +46,9 @@ extension Preferences {
         let isEnabled: Bool
         let action: () -> Void
         let settingsIconProvider: SettingsIconsProviding
+        let isNew: Bool
+        var themeManager: ThemeManager
+        let shouldShowWinBackCampaignBadge: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
         init(pane: PreferencePaneIdentifier,
@@ -52,6 +56,9 @@ extension Preferences {
              isEnabled: Bool = true,
              status: PrivacyProtectionStatus?,
              settingsIconProvider: SettingsIconsProviding,
+             isNew: Bool = false,
+             themeManager: ThemeManager,
+             shouldShowWinBackCampaignBadge: Bool = false,
              action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
@@ -59,11 +66,14 @@ extension Preferences {
             self.action = action
             self.protectionStatus = status ?? PrivacyProtectionStatus()
             self.settingsIconProvider = settingsIconProvider
+            self.isNew = isNew
+            self.themeManager = themeManager
+            self.shouldShowWinBackCampaignBadge = shouldShowWinBackCampaignBadge
         }
 
         var body: some View {
             Button(action: action) {
-                HStack(spacing: 6) {
+                HStack(alignment: .center, spacing: 6) {
                     Image(nsImage: pane.preferenceIconName(for: settingsIconProvider))
                         .frame(width: 16, height: 16)
                         .if(!isEnabled) {
@@ -74,6 +84,14 @@ extension Preferences {
                         .if(!isEnabled) {
                             $0.opacity(0.5)
                         }
+
+                    if isNew {
+                        NewBadgeView()
+                    }
+
+                    if shouldShowWinBackCampaignBadge {
+                        WinBackCampaignBadgeView()
+                    }
 
                     Spacer()
 
@@ -86,9 +104,33 @@ extension Preferences {
                 .lineLimit(1)
                 .truncationMode(.tail)
             }
-            .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
+            .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected, theme: themeManager.theme))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
             .disabled(!isEnabled)
+        }
+    }
+
+    struct NewBadgeView: View {
+        var body: some View {
+            Text(UserText.newBadge.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color(designSystemColor: .statusYellowTertiary))
+                .foregroundColor(.black)
+                .cornerRadius(9)
+        }
+    }
+
+    struct WinBackCampaignBadgeView: View {
+        var body: some View {
+            Text(UserText.winBackCampaignMenuBadgeText.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color(designSystemColor: .statusYellowTertiary))
+                .foregroundColor(.black)
+                .cornerRadius(9)
         }
     }
 
@@ -122,6 +164,7 @@ extension Preferences {
     }
 
     struct Sidebar: View {
+        @EnvironmentObject var themeManager: ThemeManager
         @EnvironmentObject var model: PreferencesSidebarModel
 
         var body: some View {
@@ -137,6 +180,7 @@ extension Preferences {
                         }
                     }.padding(.bottom, 16)
                 }
+                .accessibilityIdentifier("PreferencesSidebar.scrollView")
 
             }
             .padding(.top, 18)
@@ -154,9 +198,17 @@ extension Preferences {
                                 isSelected: model.selectedPane == pane,
                                 isEnabled: model.isSidebarItemEnabled(for: pane),
                                 status: model.protectionStatus(for: pane),
-                                settingsIconProvider: settingsIconProvider) {
-                    model.selectPane(pane)
-                }
+                                settingsIconProvider: settingsIconProvider,
+                                isNew: model.isPaneNew(pane: pane),
+                                themeManager: themeManager,
+                                shouldShowWinBackCampaignBadge: model.shouldShowWinBackCampaignBadge(pane: pane),
+                                action: {
+                                    if pane == .partnershipsHub {
+                                        model.openSubscriberOffers()
+                                    } else {
+                                        model.selectPane(pane)
+                                    }
+                                })
             }
             if section != model.sections.last {
                 Color(NSColor.separatorColor)
@@ -169,17 +221,22 @@ extension Preferences {
     private struct SidebarItemButtonStyle: ButtonStyle {
 
         let isSelected: Bool
+        let theme: ThemeStyleProviding
 
         @State private var isHovered: Bool = false
+
+        private var colorsProvider: ColorsProviding {
+            theme.colorsProvider
+        }
 
         func makeBody(configuration: Self.Configuration) -> some View {
 
             let bgColor: Color = {
                 if isSelected {
-                    return .rowHover
+                    return Color(colorsProvider.buttonMouseDownColor)
                 }
                 if isHovered {
-                    return .buttonMouseOver
+                    return Color(colorsProvider.buttonMouseOverColor)
                 }
                 return Color(NSColor.clear.withAlphaComponent(0.001))
             }()

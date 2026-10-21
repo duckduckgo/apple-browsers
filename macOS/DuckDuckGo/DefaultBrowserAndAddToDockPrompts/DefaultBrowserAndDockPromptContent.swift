@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKitIcons
 import Foundation
 
 enum DefaultBrowserAndDockPromptType {
@@ -28,6 +29,7 @@ enum DefaultBrowserAndDockPromptType {
 enum DefaultBrowserAndDockPromptContent {
     case popover(DefaultBrowserAndDockPromptType)
     case banner(DefaultBrowserAndDockPromptType)
+    case inactive(DefaultBrowserAndDockPromptType)
 
     var title: String? {
         switch self {
@@ -50,11 +52,15 @@ enum DefaultBrowserAndDockPromptContent {
         switch self {
         case let .popover(content):
             switch content {
-            case .addToDockPrompt: return .attIconPopover
-            default: return .addAsDefaultPopoverIcon
+            case .addToDockPrompt:
+                return NSImage(resource: .dockAddMac128)
+            default:
+                return NSImage(resource: .laptopDDGInstallMac128)
             }
         case .banner:
-            return .daxBannerView
+            return NSImage(resource: .daxBannerView)
+        case .inactive:
+            return NSImage(resource: .daxSearch)
         }
     }
 
@@ -75,6 +81,12 @@ enum DefaultBrowserAndDockPromptContent {
             case .setAsDefaultPrompt: return UserText.setAsDefaultBannerMessage
             case .bothDefaultBrowserAndDockPrompt: return UserText.bothSetAsDefaultAndAddToDockBannerMessage
             }
+        case let .inactive(content):
+            switch content {
+            case .addToDockPrompt: return UserText.addToDockInactiveUserPromptMessage
+            case .setAsDefaultPrompt: return UserText.setAsDefaultInactiveUserPromptMessage
+            case .bothDefaultBrowserAndDockPrompt: return UserText.bothSetAsDefaultAndAddToDockInactiveUserPromptMessage
+            }
         }
     }
 
@@ -91,6 +103,12 @@ enum DefaultBrowserAndDockPromptContent {
             case .addToDockPrompt: return UserText.addDuckDuckGoToDock
             default: return UserText.setAsDefaultPrimaryAction
             }
+        case let .inactive(content):
+            switch content {
+            case .addToDockPrompt: return UserText.addToDockInactiveUserPrimaryAction
+            case .setAsDefaultPrompt: return UserText.setAsDefaultInactiveUserPrimaryAction
+            case .bothDefaultBrowserAndDockPrompt: return UserText.bothSetAsDefaultAndAddToDockInactiveUserPrimaryAction
+            }
         }
     }
 
@@ -100,6 +118,8 @@ enum DefaultBrowserAndDockPromptContent {
             return UserText.notNow
         case .banner:
             return UserText.setAsDefaultAndAddToDockPermanentlyDismissAction
+        case .inactive:
+            return UserText.setAsDefaultAndAddToDockInactiveUserDismissAction
         }
     }
 }

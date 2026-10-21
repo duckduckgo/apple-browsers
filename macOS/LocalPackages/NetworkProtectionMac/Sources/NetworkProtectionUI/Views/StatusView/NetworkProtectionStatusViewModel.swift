@@ -17,9 +17,10 @@
 //
 
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import LoginItems
-import NetworkExtension
 import VPN
 import ServiceManagement
 import SwiftUI
@@ -69,6 +70,9 @@ extension NetworkProtectionStatusView {
         }
 
         public typealias UninstallHandler = (UninstallReason) async -> Void
+
+        private let subscriptionExpiredViewAppearHandler: (() -> Void)?
+        private let subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)?
 
         /// The NetP service.
         ///
@@ -132,6 +136,8 @@ extension NetworkProtectionStatusView {
 
         // MARK: - Initialization & Deinitialization
 
+        private let subscribeButtonOrigin: String?
+
         public init(controller: TunnelController,
                     onboardingStatusPublisher: OnboardingStatusPublisher,
                     statusReporter: NetworkProtectionStatusReporter,
@@ -143,12 +149,19 @@ extension NetworkProtectionStatusView {
                     runLoopMode: RunLoop.Mode? = nil,
                     userDefaults: UserDefaults,
                     locationFormatter: VPNLocationFormatting,
-                    uninstallHandler: @escaping UninstallHandler) {
+                    isStrictRoutingAvailable: Bool = false,
+                    uninstallHandler: @escaping UninstallHandler,
+                    subscriptionExpiredViewAppearHandler: (() -> Void)? = nil,
+                    subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)? = nil,
+                    subscribeButtonOrigin: String? = nil) {
 
             self.tunnelController = controller
             self.onboardingStatusPublisher = onboardingStatusPublisher
             self.statusReporter = statusReporter
             self.menuItems = menuItems
+            self.subscriptionExpiredViewAppearHandler = subscriptionExpiredViewAppearHandler
+            self.subscriptionExpiredViewSubscribeButtonClickPixelHandler = subscriptionExpiredViewSubscribeButtonClickPixelHandler
+            self.subscribeButtonOrigin = subscribeButtonOrigin
             self.agentLoginItem = agentLoginItem
             self.isExtensionUpdateOffered = isExtensionUpdateOfferedPublisher.value
             self.isMenuBarStatusView = isMenuBarStatusView
@@ -163,6 +176,7 @@ extension NetworkProtectionStatusView {
                                                                   vpnSettings: .init(defaults: userDefaults),
                                                                   proxySettings: .init(defaults: userDefaults),
                                                                   locationFormatter: locationFormatter,
+                                                                  isStrictRoutingAvailable: isStrictRoutingAvailable,
                                                                   uiActionHandler: uiActionHandler)
 
             connectionStatus = statusReporter.statusObserver.recentValue
@@ -196,7 +210,9 @@ extension NetworkProtectionStatusView {
         }
 
         func refreshLoginItemStatus() {
-            self.loginItemNeedsApproval = agentLoginItem?.status == .requiresApproval
+            Task { @MainActor in
+                self.loginItemNeedsApproval = await self.agentLoginItem?.status() == .requiresApproval
+            }
         }
 
         func openLoginItemSettings() {
@@ -208,10 +224,15 @@ extension NetworkProtectionStatusView {
             }
         }
 
-        func openPrivacyPro() {
+        func openSubscription() {
+            subscriptionExpiredViewSubscribeButtonClickPixelHandler?()
             Task {
-                await uiActionHandler.showPrivacyPro()
+                await uiActionHandler.showSubscription(origin: subscribeButtonOrigin)
             }
+        }
+
+        func subscriptionExpiredViewDidAppear() {
+            subscriptionExpiredViewAppearHandler?()
         }
 
         func openFeedbackForm() {
@@ -344,8 +365,8 @@ extension NetworkProtectionStatusView {
         var shouldShowSubscriptionExpired: Bool = false
 
         var promptActionViewModel: PromptActionView.Model? {
-#if !APPSTORE && !DEBUG
-            guard Bundle.main.isInApplicationDirectory else {
+#if !DEBUG
+            if !AppVersion.isAppStoreBuild, !Bundle.main.isInApplicationDirectory {
                 return moveToApplicationsActionPromptModel
             }
 #endif
@@ -369,13 +390,11 @@ extension NetworkProtectionStatusView {
             }
         }
 
-#if !APPSTORE && !DEBUG
         private var moveToApplicationsActionPromptModel: PromptActionView.Model {
             PromptActionView.Model(presentationData: MoveToApplicationsPromptPresentationData()) { [weak self] in
                 self?.tunnelControllerViewModel.moveToApplications()
             }
         }
-#endif
 
         private var loginItemsActionPromptModel: PromptActionView.Model {
             PromptActionView.Model(presentationData: LoginItemsPromptPresentationData()) { [weak self] in
@@ -436,6 +455,16 @@ extension NetworkProtectionStatusView {
             default:
                 return nil
             }
+        }
+
+        var environmentWarningViewModel: WarningView.Model? {
+            if tunnelControllerViewModel.isVPNStagingEnvironmentSelected {
+                // Internal-only message, exempt from translations:
+                let message = "VPN staging environment selected, use the Debug menu to change to the production environment if you have issues connecting"
+                return WarningView.Model(message: message, actionTitle: nil, action: nil)
+            }
+
+            return nil
         }
     }
 }

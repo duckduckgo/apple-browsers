@@ -41,7 +41,11 @@ struct HistoryViewDataProviderPixelHandler: HistoryViewDataProviderPixelFiring {
         case .searchTerm:
             searchTermPixelSubject.send()
         default:
-            firePixel(HistoryViewPixel.filterSet(.init(query)))
+            guard let filterKind = HistoryViewPixel.FilterKind(query) else {
+                assertionFailure("Unhandled filter kind: \(query)")
+                return
+            }
+            firePixel(HistoryViewPixel.filterSet(filterKind))
         }
     }
 

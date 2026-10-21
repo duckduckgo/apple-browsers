@@ -140,7 +140,7 @@ public struct SubscriptionEvent {
         return GenericJSONOutput.toJSON(dict: dictionary)
     }
 
-    public static func toJS(context: String, featureName: String, subscriptionName: String, params: Encodable) -> String? {
+    public static func toJS(context: String, featureName: String, subscriptionName: String, params: Encodable, debug: Bool = false) -> String? {
 
         let res = SubscriptionEvent(context: context, featureName: featureName, subscriptionName: subscriptionName, params: params)
         guard let json = res.toJSON() else {
@@ -148,15 +148,31 @@ public struct SubscriptionEvent {
             return nil
         }
 
+        // Looked up by string key because a name like `elicitation/create` is legal here: dot
+        // notation would parse `a/b` as division and throw, silently, since nothing checks it.
+        let name = jsStringLiteral(res.subscriptionName)
+        let warnStatement = debug ? "console.warn(\"missing \" + \(name), \(json))" : ""
+
         return """
            (() => {
-              if (!('\(res.subscriptionName)' in window)) {
-                 console.warn("missing '\(res.subscriptionName)'", \(json))
+              if (!(\(name) in (navigator?.duckduckgo?.messageHandlers ?? {}))) {
+                 \(warnStatement)
               } else {
-                  window.\(res.subscriptionName)?.(\(json));
+                  navigator?.duckduckgo?.messageHandlers?.[\(name)]?.(\(json));
               }
            })();
            """
+    }
+
+    /// Renders `value` as a JS string literal, escaped so any character is safe to embed.
+    private static func jsStringLiteral(_ value: String) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .withoutEscapingSlashes
+        guard let data = try? encoder.encode(value), let literal = String(data: data, encoding: .utf8) else {
+            assertionFailure("Could not encode subscription name as a JS string literal")
+            return "\"\""
+        }
+        return literal
     }
 }
 

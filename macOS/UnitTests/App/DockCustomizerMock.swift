@@ -22,6 +22,8 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 class DockCustomizerMock: DockCustomization {
+    var supportsAddingToDock: Bool = true
+
     private var featureShownSubject = CurrentValueSubject<Bool, Never>(false)
 
     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> {
@@ -42,6 +44,7 @@ class DockCustomizerMock: DockCustomization {
 
     @discardableResult
     func addToDock() -> Bool {
+        guard supportsAddingToDock else { return false }
         wasAddToDockCalled = true
         if !dockStatus {
             dockStatus = true
@@ -52,6 +55,10 @@ class DockCustomizerMock: DockCustomization {
     }
 
     func didCloseMoreOptionsMenu() {
+        // No-op
+    }
+
+    func synchronizeNotificationVisibilityWithFirstLaunchDate() {
         // No-op
     }
 

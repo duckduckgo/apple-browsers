@@ -163,13 +163,27 @@
                 "type": "survey",
                 "value": "https://duckduckgo.com/survey",
                 "additionalParameters": {
-                    "queryParams": "atb;var;delta;osv;ddgv"
+                    "queryParams": "atb;var;delta;osv;ddgv;last_duck_ai_usage"
                 }
             }
         },
         "matchingRules": [
             8
         ]
+    },
+    {
+        "id": "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+        "content": {
+            "messageType": "big_single_action",
+            "titleText": "PIR Title",
+            "descriptionText": "PIR Description",
+            "placeholder": "PrivacyShield",
+            "primaryActionText": "PIR Action",
+            "primaryAction": {
+                "type": "navigation",
+                "value": "pir.main"
+            }
+        }
     }
   ],
   "rules": [
@@ -260,10 +274,19 @@
         "daysSinceNetPEnabled": {
           "min": 5
         },
+        "daysSinceDuckAiUsed": {
+          "min": 3
+        },
+        "isCurrentPIRUser": {
+          "value": true
+        },
         "pproEligible": {
           "value": true
         },
         "pproSubscriber": {
+          "value": true
+        },
+        "subscriptionFreeTrialActive": {
           "value": true
         },
         "pproPurchasePlatform": {
@@ -271,6 +294,9 @@
         },
         "pproSubscriptionStatus": {
           "value": ["active", "expiring"]
+        },
+        "pproSubscriptionTier": {
+          "value": ["pro", "plus"]
         },
         "pproDaysSinceSubscribed": {
             "min": 5,
@@ -303,6 +329,31 @@
                   "Two"
               ]
           },
+      }
+    },
+    {
+      "id": 11,
+      "attributes": {
+          "syncEnabled": {
+              "value": true
+          }
+      }
+    },
+    {
+      "id": 12,
+      "attributes": {
+          "isReturningUser": {
+              "value": true
+          },
+          "isDuckAiEnabled": {
+              "value": true
+          },
+          "triedDuckAiDuringOnboarding": {
+              "value": false
+          },
+          "isDuckAiBoostActive": {
+              "value": false
+          }
       }
     }
   ]

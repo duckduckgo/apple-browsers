@@ -31,25 +31,26 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
     var hasItemsToTheRight = false
     var audioState: WKWebView.AudioState?
     var isTabBarItemAlreadyBookmarked = false
+    var shouldHideSeparator = false
 
     private(set) var tabBarViewItemWillOpenContextMenuCalled = false
     private(set) var tabBarViewItemBookmarkThisPageActionCalled = false
     private(set) var tabBarViewItemRemoveBookmarkActionCalled = false
     private(set) var tabBarViewItemBookmarkAllOpenTabsActionCalled = false
 
-    func tabBarViewItem(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem, isMouseOver: Bool) {
+    func tabBarViewItem(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem, isMouseOver: Bool) {}
 
-    }
+    func tabBarViewItemSelectTab(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {}
 
     func tabBarViewItemWillOpenContextMenu(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
         tabBarViewItemWillOpenContextMenuCalled = true
     }
 
-    func tabBarViewItemCloseAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+    func tabBarViewItemNewToTheRightAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
     }
 
-    func tabBarViewItemTogglePermissionAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+    func tabBarViewItemCloseAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
     }
 
@@ -63,6 +64,10 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
 
     func tabBarViewItemCloseToTheRightAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
+    }
+
+    func tabBarViewItemShouldHideSeparator(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) -> Bool {
+        shouldHideSeparator
     }
 
     func tabBarViewItemCanBeDuplicated(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) -> Bool {
@@ -137,7 +142,19 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
 
     }
 
+    func tabBarViewItemCrashMultipleTimesAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
+    func tabBarViewItemCrashMultiProcessAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
     func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool) {
+
+    }
+
+    func tabBarViewItemSuspendAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
     }
 

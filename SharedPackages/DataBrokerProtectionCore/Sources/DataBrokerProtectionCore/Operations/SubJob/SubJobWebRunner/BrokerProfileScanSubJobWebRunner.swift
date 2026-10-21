@@ -18,14 +18,14 @@
 
 import Foundation
 import WebKit
+import PrivacyConfig
 import BrowserServicesKit
 import UserScript
 import Common
 import os.log
 
 public protocol BrokerProfileScanSubJobWebRunning {
-    func scan(_ profileQuery: BrokerProfileQueryData,
-              showWebView: Bool,
+    func scan(showWebView: Bool,
               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile]
 }
 
@@ -35,115 +35,158 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
     public let privacyConfig: PrivacyConfigurationManaging
     public let prefs: ContentScopeProperties
-    public let query: BrokerProfileQueryData
-    public let emailService: EmailServiceProtocol
+    public let context: SubJobContextProviding
+    public let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let cookieHandler: CookieHandler
     public let stageCalculator: StageDurationCalculator
     public var webViewHandler: WebViewHandler?
     public var actionsHandler: ActionsHandler?
-    public var continuation: CheckedContinuation<[ExtractedProfile], Error>?
+    public let runnerContinuation = SubJobRunnerContinuationState<[ExtractedProfile]>()
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
-    public let shouldRunNextStep: () -> Bool
+    public let runnerCancellation: SubJobRunnerCancellationState
     public var retriesCountOnError: Int = 0
-    public let clickAwaitTime: TimeInterval
+    public lazy var clickAwaitTime: TimeInterval = {
+        executionConfig.clickAwaitTimeForScan
+    }()
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
+    public let executionConfig: BrokerJobExecutionConfig
+    public let featureFlagger: DBPFeatureFlagging
+    public let applicationNameForUserAgentProvider: () -> String?
+    public let contentBlocking: DBPWebViewContentBlocking?
+    public var fetchedEmail: String?
+    public var emailData: ExtractedEmailData = [:]
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
-                query: BrokerProfileQueryData,
-                emailService: EmailServiceProtocol,
+                context: SubJobContextProviding,
+                emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
+                featureFlagger: DBPFeatureFlagging,
+                applicationNameForUserAgentProvider: @escaping () -> String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
-                clickAwaitTime: TimeInterval = 0,
                 stageDurationCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                executionConfig: BrokerJobExecutionConfig,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
                 shouldRunNextStep: @escaping () -> Bool
     ) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
-        self.query = query
-        self.emailService = emailService
+        self.context = context
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageDurationCalculator
-        self.shouldRunNextStep = shouldRunNextStep
-        self.clickAwaitTime = clickAwaitTime
+        self.runnerCancellation = SubJobRunnerCancellationState(shouldRunNextStep: shouldRunNextStep)
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
+        self.executionConfig = executionConfig
+        self.featureFlagger = featureFlagger
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
+        self.contentBlocking = contentBlocking
     }
 
     @MainActor
-    public func scan(_ profileQuery: BrokerProfileQueryData,
-                     showWebView: Bool,
+    public func scan(showWebView: Bool,
                      shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         return try await self.run(inputValue: (), showWebView: showWebView)
     }
 
+    @MainActor
     public func run(inputValue: InputValue,
                     webViewHandler: WebViewHandler? = nil,
                     actionsHandler: ActionsHandler? = nil,
                     showWebView: Bool) async throws -> [ExtractedProfile] {
-        try await withCheckedThrowingContinuation { continuation in
-            self.continuation = continuation
-            Task {
-                await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
+        var task: Task<Void, Never>?
 
-                do {
-                    let scanStep = try query.dataBroker.scanStep()
-                    if let actionsHandler = actionsHandler {
-                        self.actionsHandler = actionsHandler
-                    } else {
-                        self.actionsHandler = ActionsHandler(step: scanStep)
-                    }
-                    if self.shouldRunNextStep() {
-                        await executeNextStep()
-                    } else {
-                        failed(with: DataBrokerProtectionError.cancelled)
-                    }
-                } catch {
-                    failed(with: DataBrokerProtectionError.unknown(error.localizedDescription))
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                self.runnerContinuation.install(continuation)
+
+                guard self.shouldRunNextStep() else {
+                    failed(with: DataBrokerProtectionError.cancelled)
+                    return
                 }
+
+                task = Task {
+                    do {
+                        try await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
+                    } catch {
+                        failed(with: error)
+                        return
+                    }
+
+                    do {
+                        let scanStep = try context.dataBroker.scanStep()
+                        if let actionsHandler = actionsHandler {
+                            self.actionsHandler = actionsHandler
+                        } else {
+                            self.actionsHandler = ActionsHandler.forScan(scanStep)
+                        }
+                        if self.shouldRunNextStep() {
+                            await executeNextStep()
+                        } else {
+                            await failAsCancelledAndTearDown()
+                        }
+                    } catch {
+                        await self.webViewHandler?.finish()
+                        failed(with: DataBrokerProtectionError.unknown(error.localizedDescription))
+                    }
+                }
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in
+                guard let self, self.runnerCancellation.markCancelled() else { return }
+
+                task?.cancel()
+                await self.failAsCancelledAndTearDown()
             }
         }
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
+        recordDebugEvent(kind: .actionResponse,
+                         actionType: .extract,
+                         details: DebugHelper.prettyPrintedJSON(from: profiles, meta: meta))
         complete(profiles)
         await executeNextStep()
     }
 
-    public func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
-        /// Certain brokers force a page reload with a random time interval when the user lands on the search result
-        /// page. The first time the action runs the C-S-S context is lost as the page is reloading and C-S-S fails
-        /// to respond to the native message. We will try to run the action one more time after the page has loaded
-        /// and the C-S-S context is present again to receive the native message.
-        ///
-        /// To minimize the impact of this change, we set the number of retries to 1 for now.
-        ///
-        /// https://app.asana.com/1/137249556945/project/481882893211075/task/1210079565270206?focus=true
-        if action is ExpectationAction, !stageCalculator.isRetrying {
-            retriesCountOnError = 1
+    public func executeNextStep() async {
+        guard !isCancelled else {
+            await failAsCancelledAndTearDown()
+            return
         }
 
-        return false
-    }
-
-    public func executeNextStep() async {
         resetRetriesCount()
-        Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
+        Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
+        recordDebugEvent(kind: .wait,
+                         actionType: actionsHandler?.currentAction()?.actionType,
+                         details: "Waiting \(operationAwaitTime)s (between actions)")
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
-        if let action = actionsHandler?.nextAction() {
-            Logger.action.debug("Next action: \(String(describing: action.actionType.rawValue), privacy: .public)")
+        let shouldContinue = self.shouldRunNextStep()
+        if let action = actionsHandler?.nextAction(), shouldContinue {
+            stageCalculator.setLastAction(action)
+            Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {
-            Logger.action.debug("Releasing the web view")
+            Logger.action.debug(loggerContext(), message: "Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
+
+            if !shouldContinue {
+                Logger.action.debug(loggerContext(), message: "Job cancelled")
+                failed(with: DataBrokerProtectionError.cancelled)
+            }
         }
+    }
+
+    private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
+        .init(stepType: .scan, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
 }

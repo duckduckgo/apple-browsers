@@ -1,0 +1,325 @@
+//
+//  UTIPixelReporter.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import Core
+import Foundation
+import PixelKit
+
+/// Injectable pixel-firing seam: routes UTI pixel firing through a single PixelKit injection point.
+/// `.live` fires for real; tests pass a `PixelKitMock`.
+struct UTIPixelFiring {
+    /// Resolved at fire time so it picks up `PixelKit.setUp` regardless of when this value was created.
+    var pixelKit: () -> (any PixelKitFiring)? = { PixelKit.shared }
+
+    static let live = UTIPixelFiring()
+
+    func fire(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
+        pixelKit()?.fire(event, options: .parameters(parameters))
+    }
+
+    func fireDailyAndCount(_ event: Pixel.Event, _ parameters: [String: String] = [:]) {
+        pixelKit()?.fire(event, frequency: .dailyAndCount, options: .parameters(parameters))
+    }
+
+    func fire(_ event: PixelKit.Event, frequency: PixelKit.Frequency) {
+        pixelKit()?.fire(event, frequency: frequency)
+    }
+}
+
+/// Live snapshot of the coordinator state a pixel needs, resolved at fire time (never captured) so a
+/// pixel always reports the surface/mode as they are the instant it fires. Kept to O(1) reads —
+/// per-call inputs (e.g. the mode-switch text/default) are passed to the reporting method instead.
+struct UTIPixelContext {
+    let surface: UnifiedToggleInputPixelSurface
+    let isDuckAISurfaceForAttribution: Bool
+    let inputMode: TextEntryMode
+    let isToggleVisible: Bool
+    let pageType: UnifiedToggleInputPromptPageType
+    let duckAIEntrySource: AIChatEntryPointSource?
+}
+
+/// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
+/// per-fire context so call sites no longer thread `surface:`/`isAITabState:` around; routes every
+/// fire through the injected `UTIPixelFiring` seam. Wraps the shared
+/// `UnifiedToggleInputCoordinatorPixelHelper` for the pixels also fired from other surfaces (iPad).
+@MainActor
+final class UTIPixelReporter {
+
+    private let firing: UTIPixelFiring
+    private let context: () -> UTIPixelContext?
+
+    init(firing: UTIPixelFiring = .live, context: @escaping () -> UTIPixelContext?) {
+        self.firing = firing
+        self.context = context
+    }
+
+    // MARK: - Session / omnibar surface
+
+    /// The pair fired whenever the unified input surface first appears in the omnibar host.
+    func reportOmnibarInputSurfaceShown() {
+        firing.fireDailyAndCount(.aiChatInternalSwitchBarDisplayed)
+        withContext {
+            firing.fire(ExperimentalOmnibarPixel.omnibarShownDaily(isToggleVisible: $0.isToggleVisible), frequency: .legacyDailyNoSuffix)
+            firing.fire(ExperimentalOmnibarPixel.omnibarShownCount(isToggleVisible: $0.isToggleVisible), frequency: .standard)
+        }
+    }
+
+    func reportBackButtonPressed() {
+        withContext { firing.fire(.aiChatExperimentalOmnibarBackButtonPressed, ["mode": $0.inputMode.rawValue]) }
+    }
+
+    func reportFloatingReturnPressed() {
+        firing.fire(.aiChatExperimentalOmnibarFloatingReturnPressed)
+    }
+
+    func reportModeSwitched(to mode: TextEntryMode, currentText: String, defaultOmnibarMode: DefaultOmnibarMode) {
+        let direction = mode == .search ? "to_search" : "to_duckai"
+        let hadText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        firing.fire(.aiChatExperimentalOmnibarModeSwitched, [
+            "direction": direction,
+            "had_text": String(hadText),
+            "default_position": defaultOmnibarMode.rawValue
+        ])
+    }
+
+    func reportStopGenerationTapped() {
+        withContext { firing.fire(.unifiedToggleInputStopGenerationTapped, ["surface": $0.surface.rawValue]) }
+    }
+
+    // MARK: - Message edit
+
+    func reportEditReceived() {
+        withContext { firing.fire(.unifiedToggleInputEditReceived, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditSubmitted() {
+        withContext { firing.fire(.unifiedToggleInputEditSubmitted, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditCancelled() {
+        withContext { firing.fire(.unifiedToggleInputEditCancelled, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportEditAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireEditAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+    }
+
+    // MARK: - Voice
+
+    func reportVoiceTapped(hasPendingPageContext: Bool) {
+        withContext {
+            firing.fireDailyAndCount(.unifiedToggleInputVoiceTapped, [
+                "source": $0.surface.rawValue,
+                "has_pending_page_context": hasPendingPageContext ? "true" : "false"
+            ])
+        }
+    }
+
+    // MARK: - Attachments
+
+    func reportAttachmentPrivacy(_ action: AttachmentPrivacyPixel.Action, kind: AttachmentPrivacyPixel.Kind) {
+        withContext {
+            firing.fire(AttachmentPrivacyPixel(action: action, kind: kind, surface: $0.surface), frequency: .dailyAndCount)
+        }
+    }
+
+    func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason, source: String) {
+        reportFileValidationFailed(reason: reason.rawValue, source: source)
+    }
+
+    /// Raw-reason variant for the paste-rejection path, which derives its reason outside the policy's `FileValidationFailureReason`.
+    func reportFileValidationFailed(reason: String, source: String) {
+        withContext {
+            firing.fireDailyAndCount(.unifiedToggleInputFileValidationFailed, [
+                "reason": reason,
+                "surface": $0.surface.rawValue,
+                "source": source
+            ])
+        }
+    }
+
+    func reportFileAttached(source: String) {
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue, "source": source]) }
+    }
+
+    func reportImageValidationFailed(reason: String, source: String) {
+        withContext {
+            firing.fireDailyAndCount(.unifiedToggleInputImageValidationFailed, [
+                "reason": reason,
+                "surface": $0.surface.rawValue,
+                "source": source
+            ])
+        }
+    }
+
+    func reportImageAttached(source: String) {
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
+    }
+
+    func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
+                             attribution: MultiTabPixelAttribution? = nil) {
+        guard let attribution = attribution ?? currentTabPixelAttribution() else { return }
+        firing.fire(MultiTabAttachmentPixel(action: action, source: source, attribution: attribution), frequency: .dailyAndCount)
+    }
+
+    func currentTabPixelAttribution() -> MultiTabPixelAttribution? {
+        guard let context = context() else { return nil }
+        return MultiTabPixelAttribution(surface: context.surface, pageType: context.pageType)
+    }
+
+    /// Snapshot attribution before asynchronous collection; delivery must outlive the input coordinator.
+    func makeTabSubmissionReporter(requestedTabCount: Int) -> (MultiTabAttachmentRequest.SubmissionResult) -> Void {
+        guard requestedTabCount > 0, let attribution = currentTabPixelAttribution() else { return { _ in } }
+        return { [firing] result in
+            if result.deliveredAttachmentCount > 0 {
+                firing.fire(MultiTabSentPixel(count: result.totalTabCount, attribution: attribution), frequency: .dailyAndCount)
+            }
+            if result.deliveredAttachmentCount < requestedTabCount {
+                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.deliveredAttachmentCount == 0 ? .all : .partial
+                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, attribution: attribution), frequency: .dailyAndCount)
+            }
+        }
+    }
+
+    func reportAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(
+                for: attachment, surface: $0.surface, pageType: $0.pageType, firing: firing)
+        }
+    }
+
+    // MARK: - Model / reasoning / tools
+
+    func reportModelSelected(modelId: String) {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireModelSelectedPixel(modelId: modelId, surface: $0.surface, firing: firing) }
+    }
+
+    func reportReasoningEffortSelected(mode: AIChatReasoningMode) {
+        withContext {
+            firing.fire(.unifiedToggleInputReasoningEffortSelected, [
+                "effort_level": mode.rawValue,
+                "surface": $0.surface.rawValue
+            ])
+        }
+    }
+
+    func reportModelPickerShown() {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireModelPickerShownPixel(isAITabState: $0.isDuckAISurfaceForAttribution, firing: firing) }
+    }
+
+    func reportReasoningPickerShown() {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireReasoningPickerShownPixel(isAITabState: $0.isDuckAISurfaceForAttribution, firing: firing) }
+    }
+
+    func reportShowModelPicker() {
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputShowModelPicker, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportSubmitChangeModel(modelId: String) {
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputSubmitChangeModel, ["model_id": modelId, "surface": $0.surface.rawValue]) }
+    }
+
+    func reportSubmitChangeModelPromptSent() {
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputSubmitChangeModelPromptSent, ["surface": $0.surface.rawValue]) }
+    }
+
+    func reportToolSelected(_ tool: AIChatRAGTool) {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: tool, surface: $0.surface, firing: firing) }
+    }
+
+    func reportToolDeselected(_ tool: AIChatRAGTool) {
+        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: tool, surface: $0.surface, firing: firing) }
+    }
+
+    func reportCustomizeResponsesSelected() {
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputCustomizeResponsesSelected, ["surface": $0.surface.rawValue]) }
+    }
+
+    // MARK: - Submission
+
+    func reportPromptSubmitted(hasText: Bool,
+                               selectedTool: AIChatRAGTool?,
+                               attachments: [UnifiedToggleInputAttachment],
+                               reasoningMode: AIChatReasoningMode?,
+                               modelId: String?,
+                               defaultOmnibarMode: DefaultOmnibarMode,
+                               isFirstPromptNewInstall: Bool) {
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
+                hasText: hasText,
+                selectedTool: selectedTool,
+                attachments: attachments,
+                reasoningMode: reasoningMode,
+                modelId: modelId,
+                surface: $0.surface,
+                pageType: $0.pageType,
+                origin: Self.promptOrigin(for: $0),
+                defaultMode: defaultOmnibarMode,
+                isFirstPromptNewInstall: isFirstPromptNewInstall,
+                firing: firing
+            )
+        }
+    }
+
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode, queryType: UnifiedToggleInputQueryType) {
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
+                surface: $0.surface,
+                pageType: $0.pageType,
+                isToggleVisible: $0.isToggleVisible,
+                defaultMode: defaultOmnibarMode,
+                queryType: queryType,
+                firing: firing
+            )
+        }
+    }
+
+    func currentPromptOrigin() -> AIChatEntryPointSource? {
+        guard let context = context() else { return nil }
+        return Self.promptOrigin(for: context)
+    }
+
+    static func promptOrigin(for context: UTIPixelContext) -> AIChatEntryPointSource? {
+        switch context.surface {
+        case .addressBar: return .addressBarPrompt
+        case .contextualChat: return .contextualChat
+        case .duckAI: return context.duckAIEntrySource
+        }
+    }
+
+    func reportToolSubmittedIfNeeded(selectedTool: AIChatRAGTool?, attachments: [UnifiedToggleInputAttachment]) {
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
+                selectedTool: selectedTool,
+                attachments: attachments,
+                surface: $0.surface,
+                firing: firing
+            )
+        }
+    }
+
+    // MARK: - Context resolution
+
+    /// Resolves the live context and runs `body`; a nil context (coordinator gone) fires nothing.
+    private func withContext(_ body: (UTIPixelContext) -> Void) {
+        guard let context = context() else { return }
+        body(context)
+    }
+}

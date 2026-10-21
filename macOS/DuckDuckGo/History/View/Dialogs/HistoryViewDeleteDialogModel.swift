@@ -16,21 +16,26 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
 import Persistence
+import PrivacyConfig
 
 protocol HistoryViewDeleteDialogSettingsPersisting: AnyObject {
     var shouldBurnHistoryWhenDeleting: Bool { get set }
+    var shouldClearChatHistoryWhenDeleting: Bool { get set }
 }
 
 final class UserDefaultsHistoryViewDeleteDialogSettingsPersistor: HistoryViewDeleteDialogSettingsPersisting {
     enum Keys {
         static let shouldBurnHistoryWhenDeleting = "history.delete.should-burn"
+        static let shouldClearChatHistoryWhenDeleting = "history.delete.should-clear-chat"
     }
 
     private let keyValueStore: KeyValueStoring
 
-    init(_ keyValueStore: KeyValueStoring = UserDefaults.standard) {
+    init(_ keyValueStore: KeyValueStoring = UserDefaults.standard,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.keyValueStore = keyValueStore
     }
 
@@ -38,15 +43,20 @@ final class UserDefaultsHistoryViewDeleteDialogSettingsPersistor: HistoryViewDel
         get { return keyValueStore.object(forKey: Keys.shouldBurnHistoryWhenDeleting) as? Bool ?? true }
         set { keyValueStore.set(newValue, forKey: Keys.shouldBurnHistoryWhenDeleting) }
     }
+
+    var shouldClearChatHistoryWhenDeleting: Bool {
+        get { return keyValueStore.object(forKey: Keys.shouldClearChatHistoryWhenDeleting) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Keys.shouldClearChatHistoryWhenDeleting) }
+    }
 }
 
 final class HistoryViewDeleteDialogModel: ObservableObject {
     enum Response {
-        case unknown, noAction, delete, burn
+        case noAction, delete, burn
     }
 
     enum DeleteMode: Equatable {
-        case all, today, yesterday, date(Date), formattedDate(String), unspecified
+        case all, today, yesterday, date(Date), sites(Set<String>), older, unspecified
 
         var date: Date? {
             guard case let .date(date) = self else {
@@ -54,24 +64,50 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
             }
             return date
         }
-    }
 
-    var title: String {
-        switch mode {
-        case .all:
-            return UserText.deleteAllHistory
-        case .today:
-            return UserText.deleteAllHistoryFromToday
-        case .yesterday:
-            return UserText.deleteAllHistoryFromYesterday
-        case .unspecified:
-            return UserText.deleteHistory
-        case .date(let date):
-            return UserText.deleteHistory(for: Self.dateFormatter.string(from: date))
-        case .formattedDate(let stringDate):
-            return UserText.deleteHistory(for: stringDate)
+        /// Title that spells the date out in full, including the year.
+        var title: String {
+            title(dateFormatter: HistoryViewDeleteDialogModel.dateFormatter)
+        }
+
+        /// Title that shortens the date to the weekday, the month and the day.
+        ///
+        /// The compact Fire dialog uses this title. It only titles dates from the last week, so the
+        /// year adds nothing and only made the title long enough to wrap onto a second line.
+        var compactTitle: String {
+            title(dateFormatter: HistoryViewDeleteDialogModel.compactDateFormatter)
+        }
+
+        private func title(dateFormatter: DateFormatter) -> String {
+            switch self {
+            case .all:
+                return UserText.deleteAllHistory
+            case .today:
+                return UserText.deleteAllHistoryFromToday
+            case .yesterday:
+                return UserText.deleteAllHistoryFromYesterday
+            case .older:
+                return UserText.deleteOlderHistory
+            case .unspecified:
+                return UserText.deleteHistory
+            case .date(let date):
+                return UserText.deleteHistory(for: dateFormatter.string(from: date))
+            case .sites(let domains) where domains.count == 1:
+                return UserText.deleteHistory(for: domains.first!)
+            case .sites:
+                return UserText.deleteHistory
+            }
+        }
+
+        var canClearChatHistory: Bool {
+            switch self {
+            case .all: return true
+            case .today, .yesterday, .date, .sites, .older, .unspecified: return false
+            }
         }
     }
+
+    var title: String { mode.title }
 
     let message: String
 
@@ -89,12 +125,28 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
             settingsPersistor.shouldBurnHistoryWhenDeleting = shouldBurn
         }
     }
-    @Published private(set) var response: Response = .unknown
+
+    /// indicates whether the option to delete chat history should be shown
+    let canClearChatHistory: Bool
+
+    /// when true, chat history will also be deleted when deleting browsing history
+    @Published var shouldClearChatHistory: Bool {
+        didSet {
+            settingsPersistor.shouldClearChatHistoryWhenDeleting = shouldClearChatHistory
+        }
+    }
+
+    @Published private(set) var response: Response?
 
     init(
         entriesCount: Int,
-        mode: DeleteMode = .unspecified,
-        settingsPersistor: HistoryViewDeleteDialogSettingsPersisting = UserDefaultsHistoryViewDeleteDialogSettingsPersistor()
+        mode: DeleteMode,
+        settingsPersistor: HistoryViewDeleteDialogSettingsPersisting = UserDefaultsHistoryViewDeleteDialogSettingsPersistor(),
+        aiChatHistoryCleaner: AIChatHistoryCleaner = AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
+                                                                          aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
+                                                                          featureDiscovery: DefaultFeatureDiscovery(),
+                                                                          privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                                                          nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler)
     ) {
         self.message = {
             guard entriesCount > 1 else {
@@ -106,6 +158,9 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
         self.mode = mode
         self.settingsPersistor = settingsPersistor
         shouldBurn = settingsPersistor.shouldBurnHistoryWhenDeleting
+        let canClearChatHistory = mode.canClearChatHistory && aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
+        self.canClearChatHistory = canClearChatHistory
+        shouldClearChatHistory = canClearChatHistory ? settingsPersistor.shouldClearChatHistoryWhenDeleting : false
     }
 
     func cancel() {
@@ -113,16 +168,29 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
     }
 
     func delete() {
-        response = shouldBurn ? .burn : .delete
+        if shouldBurn {
+            response = .burn
+        } else {
+            response = .delete
+        }
     }
 
     private let mode: DeleteMode
     private let settingsPersistor: HistoryViewDeleteDialogSettingsPersisting
 
-    private static let dateFormatter: DateFormatter = {
+    /// Spells the date out in full, including the year.
+    static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
         formatter.timeStyle = .none
+        formatter.formattingContext = .middleOfSentence
+        return formatter
+    }()
+
+    /// Shortens the date to the weekday, the month and the day, leaving the year out.
+    static let compactDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
         formatter.formattingContext = .middleOfSentence
         return formatter
     }()

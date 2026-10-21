@@ -1,0 +1,32 @@
+{
+  "configurations" : [
+    {
+      "id" : "7C32B0C7-2C4A-4A61-9E13-9F22DE11A401",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:LocalPackages\/CrashReporting",
+        "identifier" : "CrashReportingTests",
+        "name" : "CrashReportingTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:LocalPackages\/CrashReporting",
+        "identifier" : "AppStoreCrashCollectionTests",
+        "name" : "AppStoreCrashCollectionTests"
+      }
+    }
+  ],
+  "version" : 1
+}

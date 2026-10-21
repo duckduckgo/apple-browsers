@@ -21,10 +21,36 @@ import SecureStorage
 import DataBrokerProtectionCore
 import PixelKit
 
+struct DataBrokerDatabaseSearchToken: Hashable {
+    let column: String?
+    let value: String
+
+    var normalizedValue: String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
+    enum SearchMatchMode: Int {
+        case and = 0
+        case or = 1
+    }
+
     @Published var selectedTable: DataBrokerDatabaseBrowserData.Table?
     @Published var tables: [DataBrokerDatabaseBrowserData.Table]
+    @Published var sortColumn: String?
+    @Published var sortAscending: Bool = true
+    @Published var columnWidths: [String: CGFloat] = [:]
+    @Published var searchTokens: [DataBrokerDatabaseSearchToken] = []
+    @Published var searchMatchMode: SearchMatchMode = .and
+
+    // Table-specific state storage
+    private var tableSortState: [String: (column: String?, ascending: Bool)] = [:]
+    private var tableColumnWidths: [String: [String: CGFloat]] = [:]
+    private var tableSearchTokens: [String: [DataBrokerDatabaseSearchToken]] = [:]
+    private var tableSearchMatchMode: [String: SearchMatchMode] = [:]
     private let dataManager: DataBrokerProtectionDataManager?
+    private var brokerIdToUrl: [Int64: String] = [:]
 
     internal init(tables: [DataBrokerDatabaseBrowserData.Table]? = nil, localBrokerService: LocalBrokerJSONServiceProvider) {
 
@@ -41,8 +67,9 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
                 fatalError("PixelKit not set up")
             }
             let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+            let privacyConfigManager = DBPPrivacyConfigurationManager()
 
-            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigManager)
             guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
                 fatalError("Failed to make secure storage vault")
             }
@@ -67,13 +94,18 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
 
         Task {
             guard let data = try? dataManager.fetchBrokerProfileQueryData(ignoresCache: true),
-                  let attempts = try? dataManager.fetchAllOptOutAttempts() else {
+                  let attempts = try? dataManager.fetchAllOptOutAttempts(),
+                  let emailConfirmations = try? dataManager.database.fetchAllOptOutEmailConfirmations() else {
                 assertionFailure("DataManager error during DataBrokerDatavaseBrowserViewModel.updateTables")
                 return
             }
 
             let profileBrokers = data.map { $0.dataBroker }
             let dataBrokers = Array(Set(profileBrokers)).sorted { $0.id ?? 0 < $1.id ?? 0 }
+            let brokerIdToUrl = dataBrokers.reduce(into: [Int64: String]()) { result, broker in
+                guard let id = broker.id else { return }
+                result[id] = broker.url
+            }
 
             let profileQuery = Array(Set(data.map { $0.profileQuery }))
             let scanJobs = data.map { $0.scanJobData }
@@ -88,12 +120,216 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
             let extractedProfilesTable = createTable(using: extractedProfiles, tableName: "ExtractedProfile")
             let eventsTable = createTable(using: events.sorted(by: { $0.date < $1.date }), tableName: "Events")
             let attemptsTable = createTable(using: attempts.sorted(by: <), tableName: "OptOutAttempts")
+            let emailConfirmationsTable = createTable(using: emailConfirmations, tableName: "EmailConfirmations")
 
             DispatchQueue.main.async {
-                self.tables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable]
+                let updatedTables = [brokersTable, profileQueriesTable, scansTable, optOutsTable, extractedProfilesTable, eventsTable, attemptsTable, emailConfirmationsTable]
+                self.tables = updatedTables
+                self.brokerIdToUrl = brokerIdToUrl
             }
         }
  }
+
+    func refresh() {
+        updateTables()
+    }
+
+    func sortedRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
+        let filteredRows = filteredRows(for: table)
+
+        guard let sortState = tableSortState[table.name],
+              let sortColumn = sortState.column else {
+            return filteredRows
+        }
+
+        return filteredRows.sorted { row1, row2 in
+            let val1 = row1.data[sortColumn]?.description.lowercased() ?? ""
+            let val2 = row2.data[sortColumn]?.description.lowercased() ?? ""
+            return sortState.ascending ? val1 < val2 : val1 > val2
+        }
+    }
+
+    func filteredRows(for table: DataBrokerDatabaseBrowserData.Table) -> [DataBrokerDatabaseBrowserData.Row] {
+        let tokens = tableSearchTokens[table.name] ?? []
+        let matchMode = tableSearchMatchMode[table.name] ?? .and
+
+        guard !tokens.isEmpty else {
+            return table.rows
+        }
+
+        return table.rows.filter { row in
+            let matches = tokens.map { token in
+                if let column = token.column {
+                    return rowMatchesColumn(row, column: column, value: token.normalizedValue)
+                }
+                return rowMatchesAnyColumn(row, value: token.normalizedValue)
+            }
+            switch matchMode {
+            case .and:
+                return matches.allSatisfy { $0 }
+            case .or:
+                return matches.contains(true)
+            }
+        }
+    }
+
+    func toggleSort(for column: String, in table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+        let currentState = tableSortState[tableName]
+
+        if currentState?.column == column {
+            // Toggle ascending/descending for same column
+            let newAscending = !(currentState?.ascending ?? true)
+            tableSortState[tableName] = (column: column, ascending: newAscending)
+            sortColumn = column
+            sortAscending = newAscending
+        } else {
+            // New column, default to ascending
+            tableSortState[tableName] = (column: column, ascending: true)
+            sortColumn = column
+            sortAscending = true
+        }
+    }
+
+    func columnWidth(for column: String, in table: DataBrokerDatabaseBrowserData.Table) -> CGFloat {
+        return tableColumnWidths[table.name]?[column] ?? 200.0
+    }
+
+    func setColumnWidth(_ width: CGFloat, for column: String, in table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+        let clampedWidth = max(60.0, width)
+
+        if tableColumnWidths[tableName] == nil {
+            tableColumnWidths[tableName] = [:]
+        }
+        tableColumnWidths[tableName]?[column] = clampedWidth
+
+        // Only update published property if there's a meaningful change
+        if abs((columnWidths[column] ?? 0) - clampedWidth) > 1.0 {
+            columnWidths[column] = clampedWidth
+        }
+    }
+
+    func initializeColumnWidths(for table: DataBrokerDatabaseBrowserData.Table) {
+        guard !table.rows.isEmpty else { return }
+
+        let tableName = table.name
+        let columnKeys = sortedColumnKeys(for: table)
+
+        if tableColumnWidths[tableName] == nil {
+            tableColumnWidths[tableName] = [:]
+        }
+
+        for key in columnKeys where tableColumnWidths[tableName]?[key] == nil  {
+            tableColumnWidths[tableName]?[key] = 200.0 // Default width
+        }
+
+        // Update published properties for current table
+        updatePublishedState(for: table)
+    }
+
+    func updatePublishedState(for table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+
+        // Update sort state
+        if let sortState = tableSortState[tableName] {
+            sortColumn = sortState.column
+            sortAscending = sortState.ascending
+        } else {
+            sortColumn = nil
+            sortAscending = true
+        }
+
+        // Update column widths
+        if let tableWidths = tableColumnWidths[tableName] {
+            columnWidths = tableWidths
+        } else {
+            columnWidths = [:]
+        }
+
+        // Update search tokens
+        searchTokens = tableSearchTokens[tableName] ?? []
+        searchMatchMode = tableSearchMatchMode[tableName] ?? .and
+    }
+
+    func setSearchTokens(_ searchTokens: [DataBrokerDatabaseSearchToken], for table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+        let normalizedTokens = searchTokens.filter { !$0.normalizedValue.isEmpty }
+        tableSearchTokens[tableName] = normalizedTokens
+        self.searchTokens = normalizedTokens
+    }
+
+    func setSearchMatchMode(_ matchMode: SearchMatchMode, for table: DataBrokerDatabaseBrowserData.Table) {
+        let tableName = table.name
+        tableSearchMatchMode[tableName] = matchMode
+        self.searchMatchMode = matchMode
+    }
+
+    func sortedColumnKeys(for table: DataBrokerDatabaseBrowserData.Table) -> [String] {
+        guard !table.rows.isEmpty else { return [] }
+
+        return Array(table.rows[0].data.keys).sorted { key1, key2 in
+            let key1Lower = key1.lowercased()
+            let key2Lower = key2.lowercased()
+
+            // Prioritize ID columns first
+            let key1IsId = key1Lower.hasSuffix("id") || key1Lower == "id"
+            let key2IsId = key2Lower.hasSuffix("id") || key2Lower == "id"
+
+            if key1IsId && !key2IsId {
+                return true
+            } else if !key1IsId && key2IsId {
+                return false
+            } else {
+                // Both are ID columns or neither are ID columns, sort alphabetically
+                return key1 < key2
+            }
+        }
+    }
+
+    func exportTableAsCSV(_ table: DataBrokerDatabaseBrowserData.Table) -> String {
+        let columnKeys = sortedColumnKeys(for: table)
+        let rows = sortedRows(for: table)
+
+        guard !columnKeys.isEmpty else { return "" }
+
+        var csvContent = ""
+
+        // Add header row
+        let headers = columnKeys.map { escapeCSVField($0) }
+        csvContent += headers.joined(separator: ",") + "\n"
+
+        // Add data rows
+        for row in rows {
+            let values = columnKeys.map { key in
+                let value = row.data[key]?.description ?? ""
+                return escapeCSVField(value)
+            }
+            csvContent += values.joined(separator: ",") + "\n"
+        }
+
+        return csvContent
+    }
+
+    private func escapeCSVField(_ field: String) -> String {
+        // If field contains comma, newline, or quotes, wrap in quotes and escape internal quotes
+        if field.contains(",") || field.contains("\n") || field.contains("\"") {
+            let escapedField = field.replacingOccurrences(of: "\"", with: "\"\"")
+            return "\"\(escapedField)\""
+        }
+        return field
+    }
+
+    func displayValue(for column: String, value: CustomStringConvertible?) -> String {
+        guard let value else { return "" }
+        let stringValue = value.description
+        guard column == "brokerId",
+              let id = Int64(stringValue.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let url = brokerIdToUrl[id] else {
+            return stringValue
+        }
+        return "\(id) (\(url))"
+    }
 
     private func convertToGenericRowData<T>(_ item: T) -> DataBrokerDatabaseBrowserData.Row {
         let mirror = Mirror(reflecting: item)
@@ -123,6 +359,24 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
         }
 
         return unwrapChildValue(child.value)
+    }
+
+    private func rowMatchesColumn(_ row: DataBrokerDatabaseBrowserData.Row,
+                                  column: String,
+                                  value: String) -> Bool {
+        let matchingKey = row.data.keys.first { $0.caseInsensitiveCompare(column) == .orderedSame }
+        guard let key = matchingKey,
+              let fieldValue = row.data[key]?.description else { return false }
+
+        return fieldValue.lowercased().contains(value.lowercased())
+    }
+
+    private func rowMatchesAnyColumn(_ row: DataBrokerDatabaseBrowserData.Row,
+                                     value: String) -> Bool {
+        let lowercasedValue = value.lowercased()
+        return row.data.values.contains { fieldValue in
+            fieldValue.description.lowercased().contains(lowercasedValue)
+        }
     }
 }
 

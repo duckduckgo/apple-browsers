@@ -19,6 +19,7 @@
 
 import Foundation
 import Core
+import PixelKit
 
 protocol UnifiedFeedbackSender {
     func sendFeatureRequestPixel(description: String, source: String) async throws
@@ -46,28 +47,17 @@ extension UnifiedFeedbackSender {
     }
 
     func sendPixel(_ pixel: Pixel.Event, frequency: UnifiedFeedbackSenderFrequency) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let completionHandler: (Error?) -> Void = { error in
-                if let error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
-                }
-            }
-
-            switch frequency {
-            case .regular:
-                Pixel.fire(pixel: pixel,
-                           withAdditionalParameters: Self.additionalParameters(for: pixel),
-                           onComplete: completionHandler)
-            case .dailyAndCount:
-                DailyPixel.fireDailyAndCount(pixel: pixel,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             withAdditionalParameters: Self.additionalParameters(for: pixel),
-                                             onDailyComplete: { _ in },
-                                             onCountComplete: completionHandler)
-            }
+        let pixelKitFrequency: PixelKit.Frequency
+        switch frequency {
+        case .regular:
+            pixelKitFrequency = .standard
+        case .dailyAndCount:
+            pixelKitFrequency = .legacyDailyAndCount
         }
+
+        try await PixelKit.fireAsync(pixel,
+                                     frequency: pixelKitFrequency,
+                                     options: .parameters(Self.additionalParameters(for: pixel)))
     }
 }
 
@@ -103,6 +93,7 @@ struct DefaultFeedbackSender: UnifiedFeedbackSender {
         case nothingOnSpecificSite, notMe, scanStuck, removalStuck
         case accessCode, cantContactAdvisor, advisorUnhelpful
         case accessSubscriptionModels, loginThirdPartyBrowser
+        case unableToAccessFeatures
         case somethingElse
         static var `default` = Subcategory.somethingElse
     }

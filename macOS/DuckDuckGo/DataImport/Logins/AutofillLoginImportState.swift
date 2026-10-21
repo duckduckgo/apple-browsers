@@ -18,15 +18,17 @@
 
 import AppKit
 import BrowserServicesKit
+import PrivacyConfig
 
 final class AutofillLoginImportState: AutofillLoginImportStateProvider, AutofillLoginImportStateStoring {
     private enum Key {
         static let hasImportedLogins: String = "com.duckduckgo.logins.hasImportedLogins"
-        static let isCredentialsImportPromptPermanantlyDismissed: String = "com.duckduckgo.logins.isCredentialsImportPromptPermanantlyDismissed"
+        static let isCredentialsImportViaBrowserPromptPermanentlyDismissed: String = "com.duckduckgo.logins.isCredentialsImportPromptPermanantlyDismissed"
     }
 
     private let userDefaults: UserDefaults
     private let featureFlagger: FeatureFlagger
+    private let autofillPreferences: AutofillPreferencesPersistor
 
     public var isEligibleDDGUser: Bool {
         guard !featureFlagger.isFeatureOn(.credentialsImportPromotionForExistingUsers) else {
@@ -48,23 +50,37 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
         }
     }
 
+    /// Whether DuckDuckGo autofills passwords: the user wants it, and no extension manages autofill.
     public var isAutofillEnabled: Bool {
-        AutofillPreferences().askToSaveUsernamesAndPasswords
+        autofillPreferences.isUsernamesAndPasswordsAutofillActive
     }
 
-    public var isCredentialsImportPromptPermanantlyDismissed: Bool {
+    public var isAutofillManagedByExtension: Bool {
+        autofillPreferences.isManagedByExtension
+    }
+
+    public var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool {
         get {
-            userDefaults.bool(forKey: Key.isCredentialsImportPromptPermanantlyDismissed)
+            userDefaults.bool(forKey: Key.isCredentialsImportViaBrowserPromptPermanentlyDismissed)
         }
 
         set {
-            userDefaults.set(newValue, forKey: Key.isCredentialsImportPromptPermanantlyDismissed)
+            userDefaults.set(newValue, forKey: Key.isCredentialsImportViaBrowserPromptPermanentlyDismissed)
         }
     }
 
-    init(userDefaults: UserDefaults = .standard, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    // no-op on macOS
+    public var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool = false
+
+    // no-op on macOS
+    public var credentialsImportPromptPresentationCount: Int = 0
+
+    init(userDefaults: UserDefaults = .standard,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences()) {
         self.userDefaults = userDefaults
         self.featureFlagger = featureFlagger
+        self.autofillPreferences = autofillPreferences
     }
 
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool {

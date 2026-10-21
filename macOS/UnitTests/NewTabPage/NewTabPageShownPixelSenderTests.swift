@@ -18,8 +18,10 @@
 
 import Combine
 import NewTabPage
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PrivacyStats
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -35,8 +37,9 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
     var customizationModel: NewTabPageCustomizationModel!
     var handler: NewTabPageShownPixelSender!
     var keyValueStore: MockKeyValueStore!
-    var firePixelCalls: [PixelKitEvent] = []
+    var firePixelCalls: [PixelKit.Event] = []
 
+    @MainActor
     override func setUp() async throws {
         try await super.setUp()
 
@@ -46,7 +49,8 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
 
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()
@@ -56,8 +60,7 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
             userBackgroundImagesManager: nil,
             sendPixel: { _ in },
             openFilePanel: { nil },
-            showAddImageFailedAlert: {},
-            visualStyle: VisualStyle.legacy
+            showAddImageFailedAlert: {}
         )
 
         handler = NewTabPageShownPixelSender(

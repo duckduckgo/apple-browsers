@@ -37,4 +37,6 @@ runs:
         PIXEL_URL="${PIXEL_URL}?${QUERY_STRING}"
 
         echo "::notice::Sending pixel to: ${PIXEL_URL}"
-        curl -fLSs -o /dev/null "${PIXEL_URL}"
+
+        # Retry on all error types (DNS failures, connection resets, HTTP errors, etc.)
+        curl -fLSs --retry 3 --retry-delay 2 --retry-all-errors -o /dev/null "${PIXEL_URL}"

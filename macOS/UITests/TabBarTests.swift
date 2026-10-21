@@ -19,19 +19,13 @@
 import XCTest
 
 class TabBarTests: UITestCase {
-    private var app: XCUIApplication!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
 
-        app.typeKey("n", modifierFlags: .command)
+        app.openNewWindow()
         resetPinnedTabs()
-    }
-
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
     }
 
     func testClosesChildTabIsSelected_whenSibilingTabIsClosed() {
@@ -40,15 +34,15 @@ class TabBarTests: UITestCase {
         /// Opens the first link with CMD pressed so we open it on a new tab
         let tab1Link = app.webViews.firstMatch.links["Downloads"]
         tab1Link.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
 
         let tab2Link = app.webViews.firstMatch.links["Print"]
         tab2Link.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
 
         /// Move to the next tab and closes it
         app.typeKey("]", modifierFlags: [.command, .shift])
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
 
         /// Asserts that the next child tab is shown
         XCTAssertTrue(app.staticTexts["Print"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -56,25 +50,28 @@ class TabBarTests: UITestCase {
 
     func testClosesChildTabIsSelected_whenParentTabIsClosed() {
         /// We open three empty tabs and then we load the parent privacy site
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
+        app.openNewTab()
+        app.openNewTab()
         openPrivacyTestPagesSite()
+        let tabCountBeforeChildren = app.tabs.count
 
         /// Opens two child sites (downloads and print)
         let downloadsChildSiteLink = app.webViews.firstMatch.links["Downloads"]
         downloadsChildSiteLink.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
 
         let printChildSiteLink = app.webViews.firstMatch.links["Print"]
         printChildSiteLink.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(app.wait(for: .keyPath(\.tabs.count, equalTo: tabCountBeforeChildren + 2), timeout: UITests.Timeouts.elementExistence),
+                      "Both child tabs should open before closing their parent")
 
         /// We pin the privacy site and we close it. We do this to position the parent child first in the tab collection
         /// The reason why we unpin it, is because we do not want for it to be pinned for other tests.
-        app.menuItems["Pin Tab"].tap()
-        app.menuItems["Unpin Tab"].tap()
-        app.menuItems["Close Tab"].tap()
+        app.pinCurrentTab()
+        app.unpinCurrentTab()
+        app.closeCurrentTab()
 
         /// Asserts that the first child next to the closed parent tab is shown. In this case si the Downloads site
         XCTAssertTrue(app.staticTexts["Download PDF"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -82,20 +79,20 @@ class TabBarTests: UITestCase {
 
     func testParentTabIsSelected_whenChildTabIsClosedAndNoOtherChildTabsAreOpened() {
         /// We open three empty tabs and then we load the parent privacy site
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
+        app.openNewTab()
+        app.openNewTab()
         openPrivacyTestPagesSite()
 
         /// Opens one child sites (downloads and print)
         let downloadsChildSiteLink = app.webViews.firstMatch.links["Downloads"]
         downloadsChildSiteLink.rightClick()
-        app.menuItems["Open Link in New Tab"].firstMatch.tap()
+        app.menuItems["Open Link in New Tab"].firstMatch.clickAfterExistenceTestSucceeds()
 
         /// We pin the privacy site and we close it. We do this to position the parent child first in the tab collection
         /// The reason why we unpin it, is because we do not want for it to be pinned for other tests.
-        app.menuItems["Pin Tab"].tap()
-        app.menuItems["Unpin Tab"].tap()
+        app.pinCurrentTab()
+        app.unpinCurrentTab()
 
         /// We move through tabs until we are in the child position tab and we close it
         app.typeKey("]", modifierFlags: [.command, .shift])
@@ -103,7 +100,7 @@ class TabBarTests: UITestCase {
         app.typeKey("]", modifierFlags: [.command, .shift])
         app.typeKey("]", modifierFlags: [.command, .shift])
 
-        app.menuItems["Close Tab"].tap()
+        app.closeCurrentTab()
 
         /// Asserts that the first child next to the closed parent tab is shown. In this case si the Downloads site
         XCTAssertTrue(app.staticTexts["Privacy Test Pages"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -115,11 +112,11 @@ class TabBarTests: UITestCase {
         app.typeKey("1", modifierFlags: [.command])
 
         /// We open a new tab and we close it
-        app.typeKey("t", modifierFlags: [.command])
-        app.menuItems["Close Tab"].tap()
+        app.openNewTab()
+        app.closeCurrentTab()
 
         /// Asserts that the recently active tab is visible
-        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
     }
 
     func testRecentlyActiveTabIsNotSelected_ifAnotherTabWasSelectedBeforeTheTabWasClosed() {
@@ -128,21 +125,43 @@ class TabBarTests: UITestCase {
         app.typeKey("1", modifierFlags: [.command])
 
         /// We open a new tab
-        app.typeKey("t", modifierFlags: [.command])
+        app.openNewTab()
         /// We move to the third tab
         app.typeKey("3", modifierFlags: [.command])
         /// We move to the last tab and we close it
         app.typeKey("5", modifierFlags: [.command])
-        app.menuItems["Close Tab"].tap()
+        app.closeCurrentTab()
 
         /// Asserts that the tab to the right is shown
-        XCTAssertTrue(app.staticTexts["Sample text for Page #4"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(app.staticTexts["Sample text for Page #4"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+    }
+
+    func testContextMenuOpens_withRightClickOnTab() {
+        let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons.firstMatch
+        tab.rightClick()
+
+        let contextMenu = tab.children(matching: .menu).firstMatch
+
+        XCTAssertTrue(contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Context menu should appear on right click")
+    }
+
+    func testContextMenuOpens_withContextClickOnTab() {
+        let tab = app.tabGroups.matching(identifier: "Tabs").radioButtons.firstMatch
+        XCUIElement.perform(withKeyModifiers: .control) {
+            tab.click()
+        }
+
+        let contextMenu = tab.children(matching: .menu).firstMatch
+
+        XCTAssertTrue(contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Context menu should appear on control click")
     }
 
     // MARK: - Utilities
 
     private func resetPinnedTabs() {
-        app.menuItems["Reset Pinned Tabs"].tap()
+        app.debugMenu.click()
+        app.menuItems["MainMenu.resetData"].hover()
+        app.menuItems["Reset Pinned Tabs"].clickAfterExistenceTestSucceeds()
     }
 
     private func moveToRightEndTab() {
@@ -155,13 +174,13 @@ class TabBarTests: UITestCase {
     }
 
     private func openFourSitesOnSameWindow() {
-        openSite(pageTitle: "Page #1")
+        app.openSite(pageTitle: "Page #1")
         app.openNewTab()
-        openSite(pageTitle: "Page #2")
+        app.openSite(pageTitle: "Page #2")
         app.openNewTab()
-        openSite(pageTitle: "Page #3")
+        app.openSite(pageTitle: "Page #3")
         app.openNewTab()
-        openSite(pageTitle: "Page #4")
+        app.openSite(pageTitle: "Page #4")
     }
 
     private func pinsPageOne() {
@@ -171,31 +190,16 @@ class TabBarTests: UITestCase {
         app.menuItems["Pin Tab"].tap()
     }
 
-    private func openSite(pageTitle: String) {
-        let url = UITests.simpleServedPage(titled: pageTitle)
-
-        let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]
-        XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBarTextField.typeURL(url)
-        XCTAssertTrue(
-            app.windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
-    }
-
     private func openPrivacyTestPagesSite() {
         let url = URL(string: "http://privacy-test-pages.site/index.html")!
-        let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]
+        let addressBar = app.addressBar
         XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(url)
+        addressBar.typeURL(url)
         XCTAssertTrue(
-            app.windows.firstMatch.webViews["Privacy Test Pages - Home"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.firstMatch.webViews["Privacy Test Pages - Home"].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
     }

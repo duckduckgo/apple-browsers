@@ -30,9 +30,9 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
     var database: CoreDataDatabase!
 
     private enum Resource {
-        static let allowList = Bundle.module.url(forResource: "Resources/privacy-reference-tests/https-upgrades/https_allowlist_reference", withExtension: "json")!
-        static let bloomFilterSpec = Bundle.module.url(forResource: "Resources/privacy-reference-tests/https-upgrades/https_bloomfilter_spec_reference", withExtension: "json")!
-        static let bloomFilter = Bundle.module.url(forResource: "Resources/privacy-reference-tests/https-upgrades/https_bloomfilter_reference", withExtension: "bin")!
+        static let allowList = Bundle.module.url(forResource: "Res/privacy-reference-tests/https-upgrades/https_allowlist_reference", withExtension: "json")!
+        static let bloomFilterSpec = Bundle.module.url(forResource: "Res/privacy-reference-tests/https-upgrades/https_bloomfilter_spec_reference", withExtension: "json")!
+        static let bloomFilter = Bundle.module.url(forResource: "Res/privacy-reference-tests/https-upgrades/https_bloomfilter_reference", withExtension: "bin")!
     }
 
     override func setUp() {
@@ -98,6 +98,15 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
         XCTAssertEqual(specification, testee.loadBloomFilter()?.specification)
     }
 
+    func testWhenBloomFilterMatchesPersistedDataThenPersistenceIsSkipped() throws {
+        let data = "Hello World!".data(using: .utf8)!
+        let sha = "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+        let specification = HTTPSBloomFilterSpecification(bitCount: 100, errorRate: 0.01, totalEntries: 100, sha256: sha)
+
+        XCTAssertTrue(try testee.persistBloomFilter(specification: specification, data: data))
+        XCTAssertFalse(try testee.persistBloomFilter(specification: specification, data: data))
+    }
+
     func testWhenNewBloomFilterDoesNotMatchShaInSpecThenSpecAndDataNotPersisted() {
         let data = "Hello World!".data(using: .utf8)!
         let sha = "wrong sha"
@@ -131,6 +140,11 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
         XCTAssertTrue(testee.hasExcludedDomain("apple.com"))
     }
 
+    func testWhenExcludedDomainsMatchPersistedDataThenPersistenceIsSkipped() throws {
+        XCTAssertTrue(try testee.persistExcludedDomains(["WWW.EXAMPLE.COM", "apple.com"]))
+        XCTAssertFalse(try testee.persistExcludedDomains(["apple.com", "www.example.com"]))
+    }
+
     func testWhenNoExcludedDomainsPersistedThenExcludedDomainIsFalse() {
         XCTAssertFalse(testee.hasExcludedDomain("www.example.com"))
         XCTAssertFalse(testee.hasExcludedDomain("apple.com"))
@@ -143,6 +157,43 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
         XCTAssertFalse(testee.hasExcludedDomain("otherold.com"))
         XCTAssertTrue(testee.hasExcludedDomain("www.new.com"))
         XCTAssertTrue(testee.hasExcludedDomain("othernew.com"))
+    }
+
+    func testConcurrentReadsAndWritesRemainConsistent() throws {
+        let specificationData = try Data(contentsOf: Resource.bloomFilterSpec)
+        let specification = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specificationData)
+        let bloomData = try Data(contentsOf: Resource.bloomFilter)
+
+        let iterations = 50
+        let queue = DispatchQueue(label: "test.concurrent.writes", attributes: .concurrent)
+        let group = DispatchGroup()
+
+        for _ in 0..<iterations {
+            group.enter()
+            queue.async {
+                _ = self.testee.loadBloomFilter()
+                group.leave()
+            }
+
+            group.enter()
+            queue.async {
+                do {
+                    try self.testee.persistBloomFilter(specification: specification, data: bloomData)
+                } catch {
+                    XCTFail("Persist should not throw: \(error)")
+                }
+                group.leave()
+            }
+        }
+
+        let expectation = expectation(description: "Concurrent load/persist operations complete")
+        queue.async {
+            group.wait()
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 30)
+        XCTAssertNotNil(testee.loadBloomFilter())
     }
 
 }

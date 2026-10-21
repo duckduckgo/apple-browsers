@@ -1,0 +1,681 @@
+//
+//  DataClearingWideEventData.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import WideEvent
+
+/// Wide event data for tracking data clearing operations.
+///
+/// This class captures comprehensive telemetry about data clearing flows, including:
+/// - Overall clearing duration and status
+/// - Per-action latency and error tracking
+/// - Platform-specific metadata (iOS vs macOS)
+/// - User selection context (options, trigger, scope)
+///
+/// The implementation follows the fire-and-forget pattern where overall status is either
+/// SUCCESS or UNKNOWN (no FAILURE status), while individual actions can still report failures.
+/// An action error that can mean the action had nothing it could do, rather than that it went wrong.
+public protocol DataClearingActionSkipping: Error {
+    var skipsAction: Bool { get }
+}
+
+public class DataClearingWideEventData: WideEventData {
+
+    // MARK: - Metadata
+
+    public static let metadata = WideEventMetadata(
+        pixelName: "data_clearing",
+        featureName: "data-clearing",
+        mobileMetaType: "ios-data-clearing",
+        desktopMetaType: "macos-data-clearing",
+        version: "1.1.5"
+    )
+
+    public static let clearingTimeout: TimeInterval = .minutes(15)
+
+    // MARK: - WideEventData Required Properties
+
+    public var globalData: WideEventGlobalData
+    public var contextData: WideEventContextData
+    public var appData: WideEventAppData
+    public var errorData: WideEventErrorData?
+
+    // MARK: - Shared Feature Properties
+
+    /// What initiated the clearing flow.
+    public var trigger: Trigger
+
+    /// Overall duration from start of clearing attempt to end state.
+    public var overallDuration: WideEvent.MeasuredInterval?
+
+    // MARK: - iOS-Specific Properties
+
+    /// Comma-separated list of specific options selected (iOS only).
+    public var includedOptions: String?
+
+    /// Scope of the clearing action (iOS only).
+    public var scope: Scope?
+
+    /// Entry point that triggered the data clearing flow (iOS only).
+    public var source: Source?
+
+    // MARK: - macOS-Specific Properties
+
+    /// What data the user selected for clearing (macOS only).
+    public var options: Options?
+
+    /// Execution path during clearing (macOS only).
+    public var path: Path?
+
+    /// Comma-separated list of domain categories included (macOS only).
+    public var includedDomains: String?
+
+    // MARK: - Per-Action Properties
+
+    // Shared actions
+    public var clearTabsDuration: WideEvent.MeasuredInterval?
+    public var clearTabsStatus: ActionStatus?
+    public var clearTabsError: WideEventErrorData?
+
+    public var clearSafelyRemovableWebsiteDataDuration: WideEvent.MeasuredInterval?
+    public var clearSafelyRemovableWebsiteDataStatus: ActionStatus?
+    public var clearSafelyRemovableWebsiteDataError: WideEventErrorData?
+
+    public var clearFireproofableDataForNonFireproofDomainsDuration: WideEvent.MeasuredInterval?
+    public var clearFireproofableDataForNonFireproofDomainsStatus: ActionStatus?
+    public var clearFireproofableDataForNonFireproofDomainsError: WideEventErrorData?
+
+    public var clearCookiesForNonFireproofedDomainsDuration: WideEvent.MeasuredInterval?
+    public var clearCookiesForNonFireproofedDomainsStatus: ActionStatus?
+    public var clearCookiesForNonFireproofedDomainsError: WideEventErrorData?
+
+    public var clearAllHistoryDuration: WideEvent.MeasuredInterval?
+    public var clearAllHistoryStatus: ActionStatus?
+    public var clearAllHistoryError: WideEventErrorData?
+
+    public var clearAIChatHistoryDuration: WideEvent.MeasuredInterval?
+    public var clearAIChatHistoryStatus: ActionStatus?
+    public var clearAIChatHistoryError: WideEventErrorData?
+    /// Whether the Duck.ai clear was retried after a transient failure; the first attempt's error is kept alongside.
+    public var clearAIChatHistoryRetried: Bool?
+    public var clearAIChatHistoryFirstAttemptError: WideEventErrorData?
+    /// Slowest page load, script-ready wait and script reply of the first attempt, across Duck.ai origins.
+    public var clearAIChatHistoryPageLoadMilliseconds: Int?
+    public var clearAIChatHistoryScriptReadyMilliseconds: Int?
+    public var clearAIChatHistoryScriptReplyMilliseconds: Int?
+    /// How long the Duck.ai clear waited for the storage warm-up before starting; 0 when storage was already warm.
+    public var clearAIChatHistoryWarmupWaitMilliseconds: Int?
+
+    public var clearAutoconsentManagementCacheDuration: WideEvent.MeasuredInterval?
+    public var clearAutoconsentManagementCacheStatus: ActionStatus?
+    public var clearAutoconsentManagementCacheError: WideEventErrorData?
+
+    public var clearFaviconCacheDuration: WideEvent.MeasuredInterval?
+    public var clearFaviconCacheStatus: ActionStatus?
+    public var clearFaviconCacheError: WideEventErrorData?
+
+    public var cancelAllDownloadsDuration: WideEvent.MeasuredInterval?
+    public var cancelAllDownloadsStatus: ActionStatus?
+    public var cancelAllDownloadsError: WideEventErrorData?
+
+    public var clearBookmarkDatabaseDuration: WideEvent.MeasuredInterval?
+    public var clearBookmarkDatabaseStatus: ActionStatus?
+    public var clearBookmarkDatabaseError: WideEventErrorData?
+
+    public var forgetTextZoomDuration: WideEvent.MeasuredInterval?
+    public var forgetTextZoomStatus: ActionStatus?
+    public var forgetTextZoomError: WideEventErrorData?
+
+    public var clearPrivacyStatsDuration: WideEvent.MeasuredInterval?
+    public var clearPrivacyStatsStatus: ActionStatus?
+    public var clearPrivacyStatsError: WideEventErrorData?
+
+    public var clearPermissionsDuration: WideEvent.MeasuredInterval?
+    public var clearPermissionsStatus: ActionStatus?
+    public var clearPermissionsError: WideEventErrorData?
+
+    // iOS-only actions
+    public var clearURLCachesDuration: WideEvent.MeasuredInterval?
+    public var clearURLCachesStatus: ActionStatus?
+    public var clearURLCachesError: WideEventErrorData?
+
+    public var clearDaxDialogsHeldURLDataDuration: WideEvent.MeasuredInterval?
+    public var clearDaxDialogsHeldURLDataStatus: ActionStatus?
+    public var clearDaxDialogsHeldURLDataError: WideEventErrorData?
+
+    public var removeObservationsDataDuration: WideEvent.MeasuredInterval?
+    public var removeObservationsDataStatus: ActionStatus?
+    public var removeObservationsDataError: WideEventErrorData?
+
+    public var removeAllContainersAfterDelayDuration: WideEvent.MeasuredInterval?
+    public var removeAllContainersAfterDelayStatus: ActionStatus?
+    public var removeAllContainersAfterDelayError: WideEventErrorData?
+
+    public var deleteContextualAIChatDuration: WideEvent.MeasuredInterval?
+    public var deleteContextualAIChatStatus: ActionStatus?
+    public var deleteContextualAIChatError: WideEventErrorData?
+
+    public var clearWebsiteDataFireModeDuration: WideEvent.MeasuredInterval?
+    public var clearWebsiteDataFireModeStatus: ActionStatus?
+    public var clearWebsiteDataFireModeError: WideEventErrorData?
+
+    public var clearAutoconsentManagementCacheFireModeDuration: WideEvent.MeasuredInterval?
+    public var clearAutoconsentManagementCacheFireModeStatus: ActionStatus?
+    public var clearAutoconsentManagementCacheFireModeError: WideEventErrorData?
+
+    public var forgetTextZoomFireModeDuration: WideEvent.MeasuredInterval?
+    public var forgetTextZoomFireModeStatus: ActionStatus?
+    public var forgetTextZoomFireModeError: WideEventErrorData?
+
+    public var warmUpWebsiteDataStoreDuration: WideEvent.MeasuredInterval?
+    public var warmUpWebsiteDataStoreStatus: ActionStatus?
+    public var warmUpWebsiteDataStoreError: WideEventErrorData?
+
+    public var clearAppSwitcherSnapshotsDuration: WideEvent.MeasuredInterval?
+    public var clearAppSwitcherSnapshotsStatus: ActionStatus?
+    public var clearAppSwitcherSnapshotsError: WideEventErrorData?
+
+    // macOS-only actions
+    public var clearVisitedLinksDuration: WideEvent.MeasuredInterval?
+    public var clearVisitedLinksStatus: ActionStatus?
+    public var clearVisitedLinksError: WideEventErrorData?
+
+    public var clearRecentlyClosedDuration: WideEvent.MeasuredInterval?
+    public var clearRecentlyClosedStatus: ActionStatus?
+    public var clearRecentlyClosedError: WideEventErrorData?
+
+    public var clearLastSessionStateDuration: WideEvent.MeasuredInterval?
+    public var clearLastSessionStateStatus: ActionStatus?
+    public var clearLastSessionStateError: WideEventErrorData?
+
+    public var resetCookiePopupBlockedFlagDuration: WideEvent.MeasuredInterval?
+    public var resetCookiePopupBlockedFlagStatus: ActionStatus?
+    public var resetCookiePopupBlockedFlagError: WideEventErrorData?
+
+    public var clearAutoconsentStatsDuration: WideEvent.MeasuredInterval?
+    public var clearAutoconsentStatsStatus: ActionStatus?
+    public var clearAutoconsentStatsError: WideEventErrorData?
+
+    public var clearVisitsDuration: WideEvent.MeasuredInterval?
+    public var clearVisitsStatus: ActionStatus?
+    public var clearVisitsError: WideEventErrorData?
+
+    public var clearFileCacheDuration: WideEvent.MeasuredInterval?
+    public var clearFileCacheStatus: ActionStatus?
+    public var clearFileCacheError: WideEventErrorData?
+
+    public var clearDeviceHashSaltsDuration: WideEvent.MeasuredInterval?
+    public var clearDeviceHashSaltsStatus: ActionStatus?
+    public var clearDeviceHashSaltsError: WideEventErrorData?
+
+    public var clearRemoveResourceLoadStatisticsDatabaseDuration: WideEvent.MeasuredInterval?
+    public var clearRemoveResourceLoadStatisticsDatabaseStatus: ActionStatus?
+    public var clearRemoveResourceLoadStatisticsDatabaseError: WideEventErrorData?
+
+    // MARK: - Initialization
+
+    public init(
+        options: Options? = nil,
+        includedOptions: String? = nil,
+        trigger: Trigger,
+        overallDuration: WideEvent.MeasuredInterval? = nil,
+        scope: Scope? = nil,
+        source: Source? = nil,
+        path: Path? = nil,
+        includedDomains: String? = nil,
+        contextData: WideEventContextData,
+        appData: WideEventAppData = WideEventAppData(),
+        globalData: WideEventGlobalData = WideEventGlobalData()
+    ) {
+        self.options = options
+        self.includedOptions = includedOptions
+        self.trigger = trigger
+        self.overallDuration = overallDuration
+        self.scope = scope
+        self.source = source
+        self.path = path
+        self.includedDomains = includedDomains
+        self.contextData = contextData
+        self.appData = appData
+        self.globalData = globalData
+    }
+
+    // MARK: - WideEventData Protocol
+
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        switch trigger {
+        case .appLaunch:
+            guard let start = overallDuration?.start else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            guard overallDuration?.end == nil else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if Date() >= start.addingTimeInterval(Self.clearingTimeout) {
+                return .complete(.unknown(reason: StatusReason.timeout.rawValue))
+            }
+
+            return .keepPending
+        }
+    }
+}
+
+// MARK: - Public Types
+
+extension DataClearingWideEventData {
+
+    /// What data the user selected for clearing.
+    public enum Options: String, Codable, CaseIterable {
+        // iOS options
+        case tab
+        case data
+        case aiChats = "aichats"
+        case all
+
+        // macOS options
+        case currentTab
+        case currentWindow
+        case allData
+    }
+
+    /// What initiated the clearing flow.
+    public enum Trigger: String, Codable, CaseIterable {
+        // iOS triggers
+        case manualFire
+        case autoClearOnLaunch
+        case autoClearOnForeground
+        case fireModeAutoClear
+
+        // macOS triggers
+        case manual
+        case autoClear
+    }
+
+    /// Scope of the clearing action (iOS only).
+    public enum Scope: String, Codable, CaseIterable {
+        case tab
+        case all
+        case fireMode
+        case normalMode
+    }
+
+    /// Entry point that triggered the data clearing flow (iOS only).
+    public enum Source: String, Codable, CaseIterable {
+        case browsing
+        case escapeHatch
+        case tabSwitcher
+        case settings
+        case quickFire
+        case deeplink
+        case autoClear
+        case chatSuggestions
+    }
+
+    /// Execution path during clearing (macOS only).
+    public enum Path: String, Codable, CaseIterable {
+        case burnEntity
+        case burnAll
+        case burnVisits
+    }
+
+    /// Status reason for unknown/incomplete clearing attempts.
+    public enum StatusReason: String, Codable, CaseIterable {
+        case partialData = "partial_data"
+        case timeout
+    }
+
+    /// Per-action completion status.
+    public enum ActionStatus: String, Codable, CaseIterable {
+        case success = "SUCCESS"
+        case failure = "FAILURE"
+        /// The action had nothing it could do on this device; its error says why.
+        case skipped = "SKIPPED"
+
+        public init(failure error: Error) {
+            self = (error as? DataClearingActionSkipping)?.skipsAction == true ? .skipped : .failure
+        }
+    }
+
+    /// All trackable data clearing actions.
+    public enum Action: String, Codable, CaseIterable {
+        // Shared actions
+        case clearTabs = "clear_tabs"
+        case clearSafelyRemovableWebsiteData = "clear_website_data.clear_safely_removable_website_data"
+        case clearFireproofableDataForNonFireproofDomains = "clear_website_data.clear_fireproofable_data_for_nonFireproof_domains"
+        case clearCookiesForNonFireproofedDomains = "clear_website_data.clear_cookies_for_nonFireproofed_domains"
+        case clearAllHistory = "clear_all_history"
+        case clearAIChatHistory = "clear_aiChat_history"
+        case clearAutoconsentManagementCache = "clear_autoconsent_management_cache"
+        case clearFaviconCache = "clear_favicon_cache"
+        case cancelAllDownloads = "cancel_all_downloads"
+        case clearBookmarkDatabase = "clear_bookmark_database"
+        case forgetTextZoom = "forget_text_zoom"
+        case clearPrivacyStats = "clear_privacy_stats"
+        case clearPermissions = "clear_permissions"
+
+        // iOS-only actions
+        case clearURLCaches = "clear_url_caches"
+        case clearDaxDialogsHeldURLData = "clear_daxDialogs_held_URL_data"
+        case removeObservationsData = "clear_website_data.remove_observations_data"
+        case removeAllContainersAfterDelay = "clear_website_data.remove_all_containers_after_delay"
+        case deleteContextualAIChat = "delete_contextual_aiChat"
+        case clearWebsiteDataFireMode = "clear_website_data_fire_mode"
+        case clearAutoconsentManagementCacheFireMode = "clear_autoconsent_management_cache_fire_mode"
+        case forgetTextZoomFireMode = "forget_text_zoom_fire_mode"
+        case warmUpWebsiteDataStore = "warm_up_website_data_store"
+        case clearAppSwitcherSnapshots = "clear_app_switcher_snapshots"
+
+        // macOS-only actions
+        case clearVisitedLinks = "clear_visited_links"
+        case clearRecentlyClosed = "clear_recently_closed"
+        case clearLastSessionState = "clear_last_session_state"
+        case resetCookiePopupBlockedFlag = "reset_cookie_popup_blocked_flag"
+        case clearAutoconsentStats = "clear_autoconsent_stats"
+        case clearVisits = "clear_visits"
+        case clearFileCache = "clear_website_data.clear_file_cache"
+        case clearDeviceHashSalts = "clear_website_data.clear_device_hash_salts"
+        case clearRemoveResourceLoadStatisticsDatabase = "clear_website_data.clear_remove_resource_load_statistics_database"
+
+        /// Returns the keypath for accessing this action's duration property.
+        public var durationPath: WritableKeyPath<DataClearingWideEventData, WideEvent.MeasuredInterval?> {
+            switch self {
+            case .clearTabs: return \.clearTabsDuration
+            case .clearSafelyRemovableWebsiteData: return \.clearSafelyRemovableWebsiteDataDuration
+            case .clearFireproofableDataForNonFireproofDomains: return \.clearFireproofableDataForNonFireproofDomainsDuration
+            case .clearCookiesForNonFireproofedDomains: return \.clearCookiesForNonFireproofedDomainsDuration
+            case .clearAllHistory: return \.clearAllHistoryDuration
+            case .clearAIChatHistory: return \.clearAIChatHistoryDuration
+            case .clearAutoconsentManagementCache: return \.clearAutoconsentManagementCacheDuration
+            case .clearFaviconCache: return \.clearFaviconCacheDuration
+            case .cancelAllDownloads: return \.cancelAllDownloadsDuration
+            case .clearBookmarkDatabase: return \.clearBookmarkDatabaseDuration
+            case .forgetTextZoom: return \.forgetTextZoomDuration
+            case .clearPrivacyStats: return \.clearPrivacyStatsDuration
+            case .clearURLCaches: return \.clearURLCachesDuration
+            case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataDuration
+            case .removeObservationsData: return \.removeObservationsDataDuration
+            case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayDuration
+            case .deleteContextualAIChat: return \.deleteContextualAIChatDuration
+            case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeDuration
+            case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeDuration
+            case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeDuration
+            case .warmUpWebsiteDataStore: return \.warmUpWebsiteDataStoreDuration
+            case .clearAppSwitcherSnapshots: return \.clearAppSwitcherSnapshotsDuration
+            case .clearPermissions: return \.clearPermissionsDuration
+            case .clearVisitedLinks: return \.clearVisitedLinksDuration
+            case .clearRecentlyClosed: return \.clearRecentlyClosedDuration
+            case .clearLastSessionState: return \.clearLastSessionStateDuration
+            case .resetCookiePopupBlockedFlag: return \.resetCookiePopupBlockedFlagDuration
+            case .clearAutoconsentStats: return \.clearAutoconsentStatsDuration
+            case .clearVisits: return \.clearVisitsDuration
+            case .clearFileCache: return \.clearFileCacheDuration
+            case .clearDeviceHashSalts: return \.clearDeviceHashSaltsDuration
+            case .clearRemoveResourceLoadStatisticsDatabase: return \.clearRemoveResourceLoadStatisticsDatabaseDuration
+            }
+        }
+
+        /// Returns the keypath for accessing this action's status property.
+        public var statusPath: WritableKeyPath<DataClearingWideEventData, ActionStatus?> {
+            switch self {
+            case .clearTabs: return \.clearTabsStatus
+            case .clearSafelyRemovableWebsiteData: return \.clearSafelyRemovableWebsiteDataStatus
+            case .clearFireproofableDataForNonFireproofDomains: return \.clearFireproofableDataForNonFireproofDomainsStatus
+            case .clearCookiesForNonFireproofedDomains: return \.clearCookiesForNonFireproofedDomainsStatus
+            case .clearAllHistory: return \.clearAllHistoryStatus
+            case .clearAIChatHistory: return \.clearAIChatHistoryStatus
+            case .clearAutoconsentManagementCache: return \.clearAutoconsentManagementCacheStatus
+            case .clearFaviconCache: return \.clearFaviconCacheStatus
+            case .cancelAllDownloads: return \.cancelAllDownloadsStatus
+            case .clearBookmarkDatabase: return \.clearBookmarkDatabaseStatus
+            case .forgetTextZoom: return \.forgetTextZoomStatus
+            case .clearPrivacyStats: return \.clearPrivacyStatsStatus
+            case .clearURLCaches: return \.clearURLCachesStatus
+            case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataStatus
+            case .removeObservationsData: return \.removeObservationsDataStatus
+            case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayStatus
+            case .deleteContextualAIChat: return \.deleteContextualAIChatStatus
+            case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeStatus
+            case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeStatus
+            case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeStatus
+            case .warmUpWebsiteDataStore: return \.warmUpWebsiteDataStoreStatus
+            case .clearAppSwitcherSnapshots: return \.clearAppSwitcherSnapshotsStatus
+            case .clearPermissions: return \.clearPermissionsStatus
+            case .clearVisitedLinks: return \.clearVisitedLinksStatus
+            case .clearRecentlyClosed: return \.clearRecentlyClosedStatus
+            case .clearLastSessionState: return \.clearLastSessionStateStatus
+            case .resetCookiePopupBlockedFlag: return \.resetCookiePopupBlockedFlagStatus
+            case .clearAutoconsentStats: return \.clearAutoconsentStatsStatus
+            case .clearVisits: return \.clearVisitsStatus
+            case .clearFileCache: return \.clearFileCacheStatus
+            case .clearDeviceHashSalts: return \.clearDeviceHashSaltsStatus
+            case .clearRemoveResourceLoadStatisticsDatabase: return \.clearRemoveResourceLoadStatisticsDatabaseStatus
+            }
+        }
+
+        /// Returns the keypath for accessing this action's error property.
+        public var errorPath: WritableKeyPath<DataClearingWideEventData, WideEventErrorData?> {
+            switch self {
+            case .clearTabs: return \.clearTabsError
+            case .clearSafelyRemovableWebsiteData: return \.clearSafelyRemovableWebsiteDataError
+            case .clearFireproofableDataForNonFireproofDomains: return \.clearFireproofableDataForNonFireproofDomainsError
+            case .clearCookiesForNonFireproofedDomains: return \.clearCookiesForNonFireproofedDomainsError
+            case .clearAllHistory: return \.clearAllHistoryError
+            case .clearAIChatHistory: return \.clearAIChatHistoryError
+            case .clearAutoconsentManagementCache: return \.clearAutoconsentManagementCacheError
+            case .clearFaviconCache: return \.clearFaviconCacheError
+            case .cancelAllDownloads: return \.cancelAllDownloadsError
+            case .clearBookmarkDatabase: return \.clearBookmarkDatabaseError
+            case .forgetTextZoom: return \.forgetTextZoomError
+            case .clearPrivacyStats: return \.clearPrivacyStatsError
+            case .clearURLCaches: return \.clearURLCachesError
+            case .clearDaxDialogsHeldURLData: return \.clearDaxDialogsHeldURLDataError
+            case .removeObservationsData: return \.removeObservationsDataError
+            case .removeAllContainersAfterDelay: return \.removeAllContainersAfterDelayError
+            case .deleteContextualAIChat: return \.deleteContextualAIChatError
+            case .clearWebsiteDataFireMode: return \.clearWebsiteDataFireModeError
+            case .clearAutoconsentManagementCacheFireMode: return \.clearAutoconsentManagementCacheFireModeError
+            case .forgetTextZoomFireMode: return \.forgetTextZoomFireModeError
+            case .warmUpWebsiteDataStore: return \.warmUpWebsiteDataStoreError
+            case .clearAppSwitcherSnapshots: return \.clearAppSwitcherSnapshotsError
+            case .clearPermissions: return \.clearPermissionsError
+            case .clearVisitedLinks: return \.clearVisitedLinksError
+            case .clearRecentlyClosed: return \.clearRecentlyClosedError
+            case .clearLastSessionState: return \.clearLastSessionStateError
+            case .resetCookiePopupBlockedFlag: return \.resetCookiePopupBlockedFlagError
+            case .clearAutoconsentStats: return \.clearAutoconsentStatsError
+            case .clearVisits: return \.clearVisitsError
+            case .clearFileCache: return \.clearFileCacheError
+            case .clearDeviceHashSalts: return \.clearDeviceHashSaltsError
+            case .clearRemoveResourceLoadStatisticsDatabase: return \.clearRemoveResourceLoadStatisticsDatabaseError
+            }
+        }
+    }
+}
+
+// MARK: - WideEventParameterProviding
+
+extension DataClearingWideEventData {
+
+    public func jsonParameters() -> [String: Encodable] {
+        // Process overall latency with rounding and capping
+        let processedOverallLatency: Int? = {
+            guard let duration = overallDuration?.durationMilliseconds else { return nil }
+            return processedDuration(duration)
+        }()
+
+        var params: [String: Encodable] = Dictionary(compacting: [
+            (WideEventParameter.DataClearingFeature.options, options?.rawValue),
+            (WideEventParameter.DataClearingFeature.includedOptions, includedOptions),
+            (WideEventParameter.DataClearingFeature.trigger, trigger.rawValue),
+            (WideEventParameter.DataClearingFeature.overallLatency, processedOverallLatency),
+            (WideEventParameter.DataClearingFeature.scope, scope?.rawValue),
+            (WideEventParameter.DataClearingFeature.source, source?.rawValue),
+            (WideEventParameter.DataClearingFeature.path, path?.rawValue),
+            (WideEventParameter.DataClearingFeature.includedDomains, includedDomains),
+            (WideEventParameter.DataClearingFeature.interruptedActions, interruptedActions),
+            (WideEventParameter.DataClearingFeature.aiChatRetried, clearAIChatHistoryRetried),
+            (WideEventParameter.DataClearingFeature.aiChatPageLoad, clearAIChatHistoryPageLoadMilliseconds.map(processedDuration)),
+            (WideEventParameter.DataClearingFeature.aiChatScriptReady, clearAIChatHistoryScriptReadyMilliseconds.map(processedDuration)),
+            (WideEventParameter.DataClearingFeature.aiChatScriptReply, clearAIChatHistoryScriptReplyMilliseconds.map(processedDuration)),
+            (WideEventParameter.DataClearingFeature.aiChatWarmupWait, clearAIChatHistoryWarmupWaitMilliseconds.map(processedDuration)),
+        ])
+
+        for action in Action.allCases {
+            addActionLatency(self[keyPath: action.durationPath], action: action, to: &params)
+            addActionStatus(self[keyPath: action.statusPath], action: action, to: &params)
+            addActionError(self[keyPath: action.errorPath], action: action, to: &params)
+        }
+        addError(clearAIChatHistoryFirstAttemptError, named: WideEventParameter.DataClearingFeature.aiChatFirstAttempt, to: &params)
+
+        return params
+    }
+}
+
+// MARK: - Private Helpers
+
+private extension DataClearingWideEventData {
+
+    /// Actions that started but never finished, so an orphaned journey shows where it got stuck.
+    var interruptedActions: [String]? {
+        let interrupted = Action.allCases.filter { action in
+            let duration = self[keyPath: action.durationPath]
+            return duration?.start != nil && duration?.end == nil
+        }
+        return interrupted.isEmpty ? nil : interrupted.map(\.rawValue)
+    }
+
+    /// Processes duration for pixel reporting: rounds to 10ms precision and caps at 10 seconds.
+    ///
+    /// This ensures all duration values conform to the pixel schema constraints:
+    /// - `multipleOf: 10` - Round to nearest 10ms
+    /// - `maximum: 10000` - Cap at 10 seconds (10000ms)
+    ///
+    /// - Parameter durationMs: Raw duration in milliseconds
+    /// - Returns: Processed duration (rounded to 10ms, capped at 10000ms)
+    func processedDuration(_ durationMs: Int) -> Int {
+        // Round to nearest 10ms
+        let rounded = (Double(durationMs) / 10.0).rounded() * 10.0
+
+        // Cap at 10 seconds (10000ms) and ensure non-negative
+        let capped = min(max(rounded, 0), 10000.0)
+
+        return Int(capped)
+    }
+
+    func addActionLatency(_ interval: WideEvent.MeasuredInterval?, action: Action, to params: inout [String: Encodable]) {
+        guard let duration = interval?.durationMilliseconds else { return }
+        params[WideEventParameter.DataClearingFeature.latency(at: action)] = processedDuration(duration)
+    }
+
+    func addActionStatus(_ status: ActionStatus?, action: Action, to params: inout [String: Encodable]) {
+        guard let status else { return }
+        params[WideEventParameter.DataClearingFeature.status(at: action)] = status.rawValue
+    }
+
+    func addActionError(_ error: WideEventErrorData?, action: Action, to params: inout [String: Encodable]) {
+        addError(error, named: action.rawValue, to: &params)
+    }
+
+    /// Adds `error` under `feature.data.ext.<name>_error.*`.
+    func addError(_ error: WideEventErrorData?, named name: String, to params: inout [String: Encodable]) {
+        guard let error else { return }
+        let errorParams = error.jsonParameters()
+        for (key, value) in errorParams {
+            params[transformErrorKey(key, named: name)] = value
+        }
+    }
+
+    func transformErrorKey(_ key: String, named name: String) -> String {
+        switch key {
+        case WideEventParameter.Feature.errorDomain:
+            return WideEventParameter.DataClearingFeature.errorDomain(named: name)
+
+        case WideEventParameter.Feature.errorCode:
+            return WideEventParameter.DataClearingFeature.errorCode(named: name)
+
+        case WideEventParameter.Feature.errorDescription:
+            return WideEventParameter.DataClearingFeature.errorDescription(named: name)
+
+        case let key where key.hasPrefix(WideEventParameter.Feature.underlyingErrorDomain):
+            let suffix = key.dropFirst(WideEventParameter.Feature.underlyingErrorDomain.count)
+            return WideEventParameter.DataClearingFeature.errorUnderlyingDomain(named: name, suffix: String(suffix))
+
+        case let key where key.hasPrefix(WideEventParameter.Feature.underlyingErrorCode):
+            let suffix = key.dropFirst(WideEventParameter.Feature.underlyingErrorCode.count)
+            return WideEventParameter.DataClearingFeature.errorUnderlyingCode(named: name, suffix: String(suffix))
+
+        default:
+            assertionFailure("Unexpected error parameter key: \(key)")
+            return key
+        }
+    }
+}
+
+// MARK: - Wide Event Parameters
+
+extension WideEventParameter {
+
+    /// Parameter keys for data clearing wide events.
+    public enum DataClearingFeature {
+        static let options = "feature.data.ext.options"
+        static let includedOptions = "feature.data.ext.included_options"
+        static let trigger = "feature.data.ext.trigger"
+        static let overallLatency = "feature.data.ext.overall_latency_ms"
+        static let scope = "feature.data.ext.scope"
+        static let source = "feature.data.ext.source"
+        static let path = "feature.data.ext.path"
+        static let includedDomains = "feature.data.ext.included_domains"
+        static let interruptedActions = "feature.data.ext.interrupted_actions"
+        static let aiChatRetried = "feature.data.ext.clear_aiChat_history_retried"
+        static let aiChatFirstAttempt = "clear_aiChat_history_first_attempt"
+        static let aiChatPageLoad = "feature.data.ext.clear_aiChat_history_page_load_ms"
+        static let aiChatScriptReady = "feature.data.ext.clear_aiChat_history_script_ready_ms"
+        static let aiChatScriptReply = "feature.data.ext.clear_aiChat_history_script_reply_ms"
+        static let aiChatWarmupWait = "feature.data.ext.clear_aiChat_history_warmup_wait_ms"
+
+        static func latency(at action: DataClearingWideEventData.Action) -> String {
+            "feature.data.ext.\(action.rawValue)_latency_ms"
+        }
+
+        static func status(at action: DataClearingWideEventData.Action) -> String {
+            "feature.data.ext.\(action.rawValue)_status"
+        }
+
+        static func errorDomain(named name: String) -> String {
+            "feature.data.ext.\(name)_error.domain"
+        }
+
+        static func errorCode(named name: String) -> String {
+            "feature.data.ext.\(name)_error.code"
+        }
+
+        static func errorDescription(named name: String) -> String {
+            "feature.data.ext.\(name)_error.description"
+        }
+
+        static func errorUnderlyingDomain(named name: String, suffix: String) -> String {
+            return "feature.data.ext.\(name)_error.underlying_domain\(suffix)"
+        }
+
+        static func errorUnderlyingCode(named name: String, suffix: String) -> String {
+            return "feature.data.ext.\(name)_error.underlying_code\(suffix)"
+        }
+    }
+}

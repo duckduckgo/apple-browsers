@@ -19,6 +19,7 @@
 import Foundation
 import Persistence
 import Common
+import FoundationExtensions
 
 // MARK: - Legacy Store
 
@@ -50,6 +51,7 @@ final class DefaultBrowserAndDockPromptLegacyStore: DefaultBrowserAndDockPromptL
 protocol DefaultBrowserAndDockPromptStorageReading {
     var popoverShownDate: TimeInterval? { get }
     var bannerShownDate: TimeInterval? { get }
+    var inactiveUserModalShownDate: TimeInterval? { get }
     var bannerShownOccurrences: Int { get }
     var isBannerPermanentlyDismissed: Bool { get }
 }
@@ -57,6 +59,7 @@ protocol DefaultBrowserAndDockPromptStorageReading {
 protocol DefaultBrowserAndDockPromptStorageWriting: AnyObject {
     var popoverShownDate: TimeInterval? { get set }
     var bannerShownDate: TimeInterval? { get set }
+    var inactiveUserModalShownDate: TimeInterval? { get set }
     var isBannerPermanentlyDismissed: Bool { get set }
 }
 
@@ -70,6 +73,15 @@ extension DefaultBrowserAndDockPromptStorageReading {
         bannerShownDate != nil
     }
 
+    var hasSeenInactiveUserModal: Bool {
+        inactiveUserModalShownDate != nil
+    }
+
+    var lastPromptShownDate: TimeInterval? {
+        let promptShownDates = [popoverShownDate, bannerShownDate, inactiveUserModalShownDate].compacted()
+        return promptShownDates.max()
+    }
+
 }
 
 typealias DefaultBrowserAndDockPromptStorage = DefaultBrowserAndDockPromptStorageReading & DefaultBrowserAndDockPromptStorageWriting
@@ -81,6 +93,7 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
         case bannerShownDate = "com.duckduckgo.defaultBrowseAndDockPrompt.bannerShownDate"
         case bannerShownOccurrences = "com.duckduckgo.defaultBrowseAndDockPrompt.bannerShownOccurrences"
         case bannerPermanentlyDismissed = "com.duckduckgo.defaultBrowseAndDockPrompt.bannerPermanentlyDismissed"
+        case inactiveUserModalShownDate = "com.duckduckgo.defaultBrowserAndDockPrompt.inactiveUserModalShownDate"
     }
 
     private let keyValueStoring: ThrowingKeyValueStoring
@@ -133,6 +146,15 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
         }
     }
 
+    var inactiveUserModalShownDate: TimeInterval? {
+        get {
+            getValue(forKey: .inactiveUserModalShownDate)
+        }
+        set {
+            write(value: newValue, forKey: .inactiveUserModalShownDate)
+        }
+    }
+
     private func getValue<T>(forKey key: StorageKey) -> T? {
         do {
             return try keyValueStoring.object(forKey: key.rawValue) as? T
@@ -165,6 +187,8 @@ private extension DefaultBrowserAndDockPromptDebugEvent.Storage.Value {
             self = .bannerShownOccurrences(error)
         case .bannerPermanentlyDismissed:
             self = .permanentlyDismissPrompt(error)
+        case .inactiveUserModalShownDate:
+            self = .inactiveUserModalShownDate(error)
         }
     }
 

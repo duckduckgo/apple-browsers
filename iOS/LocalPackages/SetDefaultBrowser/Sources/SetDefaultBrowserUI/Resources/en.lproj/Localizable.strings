@@ -3,3 +3,7 @@
 "setDefaultBrowser.modal.cta.cancel" = "Close";
 "setDefaultBrowser.cta.primary.title" = "Set As Default Browser";
 "setDefaultBrowser.cta.secondary.title" = "Don’t Ask Again";
+
+"setDefaultBrowser.modal.inactive-user.title" = "DuckDuckGo has protections other browsers don’t.";
+"setDefaultBrowser.modal.inactive-user.cta.primary.title" = "Open Links With DuckDuckGo";
+"setDefaultBrowser.modal.inactive-user.cta.secondary.title" = "Maybe Later";

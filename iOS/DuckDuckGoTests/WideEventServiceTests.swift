@@ -1,0 +1,236 @@
+//
+//  WideEventServiceTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+import Common
+import FoundationExtensions
+@_spi(Testing) import WideEvent
+import Subscription
+import SubscriptionTestingUtilities
+import BrowserServicesKit
+@testable import DuckDuckGo
+
+final class WideEventServiceTests: XCTestCase {
+
+    private var wideEventMock: WideEventMock!
+    private var subscriptionManager: SubscriptionManagerMock!
+    private var service: WideEventService!
+
+    override func setUp() {
+        super.setUp()
+        wideEventMock = WideEventMock()
+        subscriptionManager = SubscriptionManagerMock()
+        service = WideEventService(wideEvent: wideEventMock, subscriptionManager: subscriptionManager)
+    }
+
+    override func tearDown() {
+        service = nil
+        subscriptionManager = nil
+        wideEventMock = nil
+        super.tearDown()
+    }
+
+    func testRunCleanup_withoutPendingData_completesImmediately() async {
+        await service.sendPendingEvents(trigger: .appLaunch)
+        XCTAssertTrue(wideEventMock.completions.isEmpty)
+    }
+
+    func testPerformCleanup_withActivateAccountDuration_recentStart_doesNotSendPixel() async {
+        let recentStart = Date().addingTimeInterval(-60)
+        let interval = WideEvent.MeasuredInterval(start: recentStart, end: nil)
+        let data = createMockWideEventData(activateAccountDuration: interval)
+        wideEventMock.started = [data]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+        XCTAssertTrue(wideEventMock.completions.isEmpty)
+    }
+
+    func testPerformCleanup_withActivateAccountDuration_oldStart_noEntitlements_sendsUnknownPixel() async {
+        subscriptionManager.resultFeatures = []
+
+        let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
+        let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
+        let data = createMockWideEventData(activateAccountDuration: interval)
+        wideEventMock.started = [data]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertEqual(wideEventMock.completions.count, 1, "Expected one completion but got \(wideEventMock.completions.count)")
+        let completion = wideEventMock.completions.first
+
+        if case .unknown(let reason) = completion?.1 {
+            XCTAssertEqual(reason, SubscriptionPurchaseWideEventData.StatusReason.missingEntitlements.rawValue)
+        } else {
+            XCTFail("Expected unknown status with partial data reason")
+        }
+    }
+
+    func testPerformCleanup_withActivateAccountDuration_hasEntitlements_sendsSuccessPixel() async {
+        subscriptionManager.resultFeatures = [.networkProtection]
+
+        let oldStart = Date().addingTimeInterval(-3 * 60 * 60)
+        let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
+        let data = createMockWideEventData(activateAccountDuration: interval)
+        wideEventMock.started = [data]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertEqual(wideEventMock.completions.count, 1)
+        let completion = wideEventMock.completions.first
+
+        if case .success(let reason) = completion?.1 {
+            XCTAssertEqual(reason, SubscriptionPurchaseWideEventData.StatusReason.missingEntitlementsDelayedActivation.rawValue)
+        } else {
+            XCTFail("Expected success status with delayed activation reason")
+        }
+    }
+
+    func testPerformCleanup_withActivateAccountDuration_userNotAuthenticated_sendsUnknownPixel() async {
+        let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
+        let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
+        let data = createMockWideEventData(activateAccountDuration: interval)
+        wideEventMock.started = [data]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertEqual(wideEventMock.completions.count, 1)
+        let completion = wideEventMock.completions.first
+
+        if case .unknown(let reason) = completion?.1 {
+            XCTAssertEqual(reason, SubscriptionPurchaseWideEventData.StatusReason.missingEntitlements.rawValue)
+        } else {
+            XCTFail("Expected unknown status with missing entitlements reason")
+        }
+    }
+
+    func testPerformCleanup_withActivateAccountDuration_entitlementsError_sendsUnknownPixel() async {
+        subscriptionManager.resultFeatures = []
+
+        let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
+        let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
+        let data = createMockWideEventData(activateAccountDuration: interval)
+        wideEventMock.started = [data]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertEqual(wideEventMock.completions.count, 1)
+        let completion = wideEventMock.completions.first
+
+        if case .unknown(let reason) = completion?.1 {
+            XCTAssertEqual(reason, SubscriptionPurchaseWideEventData.StatusReason.missingEntitlements.rawValue)
+        } else {
+            XCTFail("Expected unknown status with missing entitlements reason")
+        }
+    }
+
+    func testPerformCleanup_withoutActivateAccountDuration_sendsPartialDataPixel() async {
+        let data = createMockWideEventData()
+        wideEventMock.started = [data]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertEqual(wideEventMock.completions.count, 1)
+        let completion = wideEventMock.completions.first
+
+        if case .unknown(let reason) = completion?.1 {
+            XCTAssertEqual(reason, SubscriptionPurchaseWideEventData.StatusReason.partialData.rawValue)
+        } else {
+            XCTFail("Expected unknown status with partial data reason")
+        }
+    }
+
+    func testPerformCleanup_withMultipleData_processesAll() async {
+        subscriptionManager.resultFeatures = [.networkProtection]
+
+        let start = Date().addingTimeInterval(-1 * 60 * 60)
+        let interval = WideEvent.MeasuredInterval(start: start, end: nil)
+        let dataWithActivation = createMockWideEventData(activateAccountDuration: interval)
+        let dataWithoutActivation = createMockWideEventData()
+
+        wideEventMock.started = [dataWithActivation, dataWithoutActivation]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertEqual(wideEventMock.completions.count, 2)
+
+        for completion in wideEventMock.completions {
+            if case .success(let reason) = completion.1 {
+                XCTAssertEqual(reason, SubscriptionPurchaseWideEventData.StatusReason.missingEntitlementsDelayedActivation.rawValue)
+            } else if case .unknown(let reason) = completion.1 {
+                XCTAssertEqual(reason, SubscriptionPurchaseWideEventData.StatusReason.partialData.rawValue)
+            } else {
+                XCTFail("Unhandled status")
+            }
+        }
+    }
+
+    // MARK: - Launch-only events (AuthV2 token refresh)
+
+    func testForegroundResume_skipsAuthV2RefreshFlow_butCompletesOtherEvents() async {
+        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        refreshFlow.recoveryDuration = .startingNow()
+        let purchaseFlow = createMockWideEventData()
+        wideEventMock.started = [refreshFlow, purchaseFlow]
+
+        await service.sendPendingEvents(trigger: .appLaunch, includingLaunchOnlyEvents: false)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is AuthV2TokenRefreshWideEventData })
+        XCTAssertTrue(wideEventMock.completions.contains { $0.0 is SubscriptionPurchaseWideEventData })
+    }
+
+    func testColdLaunch_recentAuthV2RefreshFlowStaysPending() async {
+        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        refreshFlow.recoveryDuration = .startingNow()
+        wideEventMock.started = [refreshFlow]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is AuthV2TokenRefreshWideEventData })
+    }
+
+    func testColdLaunch_completesAuthV2RefreshFlowAsUnknown() async {
+        let staleStart = Date().addingTimeInterval(-AuthV2TokenRefreshWideEventData.launchCleanupTimeout - 1)
+        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          startedAt: staleStart)
+        refreshFlow.recoveryDuration = .startingNow()
+        wideEventMock.started = [refreshFlow]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        let completion = wideEventMock.completions.first { $0.0 is AuthV2TokenRefreshWideEventData }
+        XCTAssertNotNil(completion, "A stalled refresh must be reconciled on cold launch")
+        guard case .unknown = completion?.1 else {
+            return XCTFail("Expected the stalled refresh to complete as UNKNOWN")
+        }
+    }
+
+    private func createMockWideEventData(activateAccountDuration: WideEvent.MeasuredInterval? = nil) -> SubscriptionPurchaseWideEventData {
+        return SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: "test",
+            freeTrialEligible: false,
+            entryPoint: .unknown,
+            activateAccountDuration: activateAccountDuration,
+            contextData: WideEventContextData(),
+            appData: WideEventAppData(),
+            globalData: WideEventGlobalData()
+        )
+    }
+
+}

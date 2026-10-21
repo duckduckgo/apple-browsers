@@ -19,12 +19,6 @@
 
 import Foundation
 
-public protocol DefaultBrowserPromptFeatureFlagProvider {
-    /// A Boolean value indicating whether Set Default Browser Prompts are enabled.
-    /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserPromptsFeatureEnabled: Bool { get }
-}
-
 public protocol DefaultBrowserPromptFeatureFlagSettingsProvider {
     // A dictionary representing the settings for the feature.
     var defaultBrowserPromptFeatureSettings: [String: Any] { get }
@@ -33,37 +27,50 @@ public protocol DefaultBrowserPromptFeatureFlagSettingsProvider {
 /// An enum representing the different settings for Set Default Browser Prompts feature flag.
 public enum DefaultBrowserPromptFeatureSettings: String {
     /// The setting for the number of days to wait after app installation before showing the first modal. Default to 1 day.
-    case firstModalDelayDays
+    case firstActiveModalDelayDays
     /// The setting for the number of days to wait after the first modal has been shown before displaying the second modal. Default to 4 days.
-    case secondModalDelayDays
+    case secondActiveModalDelayDays
     /// The settings for the number of days between subsequent displays of the modal. Default to 14 days.
-    case subsequentModalRepeatIntervalDays
+    case subsequentActiveModalRepeatIntervalDays
+    /// The setting for the number of days to wait after app installation before showing the modal to inactive users. Default to 28.
+    case inactiveModalNumberOfDaysSinceInstall
+    /// The setting for the number of inactive days to wait before showing the modal to inactive users. Default to 7.
+    case inactiveModalNumberOfInactiveDays
 
     public var defaultValue: Int {
         switch self {
-        case .firstModalDelayDays: return 1
-        case .secondModalDelayDays: return 4
-        case .subsequentModalRepeatIntervalDays: return 14
+        case .firstActiveModalDelayDays: return 1
+        case .secondActiveModalDelayDays: return 4
+        case .subsequentActiveModalRepeatIntervalDays: return 14
+        case .inactiveModalNumberOfDaysSinceInstall: return 28
+        case .inactiveModalNumberOfInactiveDays: return 7
         }
     }
 }
 
-package protocol DefaultBrowserPromptFeatureFlagger: DefaultBrowserPromptFeatureFlagProvider {
-    /// The number of active days to wait after app installation before showing the first modal. Default is 1.
-    var firstModalDelayDays: Int { get }
-    /// The number of active days to wait after the first modal has been shown before displaying the second modal. Default is 4.
-    var secondModalDelayDays: Int { get }
-    /// The number of active days between subsequent displays of the modal. Default is 14.
-    var subsequentModalRepeatIntervalDays: Int { get }
+package protocol DefaultBrowserPromptActiveUserFeatureFlagger {
+    /// The number of active days to wait after app installation before showing the first modal for active users. Default is 1.
+    var firstActiveModalDelayDays: Int { get }
+    /// The number of active days to wait after the first modal has been shown before displaying the second modal for active users. Default is 4.
+    var secondActiveModalDelayDays: Int { get }
+    /// The number of active days between subsequent displays of the modal for active users. Default is 14.
+    var subsequentActiveModalRepeatIntervalDays: Int { get }
 }
+
+package protocol DefaultBrowserPromptInactiveUserFeatureFlagger {
+    /// The setting for the number of days to wait after app installation before showing the modal to inactive users. Default to 28.
+    var inactiveModalNumberOfDaysSinceInstall: Int { get }
+    /// The setting for the number of inactive days to wait before showing the modal to inactive users. Default to 7.
+    var inactiveModalNumberOfInactiveDays: Int { get }
+}
+
+package typealias DefaultBrowserPromptFeatureFlagger = DefaultBrowserPromptActiveUserFeatureFlagger & DefaultBrowserPromptInactiveUserFeatureFlagger
 
 package final class DefaultBrowserPromptFeatureFlag {
     private let settingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider
-    private let featureFlagProvider: DefaultBrowserPromptFeatureFlagProvider
 
-    package init(settingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider, featureFlagProvider: DefaultBrowserPromptFeatureFlagProvider) {
+    package init(settingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider) {
         self.settingsProvider = settingsProvider
-        self.featureFlagProvider = featureFlagProvider
     }
 }
 
@@ -71,20 +78,24 @@ package final class DefaultBrowserPromptFeatureFlag {
 
 extension DefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeatureFlagger {
 
-    public var isDefaultBrowserPromptsFeatureEnabled: Bool {
-        featureFlagProvider.isDefaultBrowserPromptsFeatureEnabled
+    package var firstActiveModalDelayDays: Int {
+        getSettings(.firstActiveModalDelayDays)
     }
 
-    package var firstModalDelayDays: Int {
-        getSettings(.firstModalDelayDays)
+    package var secondActiveModalDelayDays: Int {
+        getSettings(.secondActiveModalDelayDays)
     }
 
-    package var secondModalDelayDays: Int {
-        getSettings(.secondModalDelayDays)
+    package var subsequentActiveModalRepeatIntervalDays: Int {
+        getSettings(.subsequentActiveModalRepeatIntervalDays)
     }
 
-    package var subsequentModalRepeatIntervalDays: Int {
-        getSettings(.subsequentModalRepeatIntervalDays)
+    package var inactiveModalNumberOfDaysSinceInstall: Int {
+        getSettings(.inactiveModalNumberOfDaysSinceInstall)
+    }
+
+    package var inactiveModalNumberOfInactiveDays: Int {
+        getSettings(.inactiveModalNumberOfInactiveDays)
     }
 
     private func getSettings(_ value: DefaultBrowserPromptFeatureSettings) -> Int {

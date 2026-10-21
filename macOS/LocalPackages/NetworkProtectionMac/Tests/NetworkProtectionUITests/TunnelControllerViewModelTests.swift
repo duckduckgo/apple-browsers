@@ -33,6 +33,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
             serverLocation: TunnelControllerViewModelTests.serverAttributes(),
             serverAddress: "127.0.0.1")
 
+        let vpnEnabledObserver: VPNEnabledObserver
         let statusObserver: ConnectionStatusObserver
         let serverInfoObserver: ConnectionServerInfoObserver
         let connectionErrorObserver: ConnectionErrorObserver
@@ -48,6 +49,19 @@ final class TunnelControllerViewModelTests: XCTestCase {
              controllerErrorMessage: String? = nil,
              dataVolume: DataVolume = .init(),
              failure: KnownFailure? = nil) {
+
+            // Derive isVPNEnabled from status, matching real behavior
+            let isVPNEnabled: Bool
+            switch status {
+            case .connected, .connecting, .reasserting:
+                isVPNEnabled = true
+            case .disconnected, .disconnecting, .notConfigured, .snoozing:
+                isVPNEnabled = false
+            }
+
+            let mockVPNEnabledObserver = MockVPNEnabledObserver()
+            mockVPNEnabledObserver.subject.send(isVPNEnabled)
+            vpnEnabledObserver = mockVPNEnabledObserver
 
             let mockStatusObserver = MockConnectionStatusObserver()
             mockStatusObserver.subject.send(status)
@@ -116,15 +130,21 @@ final class TunnelControllerViewModelTests: XCTestCase {
     ///
     @MainActor
     func testProperlyReflectsStatusDisconnected() async throws {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
         let controller = MockTunnelController()
         let statusReporter = MockStatusReporter(status: .disconnected)
         let model = TunnelControllerViewModel(
             controller: controller,
             onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
             statusReporter: statusReporter,
-            vpnAppState: .init(defaults: .standard),
-            vpnSettings: .init(defaults: .standard),
-            proxySettings: .init(defaults: .standard),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
             locationFormatter: MockVPNLocationFormatter(),
             uiActionHandler: MockVPNUIActionHandler())
 
@@ -140,15 +160,21 @@ final class TunnelControllerViewModelTests: XCTestCase {
     ///
     @MainActor
     func testProperlyReflectsStatusDisconnecting() async throws {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
         let controller = MockTunnelController()
         let statusReporter = MockStatusReporter(status: .disconnecting)
         let model = TunnelControllerViewModel(
             controller: controller,
             onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
             statusReporter: statusReporter,
-            vpnAppState: .init(defaults: .standard),
-            vpnSettings: .init(defaults: .standard),
-            proxySettings: .init(defaults: .standard),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
             locationFormatter: MockVPNLocationFormatter(),
             uiActionHandler: MockVPNUIActionHandler())
 
@@ -168,6 +194,12 @@ final class TunnelControllerViewModelTests: XCTestCase {
         let mockDate = Date().addingTimeInterval(-59)
         let mockDateString = "59s"
 
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
         let controller = MockTunnelController()
         let serverInfo = NetworkProtectionStatusServerInfo(
             serverLocation: Self.serverAttributes(),
@@ -177,9 +209,9 @@ final class TunnelControllerViewModelTests: XCTestCase {
             controller: controller,
             onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
             statusReporter: statusReporter,
-            vpnAppState: .init(defaults: .standard),
-            vpnSettings: .init(defaults: .standard),
-            proxySettings: .init(defaults: .standard),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
             locationFormatter: MockVPNLocationFormatter(),
             uiActionHandler: MockVPNUIActionHandler())
 
@@ -197,15 +229,21 @@ final class TunnelControllerViewModelTests: XCTestCase {
     ///
     @MainActor
     func testProperlyReflectsStatusConnecting() async throws {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
         let controller = MockTunnelController()
         let statusReporter = MockStatusReporter(status: .connecting)
         let model = TunnelControllerViewModel(
             controller: controller,
             onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
             statusReporter: statusReporter,
-            vpnAppState: .init(defaults: .standard),
-            vpnSettings: .init(defaults: .standard),
-            proxySettings: .init(defaults: .standard),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
             locationFormatter: MockVPNLocationFormatter(),
             uiActionHandler: MockVPNUIActionHandler())
 
@@ -215,10 +253,73 @@ final class TunnelControllerViewModelTests: XCTestCase {
         XCTAssertFalse(model.showServerDetails)
     }
 
+    // MARK: - Strict routing pill
+
+    @MainActor
+    func testShowsStrictRoutingPillWhenConnectedAndAvailable() async throws {
+        let model = makeModel(status: .connected(connectedDate: Date()), isStrictRoutingAvailable: true)
+        XCTAssertTrue(model.showStrictRoutingPill)
+    }
+
+    @MainActor
+    func testHidesStrictRoutingPillWhenUnavailable() async throws {
+        let model = makeModel(status: .connected(connectedDate: Date()), isStrictRoutingAvailable: false)
+        XCTAssertFalse(model.showStrictRoutingPill)
+    }
+
+    @MainActor
+    func testHidesStrictRoutingPillWhenDisconnected() async throws {
+        let model = makeModel(status: .disconnected, isStrictRoutingAvailable: true)
+        XCTAssertFalse(model.showStrictRoutingPill)
+    }
+
+    @MainActor
+    func testHeaderMessageWarnsWhenStrictRoutingOff() async throws {
+        let model = makeModel(status: .connected(connectedDate: Date()), isStrictRoutingAvailable: true, enforceRoutes: false)
+        XCTAssertEqual(model.headerMessage, UserText.networkProtectionStatusHeaderMessageStrictRoutingOff)
+    }
+
+    @MainActor
+    func testHeaderMessageReflectsOnStateWhenStrictRoutingOn() async throws {
+        let model = makeModel(status: .connected(connectedDate: Date()), isStrictRoutingAvailable: true, enforceRoutes: true)
+        XCTAssertEqual(model.headerMessage, UserText.networkProtectionStatusHeaderMessageOn)
+    }
+
+    @MainActor
+    private func makeModel(status: ConnectionStatus,
+                           isStrictRoutingAvailable: Bool = false,
+                           enforceRoutes: Bool = false) -> TunnelControllerViewModel {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
+        let vpnSettings = VPNSettings(defaults: testDefaults)
+        vpnSettings.enforceRoutes = enforceRoutes
+
+        return TunnelControllerViewModel(
+            controller: MockTunnelController(),
+            onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
+            statusReporter: MockStatusReporter(status: status),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: vpnSettings,
+            proxySettings: .init(defaults: testDefaults),
+            locationFormatter: MockVPNLocationFormatter(),
+            isStrictRoutingAvailable: isStrictRoutingAvailable,
+            uiActionHandler: MockVPNUIActionHandler())
+    }
+
     /// We expect the model to properly reflect the data volume.
     ///
     @MainActor
     func testProperlyReflectsDataVolume() async throws {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
         let controller = MockTunnelController()
         let statusReporter = MockStatusReporter(status: .connected(connectedDate: Date()),
                                                 dataVolume: .init(bytesSent: 512000, bytesReceived: 1024000))
@@ -226,9 +327,9 @@ final class TunnelControllerViewModelTests: XCTestCase {
             controller: controller,
             onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
             statusReporter: statusReporter,
-            vpnAppState: .init(defaults: .standard),
-            vpnSettings: .init(defaults: .standard),
-            proxySettings: .init(defaults: .standard),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
             locationFormatter: MockVPNLocationFormatter(),
             uiActionHandler: MockVPNUIActionHandler())
 
@@ -239,15 +340,21 @@ final class TunnelControllerViewModelTests: XCTestCase {
     ///
     @MainActor
     func testStartsNetworkProtection() async throws {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
         let controller = MockTunnelController()
         let statusReporter = MockStatusReporter(status: .disconnected)
         let model = TunnelControllerViewModel(
             controller: controller,
             onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
             statusReporter: statusReporter,
-            vpnAppState: .init(defaults: .standard),
-            vpnSettings: .init(defaults: .standard),
-            proxySettings: .init(defaults: .standard),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
             locationFormatter: MockVPNLocationFormatter(),
             uiActionHandler: MockVPNUIActionHandler())
         let networkProtectionWasStarted = expectation(description: "The model started the VPN when appropriate")
@@ -263,10 +370,52 @@ final class TunnelControllerViewModelTests: XCTestCase {
         await fulfillment(of: [networkProtectionWasStarted], timeout: 0.1)
     }
 
+    /// We expect that starting the VPN notifies the UI action handler.
+    ///
+    @MainActor
+    func testWhenVPNStarts_ItNotifiesUIActionHandler() async throws {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
+        let controller = MockTunnelController()
+        let statusReporter = MockStatusReporter(status: .disconnected)
+        let uiActionHandler = MockVPNUIActionHandler()
+        let model = TunnelControllerViewModel(
+            controller: controller,
+            onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
+            statusReporter: statusReporter,
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
+            locationFormatter: MockVPNLocationFormatter(),
+            uiActionHandler: uiActionHandler)
+
+        let didStartVPNCalled = expectation(description: "didStartVPN was called on the handler")
+        uiActionHandler.didStartVPNCallback = {
+            didStartVPNCalled.fulfill()
+        }
+
+        Task { @MainActor in
+            model.isToggleOn.wrappedValue = true
+        }
+
+        await fulfillment(of: [didStartVPNCalled], timeout: 0.1)
+        XCTAssertTrue(uiActionHandler.didStartVPNCalled)
+    }
+
     /// We expect that setting the model's `isRunning` to `false`, will stop the VPN.
     ///
     @MainActor
     func testStopsNetworkProtection() async throws {
+        let testSuiteName = "test.\(UUID().uuidString)"
+        let testDefaults = UserDefaults(suiteName: testSuiteName)!
+        addTeardownBlock {
+            testDefaults.removePersistentDomain(forName: testSuiteName)
+        }
+
         let mockDate = Date().addingTimeInterval(-59)
         let mockServerIP = "127.0.0.1"
 
@@ -279,9 +428,9 @@ final class TunnelControllerViewModelTests: XCTestCase {
             controller: controller,
             onboardingStatusPublisher: Just(OnboardingStatus.completed).eraseToAnyPublisher(),
             statusReporter: statusReporter,
-            vpnAppState: .init(defaults: .standard),
-            vpnSettings: .init(defaults: .standard),
-            proxySettings: .init(defaults: .standard),
+            vpnAppState: .init(defaults: testDefaults),
+            vpnSettings: .init(defaults: testDefaults),
+            proxySettings: .init(defaults: testDefaults),
             locationFormatter: MockVPNLocationFormatter(),
             uiActionHandler: MockVPNUIActionHandler())
 

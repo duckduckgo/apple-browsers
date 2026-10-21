@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import AttributedMetric
 
 /// A type that handles Pixels for acquisition attributions.
 protocol InstallationAttributionsPixelHandler: AnyObject {
@@ -26,11 +27,13 @@ protocol InstallationAttributionsPixelHandler: AnyObject {
 }
 
 final class AppInstallationAttributionPixelHandler: InstallationAttributionsPixelHandler {
-    private let originProvider: AttributionOriginProvider
+    private let originProvider: AttributedMetricOriginProvider
     private let decoratedAttributionPixelHandler: AttributionPixelHandler
 
     init(
-        originProvider: AttributionOriginProvider = AttributionOriginFileProvider(),
+        originProvider: AttributedMetricOriginProvider = DefaultAttributedMetricOriginProvider(loadOrigin: {
+            getXattr(named: AttributionXattr.origin, from: Bundle.main.bundlePath)
+        }),
         attributionPixelHandler: AttributionPixelHandler = GenericAttributionPixelHandler()
     ) {
         self.originProvider = originProvider

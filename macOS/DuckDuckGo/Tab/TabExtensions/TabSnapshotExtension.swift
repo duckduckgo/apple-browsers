@@ -18,10 +18,12 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
-import Navigation
-import WebKit
+import FoundationExtensions
+import DDGNavigation
 import os.log
+import WebKit
 
 final class TabSnapshotExtension {
 
@@ -35,6 +37,14 @@ final class TabSnapshotExtension {
 
     // Flag is true if the extension restored the snapshot from storage
     @MainActor private var didRestoreSnapshot = false
+
+    /// Controls whether snapshot is cleared on deinit.
+    ///
+    /// A tab that is being suspended is replaced with a new instance of `Tab`
+    /// that reuses the same UUID, in which case the "old" Tab instance needs
+    /// to be instructed not to clear its snapshot on deinit, by setting this
+    /// property to `false`.
+    var shouldClearSnapshotOnDeinit = true
 
     private weak var webView: WebView?
     private var tabContent: Tab.TabContent?
@@ -50,6 +60,7 @@ final class TabSnapshotExtension {
          viewSnapshotRenderer: ViewSnapshotRendering = ViewSnapshotRenderer(),
          webViewPublisher: some Publisher<WKWebView, Never>,
          contentPublisher: some Publisher<Tab.TabContent, Never>,
+         interactionEventsPublisher: some Publisher<WebViewInteractionEvent, Never>,
          isBurner: Bool) {
 
         self.store = store
@@ -59,11 +70,16 @@ final class TabSnapshotExtension {
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView as? WebView
-            self?.webView?.interactionEventsDelegate = self
         }.store(in: &cancellables)
 
         contentPublisher.sink { [weak self] tabContent in
             self?.tabContent = tabContent
+        }.store(in: &cancellables)
+
+        interactionEventsPublisher.sink { [weak self] event in
+            MainActor.assumeMainThread {
+                self?.handleInteractionEvent(event)
+            }
         }.store(in: &cancellables)
     }
 
@@ -71,10 +87,11 @@ final class TabSnapshotExtension {
         cancellables.forEach { $0.cancel() }
         cancellables.removeAll()
 
-        webView?.interactionEventsDelegate = nil
         webView = nil
 
-        store.clearSnapshot(tabID: identifier)
+        if shouldClearSnapshotOnDeinit {
+            store.clearSnapshot(tabID: identifier)
+        }
     }
 
     @MainActor
@@ -154,7 +171,7 @@ final class TabSnapshotExtension {
     func renderWebViewSnapshot() async {
         guard let webView, let tabContent,
               let url = tabContent.userEditableUrl,
-              url.navigationalScheme != .duck || url == .onboarding || url.isHistory else {
+              isAllowedURL(url) else {
             // Previews of native views are rendered in renderNativePreview()
             return
         }
@@ -173,7 +190,7 @@ final class TabSnapshotExtension {
             return
         }
 
-        guard let snapshot = await webViewSnapshotRenderer.renderSnapshot(webView: webView) else {
+        guard let snapshot = await webViewSnapshotRenderer.renderSnapshot(webView: webView, delay: snapshotDelay(forURL: url)) else {
             return
         }
 
@@ -189,7 +206,7 @@ final class TabSnapshotExtension {
     // MARK: - Snapshots rendered from regular views
 
     @MainActor
-    func renderSnapshot(from view: NSView) async {
+    func renderSnapshot(from view: @escaping () -> NSView?) async {
         guard let snapshot = await viewSnapshotRenderer.renderSnapshot(view: view) else {
             clearSnapshot()
             return
@@ -199,22 +216,32 @@ final class TabSnapshotExtension {
         Logger.tabSnapshots.debug("Snapshot of native page rendered")
     }
 
-}
+    @MainActor
+    func renderSnapshotSync(from view: NSView) {
+        guard let snapshot = viewSnapshotRenderer.renderSnapshotSync(view: view) else {
+            clearSnapshot()
+            return
+        }
 
-extension TabSnapshotExtension: WebViewInteractionEventsDelegate {
-
-    @MainActor(unsafe)
-    func webView(_ webView: WebView, mouseDown event: NSEvent) {
-        userDidInteractWithWebsite = true
+        snapshotData = SnapshotData.snapshotDataForRegularView(from: snapshot)
+        Logger.tabSnapshots.debug("Snapshot of native page rendered")
     }
 
-    @MainActor(unsafe)
-    func webView(_ webView: WebView, keyDown event: NSEvent) {
-        userDidInteractWithWebsite = true
+    private func isAllowedURL(_ url: URL) -> Bool {
+        // If duck url allow exception only if it's DuckPlayer or Onboarding or History.
+        guard url.navigationalScheme == .duck else { return true }
+
+        return url.host == URL.duckPlayerHost || url == .onboarding || url.isHistory
     }
 
-    @MainActor(unsafe)
-    func webView(_ webView: WebView, scrollWheel event: NSEvent) {
+    private func snapshotDelay(forURL url: URL) -> TimeInterval {
+        // If DuckPlayer URL delay screenshot rendering to give time to load the video
+        // Otherwise wait a bit to allow super-fast loading pages (e.g. localhost and special pages) get rendered in the webView
+        url.navigationalScheme == .duck && url.host == URL.duckPlayerHost ? 1.0 : 0.1
+    }
+
+    @MainActor
+    private func handleInteractionEvent(_ event: WebViewInteractionEvent) {
         userDidInteractWithWebsite = true
     }
 
@@ -226,7 +253,7 @@ extension TabSnapshotExtension: NSCodingExtension {
         static let tabSnapshotIdentifier = "TabSnapshotIdentifier"
     }
 
-    @MainActor
+    @preconcurrency @MainActor
     func awakeAfter(using decoder: NSCoder) {
         guard !didRestoreSnapshot else { return }
 
@@ -241,7 +268,7 @@ extension TabSnapshotExtension: NSCodingExtension {
         setIdentifier(identifier)
     }
 
-    @MainActor
+    @preconcurrency @MainActor
     func encode(using coder: NSCoder) {
         coder.encode(identifier.uuidString,
                      forKey: NSSecureCodingKeys.tabSnapshotIdentifier)
@@ -275,10 +302,12 @@ protocol TabSnapshotExtensionProtocol: AnyObject, NavigationResponder {
 
     var snapshot: NSImage? { get }
     var identifier: UUID { get }
+    var shouldClearSnapshotOnDeinit: Bool { get set }
 
     func setIdentifier(_ identifier: UUID)
     func renderWebViewSnapshot() async
-    func renderSnapshot(from view: NSView) async
+    func renderSnapshot(from view: @escaping () -> NSView?) async
+    func renderSnapshotSync(from view: NSView)
 
 }
 

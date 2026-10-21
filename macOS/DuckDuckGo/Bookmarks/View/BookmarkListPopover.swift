@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import Combine
 
 protocol BookmarkListPopoverDelegate: NSPopoverDelegate {
     func openNextBookmarksMenu(_ sender: BookmarkListPopover)
@@ -26,31 +27,54 @@ protocol BookmarkListPopoverDelegate: NSPopoverDelegate {
 
 final class BookmarkListPopover: NSPopover {
 
-    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
+    private let pinningManager: PinningManager
+
+    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
         super.init()
 
         self.animates = false
         self.behavior = .transient
 
         setupContentController(using: bookmarkManager, dragDropManager: dragDropManager)
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
         fatalError("BookmarkListPopover: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     // swiftlint:disable:next force_cast
     var viewController: BookmarkListViewController { contentViewController as! BookmarkListViewController }
 
     private func setupContentController(using bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
-        let controller = BookmarkListViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let controller = BookmarkListViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
         controller.delegate = self
         contentViewController = controller
     }
 
     override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
+        viewController.hostWindow = positioningView.window
         viewController.adjustPreferredContentSize(positionedRelativeTo: positioningRect, of: positioningView, at: preferredEdge)
         super.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
+    }
+}
+
+extension BookmarkListPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
     }
 }
 

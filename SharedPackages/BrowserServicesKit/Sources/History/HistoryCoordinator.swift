@@ -19,9 +19,20 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import os.log
+import QuartzCore
 
 public typealias BrowsingHistory = [HistoryEntry]
+
+/// Error type for history coordinator operations that don't have a specific underlying error
+public struct HistoryCoordinatorError: Error {
+    public let description: String
+
+    public init(description: String) {
+        self.description = description
+    }
+}
 
 /**
  * This protocol allows for debugging History.
@@ -30,40 +41,59 @@ public protocol HistoryCoordinatingDebuggingSupport {
     /**
      * Adds visit at an arbitrary time, rather than current timestamp.
      *
-     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` should be used.
+     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` or `addVisit(of: URL, tabID:)` should be used.
      */
-    @discardableResult func addVisit(of url: URL, at date: Date) -> Visit?
+    @discardableResult @MainActor func addVisit(of url: URL, at date: Date, tabID: String?) -> Visit?
 }
 
 public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupport {
 
-    func loadHistory(onCleanFinished: @escaping () -> Void)
+    @MainActor func loadHistory(onCleanFinished: @escaping () -> Void)
 
-    var history: BrowsingHistory? { get }
-    var allHistoryVisits: [Visit]? { get }
-    var historyDictionary: [URL: HistoryEntry]? { get }
+    @MainActor var history: BrowsingHistory? { get }
+    @MainActor var allHistoryVisits: [Visit]? { get }
+    @MainActor var historyDictionary: [URL: HistoryEntry]? { get }
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
 
-    @discardableResult func addVisit(of url: URL) -> Visit?
-    func addBlockedTracker(entityName: String, on url: URL)
-    func trackerFound(on: URL)
-    func updateTitleIfNeeded(title: String, url: URL)
-    func markFailedToLoadUrl(_ url: URL)
-    func commitChanges(url: URL)
+    @MainActor func addBlockedTracker(entityName: String, on url: URL)
+    @MainActor func trackerFound(on: URL)
+    @MainActor func cookiePopupBlocked(on: URL)
+    @MainActor func updateTitleIfNeeded(title: String, url: URL)
+    @MainActor func markFailedToLoadUrl(_ url: URL)
+    @MainActor func commitChanges(url: URL)
 
-    func title(for url: URL) -> String?
+    @MainActor func title(for url: URL) -> String?
 
-    func burnAll(completion: @escaping () -> Void)
-    func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping (Set<URL>) -> Void)
-    func burnVisits(_ visits: [Visit], completion: @escaping () -> Void)
+    @MainActor func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void)
+    @MainActor func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void)
+    @MainActor func burnVisits(_ visits: [Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void)
+    @MainActor func burnVisits(for tabID: String) async throws
 
-    func removeUrlEntry(_ url: URL, completion: ((Error?) -> Void)?)
+    @MainActor func resetCookiePopupBlocked(for domains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void)
+
+    @MainActor func removeUrlEntry(_ url: URL, completion: (@MainActor (Error?) -> Void)?)
 }
 
 extension HistoryCoordinating {
+
+    /**
+     * Adds visit at an arbitrary time, rather than current timestamp.
+     *
+     * > This function shouldn't be used in production code. Instead, `addVisit(of: URL)` or `addVisit(of: URL, tabID:)` should be used.
+     */
     @discardableResult
-    public func addVisit(of url: URL) -> Visit? {
-        addVisit(of: url, at: Date())
+    @MainActor public func addVisit(of url: URL, at date: Date) -> Visit? {
+        addVisit(of: url, at: date, tabID: nil)
+    }
+
+    @discardableResult
+    @MainActor public func addVisit(of url: URL) -> Visit? {
+        addVisit(of: url, at: Date(), tabID: nil)
+    }
+
+    @discardableResult
+    @MainActor public func addVisit(of url: URL, tabID: String?) -> Visit? {
+        addVisit(of: url, at: Date(), tabID: tabID)
     }
 }
 
@@ -76,6 +106,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         self.historyStoringProvider = historyStoring
     }
 
+    @MainActor
     public func loadHistory(onCleanFinished: @escaping () -> Void) {
         historyDictionary = [:]
         cleanOldAndLoad(onCleanFinished: onCleanFinished)
@@ -92,28 +123,27 @@ final public class HistoryCoordinator: HistoryCoordinating {
     public var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { $historyDictionary }
 
     // Output
+    @MainActor
     public var history: BrowsingHistory? {
-        guard let historyDictionary = historyDictionary else {
-            return nil
-        }
+        guard let historyDictionary else { return nil }
 
         return makeHistory(from: historyDictionary)
     }
 
+    @MainActor
     public var allHistoryVisits: [Visit]? {
         history?.flatMap { $0.visits }
     }
 
-    private var cancellables = Set<AnyCancellable>()
-
-    @discardableResult public func addVisit(of url: URL, at date: Date) -> Visit? {
-        guard let historyDictionary = historyDictionary else {
-            Logger.history.debug("Visit of \(url.absoluteString) ignored")
+    @MainActor
+    @discardableResult public func addVisit(of url: URL, at date: Date, tabID: String? = nil) -> Visit? {
+        guard let historyDictionary else {
+            Logger.history.debug("Visit of \(url.shortDescription) ignored")
             return nil
         }
 
         let entry = historyDictionary[url] ?? HistoryEntry(url: url)
-        let visit = entry.addVisit(at: date)
+        let visit = entry.addVisit(at: date, tabID: tabID)
         entry.failedToLoad = false
 
         self.historyDictionary?[url] = entry
@@ -123,13 +153,13 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     public func addBlockedTracker(entityName: String, on url: URL) {
-        guard let historyDictionary = historyDictionary else {
-            Logger.history.debug("Add tracker to \(url.absoluteString) ignored, no history")
+        guard let historyDictionary else {
+            Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no history")
             return
         }
 
         guard let entry = historyDictionary[url] else {
-            Logger.history.debug("Add tracker to \(url.absoluteString) ignored, no entry")
+            Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no entry")
             return
         }
 
@@ -137,21 +167,36 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     public func trackerFound(on url: URL) {
-        guard let historyDictionary = historyDictionary else {
-            Logger.history.debug("Add tracker to \(url.absoluteString) ignored, no history")
+        guard let historyDictionary else {
+            Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no history")
             return
         }
 
         guard let entry = historyDictionary[url] else {
-            Logger.history.debug("Add tracker to \(url.absoluteString) ignored, no entry")
+            Logger.history.debug("Add tracker to \(url.shortDescription) ignored, no entry")
             return
         }
 
         entry.trackersFound = true
     }
 
+    public func cookiePopupBlocked(on url: URL) {
+        guard let historyDictionary else {
+            Logger.history.debug("Set cookie popup blocked on \(url.shortDescription) ignored, no history")
+            return
+        }
+
+        guard let entry = historyDictionary[url] else {
+            Logger.history.debug("Set cookie popup blocked on \(url.shortDescription) ignored, no entry")
+            return
+        }
+
+        entry.cookiePopupBlocked = true
+        commitChanges(url: url)
+    }
+
     public func updateTitleIfNeeded(title: String, url: URL) {
-        guard let historyDictionary = historyDictionary else { return }
+        guard let historyDictionary else { return }
         guard let entry = historyDictionary[url] else {
             Logger.history.debug("Title update ignored - URL not part of history yet")
             return
@@ -167,11 +212,8 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     public func commitChanges(url: URL) {
-        guard let historyDictionary = historyDictionary,
-              let entry = historyDictionary[url] else {
-            return
-        }
-
+        guard let historyDictionary, let entry = historyDictionary[url] else { return }
+        Logger.history.debug("HistoryCoordinator: committing \(url.shortDescription)")
         save(entry: entry)
     }
 
@@ -183,33 +225,74 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return historyEntry.title
     }
 
-    public func burnAll(completion: @escaping () -> Void) {
-        clean(until: Date()) {
-            self.historyDictionary = [:]
-            completion()
+    @MainActor
+    public func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+        Logger.history.debug("HistoryCoordinator: burnAll")
+        self.historyDictionary = [:]
+        clean(until: .distantFuture) { result in
+            Logger.history.debug("HistoryCoordinator: burnAll completed")
+            completion(result)
         }
     }
 
-    public func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping (Set<URL>) -> Void) {
-        guard let historyDictionary = historyDictionary else { return }
+    @MainActor
+    public func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Set<URL>, Error>) -> Void) {
+        guard let historyDictionary else {
+            completion(.failure(HistoryCoordinatorError(description: "historyDictionary is nil")))
+            return
+        }
 
         var urls = Set<URL>()
         let entries: [HistoryEntry] = historyDictionary.values.filter { historyEntry in
             guard let host = historyEntry.url.host,
-                  let baseDomain = tld.eTLDplus1(host),
-                  baseDomains.contains(baseDomain) else { return false }
+                  baseDomains.contains(tld.eTLDplus1(host) ?? host) else { return false }
             urls.insert(historyEntry.url)
             return true
         }
 
-        removeEntries(entries, completionHandler: { _ in
-            completion(urls)
+        removeEntries(entries, completionHandler: { result in
+            switch result {
+            case .success:
+                completion(.success(urls))
+            case .failure(let error):
+                completion(.failure(error))
+            }
         })
     }
 
-    public func burnVisits(_ visits: [Visit], completion: @escaping () -> Void) {
-        removeVisits(visits) { _ in
-            completion()
+    @MainActor
+    public func burnVisits(_ visits: [Visit], completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+        removeVisits(visits, completionHandler: completion)
+    }
+
+    /// Burns all history visits associated with a specific tab.
+    ///
+    /// This method retrieves visit IDs from the tab history store, maps them to in-memory `Visit` objects,
+    /// and removes them from history. Used when burning a single tab to clear its browsing history.
+    ///
+    /// - Parameter tabID: The unique identifier of the tab whose visits should be removed.
+    /// - Throws: `EntryRemovalError.notAvailable` if history has not yet been loaded.
+    @MainActor
+    public func burnVisits(for tabID: String) async throws {
+        guard let allVisits = allHistoryVisits else {
+            Logger.history.error("burnVisits(for:) called but history not yet loaded")
+            throw EntryRemovalError.notAvailable
+        }
+
+        let visitIDs = try await historyStoring.pageVisitIDs(in: tabID)
+        let visitsAndIDsArray = allVisits.map { ($0.identifier, $0) }
+        let visitByIDsDictionary = Dictionary(visitsAndIDsArray) { existing, _ in
+            existing // Keep the first instance found.
+        }
+        let visits = visitIDs.compactMap { visitByIDsDictionary[$0] }
+
+        assert(visits.count == visitIDs.count,
+               "burnVisits(for:) found \(visitIDs.count) visit IDs but matched only \(visits.count) in memory")
+
+        return await withCheckedContinuation { continuation in
+            burnVisits(visits) { _ in
+                continuation.resume()
+            }
         }
     }
 
@@ -217,71 +300,106 @@ final public class HistoryCoordinator: HistoryCoordinating {
         case notAvailable
     }
 
-    public func removeUrlEntry(_ url: URL, completion: ((Error?) -> Void)? = nil) {
-        guard let historyDictionary = historyDictionary else { return }
+    @MainActor
+    public func resetCookiePopupBlocked(for domains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
+        guard let historyDictionary else {
+            completion(.failure(HistoryCoordinatorError(description: "historyDictionary is nil")))
+            return
+        }
+
+        let entries: [HistoryEntry] = historyDictionary.values.filter { historyEntry in
+            guard let host = historyEntry.url.host,
+                  domains.contains(tld.eTLDplus1(host) ?? host) else { return false }
+            return true
+        }
+
+        for entry in entries {
+            entry.cookiePopupBlocked = false
+            commitChanges(url: entry.url)
+        }
+
+        completion(.success(()))
+    }
+
+    @MainActor
+    public func removeUrlEntry(_ url: URL, completion: (@MainActor (Error?) -> Void)? = nil) {
+        guard let historyDictionary else { return }
         guard let entry = historyDictionary[url] else {
             completion?(EntryRemovalError.notAvailable)
             return
         }
 
-        removeEntries([entry], completionHandler: completion)
+        // Bridge between old Error? completion and new Result completion
+        removeEntries([entry]) { result in
+            switch result {
+            case .success:
+                completion?(nil)
+            case .failure(let error):
+                completion?(error)
+            }
+        }
     }
 
     var cleaningDate: Date { .monthAgo }
 
     @objc private func cleanOld() {
-        clean(until: cleaningDate)
+        clean(until: cleaningDate, onCleanFinished: { _ in })
     }
 
-    private func cleanOldAndLoad(onCleanFinished: @escaping () -> Void) {
-        clean(until: cleaningDate, onCleanFinished: onCleanFinished)
+    private func cleanOldAndLoad(onCleanFinished: @escaping @MainActor () -> Void) {
+        clean(until: cleaningDate, onCleanFinished: { _ in
+            onCleanFinished()
+        })
     }
 
-    private func clean(until date: Date, onCleanFinished: (() -> Void)? = nil) {
-        historyStoring.cleanOld(until: date)
-            .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    Logger.history.debug("History cleaned successfully")
-                case .failure(let error):
-                    // This should really be a pixel
-                    Logger.history.error("Cleaning of history failed: \(error.localizedDescription)")
+    private func clean(until date: Date, onCleanFinished: (@MainActor (Result<Void, Error>) -> Void)? = nil) {
+        Task {
+            do {
+                let history = try await historyStoring.cleanOld(until: date)
+                Logger.history.debug("History cleaned successfully")
+                await MainActor.run { [weak self] in
+                    self?.historyDictionary = self?.makeHistoryDictionary(from: history)
+                    onCleanFinished?(.success(()))
                 }
-                onCleanFinished?()
-            }, receiveValue: { [weak self] history in
-                self?.historyDictionary = self?.makeHistoryDictionary(from: history)
-            })
-            .store(in: &cancellables)
+            } catch {
+                Logger.history.error("Cleaning of history failed: \(error.localizedDescription)")
+                await MainActor.run {
+                    onCleanFinished?(.failure(error))
+                }
+            }
+        }
     }
 
-    private func removeEntries(_ entries: [HistoryEntry],
-                               completionHandler: ((Error?) -> Void)? = nil) {
+    @MainActor
+    private func removeEntries(_ entries: some Sequence<HistoryEntry>, completionHandler: (@MainActor (Result<Void, Error>) -> Void)? = nil) {
         // Remove from the local memory
         entries.forEach { entry in
             historyDictionary?.removeValue(forKey: entry.url)
         }
 
         // Remove from the storage
-        historyStoring.removeEntries(entries)
-            .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    Logger.history.debug("Entries removed successfully")
-                    completionHandler?(nil)
-                case .failure(let error):
-                    assertionFailure("Removal failed")
-                    Logger.history.error("Removal failed: \(error.localizedDescription)")
-                    completionHandler?(error)
+        Task {
+            do {
+                try await historyStoring.removeEntries(entries)
+                Logger.history.debug("Entries removed successfully")
+                await MainActor.run {
+                    completionHandler?(.success(()))
                 }
-            }, receiveValue: {})
-            .store(in: &cancellables)
+            } catch {
+                assertionFailure("Removal failed")
+                Logger.history.error("Removal failed: \(error.localizedDescription)")
+                await MainActor.run {
+                    completionHandler?(.failure(error))
+                }
+            }
+        }
     }
 
+    @MainActor
     private func removeVisits(_ visits: [Visit],
-                              completionHandler: ((Error?) -> Void)? = nil) {
-        var entriesToRemove = [HistoryEntry]()
+                              completionHandler: (@MainActor (Result<Void, Error>) -> Void)? = nil) {
+        var entriesToRemove = Set<HistoryEntry>()
+        var entriesToSave = Set<HistoryEntry>()
 
         // Remove from the local memory
         visits.forEach { visit in
@@ -291,43 +409,51 @@ final public class HistoryCoordinator: HistoryCoordinating {
                 if historyEntry.visits.count > 0 {
                     if let newLastVisit = historyEntry.visits.map({ $0.date }).max() {
                         historyEntry.lastVisit = newLastVisit
-                        save(entry: historyEntry)
+                        entriesToSave.insert(historyEntry)
                     } else {
                         assertionFailure("No history entry")
                     }
                 } else {
-                    entriesToRemove.append(historyEntry)
+                    entriesToRemove.insert(historyEntry)
                 }
             } else {
                 assertionFailure("No history entry")
             }
         }
 
+        entriesToSave.forEach { entry in
+            save(entry: entry)
+        }
+        // Remove from the local memory _before_ enqueuing async removal from database
+        entriesToRemove.forEach { entry in
+            historyDictionary?.removeValue(forKey: entry.url)
+        }
+
         // Remove from the storage
-        historyStoring.removeVisits(visits)
-            .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { [weak self] completion in
-                switch completion {
-                case .finished:
-                    Logger.history.debug("Visits removed successfully")
-                    // Remove entries with no remaining visits
-                    self?.removeEntries(entriesToRemove, completionHandler: completionHandler)
-                case .failure(let error):
-                    assertionFailure("Removal failed")
-                    Logger.history.error("Removal failed: \(error.localizedDescription)")
-                    completionHandler?(error)
+        Task {
+            do {
+                try await historyStoring.removeVisits(visits)
+                Logger.history.debug("Visits removed successfully")
+                // Remove entries with no remaining visits
+                await MainActor.run {
+                    self.removeEntries(entriesToRemove, completionHandler: completionHandler)
                 }
-            }, receiveValue: {})
-            .store(in: &cancellables)
+            } catch {
+                assertionFailure("Removal failed")
+                Logger.history.error("Removal failed: \(error.localizedDescription)")
+                await MainActor.run {
+                    completionHandler?(.failure(error))
+                }
+            }
+        }
     }
 
     private func scheduleRegularCleaning() {
-        let timer = Timer(fireAt: .startOfDayTomorrow,
+        let timer = Timer(fire: .startOfDayTomorrow,
                           interval: .day,
-                          target: self,
-                          selector: #selector(cleanOld),
-                          userInfo: nil,
-                          repeats: true)
+                          repeats: true) { [weak self] _ in
+            self?.cleanOld()
+        }
         RunLoop.main.add(timer, forMode: RunLoop.Mode.common)
         regularCleaningTimer = timer
     }
@@ -352,30 +478,29 @@ final public class HistoryCoordinator: HistoryCoordinating {
         }
         entry.visits.forEach { $0.savingState = .saved }
 
-        historyStoring.save(entry: entryCopy)
-            .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.absoluteString), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no")")
-                case .failure(let error):
-                    Logger.history.error("Saving of history entry failed: \(error.localizedDescription)")
-                }
-            }, receiveValue: { result in
-                for (id, date) in result {
-                    if let visit = entry.visits.first(where: { $0.date == date }) {
-                        visit.identifier = id
+        Task {
+            do {
+                let result = try await historyStoring.save(entry: entryCopy)
+                Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.shortDescription), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no"), cookie popup blocked: \(entry.cookiePopupBlocked ? "yes" : "no")")
+                await MainActor.run {
+                    for (id, date) in result {
+                        if let visit = entry.visits.first(where: { $0.date == date }) {
+                            visit.identifier = id
+                        }
                     }
                 }
-            })
-            .store(in: &cancellables)
+            } catch {
+                Logger.history.error("Saving of history entry failed: \(error.localizedDescription)")
+            }
+        }
     }
 
     /// Sets boolean value for the keyPath in HistroryEntry for the specified url
     /// Does the same for the root URL if it has no visits
+    @MainActor
     private func mark(url: URL, keyPath: WritableKeyPath<HistoryEntry, Bool>, value: Bool) {
-        guard let historyDictionary = historyDictionary, var entry = historyDictionary[url] else {
-            Logger.history.debug("Marking of \(url.absoluteString) not saved. History not loaded yet or entry doesn't exist")
+        guard let historyDictionary, var entry = historyDictionary[url] else {
+            Logger.history.debug("Marking of \(url.shortDescription) not saved. History not loaded yet or entry doesn't exist")
             return
         }
 

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import WebKit
 
 /// Represents a “Fire Window Session” tracking lifetime of the owning Fire Window and Popup windows created from it.
 /// Used to detect active downloads within a Fire Window Session.
@@ -41,6 +42,10 @@ import AppKit
     }
     private var windowRefs: Set<WindowRef> = []
     private var deinitObservers: [() -> Void] = []
+
+    /// The non-persistent website data store this session was created for.
+    /// Provides a stable link back to the session without requiring a window.
+    weak var websiteDataStore: WKWebsiteDataStore?
 
     var windows: [NSWindow] {
         windowRefs.reduce(into: []) { result, windowRef in
@@ -81,13 +86,18 @@ struct FireWindowSessionRef: Hashable {
     @MainActor
     init?(window: NSWindow?) {
         guard let window else { return nil }
-        guard let mainWindowController = window.windowController as? MainWindowController else {
-            assertionFailure("\(window) has no MainWindowController")
-            return nil
-        }
+        // Some windows (e.g. the detached AI Chat sidebar) don't use MainWindowController and aren't part of any fire session.
+        guard let mainWindowController = window.windowController as? MainWindowController else { return nil }
         guard let fireWindowSession = mainWindowController.fireWindowSession else { return nil }
         self.fireWindowSession = fireWindowSession
         self.identifier = ObjectIdentifier(fireWindowSession)
+    }
+
+    @MainActor
+    init?(session: FireWindowSession?) {
+        guard let session else { return nil }
+        self.fireWindowSession = session
+        self.identifier = ObjectIdentifier(session)
     }
 
     @MainActor

@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import CoreData
 import os.log
@@ -114,16 +115,27 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
     func add(domain: String, notify: Bool = true) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        guard let eTLDPlus1Domain = tld.eTLDplus1(domain) else {
-            // eTLD+1 domain not available, domain is probably invalid
-            return
-        }
+        let eTLDPlus1Domain = tld.eTLDplus1(domain) ?? domain
         guard !isFireproof(fireproofDomain: eTLDPlus1Domain) else {
             return
         }
 
+        let id: NSManagedObjectID
         do {
-            let id = try store.add(eTLDPlus1Domain)
+            id = try store.add(eTLDPlus1Domain)
+        } catch {
+#if DEBUG
+            if AppVersion.runType == .xcPreviews {
+                id = NSManagedObjectID()
+            } else {
+                assertionFailure("could not add fireproof domain \(eTLDPlus1Domain): \(error)")
+                return
+            }
+#else
+            return
+#endif
+        }
+        do {
             try container.add(domain: eTLDPlus1Domain, withId: id)
         } catch {
             assertionFailure("could not add fireproof domain \(eTLDPlus1Domain): \(error)")
@@ -137,17 +149,23 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
         }
     }
 
+    /// Validates and normalizes arbitrary user input (URL or host) into an eTLD+1 host.
+    /// Returns nil if the input is empty, invalid, or already fireproofed.
+    func normalizedHost(fromUserInput input: String) -> String? {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let url = URL(trimmedAddressBarString: trimmed),
+              url.navigationalScheme?.isHypertextScheme == true else { return nil }
+        let eTLDPlus1Domain = tld.eTLDplus1(url.host) ?? url.host
+        return eTLDPlus1Domain
+    }
+
     func remove(domain: String, changeToETLDPlus1: Bool = true) {
         dispatchPrecondition(condition: .onQueue(.main))
 
         let newDomain: String
         if changeToETLDPlus1 {
-            guard let eTLDPlus1Domain = tld.eTLDplus1(domain) else {
-                // eTLD+1 domain not available, domain is probably invalid
-                return
-            }
-
-            newDomain = eTLDPlus1Domain
+            newDomain = tld.eTLDplus1(domain) ?? domain
         } else {
             newDomain = domain
         }
@@ -173,19 +191,13 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
 
     func isFireproof(cookieDomain: String) -> Bool {
         let domainWithoutDotPrefix = cookieDomain.dropping(prefix: ".")
-        guard let eTLDPlus1Domain = tld.eTLDplus1(domainWithoutDotPrefix) else {
-            // eTLD+1 domain not available, domain is probably invalid
-            return false
-        }
+        let eTLDPlus1Domain = tld.eTLDplus1(domainWithoutDotPrefix) ?? domainWithoutDotPrefix
 
         return container.contains(domain: eTLDPlus1Domain)
     }
 
     func isFireproof(fireproofDomain domain: String) -> Bool {
-        guard let eTLDPlus1Domain = tld.eTLDplus1(domain) else {
-            // eTLD+1 domain not available, domain is probably invalid
-            return false
-        }
+        let eTLDPlus1Domain = tld.eTLDplus1(domain) ?? domain
         return container.contains(domain: eTLDPlus1Domain)
     }
 

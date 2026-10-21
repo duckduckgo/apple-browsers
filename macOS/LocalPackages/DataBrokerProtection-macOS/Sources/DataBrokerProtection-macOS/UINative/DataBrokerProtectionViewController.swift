@@ -19,11 +19,13 @@
 import Cocoa
 import SwiftUI
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import WebKit
 import Combine
 import DataBrokerProtectionCore
+import PrivacyConfig
 
 final public class DataBrokerProtectionViewController: NSViewController {
     private let dataManager: DataBrokerProtectionDataManaging?
@@ -44,13 +46,14 @@ final public class DataBrokerProtectionViewController: NSViewController {
                 privacyConfig: PrivacyConfigurationManaging? = nil,
                 prefs: ContentScopeProperties? = nil,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
+                isUserSubscribed: @escaping () -> Bool,
                 openURLHandler: @escaping (URL?) -> Void) {
         self.dataManager = dataManager
         self.vpnBypassService = vpnBypassService
         self.openURLHandler = openURLHandler
         self.webUISettings = webUISettings
         self.pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
-        self.webUIPixel = DataBrokerProtectionWebUIPixels(pixelHandler: pixelHandler)
+        self.webUIPixel = DataBrokerProtectionWebUIPixels(pixelHandler: pixelHandler, isUserSubscribed: isUserSubscribed)
 
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
@@ -76,6 +79,10 @@ final public class DataBrokerProtectionViewController: NSViewController {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    public func updateFreeScanEntryPoint(_ entryPoint: String?) {
+        webUIViewModel.setFreeScanEntryPoint(entryPoint, in: webView)
     }
 
     public override func viewDidLoad() {

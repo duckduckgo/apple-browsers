@@ -31,9 +31,9 @@ import PixelKit
  * Anomaly Investigation:
  * - Anomaly in these pixels may mean an increase/drop in app use.
  */
-enum MoreOptionsMenuPixel: PixelKitEventV2 {
+enum MoreOptionsMenuPixel: PixelKit.Event {
 
-    /// Event Trigger: Feedback or Privacy Pro feedback menu action is clicked
+    /// Event Trigger: Feedback or Subscription feedback menu action is clicked
     case feedbackActionClicked
 
     /// Event Trigger: New Tab action is clicked
@@ -44,9 +44,6 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
 
     /// Event Trigger: New Fire Window action is clicked
     case newBurnerWindowActionClicked
-
-    /// Event Trigger: Zoom In, zoom Out or Actual Size action is clicked
-    case zoomActionClicked
 
     /// Event Trigger: Any action in Bookmarks submenu is clicked
     case bookmarksActionClicked
@@ -102,8 +99,6 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
             return "browser_menu_new_window"
         case .newBurnerWindowActionClicked:
             return "browser_menu_new_burner_window"
-        case .zoomActionClicked:
-            return "browser_menu_zoom"
         case .bookmarksActionClicked:
             return "browser_menu_bookmarks"
         case .downloadsActionClicked:
@@ -139,7 +134,28 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .feedbackActionClicked,
+                .newTabActionClicked,
+                .newWindowActionClicked,
+                .newBurnerWindowActionClicked,
+                .bookmarksActionClicked,
+                .downloadsActionClicked,
+                .passwordsActionClicked,
+                .deleteBrowsingDataActionClicked,
+                .emailProtectionActionClicked,
+                .subscriptionActionClicked,
+                .dataBrokerProtectionActionClicked,
+                .fireproofSiteActionClicked,
+                .findInPageActionClicked,
+                .shareActionClicked,
+                .printActionClicked,
+                .helpActionClicked,
+                .updateActionClicked,
+                .settingsActionClicked:
+            return [.pixelSource]
+        }
     }
+
 }

@@ -16,20 +16,33 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
-import BrowserServicesKit
+import Common
+import Foundation
+import FoundationExtensions
+import PrivacyConfig
 import UserScript
 
 enum AIChatMessageType {
-    case nativeConfigValues
     case nativeHandoffData
     case nativePrompt
     case chatRestorationData
+    case pageContext
 }
 
 protocol AIChatMessageHandling {
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable?
     func setData(_ data: Any?, forMessageType type: AIChatMessageType)
+
+    /// Selection context is a list (not a single slot), so it has dedicated accessors rather than
+    /// going through `AIChatMessageType`. `appendSelectionContext` stores a pushed selection so a
+    /// later `getSelectionContexts` pull can return it; `clearSelectionContexts` resets on submit.
+    func appendSelectionContext(_ selection: AIChatSelectionContextData)
+    func getSelectionContexts() -> [AIChatSelectionContextData]
+    func clearSelectionContexts()
 }
 
 final class AIChatMessageHandler: AIChatMessageHandling {
@@ -37,27 +50,51 @@ final class AIChatMessageHandler: AIChatMessageHandling {
     private let promptHandler: any AIChatConsumableDataHandling
     private let payloadHandler: AIChatPayloadHandler
     private let chatRestorationDataHandler: AIChatRestorationDataHandler
+    private let pageContextHandler: AIChatPageContextHandler
+    private let selectionContextHandler: AIChatSelectionContextHandler
+    private let isNativeStorageBridgeAvailable: Bool
+    private let installDateProvider: () -> Date?
+    private let installTypeProvider: () -> AIChatInstallType
+    private let homepageAiChatsProvider: HomepageAiChatsProvider?
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
-         chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler()) {
+         chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler(),
+         pageContextHandler: AIChatPageContextHandler = AIChatPageContextHandler(),
+         selectionContextHandler: AIChatSelectionContextHandler = AIChatSelectionContextHandler(),
+         isNativeStorageBridgeAvailable: Bool = false,
+         installDateProvider: @escaping () -> Date? = { LocalStatisticsStore().installDate },
+         installTypeProvider: @escaping () -> AIChatInstallType = {
+             // App Store builds can't detect reinstalls, so report `.unknown` rather than misreporting `.new`.
+             guard StandardApplicationBuildType().isSparkleBuild else { return .unknown }
+             let isReturning = DefaultReinstallUserDetection(
+                keyValueStore: Application.appDelegate.keyValueStore).isReinstallingUser
+             return isReturning ? .returning : .new
+         },
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
         self.payloadHandler = payloadHandler
         self.chatRestorationDataHandler = chatRestorationDataHandler
+        self.pageContextHandler = pageContextHandler
+        self.selectionContextHandler = selectionContextHandler
+        self.isNativeStorageBridgeAvailable = isNativeStorageBridgeAvailable
+        self.installDateProvider = installDateProvider
+        self.installTypeProvider = installTypeProvider
+        self.homepageAiChatsProvider = homepageAiChatsProvider
     }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
         switch type {
-        case .nativeConfigValues:
-            return getNativeConfigValues()
         case .nativeHandoffData:
             return getNativeHandoffData()
         case .nativePrompt:
             return getAIChatNativePrompt()
         case .chatRestorationData:
             return getAIChatRestorationData()
+        case .pageContext:
+            return getPageContext()
         }
     }
 
@@ -67,26 +104,64 @@ final class AIChatMessageHandler: AIChatMessageHandling {
             setNativeHandoffData(data as? AIChatPayload)
         case .chatRestorationData:
             setAIChatRestorationData(data as? AIChatRestorationData)
+        case .pageContext:
+            setPageContext(data as? AIChatPageContextData)
         default:
             break
         }
+    }
+
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {
+        selectionContextHandler.append(selection)
+    }
+
+    func getSelectionContexts() -> [AIChatSelectionContextData] {
+        selectionContextHandler.getAll()
+    }
+
+    func clearSelectionContexts() {
+        selectionContextHandler.reset()
     }
 }
 
 // MARK: - Messages
 extension AIChatMessageHandler {
-    private func getNativeConfigValues() -> Encodable? {
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                            supportsClosingAIChat: true,
-                                            supportsOpeningSettings: true,
-                                            supportsNativePrompt: true,
-                                            supportsNativeChatInput: featureFlagger.isFeatureOn(.aiChatTextSummarization), // enabled in order to make submitAIChatNativePrompt message available
-                                            supportsURLChatIDRestoration: true,
-                                            supportsFullChatRestoration: true)
-        } else {
-            return AIChatNativeConfigValues.defaultValues
-        }
+    func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
+        let appVersion = AppVersion.shared.versionAndBuildNumber
+        let defaults = AIChatNativeConfigValues.defaultValues
+        return AIChatNativeConfigValues(
+            isAIChatHandoffEnabled: true,
+            supportsClosingAIChat: true,
+            supportsOpeningSettings: true,
+            supportsNativePrompt: true,
+            supportsStandaloneMigration: featureFlagger.isFeatureOn(.standaloneMigration),
+            supportsNativeChatInput: false,
+            supportsURLChatIDRestoration: true,
+            supportsFullChatRestoration: true,
+            supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
+            supportsAIChatFullMode: false,
+            supportsAIChatContextualMode: false,
+            appVersion: appVersion,
+            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
+            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
+            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync) && !isFireWindow,
+            supportsMultipleContexts: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts),
+            supportsTabPicker: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatSidebarAttachMoreTabs),
+            supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
+            supportsSuggestions: featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.sidebarSuggestedPrompts),
+            supportsNativeVoicePermissionHandler: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow),
+            supportsNativeDictationPermissionHandler: true,
+            supportsBlobSafeDataClearing: true,
+            installType: installTypeProvider(),
+            installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
+            attachmentLimits: featureFlagger.isFeatureOn(.aiChatTabAttachmentLimit)
+                ? AIChatNativeAttachmentLimits(tabs: .init(maxAttached: AIChatOmnibarController.maxTabAttachments))
+                : nil,
+            supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools),
+            supportsAttachmentPrivacyDisplay: featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure),
+            supportsHomePageChatSuggestions: homepageAiChatsProvider?.isSupported == true,
+            supportsCanonicalChatFormat: true
+        )
     }
 
     private func getNativeHandoffData() -> Encodable? {
@@ -122,5 +197,18 @@ extension AIChatMessageHandler {
         }
 
         chatRestorationDataHandler.setData(data)
+    }
+
+    private func getPageContext() -> Encodable? {
+        pageContextHandler.consumeData()
+    }
+
+    private func setPageContext(_ data: AIChatPageContextData?) {
+        guard let data else {
+            pageContextHandler.reset()
+            return
+        }
+
+        pageContextHandler.setData(data)
     }
 }

@@ -11,6 +11,7 @@
 		<string>$(GROUP_ID_PREFIX).bookmarks</string>
 		<string>$(GROUP_ID_PREFIX).database</string>
 		<string>$(GROUP_ID_PREFIX).netp</string>
+		<string>$(GROUP_ID_PREFIX).app-configuration</string>
 	</array>
 </dict>
 </plist>

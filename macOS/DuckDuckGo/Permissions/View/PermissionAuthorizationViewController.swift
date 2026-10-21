@@ -16,7 +16,12 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
+import FeatureFlags_macOS
+import PixelKit
+import PrivacyConfig
+import SwiftUI
 
 extension PermissionType {
     var localizedDescription: String {
@@ -29,12 +34,16 @@ extension PermissionType {
             return UserText.permissionGeolocation
         case .popups:
             return UserText.permissionPopups
+        case .notification:
+            return UserText.permissionNotification
         case .externalScheme(scheme: let scheme):
             guard let url = URL(string: scheme + URL.NavigationalScheme.separator),
                   let app = NSWorkspace.shared.application(toOpen: url)
             else { return scheme }
 
             return app
+        case .autoplayPolicy:
+            return UserText.permissionAutoplay
         }
     }
 }
@@ -55,92 +64,159 @@ extension Array where Element == PermissionType {
 
 final class PermissionAuthorizationViewController: NSViewController {
 
-    @IBOutlet var descriptionLabel: NSTextField!
-    @IBOutlet var domainNameLabel: NSTextField!
-    @IBOutlet var alwaysAllowCheckbox: NSButton!
-    @IBOutlet var alwaysAllowStackView: NSStackView!
-    @IBOutlet var learnMoreStackView: NSStackView!
-    @IBOutlet var denyButton: NSButton!
-    @IBOutlet var buttonsBottomConstraint: NSLayoutConstraint!
-    @IBOutlet var learnMoreBottomConstraint: NSLayoutConstraint!
-    @IBOutlet weak var linkButton: LinkButton!
-    @IBOutlet weak var allowButton: NSButton!
+    let systemPermissionManager: SystemPermissionManagerProtocol
+    private let featureFlagger: FeatureFlagger
+
+    private var swiftUIHostingView: NSView?
+
+    /// Legacy prompt only (`websitePermissionsPrompts` off): cleared by its Allow, Deny and dismiss handlers.
+    private var isLegacyFlowInProgress = false
+
+    /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
+    /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
+    /// A query that was released or completed elsewhere, e.g. by a navigation, is no longer in progress.
+    var isAuthorizationInProgress: Bool {
+        guard query?.isComplete == false else { return false }
+        return featureFlagger.isFeatureOn(.websitePermissionsPrompts) || isLegacyFlowInProgress
+    }
 
     weak var query: PermissionAuthorizationQuery? {
         didSet {
-            updateText()
+            setupSwiftUIView()
         }
+    }
+
+    init(featureFlagger: FeatureFlagger, systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()) {
+        self.featureFlagger = featureFlagger
+        self.systemPermissionManager = systemPermissionManager
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("PermissionAuthorizationViewController: Use init() instead")
+    }
+
+    override func loadView() {
+        view = NSView()
     }
 
     override func viewDidLoad() {
-        updateText()
+        super.viewDidLoad()
+        setupSwiftUIView()
     }
 
-    override func viewWillAppear() {
-        alwaysAllowCheckbox.state = .off
-        if query?.shouldShowCancelInsteadOfDeny == true {
-            denyButton.title = UserText.cancel
+    // MARK: - SwiftUI View Setup
+
+    private func setupSwiftUIView() {
+        guard let query = query, !query.permissions.isEmpty else { return }
+
+        // Remove all existing subviews to ensure clean state
+        view.subviews.forEach { $0.removeFromSuperview() }
+        swiftUIHostingView = nil
+
+        let hostingView: NSView = if featureFlagger.isFeatureOn(.websitePermissionsPrompts) {
+            NSHostingView(rootView: PermissionAuthorizationView(viewModel: makeViewModel(for: query)))
         } else {
-            denyButton.title = UserText.permissionPopoverDenyButton
+            makeLegacyHostingView(for: query)
         }
-        denyButton.setAccessibilityIdentifier("PermissionAuthorizationViewController.denyButton")
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hostingView)
+
+        NSLayoutConstraint.activate([
+            hostingView.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        swiftUIHostingView = hostingView
+        isLegacyFlowInProgress = true
     }
 
-    private func updateText() {
-        guard isViewLoaded,
-              let query = query,
-              !query.permissions.isEmpty
-        else { return }
+    private func makeLegacyHostingView(for query: PermissionAuthorizationQuery) -> NSView {
+        let permissionType = PermissionAuthorizationType(from: query.permissions)
+        let showsTwoStepUI = permissionType.requiresSystemPermission
+            && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
 
-        switch query.permissions[0] {
-        case .camera, .microphone:
-            descriptionLabel.stringValue = String(format: UserText.devicePermissionAuthorizationFormat,
-                                                  query.domain,
-                                                  query.permissions.localizedDescription.lowercased())
-        case .popups:
-            descriptionLabel.stringValue = String(format: UserText.popupWindowsPermissionAuthorizationFormat,
-                                                  query.domain,
-                                                  query.permissions.localizedDescription.lowercased())
-        case .externalScheme where query.domain.isEmpty:
-            descriptionLabel.stringValue = String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat,
-                                                  query.permissions.localizedDescription)
-        case .externalScheme:
-            descriptionLabel.stringValue = String(format: UserText.externalSchemePermissionAuthorizationFormat,
-                                                  query.domain,
-                                                  query.permissions.localizedDescription)
-        case .geolocation:
-            descriptionLabel.stringValue = String(format: UserText.locationPermissionAuthorizationFormat, query.domain)
+        let swiftUIView = LegacyPermissionAuthorizationSwiftUIView(
+            domain: query.domain,
+            permissionType: permissionType,
+            showsTwoStepUI: showsTwoStepUI,
+            isSystemPermissionDisabled: query.opensOnSystemPermissionStep,
+            onDeny: { [weak self] in
+                self?.handleDeny()
+            },
+            onAllow: { [weak self] in
+                self?.handleAllow()
+            },
+            onDismiss: { [weak self] in
+                self?.handleDismiss()
+            },
+            onLearnMore: permissionType.learnMoreURL != nil ? {
+                if let url = permissionType.learnMoreURL {
+                    Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+                }
+            } : nil,
+            systemPermissionManager: systemPermissionManager
+        )
+        return NSHostingView(rootView: swiftUIView)
+    }
+
+    private func makeViewModel(for query: PermissionAuthorizationQuery) -> PermissionAuthorizationViewModel {
+        let viewModel = query.parameters.authorizationViewModel ?? PermissionAuthorizationViewModel(
+            query: query,
+            systemPermissionManager: systemPermissionManager,
+            openURL: { url in
+                Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+            },
+            finish: {}
+        )
+        // Rebind on every attach: a cached view model may have been created by another presenter, e.g. before the tab moved windows.
+        viewModel.finish = { [weak self, weak query] in
+            guard let self else { return }
+            if let currentQuery = self.query, currentQuery !== query { return }
+            self.dismiss()
         }
-        alwaysAllowCheckbox.title = UserText.permissionAlwaysAllowOnDomainCheckbox
-        domainNameLabel.stringValue = query.domain.isEmpty ? "" : "“" + query.domain + "”"
-        alwaysAllowStackView.isHidden = !query.shouldShowAlwaysAllowCheckbox
-        learnMoreStackView.isHidden = !query.permissions.contains(.geolocation)
-        learnMoreBottomConstraint.isActive = !learnMoreStackView.isHidden
-        buttonsBottomConstraint.isActive = !learnMoreBottomConstraint.isActive
-        linkButton.title = UserText.permissionPopupLearnMoreLink
-        allowButton.title = UserText.permissionPopupAllowButton
-        allowButton.setAccessibilityIdentifier("PermissionAuthorizationViewController.allowButton")
+        query.parameters.authorizationViewModel = viewModel
+        return viewModel
     }
 
-    @IBAction func alwaysAllowLabelClick(_ sender: Any) {
-        alwaysAllowCheckbox.setNextState()
+    private func handleDeny() {
+        defer {
+            isLegacyFlowInProgress = false
+            dismiss()
+        }
+        guard let query else { return }
+
+        fireAuthorizationPixel(decision: .deny)
+        query.handleDecision(grant: false, remember: nil)
     }
 
-    @IBAction func grantAction(_ sender: NSButton) {
-        self.dismiss()
-        query?.handleDecision(grant: true, remember: query!.shouldShowAlwaysAllowCheckbox && alwaysAllowCheckbox.state == .on)
+    private func handleAllow() {
+        defer {
+            isLegacyFlowInProgress = false
+            dismiss()
+        }
+        guard let query else { return }
+
+        fireAuthorizationPixel(decision: .allow)
+        // For duck.ai microphone, persist "always allow" so voice chat doesn't re-prompt on every session.
+        let alwaysRemember = query.permissions.contains(.microphone) && query.domain.isDuckAIHost
+        query.handleDecision(grant: true, remember: alwaysRemember ? true : nil)
     }
 
-    @IBAction func denyAction(_ sender: NSButton) {
-        self.dismiss()
-        guard let query = query,
-              !query.shouldShowCancelInsteadOfDeny
-        else { return }
-
-        query.handleDecision(grant: false)
+    private func handleDismiss() {
+        isLegacyFlowInProgress = false
+        query?.cancel()
+        dismiss()
     }
 
-    @IBAction func learnMoreAction(_ sender: NSButton) {
-        Application.appDelegate.windowControllersManager.show(url: "https://help.duckduckgo.com/privacy/device-location-services".url, source: .ui, newTab: true)
+    private func fireAuthorizationPixel(decision: PermissionPixel.AuthorizationDecision) {
+        guard let query = query else { return }
+        // Fire pixel for each permission type in the query
+        for permissionType in query.permissions {
+            PixelKit.fire(PermissionPixel.authorizationDecision(permissionType: permissionType, decision: decision))
+        }
     }
 }

@@ -1,0 +1,429 @@
+//
+//  JobQueueManager.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Common
+import Foundation
+import os.log
+
+public protocol BrokerProfileJobQueue {
+    var maxConcurrentOperationCount: Int { get set }
+    func cancelAllOperations()
+    func addOperation(_ op: Operation)
+    func addBarrierBlock1(_ barrier: @escaping @Sendable () -> Void)
+}
+
+extension OperationQueue: BrokerProfileJobQueue {
+    public func addBarrierBlock1(_ barrier: @escaping () -> Void) {
+        addBarrierBlock(barrier)
+    }
+}
+
+enum BrokerProfileJobQueueMode {
+    case idle
+    case immediate(errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?)
+    case scheduled(errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?)
+
+    var priorityDate: Date? {
+        switch self {
+        case .idle, .immediate:
+            return Date()
+        case .scheduled:
+            return Date()
+        }
+    }
+
+    func canBeInterruptedBy(newMode: BrokerProfileJobQueueMode) -> Bool {
+        switch (self, newMode) {
+        case (.idle, _):
+            return true
+        case (_, .immediate):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+public enum BrokerProfileJobQueueError: Error {
+    case cannotInterrupt
+    case interrupted
+}
+
+public protocol JobQueueManaging {
+    var delegate: JobQueueManagerDelegate? { get set }
+
+    init(jobQueue: BrokerProfileJobQueue,
+         jobProvider: BrokerProfileJobProviding,
+         emailConfirmationJobProvider: EmailConfirmationJobProviding,
+         mismatchCalculator: MismatchCalculator,
+         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
+
+    func startImmediateScanOperationsIfPermitted(showWebView: Bool,
+                                                 isAuthenticatedUser: Bool,
+                                                 jobDependencies: BrokerProfileJobDependencyProviding,
+                                                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                 completion: (() -> Void)?)
+    func startImmediateOptOutOperationsIfPermitted(showWebView: Bool,
+                                                   isAuthenticatedUser: Bool,
+                                                   jobDependencies: BrokerProfileJobDependencyProviding,
+                                                   errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                   completion: (() -> Void)?)
+    func startScheduledAllOperationsIfPermitted(showWebView: Bool,
+                                                isAuthenticatedUser: Bool,
+                                                jobDependencies: BrokerProfileJobDependencyProviding,
+                                                errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                completion: (() -> Void)?)
+    func startScheduledScanOperationsIfPermitted(showWebView: Bool,
+                                                 isAuthenticatedUser: Bool,
+                                                 jobDependencies: BrokerProfileJobDependencyProviding,
+                                                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                 completion: (() -> Void)?)
+    func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding)
+    func stop()
+    func stopScheduledOperationsOnly()
+    var debugRunningStatusString: String { get }
+}
+
+public protocol JobQueueManagerDelegate: AnyObject {
+    func queueManagerWillEnqueueOperations(_ queueManager: JobQueueManaging)
+    func queueManagerDidStartOperations(_ queueManager: JobQueueManaging)
+    func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging)
+    func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging, identifier: CompletedJobIdentifier?)
+}
+
+public extension JobQueueManagerDelegate {
+    func queueManagerDidStartOperations(_ queueManager: JobQueueManaging) {}
+    func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging) {}
+}
+
+public final class JobQueueManager: JobQueueManaging {
+    public weak var delegate: JobQueueManagerDelegate?
+
+    private var jobQueue: BrokerProfileJobQueue
+    private let jobProvider: BrokerProfileJobProviding
+    private let emailConfirmationJobProvider: EmailConfirmationJobProviding
+    private let mismatchCalculator: MismatchCalculator
+    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+
+    private var mode = BrokerProfileJobQueueMode.idle
+    private let operationErrorsLock = NSLock()
+    private var operationErrors: [Error] = []
+    private var activeRunID: UUID?
+
+    public var debugRunningStatusString: String {
+        switch mode {
+        case .idle:
+            return "idle"
+        case .immediate,
+                .scheduled:
+            return "running"
+        }
+    }
+
+    public init(jobQueue: BrokerProfileJobQueue,
+                jobProvider: BrokerProfileJobProviding,
+                emailConfirmationJobProvider: EmailConfirmationJobProviding,
+                mismatchCalculator: MismatchCalculator,
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
+
+        self.jobQueue = jobQueue
+        self.jobProvider = jobProvider
+        self.emailConfirmationJobProvider = emailConfirmationJobProvider
+        self.mismatchCalculator = mismatchCalculator
+        self.pixelHandler = pixelHandler
+    }
+
+    public func startImmediateScanOperationsIfPermitted(showWebView: Bool,
+                                                        isAuthenticatedUser: Bool,
+                                                        jobDependencies: BrokerProfileJobDependencyProviding,
+                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                        completion: (() -> Void)?) {
+
+        let newMode = BrokerProfileJobQueueMode.immediate(errorHandler: errorHandler, completion: completion)
+        startJobsIfPermitted(forNewMode: newMode,
+                             type: .manualScan,
+                             showWebView: showWebView,
+                             isAuthenticatedUser: isAuthenticatedUser,
+                             jobDependencies: jobDependencies) { [weak self] errors in
+            self?.mismatchCalculator.calculateMismatches()
+            errorHandler?(errors)
+        } completion: {
+            completion?()
+        }
+    }
+
+    public func startImmediateOptOutOperationsIfPermitted(showWebView: Bool,
+                                                          isAuthenticatedUser: Bool,
+                                                          jobDependencies: BrokerProfileJobDependencyProviding,
+                                                          errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                          completion: (() -> Void)?) {
+        cancelCurrentModeAndResetIfNeeded()
+        mode = .immediate(errorHandler: nil, completion: nil)
+        let runID = UUID()
+        activeRunID = runID
+        delegate?.queueManagerDidStartOperations(self)
+        addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
+        addJobs(for: .optOut,
+                runID: runID,
+                showWebView: showWebView,
+                isAuthenticatedUser: isAuthenticatedUser,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completion)
+    }
+
+    public func startScheduledAllOperationsIfPermitted(showWebView: Bool,
+                                                       isAuthenticatedUser: Bool,
+                                                       jobDependencies: BrokerProfileJobDependencyProviding,
+                                                       errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                       completion: (() -> Void)?) {
+        startScheduledJobsIfPermitted(for: .all,
+                                      showWebView: showWebView,
+                                      isAuthenticatedUser: isAuthenticatedUser,
+                                      jobDependencies: jobDependencies,
+                                      errorHandler: errorHandler,
+                                      completion: completion)
+    }
+
+    public func startScheduledScanOperationsIfPermitted(showWebView: Bool,
+                                                        isAuthenticatedUser: Bool,
+                                                        jobDependencies: BrokerProfileJobDependencyProviding,
+                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                                        completion: (() -> Void)?) {
+        startScheduledJobsIfPermitted(for: .scheduledScan,
+                                      showWebView: showWebView,
+                                      isAuthenticatedUser: isAuthenticatedUser,
+                                      jobDependencies: jobDependencies,
+                                      errorHandler: errorHandler,
+                                      completion: completion)
+    }
+
+    public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
+        do {
+            let emailConfirmationDependencies = EmailConfirmationJobDependencies(from: jobDependencies)
+            let emailJobs = try emailConfirmationJobProvider.createEmailConfirmationJobs(
+                showWebView: showWebView,
+                errorDelegate: self,
+                jobDependencies: emailConfirmationDependencies
+            )
+            Logger.dataBrokerProtection.log("✉️ Adding \(emailJobs.count, privacy: .public) email confirmation jobs to queue")
+
+            for job in emailJobs {
+                jobQueue.addOperation(job)
+            }
+
+            if !emailJobs.isEmpty {
+                Logger.dataBrokerProtection.log("✉️ Email confirmation jobs enqueued successfully")
+            }
+        } catch {
+            Logger.dataBrokerProtection.error("✉️ Failed to create email confirmation jobs: \(error, privacy: .public)")
+        }
+    }
+
+    public func stop() {
+        cancelCurrentModeAndResetIfNeeded()
+    }
+
+    // Won't stop if running immediate scans
+    public func stopScheduledOperationsOnly() {
+        if case .immediate = mode {
+            return
+        }
+        cancelCurrentModeAndResetIfNeeded()
+    }
+}
+
+private extension JobQueueManager {
+
+    func startScheduledJobsIfPermitted(for jobType: JobType,
+                                       showWebView: Bool,
+                                       isAuthenticatedUser: Bool,
+                                       jobDependencies: BrokerProfileJobDependencyProviding,
+                                       errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                       completion: (() -> Void)?) {
+        let newMode = BrokerProfileJobQueueMode.scheduled(errorHandler: errorHandler, completion: completion)
+        startJobsIfPermitted(forNewMode: newMode,
+                             type: jobType,
+                             showWebView: showWebView,
+                             isAuthenticatedUser: isAuthenticatedUser,
+                             jobDependencies: jobDependencies,
+                             errorHandler: errorHandler,
+                             completion: completion)
+    }
+
+    func startJobsIfPermitted(forNewMode newMode: BrokerProfileJobQueueMode,
+                              type: JobType,
+                              showWebView: Bool,
+                              isAuthenticatedUser: Bool,
+                              jobDependencies: BrokerProfileJobDependencyProviding,
+                              errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                              completion: (() -> Void)?) {
+
+        guard mode.canBeInterruptedBy(newMode: newMode) else {
+            let error = BrokerProfileJobQueueError.cannotInterrupt
+            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: error)
+            errorHandler?(errorCollection)
+            completion?()
+            return
+        }
+
+        if delegate != nil {
+            jobQueue.addBarrierBlock1 { [weak self] in
+                guard let self, let delegate = self.delegate else { return }
+                delegate.queueManagerWillEnqueueOperations(self)
+            }
+        }
+
+        cancelCurrentModeAndResetIfNeeded()
+        mode = newMode
+        let runID = UUID()
+        activeRunID = runID
+
+        delegate?.queueManagerDidStartOperations(self)
+
+        addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
+        addJobs(for: type,
+                runID: runID,
+                priorityDate: mode.priorityDate,
+                showWebView: showWebView,
+                isAuthenticatedUser: isAuthenticatedUser,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completion)
+    }
+
+    func cancelCurrentModeAndResetIfNeeded() {
+        switch mode {
+        case .immediate(let errorHandler, let completion), .scheduled(let errorHandler, let completion):
+            jobQueue.cancelAllOperations()
+            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
+            errorHandler?(errorCollection)
+            resetMode()
+            delegate?.queueManagerDidFinishOperations(self)
+            completion?()
+        default:
+            break
+        }
+    }
+
+    func resetMode() {
+        mode = .idle
+        activeRunID = nil
+        operationErrorsLock.withLock { operationErrors = [] }
+    }
+
+    func addJobs(for jobType: JobType,
+                 runID: UUID,
+                 priorityDate: Date? = nil,
+                 showWebView: Bool,
+                 isAuthenticatedUser: Bool,
+                 jobDependencies: BrokerProfileJobDependencyProviding,
+                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                 completion: (() -> Void)?) {
+
+        jobQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentJobsFor(jobType)
+
+        let jobs: [BrokerProfileJob]
+        do {
+            jobs = try jobProvider.createJobs(with: jobType,
+                                              withPriorityDate: priorityDate,
+                                              showWebView: showWebView,
+                                              statusReportingDelegate: self,
+                                              isAuthenticatedUser: isAuthenticatedUser,
+                                              jobDependencies: jobDependencies)
+
+            for job in jobs {
+                jobQueue.addOperation(job)
+            }
+        } catch {
+            Logger.dataBrokerProtection.error("DataBrokerProtectionProcessor error: addOperations, error: \(error.localizedDescription, privacy: .public)")
+            errorHandler?(DataBrokerProtectionJobsErrorCollection(oneTimeError: error))
+            resetMode()
+            delegate?.queueManagerDidFinishOperations(self)
+            completion?()
+            return
+        }
+
+        jobQueue.addBarrierBlock1 { [weak self] in
+            if let self, self.activeRunID != runID { return }
+            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: nil, operationErrors: self?.operationErrorsForCurrentOperations())
+            errorHandler?(errorCollection)
+            self?.resetMode()
+            if let self {
+                self.delegate?.queueManagerDidFinishOperations(self)
+            }
+            completion?()
+        }
+    }
+
+    func operationErrorsForCurrentOperations() -> [Error]? {
+        operationErrorsLock.withLock {
+            operationErrors.isEmpty ? nil : operationErrors
+        }
+    }
+}
+
+extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
+    public func dataBrokerOperationDidError(_ error: any Error,
+                                            withBrokerURL brokerURL: String?,
+                                            version: String?,
+                                            identifier: CompletedJobIdentifier?,
+                                            dataBrokerParent: String?,
+                                            isFreeScan: Bool?) {
+        operationErrorsLock.withLock { operationErrors.append(error) }
+        delegate?.queueManagerDidCompleteIndividualJob(self, identifier: identifier)
+
+        guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else { return }
+
+        switch error {
+        case .httpError(let code):
+            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerURL, version: version, isFreeScan: isFreeScan))
+        case .actionFailed(let actionId, let message):
+            pixelHandler.fire(.actionFailedError(error: error,
+                                                 actionId: actionId,
+                                                 message: message,
+                                                 dataBroker: brokerURL,
+                                                 version: version,
+                                                 stepType: identifier?.stepType,
+                                                 dataBrokerParent: dataBrokerParent,
+                                                 isFreeScan: isFreeScan,
+                                                 isSilentFailure: false))
+        default:
+            pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version, isFreeScan: isFreeScan))
+        }
+    }
+
+    public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
+                                                           version: String?,
+                                                           dataBrokerParent: String?,
+                                                           identifier: CompletedJobIdentifier) {
+        delegate?.queueManagerDidCompleteIndividualJob(self, identifier: identifier)
+    }
+}
+
+extension JobQueueManager: EmailConfirmationErrorDelegate {
+    public func emailConfirmationOperationDidError(_ error: Error, withBrokerURL brokerURL: String?, version: String?) {
+        operationErrorsLock.withLock { operationErrors.append(error) }
+
+        guard let error = error as? DataBrokerProtectionError, let brokerURL, let version else {
+            return
+        }
+
+        pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version, isFreeScan: false))
+    }
+}

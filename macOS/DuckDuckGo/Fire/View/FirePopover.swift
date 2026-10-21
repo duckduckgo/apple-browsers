@@ -58,15 +58,19 @@ final class FirePopover: NSPopover {
         fatalError("\(Self.self): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     // swiftlint:disable force_cast
-    var viewController: FirePopoverWrapperViewController { contentViewController as! FirePopoverWrapperViewController }
+    var viewController: FirePopoverViewController { contentViewController as! FirePopoverViewController }
     // swiftlint:enable force_cast
 
     private func setupContentController(fireViewModel: FireViewModel, tabCollectionViewModel: TabCollectionViewModel) {
-        let storyboard = NSStoryboard(name: "Fire", bundle: nil)
-        let controller = storyboard.instantiateController(identifier: "FirePopoverWrapperViewController") { coder -> FirePopoverWrapperViewController? in
-            return FirePopoverWrapperViewController(coder: coder, fireViewModel: fireViewModel, tabCollectionViewModel: tabCollectionViewModel)
-        }
+        let controller = FirePopoverViewController(fireViewModel: fireViewModel, tabCollectionViewModel: tabCollectionViewModel)
         contentViewController = controller
     }
 

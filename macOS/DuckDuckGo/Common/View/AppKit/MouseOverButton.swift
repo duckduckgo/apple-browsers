@@ -40,6 +40,7 @@ internal class MouseOverButton: NSButton, Hoverable {
 
     @IBInspectable dynamic var cornerRadius: CGFloat = 0
     @IBInspectable dynamic var backgroundInset: NSPoint = .zero
+    @IBInspectable dynamic var mustAnimateOnMouseOver: Bool = false
 
     @IBInspectable var mouseOverTintColor: NSColor? {
         didSet {
@@ -179,14 +180,20 @@ internal class MouseOverButton: NSButton, Hoverable {
 
     func updateTintColor() {
         NSAppearance.withAppAppearance {
-            if isMouseDown {
-                self.contentTintColor = self.mouseDownTintColor ?? self.normalTintColor
-            } else if isMouseOver {
-                self.contentTintColor = self.mouseOverTintColor ?? self.normalTintColor
-            } else {
-                self.contentTintColor = self.normalTintColor
-            }
+            self.contentTintColor = currentTintColor()
         }
+    }
+
+    private func currentTintColor() -> NSColor? {
+        if isMouseDown {
+            return mouseDownTintColor ?? normalTintColor
+        }
+
+        if isMouseOver {
+            return mouseOverTintColor ?? normalTintColor
+        }
+
+        return normalTintColor
     }
 
     private var hoverTrackingArea: HoverTrackingArea? {
@@ -204,8 +211,18 @@ internal class MouseOverButton: NSButton, Hoverable {
 
     override func mouseDown(with event: NSEvent) {
         isMouseDown = true
-        super.mouseDown(with: event)
-        isMouseDown = false
+        defer { isMouseDown = false }
+
+        guard eventTypeMask.contains(.leftMouseDown), isEnabled, let action else {
+            // Anything that did not ask for mouse-down keeps AppKit's own tracking, including
+            // action-less buttons that rely on it purely for the pressed appearance.
+            super.mouseDown(with: event)
+            return
+        }
+
+        // Deliberately not calling `super`: its cell tracking would fire the action a second
+        // time on mouse-up. `isMouseDown` stays set while the menu runs its own modal loop.
+        NSApp.sendAction(action, to: target, from: self)
     }
 
     override func otherMouseDown(with event: NSEvent) {

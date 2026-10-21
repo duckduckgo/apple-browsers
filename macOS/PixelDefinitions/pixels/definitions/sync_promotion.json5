@@ -1,0 +1,66 @@
+{
+    "sync_promotion_displayed_mac": {
+        "description": "Fired when a dismissable Sync promotion is displayed.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The surface where the Sync promotion was displayed. 'bookmarksBar' and 'bookmarkAdded' are the Sync device buttons in the bookmarks bar and the add-bookmark popover; the others are the Sync promo banners in the bookmarks panel and manager ('bookmarks'), Passwords settings or the password manager's All Items tab ('autofill'), and the password manager tabs ('passwords', 'creditCards', 'identities').",
+                "enum": ["bookmarksBar", "bookmarkAdded", "bookmarks", "autofill", "passwords", "creditCards", "identities"]
+            }
+        ]
+    },
+    "sync_promotion_confirmed_mac": {
+        "description": "Fired when a user starts Sync setup from a Sync promotion or Sync entry point.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The surface the user started Sync setup from. Includes every value of sync_promotion_displayed_mac plus entry points without a displayed pixel: the empty bookmarks panel and manager ('bookmarksListEmpty', 'bookmarksManagementEmpty'), the empty password manager ('passwordsEmpty'), the start and end of data import ('dataImportStart', 'dataImportFinish'), the More menu ('moreMenu'), Duck.ai ('aiChat'), and the New Tab Page Next Steps card ('nextStepsCard').",
+                "enum": [
+                    "bookmarksBar",
+                    "bookmarkAdded",
+                    "bookmarks",
+                    "autofill",
+                    "passwords",
+                    "creditCards",
+                    "identities",
+                    "bookmarksListEmpty",
+                    "bookmarksManagementEmpty",
+                    "passwordsEmpty",
+                    "dataImportStart",
+                    "dataImportFinish",
+                    "moreMenu",
+                    "aiChat",
+                    "nextStepsCard"
+                ]
+            }
+        ]
+    },
+    "sync_promotion_dismissed_mac": {
+        "description": "Fired when a user dismisses a Sync promotion.",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "The surface where the Sync promotion was dismissed. Same values as sync_promotion_displayed_mac.",
+                "enum": ["bookmarksBar", "bookmarkAdded", "bookmarks", "autofill", "passwords", "creditCards", "identities"]
+            }
+        ]
+    }
+}

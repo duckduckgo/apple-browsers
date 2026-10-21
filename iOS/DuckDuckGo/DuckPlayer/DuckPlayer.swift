@@ -18,14 +18,19 @@
 //
 
 import BrowserServicesKit
-import Common
 import Combine
-import Foundation
-import WebKit
-import UserScript
-import Core
+import Common
+import FoundationExtensions
 import ContentScopeScripts
+import Core
+import Foundation
+import PrivacyConfig
 import SwiftUI
+import WebKit
+import UIKit
+import UserScript
+import FeatureFlags_iOS
+import PixelKit
 
 /// Values that the frontend can use to determine the current state.
 struct InitialPlayerSettings: Codable {
@@ -400,10 +405,16 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     // Add a convenience initializer that creates a new presenter
     convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+                     userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                     floatingUIManager: FloatingUIManaging? = nil) {
+        let floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
+        )
         self.init(settings: settings,
                   featureFlagger: featureFlagger,
-                  nativeUIPresenter: DuckPlayerNativeUIPresenter())
+                  nativeUIPresenter: DuckPlayerNativeUIPresenter(userScriptsDependencies: userScriptsDependencies,
+                                                                 floatingUIManager: floatingUIManager))
     }
 
     deinit {
@@ -469,12 +480,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private func setupHideBrowserChromeTimer() {
         hideBrowserChromeTimer?.invalidate()
 
-        weak var weakHostView = hostView
-        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { _ in
+        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { [weak hostView] _ in
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    weakHostView?.hideChrome()
+                    hostView?.hideChrome()
                 }
             }
         }
@@ -684,8 +694,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     @MainActor
     public func handleYoutubeError(params: Any, message: WKScriptMessage) async -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
-        DailyPixel.fire(pixel: dailyPixel)
-        Pixel.fire(pixel: volumePixel)
+        PixelKit.fire(dailyPixel, frequency: .legacyDailyNoSuffix)
+        PixelKit.fire(volumePixel)
         return nil
     }
 
@@ -730,9 +740,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Encodes UI values for sending to the web content.
     ///
     /// - Returns: An instance of `UIValues`.
-    private func encodeUIValues() -> UIValues {
-        UIValues(
-            allowFirstVideo: settings.allowFirstVideo
+    private func encodeUIValues(with webView: WKWebView?) -> UIValues {
+        let urlRequiresAllowFirst = webView?.url?.getParameter(named: WebDuckPlayerNavigationHandler.Constants.allowFirstVideoParameter) == "1"
+        return UIValues(
+            allowFirstVideo: urlRequiresAllowFirst || settings.allowFirstVideo
         )
     }
 
@@ -750,7 +761,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         let playerSettings = InitialPlayerSettings.PlayerSettings(pip: pip, customError: customError)
 
         let userValues = encodeUserValues()
-        let uiValues = encodeUIValues()
+        let uiValues = encodeUIValues(with: webView)
         let settings = InitialPlayerSettings(
             userValues: userValues,
             ui: uiValues,
@@ -782,9 +793,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         if isSERP {
             switch userValues.duckPlayerMode {
             case .enabled:
-                Pixel.fire(pixel: .duckPlayerSettingsAlwaysOverlaySERP)
+                PixelKit.fire(Pixel.Event.duckPlayerSettingsAlwaysOverlaySERP)
             case .disabled:
-                Pixel.fire(pixel: .duckPlayerSettingsNeverOverlaySERP)
+                PixelKit.fire(Pixel.Event.duckPlayerSettingsNeverOverlaySERP)
             default: break
             }
 
@@ -792,9 +803,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         } else {
             switch userValues.duckPlayerMode {
             case .enabled:
-                Pixel.fire(pixel: .duckPlayerSettingsAlwaysOverlayYoutube)
+                PixelKit.fire(Pixel.Event.duckPlayerSettingsAlwaysOverlayYoutube)
             case .disabled:
-                Pixel.fire(pixel: .duckPlayerSettingsNeverOverlayYoutube)
+                PixelKit.fire(Pixel.Event.duckPlayerSettingsNeverOverlayYoutube)
             default: break
             }
         }

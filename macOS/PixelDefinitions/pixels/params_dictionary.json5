@@ -1,0 +1,744 @@
+// This file defines commonly used params - this does NOT mean they are added by default
+// In your pixel definitions, you can reference these params by their key
+// See TEMPLATE.json for an example
+{
+    "appVersion": {
+        "key": "appVersion",
+        "type": "string",
+        "description": "",
+        "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+        "examples": ["1.146.0"]
+    },
+    "cookie_popup_preference": {
+        "key": "cookie_popup_preference",
+        "type": "string",
+        "description": "The resulting Cookie Pop-up Protection preference after the user confirms the opt-in dialog",
+        "enum": ["max", "default", "off"]
+    },
+    "autoconsent_enabled": {
+        "key": "autoconsent_enabled",
+        "type": "boolean",
+        "description": "Whether Cookie Pop-up Protection (autoconsent) was enabled at the moment the dialog was shown"
+    },
+    "time_since_shown": {
+        "key": "time_since_shown",
+        "type": "string",
+        "description": "Bucketed time elapsed from when the opt-in dialog was first shown to when it was confirmed",
+        "enum": ["0-1min", "1-5min", "5-60min", "1h-1d", "1d+"]
+    },
+    "atb": {
+        "key": "atb",
+        "type": "string",
+        "pattern": "v[0-9]{1,3}-[0-7]([a-z]{2})?",
+        "description": "Add to browser value, corresponding to the users install week and day"
+    },
+    "pixelSource": {
+        "key": "pixelSource",
+        "type": "string",
+        "description": "The channel the user is on",
+        "enum": [
+            "browser-dmg",
+            "browser-appstore",
+            "vpnAgent",
+            "vpnAgentAppStore",
+            "vpnAppExtension",
+            "vpnSystemExtension",
+            "vpnSystemExtensionAppStore",
+            "vpnProxyExtension",
+            "vpnSystemExtensionProxy",
+            "dbpBackgroundAgent"
+        ]
+    },
+    "subscriptionAuthSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The legacy app component identifier for the process that encountered the subscription authentication event",
+        "enum": ["MainApp", "SysExt", "VPNApp", "DBP"]
+    },
+    "subscriptionAuthTokenCachePolicy": {
+        "key": "policycache",
+        "type": "string",
+        "description": "The token cache policy used by the failed token request",
+        "enum": ["Local", "Local valid", "Local force refresh", "Create if needed"]
+    },
+    "subscriptionAutoSignOutRecoveryOutcome": {
+        "key": "recovery_outcome",
+        "type": "string",
+        "description": "Whether account recovery was unavailable or failed; not_applicable when recovery is not part of the sign-out path",
+        "enum": ["not_attempted", "failed", "not_applicable"]
+    },
+    "subscriptionAutoSignOutHadSubscriptionEntitlementsBefore": {
+        "key": "had_subscription_entitlements_before",
+        "type": "string",
+        "description": "Whether the locally stored access token contained subscription entitlements immediately before the token attempt",
+        "enum": ["present", "absent", "unknown"]
+    },
+    "subscriptionAutoSignOutAccessTokenTimeRemainingBucketBefore": {
+        "key": "access_token_time_remaining_bucket_before",
+        "type": "string",
+        "description": "Bucketed time until the locally stored access token expired, captured immediately before the token attempt",
+        "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+    },
+    "subscriptionAutoSignOutRefreshTokenTimeRemainingBucketBefore": {
+        "key": "refresh_token_time_remaining_bucket_before",
+        "type": "string",
+        "description": "Bucketed time until the locally stored refresh token expired, captured immediately before the token attempt",
+        "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+    },
+    "subscriptionAutoSignOutRefreshTokenAgeBucketBefore": {
+        "key": "refresh_token_age_bucket_before",
+        "type": "string",
+        "description": "Bucketed age of the locally stored refresh token immediately before the token attempt; issued_in_future can indicate clock skew",
+        "enum": ["issued_in_future", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown"]
+    },
+    "subscriptionAutoSignOutCachedSubscriptionStatusBefore": {
+        "key": "cached_subscription_status_before",
+        "type": "string",
+        "description": "Status of the subscription cached in the reporting process before sign-out; absence does not mean the backend subscription was inactive",
+        "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "unavailable"]
+    },
+    "subscriptionAutoSignOutCachedSubscriptionTrialStatusBefore": {
+        "key": "cached_subscription_trial_status_before",
+        "type": "string",
+        "description": "Whether the subscription cached in the reporting process had an active free-trial offer before sign-out",
+        "enum": ["active", "not_active", "unavailable"]
+    },
+    "subscriptionAutoSignOutCachedSubscriptionPurchasePlatformBefore": {
+        "key": "cached_subscription_purchase_platform_before",
+        "type": "string",
+        "description": "Purchase platform of the subscription cached in the reporting process before sign-out",
+        "enum": ["app_store", "play_store", "stripe", "unknown", "unavailable"]
+    },
+    "subscriptionAutoSignOutCachedSubscriptionTimeRemainingBucketBefore": {
+        "key": "cached_subscription_time_remaining_bucket_before",
+        "type": "string",
+        "description": "Bucketed time until the cached subscription expiry or renewal date before sign-out; absence is reported per process",
+        "enum": ["expired", "less_than_1_hour", "1_hour_to_1_day", "1_to_3_days", "more_than_3_days", "unknown", "unavailable"]
+    },
+    "subscriptionAutoSignOutStoredRefreshTokenStateDuringAttempt": {
+        "key": "stored_refresh_token_state_during_attempt",
+        "type": "string",
+        "description": "Whether the locally stored refresh token changed or disappeared between the pre-request snapshot and the failed request",
+        "enum": ["unchanged", "changed", "missing", "read_error", "unavailable_before_attempt"]
+    },
+    "subscriptionAutoSignOutLocalTokenStateAfterSignOut": {
+        "key": "local_token_state_after_sign_out",
+        "type": "string",
+        "description": "Whether local authentication tokens were actually removed after the automatic sign-out completed",
+        "enum": ["present", "missing", "read_error"]
+    },
+    "channel": {
+        "key": "channel",
+        "type": "string",
+        "description": "Identifies non-production pixels. 'canary' for internal users; 'dev' for alpha/review builds. Omitted for production builds.",
+        "enum": ["canary", "dev"]
+    },
+    "errorDomain": {
+        "key": "d",
+        "type": "string",
+        "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+        "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+    },
+    "errorCode": {
+        "key": "e",
+        "type": "number",
+        "description": "NSError code"
+    },
+    "keychainErrorCode": {
+        "key": "keychain_error_code",
+        "type": "string",
+        "description": "OSStatus code returned by the Keychain when reading or writing the encryption key failed"
+    },
+    "fromExtension": {
+        "key": "fromExtension",
+        "description": "0 when fired from UserScript (web extensions available but autoconsent extension not loaded), 1 when fired from the web extension",
+        "type": "integer",
+        "enum": [0, 1]
+    },
+    "themeName": {
+        "key": "themeName",
+        "enum": ["default", "coolGray", "desert", "green", "orange", "rose", "slateBlue", "violet"],
+        "description": "The name of the active Theme"
+    },
+    "themeChangeSource": {
+        "key": "themeChangeSource",
+        "enum": ["new-tab-page", "settings"],
+        "description": "Interface from which the Theme Name or Appearance were updated"
+    },
+    "underlyingErrorCode": {
+        "keyPattern": "^ue[0-9]?$",
+        "type": "number",
+        "description": "Underlying NSError code"
+    },
+    "underlyingErrorDomain": {
+        "keyPattern": "^ud[0-9]?$",
+        "type": "string",
+        "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+        "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+    },
+    "wideEventAppName": {
+        "key": "app.name",
+        "type": "string",
+        "description": "The name of the app sending the pixel"
+    },
+    "wideEventAppVersion": {
+        "key": "app.version",
+        "type": "string",
+        "description": "The version of the app sending the pixel"
+    },
+    "wideEventPlatform": {
+        "key": "global.platform",
+        "type": "string",
+        "description": "The name of the platform that the app is running on",
+        "enum": ["macOS"]
+    },
+    "wideEventType": {
+        "key": "global.type",
+        "type": "string",
+        "description": "The type of software sending the wide pixel",
+        "enum": ["app"]
+    },
+    "wideEventSampleRate": {
+        "key": "global.sample_rate",
+        "type": "number",
+        "description": "Sample rate for this pixel, between 0 and 1"
+    },
+    "wideEventMetaVersion": {
+        "key": "meta.version",
+        "type": "string",
+        "description": "Schema version of the wide event (MAJOR.MINOR.PATCH format)",
+        "pattern": "^[1-9]\\d*\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    },
+    "wideEventIsFirstDailyOccurrence": {
+        "key": "global.is_first_daily_occurrence",
+        "type": "boolean",
+        "description": "Whether this is the first occurrence of this wide event today. Only included when true."
+    },
+    "wideEventFeatureStatus": {
+        "key": "feature.status",
+        "type": "string",
+        "description": "Final status of the wide event flow",
+        "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+    },
+    "wideEventFeatureStatusReason": {
+        "key": "feature.data.ext.status_reason",
+        "type": "string",
+        "description": "Optional reason accompanying the feature status"
+    },
+    "wideEventErrorDomain": {
+        "key": "feature.data.ext.error.domain",
+        "type": "string",
+        "description": "Error domain for the failure, when applicable, e.g. SKErrorDomain"
+    },
+    "wideEventErrorCode": {
+        "key": "feature.data.ext.error.code",
+        "type": "integer",
+        "description": "Error code for the failure, when applicable"
+    },
+    "wideEventUnderlyingErrorDomain": {
+        "keyPattern": "^feature\\.data\\.ext\\.error\\.underlying_domain[0-9]?$",
+        "type": "string",
+        "description": "Underlying error domain (supports optional numeric index for nested errors)"
+    },
+    "wideEventUnderlyingErrorCode": {
+        "keyPattern": "^feature\\.data\\.ext\\.error\\.underlying_code[0-9]?$",
+        "type": "integer",
+        "description": "Underlying error code (supports optional numeric index for nested errors)"
+    },
+    "duration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Duration in milliseconds",
+        "examples": [1500, 3200]
+    },
+    "navigation_type": {
+        "key": "navigation_type",
+        "type": "string",
+        "description": "Type of navigation that triggered the loading",
+        "enum": [
+            "linkActivated",
+            "formSubmitted",
+            "formResubmitted",
+            "backForward",
+            "reload",
+            "redirect",
+            "sessionRestoration",
+            "alternateHtmlLoad",
+            "sameDocumentNavigation",
+            "other",
+            "custom.userEnteredUrl",
+            "custom.loadedByStateRestoration",
+            "custom.appOpenUrl",
+            "custom.historyEntry",
+            "custom.bookmark",
+            "custom.ui",
+            "custom.link",
+            "custom.webViewUpdated",
+            "custom.userRequestedPageDownload",
+            "custom.unknown"
+        ]
+    },
+    "dbpDataBroker": {
+        "key": "data_broker",
+        "type": "string",
+        "description": "Name of the data broker involved in the opt-out attempt or action"
+    },
+    "dbpParentBroker": {
+        "key": "parent",
+        "type": "string",
+        "description": "Parent data broker of the entity targeted by the opt-out attempt"
+    },
+    "dbpAttemptId": {
+        "key": "attempt_id",
+        "type": "string",
+        "description": "Client-generated identifier of the opt-out attempt"
+    },
+    "dbpBrokerVersion": {
+        "key": "broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file used for the flow"
+    },
+    "dbpIsAuthenticated": {
+        "key": "isAuthenticated",
+        "type": "boolean",
+        "description": "Whether the user is authenticated"
+    },
+    "dbpIsFreeScan": {
+        "key": "free_scan",
+        "type": "boolean",
+        "description": "Whether this is a free (unauthenticated) scan"
+    },
+    "dbpStageDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Stage duration in milliseconds"
+    },
+    "dbpStageTries": {
+        "key": "tries",
+        "type": "string",
+        "description": "Number of tries it took to complete the stage"
+    },
+    "dbpActionId": {
+        "key": "action_id",
+        "type": "string",
+        "description": "Identifier of the broker action executed during the broker flow"
+    },
+    "dbpActionType": {
+        "key": "action_type",
+        "type": "string",
+        "description": "Type of action executed during the broker flow",
+        "enum": [
+            "extract",
+            "navigate",
+            "fillForm",
+            "click",
+            "expectation",
+            "emailConfirmation",
+            "generateEmail",
+            "getEmailData",
+            "getCaptchaInfo",
+            "solveCaptcha",
+            "condition",
+            "executeScript",
+            "unknown"
+        ]
+    },
+    "dbpActionDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Duration of the broker action execution in milliseconds"
+    },
+    "dbpActionTries": {
+        "key": "tries",
+        "type": "integer",
+        "description": "Number of tries it took for the broker action to complete"
+    },
+    "dbpAttemptDuration": {
+        "key": "duration",
+        "type": "number",
+        "description": "Total duration of the opt-out attempt in milliseconds"
+    },
+    "dbpAwakeDuration": {
+        "key": "awake_duration",
+        "type": "number",
+        "description": "Total duration excluding machine sleep in milliseconds"
+    },
+    "dbpConfirmationAttemptNumber": {
+        "key": "attempt_number",
+        "type": "integer",
+        "description": "Confirmation attempt ordinal (1..3)"
+    },
+    "dbpFeatureDataBrokerVersion": {
+        "key": "feature.data.ext.data_broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file reported via wide pixels"
+    },
+    "vpnSubscriptionActive": {
+        "key": "vpnSubscriptionActive",
+        "type": "string",
+        "description": "Whether the VPN subscription is active",
+        "enum": ["true", "false", "no_subscription"]
+    },
+    "vpnNotificationObjectClass": {
+        "key": "notificationObjectClass",
+        "type": "string",
+        "description": "Class name of the object that originated the subscription notification"
+    },
+    "vpnLatencyLocation": {
+        "key": "location",
+        "type": "string",
+        "description": "Location selection for the VPN latency test",
+        "enum": ["nearest", "custom"]
+    },
+    "connectionAttemptSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The origin of a VPN connection attempt",
+        "enum": ["start", "rekey", "serverChange", "locationChange", "adapterRestart", "failureRecovery", "serverMigration"]
+    },
+    "locale": {
+        "key": "locale",
+        "type": "string",
+        "description": "User locale",
+        "examples": ["en-US", "hu-HU"]
+    },
+    "freeTrial": {
+        "key": "free_trial",
+        "type": "boolean",
+        "description": "Whether the user is eligible for a free trial"
+    },
+    "subscribed": {
+        "key": "subscribed",
+        "type": "boolean",
+        "description": "Whether the user has an active subscription at the time the pixel fires."
+    },
+    "subscriptionEntryStatus": {
+        "key": "status",
+        "type": "string",
+        "description": "Visual state of the subscription entry-point promo at impression time. Indicates which badge variant the user saw on a non-subscriber surface (App Menu, Preferences).",
+        "enum": ["churned", "free-eligible", "free-ineligible"]
+    },
+    // Mirrors `SubscriptionFunnelOrigin` in macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift
+    // case for case. Keep the two lists in sync whenever a case is added, renamed, or removed there.
+    // Privacy note: this is a product funnel-step identifier, not an ad-attribution channel — never
+    // add an ad-campaign or marketing-attribution origin to this list (those are a distinct concept,
+    // handled by AttributedMetric's install-origin parsing).
+    "subscriptionFunnelOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Funnel that led the user to a subscription pixel — encodes the entry-point and platform. Must match a case's raw value in `SubscriptionFunnelOrigin` (macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift); never an ad-campaign or marketing-attribution origin.",
+        "enum": [
+            "funnel_appsettings_macos",
+            "funnel_appmenu_macos",
+            "funnel_freescan_macos",
+            "funnel_applaunch_macos_winback",
+            "funnel_appmenu_macos_winback",
+            "funnel_appsettings_macos_winback",
+            "funnel_newtab_macos_winback",
+            "funnel_onboarding_macOS__nextstepscard",
+            "funnel_onboarding_macos__subscriptionupsell",
+            "funnel_newtab_macos__firewindowvpn",
+            "funnel_toolbar_macos__subscriptionvpnupsell",
+            "funnel_toolbar_macos__subscriptionvpnrevoked",
+            "funnel_menubar_macos__subscriptionvpnrevoked",
+            "funnel_addressbar_macos__modelpicker",
+            "funnel_addressbar_macos__reasoningdropdown",
+            "funnel_newtab_macos__omnibar",
+            "funnel_newtab_macos__modelpicker",
+            "funnel_newtab_macos__reasoningdropdown",
+            "funnel_newtab_macos__usagelimit",
+            "funnel_promptbar_macos__modelpicker",
+            "funnel_promptbar_macos__reasoningdropdown",
+            "funnel_addressbar_macos__usagelimit",
+            "funnel_promptbar_macos__usagelimit",
+            "funnel_duckai_macos__aisidebar",
+            "funnel_duckai_macos__activatesubscription",
+            "funnel_duckai_macos__freelabel",
+            "funnel_duckai_macos__freelimit",
+            "funnel_duckai_macos__imagegenerationlimit",
+            "funnel_duckai_macos__pluslimit",
+            "funnel_duckai_macos__promotioncard",
+            "funnel_duckai_macos__settings",
+            "funnel_duckai_macos__disclaimerbanner",
+            "funnel_duckai_macos__voicechatlimit",
+            "funnel_duckai_macos__voicechatdurationlimit",
+            "funnel_duckai_macos__modelpicker",
+            "funnel_duckai_macos__reasoningdropdown",
+            "funnel_duckai_macos__switchmodel",
+            "funnel_duckai_macos__unknown"
+        ]
+    },
+    "onboardingEventType": {
+        "key": "event",
+        "type": "string",
+        "description": "Event type to classify what happened at each onboarding step",
+        "enum": ["shown", "clicked", "confirmed"]
+    },
+    "onboardingClickedValue": {
+        "key": "value",
+        "type": "string",
+        "description": "Whether the user clicked the primary CTA or skipped/closed the onboarding step",
+        "enum": ["engage", "dismiss"]
+    },
+    "onboardingInstallType": {
+        "key": "installType",
+        "type": "string",
+        "description": "Install type to distinguish between first-time installs and reinstalls during onboarding",
+        "enum": ["new", "reinstall"]
+    },
+    "onboardingDaysSinceInstall": {
+        "key": "daysSinceInstall",
+        "type": "string",
+        "description": "Bucketed days since install during onboarding",
+        "enum": ["0", "1-3", "4-10", "11-28", "28+"]
+    },
+    "nextStepsDaysSinceInstall": {
+        "key": "daysSinceInstall",
+        "type": "integer",
+        "description": "Days since app install (in buckets of 0, 1, 2-3, 4+)",
+        "enum": [0, 1, 2, 4]
+    },
+    "nextStepsActiveUsageDays": {
+        "key": "nextStepsActiveUsageDays",
+        "type": "integer",
+        "description": "Number of days the New Tab Page has been opened with Next Steps cards visible",
+        "enum": [0, 1, 2, 3, 4, 6, 9, 14]
+    },
+    "ntpImpressionCount": {
+        "key": "ntpImpressionCount",
+        "type": "integer",
+        "description": "Number of times the New Tab Page has been opened (newTabPageWebViewDidAppear)",
+        "enum": [1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 25, 50]
+    },
+    "nextStepsCardImpressionCount": {
+        "key": "cardImpressionCount",
+        "type": "integer",
+        "description": "Number of times a Next Steps card was shown (appeared at the top of the Next Steps card stack)",
+        "maximum": 10
+    },
+    "consentHeuristicEnabled": {
+        "key": "consentHeuristicEnabled",
+        "description": "The mode of the consent heuristic feature: '', off, reject, tier1, tier2",
+        "type": "string",
+        "enum": ["", "off", "reject", "tier1", "tier2"]
+    },
+    "aiChatConversationSource": {
+        "key": "source",
+        "type": "string",
+        "description": "The user-facing surface that opened the Duck.ai conversation this prompt was submitted in. Recorded just before the chat opens and consumed once when it loads, so for an ongoing chat it describes how that chat was originally opened, not where this particular prompt came from. Values name the specific control that was used, down to the individual menu item, so a voice, image-generation or resumed-chat start stays attributable to the surface it came from (e.g. 'new-tab-page-voice', 'main-menu-image', 'omnibar-recent-chat'). The 'contextual-*' values are page actions on the current page or selection; 'address-bar-context-menu' is the right-click menu on the address-bar Duck.ai button and is unrelated to them. 'duckduckgo-homepage' is a conversation the duckduckgo.com homepage handed to Duck.ai from its own search/Duck.ai toggle; no native surface is involved, so it is read from the origin=funnel_home_website marker duckduckgo.com puts on the chat URL when it does so, and like every other value it is fixed when the chat loads. 'settings' covers the Duck.ai buttons in both the AI Features and the subscription's Duck.ai settings panes, and 'more-options-menu-open-duck-ai' also covers the Duck.ai item in More Options' subscription submenu. 'subscription-page' is the Duck.ai link on the subscription welcome page. The 'direct-*' values are a navigation straight to duck.ai rather than a Duck.ai surface: typed in the address bar or picked from its suggestions, a bookmark or favorite, a history entry, a link from another app, a link on a web page, or typed in the New Tab Page search box; a surface's own stamp wins over them. 'duck-ai-link' and 'duckduckgo-link' are a link on a Duck.ai or duckduckgo.com page that opened Duck.ai, other than the homepage handoff; a surface's own stamp wins over them too. 'session-restore', 'reopened-tab' and 'tab-copy' are a chat continued in a tab the browser re-created from an earlier one: restored with the previous session (tabs, pinned tabs, and sidebar or floating chats), reopened after it was closed (Reopen Closed Tab, Recently Closed, a reopened window), or duplicated. They label only the tab's first page load, and like 'direct-*' a surface's own stamp wins over them. 'unattributed' means nothing above explains the chat, such as an entry point not yet instrumented, so it measures the attribution gap rather than naming a real entry point. Mirrors AIChatConversationSource in SharedPackages/AIChat.",
+        "enum": [
+            "tab-bar-button",
+            "ask-about-page",
+            "tab-bar-sidebar",
+            "tab-bar-chats",
+            "address-bar",
+            "address-bar-suggestion",
+            "address-bar-context-menu",
+            "new-tab-page",
+            "new-tab-page-view-all-chats",
+            "new-tab-page-voice",
+            "new-tab-page-recent-chat",
+            "omnibar",
+            "omnibar-view-all-chats",
+            "omnibar-voice",
+            "omnibar-recent-chat",
+            "prompt-bar",
+            "prompt-bar-voice",
+            "main-menu-file-new-chat",
+            "main-menu-sidebar",
+            "main-menu-ask-about-page",
+            "main-menu-open-duck-ai",
+            "main-menu-new-chat",
+            "main-menu-view-all-chats",
+            "main-menu-voice",
+            "main-menu-image",
+            "main-menu-recent-chat",
+            "more-options-menu-new-duck-ai-chat",
+            "more-options-menu-open-duck-ai",
+            "more-options-menu-new-chat",
+            "more-options-menu-view-all-chats",
+            "more-options-menu-voice",
+            "more-options-menu-image",
+            "more-options-menu-recent-chat",
+            "contextual-summarize",
+            "contextual-translate",
+            "contextual-attach-selection",
+            "serp",
+            "sidebar-handoff",
+            "settings",
+            "subscription-page",
+            "direct-typed",
+            "direct-suggestion",
+            "direct-bookmark",
+            "direct-favorite",
+            "direct-history",
+            "direct-external",
+            "direct-link",
+            "direct-new-tab-page",
+            "duckduckgo-homepage",
+            "duck-ai-link",
+            "duckduckgo-link",
+            "session-restore",
+            "reopened-tab",
+            "tab-copy",
+            "unattributed"
+        ]
+    },
+    "aiChatPromptSurface": {
+        "key": "surface",
+        "type": "string",
+        "description": "Where this prompt was submitted, unlike 'source', which says how the chat was opened. 'address_bar', 'new_tab_page' and 'prompt_bar' are native composers that hand Duck.ai a prompt to send on its own; only the prompt they handed over reports them. Every other prompt reports where the chat is shown: 'duck_ai' for a Duck.ai tab, 'sidebar' for the sidebar, 'floating' for a sidebar chat detached into its own window.",
+        "enum": ["address_bar", "new_tab_page", "prompt_bar", "duck_ai", "sidebar", "floating"]
+    },
+    "aiChatFirstPromptNewInstall": {
+        "key": "first_prompt_new_install",
+        "type": "boolean",
+        "description": "Present (true) only when this is the first Duck.ai prompt ever submitted on a brand-new install. Omitted on every later prompt. Installs that predate this parameter are marked at launch, from their existing install statistics, so updating users never report it. Mirrors iOS's first_prompt_new_install."
+    },
+    "extension_context_loaded": {
+        "key": "context_loaded",
+        "type": "boolean",
+        "description": "Whether the CPM extension context was loaded when the failure was measured."
+    },
+    "background_view_alive": {
+        "key": "bg_view_alive",
+        "type": "boolean",
+        "description": "Whether the current CPM background web view was alive."
+    },
+    "background_web_process_alive": {
+        "key": "bg_process_alive",
+        "type": "boolean",
+        "description": "Whether the CPM background web process was alive."
+    },
+    "tab_known_to_webkit": {
+        "key": "tab_in_context",
+        "type": "boolean",
+        "description": "Whether WebKit's extension context contained the failing tab."
+    },
+    "native_handler_registered": {
+        "key": "handler_registered",
+        "type": "boolean",
+        "description": "Whether the CPM native-message handler was registered."
+    },
+    "tab_controller_matches_context": {
+        "key": "tab_controller_match",
+        "type": "boolean",
+        "description": "Whether the tab and CPM context used the same web-extension controller."
+    },
+    "tab_has_extension_user_scripts": {
+        "key": "tab_has_ext_scripts",
+        "type": "boolean",
+        "description": "Whether CPM extension user scripts remained registered on the tab."
+    },
+    "background_web_process_responsive": {
+        "key": "bg_process_responsive",
+        "type": "boolean",
+        "description": "Whether WebKit reported the CPM background web process as responsive."
+    },
+    "background_events": {
+        "key": "bg_events",
+        "type": "string",
+        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), process death, graveyard hold/release, context unload and extension file removal failures with error descriptors, and interruption (the app resumed from background or system sleep; one event for both). Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+    },
+    "background_load_error_app_state": {
+        "key": "bg_load_error_app_state",
+        "type": "string",
+        "enum": ["active", "inactive", "background"],
+        "description": "App state captured when the first newly observed WebKit error 6 was attributed to the affected background-load attempt. Only sent when that error is in the first-failure snapshot and state is known; macOS reports active/inactive. Errors observed after the first failure are not included in this episode. Not a generic app-state dimension."
+    },
+    "background_load_error_after": {
+        "key": "bg_load_error_after",
+        "type": "string",
+        "enum": ["under_5s", "5s_to_25s", "25s_to_35s", "over_35s"],
+        "description": "Time from the affected background view's creation to the first newly observed WebKit error 6 for that load attempt: <5 s, 5-<25 s, 25-<35 s, >=35 s. Only sent when the first-failure snapshot contains an attributed error 6 with known timing; cleared for a replacement view/context. Historical error-list entries and errors observed after the first failure do not qualify for the episode report."
+    },
+    "background_view_age": {
+        "key": "bg_view_age",
+        "type": "string",
+        "enum": ["under_4s", "4s_to_8s", "8s_to_30s", "30s_to_2m", "over_2m"],
+        "description": "Age of the current background view at the first failure: <4 s, 4-<8 s, 8-<30 s, 30-<120 s, >=120 s. Omitted when no current view exists."
+    },
+    "background_ready_after": {
+        "key": "bg_ready_after",
+        "type": "string",
+        "enum": ["none", "pending", "failed", "under_1s", "1s_to_4s", "4s_to_10s", "10s_to_30s", "over_30s"],
+        "description": "Background-load evidence frozen at the first failure. none means no current view and no attributed error 6 for the latest attempt. failed includes an attributed error 6 after its view disappears, until a new view/context resets attribution. pending means loading had not completed at the snapshot; it may complete or fail later. Load fields are not refreshed when the episode is reported, so later errors are omitted. Completion buckets: <1 s, 1-<4 s, 4-<10 s, 10-<30 s, >=30 s. Omitted when observation is disabled or unavailable; readiness does not prove initResp delivery."
+    },
+    "web_extension_type": {
+        "key": "extension_type",
+        "type": "string",
+        "description": "Web extension type whose reload failed.",
+        "enum": ["embedded", "darkMode", "adBlocking", "searchToken", "unknown"]
+    },
+    "web_extension": {
+        "key": "extension",
+        "type": "string",
+        "description": "The extension's name in the Chrome Web Store catalog, or other for an extension the catalog doesn't list. Keep in sync with ExtensionsCatalogSubfeature.",
+        "enum": ["bitwarden", "onePassword", "lastPass", "other"]
+    },
+    "web_extension_version": {
+        "key": "extension_version",
+        "type": "string",
+        "description": "The extension's version from its manifest, one to four numbers separated by dots, or other when it has a different format.",
+        "pattern": "^([0-9]{1,9}(\\.[0-9]{1,9}){0,3}|other)$"
+    },
+    "web_extension_missing_api_count": {
+        "key": "missing_api_count",
+        "type": "integer",
+        "description": "How many distinct Chrome or JavaScript APIs the extension used that are missing.",
+        "minimum": 0
+    },
+    "web_extension_unsupported_url_count": {
+        "key": "unsupported_url_count",
+        "type": "integer",
+        "description": "How many distinct Chrome pages, such as chrome://password-manager, the extension tried to open without a DuckDuckGo counterpart.",
+        "minimum": 0
+    },
+    "web_extension_reload_trigger": {
+        "key": "reload_trigger",
+        "type": "string",
+        "description": "Operation that initiated the failed web extension reload.",
+        "enum": ["data_clearing", "scriptlet_update", "explicit", "cpm_messaging_hung"]
+    },
+    "web_extension_reload_phase": {
+        "key": "reload_phase",
+        "type": "string",
+        "description": "Reload operation that failed.",
+        "enum": ["unload", "load", "light_load", "full_load", "fallback_load"]
+    },
+    "eventHubAttributionPeriod": {
+        "key": "attributionPeriod",
+        "type": "integer",
+        "description": "Unix timestamp (UTC seconds) denoting the start of the measurement period"
+    },
+    "eventHubBucketedCount": {
+        "key": "count",
+        "type": "string",
+        "description": "Bucketed count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubYouTubeLoginState": {
+        "key": "loginState",
+        "type": "string",
+        "description": "The user's YouTube login state, as percent-encoded JSON, recorded as the last value seen during the period",
+        "enum": ["%22unknown%22", "%22logged-in%22", "%22logged-out%22", "%22premium%22"]
+    },
+    "eventHubBaseline": {
+        "key": "baseline",
+        "type": "string",
+        "description": "Bucketed count of periods in which EventHub ran. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdwallCount": {
+        "key": "adwallCount",
+        "type": "string",
+        "description": "Bucketed adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdmiralAdwallCount": {
+        "key": "admiralAdwallCount",
+        "type": "string",
+        "description": "Bucketed Admiral-served adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    }
+}

@@ -1,0 +1,170 @@
+//
+//  SubscriptionPromoCoordinator.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import BrowserServicesKit
+import Core
+import Foundation
+import PixelKit
+import PrivacyConfig
+import Subscription
+import FeatureFlags_iOS
+
+/// Coordinates the subscription promotion launch sheet for users who skipped onboarding.
+///
+/// Self-contained: owns eligibility, pixel firing, and CTA navigation.
+/// Uses only stable, synchronous signals, including already-loaded product availability.
+protocol SubscriptionPromoCoordinating: AnyObject {
+    /// Per-coordinator presentation gate. Each coordinator decides independently whether the
+    /// current onboarding state permits the launch prompt to be shown.
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool
+    func shouldPresentLaunchPrompt() -> Bool
+    func markLaunchPromptPresented()
+    func promoTitle() -> String
+    func proceedButtonText() -> String
+    func promoMessage() -> AttributedString
+    func handleCTAAction()
+    func handleDismissAction()
+}
+
+final class SubscriptionPromoCoordinator: SubscriptionPromoCoordinating {
+
+    static let cooldownDays = 7
+
+    private let daxDialogsSettings: DaxDialogsSettings
+    private let featureFlagger: FeatureFlagger
+    private let tutorialSettings: TutorialSettings
+    private let statisticsStore: StatisticsStore
+    private let subscriptionManager: any SubscriptionManager
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(
+        daxDialogsSettings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
+        featureFlagger: FeatureFlagger,
+        tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
+        statisticsStore: StatisticsStore = StatisticsUserDefaults(),
+        subscriptionManager: any SubscriptionManager,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
+    ) {
+        self.daxDialogsSettings = daxDialogsSettings
+        self.featureFlagger = featureFlagger
+        self.tutorialSettings = tutorialSettings
+        self.statisticsStore = statisticsStore
+        self.subscriptionManager = subscriptionManager
+        self.pixelFiring = pixelFiring
+    }
+
+    // MARK: - Eligibility
+
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
+         daxDialogsSettings.isDismissed
+    }
+
+    func shouldPresentLaunchPrompt() -> Bool {
+        guard !daxDialogsSettings.subscriptionPromotionDialogShown else {
+            Logger.subscription.debug("[Subscription Promo] Promo already shown, skipping.")
+            return false
+        }
+        let shouldShow = featureFlagger.isFeatureOn(for: FeatureFlag.subscriptionPromoForReinstallers, allowOverride: true)
+            && featureFlagger.isFeatureOn(for: FeatureFlag.privacyProOnboardingPromotion, allowOverride: true)
+            && isReturningUser
+            && tutorialSettings.hasSkippedOnboarding
+            && hasCooldownPassed()
+        guard shouldShow else {
+            Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: false")
+            return false
+        }
+        guard subscriptionManager.isSubscriptionPurchaseEligible else {
+            Logger.subscription.debug("[Subscription Promo] App Store products unavailable, skipping.")
+            return false
+        }
+        Logger.subscription.debug("[Subscription Promo] shouldPresentLaunchPrompt: true")
+        return true
+    }
+
+    func markLaunchPromptPresented() {
+        daxDialogsSettings.subscriptionPromotionDialogShown = true
+        Logger.subscription.debug("[Subscription Promo] Launch prompt marked as presented.")
+        firePixel(.subscriptionSkippedOnboardingPromotionImpression)
+    }
+
+    // MARK: - Content
+
+    func promoTitle() -> String {
+        UserText.SubscriptionPromotionOnboarding.Promo.delayedTitle
+    }
+
+    func proceedButtonText() -> String {
+        subscriptionManager.isUserEligibleForFreeTrial()
+        ? UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.tryItFree
+            : UserText.SubscriptionPromotionOnboarding.Buttons.learnMore
+    }
+
+    func promoMessage() -> AttributedString {
+        let markdown = UserText.SubscriptionPromotionOnboarding.Promo.reinstallerMessage
+        return (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
+    }
+
+    // MARK: - Actions
+
+    func handleCTAAction() {
+        Logger.subscription.debug("[Subscription Promo] CTA action triggered.")
+        firePixel(.subscriptionSkippedOnboardingPromotionTap)
+
+        let origin = redirectOrigin()
+        let comps = SubscriptionURL.purchaseURLComponentsWithOrigin(origin.rawValue)
+        let deepLink = SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: comps)
+        NotificationCenter.default.post(name: .settingsDeepLinkNotification, object: deepLink)
+    }
+
+    func handleDismissAction() {
+        Logger.subscription.debug("[Subscription Promo] Dismiss action triggered.")
+        firePixel(.subscriptionSkippedOnboardingPromotionDismiss)
+    }
+
+    // MARK: - Private
+
+    private func hasCooldownPassed() -> Bool {
+        guard let installDate = statisticsStore.installDate else { return false }
+        let daysSinceInstall = Calendar.current.dateComponents([.day], from: installDate, to: Date()).day ?? 0
+        return daysSinceInstall >= Self.cooldownDays
+    }
+
+    private var isReturningUser: Bool {
+        statisticsStore.variant == VariantIOS.returningUser.name
+    }
+
+    private var isFreeTrialEligible: Bool {
+        subscriptionManager.isUserEligibleForFreeTrial()
+    }
+
+    private var pixelParameters: [String: String] {
+        [
+            PixelParameters.returningUser: isReturningUser ? "true" : "false",
+            PixelParameters.freeTrial: isFreeTrialEligible ? "true" : "false"
+        ]
+    }
+
+    private func firePixel(_ event: Pixel.Event) {
+        pixelFiring?.fire(event, options: .parameters(pixelParameters))
+    }
+
+    private func redirectOrigin() -> SubscriptionFunnelOrigin {
+        .skippedOnboarding
+    }
+}

@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 
 /// A utility to fix retain cycles in SwiftUI context menus

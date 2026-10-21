@@ -20,6 +20,7 @@ import Foundation
 
 public protocol SuggestionLoading: AnyObject {
 
+    @MainActor
     func getSuggestions(query: String,
                         usingDataSource dataSource: SuggestionLoadingDataSource,
                         completion: @escaping (SuggestionResult?, Error?) -> Void)
@@ -28,7 +29,7 @@ public protocol SuggestionLoading: AnyObject {
 
 public class SuggestionLoader: SuggestionLoading {
 
-    static let remoteSuggestionsUrl = URL(string: "https://duckduckgo.com/ac/")!
+    public static let remoteSuggestionsURL = URL(string: "https://duckduckgo.com/ac/")!
     static let searchParameter = "q"
     static let isNavParameter = "is_nav"
 
@@ -38,14 +39,15 @@ public class SuggestionLoader: SuggestionLoading {
         case failedToProcessData
     }
 
-    private let urlFactory: (String) -> URL?
+    private let shouldLoadSuggestionsForUserInput: (String) -> Bool
     private let isUrlIgnored: (URL) -> Bool
 
-    public init(urlFactory: @escaping (String) -> URL?, isUrlIgnored: @escaping (URL) -> Bool) {
-        self.urlFactory = urlFactory
+    public init(shouldLoadSuggestionsForUserInput: @escaping (String) -> Bool, isUrlIgnored: @escaping (URL) -> Bool) {
+        self.shouldLoadSuggestionsForUserInput = shouldLoadSuggestionsForUserInput
         self.isUrlIgnored = isUrlIgnored
     }
 
+    @MainActor
     public func getSuggestions(query: String,
                                usingDataSource dataSource: SuggestionLoadingDataSource,
                                completion: @escaping (SuggestionResult?, Error?) -> Void) {
@@ -55,21 +57,17 @@ public class SuggestionLoader: SuggestionLoading {
             return
         }
 
-        // 1) Getting all necessary data
-        let bookmarks = dataSource.bookmarks(for: self)
-        let history = dataSource.history(for: self)
-        let internalPages = dataSource.internalPages(for: self)
-        let openTabs = dataSource.openTabs(for: self)
         var apiResult: APIResult?
         var apiError: Error?
 
-        let url = urlFactory(query)
+        // 1) Kick off the remote suggestions fetch.
+        let shouldLoadSuggestions = shouldLoadSuggestionsForUserInput(query)
 
         let group = DispatchGroup()
-        if url == nil || url!.isRoot && url!.path.last != "/" {
+        if shouldLoadSuggestions {
             group.enter()
             dataSource.suggestionLoading(self,
-                                         suggestionDataFromUrl: Self.remoteSuggestionsUrl,
+                                         suggestionDataFromUrl: Self.remoteSuggestionsURL,
                                          withParameters: [ Self.searchParameter: query,
                                                            Self.isNavParameter: "1", // Enables is_nav in the JSON response
                                                          ]) { data, error in
@@ -88,7 +86,13 @@ public class SuggestionLoader: SuggestionLoading {
             apiResult = nil
         }
 
-        // 2) Processing it
+        // 2) Gather local data while the autocomplete suggestions request is in-flight.
+        let bookmarks = dataSource.bookmarks(for: self)
+        let history = dataSource.history(for: self)
+        let internalPages = dataSource.internalPages(for: self)
+        let openTabs = dataSource.openTabs(for: self)
+
+        // 3) Processing it
         group.notify(queue: .global(qos: .userInitiated)) { [weak self] in
             guard let self else { return }
             let processor = SuggestionProcessing(platform: dataSource.platform, isUrlIgnored: isUrlIgnored)
@@ -115,11 +119,11 @@ public protocol SuggestionLoadingDataSource: AnyObject {
 
     func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark]
 
-    func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion]
+    @MainActor func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion]
 
-    func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage]
+    @MainActor func internalPages(for suggestionLoading: SuggestionLoading) -> [InternalPage]
 
-    func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab]
+    @MainActor func openTabs(for suggestionLoading: SuggestionLoading) -> [BrowserTab]
 
     func suggestionLoading(_ suggestionLoading: SuggestionLoading,
                            suggestionDataFromUrl url: URL,

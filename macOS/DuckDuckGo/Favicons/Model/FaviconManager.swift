@@ -17,13 +17,19 @@
 //
 
 import Bookmarks
+import BrowserServicesKit
+import FeatureFlags_macOS
 import Cocoa
 import Combine
-import BrowserServicesKit
 import Common
-import History
+import FoundationExtensions
 import CoreImage
+import History
+import os.log
 import Persistence
+import PrivacyConfig
+import UserScript
+import WebKit
 
 protocol FaviconManagement: AnyObject {
 
@@ -33,7 +39,7 @@ protocol FaviconManagement: AnyObject {
     var faviconsLoadedPublisher: Published<Bool>.Publisher { get }
 
     @MainActor
-    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon?
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon?
 
     @MainActor
     func handleFaviconsByDocumentUrl(_ faviconsByDocumentUrl: [URL: [Favicon]]) async
@@ -44,6 +50,16 @@ protocol FaviconManagement: AnyObject {
     @MainActor
     func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon?
 
+    /// Awaits the favicon image decode (used by the duck://favicon scheme handler so it returns the
+    /// image once decoded instead of a cache-missed 404).
+    @MainActor
+    func resolvedCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) async -> Favicon?
+
+    /// Awaits the favicon image decode for a host-keyed lookup (used by `LoginFaviconView` so it shows
+    /// the image once decoded instead of relying on a cache-update notification).
+    @MainActor
+    func resolvedCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) async -> Favicon?
+
     @MainActor
     func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon?
 
@@ -51,14 +67,14 @@ protocol FaviconManagement: AnyObject {
     func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon?
 
     @MainActor
-    func burn(except: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async
+    func burn(except: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async -> Result<Void, Error>
 
     @MainActor
     func burnDomains(_ domains: Set<String>,
                      exceptBookmarks bookmarkManager: BookmarkManager,
                      exceptSavedLogins: Set<String>,
                      exceptExistingHistory history: BrowsingHistory,
-                     tld: TLD) async
+                     tld: TLD) async -> Result<Void, Error>
 }
 
 /**
@@ -86,6 +102,45 @@ extension FaviconManagement {
     func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
         getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: sizeCategory, fallBackToSmaller: false)
     }
+
+    @MainActor
+    func getCachedFaviconSafeForRendering(for host: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+        guard shouldRenderFavicon else {
+            return nil
+        }
+
+        return getCachedFavicon(for: host, sizeCategory: sizeCategory)
+    }
+
+    @MainActor
+    func resolvedCachedFaviconSafeForRendering(for host: String, sizeCategory: Favicon.SizeCategory) async -> Favicon? {
+        guard shouldRenderFavicon else {
+            return nil
+        }
+
+        return await resolvedCachedFavicon(for: host, sizeCategory: sizeCategory)
+    }
+
+    @MainActor
+    private var shouldRenderFavicon: Bool {
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+
+        // Workaround for favicon rendering crashes on Ventura 13.7.8 and newer 13.x patches.
+        switch (osVersion.majorVersion, osVersion.minorVersion, osVersion.patchVersion) {
+        case let (13, minor, _) where minor > 7:
+            return false
+        case let (13, 7, patch) where patch >= 8:
+            return false
+        default:
+            return true
+        }
+    }
+}
+
+/// Describes a favicon's pixel size and whether it's an SVG — the inputs to `FaviconManager.faviconsToKeep`.
+protocol FaviconSizeRepresentable {
+    var longestSide: CGFloat { get }
+    var isSVG: Bool { get }
 }
 
 final class FaviconManager: FaviconManagement {
@@ -95,10 +150,28 @@ final class FaviconManager: FaviconManagement {
         case inMemory
     }
 
+    private(set) var store: FaviconStoring
+
+    private let bookmarkManager: BookmarkManager
+    private let faviconDownloader: FaviconDownloader
+    private let featureFlagger: FeatureFlagger
+
+    /// SVG favicons rejected in this session because they render fully transparent.
+    @MainActor private var transparentSVGFaviconURLs = Set<URL>()
+
+    @Published private var faviconsLoaded = false
+    var faviconsLoadedPublisher: Published<Bool>.Publisher { $faviconsLoaded }
+
+    var isCacheLoaded: Bool {
+        imageCache.loaded && referenceCache.loaded
+    }
+
     init(
         cacheType: CacheType,
         bookmarkManager: BookmarkManager,
         fireproofDomains: FireproofDomains,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        featureFlagger: FeatureFlagger,
         imageCache: ((FaviconStoring) -> FaviconImageCaching)? = nil,
         referenceCache: ((FaviconStoring) -> FaviconReferenceCaching)? = nil
     ) {
@@ -109,7 +182,15 @@ final class FaviconManager: FaviconManagement {
             store = FaviconNullStore()
         }
         self.bookmarkManager = bookmarkManager
-        self.imageCache = imageCache?(store) ?? FaviconImageCache(faviconStoring: store)
+        self.faviconDownloader = FaviconDownloader(privacyConfigurationManager: privacyConfigurationManager)
+        self.featureFlagger = featureFlagger
+        if let imageCache {
+            self.imageCache = imageCache(store)
+        } else if featureFlagger.isFeatureOn(.faviconLazyImageLoading) {
+            self.imageCache = FaviconImageCache(faviconStoring: store)
+        } else {
+            self.imageCache = EagerFaviconImageCache(faviconStoring: store)
+        }
         self.referenceCache = referenceCache?(store) ?? FaviconReferenceCache(faviconStoring: store)
 
         Task {
@@ -117,24 +198,12 @@ final class FaviconManager: FaviconManagement {
         }
     }
 
-    private(set) var store: FaviconStoring
-
-    private let bookmarkManager: BookmarkManager
-    private let faviconURLSession = URLSession(configuration: .ephemeral)
-
-    @Published private var faviconsLoaded = false
-    var faviconsLoadedPublisher: Published<Bool>.Publisher { $faviconsLoaded }
-
     private func loadFavicons(_ fireproofDomains: FireproofDomains) async throws {
         try await imageCache.load()
         await imageCache.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
         try await referenceCache.load()
         await referenceCache.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
         faviconsLoaded = true
-    }
-
-    var isCacheLoaded: Bool {
-        imageCache.loaded && referenceCache.loaded
     }
 
     @MainActor
@@ -156,17 +225,24 @@ final class FaviconManager: FaviconManagement {
     private let imageCache: FaviconImageCaching
     private let referenceCache: FaviconReferenceCaching
 
-    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon? {
-        // Manually add favicon.ico into links
-        let faviconLinks = createFallbackLinksIfNeeded(faviconLinks, documentUrl: documentUrl)
-
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon? {
         await awaitFaviconsLoaded()
-        // Fetch favicons if needed
-        let faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
-        let newFavicons = await fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl)
-        let favicon = await cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.map(\.href), for: documentUrl)
+        guard !Task.isCancelled else { return nil }
 
-        return favicon
+        // If we have links from the page, try those first
+        // Fetch favicons if needed
+        var faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
+        var newFavicons = await fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl, webView: webView)
+        if let favicon = await cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.map(\.href), for: documentUrl) {
+            return favicon
+        }
+        guard !Task.isCancelled else { return nil }
+
+        // If main links failed or were empty, try fallback
+        let fallbackLinks = fallbackFaviconLinks(for: documentUrl)
+        faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: fallbackLinks)
+        newFavicons = await fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl, webView: webView)
+        return await cacheFavicons(newFavicons, faviconURLs: fallbackLinks.lazy.map(\.href), for: documentUrl)
     }
 
     func handleFaviconsByDocumentUrl(_ faviconsByDocumentUrl: [URL: [Favicon]]) async {
@@ -230,6 +306,24 @@ final class FaviconManager: FaviconManagement {
         return faviconURL
     }
 
+    @MainActor
+    func resolvedCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) async -> Favicon? {
+        await awaitFaviconsLoaded()
+        guard let faviconURL = getCachedFaviconURL(for: documentUrl, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) else {
+            return nil
+        }
+        return await imageCache.resolvedFavicon(faviconUrl: faviconURL)
+    }
+
+    @MainActor
+    func resolvedCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) async -> Favicon? {
+        await awaitFaviconsLoaded()
+        guard let faviconURL = referenceCache.getFaviconUrl(for: host, sizeCategory: sizeCategory) else {
+            return nil
+        }
+        return await imageCache.resolvedFavicon(faviconUrl: faviconURL)
+    }
+
     func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
         guard let faviconURL = referenceCache.getFaviconUrl(for: documentUrl, sizeCategory: sizeCategory) else {
             guard fallBackToSmaller, let smallerSizeCategory = sizeCategory.smaller else {
@@ -270,87 +364,260 @@ final class FaviconManager: FaviconManagement {
 
     // MARK: - Burning
 
-    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String> = []) async {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String> = []) async -> Result<Void, Error> {
         await referenceCache.burn(except: fireproofDomains, bookmarkManager: bookmarkManager, savedLogins: savedLogins)
-        await imageCache.burn(except: fireproofDomains, bookmarkManager: bookmarkManager, savedLogins: savedLogins)
+        return await imageCache.burn(except: fireproofDomains, bookmarkManager: bookmarkManager, savedLogins: savedLogins)
     }
 
     func burnDomains(_ baseDomains: Set<String>,
                      exceptBookmarks bookmarkManager: BookmarkManager,
                      exceptSavedLogins: Set<String> = [],
                      exceptExistingHistory history: BrowsingHistory,
-                     tld: TLD) async {
+                     tld: TLD) async -> Result<Void, Error> {
         let existingHistoryDomains = Set(history.compactMap { $0.url.host })
 
         await referenceCache.burnDomains(baseDomains, exceptBookmarks: bookmarkManager,
                                          exceptSavedLogins: exceptSavedLogins,
                                          exceptHistoryDomains: existingHistoryDomains,
                                          tld: tld)
-        await imageCache.burnDomains(baseDomains,
-                                     exceptBookmarks: bookmarkManager,
-                                     exceptSavedLogins: exceptSavedLogins,
-                                     exceptHistoryDomains: existingHistoryDomains,
-                                     tld: tld)
+        return await imageCache.burnDomains(baseDomains,
+                                            exceptBookmarks: bookmarkManager,
+                                            exceptSavedLogins: exceptSavedLogins,
+                                            exceptHistoryDomains: existingHistoryDomains,
+                                            tld: tld)
     }
 
     // MARK: - Private
 
-    private func createFallbackLinksIfNeeded(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) -> [FaviconUserScript.FaviconLink] {
-        let validSchemes: [URL.NavigationalScheme?] = [.http, .https]
-        guard faviconLinks.isEmpty,
-              let root = documentUrl.root?.toHttps(),
-              validSchemes.contains(documentUrl.navigationalScheme) else {
-            return faviconLinks
+    private func fallbackFaviconLinks(for documentUrl: URL) -> [FaviconUserScript.FaviconLink] {
+        guard let root = documentUrl.root else { return [] }
+        var result = [FaviconUserScript.FaviconLink]()
+        if [.https, .http].contains(documentUrl.navigationalScheme) {
+            result.append(FaviconUserScript.FaviconLink(href: root.appending("favicon.ico"), rel: "favicon.ico"))
         }
-        return [
-            FaviconUserScript.FaviconLink(href: root.appending("favicon.ico"), rel: "favicon.ico")
-        ]
+        if documentUrl.navigationalScheme == .http,
+           let upgradedRoot = root.toHttps(),
+           upgradedRoot.navigationalScheme == .https {
+            result.append(FaviconUserScript.FaviconLink(href: upgradedRoot.appending("favicon.ico"), rel: "favicon.ico"))
+        }
+        return result
     }
 
+    @MainActor
     private func filteringAlreadyFetchedFaviconLinks(from faviconLinks: [FaviconUserScript.FaviconLink]) async -> [FaviconUserScript.FaviconLink] {
+        guard !faviconLinks.isEmpty else { return [] }
+
         let urlsToLinks = faviconLinks.reduce(into: [URL: FaviconUserScript.FaviconLink]()) { result, faviconLink in
             result[faviconLink.href] = faviconLink
         }
         let weekAgo = Date.weekAgo
-        let cachedFavicons = await imageCache.getFavicons(with: urlsToLinks.keys)?
+        let cachedFavicons = imageCache.getFavicons(with: urlsToLinks.keys)?
             .filter { favicon in
                 favicon.dateCreated > weekAgo
             } ?? []
         let cachedUrls = Set(cachedFavicons.map(\.url))
 
+        // Transparent SVGs rejected earlier in this session would only be rejected again.
         let nonCachedFavicons = urlsToLinks.filter { url, _ in
-            !cachedUrls.contains(url)
+            !cachedUrls.contains(url) && !transparentSVGFaviconURLs.contains(url)
         }.values
 
         return Array(nonCachedFavicons)
     }
 
-    private func fetchFavicons(faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> [Favicon] {
+    private func fetchFavicons(faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> [Favicon] {
         guard !faviconLinks.isEmpty else { return [] }
 
-        return await withTaskGroup(of: Favicon?.self) { [faviconURLSession] group in
+        // Download and decode every favicon at full resolution first. We need each favicon's original
+        // size to decide which ones to keep — if we downscaled during the download (capping every favicon
+        // at `maxStoredFaviconPixelSize`) we could no longer tell the redundant large ones apart.
+        let (fetched, transparentSVGURLs) = await downloadFavicons(faviconLinks, webView: webView)
+        await rejectTransparentSVGFavicons(transparentSVGURLs)
+
+        // With the storing improvements off, follow the pre-existing path: store every fetched favicon at
+        // its original resolution.
+        guard featureFlagger.isFeatureOn(.faviconStoringImprovements) else {
+            return fetched.map { fetchedFavicon in
+                Favicon(identifier: UUID(),
+                        url: fetchedFavicon.link.href,
+                        image: fetchedFavicon.image,
+                        relationString: fetchedFavicon.link.rel,
+                        documentUrl: documentUrl,
+                        dateCreated: Date())
+            }
+        }
+
+        // Storing improvements on: the browser never displays a favicon larger than `maxStoredFaviconPixelSize`
+        // (64px = 32@2x), so keep only the favicons we need (dropping redundant larger ones and unneeded SVGs)
+        // and downscale the single kept larger favicon to the max stored size.
+        return Self.faviconsToKeep(fetched, maxStoredSize: NSImage.maxStoredFaviconPixelSize).map { fetchedFavicon -> Favicon in
+            let image: NSImage
+            if fetchedFavicon.longestSide > NSImage.maxStoredFaviconPixelSize,
+               let downscaled = NSImage(dataUsingCIImage: fetchedFavicon.data, maxPixelSize: NSImage.maxStoredFaviconPixelSize) {
+                image = downscaled
+            } else {
+                image = fetchedFavicon.image
+            }
+            return Favicon(identifier: UUID(),
+                           url: fetchedFavicon.link.href,
+                           image: image,
+                           relationString: fetchedFavicon.link.rel,
+                           documentUrl: documentUrl,
+                           dateCreated: Date())
+        }
+    }
+
+    private enum FaviconDownloadResult {
+        case fetched(FetchedFavicon)
+        case transparentSVG(URL)
+        case failed
+    }
+
+    /// Downloads and decodes favicons in parallel. Returns the decoded favicons and the URLs of SVG favicons
+    /// that were rejected because they render fully transparent.
+    private func downloadFavicons(_ faviconLinks: [FaviconUserScript.FaviconLink],
+                                  webView: WKWebView?) async -> (fetched: [FetchedFavicon], transparentSVGURLs: Set<URL>) {
+        await withTaskGroup(of: FaviconDownloadResult.self) { [faviconDownloader] group in
             for faviconLink in faviconLinks {
                 let faviconUrl = faviconLink.href
                 group.addTask {
-                    guard let data = try? await faviconURLSession.data(from: faviconUrl).0 else { return nil }
+                    do {
+                        try Task.checkCancellation()
 
-                    let favicon = Favicon(identifier: UUID(),
-                                          url: faviconUrl,
-                                          image: NSImage(dataUsingCIImage: data),
-                                          relationString: faviconLink.rel,
-                                          documentUrl: documentUrl,
-                                          dateCreated: Date())
-                    return favicon
+                        let data = try await faviconDownloader.download(from: faviconUrl, using: webView)
+
+                        try Task.checkCancellation()
+
+                        return .fetched(try Self.decodeFavicon(from: data, link: faviconLink))
+                    } catch FaviconDecodingError.transparentSVG {
+                        Logger.favicons.debug("Rejected Favicon from \(faviconUrl.shortDescription): SVG renders fully transparent")
+                        return .transparentSVG(faviconUrl)
+                    } catch {
+                        Logger.favicons.error("Error downloading Favicon from \(faviconUrl.shortDescription): \(error.localizedDescription)")
+                        return .failed
+                    }
                 }
             }
-            var favicons = [Favicon]()
-            for await result in group {
-                if let favicon = result {
-                    favicons.append(favicon)
+            var fetched = [FetchedFavicon]()
+            var transparentSVGURLs = Set<URL>()
+            for await downloadResult in group {
+                guard !Task.isCancelled else {
+                    return ([], [])
+                }
+                switch downloadResult {
+                case .fetched(let fetchedFavicon):
+                    fetched.append(fetchedFavicon)
+                case .transparentSVG(let url):
+                    transparentSVGURLs.insert(url)
+                case .failed:
+                    break
                 }
             }
 
-            return favicons
+            return (fetched, transparentSVGURLs)
+        }
+    }
+
+    /**
+     * Remembers the given transparent SVG favicon URLs for the rest of the session, so that they aren't downloaded
+     * again on every favicon update, and removes cached copies of them stored before transparent SVGs were rejected.
+     *
+     * After the removal, references that point at these favicons resolve to a cache miss, so the tab shows
+     * the placeholder (or the `/favicon.ico` fallback, if available) instead of an invisible favicon.
+     */
+    @MainActor
+    private func rejectTransparentSVGFavicons(_ urls: Set<URL>) async {
+        guard !urls.isEmpty else { return }
+        transparentSVGFaviconURLs.formUnion(urls)
+
+        let identifiers = Set(imageCache.getFavicons(with: urls)?.map(\.identifier) ?? [])
+        await imageCache.removeFavicons(withIdentifiers: identifiers)
+    }
+
+    private enum FaviconDecodingError: Error {
+        /// AppKit's SVG renderer ignores CSS, so an SVG that colors its paths only through a `<style>` rule
+        /// (e.g. chatgpt.com: `fill="none"` on the root, overridden by `:root { fill: #000 }`) decodes into
+        /// a fully transparent image.
+        case transparentSVG
+    }
+
+    private static func decodeFavicon(from data: Data, link: FaviconUserScript.FaviconLink) throws -> FetchedFavicon {
+        // Validate that we got actual image data
+        guard !data.isEmpty else {
+            throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: link.href])
+        }
+        guard let image = NSImage(dataUsingCIImage: data, maxPixelSize: nil) else {
+            throw CocoaError(.fileReadCorruptFile, userInfo: [NSURLErrorKey: link.href])
+        }
+
+        let fetchedFavicon = FetchedFavicon(link: link, data: data, image: image)
+
+        // Treat a transparent SVG as undecodable so that another favicon
+        // or the `/favicon.ico` fallback gets picked instead.
+        guard !fetchedFavicon.isTransparentSVG else {
+            throw FaviconDecodingError.transparentSVG
+        }
+
+        return fetchedFavicon
+    }
+
+    /// A favicon downloaded at full resolution, retained while we decide which favicons to keep.
+    private struct FetchedFavicon: FaviconSizeRepresentable {
+        let link: FaviconUserScript.FaviconLink
+        let data: Data
+        let image: NSImage
+
+        var longestSide: CGFloat { max(image.size.width, image.size.height) }
+
+        var isSVG: Bool {
+            if let type = link.type?.lowercased(), type.contains("svg") {
+                return true
+            }
+            return link.href.pathExtension.lowercased() == "svg"
+        }
+
+        /// See `FaviconDecodingError.transparentSVG`.
+        var isTransparentSVG: Bool {
+            (isSVG || data.isSVGImageData) && !image.hasVisiblePixels()
+        }
+    }
+
+    /**
+     * Returns the favicons to keep, in their original order, given each favicon's longest-side pixel size
+     * and whether it's an SVG.
+     *
+     * The browser never displays a favicon larger than `maxStoredSize` (64px = 32@2x), so larger favicons
+     * are redundant. The rules:
+     * - every raster favicon up to and including `maxStoredSize` is kept;
+     * - if a raster favicon exactly `maxStoredSize` exists, all larger favicons are dropped;
+     * - otherwise the smallest raster favicon size larger than `maxStoredSize` is kept;
+     * - an SVG is kept only when no raster favicon reaches `maxStoredSize` (i.e. every raster is smaller),
+     *   since otherwise a raster already covers the largest size the browser displays;
+     * - duplicate raster favicons of the same pixel size are de-duplicated (only the first is kept).
+     */
+    static func faviconsToKeep<F: FaviconSizeRepresentable>(_ favicons: [F], maxStoredSize: CGFloat) -> [F] {
+        let hasExactMax = favicons.contains { !$0.isSVG && $0.longestSide == maxStoredSize }
+        // An SVG is only useful when no raster favicon already covers the largest displayed size, i.e. when
+        // every raster favicon is smaller than the max.
+        let hasRasterAtLeastMax = favicons.contains { !$0.isSVG && $0.longestSide >= maxStoredSize }
+
+        // When there's no exact-max raster favicon, the larger favicon we keep is the smallest larger size.
+        let smallestLargerSize: CGFloat? = hasExactMax ? nil : favicons.lazy
+            .filter { !$0.isSVG && $0.longestSide > maxStoredSize }
+            .map(\.longestSide)
+            .min()
+
+        // Keep the eligible favicons, de-duplicating raster favicons of the same pixel size (keep the first).
+        var keptRasterSizes = Set<CGFloat>()
+        return favicons.filter { favicon in
+            if favicon.isSVG {
+                return !hasRasterAtLeastMax
+            }
+            // Larger-than-max rasters are eligible only at the smallest larger size (and only when there's no
+            // exact-max favicon, in which case `smallestLargerSize` is nil and they're all dropped).
+            let isEligible = favicon.longestSide <= maxStoredSize || favicon.longestSide == smallestLargerSize
+            guard isEligible else { return false }
+            return keptRasterSizes.insert(favicon.longestSide).inserted
         }
     }
 
@@ -400,20 +667,191 @@ extension FaviconManager: Bookmarks.FaviconStoring {
     }
 }
 
-fileprivate extension NSImage {
+extension NSImage {
+
+    /**
+     * The maximum pixel size (longest side) at which freshly downloaded favicons are stored and cached.
+     *
+     * The largest size the app ever *displays* a favicon is the New Tab Page favorites tile, which is
+     * 32 pt; at 2x Retina that is 64 device px (the NTP itself requests favicons at 64px).
+     * Anything larger is wasted memory and disk space, so downloaded favicons are downscaled to this cap
+     * before being stored. Bump this if a larger favicon display surface is ever introduced.
+     */
+    static let maxStoredFaviconPixelSize: CGFloat = 64
+
     /**
      * This function attempts to initialize `NSImage` from `CIImage`.
      *
      * This helps to preserve transparency on some PNG images, and fixes
      * storing `NSImage` initialized with `ico` files in NSKeyedArchiver.
+     *
+     * When `maxPixelSize` is non-nil, freshly decoded images are downscaled to that cap (longest side,
+     * aspect ratio preserved) so that both the in-memory image and the archived blob stay small; images
+     * already at or below the cap are left untouched (downscale only, never upscale). When `maxPixelSize`
+     * is `nil` (downscaling disabled), the image is stored at its original resolution.
      */
-    convenience init?(dataUsingCIImage data: Data) {
+    convenience init?(dataUsingCIImage data: Data, maxPixelSize: CGFloat?) {
         guard let ciImage = CIImage(data: data) else {
             self.init(data: data)
             return
         }
-        let rep = NSCIImageRep(ciImage: ciImage)
+
+        let rep = NSImage.bitmapRep(from: ciImage, maxPixelSize: maxPixelSize)
         self.init(size: rep.size)
         addRepresentation(rep)
+    }
+
+    /**
+     * Renders the given `CIImage` into a bitmap-backed image representation. When `maxPixelSize` is
+     * non-nil, the pixel dimensions are capped at that value on the longest side (aspect ratio preserved,
+     * downscale only); when `nil`, the image is rendered at its original resolution.
+     *
+     * The result is always a concrete `NSBitmapImageRep` (not a lazy `NSCIImageRep`), so the backing bitmap
+     * and the archived blob are concrete. Its `size` (in points) equals its pixel dimensions, which keeps
+     * `Favicon.SizeCategory` classification (driven by `image.size`) consistent with the actual pixels.
+     */
+    private static func bitmapRep(from ciImage: CIImage, maxPixelSize: CGFloat?) -> NSImageRep {
+        let extent = ciImage.extent
+        let longestSide = max(extent.width, extent.height)
+
+        // Downscale only when a cap is provided and the image exceeds it; never upscale.
+        let scaledImage: CIImage
+        if let maxPixelSize, longestSide > maxPixelSize, longestSide.isFinite, longestSide > 0 {
+            let scaleFactor = maxPixelSize / longestSide
+            // High-quality (Lanczos) downscaling keeps small favicons crisp; fall back to an affine
+            // transform if the filter is unavailable for the input.
+            let lanczos = CIFilter(name: "CILanczosScaleTransform", parameters: [
+                kCIInputImageKey: ciImage,
+                kCIInputScaleKey: scaleFactor,
+                kCIInputAspectRatioKey: 1.0
+            ])
+            scaledImage = lanczos?.outputImage ?? ciImage.scaled(by: scaleFactor)
+        } else {
+            scaledImage = ciImage
+        }
+
+        // Render to a concrete CGImage with high-quality interpolation, then wrap in a bitmap rep.
+        let context = CIContext(options: [.highQualityDownsample: true])
+        if let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) {
+            let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
+            // Keep points == pixels (1:1) so SizeCategory, which reads `image.size`, reflects real pixels.
+            bitmapRep.size = NSSize(width: cgImage.width, height: cgImage.height)
+            return bitmapRep
+        }
+
+        // Fallback: if rendering fails for some reason, fall back to the original CIImage-backed rep.
+        return NSCIImageRep(ciImage: scaledImage)
+    }
+}
+
+extension NSImage {
+
+    /**
+     * Returns whether the image draws at least one non-transparent pixel when rendered at `renderSize`.
+     *
+     * Rendering uses its own bitmap context, so it's safe to call off the main thread.
+     * Returns `true` if the bitmap context can't be created, so that an image is never rejected
+     * only because the check itself failed.
+     */
+    func hasVisiblePixels(renderSize: Int = 32) -> Bool {
+        let bytesPerRow = renderSize * 4
+        var pixels = [UInt8](repeating: 0, count: bytesPerRow * renderSize)
+        let didDraw = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress,
+                                          width: renderSize,
+                                          height: renderSize,
+                                          bitsPerComponent: 8,
+                                          bytesPerRow: bytesPerRow,
+                                          space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                return false
+            }
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+            draw(in: NSRect(x: 0, y: 0, width: renderSize, height: renderSize))
+            NSGraphicsContext.restoreGraphicsState()
+            return true
+        }
+        guard didDraw else { return true }
+
+        // Every 4th byte, starting at index 3, is the alpha component.
+        return stride(from: 3, to: pixels.count, by: 4).contains { pixels[$0] > 0 }
+    }
+}
+
+extension Data {
+
+    /// Returns whether the data looks like an SVG document, based on its first bytes.
+    var isSVGImageData: Bool {
+        // Latin-1 decodes any byte sequence, and `<svg` is plain ASCII.
+        String(bytes: prefix(1024), encoding: .isoLatin1)?.lowercased().contains("<svg") ?? false
+    }
+}
+
+extension NSImage {
+    /// Returns a `data:image/png;base64,...` string for this image, or nil if encoding fails.
+    var base64PNGDataURL: String? {
+        guard let cgImage = cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
+        guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else { return nil }
+        return "data:image/png;base64,\(pngData.base64EncodedString())"
+    }
+}
+
+// MARK: - Favicon Browser (debug) support
+
+/**
+ * Read/delete access to the favicon store used by the debug-only Favicon Browser page (`duck://favicons`).
+ *
+ * Only `FaviconManager` conforms; `DuckURLSchemeHandler` downcasts its `FaviconManagement` to this
+ * protocol when serving the page, so the debug surface stays off the main `FaviconManagement` protocol
+ * (and its mocks). All access goes through the in-app favicon stack, which holds the decryption key, so
+ * the encrypted URL/image columns are handled transparently.
+ */
+@MainActor
+protocol FaviconManagementDebugging: AnyObject {
+
+    /// Metadata for every stored favicon image record (no image decode), ordered oldest-first.
+    func allFaviconsMetadata() async -> [FaviconMetadata]
+
+    /// The decoded image for a single favicon record, by its identifier, or nil if missing/undecodable.
+    func faviconImage(withIdentifier identifier: UUID) async -> NSImage?
+
+    /// Deletes the favicon image records with the given identifiers (memory + store).
+    func deleteFavicons(withIdentifiers identifiers: Set<UUID>) async
+
+    /// Deletes every favicon image record and every favicon reference (full reset).
+    func deleteAllFavicons() async
+}
+
+extension FaviconManager: FaviconManagementDebugging {
+
+    @MainActor
+    func allFaviconsMetadata() async -> [FaviconMetadata] {
+        (try? await store.loadFaviconMetadata()) ?? []
+    }
+
+    @MainActor
+    func faviconImage(withIdentifier identifier: UUID) async -> NSImage? {
+        try? await store.loadImage(for: identifier)
+    }
+
+    @MainActor
+    func deleteFavicons(withIdentifiers identifiers: Set<UUID>) async {
+        await imageCache.removeFavicons(withIdentifiers: identifiers)
+    }
+
+    @MainActor
+    func deleteAllFavicons() async {
+        await imageCache.removeAllFavicons()
+        await referenceCache.removeAllReferences()
+    }
+
+    /// Debug: clears the in-memory decoded-image cache without deleting any stored favicons. Only the
+    /// lazy `FaviconImageCache` keeps a separate in-memory image cache, so this is a no-op on the eager
+    /// (non-lazy) path.
+    @MainActor
+    func clearInMemoryFaviconCache() {
+        (imageCache as? FaviconImageCache)?.clearInMemoryCache()
     }
 }

@@ -16,27 +16,47 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
+import Common
+import FoundationExtensions
 import History
 import HistoryView
+import Foundation
+import PrivacyConfig
 
 extension HistoryViewActionsManager {
 
     convenience init(
         historyCoordinator: HistoryDataSource,
         bookmarksHandler: HistoryViewBookmarksHandling,
+        featureFlagger: FeatureFlagger,
+        themeManager: ThemeManaging,
         fireproofStatusProvider: DomainFireproofStatusProviding,
-        fire: @escaping () async -> Fire
+        tld: TLD,
+        fire: @escaping () async -> FireProtocol
     ) {
         let dataProvider = HistoryViewDataProvider(
             historyDataSource: historyCoordinator,
-            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider, fire: fire)
+            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider,
+                                             fire: fire,
+                                             recordAIChatHistoryClearForSync: { Task { await Application.appDelegate.aiChatSyncCleaner?.recordLocalClear(date: Date()) } }),
+            tld: tld
         )
+        let styleProvider = ScriptStyleProvider(themeManager: themeManager)
+
+        let buildType = StandardApplicationBuildType()
+        let environment: DataClient.Environment = (buildType.isDebugBuild || buildType.isReviewBuild) ? .development : .production
+
         self.init(scriptClients: [
             DataClient(
                 dataProvider: dataProvider,
+                styleProvider: styleProvider,
+                environment: environment,
                 actionsHandler: HistoryViewActionsHandler(dataProvider: dataProvider, bookmarksHandler: bookmarksHandler),
                 errorHandler: HistoryViewErrorHandler()
-            )
+            ),
+            StyleClient(styleProviding: styleProvider)
         ])
     }
 }

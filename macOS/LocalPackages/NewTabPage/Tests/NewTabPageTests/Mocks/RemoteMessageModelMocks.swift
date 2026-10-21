@@ -22,6 +22,7 @@ extension RemoteMessageModel {
     static func mockSmall(id: String) -> RemoteMessageModel {
         .init(
             id: id,
+            surfaces: .newTabPage,
             content: .small(titleText: "title", descriptionText: "description"),
             matchingRules: [],
             exclusionRules: [],
@@ -32,7 +33,8 @@ extension RemoteMessageModel {
     static func mockMedium(id: String) -> RemoteMessageModel {
         .init(
             id: "sample_message",
-            content: .medium(titleText: "title", descriptionText: "description", placeholder: .criticalUpdate),
+            surfaces: .newTabPage,
+            content: .medium(titleText: "title", descriptionText: "description", placeholder: .criticalUpdate, imageUrl: nil),
             matchingRules: [],
             exclusionRules: [],
             isMetricsEnabled: true
@@ -42,10 +44,12 @@ extension RemoteMessageModel {
     static func mockBigSingleAction(id: String, action: RemoteAction) -> RemoteMessageModel {
         .init(
             id: "sample_message",
+            surfaces: .newTabPage,
             content: .bigSingleAction(
                 titleText: "title",
                 descriptionText: "description",
                 placeholder: .ddgAnnounce,
+                imageUrl: nil,
                 primaryActionText: "primary_action",
                 primaryAction: action
             ),
@@ -58,10 +62,12 @@ extension RemoteMessageModel {
     static func mockBigTwoAction(id: String, primaryAction: RemoteAction, secondaryAction: RemoteAction) -> RemoteMessageModel {
         .init(
             id: "sample_message",
+            surfaces: .newTabPage,
             content: .bigTwoAction(
                 titleText: "title",
                 descriptionText: "description",
                 placeholder: .ddgAnnounce,
+                imageUrl: nil,
                 primaryActionText: "primary_action",
                 primaryAction: primaryAction,
                 secondaryActionText: "secondary_action",

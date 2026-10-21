@@ -1,0 +1,53 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - duckplayer_native
+
+---
+
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Load Site
+- runFlow: 
+    file: shared/load_serp_url.yaml
+
+# Open Specific Video
+- runFlow:
+    file: shared/tap_serp_title.yaml
+
+# Validate Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml
+
+- assertVisible:
+    id: ${output.watchOnYoutubeLabel}
+
+- assertVisible:
+    id: ${output.chevronUpId}
+
+- tapOn:
+    id: ${output.chevronUpId}
+
+- assertNotVisible:
+    id: ${output.watchOnYoutubeLabel}
+
+- tapOn:
+    id: ${output.chevronUpId}
+
+- tapOn:
+    id: ${output.watchOnYoutubeLabel}
+
+# Validate YouTube opens
+- assertVisible: ${output.youtubeMobileDomain}
+
+# Assert Pill is present
+- assertNotVisible:
+    id: ${output.playThisVideoInDuckPlayerLabel}
+- assertNotVisible:
+    id: ${output.playInDuckPlayerLabel}

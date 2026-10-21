@@ -21,14 +21,17 @@ import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import enum UserScript.UserScriptError
+import FoundationExtensions
 import PixelKit
+import PrivacyConfig
 import SecureStorage
 import WebKit
 
 @MainActor
 public final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
 
-    @IBOutlet var webView: WKWebView!
+    var webView: WKWebView!
     private var topAutofillUserScript: OverlayAutofillUserScript?
     private var appearanceCancellable: AnyCancellable?
 
@@ -41,7 +44,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     }()
 
     lazy var vaultManager: SecureVaultManager = {
-        let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
+        let manager = SecureVaultManager(passwordManager: Application.appDelegate.passwordManagerCoordinator,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
                                          tld: tld)
         manager.delegate = self
@@ -59,29 +62,40 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         return model
     }()
 
-    init?(
-        coder: NSCoder,
+    init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
-        tld: TLD
+        tld: TLD,
+        pinningManager: PinningManager
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.featureFlagger = featureFlagger
         self.tld = tld
-        super.init(coder: coder)
+        self.pinningManager = pinningManager
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        fatalError("\(type(of: self)): Bad initializer")
     }
 
-    lazy var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
+    lazy var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
+
+    lazy var autofillImportPromoReporter: AutofillImportPromoReporting = Application.appDelegate.autofillImportPromoObserver
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
     private let tld: TLD
+    private let pinningManager: PinningManager
 
     lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+
+    public override func loadView() {
+        view = NSView(frame: .zero)
+    }
 
     public override func viewDidLoad() {
         initWebView()
@@ -135,6 +149,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     public override func viewWillDisappear() {
         // We should never see this but it's better than a flash of old content
         webView.load(URLRequest(url: .blankPage))
+
+        autofillImportPromoReporter.overlayWillDisappear(self)
     }
 
     public func messageMouseMove(x: CGFloat, y: CGFloat) {
@@ -257,6 +273,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
     public func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
         let prefs = AutofillPreferences()
+        guard !prefs.isManagedByExtension else { return false }
         switch type {
         case .card:
             return prefs.askToSavePaymentMethods
@@ -269,7 +286,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         }
     }
     public func secureVaultManagerShouldSaveData(_: SecureVaultManager) -> Bool {
-        return true
+        return !AutofillPreferences().isManagedByExtension
     }
 
     public func secureVaultManager(_: SecureVaultManager,
@@ -297,6 +314,12 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
     public func secureVaultManager(_: SecureVaultManager,
                                    promptUserWithGeneratedPassword password: String,
+                                   completionHandler: @escaping (Bool) -> Void) {
+        // no-op on macOS
+    }
+
+    public func secureVaultManager(_: SecureVaultManager,
+                                   promptUserToImportCredentialsForDomain domain: String,
                                    completionHandler: @escaping (Bool) -> Void) {
         // no-op on macOS
     }
@@ -363,13 +386,14 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
             self.emailManager.updateLastUseDate()
 
-            PixelKit.fire(NonStandardEvent(GeneralPixel.jsPixel(pixel)), withAdditionalParameters: pixelParameters)
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixelParameters)
             NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
         } else if pixel.isCredentialsImportPromotionPixel {
-            PixelKit.fire(NonStandardEvent(GeneralPixel.jsPixel(pixel)))
+            PixelKit.fire(GeneralPixel.jsPixel(pixel))
+            autofillImportPromoReporter.overlayDidShowImportPrompt(self)
         } else {
             var existingParameters = pixel.pixelParameters ?? [:]
-            var parameters = usageProvider.formattedFillDate.flatMap {
+            let parameters = usageProvider.formattedFillDate.flatMap {
                 existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
                 return existingParameters
             } ?? existingParameters
@@ -389,33 +413,49 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didRequestPasswordManagerForDomain domain: String) {
-        let mngr = PasswordManagerCoordinator.shared
+        let mngr = Application.appDelegate.passwordManagerCoordinator
         if mngr.isEnabled {
-            mngr.bitwardenManagement.openBitwarden()
+            mngr.bitwardenManagement?.openBitwarden()
         } else {
             autofillPreferencesModel.showAutofillPopover(.logins, source: .manage)
         }
     }
 
     public func secureVaultManager(_: SecureVaultManager, didRequestRuntimeConfigurationForDomain domain: String, completionHandler: @escaping (String?) -> Void) {
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
         let properties = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                                 sessionKey: topAutofillUserScript?.sessionKey ?? "",
                                                 messageSecret: topAutofillUserScript?.messageSecret ?? "",
-                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig))
+                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig),
+                                                themeVariant: themeVariant)
 
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                                         properties: properties)
-            .build()
-            .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                 properties: properties)
+                .build()
+                .buildRuntimeConfigResponse()
 
-        completionHandler(runtimeConfiguration)
+            completionHandler(runtimeConfiguration)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to load JS for DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 }
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        let viewModel = DataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
-        DataImportView(model: viewModel, isDataTypePickerExpanded: true).show()
+        autofillImportPromoReporter.overlayDidStartImport(self)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(onFinished: onFinished, onCancelled: onCancelled) { [weak self] in
+            guard let self else { return }
+            autofillImportPromoReporter.overlayDidEndImportFlow(self)
+        }
+    }
+
+    public func autofillDidPermanentlyDismissCredentialsImportPrompt() {
+        autofillImportPromoReporter.overlayDidPermanentlyDismissImportPrompt(self)
     }
 }

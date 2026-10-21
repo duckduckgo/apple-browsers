@@ -21,12 +21,14 @@ import Foundation
 import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
+import DesignResourcesKit
 
 private let interItemSpacing: CGFloat = 18
 private let itemSpacing: CGFloat = 13
 
 struct PasswordManagementIdentityItemView: View {
 
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     @EnvironmentObject var model: PasswordManagementIdentityModel
 
     var body: some View {
@@ -41,7 +43,7 @@ struct PasswordManagementIdentityItemView: View {
                 if editMode {
 
                     RoundedRectangle(cornerRadius: 8)
-                        .foregroundColor(Color(.editingPanel))
+                        .foregroundColor(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
                         .shadow(radius: 6)
 
                 }
@@ -73,13 +75,14 @@ struct PasswordManagementIdentityItemView: View {
 
                     Buttons()
                         .padding(.top, editMode ? 4 : 10)
-                        .padding(.bottom, editMode ? 12 : 3)
+                        .padding(.bottom, editMode ? 12 : 1)
                         .padding(.horizontal)
 
                 }
 
             }
             .padding(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 10))
+            .environmentObject(themeManager)
 
         }
 
@@ -89,6 +92,7 @@ struct PasswordManagementIdentityItemView: View {
 
 private struct IdentificationView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementIdentityModel
 
     var body: some View {
@@ -97,16 +101,16 @@ private struct IdentificationView: View {
             if !model.firstName.isEmpty || !model.middleName.isEmpty || !model.lastName.isEmpty || model.isInEditMode {
                 Text(UserText.pmIdentification)
                     .bold()
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .padding(.bottom, 20)
             }
 
-            EditableIdentityField(textFieldValue: $model.firstName, title: UserText.pmFirstName)
-            EditableIdentityField(textFieldValue: $model.middleName, title: UserText.pmMiddleName)
-            EditableIdentityField(textFieldValue: $model.lastName, title: UserText.pmLastName)
+            EditableIdentityField(textFieldValue: $model.firstName, title: UserText.pmFirstName, accessibilityIdentifier: "FirstName TextField")
+            EditableIdentityField(textFieldValue: $model.middleName, title: UserText.pmMiddleName, accessibilityIdentifier: "MiddleName TextField")
+            EditableIdentityField(textFieldValue: $model.lastName, title: UserText.pmLastName, accessibilityIdentifier: "LastName TextField")
 
             if model.isInEditMode {
-                Text("Birthday", comment: "Title of the section of the Identities manager where the user can add/modify a date of birth")
+                Text("Birthday", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify a date of birth")
                     .bold()
                     .padding(.bottom, 5)
 
@@ -189,7 +193,7 @@ private struct IdentificationView: View {
                 }
                 .padding(.bottom, interItemSpacing)
             } else if let day = model.birthdayDay, let month = model.birthdayMonth, let year = model.birthdayYear {
-                Text("Birthday")
+                Text("Birthday", bundle: #bundle)
                     .bold()
                     .padding(.bottom, 5)
 
@@ -208,6 +212,7 @@ private struct IdentificationView: View {
 
 private struct AddressView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementIdentityModel
 
     var body: some View {
@@ -219,20 +224,20 @@ private struct AddressView: View {
                 !model.addressPostalCode.isEmpty ||
                 !model.addressCountryCode.isEmpty ||
                 model.isInEditMode {
-                Text("Address", comment: "Title of the section of the Identities manager where the user can add/modify an address (street city etc,)")
+                Text("Address", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify an address (street city etc,)")
                     .bold()
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .padding(.bottom, 20)
             }
 
-            EditableIdentityField(textFieldValue: $model.addressStreet, title: UserText.pmAddress1)
-            EditableIdentityField(textFieldValue: $model.addressStreet2, title: UserText.pmAddress2)
-            EditableIdentityField(textFieldValue: $model.addressCity, title: UserText.pmAddressCity)
-            EditableIdentityField(textFieldValue: $model.addressProvince, title: UserText.pmAddressProvince)
-            EditableIdentityField(textFieldValue: $model.addressPostalCode, title: UserText.pmAddressPostalCode)
+            EditableIdentityField(textFieldValue: $model.addressStreet, title: UserText.pmAddress1, accessibilityIdentifier: "AddressStreet TextField")
+            EditableIdentityField(textFieldValue: $model.addressStreet2, title: UserText.pmAddress2, accessibilityIdentifier: "AddressStreet2 TextField")
+            EditableIdentityField(textFieldValue: $model.addressCity, title: UserText.pmAddressCity, accessibilityIdentifier: "AddressCity TextField")
+            EditableIdentityField(textFieldValue: $model.addressProvince, title: UserText.pmAddressProvince, accessibilityIdentifier: "AddressProvince TextField")
+            EditableIdentityField(textFieldValue: $model.addressPostalCode, title: UserText.pmAddressPostalCode, accessibilityIdentifier: "AddressPostalCode TextField")
 
             if model.isInEditMode {
-                Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
+                Text("Country", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
                     .bold()
                     .padding(.bottom, 5)
 
@@ -252,7 +257,7 @@ private struct AddressView: View {
                 .padding(.bottom, 5)
 
             } else if !model.addressCountryCode.isEmpty {
-                Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
+                Text("Country", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
                     .bold()
                     .padding(.bottom, 5)
 
@@ -267,20 +272,21 @@ private struct AddressView: View {
 
 private struct ContactInfoView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementIdentityModel
 
     var body: some View {
 
         VStack(alignment: .leading, spacing: 0) {
             if !model.homePhone.isEmpty || !model.mobilePhone.isEmpty || !model.emailAddress.isEmpty || model.isInEditMode {
-                Text("Contact Info", comment: "Title of the section of the Identities manager where the user can add/modify contact info (phone, email address)")
+                Text("Contact Info", bundle: #bundle, comment: "Title of the section of the Identities manager where the user can add/modify contact info (phone, email address)")
                     .bold()
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .padding(.bottom, 20)
             }
 
-            EditableIdentityField(textFieldValue: $model.homePhone, title: UserText.pmPhoneNumber)
-            EditableIdentityField(textFieldValue: $model.emailAddress, title: UserText.pmEmailAddress)
+            EditableIdentityField(textFieldValue: $model.homePhone, title: UserText.pmPhoneNumber, accessibilityIdentifier: "PhoneNumber TextField")
+            EditableIdentityField(textFieldValue: $model.emailAddress, title: UserText.pmEmailAddress, accessibilityIdentifier: "EmailAddress TextField")
         }
 
     }
@@ -302,8 +308,11 @@ private struct HeaderView: View {
 
             if model.isNew || model.isEditing {
 
-                TextField("", text: $model.title)
-                    .font(.title)
+                TextField(UserText.pmIdentificationTitlePlaceholder, text: $model.title)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(height: 32)
+                    .controlSize(.large)
+                    .accessibility(identifier: "Title TextField")
 
             } else {
 
@@ -329,7 +338,6 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
             }
 
             Spacer()
@@ -338,24 +346,23 @@ private struct Buttons: View {
                 Button(UserText.pmCancel) {
                     model.cancel()
                 }
-                .buttonStyle(StandardButtonStyle())
+                .keyboardShortcut(.cancelAction)
 
                 Button(UserText.pmSave) {
                     model.save()
                 }
                 .disabled(!model.isDirty)
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty))
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty, topPadding: 4, bottomPadding: 4))
+                .keyboardShortcut(.defaultAction)
 
             } else {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
 
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-                .buttonStyle(StandardButtonStyle())
 
             }
 
@@ -372,6 +379,7 @@ private struct EditableIdentityField: View {
     @Binding var textFieldValue: String
 
     let title: String
+    let accessibilityIdentifier: String
 
     var body: some View {
         // Only show fields if the model is either editing or has data to show
@@ -385,9 +393,10 @@ private struct EditableIdentityField: View {
 
                 if model.isEditing || model.isNew {
 
-                    TextField("", text: $textFieldValue)
+                    TextField("" as String, text: $textFieldValue)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .padding(.bottom, interItemSpacing)
+                        .accessibility(identifier: accessibilityIdentifier)
 
                 } else {
 

@@ -17,11 +17,12 @@
 //
 
 import BrowserServicesKitTestsUtils
+import Common
+import ConcurrencyExtensions
 import CoreData
 import Foundation
-import Persistence
+@_spi(Testing) import Persistence
 import RemoteMessagingTestsUtils
-import PersistenceTestingUtils
 import XCTest
 @testable import RemoteMessaging
 
@@ -33,6 +34,7 @@ class RemoteMessagingStoreTests: XCTestCase {
     var availabilityProvider: MockRemoteMessagingAvailabilityProvider!
     var remoteMessagingDatabase: CoreDataDatabase!
     var location: URL!
+    var autoDismissedMessageIDs: [String] = []
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -47,25 +49,34 @@ class RemoteMessagingStoreTests: XCTestCase {
         remoteMessagingDatabase.loadStore()
 
         availabilityProvider = MockRemoteMessagingAvailabilityProvider()
+        autoDismissedMessageIDs = []
 
         store = RemoteMessagingStore(
             database: remoteMessagingDatabase,
             notificationCenter: notificationCenter,
             errorEvents: nil,
+            autoDismissEvents: EventMapping { [weak self] event, _, _, _ in
+                switch event {
+                case .messageAutoDismissed(let messageID):
+                    self?.autoDismissedMessageIDs.append(messageID)
+                }
+            },
+            enforcesMaxImpressions: true,
             remoteMessagingAvailabilityProvider: availabilityProvider
         )
 
         defaults = MockKeyValueStore()
     }
 
-    override func tearDownWithError() throws {
+    override func tearDown() async throws {
+        await store?.waitForStoreInitiatedTasks()
         store = nil
 
         try? remoteMessagingDatabase.tearDown(deleteStores: true)
         remoteMessagingDatabase = nil
         try? FileManager.default.removeItem(at: location)
 
-        try super.tearDownWithError()
+        try await super.tearDown()
     }
 
     // Tests:
@@ -91,9 +102,9 @@ class RemoteMessagingStoreTests: XCTestCase {
         let config = store.fetchRemoteMessagingConfig()
         XCTAssertNotNil(config)
         XCTAssertEqual(config?.version, processorResult.version)
-        guard let remoteMessage = store.fetchScheduledRemoteMessage() else {
+        guard let remoteMessage = store.fetchScheduledRemoteMessage(surfaces: .allCases) else {
             XCTFail("No remote message found")
-            return RemoteMessageModel(id: "", content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: true)
+            return RemoteMessageModel(id: "", surfaces: .newTabPage, content: nil, matchingRules: [], exclusionRules: [], isMetricsEnabled: true)
         }
 
         XCTAssertNotNil(remoteMessage)
@@ -258,30 +269,30 @@ class RemoteMessagingStoreTests: XCTestCase {
 
     func testWhenFeatureFlagIsDisabledThenScheduledRemoteMessagesAreDeleted() async throws {
         _ = try await saveProcessedResultFetchRemoteMessage()
-        XCTAssertNotNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNotNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         let expectation = XCTNSNotificationExpectation(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
                                                        object: nil, notificationCenter: notificationCenter)
 
         try await setFeatureFlagEnabled(false)
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         await fulfillment(of: [expectation], timeout: 1)
 
         // Re-enabling remote messaging doesn't trigger a refetch on a Store level so no new scheduled messages should appear
         try await setFeatureFlagEnabled(true)
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
     }
 
     func testWhenFeatureFlagIsDisabledAndThereWereNoMessagesThenNotificationIsNotSent() async throws {
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         let expectation = XCTNSNotificationExpectation(name: RemoteMessagingStore.Notifications.remoteMessagesDidChange,
                                                        object: nil, notificationCenter: notificationCenter)
         expectation.isInverted = true
 
         try await setFeatureFlagEnabled(false)
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         await fulfillment(of: [expectation], timeout: 1)
     }
@@ -290,7 +301,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         _ = try await saveProcessedResultFetchRemoteMessage()
 
         // Dismiss all available messages
-        while let remoteMessage = store.fetchScheduledRemoteMessage() {
+        while let remoteMessage = store.fetchScheduledRemoteMessage(surfaces: .allCases) {
             await store.dismissRemoteMessage(withID: remoteMessage.id)
         }
 
@@ -299,7 +310,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         expectation.isInverted = true
 
         try await setFeatureFlagEnabled(false)
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
 
         await fulfillment(of: [expectation], timeout: 1)
     }
@@ -321,7 +332,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         _ = try await saveProcessedResultFetchRemoteMessage()
         try await setFeatureFlagEnabled(false)
 
-        XCTAssertNil(store.fetchScheduledRemoteMessage())
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
     }
 
     func testWhenFeatureFlagIsDisabledThenFetchRemoteMessagingConfigReturnsNil() async throws {
@@ -357,7 +368,680 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), [])
     }
 
-    // MARK: -
+    // MARK: - Surface
+
+    func testWhenFetchScheduledRemoteMessageAndScheduledMessageSurfaceDoesNotMatchThenReturnNil() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .newTabPage, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: [.modal, .dedicatedTab])
+
+        // THEN
+        XCTAssertNil(result)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsNewTabAndScheduledMessageSurfaceMatchesThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .newTabPage, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .newTabPage)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsModalAndScheduledMessageSurfaceMatchesThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .modal, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .modal)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsDedicatedTabAndScheduledMessageSurfaceMatchesThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .dedicatedTab, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .dedicatedTab)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsTabBarAndScheduledMessageSurfaceMatchesThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .tabBar, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .tabBar)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsNewTabThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .newTabPage, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsModalThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .modal, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsDedicatedTabThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .dedicatedTab, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsTabBarThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .tabBar, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceMatchesOneOfTheOptionsThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: [.newTabPage, .modal], content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .newTabPage)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndMesssageDoesNotHaveAnySurfaceAndSurfaceIsNewTabThenDefaultToNewTabPageSurface() async throws {
+        // GIVEN
+        let context = store.context
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "1"
+            message.status = NSNumber(value: 0) // Scheduled
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":false,"content":{"small":{"titleText":"","descriptionText":""}},"id":"1","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .newTabPage)
+
+        // THEN
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.surfaces, .newTabPage)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndMesssageDoesNotHaveAnySurfaceAndSurfaceHasNewTabThenDefaultToNewTabPageSurface() async throws {
+        // GIVEN
+        let context = store.context
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "1"
+            message.status = NSNumber(value: 0) // Scheduled
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":false,"content":{"small":{"titleText":"","descriptionText":""}},"id":"1","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .modal])
+
+        // THEN
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.surfaces, .newTabPage)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndMesssageDoesNotHaveAnySurfaceAndSurfaceHasNotNewTabThenDoNotReturnMessage() async throws {
+        // GIVEN
+        let context = store.context
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "1"
+            message.status = NSNumber(value: 0) // Scheduled
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":false,"content":{"small":{"titleText":"","descriptionText":""}},"id":"1","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .modal)
+
+        // THEN
+        XCTAssertNil(result)
+    }
+
+    // MARK: - Auto-Dismiss Tests
+
+    func testWhenMessageExceedsDismissAfterDaysShownThenItIsNotReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-1"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -3, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-1","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNil(result)
+    }
+
+    func testWhenMessageIsWithinDismissAfterDaysShownThenItIsReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-2"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-2","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":3}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.id, "auto-dismiss-2")
+    }
+
+    func testWhenMessageHasNoDismissAfterDaysShownThenItIsAlwaysReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "no-auto-dismiss"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -100, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"no-auto-dismiss","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNotNil(result)
+    }
+
+    func testWhenMessageIsWithinDaysShownAndBelowMaxImpressionsThenItIsReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "below-impression-cap"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+            message.impressionCount = 1
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"below-impression-cap","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":3,"maxImpressions":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        XCTAssertEqual(result?.id, "below-impression-cap")
+        XCTAssertTrue(autoDismissedMessageIDs.isEmpty)
+    }
+
+    func testWhenMessageReachesMaxImpressionsThenItIsDismissedAndEventFiresOnce() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "at-impression-cap"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.impressionCount = 2
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"at-impression-cap","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+
+        await store.waitForStoreInitiatedTasks()
+
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["at-impression-cap"])
+        XCTAssertEqual(autoDismissedMessageIDs, ["at-impression-cap"])
+    }
+
+    func testWhenMaxImpressionsEnforcementIsDisabledThenMessageRemainsScheduled() throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "cap-not-enforced"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.impressionCount = 1
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"cap-not-enforced","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":1}}
+              """
+            try context.save()
+        }
+
+        let storeWithoutCap = RemoteMessagingStore(database: remoteMessagingDatabase,
+                                                   notificationCenter: notificationCenter,
+                                                   errorEvents: nil,
+                                                   remoteMessagingAvailabilityProvider: availabilityProvider)
+
+        XCTAssertEqual(storeWithoutCap.fetchScheduledRemoteMessage(surfaces: .allCases)?.id, "cap-not-enforced")
+        XCTAssertTrue(autoDismissedMessageIDs.isEmpty)
+    }
+
+    func testWhenMessageIsAlreadyDismissedThenNoAutomaticDismissalEventIsEmitted() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "already-dismissed"
+            message.status = NSNumber(value: 1)
+            message.shown = true
+            message.impressionCount = 2
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"already-dismissed","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        await store.waitForStoreInitiatedTasks()
+
+        XCTAssertTrue(autoDismissedMessageIDs.isEmpty)
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["already-dismissed"])
+    }
+
+    func testWhenMetricsAreDisabledThenReachingMaxImpressionsDoesNotFireEvent() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "metrics-disabled-impression-cap"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.impressionCount = 1
+            message.message = """
+              {"isMetricsEnabled":false,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"metrics-disabled-impression-cap","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":1}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+
+        await store.waitForStoreInitiatedTasks()
+
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["metrics-disabled-impression-cap"])
+        XCTAssertTrue(autoDismissedMessageIDs.isEmpty)
+    }
+
+    func testWhenMessageExceedsDismissThresholdThenItIsNotReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-status"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-status","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNil(result)
+    }
+
+    func testWhenExpiredMessageIsFetchedThenWaitingForStoreInitiatedTasksCompletesTheDismissal() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "auto-dismiss-pending"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"auto-dismiss-pending","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":2}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+
+        await store.waitForStoreInitiatedTasks()
+
+        XCTAssertEqual(store.fetchDismissedRemoteMessageIDs(), ["auto-dismiss-pending"])
+        XCTAssertEqual(autoDismissedMessageIDs, ["auto-dismiss-pending"])
+    }
+
+    func testWhenMessageHasNilFirstShownDateThenItIsReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "nil-first-shown"
+            message.status = NSNumber(value: 0)
+            message.shown = false
+            message.firstShownDate = nil
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"nil-first-shown","exclusionRules":[],"matchingRules":[],"displayConditions":{"dismissAfterDaysShown":1}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+        XCTAssertNotNil(result)
+    }
+
+    // MARK: - Trigger Matching Tests
+
+    func testWhenMessageHasTriggerAndCallerMatchesThenItIsReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "trigger-match"
+            message.status = NSNumber(value: 0)
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"trigger-match","exclusionRules":[],"matchingRules":[],"displayConditions":{"trigger":"after_idle"}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .specific(.afterIdle))
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.id, "trigger-match")
+    }
+
+    func testWhenMessageHasTriggerAndCallerPassesNoTriggerThenItIsNotReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "trigger-no-match"
+            message.status = NSNumber(value: 0)
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"trigger-no-match","exclusionRules":[],"matchingRules":[],"displayConditions":{"trigger":"after_idle"}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .noTrigger)
+        XCTAssertNil(result)
+    }
+
+    func testWhenMessageHasNoTriggerThenItMatchesNoTriggerAndAnyButNotSpecific() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "no-trigger"
+            message.status = NSNumber(value: 0)
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"no-trigger","exclusionRules":[],"matchingRules":[]}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let resultWithSpecificTrigger = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .specific(.afterIdle))
+        XCTAssertNil(resultWithSpecificTrigger)
+
+        let resultWithAny = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any)
+        XCTAssertNotNil(resultWithAny)
+
+        // Reset status to scheduled for the next fetch
+        try context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", "no-trigger")
+            guard let result = try context.fetch(fetchRequest).first else {
+                XCTFail("Message not found")
+                return
+            }
+            result.status = NSNumber(value: 0)
+            try context.save()
+        }
+
+        let resultWithoutTrigger = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .noTrigger)
+        XCTAssertNotNil(resultWithoutTrigger)
+    }
+
+    func testWhenMessageHasTriggerAndCallerPassesAnyThenItIsReturned() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "trigger-any"
+            message.status = NSNumber(value: 0)
+            message.shown = false
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"trigger-any","exclusionRules":[],"matchingRules":[],"displayConditions":{"trigger":"after_idle"}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .any)
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.id, "trigger-any")
+    }
+
+    func testWhenMessageHasTriggerAndDismissAfterDaysShownAndBothConditionsMetThenItIsAutoDismissed() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "trigger-and-dismiss"
+            message.status = NSNumber(value: 0)
+            message.shown = true
+            message.firstShownDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"trigger-and-dismiss","exclusionRules":[],"matchingRules":[],"displayConditions":{"trigger":"after_idle","dismissAfterDaysShown":3}}
+              """
+            context.insert(message)
+            try context.save()
+        }
+
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases, triggerFilter: .specific(.afterIdle))
+        XCTAssertNil(result)
+    }
+
+    func testWhenUpdateRemoteMessageAsShownThenFirstShownDateIsRecorded() async throws {
+        let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
+
+        let context = store.context
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", remoteMessage.id)
+            guard let result = try? context.fetch(fetchRequest).first else {
+                XCTFail("Message not found")
+                return
+            }
+            XCTAssertNotNil(result.firstShownDate)
+            XCTAssertEqual(result.impressionCount, 1)
+        }
+    }
+
+    func testWhenUpdateRemoteMessageAsShownTwiceThenFirstShownDateIsNotOverwritten() async throws {
+        let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
+
+        let pastDate = Calendar.current.date(byAdding: .day, value: -10, to: Date())!
+        let context = store.context
+        try context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", remoteMessage.id)
+            guard let result = try? context.fetch(fetchRequest).first else {
+                XCTFail("Message not found")
+                return
+            }
+            result.firstShownDate = pastDate
+            try context.save()
+        }
+
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: false)
+        await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
+
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", remoteMessage.id)
+            guard let result = try? context.fetch(fetchRequest).first else {
+                XCTFail("Message not found")
+                return
+            }
+            XCTAssertEqual(result.firstShownDate, pastDate)
+            XCTAssertEqual(result.impressionCount, 2)
+        }
+    }
+
+    func testWhenRecordRemoteMessageImpressionThenItReturnsFirstAndIncrementsSerializedCount() async throws {
+        let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
+
+        let firstResult = await store.recordRemoteMessageImpression(withID: remoteMessage.id)
+        let secondResult = await store.recordRemoteMessageImpression(withID: remoteMessage.id)
+
+        XCTAssertEqual(firstResult, .recorded(isFirstImpression: true, impressionCount: 1))
+        XCTAssertEqual(secondResult, .recorded(isFirstImpression: false, impressionCount: 2))
+        XCTAssertTrue(store.hasShownRemoteMessage(withID: remoteMessage.id))
+    }
+
+    func testWhenRecordRemoteMessageImpressionConcurrentlyThenEachOperationIsSerialized() async throws {
+        let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
+
+        async let firstResult = store.recordRemoteMessageImpression(withID: remoteMessage.id)
+        async let secondResult = store.recordRemoteMessageImpression(withID: remoteMessage.id)
+        let results = await [firstResult, secondResult]
+
+        XCTAssertEqual(results.compactMap { result in
+            guard case .recorded(_, let count) = result else { return nil }
+            return count.map(Int.init)
+        }.sorted(), [1, 2])
+        XCTAssertEqual(results.filter { result in
+            guard case .recorded(isFirstImpression: true, _) = result else { return false }
+            return true
+        }.count, 1)
+    }
+
+    func testWhenRecordRemoteMessageImpressionConcurrentlyAtCapThenOnlyOneIsRecorded() async throws {
+        let context = store.context
+        try context.performAndWait {
+            let message = RemoteMessageManagedObject(context: context)
+            message.id = "impression-cap-race"
+            message.status = NSNumber(value: 0)
+            message.message = """
+              {"isMetricsEnabled":true,"content":{"small":{"titleText":"t","descriptionText":"d"}},"id":"impression-cap-race","exclusionRules":[],"matchingRules":[],"displayConditions":{"maxImpressions":1}}
+              """
+            try context.save()
+        }
+
+        async let firstResult = store.recordRemoteMessageImpression(withID: "impression-cap-race")
+        async let secondResult = store.recordRemoteMessageImpression(withID: "impression-cap-race")
+        let results = await [firstResult, secondResult]
+
+        XCTAssertEqual(results.filter { if case .recorded = $0 { return true }; return false }.count, 1)
+        XCTAssertEqual(results.filter { $0 == .notRecorded }.count, 1)
+        context.performAndWait {
+            let fetchRequest: NSFetchRequest<RemoteMessageManagedObject> = RemoteMessageManagedObject.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "id == %@", "impression-cap-race")
+            XCTAssertEqual(try? context.fetch(fetchRequest).first?.impressionCount, 1)
+        }
+    }
+
+    func testWhenRecordRemoteMessageImpressionCannotFindMessageThenItIsNotRecorded() async {
+        let result = await store.recordRemoteMessageImpression(withID: "missing")
+
+        XCTAssertEqual(result, .notRecorded)
+    }
+
+}
+
+// MARK: - Helpers
+
+private extension RemoteMessagingStoreTests {
 
     func setFeatureFlagEnabled(_ isRemoteMessagingAvailable: Bool) async throws {
         availabilityProvider.isRemoteMessagingAvailable = isRemoteMessagingAvailable
@@ -397,25 +1081,34 @@ class RemoteMessagingStoreTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: self.defaults),
                 surveyActionMapper: MockRemoteMessagingSurveyActionMapper(),
@@ -427,7 +1120,7 @@ class RemoteMessagingStoreTests: XCTestCase {
                                                                   invalidate: false,
                                                                   evaluationTimestamp: Date())
 
-        if let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config) {
+        if let processorResult = processor.process(jsonRemoteMessagingConfig: jsonRemoteMessagingConfig, currentConfig: config, supportedSurfacesForMessage: { _ in .newTabPage }) {
             return processorResult
         } else {
             XCTFail("Processor result message is nil")
@@ -450,6 +1143,7 @@ class RemoteMessagingStoreTests: XCTestCase {
         }
         """
     }
+
 }
 
 private final class MockRemoteMessagingSurveyActionMapper: RemoteMessagingSurveyActionMapping {

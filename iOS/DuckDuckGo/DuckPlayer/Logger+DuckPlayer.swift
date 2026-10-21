@@ -18,7 +18,7 @@
 //
 
 import Foundation
-@_exported import os.log
+@_documentation(visibility: internal) @_exported import os.log
 
 extension Logger {
     static var duckplayer = {

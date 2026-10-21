@@ -1,5 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - privacy
 
 ---
@@ -17,23 +18,23 @@ tags:
 - pressKey: Enter
 
 # Change settings
+- assertVisible: "Safe search"
+- waitForAnimationToEnd
 - tapOn: "Safe search"
+- assertVisible: "Off"
+- waitForAnimationToEnd
 - tapOn: "Off"
 
 # Fire Button - twice, just to be sure
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 - assertVisible:
     id: "searchEntry"
+# Dismiss the focused address bar if present ("Cancel" classic / "Back" under the unified toggle input).
 - runFlow:
-    when:
-        visible: "Cancel"
-    commands:
-        - tapOn: "Cancel"
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+    file: ../shared/dismiss_address_bar_editing.yaml
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Validate Cookie was retained
 - tapOn: 

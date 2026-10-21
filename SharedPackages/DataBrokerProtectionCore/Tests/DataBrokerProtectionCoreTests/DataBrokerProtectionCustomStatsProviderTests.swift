@@ -44,7 +44,7 @@ final class DataBrokerProtectionCustomStatsProviderTests: XCTestCase {
         let queryData = BrokerProfileQueryData.queryDataWithMultipleSuccessfulOptOutRequestsIn24Hours
         let startDate = Date.nowMinus(hours: 26)
         let endDate = Date.nowMinus(hours: 24)
-        let expected = CustomIndividualDataBrokerStat(dataBrokerName: "Test broker", optoutSubmitSuccessRate: 1.0)
+        let expected = CustomIndividualDataBrokerStat(dataBrokerURL: "testbroker.com", optoutSubmitSuccessRate: 1.0)
 
         // When
         let result = sut.customOptOutStats(startDate: startDate, endDate: endDate, andQueryData: queryData)

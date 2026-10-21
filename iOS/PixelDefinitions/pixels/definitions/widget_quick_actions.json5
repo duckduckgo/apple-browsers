@@ -1,0 +1,17 @@
+{
+    "m_widget_medium_launch": {
+        "description": "Fires daily and counts when the user taps any shortcut in the medium quick-actions widget. The shortcut parameter identifies which shortcut was tapped, allowing per-shortcut analysis and inference of customisation usage.",
+        "owners": ["samsymons"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "shortcut",
+                "description": "Identifier of the shortcut that triggered the launch.",
+                "type": "string",
+                "enum": ["passwords", "duckAI", "duckAIVoice", "voiceSearch", "favorites", "emailProtection", "vpn", "bookmarks"]
+            }
+        ]
+    }
+}

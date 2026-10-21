@@ -1,0 +1,1091 @@
+//
+//  FeatureFlag.swift
+//  DuckDuckGo
+//
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import PrivacyConfig
+
+public enum FeatureFlag: String {
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866605041091
+    case sync
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866709124077
+    case autofillCredentialInjecting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466776981
+    case autofillCredentialsSaving
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866465652865
+    case autofillInlineIconCredentials
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866709604162
+    case autofillAccessCredentialManagement
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866608422170
+    case autofillPasswordGeneration
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866465600921
+    case autofillOnByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866709799446
+    case autofillFailureReporting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466892257
+    case autofillOnForExistingUsers
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464342535
+    case autofillUnknownUsernameCategorization
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467356751
+    case autofillPartialFormSaves
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866603305287
+    case autofillCreditCards
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609047656
+    case autofillCreditCardsOnByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710362491
+    case autocompleteAttributeSupport
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467693551
+    case inputFocusApi
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866467140007
+    case incontextSignup
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710317371
+    case autoconsentOnByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214554020534806
+    case heuristicAction
+
+    /// Cookie Pop-up Protection opt-in dialog
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654865?focus=true
+    case cookiePopupOptInDialog
+
+    // Duckplayer 'Web based' UI
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609457246
+    case duckPlayer
+
+    // Open Duckplayer in a new tab for 'Web based' UI
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710727484
+    case duckPlayerOpenInNewTab
+
+    // Duckplayer 'Native' UI
+    // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710146121
+    case duckPlayerNativeUI
+
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468307995
+    case syncPromotionBookmarks
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468401462
+    case syncPromotionPasswords
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
+    case autofillSurveys
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
+    case adAttributionReporting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
+    case dbpForegroundRunningOnAppActive
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213433655862033?focus=true
+    case dbpContinuedProcessing
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214085808544002
+    case dbpFreemiumPIR
+
+    /// https://app.asana.com/1/137249556945/task/1213609085394793
+    case dbpWebViewUserAgent
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
+    case dbpOptOutRetryError96Hours
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217396600005661
+    case dbpExtractedProfileRefresh
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
+    case crashReportOptInStatusResetting
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866706505415
+    case syncSeamlessAccountSwitching
+
+    /// Feature flag to enable / disable phishing and malware protection
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866465175262
+    case maliciousSiteProtection
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711861627
+    case scamSiteProtection
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712841283
+    case privacyProOnboardingPromotion
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354517064977
+    case performanceOptimizedPaywalls
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746472
+    case partnershipsHub
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
+    case subscriptionPromoForReinstallers
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215316109166260?focus=true
+    case subscriptionExpirationReminderNotification
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1214798984829406
+    case subscriptionPromoForExistingUsers
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218770045835674
+    case subscriptionConcurrentExperiments
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637477
+    case subscriptionOnboardingFreeTrialsOct2026
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637484
+    case subscriptionOnboardingPaidSubsOct2026
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
+    case syncSetupBarcodeIsUrlBased
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611816519
+    case canScanUrlBasedSyncSetupBarcodes
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470360367
+    case autofillPasswordVariantCategorization
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611178534
+    case paidAIChat
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609800953
+    case canInterceptSyncSetupUrls
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470664073
+    case exchangeKeysToSyncWithAnotherDevice
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866612283363
+    case aiChatKeepSession
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866607644644
+    case canPromoteImportPasswordsInPasswordManagement
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611615737
+    case canPromoteImportPasswordsInBrowser
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463389460
+    /// Note: 'Failsafe' feature flag. See https://app.asana.com/1/137249556945/project/1202500774821704/task/1210572145398078?focus=true
+    case supportsAlternateStripePaymentFlow
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611730044
+    case personalInformationRemoval
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712516861
+    /// This is off by default.  We can turn it on to get daily pixels of users's widget usage for a short time.
+    case widgetReporting
+
+    /// Control daily Duo counts for app improvements, with randomized timestamps for privacy.
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1218733091540132?focus=true
+    case iPhoneDuoLaunchReporting
+
+    /// Local inactivity provisional notifications delivered to Notification Center.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471590692
+    case inactivityNotification
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469585479
+    case daxEasterEggLogos
+
+    /// Allows users to set an Easter egg logo as their permanent search icon
+    case daxEasterEggPermanentLogo
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471806081
+    case showAIChatAddressBarChoiceScreen
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
+    case newDeviceSyncPrompt
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212887107244162?focus=true
+    case syncAutoRestore
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468857577
+    case winBackOffer
+
+    /// https://app.asana.com/1/137249556945/project/1210594645229050/task/1211969445818393?focus=true
+    case blackFridayCampaign
+
+    ///  https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712760360
+    case syncCreditCards
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613993355
+    case unifiedURLPredictor
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
+    case vpnMenuItem
+
+    /// Gates the VPN Session Health Telemetry
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
+    case vpnSessionHealthTelemetry
+
+    /// Gates the "Strict routing" VPN toggle.
+    case vpnStrictRoutingToggle
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
+    case forgetAllInSettings
+
+    /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
+    /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
+    case attributedMetrics
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214336846806516?focus=true
+    case onboardingDuckAIFlow
+
+    /// https://app.asana.com/1/137249556945/project/1142021229838617/task/1214846580751519
+    case onboardingDuckAIQueryTrackersDemoExperiment
+
+    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
+    case standaloneMigration
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203542?focus=true
+    case allowProTierPurchase
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
+    case autofillExtensionSettings
+    case canPromoteAutofillExtensionInBrowser
+    case canPromoteAutofillExtensionInPasswordManagement
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
+    case migrateKeychainAccessibility
+
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
+    case productTelemeterySurfaceUsage
+
+    /// Sort domain matches higher than other matches when searching saved passwords
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1212324661709006?focus=true
+    case autofillPasswordSearchPrioritizeDomain
+
+    /// Feature flag for new sync promotion footer in data import summary
+    /// https://app.asana.com/1/137249556945/project/1203822806345703/task/1209629138021290?focus=true
+    case dataImportSummarySyncPromotion
+
+    /// Feature flag to gate the iOS 26.4+ data import hub routing.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213998785377466?focus=true
+    case dataImportNewUI
+
+    // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
+    case appRatingPrompt
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
+    case contextualDuckAIMode
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
+    case pageContextFeature
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
+    case aiChatAutoAttachContextByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217856366373963?focus=true
+    case aiChatPdfPageContext
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354738310249?focus=true
+    case aiChatContextualAddressBarMenu
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692847?focus=true
+    case aiChatSync
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212745919983886?focus=true
+    case aiChatSuggestions
+
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1213651297612976?focus=true
+    case aiChatNativeChatHistory
+
+    /// Kill switch for Recent Chats in the address-bar Duck.ai menu; enabled by default.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1218242514345528
+    case aiChatAddressBarRecentChats
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216562593480288
+    case aiChatHistoryMultiselect
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216562593153043
+    case aiChatNativeSidebar
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216111312217462?focus=true
+    case contextualSuggestedPrompts
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218266695612921?focus=true
+    case contextualPagePlaceholder
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
+    case showWhatsNewPromptOnDemand
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217271232291839
+    case updatedModelPicker
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217899627532631
+    case updatedCreateImage
+
+    /// Failsafe kill switch for hiding the Search↔Duck.ai toggle on Duck.ai tabs. On by
+    /// default; ship a privacy-config entry to roll back. See
+    /// `UnifiedToggleInputFeatureProviding.isToggleHiddenOnDuckAITab`.
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214995978971487?focus=true
+    case aiChatTabHideToggle
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216049537026986
+    case aiChatContextualUnifiedToggleInput
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218312902503176
+    case aiChatContextualAttachMoreTabs
+
+    /// Address-bar Duck.ai menu plus the floating contextual input. iPhone only.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1215757651854873
+    case aiChatContextualFloatingInput
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1216575765851990
+    case unifiedToggleInputAttachmentPaste
+
+    /// https://app.asana.com/1/137249556945/task/1218397803938552
+    case unifiedToggleInputAttachmentPrivacy
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219661921884283
+    case unifiedToggleInputPastedText
+
+    /// Controls the attachment privacy disclosure in Duck.ai on iPad.
+    /// https://app.asana.com/1/137249556945/task/1218992416130371
+    case aiChatAttachmentPrivacyIPad
+
+    /// Failsafe flag for whether the free trial conversion wide event is enabled
+    case freeTrialConversionWideEvent
+
+    /// Shows tracker count banner in Tab Switcher and related settings item
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212632627091091?focus=true
+    case tabSwitcherTrackerCount
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1213076120133808?focus=true
+    case showNTPAfterIdleReturn
+
+    /// Coordinates presentation across modal prompts and visible promotional surfaces.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216996143775013?focus=true
+    case promoPresentationCoordination
+
+    /// Routes the App Store rating prompt through the Promo Queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218112848073763?focus=true
+    case appRatingPromptCoordination
+
+    /// Test-only feature flag for verifying UI test override mechanism.
+    /// Used in Debug > UI Test Overrides screen.
+    case uiTestFeatureFlag
+
+    /// Test-only experiment for verifying UI test experiment override mechanism.
+    /// Used in Debug > UI Test Overrides screen.
+    case uiTestExperiment
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212875994217788?focus=true
+    case genericBackgroundTask
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764805
+    case crashCollectionLimitCallStackTreeDepth
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759199?focus=true
+    case tabEvictionOnMemoryWarning
+
+    /// Kill switch for the web content freeze pixels.
+    /// https://app.asana.com/1/137249556945/project/414709148257752/task/1219446662051332
+    case webContentFreezeTelemetry
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217244101759205?focus=true
+    case tabLRUEviction
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213001736131250?focus=true
+    case webExtensions
+
+    /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
+    /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617265
+    case webExtensionLightweightReload
+
+    /// Failsafe for Web Extensions background-process diagnostics observation: the forwarding delegate and the
+    /// background-load readiness observation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218782530802146
+    case cpmBackgroundDelegateProxy
+
+    /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444896174
+    case cpmDiagnosticsRecorder
+
+    /// Opt-in one-document GET recovery after the five-second background-readiness wait expires.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219588320073672
+    case cpmLateBackgroundDocumentRecovery
+
+    /// Retries a failed embedded background load in the same context, independently of hang recovery.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
+    case cpmBackgroundLoadRecovery
+
+    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
+    /// https://app.asana.com/0/0/1218855001659655
+    case cpmMessagingHangRecovery
+
+    /// Restarts the embedded background after a confirmed Network process replacement.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
+    case cpmNetworkProcessRecovery
+
+    /// Remotely activated Web Extension background Web View graveyard treatment.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343
+    case cpmBackgroundGraveyardTreatment
+
+    /// Failsafe kill switch for deferring web-extension load/install until protected data is
+    /// available. On by default; disable remotely to load/install immediately (previous flow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451186617267
+    case webExtensionProtectedDataLoadGate
+
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218932196689863
+    case webExtensionStateRestorationGate
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
+    case embeddedExtension
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213278892205657?focus=true
+    case forceDarkModeOnWebsites
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213725495563625
+    case adBlockingExtension
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173934
+    case adBlockingExtensionEnabledByDefault
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212980785692854?focus=true
+    case supportsSyncChatsDeletion
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215655022971962?focus=true
+    case supportsSyncChatsUpdate
+
+    /// https://app.asana.com/1/137249556945/task/1213314048601761
+    case fireMode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
+    case fireButtonRefinements
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
+    case aiChatOmnibarDefaultPosition
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213813585476250?focus=true
+    case screenTimeCleaning
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215448831345663?focus=true
+    case bottomBarViewportFixedElementsWorkaround
+
+    /// https://app.asana.com/1/137249556945/project/414709148257752/task/1217605270508341
+    case elementFullscreen
+
+    case aiChatNativeStorage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215106459483563?focus=true
+    case duckAINativeStoragePathMigration
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
+    case aiChatNativeDataAccess
+
+    /// Lets the duckduckgo.com homepage list the user's Duck.ai chats under its chat box.
+    case aiChatHomepageChatSuggestions
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214777651593367?focus=true
+    case omniBarLongPressMenu
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214797978179697?focus=true
+    case customProductPageDuckAiChat
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216945875759265
+    case aiChatTextActions
+
+    /// Gate the default-to-NTP-after-idle behavior for existing iPhone users behind a remote flag.
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1214830562427843
+    case defaultExistingIPhoneUsersToNewTabAfterIdle
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217024926605808
+    case customizeNTPIcons
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217276406422603
+    case newTabPageSessionInstrumentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1218145365492985
+    case duckAISessionWideEvent
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217645779581965
+    case newTabPageRedesign
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215169783702336
+    case walletPassDownload
+
+    /// Gates the Duck.ai shortcut in the iPad browser chrome (tabs bar).
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
+    case aiChatChromeShortcutIPad
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
+    case aiChatChromeMenuButtonIPad
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511214?focus=true
+    case utiDuckAIWarnings
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
+    case duckAINativeTermsOfService
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215359554019438?focus=true
+    case floatingUIiOS26
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
+    case floatingUIiOS27
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
+    case aiChatTabSwitcherRichCard
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114749?focus=true
+    case syncScopedAccessCredentials
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114760?focus=true
+    case syncCanUseV2ConnectFlow
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215597855114767?focus=true
+    case syncCanShowV2ConnectCode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115676?focus=true
+    case syncCanUseExchangeV2Point1
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115688?focus=true
+    case syncCanSendExchangeChannelSecret
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064244?focus=true
+    case syncCanWriteUnifiedDeviceList
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217684925915714?focus=true
+    case syncCanUsePatchEndpointForLegacyDeviceRename
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064256?focus=true
+    case syncCanReadUnifiedDeviceList
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219175598274067
+    case syncImprovedPairingFlow
+
+    /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
+    case searchTokenExperimentV4
+
+    /// NA Experiment: tailor the onboarding flow based on the user's download reason.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216491579842691?focus=true
+    ///
+    /// Concluded and disabled so no new users are enrolled. The download-reason flow  is kept for the follow-up experiment:
+    /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1219341928461688
+    /// To reuse it, rename this case, its subfeature and cohort enum, rename the experiment in
+    /// `native_experiments.json5`, and switch the source back to `.remoteReleasable`. Use a new subfeature name
+    /// so devices enrolled in this run are not carried over.
+    case onboardingFlowByDownloadReasonExperiment
+
+    /// Experiment for removing monthly free trials — second run, enrolling only free-trial eligible users.
+    /// https://app.asana.com/1/137249556945/task/1217334233390728
+    case monthlyFreeTrialExperiment2
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1216352541195038?focus=true
+    case nativeAIPromptEditing
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217880888140745
+    case sitePermissions
+
+    /// Page Signals: Extended Site Breakage Diagostics
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
+    case pageSignals
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219115104348289
+    case alwaysShowKeyboardOnNewTabPage
+
+    /// Removes tracking parameters without `URLComponents`, which hangs or runs out of memory on very large URLs.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
+    case fastTrackingParameterFilter
+
+    /// Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219240727858123?focus=true
+    case aiChatLimitExtensionPromo
+
+}
+
+extension FeatureFlag: FeatureFlagDescribing {
+    /// Test-only cohort for verifying UI test experiment override mechanism.
+    public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Search-token experiment cohorts. Treatment devices signal the SERP to serve the faster combined response.
+    public enum SearchTokenExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the onboarding-flow-by-download-reason experiment.
+    public enum OnboardingFlowByDownloadReasonExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    public enum MonthlyFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    public enum PerformanceOptimizedPaywallsCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the `subscriptionOnboardingFreeTrialsOct2026` ABN test.
+    public enum SubscriptionOnboardingFreeTrialsOct2026Cohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    /// Cohorts for the `subscriptionOnboardingPaidSubsOct2026` ABN test.
+    public enum SubscriptionOnboardingPaidSubsOct2026Cohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
+    public static var localOverrideStoreName: String = "com.duckduckgo.app.featureFlag.localOverrides"
+
+    private struct Config {
+        let defaultValue: FeatureFlagDefaultValue
+        let source: FeatureFlagSource
+        let supportsLocalOverriding: Bool
+        let cohortType: (any FeatureFlagCohortDescribing.Type)?
+
+        init(
+            defaultValue: FeatureFlagDefaultValue = .disabled,
+            source: FeatureFlagSource,
+            supportsLocalOverriding: Bool = true,
+            cohortType: (any FeatureFlagCohortDescribing.Type)? = nil
+        ) {
+            self.defaultValue = defaultValue
+            self.source = source
+            self.supportsLocalOverriding = supportsLocalOverriding
+            self.cohortType = cohortType
+        }
+    }
+
+    private var config: Config {
+        switch self {
+        case .sync:
+            Config(source: .remoteReleasable(SyncSubfeature.level0ShowSync), supportsLocalOverriding: false)
+        case .autofillCredentialInjecting:
+            Config(source: .remoteReleasable(AutofillSubfeature.credentialsAutofill), supportsLocalOverriding: false)
+        case .autofillCredentialsSaving:
+            Config(source: .remoteReleasable(AutofillSubfeature.credentialsSaving), supportsLocalOverriding: false)
+        case .autofillInlineIconCredentials:
+            Config(source: .remoteReleasable(AutofillSubfeature.inlineIconCredentials), supportsLocalOverriding: false)
+        case .autofillAccessCredentialManagement:
+            Config(source: .remoteReleasable(AutofillSubfeature.accessCredentialManagement), supportsLocalOverriding: false)
+        case .autofillPasswordGeneration:
+            Config(source: .remoteReleasable(AutofillSubfeature.autofillPasswordGeneration), supportsLocalOverriding: false)
+        case .autofillOnByDefault:
+            Config(source: .remoteReleasable(AutofillSubfeature.onByDefault), supportsLocalOverriding: false)
+        case .autofillFailureReporting:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillBreakageReporterSubfeature.featureEnabled), supportsLocalOverriding: false)
+        case .autofillOnForExistingUsers:
+            Config(source: .remoteReleasable(AutofillSubfeature.onForExistingUsers), supportsLocalOverriding: false)
+        case .autofillUnknownUsernameCategorization:
+            Config(source: .remoteReleasable(AutofillSubfeature.unknownUsernameCategorization), supportsLocalOverriding: false)
+        case .autofillPartialFormSaves:
+            Config(source: .remoteReleasable(AutofillSubfeature.partialFormSaves), supportsLocalOverriding: false)
+        case .autofillCreditCards:
+            Config(source: .remoteReleasable(AutofillSubfeature.autofillCreditCards), supportsLocalOverriding: false)
+        case .autofillCreditCardsOnByDefault:
+            Config(source: .remoteReleasable(AutofillSubfeature.autofillCreditCardsOnByDefault), supportsLocalOverriding: false)
+        case .autocompleteAttributeSupport:
+            Config(source: .remoteReleasable(AutofillSubfeature.autocompleteAttributeSupport))
+        case .inputFocusApi:
+            Config(source: .remoteReleasable(AutofillSubfeature.inputFocusApi), supportsLocalOverriding: false)
+        case .incontextSignup:
+            Config(defaultValue: .enabled, source: .remoteReleasable(IncontextSignupSubfeature.featureEnabled), supportsLocalOverriding: false)
+        case .autoconsentOnByDefault:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.onByDefault), supportsLocalOverriding: false)
+        case .heuristicAction:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
+        case .cookiePopupOptInDialog:
+            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog))
+        case .duckPlayer:
+            Config(source: .remoteReleasable(DuckPlayerSubfeature.enableDuckPlayer), supportsLocalOverriding: false)
+        case .duckPlayerOpenInNewTab:
+            Config(source: .remoteReleasable(DuckPlayerSubfeature.openInNewTab), supportsLocalOverriding: false)
+        case .duckPlayerNativeUI:
+            Config(source: .remoteReleasable(DuckPlayerSubfeature.nativeUI))
+        case .syncPromotionBookmarks:
+            Config(source: .remoteReleasable(SyncPromotionSubfeature.bookmarks), supportsLocalOverriding: false)
+        case .syncPromotionPasswords:
+            Config(source: .remoteReleasable(SyncPromotionSubfeature.passwords), supportsLocalOverriding: false)
+        case .autofillSurveys:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
+        case .adAttributionReporting:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AdAttributionReportingSubfeature.featureEnabled), supportsLocalOverriding: false)
+        case .dbpForegroundRunningOnAppActive:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.foregroundRunningOnAppActive))
+        case .dbpContinuedProcessing:
+            Config(source: .remoteReleasable(DBPSubfeature.continuedProcessing))
+        case .dbpFreemiumPIR:
+            Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
+        case .dbpWebViewUserAgent:
+            Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true)
+        case .dbpOptOutRetryError96Hours:
+            Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours))
+        case .dbpExtractedProfileRefresh:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.extractedProfileRefresh), supportsLocalOverriding: true)
+        case .crashReportOptInStatusResetting:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashReportOptInStatusResetting), supportsLocalOverriding: false)
+        case .syncSeamlessAccountSwitching:
+            Config(source: .remoteReleasable(SyncSubfeature.seamlessAccountSwitching), supportsLocalOverriding: false)
+        case .maliciousSiteProtection:
+            Config(source: .remoteReleasable(MaliciousSiteProtectionSubfeature.onByDefault))
+        case .scamSiteProtection:
+            Config(source: .remoteReleasable(MaliciousSiteProtectionSubfeature.scamProtection))
+        case .privacyProOnboardingPromotion:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .performanceOptimizedPaywalls:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls), cohortType: PerformanceOptimizedPaywallsCohort.self)
+        case .partnershipsHub:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub))
+        case .subscriptionPromoForReinstallers:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForReinstallers))
+        case .subscriptionExpirationReminderNotification:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionExpirationReminderNotification))
+        case .subscriptionPromoForExistingUsers:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForExistingUsers))
+        case .subscriptionConcurrentExperiments:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionConcurrentExperiments))
+        case .subscriptionOnboardingFreeTrialsOct2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsOct2026), cohortType: SubscriptionOnboardingFreeTrialsOct2026Cohort.self)
+        case .subscriptionOnboardingPaidSubsOct2026:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsOct2026), cohortType: SubscriptionOnboardingPaidSubsOct2026Cohort.self)
+        case .syncSetupBarcodeIsUrlBased:
+            Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
+        case .canScanUrlBasedSyncSetupBarcodes:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .autofillPasswordVariantCategorization:
+            Config(source: .remoteReleasable(AutofillSubfeature.passwordVariantCategorization))
+        case .paidAIChat:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.paidAIChat))
+        case .canInterceptSyncSetupUrls:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canInterceptSyncSetupUrls))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            Config(source: .remoteReleasable(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .aiChatKeepSession:
+            Config(source: .remoteReleasable(AIChatSubfeature.keepSession), supportsLocalOverriding: false)
+        case .canPromoteImportPasswordsInPasswordManagement:
+            Config(source: .remoteReleasable(AutofillSubfeature.canPromoteImportPasswordsInPasswordManagement), supportsLocalOverriding: false)
+        case .canPromoteImportPasswordsInBrowser:
+            Config(source: .remoteReleasable(AutofillSubfeature.canPromoteImportPasswordsInBrowser), supportsLocalOverriding: false)
+        case .supportsAlternateStripePaymentFlow:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
+        case .personalInformationRemoval:
+            Config(source: .remoteReleasable(DBPSubfeature.pirRollout))
+        case .widgetReporting:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.widgetReporting), supportsLocalOverriding: false)
+        case .iPhoneDuoLaunchReporting:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.iPhoneDuoLaunchReporting))
+        case .inactivityNotification:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.inactivityNotification))
+        case .daxEasterEggLogos:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DaxEasterEggLogosSubfeature.featureEnabled))
+        case .daxEasterEggPermanentLogo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DaxEasterEggPermanentLogoSubfeature.featureEnabled))
+        case .showAIChatAddressBarChoiceScreen:
+            Config(source: .remoteReleasable(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
+        case .newDeviceSyncPrompt:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.newDeviceSyncPrompt), supportsLocalOverriding: false)
+        case .syncAutoRestore:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncAutoRestore))
+        case .winBackOffer:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.winBackOffer))
+        case .blackFridayCampaign:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign))
+        case .syncCreditCards:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
+        case .unifiedURLPredictor:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.unifiedURLPredictor))
+        case .vpnMenuItem:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.vpnMenuItem))
+        case .vpnSessionHealthTelemetry:
+            Config(defaultValue: .enabled, source: .remoteReleasable(NetworkProtectionSubfeature.sessionHealthTelemetry))
+        case .vpnStrictRoutingToggle:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(NetworkProtectionSubfeature.strictRoutingToggle))
+        case .forgetAllInSettings:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.forgetAllInSettings))
+        case .utiDuckAIWarnings:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings))
+        case .duckAINativeTermsOfService:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService))
+        case .attributedMetrics:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
+        case .onboardingDuckAIFlow:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiOnboardingFlow))
+        case .onboardingDuckAIQueryTrackersDemoExperiment:
+            Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment))
+        case .standaloneMigration:
+            Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration))
+        case .allowProTierPurchase:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.allowProTierPurchase))
+        case .autofillExtensionSettings:
+            Config(source: .remoteReleasable(AutofillSubfeature.autofillExtensionSettings))
+        case .canPromoteAutofillExtensionInBrowser:
+            Config(source: .remoteReleasable(AutofillSubfeature.canPromoteAutofillExtensionInBrowser))
+        case .canPromoteAutofillExtensionInPasswordManagement:
+            Config(source: .remoteReleasable(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
+        case .migrateKeychainAccessibility:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.migrateKeychainAccessibility), supportsLocalOverriding: false)
+        case .productTelemeterySurfaceUsage:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.productTelemetrySurfaceUsage), supportsLocalOverriding: false)
+        case .autofillPasswordSearchPrioritizeDomain:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
+        case .dataImportSummarySyncPromotion:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.dataImportSummarySyncPromotion))
+        case .dataImportNewUI:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newDataImportExperience))
+        case .appRatingPrompt:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRatingPrompt))
+        case .contextualDuckAIMode:
+            Config(source: .remoteReleasable(AIChatSubfeature.contextualDuckAIMode))
+        case .pageContextFeature:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PageContextSubfeature.featureEnabled))
+        case .aiChatAutoAttachContextByDefault:
+            Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
+        case .aiChatPdfPageContext:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
+        case .aiChatContextualAddressBarMenu:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualAddressBarMenu), supportsLocalOverriding: true)
+        case .aiChatSync:
+            Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
+        case .aiChatSuggestions:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.featureEnabled))
+        case .aiChatNativeChatHistory:
+            Config(defaultValue: .enabled, source: .remoteReleasable(DuckAiChatHistorySubfeature.nativeChatHistory))
+        case .aiChatAddressBarRecentChats:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats))
+        case .aiChatHistoryMultiselect:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.historyMultiselect))
+        case .aiChatNativeSidebar:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativeSidebar))
+        case .contextualSuggestedPrompts:
+            Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
+        case .contextualPagePlaceholder:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
+        case .showWhatsNewPromptOnDemand:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
+        case .updatedModelPicker:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedModelPicker))
+        case .updatedCreateImage:
+            Config(source: .remoteReleasable(AIChatSubfeature.updatedCreateImage))
+        case .aiChatTabHideToggle:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
+        case .aiChatContextualUnifiedToggleInput:
+            Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
+        case .aiChatContextualAttachMoreTabs:
+            Config(source: .remoteReleasable(AIChatSubfeature.contextualAttachMoreTabs))
+        case .aiChatContextualFloatingInput:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
+        case .unifiedToggleInputAttachmentPaste:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPaste))
+        case .unifiedToggleInputAttachmentPrivacy:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputAttachmentPrivacy))
+        case .unifiedToggleInputPastedText:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputPastedText))
+        case .aiChatAttachmentPrivacyIPad:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadAttachmentPrivacy))
+        case .freeTrialConversionWideEvent:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
+        case .tabSwitcherTrackerCount:
+            Config(defaultValue: .enabled, source: .remoteReleasable(TabSwitcherTrackerCountSubfeature.featureEnabled))
+        case .showNTPAfterIdleReturn:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.showNTPAfterIdleReturn))
+        case .promoPresentationCoordination:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.promoPresentationCoordination))
+        case .appRatingPromptCoordination:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.appRatingPromptCoordination))
+        case .uiTestFeatureFlag:
+            Config(source: .disabled)
+        case .uiTestExperiment:
+            Config(source: .disabled, cohortType: UITestExperimentCohort.self)
+        case .searchTokenExperimentV4:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV4), cohortType: SearchTokenExperimentCohort.self)
+        case .onboardingFlowByDownloadReasonExperiment:
+            Config(source: .disabled, cohortType: OnboardingFlowByDownloadReasonExperimentCohort.self)
+        case .monthlyFreeTrialExperiment2:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.monthlyFreeTrialExperiment2), cohortType: MonthlyFreeTrialExperimentCohort.self)
+        case .genericBackgroundTask:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.genericBackgroundTask))
+        case .crashCollectionLimitCallStackTreeDepth:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
+        case .tabEvictionOnMemoryWarning:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning), supportsLocalOverriding: true)
+        case .webContentFreezeTelemetry:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webContentFreezeTelemetry), supportsLocalOverriding: true)
+        case .tabLRUEviction:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabLRUEviction), supportsLocalOverriding: true)
+        case .webExtensions:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
+        case .webExtensionLightweightReload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear))
+        case .cpmBackgroundDelegateProxy:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy))
+        case .cpmDiagnosticsRecorder:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder))
+        case .cpmLateBackgroundDocumentRecovery:
+            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmLateBackgroundDocumentRecovery))
+        case .cpmBackgroundLoadRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRecovery))
+        case .cpmMessagingHangRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
+        case .cpmNetworkProcessRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery))
+        case .cpmBackgroundGraveyardTreatment:
+            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment))
+        case .webExtensionProtectedDataLoadGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.protectedDataLoadGate))
+        case .webExtensionStateRestorationGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate))
+        case .embeddedExtension:
+            Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension))
+        case .forceDarkModeOnWebsites:
+            Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout))
+        case .adBlockingExtension:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled))
+        case .adBlockingExtensionEnabledByDefault:
+            Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault))
+        case .supportsSyncChatsDeletion:
+            Config(source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsDeletion))
+        case .supportsSyncChatsUpdate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsUpdate))
+        case .fireMode:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
+        case .fireButtonRefinements:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
+        case .aiChatOmnibarDefaultPosition:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarDefaultPosition))
+        case .screenTimeCleaning:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.screenTimeCleaning))
+        case .bottomBarViewportFixedElementsWorkaround:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.bottomBarViewportFixedElementsWorkaround))
+        case .elementFullscreen:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.elementFullscreen))
+        case .aiChatNativeStorage:
+            Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage))
+        case .duckAINativeStoragePathMigration:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeStoragePathMigration))
+        case .aiChatNativeDataAccess:
+            Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess))
+        case .aiChatHomepageChatSuggestions:
+            Config(source: .remoteReleasable(AIChatSubfeature.homepageChatSuggestions))
+        case .omniBarLongPressMenu:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.omniBarLongPressMenu))
+        case .customProductPageDuckAiChat:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customProductPageDuckAiChat), supportsLocalOverriding: true)
+        case .aiChatTextActions:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.textActions), supportsLocalOverriding: true)
+        case .defaultExistingIPhoneUsersToNewTabAfterIdle:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.defaultExistingIPhoneUsersToNewTabAfterIdle))
+        case .customizeNTPIcons:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.customizeNTPIcons))
+        case .newTabPageSessionInstrumentation:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageSessionInstrumentation))
+        case .duckAISessionWideEvent:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAISessionWideEvent))
+        case .newTabPageRedesign:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageRedesign))
+        case .walletPassDownload:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
+        case .aiChatChromeShortcutIPad:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
+        case .aiChatChromeMenuButtonIPad:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
+        case .floatingUIiOS26:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
+        case .floatingUIiOS27:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
+        case .aiChatTabSwitcherRichCard:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
+        case .syncScopedAccessCredentials:
+            Config(source: .remoteReleasable(SyncSubfeature.scopedAccessCredentials))
+        case .syncCanUseV2ConnectFlow:
+            Config(source: .remoteReleasable(SyncSubfeature.canUseV2ConnectFlow))
+        case .syncCanShowV2ConnectCode:
+            Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode))
+        case .syncCanUseExchangeV2Point1:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1))
+        case .syncCanSendExchangeChannelSecret:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canSendExchangeChannelSecret))
+        case .syncCanWriteUnifiedDeviceList:
+            Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList))
+        case .syncCanUsePatchEndpointForLegacyDeviceRename:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename))
+        case .syncCanReadUnifiedDeviceList:
+            Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
+        case .syncImprovedPairingFlow:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
+        case .nativeAIPromptEditing:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
+        case .sitePermissions:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.sitePermissions))
+        case .pageSignals:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
+        case .alwaysShowKeyboardOnNewTabPage:
+            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.alwaysShowKeyboardOnNewTabPage))
+        case .fastTrackingParameterFilter:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
+        case .aiChatLimitExtensionPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
+        }
+    }
+
+    public var defaultValue: FeatureFlagDefaultValue { config.defaultValue }
+    public var source: FeatureFlagSource { config.source }
+    public var cohortType: (any FeatureFlagCohortDescribing.Type)? { config.cohortType }
+
+    public var supportsLocalOverriding: Bool {
+        config.supportsLocalOverriding
+    }
+}
+
+extension FeatureFlagger {
+    public func isFloatingUIFeatureEnabled() -> Bool {
+        if #available(iOS 27, *) {
+            return isFloatingUIFeatureEnabled(osMajorVersion: 27)
+        } else if #available(iOS 26, *) {
+            return isFloatingUIFeatureEnabled(osMajorVersion: 26)
+        } else {
+            return false
+        }
+    }
+
+    public func isFloatingUIFeatureEnabled(osMajorVersion: Int) -> Bool {
+        switch osMajorVersion {
+        case 26:
+            return isFeatureOn(.floatingUIiOS26)
+        case 27...:
+            return isFeatureOn(.floatingUIiOS27)
+        default:
+            return false
+        }
+    }
+
+    public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {
+        isFeatureOn(for: featureFlag)
+    }
+}

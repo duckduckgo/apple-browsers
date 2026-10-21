@@ -1,0 +1,10 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DDG Tests//ICSParser//EN
+BEGIN:VEVENT
+UID:missing-dtstart-001@duckduckgo.com
+DTSTAMP:20260501T120000Z
+SUMMARY:Event Without DTSTART
+DESCRIPTION:DTSTART is required by RFC 5545 for VEVENTs in publish methods. Missing it should surface as missingRequiredField.
+END:VEVENT
+END:VCALENDAR

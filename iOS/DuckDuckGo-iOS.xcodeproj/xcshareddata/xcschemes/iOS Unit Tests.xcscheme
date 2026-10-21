@@ -25,16 +25,6 @@
             </BuildableReference>
          </TestableReference>
          <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "025CCFE12582601C001CD5BB"
-               BuildableName = "FingerprintingUITests.xctest"
-               BlueprintName = "FingerprintingUITests"
-               ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
             skipped = "NO"
             parallelizable = "NO">
             <BuildableReference

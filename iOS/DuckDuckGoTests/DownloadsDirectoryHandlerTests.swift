@@ -40,17 +40,17 @@ class DownloadsDirectoryHandlerTests: XCTestCase {
         XCTAssertEqual(handler.downloadsDirectory.standardizedFileURL, expectedPath.standardizedFileURL)
     }
 
-    func testDownloadsDirectoryFilesProperty() {
-        XCTAssertTrue(handler.downloadsDirectoryFiles.isEmpty)
+    func testDownloadsDirectoryFilesProperty() throws {
+        XCTAssert(try handler.downloadsDirectoryFiles.isEmpty)
 
         let fileURL = handler.downloadsDirectory.appendingPathComponent("testFile.txt")
         try? FileManager.default.createDirectory(at: handler.downloadsDirectory, withIntermediateDirectories: true, attributes: nil)
         FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
-        XCTAssertEqual(handler.downloadsDirectoryFiles, [fileURL])
+        XCTAssertEqual(try handler.downloadsDirectoryFiles, [fileURL])
 
         let subdirectoryURL = handler.downloadsDirectory.appendingPathComponent("Subdirectory")
         try? FileManager.default.createDirectory(at: subdirectoryURL, withIntermediateDirectories: true, attributes: nil)
-        XCTAssertEqual(handler.downloadsDirectoryFiles, [fileURL])
+        XCTAssertEqual(try handler.downloadsDirectoryFiles, [fileURL])
     }
 
     func testCreateDownloadsDirectoryIfNeeded() {

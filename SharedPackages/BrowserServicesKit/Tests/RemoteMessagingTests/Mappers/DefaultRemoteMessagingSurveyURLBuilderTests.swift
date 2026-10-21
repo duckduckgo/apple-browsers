@@ -20,7 +20,6 @@ import XCTest
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import RemoteMessagingTestsUtils
-@testable import Subscription
 @testable import RemoteMessaging
 
 class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
@@ -66,12 +65,32 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?locale=en-NZ")
     }
 
-    func testAddingPrivacyProParameters() {
+    func testAddingSubscriptionParameters() {
         let builder = buildRemoteMessagingSurveyURLBuilder()
         let baseURL = URL(string: "https://duckduckgo.com")!
-        let finalURL = builder.add(parameters: [.privacyProStatus, .privacyProPlatform, .privacyProPlatform], to: baseURL)
+        let finalURL = builder.add(parameters: [.subscriptionStatus, .subscriptionPlatform, .subscriptionPlatform], to: baseURL)
 
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_status=auto_renewable&ppro_platform=apple&ppro_platform=apple")
+    }
+
+    func testAddingSubscriptionTierParameter() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(subscriptionTier: "pro")
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.subscriptionTier], to: baseURL)
+
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_tier=pro")
+    }
+
+    func testSubscriptionTierParameterIsOmittedWhenUnknown() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(subscriptionTier: nil)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.subscriptionTier], to: baseURL)
+
+        let tierValue = URLComponents(string: finalURL.absoluteString)?
+            .queryItems?
+            .first { $0.name == RemoteMessagingSurveyActionParameter.subscriptionTier.rawValue }?
+            .value
+        XCTAssertNil(tierValue)
     }
 
     func testAddingVPNUsageParameters() {
@@ -80,6 +99,22 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         let finalURL = builder.add(parameters: [.vpnFirstUsed, .vpnLastUsed], to: baseURL)
 
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?vpn_first_used=10&vpn_last_used=5")
+    }
+
+    func testAddingTrialActiveParameterTrue() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(subscriptionTrialActive: true)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.subscriptionTrialActive], to: baseURL)
+
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_trial_active=true")
+    }
+
+    func testAddingTrialActiveParameterFalse() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(subscriptionTrialActive: false)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.subscriptionTrialActive], to: baseURL)
+
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?ppro_trial_active=false")
     }
 
     func testAddingParametersToURLThatAlreadyHasThem() {
@@ -136,6 +171,29 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=week")
     }
 
+    func testAddingLastDuckAIUsageUsesExpectedBucket() {
+        let expectations: [(daysSinceLastUsed: Int?, expectedState: String)] = [
+            (nil, "none"),
+            (0, "day"),
+            (1, "day"),
+            (2, "week"),
+            (7, "week"),
+            (8, "none")
+        ]
+
+        for expectation in expectations {
+            let builder = buildRemoteMessagingSurveyURLBuilder(daysSinceDuckAIUsed: expectation.daysSinceLastUsed)
+            let baseURL = URL(string: "https://duckduckgo.com")!
+            let finalURL = builder.add(parameters: [.lastDuckAIUsage], to: baseURL)
+
+            XCTAssertEqual(
+                finalURL.absoluteString,
+                "https://duckduckgo.com?last_duck_ai_usage=\(expectation.expectedState)",
+                "Unexpected state for \(String(describing: expectation.daysSinceLastUsed)) days since Duck.ai use"
+            )
+        }
+    }
+
     func testRefreshLastSearchState_noParamPresent_returnsUnchangedURL() {
         let raw = "https://duckduckgo.com?atb=v1"
         let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: raw, lastSearchDate: Date())
@@ -154,13 +212,42 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertTrue(components.queryItems!.contains { $0.name == "foo" && $0.value == "bar" })
     }
 
+    func testRefreshSurveyUsageStates_noUsageParamsPresent_returnsUnchangedURL() {
+        let raw = "https://duckduckgo.com?atb=v1"
+        let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshSurveyUsageStates(
+            in: raw,
+            lastSearchDate: Date(),
+            daysSinceDuckAIUsed: 0
+        )
+
+        XCTAssertEqual(refreshed, raw)
+    }
+
+    func testRefreshSurveyUsageStates_updatesBothValuesAndPreservesOtherParameters() {
+        let raw = "https://duckduckgo.com?last_search_state=none&foo=bar&last_duck_ai_usage=none"
+        let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshSurveyUsageStates(
+            in: raw,
+            lastSearchDate: Date(),
+            daysSinceDuckAIUsed: 3
+        )
+
+        let components = URLComponents(string: refreshed)!
+        let queryItems = components.queryItems!
+        XCTAssertEqual(queryItems.first(where: { $0.name == "last_search_state" })?.value, "day")
+        XCTAssertEqual(queryItems.first(where: { $0.name == "last_duck_ai_usage" })?.value, "week")
+        XCTAssertTrue(queryItems.contains { $0.name == "foo" && $0.value == "bar" })
+    }
+
     private func buildRemoteMessagingSurveyURLBuilder(
         atb: String = "v123-4",
         variant: String = "var",
         vpnDaysSinceActivation: Int = 2,
         vpnDaysSinceLastActive: Int = 1,
         locale: Locale = Locale(identifier: "en_US"),
-        lastSearchDate: Date? = nil
+        lastSearchDate: Date? = nil,
+        daysSinceDuckAIUsed: Int? = nil,
+        subscriptionTrialActive: Bool = false,
+        subscriptionTier: String? = "pro"
     ) -> DefaultRemoteMessagingSurveyURLBuilder {
 
         let mockStatisticsStore = MockStatisticsStore()
@@ -172,29 +259,35 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
             daysSinceLastActive: vpnDaysSinceLastActive
         )
 
-        let subscription = PrivacyProSubscription(productId: "product-id",
-                                           name: "product-name",
-                                           billingPeriod: .monthly,
-                                           startedAt: Date(timeIntervalSince1970: 1000),
-                                           expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
-                                           platform: .apple,
-                                           status: .autoRenewable,
-                                           activeOffers: [])
+        let mockSubscription = MockDuckDuckGoSubscription()
+        mockSubscription.billing = "monthly"
+        mockSubscription.platform = "apple"
+        mockSubscription.status = "auto_renewable"
+        mockSubscription.tier = subscriptionTier
+        mockSubscription.started = Date(timeIntervalSince1970: 1000)
+        mockSubscription.expiry = Date(timeIntervalSince1970: 2000)
+        mockSubscription.trialActive = subscriptionTrialActive
 
         standardDefaults.set(lastSearchDate, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
+
+        let featureDiscovery = MockFeatureDiscovery()
+        if let daysSinceDuckAIUsed {
+            featureDiscovery.setDaysSinceLastUsedValue(daysSinceDuckAIUsed, for: .aiChat)
+        }
 
         return DefaultRemoteMessagingSurveyURLBuilder(
             statisticsStore: mockStatisticsStore,
             vpnActivationDateStore: vpnActivationDateStore,
-            subscription: subscription,
+            subscriptionDataProvider: mockSubscription,
             localeIdentifier: locale.identifier,
-            autofillUsageStore: autofillUsageStore
+            autofillUsageStore: autofillUsageStore,
+            featureDiscovery: featureDiscovery
         )
     }
 
 }
 
-private class MockVPNActivationDateStore: VPNActivationDateProviding {
+private final class MockVPNActivationDateStore: VPNActivationDateProviding {
 
     var _daysSinceActivation: Int
     var _daysSinceLastActive: Int
@@ -212,4 +305,43 @@ private class MockVPNActivationDateStore: VPNActivationDateProviding {
         return _daysSinceLastActive
     }
 
+}
+
+private final class MockDuckDuckGoSubscription: SubscriptionSurveyDataProviding {
+
+    var status: String?
+    var platform: String?
+    var billing: String?
+    var tier: String?
+    var started: Date?
+    var expiry: Date?
+    var trialActive: Bool?
+
+    public var subscriptionStatus: String? {
+        return status
+    }
+
+    public var subscriptionPlatform: String? {
+        return platform
+    }
+
+    public var subscriptionBilling: String? {
+        return billing
+    }
+
+    public var subscriptionTier: String? {
+        return tier
+    }
+
+    public var subscriptionStartDate: Date? {
+        return started
+    }
+
+    public var subscriptionExpiryDate: Date? {
+        return expiry
+    }
+
+    public var subscriptionTrialActive: Bool? {
+        return trialActive
+    }
 }

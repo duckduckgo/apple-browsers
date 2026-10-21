@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import protocol Navigation.WebKitDownload
+import protocol DDGNavigation.WebKitDownload
 import UniformTypeIdentifiers
 import WebKit
 
@@ -50,12 +50,11 @@ class DownloadsTabExtensionMock: NSObject, DownloadsTabExtensionProtocol {
     }
 
     func saveDownloadedData(_ data: Data?, suggestedFilename: String, mimeType: String, originatingURL: URL) async throws -> URL? {
-        didCallSaveDownloadedData = true
         capturedSavedDownloadData = data
         capturedSuggestedFilename = suggestedFilename
         capturedMimeType = mimeType
         capturedOriginatingURL = originatingURL
-
+        didCallSaveDownloadedData = true
         return nil
     }
 

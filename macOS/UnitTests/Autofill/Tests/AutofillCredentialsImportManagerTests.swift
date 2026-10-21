@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import BrowserServicesKit
@@ -24,15 +25,19 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
 
     private var manager: AutofillCredentialsImportManager!
     private var importState: MockAutofillLoginImportState!
+    private var presentationDelegate: MockAutofillCredentialsImportPresentationDelegate!
 
     override func setUp() {
         super.setUp()
         importState = MockAutofillLoginImportState()
+        presentationDelegate = MockAutofillCredentialsImportPresentationDelegate()
         manager = AutofillCredentialsImportManager(loginImportStateProvider: importState, isBurnerWindow: false)
+        manager.presentationDelegate = presentationDelegate
     }
 
     override func tearDown() {
         importState = nil
+        presentationDelegate = nil
         manager = nil
         super.tearDown()
     }
@@ -80,7 +85,7 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
     }
 
     func testWhenCredentialsImportPresentationCountIs5_ThenAutofillUserScriptShouldShowPasswordImportDialogIsFalse() {
-        let result = autofillUserScriptShouldShowPasswordImportDialogResult(isCredentialsImportPromptPermanantlyDismissed: true)
+        let result = autofillUserScriptShouldShowPasswordImportDialogResult(isCredentialsImportPromoInBrowserPermanentlyDismissed: true)
 
         XCTAssertFalse(result)
     }
@@ -94,7 +99,13 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
     func testWhenPermanentCredentialsImportPromptDismissalIsRequested_ThenStateFlagIsSetToTrue() {
         manager.autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal()
 
-        XCTAssertTrue(importState.isCredentialsImportPromptPermanantlyDismissed)
+        XCTAssertTrue(importState.isCredentialsImportPromoInBrowserPermanentlyDismissed)
+    }
+
+    func testWhenPermanentCredentialsImportPromptDismissalIsRequested_ThenPresentationDelegateIsNotifiedOnce() {
+        manager.autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal()
+
+        XCTAssertEqual(presentationDelegate.calls, [.permanentDismissal])
     }
 
     func testOnAutofillUserScriptShouldDisplayOverlay_NonParsableSerializedInputContext_returnsTrue() {
@@ -110,7 +121,7 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
     }
 
     func testOnAutofillUserScriptShouldDisplayOverlay_SerializedInputContextWithCredentialsImportTrue_PromptHasNOTBeenPermanantlyDismissed_returnsTrue() {
-        importState.isCredentialsImportPromptPermanantlyDismissed = false
+        importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
         let result = manager.autofillUserScriptShouldDisplayOverlay("", for: "fill.dev")
 
         XCTAssertTrue(result)
@@ -118,10 +129,34 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
 
     func testOnAutofillUserScriptShouldDisplayOverlay_SerializedInputContextWithCredentialsImportTrue_PromptHasBeenPermanantlyDismissed_returnsFalse() {
         let serializedInputContext = "{\"inputType\":\"credentials.username\",\"credentialsImport\":true}"
-        importState.isCredentialsImportPromptPermanantlyDismissed = true
+        importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = true
         let result = manager.autofillUserScriptShouldDisplayOverlay(serializedInputContext, for: "fill.dev")
 
         XCTAssertFalse(result)
+    }
+
+    func testWhenAnExtensionManagesAutofill_ThenTheMenuOpensOnlyOnEmailFieldsForDuckAddress() {
+        importState.isAutofillManagedByExtension = true
+
+        XCTAssertTrue(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"identities.emailAddress\",\"credentialsImport\":false}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"credentials.username\",\"credentialsImport\":false}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"identities.addressStreet\",\"credentialsImport\":false}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("{\"inputType\":\"creditCards.cardNumber\",\"credentialsImport\":false}", for: "fill.dev"))
+        XCTAssertFalse(manager.autofillUserScriptShouldDisplayOverlay("", for: "fill.dev"))
+    }
+
+    func testWhenAnExtensionManagesAutofill_ThenAutofillCountsAsDisabledForTheImportPromo() {
+        let preferences = AutofillPreferencesPersistorMock()
+        let state = AutofillLoginImportState(userDefaults: UserDefaults(suiteName: #function)!,
+                                             featureFlagger: MockFeatureFlagger(),
+                                             autofillPreferences: preferences)
+        XCTAssertTrue(state.isAutofillEnabled)
+        XCTAssertFalse(state.isAutofillManagedByExtension)
+
+        preferences.isManagedByExtension = true
+
+        XCTAssertFalse(state.isAutofillEnabled)
+        XCTAssertTrue(state.isAutofillManagedByExtension)
     }
 
     // Default values here are those that will result in a `true` value for credentialsImport. Override to test `false` case.
@@ -132,12 +167,12 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
                                                                         isEligibleDDGUser: Bool = true,
                                                                         hasNeverPromptWebsites: Bool = false,
                                                                         isAutofillEnabled: Bool = true,
-                                                                        isCredentialsImportPromptPermanantlyDismissed: Bool = false,
+                                                                        isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool = false,
                                                                         file: StaticString = #filePath,
                                                                         line: UInt = #line) -> Bool {
         importState.stubHasNeverPromptWebsitesForDomain = hasNeverPromptWebsites
         importState.hasImportedLogins = hasUserImportedLogins
-        importState.isCredentialsImportPromptPermanantlyDismissed = isCredentialsImportPromptPermanantlyDismissed
+        importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = isCredentialsImportPromoInBrowserPermanentlyDismissed
         importState.isAutofillEnabled = isAutofillEnabled
         importState.isEligibleDDGUser = isEligibleDDGUser
         return manager.autofillUserScriptShouldShowPasswordImportDialog(domain: "", credentials: credentials, credentialsProvider: credentialsProvider, totalCredentialsCount: totalCredentialsCount)
@@ -155,7 +190,11 @@ final class AutofillCredentialsImportManagerTests: XCTestCase {
 }
 
 final class MockAutofillLoginImportState: AutofillLoginImportStateStoring, AutofillLoginImportStateProvider {
-    var isCredentialsImportPromptPermanantlyDismissed: Bool = false
+    var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool = false
+
+    var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool = false
+
+    var credentialsImportPromptPresentationCount: Int = 0
 
     var isEligibleDDGUser = false
 
@@ -163,8 +202,27 @@ final class MockAutofillLoginImportState: AutofillLoginImportStateStoring, Autof
 
     var isAutofillEnabled = false
 
+    var isAutofillManagedByExtension = false
+
     var stubHasNeverPromptWebsitesForDomain = false
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool {
         stubHasNeverPromptWebsitesForDomain
+    }
+}
+
+private final class MockAutofillCredentialsImportPresentationDelegate: AutofillCredentialsImportPresentationDelegate {
+    enum Call: Equatable {
+        case importFlowRequest
+        case permanentDismissal
+    }
+
+    private(set) var calls: [Call] = []
+
+    func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
+        calls.append(.importFlowRequest)
+    }
+
+    func autofillDidPermanentlyDismissCredentialsImportPrompt() {
+        calls.append(.permanentDismissal)
     }
 }

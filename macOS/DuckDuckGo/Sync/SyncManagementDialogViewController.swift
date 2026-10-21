@@ -19,8 +19,42 @@
 import AppKit
 import SwiftUI
 import SyncUI_macOS
+import DesignResourcesKit
 
 final class SyncManagementDialogViewController: NSViewController {
+
+    /*
+     These properties serve only to keep the instances alive for
+     the entire lifecycle of this flow.
+     */
+    let dialogController: SyncDialogController
+    let coordinator: DeviceSyncCoordinator
+
+    weak var managementDialogModel: ManagementDialogModel?
+
+    init(_ model: ManagementDialogModel, dialogController: SyncDialogController, coordinator: DeviceSyncCoordinator) {
+        self.managementDialogModel = model
+        self.dialogController = dialogController
+        self.coordinator = coordinator
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        guard let managementDialogModel else {
+            assertionFailure("Sync ManagementDialogModel was deallocated")
+            view = NSView()
+            return
+        }
+        let syncManagementDialog = ThemedManagementDialog(themeManager: Application.appDelegate.themeManager, model: managementDialogModel)
+        view = NSHostingView(rootView: syncManagementDialog)
+    }
+}
+
+final class LegacySyncManagementDialogViewController: NSViewController {
 
     init(_ model: ManagementDialogModel) {
         self.managementDialogModel = model
@@ -39,8 +73,18 @@ final class SyncManagementDialogViewController: NSViewController {
             view = NSView()
             return
         }
-        let syncManagementDialog = ManagementDialog(model: managementDialogModel)
+        let syncManagementDialog = ThemedManagementDialog(themeManager: Application.appDelegate.themeManager, model: managementDialogModel)
         view = NSHostingView(rootView: syncManagementDialog)
     }
 
+}
+
+private struct ThemedManagementDialog: View {
+    @ObservedObject var themeManager: ThemeManager
+    let model: ManagementDialogModel
+
+    var body: some View {
+        ManagementDialog(model: model)
+            .environment(\.designSystemPalette, themeManager.designColorPalette)
+    }
 }

@@ -1,1 +1,1 @@
-ddg,duckduckgo,duck duck go, Verkkohaku, Haku, Selain, Sanakirja, Vastaukset, Viittaus, Internet
+verkko,salaus,haku,turvallinen,seuranta,data,incognito,mainos,esto,vpn,tekoäly,chat,bot,avustajat

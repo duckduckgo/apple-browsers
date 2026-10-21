@@ -17,12 +17,12 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 
 extension FileManager {
 
-#if !SANDBOX_TEST_TOOL
     func configurationDirectory() -> URL {
         let fm = FileManager.default
 
@@ -45,7 +45,6 @@ extension FileManager {
         }
         return subDir
     }
-#endif
 
     @discardableResult
     func moveItem(at srcURL: URL, to destURL: URL, incrementingIndexIfExists flag: Bool, pathExtension: String? = nil) throws -> URL {
@@ -119,24 +118,28 @@ extension FileManager {
         throw CocoaError(.fileWriteFileExists)
     }
 
-    func isInTrash(_ url: URL) -> Bool {
-        let resolvedUrl = url.resolvingSymlinksInPath()
-        guard let trashUrl = (try? self.url(for: .trashDirectory, in: .allDomainsMask, appropriateFor: resolvedUrl, create: false))
-                ?? urls(for: .trashDirectory, in: .userDomainMask).first else { return false }
+    func directoryExists(atPath path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        guard fileExists(atPath: path, isDirectory: &isDirectory) else {
+            return false
+        }
 
-        return resolvedUrl.path.hasPrefix(trashUrl.path)
+        return isDirectory.boolValue
     }
 
-    /// Check if location pointed by the URL is writable by writing an empty data to it and removing the file if write succeeds
-    /// - Throws error if writing to the location fails
-    func checkWritability(_ url: URL) throws {
-        if fileExists(atPath: url.path), isWritableFile(atPath: url.path) {
-            return // we can write
-        } else {
-            // either we can‘t write or there‘s no file at the url – try writing throwing access error if no permission
-            try Data().write(to: url)
-            try removeItem(at: url)
+    /// `true` when the directory can be listed. Any failure - including unknown ones - reports `false`.
+    func isDirectoryReadable(atPath path: String) -> Bool {
+        do {
+            _ = try contentsOfDirectory(atPath: path)
+            return true
+        } catch {
+            Logger.general.error("Failed to list directory contents: \(error.localizedDescription)")
+            return false
         }
     }
 
+    /// `true` only when the directory exists but we don't have the rights to access its contents
+    func requiresReadPermission(atPath path: String) -> Bool {
+        directoryExists(atPath: path) && !isReadableFile(atPath: path)
+    }
 }

@@ -98,4 +98,36 @@ class AddressDisplayHelperTests: XCTestCase {
 
         XCTAssertEqual(addressForDisplay.string, "file:///some/path")
     }
+
+    // MARK: - Duck.ai Address Bar Display
+
+    func testWhenDuckAIURLAndIpadThenShowsFeatureName() {
+        let url = URL(string: "https://duck.ai")!
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, isIpad: true)
+        XCTAssertEqual(result.string, UserText.duckAiFeatureName)
+    }
+
+    func testWhenDuckAIURLWithChatIDAndIpadThenShowsFeatureName() {
+        let url = URL(string: "https://duck.ai/?chatID=abc123")!
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, isIpad: true)
+        XCTAssertEqual(result.string, UserText.duckAiFeatureName)
+    }
+
+    func testWhenDuckAIURLAndShowsFullURLThenShowsActualURL() {
+        let url = URL(string: "https://duck.ai/?chatID=abc123")!
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: true, isIpad: true)
+        XCTAssertEqual(result.string, url.absoluteString)
+    }
+
+    func testWhenDuckAIURLAndNotIpadThenShowsDomain() {
+        let url = URL(string: "https://duck.ai")!
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, isIpad: false)
+        XCTAssertEqual(result.string, "duck.ai")
+    }
+
+    func testWhenNonDuckAIURLAndIpadThenShowsDomain() {
+        let url = URL(string: "https://example.com")!
+        let result = AddressHelper.addressForDisplay(url: url, showsFullURL: false, isIpad: true)
+        XCTAssertEqual(result.string, "example.com")
+    }
 }

@@ -55,7 +55,7 @@ enum NavigationEngagementPixel {
     }
 }
 
-extension NavigationEngagementPixel: PixelKitEventV2 {
+extension NavigationEngagementPixel: PixelKit.Event {
 
     var name: String {
         switch self {
@@ -78,7 +78,12 @@ extension NavigationEngagementPixel: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .navigateToURL,
+                .navigateToBookmark:
+            return [.pixelSource]
+        }
     }
+
 }

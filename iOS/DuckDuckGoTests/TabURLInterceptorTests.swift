@@ -19,6 +19,7 @@
 
 import XCTest
 import BrowserServicesKit
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
@@ -26,13 +27,24 @@ import SubscriptionTestingUtilities
 class TabURLInterceptorDefaultTests: XCTestCase {
 
     private var mockInternalUserStoring = MockInternalUserStoring()
+    private let performanceOptimizedPaywallPaths = SubscriptionURL.PerformanceOptimizedPaywallPaths(
+        vpn: "/subscriptions/v2/vpn",
+        duckai: "/subscriptions/v2/duckai",
+        pir: "/subscriptions/v2/pir")
 
     var urlInterceptor: TabURLInterceptorDefault!
+    private var performanceOptimizedPaywallsProvider: MockPerformanceOptimizedPaywallsProvider!
 
     override func setUp() {
         super.setUp()
         mockInternalUserStoring.isInternalUser = false
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring)),
+        let featureFlagger = MockFeatureFlagger(
+            internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring))
+        performanceOptimizedPaywallsProvider = MockPerformanceOptimizedPaywallsProvider(
+            isEnabled: false,
+            paths: performanceOptimizedPaywallPaths)
+        urlInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger,
+                                                  performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider,
                                                   canPurchase: { true })
     }
     
@@ -50,16 +62,23 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         let url = URL(string: "https://duckduckgo.com/about")!
         XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
     }
+
+    func testUninterceptedDuckDuckGoPathDoesNotReadPerformanceOptimizedPaywallPaths() {
+        let url = URL(string: "https://duckduckgo.com/?q=privacy")!
+
+        XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
+        XCTAssertEqual(performanceOptimizedPaywallsProvider.pathsAccessCount, 0)
+    }
     
-    func testNotificationForInterceptedPrivacyProPath() {
-        _ = self.expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: nil)
-        
-        let url = URL(string: "https://duckduckgo.com/pro")!
+    func testNotificationForInterceptedSubscriptionPath() {
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
+        let url = URL(string: "https://duckduckgo.com/subscriptions")!
         let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
-        
+
         // Fail if no note is posted
         XCTAssertFalse(canNavigate)
-        
+
         waitForExpectations(timeout: 1) { error in
             if let error = error {
                 XCTFail("Notification expectation failed: \(error)")
@@ -67,14 +86,44 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         }
     }
 
-    func testWhenURLIsPrivacyProAndHasOriginQueryParameterThenNotificationUserInfoHasOriginSet() throws {
+    func testNotificationForInterceptedLegacyProPath() {
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
+        let url = URL(string: "https://duckduckgo.com/pro")!
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        XCTAssertFalse(canNavigate)
+
+        waitForExpectations(timeout: 1) { error in
+            if let error = error {
+                XCTFail("Notification expectation failed: \(error)")
+            }
+        }
+    }
+
+    func testNotificationForInterceptedLegacyProPlansPath() {
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
+        let url = URL(string: "https://duckduckgo.com/pro/plans")!
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        XCTAssertFalse(canNavigate)
+
+        waitForExpectations(timeout: 1) { error in
+            if let error = error {
+                XCTFail("Notification expectation failed: \(error)")
+            }
+        }
+    }
+
+    func testWhenURLIsSubscriptionAndHasOriginQueryParameterThenNotificationUserInfoHasOriginSet() throws {
         // GIVEN
         var capturedNotification: Notification?
-        _ = self.expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: { notification in
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: { notification in
             capturedNotification = notification
             return true
         })
-        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/pro?origin=test_origin"))
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions?origin=test_origin"))
         
         // WHEN
         _ = urlInterceptor.allowsNavigatingTo(url: url)
@@ -86,14 +135,14 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         XCTAssertEqual(originQueryItem.value, "test_origin")
     }
 
-    func testWhenURLIsPrivacyProAndDoesNotHaveOriginQueryParameterThenNotificationUserInfoDoesNotHaveOriginSet() throws {
+    func testWhenURLIsSubscriptionAndDoesNotHaveOriginQueryParameterThenNotificationUserInfoDoesNotHaveOriginSet() throws {
         // GIVEN
         var capturedNotification: Notification?
-        _ = self.expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: { notification in
+        _ = self.expectation(forNotification: .urlInterceptSubscription, object: nil, handler: { notification in
             capturedNotification = notification
             return true
         })
-        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/pro"))
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions"))
 
         // WHEN
         _ = urlInterceptor.allowsNavigatingTo(url: url)
@@ -105,41 +154,12 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         XCTAssertNil(originQueryItem)
     }
 
-    func testAllowsNavigationForNonAIChatURL() {
-        let url = URL(string: "https://www.example.com")!
-        XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
-    }
-
-    func testNotificationForInterceptedAIChatPathWhenFeatureFlagIsOn() {
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), canPurchase: { true })
-
-        _ = self.expectation(forNotification: .urlInterceptAIChat, object: nil, handler: nil)
-
-        let url = URL(string: "https://duckduckgo.com/?ia=chat")!
-        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
-
-        XCTAssertFalse(canNavigate)
-
-        waitForExpectations(timeout: 1) { error in
-            if let error = error {
-                XCTFail("Notification expectation failed: \(error)")
-            }
-        }
-    }
-
-    func testDoesNotAllowNavigationForAIChatPath() {
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), canPurchase: { true })
-
-        let url = URL(string: "https://duckduckgo.com/?ia=chat")!
-        XCTAssertFalse(urlInterceptor.allowsNavigatingTo(url: url))
-    }
-
     func testWhenURLBelongsToTestDomainAndInternalModeIsDisabledThenNavigationIsNotIntercepted() async throws {
-        let notificationExpectation = expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: nil)
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
         notificationExpectation.isInverted = true
 
         // GIVEN
-        let url = URL(string: "https://duck.co/pro")!
+        let url = URL(string: "https://duck.co/subscriptions")!
         mockInternalUserStoring.isInternalUser = false
 
         // WHEN
@@ -151,10 +171,10 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     }
 
     func testWhenURLBelongsToTestDomainAndInternalModeIsEnabledThenRedirectTriggers() async throws {
-        let notificationExpectation = expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: nil)
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
 
         // GIVEN
-        let url = URL(string: "https://duck.co/pro")!
+        let url = URL(string: "https://duck.co/subscriptions")!
         mockInternalUserStoring.isInternalUser = true
 
         // WHEN
@@ -165,4 +185,108 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         await fulfillment(of: [notificationExpectation], timeout: 0.5)
     }
 
+    func testNotificationForInterceptedSubscriptionPlansPath() async {
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
+        // GIVEN
+        let url = URL(string: "https://duck.co/subscriptions/plans")!
+        mockInternalUserStoring.isInternalUser = true
+
+        // WHEN
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        // THEN
+        XCTAssertFalse(canNavigate)
+        await fulfillment(of: [notificationExpectation], timeout: 0.5)
+    }
+
+    func testNotificationForInterceptedSubscriptionUpgradePath() async {
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+
+        // GIVEN
+        let url = URL(string: "https://duckduckgo.com/subscriptions/plans?tier=pro")!
+        mockInternalUserStoring.isInternalUser = true
+
+        // WHEN
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        // THEN
+        XCTAssertFalse(canNavigate)
+        await fulfillment(of: [notificationExpectation], timeout: 0.5)
+    }
+
+    func testConfiguredPerformanceOptimizedPaywallPathsAreInterceptedWhenFeatureIsDisabled() throws {
+        let testCases: [(path: String, entryPoint: SubscriptionURL.PerformanceOptimizedPaywallEntryPoint)] = [
+            (performanceOptimizedPaywallPaths.vpn, .vpn),
+            (performanceOptimizedPaywallPaths.duckai, .duckai),
+            (performanceOptimizedPaywallPaths.pir, .pir)
+        ]
+
+        for testCase in testCases {
+            let url = try XCTUnwrap(URL(
+                string: "https://duckduckgo.com\(testCase.path)"
+                + "?origin=test_origin"
+                + "&experiment_mobileannualtrials2_ios=treatment"
+                + "&featurePage=stale"))
+
+            let redirectComponents = try interceptedRedirectComponents(for: url)
+
+            XCTAssertEqual(redirectComponents.path, SubscriptionPurchaseFlowPath.purchase.rawValue)
+            XCTAssertEqual(redirectComponents.queryItems?.first { $0.name == AttributionParameter.origin }?.value, "test_origin")
+            XCTAssertEqual(redirectComponents.queryItems?.first { $0.name == "experiment_mobileannualtrials2_ios" }?.value, "treatment")
+            let featurePages = (redirectComponents.queryItems ?? [])
+                .filter { $0.name == "featurePage" }
+                .compactMap(\.value)
+            XCTAssertEqual(featurePages, [testCase.entryPoint.rawValue])
+        }
+    }
+
+    func testDefaultPerformanceOptimizedPaywallPathIsInterceptedWhenConfiguredPathIsDifferent() throws {
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions/new/mobile/vpn"))
+
+        let redirectComponents = try interceptedRedirectComponents(for: url)
+
+        XCTAssertEqual(redirectComponents.path, SubscriptionPurchaseFlowPath.purchase.rawValue)
+        XCTAssertEqual(redirectComponents.queryItems?.count, 1)
+        XCTAssertEqual(redirectComponents.queryItems?.first?.name, "featurePage")
+        XCTAssertEqual(redirectComponents.queryItems?.first?.value, "vpn")
+    }
+
+    func testUnknownPerformanceOptimizedPaywallPathIsNotIntercepted() throws {
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil, handler: nil)
+        notificationExpectation.isInverted = true
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions/v2/unknown"))
+
+        XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
+        wait(for: [notificationExpectation], timeout: 0.5)
+    }
+
+    private func interceptedRedirectComponents(for url: URL) throws -> URLComponents {
+        var capturedNotification: Notification?
+        let notificationExpectation = expectation(forNotification: .urlInterceptSubscription, object: nil) { notification in
+            capturedNotification = notification
+            return true
+        }
+
+        XCTAssertFalse(urlInterceptor.allowsNavigatingTo(url: url))
+        wait(for: [notificationExpectation], timeout: 1)
+
+        return try XCTUnwrap(capturedNotification?.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents)
+    }
+}
+
+private final class MockPerformanceOptimizedPaywallsProvider: PerformanceOptimizedPaywallsProviding {
+    let isEnabled: Bool
+    private let configuredPaths: SubscriptionURL.PerformanceOptimizedPaywallPaths
+    private(set) var pathsAccessCount = 0
+
+    var paths: SubscriptionURL.PerformanceOptimizedPaywallPaths {
+        pathsAccessCount += 1
+        return configuredPaths
+    }
+
+    init(isEnabled: Bool, paths: SubscriptionURL.PerformanceOptimizedPaywallPaths) {
+        self.isEnabled = isEnabled
+        self.configuredPaths = paths
+    }
 }

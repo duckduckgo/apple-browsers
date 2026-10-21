@@ -26,6 +26,11 @@ for dir in "$1"/*; do
       		rm "${dir}/${fileName}.bak"
     	fi
 
+    	# Change state="new" to state="translated"
+    	echo "Changing state from 'new' to 'translated' for all entries in ${fileName}"
+    	sed -i '.bak' 's/state="new"/state="translated"/g' "${dir}/${fileName}"
+    	rm "${dir}/${fileName}.bak"
+
     	echo "Importing ${dir}/${fileName} ..."
 
 		if ! xcodebuild -importLocalizations -project "${base_dir}/DuckDuckGo-iOS.xcodeproj" -sdk iphoneos -localizationPath "${dir}/${fileName}"; then
@@ -37,11 +42,11 @@ for dir in "$1"/*; do
 		fi
 
 		echo "Reverting changes to stringsdict file"
-		git checkout "${base_dir}/DuckDuckGo/${targetLocale}.lproj/Localizable.stringsdict"
+		git checkout "${base_dir}/DuckDuckGo/UserInterfaceResources/${targetLocale}.lproj/Localizable.stringsdict"
 	elif test -f "${dir}/${baseName}.stringsdict"; then
     	fileName="${baseName}.stringsdict"
 		echo "Processing ${locale} stringsdict"
-		cp "${dir}/${fileName}" "${base_dir}/DuckDuckGo/${targetLocale}.lproj/Localizable.stringsdict"
+		cp "${dir}/${fileName}" "${base_dir}/DuckDuckGo/UserInterfaceResources/${targetLocale}.lproj/Localizable.stringsdict"
 	else
 		echo "ERROR: ${fileName} xliff or stringsdict not found in ${dir}"
 		echo

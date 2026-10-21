@@ -16,10 +16,17 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 
 struct FaviconView: View {
+
+    enum Placeholder {
+        case letters
+        case globe
+    }
 
     let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
@@ -27,6 +34,7 @@ struct FaviconView: View {
     let size: CGFloat
     let onFaviconMissing: (() -> Void)?
     private var letterPaddingModifier: CGFloat
+    private let placeholder: Placeholder
 
     var domain: String {
         url?.host ?? ""
@@ -37,15 +45,21 @@ struct FaviconView: View {
 
     /// Initializes a `FaviconView`
     /// Note: The `letterPaddingModifier` parameter is only used when a `LetterIconView` is displayed instead of a Favicon image
-    init(url: URL?, size: CGFloat = 32, letterPaddingModifier: CGFloat = 0.33, onFaviconMissing: (() -> Void)? = nil) {
+    init(url: URL?, size: CGFloat = 32, letterPaddingModifier: CGFloat = 0.33, placeholder: Placeholder = .letters, onFaviconMissing: (() -> Void)? = nil) {
         self.url = url
         self.size = size
         self.letterPaddingModifier = letterPaddingModifier
+        self.placeholder = placeholder
         self.onFaviconMissing = onFaviconMissing
     }
 
+    // Refresh, not navigation: only upgrade to a decoded image, never clear an already-shown one.
+    // Favicon images can decode lazily off the main thread on a cache miss (see FaviconImageCache.get),
+    // posting `.faviconCacheUpdated` again once the image lands - unconditionally clearing here on every
+    // such refresh would blank the favicon back to the letter placeholder during that decode window,
+    // making it blink between placeholder and image as the notification fires repeatedly.
     func refreshImage() {
-        if let duckPlayerImage = DuckPlayer.shared.image(for: self) {
+        if let duckPlayerImage = NSApp.delegateTyped.duckPlayer.image(for: self) {
             image = duckPlayerImage
             return
         }
@@ -58,8 +72,6 @@ struct FaviconView: View {
             }
             onFaviconMissing?()
         }
-
-        image = nil
     }
 
     var body: some View {
@@ -76,7 +88,15 @@ struct FaviconView: View {
                         timer.upstream.connect().cancel()
                     }
             } else {
-                LetterIconView(title: Application.appDelegate.tld.eTLDplus1(domain) ?? domain, size: size, paddingModifier: letterPaddingModifier)
+                switch placeholder {
+                case .letters:
+                    LetterIconView(title: Application.appDelegate.tld.eTLDplus1(domain) ?? domain, size: size, paddingModifier: letterPaddingModifier)
+                case .globe:
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.globe)
+                        .renderingMode(.template)
+                        .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                        .frame(width: size, height: size)
+                }
             }
         }.onAppear {
             refreshImage()
@@ -84,6 +104,16 @@ struct FaviconView: View {
             guard faviconManagement.isCacheLoaded else { return }
             timer.upstream.connect().cancel()
             refreshImage()
+        }.onReceive(NotificationCenter.default.publisher(for: .faviconCacheUpdated)) { note in
+            // A favicon image may be decoded after the initial cache-loaded trigger; refresh when
+            // the update is relevant to this view's page URL (or defensively if no payload is present).
+            guard let update = note.faviconsCacheUpdate else {
+                refreshImage()
+                return
+            }
+            if (url?.host).map(update.hosts.contains) == true {
+                refreshImage()
+            }
         }
 
     }

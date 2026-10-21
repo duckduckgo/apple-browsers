@@ -1,0 +1,24 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_new_chat
+
+---
+
+- runFlow:
+    file: ../shared/open_chat_tab.yaml
+
+# "Recent chats" opens the native chat-history page. On a fresh install it has no
+# history, so it shows the empty state with the "Open Duck.ai" call to action.
+- tapOn: "Recent chats"
+- assertVisible: "Chats"
+- assertVisible: "No recent chats"
+- assertVisible: "Open Duck.ai"
+
+# Start a new chat — the page closes and the chat tab remains open.
+- tapOn: "Open Duck.ai"
+- assertVisible: "Close tab"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"

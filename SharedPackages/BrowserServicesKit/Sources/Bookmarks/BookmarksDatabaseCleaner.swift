@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import CoreData
 import Persistence
 import os.log
@@ -31,7 +32,13 @@ public struct BookmarksCleanupError: Error {
 
 public struct BookmarksCleanupCancelledError: Error {}
 
-public final class BookmarkDatabaseCleaner {
+public protocol BookmarkDatabaseCleaning: AnyObject {
+    func scheduleRegularCleaning()
+    func cancelCleaningSchedule()
+    func cleanUpDatabaseNow()
+}
+
+public final class BookmarkDatabaseCleaner: BookmarkDatabaseCleaning {
 
     public var isSyncActive: () -> Bool = { false }
 

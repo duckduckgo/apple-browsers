@@ -1,0 +1,67 @@
+// swift-tools-version: 5.10
+// The swift-tools-version declares the minimum version of Swift required to build this package.
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import PackageDescription
+
+let strictConcurrencySettings: [SwiftSetting] = [
+    .enableExperimentalFeature("StrictConcurrency")
+]
+
+let package = Package(
+    name: "AttributedMetric",
+    platforms: [
+        .iOS("15.0"),
+        .macOS("12.3")
+    ],
+    products: [
+        .library(name: "AttributedMetric", targets: ["AttributedMetric"]),
+        .library(name: "AttributedMetricTestsUtils", targets: ["AttributedMetricTestsUtils"]),
+    ],
+    dependencies: [
+        .package(path: "../DDGError"),
+        .package(path: "../PixelKit"),
+        .package(path: "../BrowserServicesKit")
+    ],
+    targets: [
+        .target(
+            name: "AttributedMetric",
+            dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit")
+            ],
+            swiftSettings: strictConcurrencySettings
+        ),
+        .target(
+            name: "AttributedMetricTestsUtils",
+            dependencies: [
+                "AttributedMetric"
+            ],
+            swiftSettings: strictConcurrencySettings
+        ),
+        .testTarget(
+            name: "AttributedMetricTests",
+            dependencies: [
+                "AttributedMetric",
+                "AttributedMetricTestsUtils",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit")
+            ],
+            swiftSettings: strictConcurrencySettings
+        )
+    ]
+)

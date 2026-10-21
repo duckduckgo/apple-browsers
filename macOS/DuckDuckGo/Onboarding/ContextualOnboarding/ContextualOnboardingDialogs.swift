@@ -17,8 +17,11 @@
 //
 
 import Common
-import SwiftUI
+import FoundationExtensions
+import History
+import HistoryView
 import Onboarding
+import SwiftUI
 import SwiftUIExtensions
 
 struct OnboardingDialogsContants {
@@ -260,9 +263,49 @@ struct OnboardingFinalDialog: View {
     }
 }
 
+struct OnboardingSubscriptionUpsellDialogContent: View {
+    /// Figma stacks the two CTAs vertically, primary above secondary.
+    private enum Metrics {
+        static let buttonSpacing: CGFloat = 8
+    }
+
+    let acceptAction: () -> Void
+    let declineAction: () -> Void
+
+    var body: some View {
+        ContextualDaxDialogContent(orientation: .horizontalStack(alignment: .center),
+                                   title: UserText.ContextualOnboarding.onboardingSubscriptionUpsellTitle,
+                                   titleFont: OnboardingDialogsContants.titleFont,
+                                   message: NSMutableAttributedString.attributedString(
+                                    from: UserText.ContextualOnboarding.onboardingSubscriptionUpsellMessage,
+                                    fontSize: OnboardingDialogsContants.messageFontSize
+                                   ),
+                                   messageFont: OnboardingDialogsContants.messageFont,
+                                   customActionView: AnyView(
+                                    VStack(spacing: Metrics.buttonSpacing) {
+                                        OnboardingPrimaryCTAButton(title: UserText.ContextualOnboarding.onboardingSubscriptionUpsellAcceptButton, action: acceptAction)
+                                        OnboardingSecondaryCTAButton(title: UserText.ContextualOnboarding.onboardingSubscriptionUpsellDeclineButton, action: declineAction)
+                                    }
+                                   ))
+    }
+}
+
+struct OnboardingSubscriptionUpsellDialog: View {
+    let acceptAction: () -> Void
+    let declineAction: () -> Void
+    let onManualDismiss: () -> Void
+
+    var body: some View {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+            OnboardingSubscriptionUpsellDialogContent(acceptAction: acceptAction, declineAction: declineAction)
+        }
+    }
+}
+
 struct OnboardingPrimaryCTAButton: View {
     let title: String
     let action: @MainActor () -> Void
+    var pillShape: Bool = false
 
     var body: some View {
         Button(action: action) {
@@ -270,7 +313,7 @@ struct OnboardingPrimaryCTAButton: View {
                 .padding(.vertical, 5)
                 .padding(.horizontal, 24)
         }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true))
+        .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton, pillShape: pillShape))
         .shadow(radius: 1, x: -0.6, y: +0.6)
     }
 
@@ -284,18 +327,32 @@ struct OnboardingSecondaryCTAButton: View {
 
     let title: String
     let action: () -> Void
+    var pillShape: Bool = false
 
     var body: some View {
         Button(action: action) {
             Text(title)
             .padding(.horizontal, 18)
         }
-        .buttonStyle(OnboardingStyles.ListButtonStyle(maxWidth: nil))
+        .buttonStyle(OnboardingStyles.ListButtonStyle(maxWidth: nil, cornerRadius: Metrics.cornerRadius, pillShape: pillShape))
         .overlay(
-            RoundedRectangle(cornerRadius: 5)
-                .inset(by: 0.5)
-                .stroke(strokeColor, lineWidth: 1)
+            Group {
+                if pillShape && AppVersion.isLiquidGlassSupported {
+                    Capsule()
+                        .inset(by: 0.5)
+                        .stroke(strokeColor, lineWidth: 1)
+                } else {
+                    RoundedRectangle(cornerRadius: Metrics.cornerRadius)
+                        .inset(by: 0.5)
+                        .stroke(strokeColor, lineWidth: 1)
+                }
+            }
+                .allowsHitTesting(false)
         )
+    }
+
+    private enum Metrics {
+        static let cornerRadius: CGFloat = 5
     }
 
 }
@@ -319,7 +376,7 @@ struct OnboardingSecondaryCTAButton: View {
 
 #Preview("Try Fire Button") {
     DaxDialogView(logoPosition: .left) {
-        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD()), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
+        OnboardingFireButtonDialogContent(viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: nil, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
     }
     .padding()
 }
@@ -329,6 +386,6 @@ struct OnboardingSecondaryCTAButton: View {
         let firstString = UserText.ContextualOnboarding.onboardingTryFireButtonMessage
         return NSMutableAttributedString(string: firstString)
     }()
-    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: FireCoordinator(tld: TLD()), onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
+    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(fireCoordinator: nil, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
         .padding()
 }

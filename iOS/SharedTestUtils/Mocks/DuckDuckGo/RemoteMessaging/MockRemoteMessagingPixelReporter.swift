@@ -1,0 +1,150 @@
+//
+//  MockRemoteMessagingPixelReporter.swift
+//  DuckDuckGo
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import RemoteMessaging
+@testable import DuckDuckGo
+
+final class MockRemoteMessagingPixelReporter: RemoteMessagingPixelReporting {
+
+    // MARK: - Appeared
+    var didCallMeasureRemoteMessageAppeared = false
+    var capturedAppearedMessage: RemoteMessageModel?
+    var capturedHasAlreadySeenMessage: Bool?
+
+    func measureRemoteMessageAppeared(_ remoteMessage: RemoteMessageModel, hasAlreadySeenMessage: Bool) {
+        didCallMeasureRemoteMessageAppeared = true
+        capturedAppearedMessage = remoteMessage
+        capturedHasAlreadySeenMessage = hasAlreadySeenMessage
+    }
+
+    // MARK: - Dismissed
+    var didCallMeasureRemoteMessageDismissed = false
+    var capturedDismissedMessage: RemoteMessageModel?
+    var capturedDismissType: RemoteMessagePixelDismissType?
+
+    func measureRemoteMessageDismissed(_ remoteMessage: RemoteMessageModel, dismissType: RemoteMessagePixelDismissType?) {
+        didCallMeasureRemoteMessageDismissed = true
+        capturedDismissedMessage = remoteMessage
+        capturedDismissType = dismissType
+    }
+
+    // MARK: - Action Clicked
+    var didCallMeasureRemoteMessageActionClicked = false
+    var capturedActionClickedMessage: RemoteMessageModel?
+
+    func measureRemoteMessageActionClicked(_ remoteMessage: RemoteMessageModel) {
+        didCallMeasureRemoteMessageActionClicked = true
+        capturedActionClickedMessage = remoteMessage
+    }
+
+    // MARK: - Primary Action Clicked
+    var didCallMeasureRemoteMessagePrimaryActionClicked = false
+    var capturedPrimaryActionClickedMessage: RemoteMessageModel?
+
+    func measureRemoteMessagePrimaryActionClicked(_ remoteMessage: RemoteMessageModel) {
+        didCallMeasureRemoteMessagePrimaryActionClicked = true
+        capturedPrimaryActionClickedMessage = remoteMessage
+    }
+
+    // MARK: - Secondary Action Clicked
+    var didCallMeasureRemoteMessageSecondaryActionClicked = false
+    var capturedSecondaryActionClickedMessage: RemoteMessageModel?
+
+    func measureRemoteMessageSecondaryActionClicked(_ remoteMessage: RemoteMessageModel) {
+        didCallMeasureRemoteMessageSecondaryActionClicked = true
+        capturedSecondaryActionClickedMessage = remoteMessage
+    }
+
+    // MARK: - Sheet Shown
+    var didCallMeasureRemoteMessageSheetShown = false
+    var capturedSheetShownMessage: RemoteMessageModel?
+    var capturedSheetResult: Bool?
+
+    func measureRemoteMessageSheetShown(_ remoteMessage: RemoteMessageModel, sheetResult: Bool) {
+        didCallMeasureRemoteMessageSheetShown = true
+        capturedSheetShownMessage = remoteMessage
+        capturedSheetResult = sheetResult
+    }
+
+    // MARK: - Card Shown
+    var didCallMeasureRemoteMessageCardShown = false
+    var capturedCardShownMessage: RemoteMessageModel?
+    var capturedCardShownCardId: String?
+
+    func measureRemoteMessageCardShown(_ remoteMessage: RemoteMessageModel, cardId: String) {
+        didCallMeasureRemoteMessageCardShown = true
+        capturedCardShownMessage = remoteMessage
+        capturedCardShownCardId = cardId
+    }
+
+    // MARK: - Card Clicked
+    var didCallMeasureRemoteMessageCardClicked = false
+    var capturedCardClickedMessage: RemoteMessageModel?
+    var capturedCardClickedCardId: String?
+
+    func measureRemoteMessageCardClicked(_ remoteMessage: RemoteMessageModel, cardId: String) {
+        didCallMeasureRemoteMessageCardClicked = true
+        capturedCardClickedMessage = remoteMessage
+        capturedCardClickedCardId = cardId
+    }
+
+    // MARK: - Image Load Success
+    var didCallMeasureRemoteMessageImageLoadSuccess = false
+    var capturedImageLoadSuccessMessage: RemoteMessageModel?
+
+    func measureRemoteMessageImageLoadSuccess(_ remoteMessage: RemoteMessageModel) {
+        didCallMeasureRemoteMessageImageLoadSuccess = true
+        capturedImageLoadSuccessMessage = remoteMessage
+    }
+
+    // MARK: - Image Load Failed
+    var didCallMeasureRemoteMessageImageLoadFailed = false
+    var capturedImageLoadFailedMessage: RemoteMessageModel?
+
+    func measureRemoteMessageImageLoadFailed(_ remoteMessage: RemoteMessageModel) {
+        didCallMeasureRemoteMessageImageLoadFailed = true
+        capturedImageLoadFailedMessage = remoteMessage
+    }
+
+    // MARK: - Card Image Load Success
+    var didCallMeasureRemoteMessageCardImageLoadSuccess = false
+    var measureRemoteMessageCardImageLoadSuccessCount = 0
+    var capturedCardImageLoadSuccessMessage: RemoteMessageModel?
+    var capturedCardImageLoadSuccessCardId: String?
+
+    func measureRemoteMessageCardImageLoadSuccess(_ remoteMessage: RemoteMessageModel, cardId: String) {
+        didCallMeasureRemoteMessageCardImageLoadSuccess = true
+        measureRemoteMessageCardImageLoadSuccessCount += 1
+        capturedCardImageLoadSuccessMessage = remoteMessage
+        capturedCardImageLoadSuccessCardId = cardId
+    }
+
+    // MARK: - Card Image Load Failed
+    var didCallMeasureRemoteMessageCardImageLoadFailed = false
+    var capturedCardImageLoadFailedMessage: RemoteMessageModel?
+    var capturedCardImageLoadFailedCardId: String?
+
+    func measureRemoteMessageCardImageLoadFailed(_ remoteMessage: RemoteMessageModel, cardId: String) {
+        didCallMeasureRemoteMessageCardImageLoadFailed = true
+        capturedCardImageLoadFailedMessage = remoteMessage
+        capturedCardImageLoadFailedCardId = cardId
+    }
+
+}

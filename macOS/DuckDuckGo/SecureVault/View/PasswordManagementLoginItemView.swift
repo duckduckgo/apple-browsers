@@ -17,17 +17,18 @@
 //
 
 import Foundation
-
 import SwiftUI
 import BrowserServicesKit
 import SwiftUIExtensions
-import Combine
+import DesignResourcesKit
+import Common
 
 private let interItemSpacing: CGFloat = 20
 private let itemSpacing: CGFloat = 6
 
 struct PasswordManagementLoginItemView: View {
 
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     @EnvironmentObject var model: PasswordManagementLoginModel
 
     var body: some View {
@@ -42,7 +43,7 @@ struct PasswordManagementLoginItemView: View {
                 if editMode {
 
                     RoundedRectangle(cornerRadius: 8)
-                        .foregroundColor(Color(.editingPanel))
+                        .foregroundColor(Color(designSystemColor: .surfaceSecondary, palette: themeManager.designColorPalette))
                         .shadow(radius: 6)
 
                 }
@@ -84,12 +85,13 @@ struct PasswordManagementLoginItemView: View {
 
                     Buttons()
                         .padding(.top, editMode ? 12 : 10)
-                        .padding(.bottom, editMode ? 12 : 3)
+                        .padding(.bottom, editMode ? 12 : 1)
                         .padding(.horizontal)
 
                 }
             }
             .padding(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 10))
+            .environmentObject(themeManager)
             .alert(isPresented: $model.isShowingAddressUpdateConfirmAlert) {
                 let btnLabel = Text(model.toggleConfirmationAlert.button)
                 let btnAction = model.togglePrivateEmailStatus
@@ -123,7 +125,6 @@ private struct Buttons: View {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
             }
 
             Spacer()
@@ -132,24 +133,23 @@ private struct Buttons: View {
                 Button(UserText.pmCancel) {
                     model.cancel()
                 }
-                .buttonStyle(StandardButtonStyle())
+                .keyboardShortcut(.cancelAction)
+
                 Button(UserText.pmSave) {
-                    model.save()
+                    _ = model.save()
                 }
-                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty))
                 .disabled(!model.isDirty)
+                .buttonStyle(DefaultActionButtonStyle(enabled: model.isDirty, topPadding: 4, bottomPadding: 4))
+                .keyboardShortcut(.defaultAction)
 
             } else {
                 Button(UserText.pmDelete) {
                     model.requestDelete()
                 }
-                .buttonStyle(StandardButtonStyle())
 
                 Button(UserText.pmEdit) {
                     model.edit()
                 }
-                .buttonStyle(StandardButtonStyle())
-
             }
 
         }
@@ -175,7 +175,7 @@ private struct UsernameView: View {
 
             if model.isEditing || model.isNew {
 
-                TextField("", text: $model.username)
+                TextField("" as String, text: $model.username)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding(.bottom, interItemSpacing)
                     .accessibility(identifier: "Username TextField")
@@ -186,7 +186,7 @@ private struct UsernameView: View {
                     UsernameLabel(isHovering: $isHovering)
                     Spacer()
                     if model.shouldShowPrivateEmailToggle {
-                        Toggle("", isOn: $model.privateEmailStatusBool)
+                        Toggle("" as String, isOn: $model.privateEmailStatusBool)
                             .frame(width: 40)
                             .toggleStyle(.switch)
                     }
@@ -278,16 +278,16 @@ private struct PrivateEmailImage: View {
 }
 
 private struct PrivateEmailMessage: View {
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementLoginModel
 
     @State private var hover: Bool = false
 
-    @available(macOS 12, *)
     var attributedString: AttributedString {
         let text = String(format: UserText.pmSignInToManageEmail, UserText.pmEnableEmailProtection)
         var attributedString = AttributedString(text)
         if let range = attributedString.range(of: UserText.pmEnableEmailProtection) {
-            attributedString[range].foregroundColor = Color(.linkBlue)
+            attributedString[range].foregroundColor = Color(designSystemColor: .textLink, palette: themeManager.designColorPalette)
         }
         return attributedString
     }
@@ -305,37 +305,25 @@ private struct PrivateEmailMessage: View {
                     }
 
                 } else {
-
-                    if #available(macOS 12.0, *) {
-                        let combinedText = Text(attributedString)
-                            .font(.subheadline)
-                            .lineLimit(nil)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                        combinedText
-                            .onTapGesture {
-                                model.enableEmailProtection()
-                            }
-                            .onHover { isHovered in
-                                self.hover = isHovered
-                                DispatchQueue.main.async {
-                                    if hover {
-                                        NSCursor.pointingHand.push()
-                                    } else {
-                                        NSCursor.pop()
-                                    }
+                    let combinedText = Text(attributedString)
+                        .font(.subheadline)
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                    combinedText
+                        .onTapGesture {
+                            model.enableEmailProtection()
+                        }
+                        .onHover { isHovered in
+                            self.hover = isHovered
+                            DispatchQueue.main.async {
+                                if hover {
+                                    NSCursor.pointingHand.push()
+                                } else {
+                                    NSCursor.pop()
                                 }
                             }
-                    } else {
-                        Text(String(format: UserText.pmSignInToManageEmail, UserText.pmEnableEmailProtection))
-                            .font(.subheadline)
-                            .lineLimit(nil)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .onTapGesture {
-                                model.enableEmailProtection()
-                            }
-                    }
+                        }
                 }
             }
         }
@@ -374,15 +362,22 @@ private struct PasswordView: View {
 
                     HiddenText(isVisible: isPasswordVisible, text: model.password, hiddenTextLength: 12)
 
-                    if (isHovering || isPasswordVisible) && model.password != "" {
+                    if model.password != "" {
+                        let showEyeButton = isHovering || isPasswordVisible
                         SecureTextFieldButton(isVisible: $isPasswordVisible, toolTipHideText: UserText.hidePasswordTooltip, toolTipShowText: UserText.showPasswordTooltip)
-                    }
+                            .opacity(showEyeButton ? 1 : 0)
+                            .disabled(!showEyeButton)
+                            .allowsHitTesting(showEyeButton)
+                            .accessibilityHidden(!showEyeButton)
 
-                    if isHovering && model.password != "" {
                         CopyButton {
                             model.copy(model.password, fieldType: .password)
                         }
                         .tooltip(UserText.copyPasswordTooltip)
+                        .opacity(isHovering ? 1 : 0)
+                        .disabled(!isHovering)
+                        .allowsHitTesting(isHovering)
+                        .accessibilityHidden(!isHovering)
                     }
 
                     Spacer()
@@ -392,6 +387,7 @@ private struct PasswordView: View {
             }
 
         }
+        .contentShape(Rectangle())
         .onHover {
             isHovering = $0
         }
@@ -403,6 +399,8 @@ private struct WebsiteView: View {
 
     @EnvironmentObject var model: PasswordManagementLoginModel
 
+    @State private var isHovering = false
+
     var body: some View {
 
         Text(UserText.pmWebsite)
@@ -411,20 +409,41 @@ private struct WebsiteView: View {
 
         if model.isEditing || model.isNew {
 
-            TextField("", text: $model.domain)
+            TextField("" as String, text: $model.domain)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.bottom, interItemSpacing)
                 .accessibility(identifier: "Website TextField")
 
         } else {
-            if let domainURL = model.domain.url {
-                TextButton(model.domain) {
-                    model.openURL(domainURL)
+
+            HStack(alignment: .center, spacing: 6) {
+
+                if let domainURL = model.domain.url {
+                    TextButton(model.domain) {
+                        model.openURL(domainURL)
+                    }
+                } else {
+                    Text(model.domain)
                 }
-                .padding(.bottom, interItemSpacing)
-            } else {
-                Text(model.domain)
-                    .padding(.bottom, interItemSpacing)
+
+                if !model.domain.isEmpty {
+                    CopyButton {
+                        model.copy(model.domain)
+                    }
+                    .tooltip(UserText.copy)
+                    .opacity(isHovering ? 1 : 0)
+                    .disabled(!isHovering)
+                    .allowsHitTesting(isHovering)
+                    .accessibilityHidden(!isHovering)
+                }
+
+                Spacer()
+            }
+            .padding(.bottom, interItemSpacing)
+            // Covers the copy button too, so moving onto it from the URL keeps it visible.
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovering = hovering
             }
         }
 
@@ -434,6 +453,7 @@ private struct WebsiteView: View {
 
 private struct NotesView: View {
 
+    @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var model: PasswordManagementLoginModel
     let cornerRadius: CGFloat = 8.0
     let borderWidth: CGFloat = 0.4
@@ -445,32 +465,7 @@ private struct NotesView: View {
             .padding(.bottom, itemSpacing)
 
         if model.isEditing || model.isNew {
-#if APPSTORE
             FocusableTextEditor(text: $model.notes)
-#else
-            if #available(macOS 12, *) {
-                FocusableTextEditor(text: $model.notes)
-            } else {
-                TextEditor(text: $model.notes)
-                    .frame(height: 197.0)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                    .onChange(of: model.notes) {
-                        model.notes = String($0.prefix(characterLimit))
-                    }
-                    .padding(EdgeInsets(top: 3.0, leading: 6.0, bottom: 5.0, trailing: 0.0))
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius,
-                                                style: .continuous))
-                    .background(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .stroke(Color(.textEditorBorder), lineWidth: borderWidth)
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .fill(Color(.textEditorBackground))
-                        }
-                    )
-            }
-#endif
         } else {
             Text(model.notes)
                 .padding(.bottom, interItemSpacing)
@@ -489,12 +484,8 @@ private struct NotesView: View {
 private struct TextSelectionModifier: ViewModifier {
 
     func body(content: Content) -> some View {
-        if #available(macOS 12, *) {
-            content
-                .textSelection(.enabled)
-        } else {
-            content
-        }
+        content
+            .textSelection(.enabled)
     }
 
 }
@@ -547,9 +538,11 @@ private struct HeaderView: View {
                .padding(.trailing, 10)
 
             if model.isNew || model.isEditing {
-
-                TextField(model.domain, text: $model.title)
-                    .font(.title)
+                let placeholder = model.domain.isEmpty ? UserText.pmLoginTitlePlaceholder : model.domain
+                TextField(placeholder, text: $model.title)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(height: 32)
+                    .controlSize(.large)
                     .accessibility(identifier: "Title TextField")
 
             } else {
@@ -574,3 +567,36 @@ extension NSTextView {
     }
   }
 }
+
+#if DEBUG
+private extension PasswordManagementLoginModel {
+    static func preview(password: String = "MyStrongPassw0rd!",
+                        username: String = "user@example.com",
+                        domain: String = "example.com") -> PasswordManagementLoginModel {
+        let model = PasswordManagementLoginModel(
+            onSaveRequested: { _ in },
+            onDeleteRequested: { _ in },
+            urlMatcher: AutofillDomainNameUrlMatcher(),
+            emailManager: EmailManager(),
+            tld: TLD(),
+            urlSort: AutofillDomainNameUrlSort()
+        )
+        model.credentials = .init(
+            account: .init(id: "preview",
+                           title: nil,
+                           username: username,
+                           domain: domain,
+                           created: Date(),
+                           lastUpdated: Date()),
+            password: password.data(using: .utf8)
+        )
+        return model
+    }
+}
+
+#Preview("Login item view") {
+    PasswordManagementLoginItemView()
+        .environmentObject(PasswordManagementLoginModel.preview())
+        .frame(width: 480, height: 600)
+}
+#endif

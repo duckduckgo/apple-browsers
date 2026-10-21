@@ -16,56 +16,145 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
 import Common
-import PixelKitTestingUtilities
-import Subscription
-import SubscriptionUI
+import ConcurrencyExtensions
+import FeatureFlags_macOS
+import FoundationExtensions
+@_spi(Testing) import Networking
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
+import PreferencesUI_macOS
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+@_spi(Testing) import SharedTestUtilities
 import SubscriptionTestingUtilities
+import SubscriptionUI
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 @MainActor
 final class PreferencesSidebarModelTests: XCTestCase {
 
     private var testNotificationCenter: NotificationCenter!
-    private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    private var mockDefaultBrowserPreferences: DefaultBrowserPreferences!
+    private var mockSubscriptionManager: SubscriptionManagerMock!
     private var pixelFiringMock: PixelKitMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
-
+    private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
+    private var mockSyncService: MockDDGSyncing!
+    private var mockVPNGatekeeper: DefaultVPNFeatureGatekeeper!
+    private var mockAIChatPreferences: AIChatPreferences!
+    private var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
     var cancellables = Set<AnyCancellable>()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         testNotificationCenter = NotificationCenter()
-        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        mockDefaultBrowserPreferences = DefaultBrowserPreferences(defaultBrowserProvider: DefaultBrowserProviderMock())
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockAIChatPreferences = AIChatPreferences(
+            storage: MockAIChatPreferencesStorage(),
+            aiChatMenuConfiguration: MockAIChatConfig(),
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
+        )
+        mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
+        let startedAt = Date().startOfDay
+        let expiresAt = Date().startOfDay.daysAgo(-10)
+        let subscription = DuckDuckGoSubscription(
+            productId: "test",
+            name: "test",
+            billingPeriod: .yearly,
+            startedAt: startedAt,
+            expiresOrRenewsAt: expiresAt,
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: nil,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(subscription)
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat] // All enabled
+//        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat] // All available
+
         pixelFiringMock = PixelKitMock()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockPrivacyConfigurationManager = MockPrivacyConfigurationManager()
+        mockSyncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+        mockVPNGatekeeper = DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: MockPinningManager()), subscriptionManager: mockSubscriptionManager)
         cancellables.removeAll()
     }
 
     override func tearDownWithError() throws {
         testNotificationCenter = nil
+        mockDefaultBrowserPreferences = nil
         mockSubscriptionManager = nil
         pixelFiringMock = nil
         mockFeatureFlagger = nil
+        mockPrivacyConfigurationManager = nil
+        mockSyncService = nil
+        mockVPNGatekeeper = nil
+        mockAIChatPreferences = nil
+        mockWinBackOfferVisibilityManager = nil
         cancellables.removeAll()
         try super.tearDownWithError()
     }
 
     private func PreferencesSidebarModel(loadSections: [PreferencesSection]? = nil, tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
-            loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, subscriptionState: .initial) },
+            loadSections: { _ in
+                loadSections ?? PreferencesSection.defaultSections(
+                    includingDuckPlayer: false,
+                    includingSync: false,
+                    includingAIChat: false,
+                    includingYouTubeAdBlocking: false,
+                    includingWebsitePermissions: false,
+                    subscriptionState: PreferencesSidebarSubscriptionState()
+                )
+            },
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
-            pixelFiring: pixelFiringMock
+            pixelFiring: pixelFiringMock,
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: mockAIChatPreferences,
+            aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
+                                                  pixelFiring: nil),
+            accessibilityPreferences: AccessibilityPreferences(),
+            duckPlayerPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return prefs
+            }(),
+            youTubeAdBlockingPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return YouTubeAdBlockingPreferences(duckPlayerPreferences: prefs)
+            }(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
 
     private func PreferencesSidebarModel(loadSections: @escaping (PreferencesSidebarSubscriptionState) -> [PreferencesSection]) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
             loadSections: loadSections,
             tabSwitcherTabs: [],
@@ -74,7 +163,89 @@ final class PreferencesSidebarModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             notificationCenter: testNotificationCenter,
             featureFlagger: mockFeatureFlagger,
-            pixelFiring: pixelFiringMock
+            pixelFiring: pixelFiringMock,
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: mockAIChatPreferences,
+            aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
+                                                  pixelFiring: nil),
+            accessibilityPreferences: AccessibilityPreferences(),
+            duckPlayerPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return prefs
+            }(),
+            youTubeAdBlockingPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return YouTubeAdBlockingPreferences(duckPlayerPreferences: prefs)
+            }(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
+        )
+    }
+
+    private func createPreferencesSidebarModelWithDefaults(includeDuckPlayer: Bool = false,
+                                                           includeAIChat: Bool = false) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let loadSections = { currentSubscriptionFeatures in
+            return PreferencesSection.defaultSections(
+                includingDuckPlayer: includeDuckPlayer,
+                includingSync: false,
+                includingAIChat: includeAIChat,
+                includingYouTubeAdBlocking: false,
+                includingWebsitePermissions: false,
+                subscriptionState: currentSubscriptionFeatures
+            )
+        }
+
+        let windowControllersManager = WindowControllersManagerMock()
+
+        return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
+            loadSections: loadSections,
+            tabSwitcherTabs: [],
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            syncService: mockSyncService,
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            pixelFiring: pixelFiringMock,
+            defaultBrowserPreferences: mockDefaultBrowserPreferences,
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: mockAIChatPreferences,
+            aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
+                                                  pixelFiring: nil),
+            accessibilityPreferences: AccessibilityPreferences(),
+            duckPlayerPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return prefs
+            }(),
+            youTubeAdBlockingPreferences: {
+                let prefs = DuckPlayerPreferences(
+                    persistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    internalUserDecider: mockFeatureFlagger.internalUserDecider
+                )
+                return YouTubeAdBlockingPreferences(duckPlayerPreferences: prefs)
+            }(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
         )
     }
 
@@ -138,48 +309,158 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertEqual(selectedPaneUpdates, [.appearance])
     }
 
+    func testWhenVPNPaneIsSelectedBeforeSectionsIncludeItThenItIsRememberedNotDropped() throws {
+        // Regression: opening `.vpn` from the VPN status view before entitlement state has loaded
+        // must still land on the VPN pane. Sections are built from subscription state, so before it
+        // loads they don't contain `.vpn` — previously `selectPane(.vpn)` no-opped because the pane
+        // wasn't visible yet and the request was silently dropped, leaving Settings on the default
+        // pane. Whether it worked depended on whether the async entitlement load won the race.
+        let sectionsWithoutVPN: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill])]
+        let model = PreferencesSidebarModel(loadSections: sectionsWithoutVPN)
+        XCTAssertNotEqual(model.selectedPane, .vpn)
+
+        model.selectPane(.vpn)
+
+        XCTAssertEqual(model.selectedPane, .vpn, "VPN request must be remembered even though the VPN pane isn't visible yet")
+
+        // A sections refresh occurring before entitlements load must not drop the pending pane.
+        model.adjustSelectedPaneIfNeeded()
+        XCTAssertEqual(model.selectedPane, .vpn, "VPN pane must survive a refresh until entitlement state loads")
+    }
+
+    func testWhenVPNPaneIsSelectedBeforeStateLoadsWithEntitlementThenItStaysSelected() async throws {
+        // Completes the race: with the NetP entitlement, the VPN pane becomes visible once state
+        // loads, so a `.vpn` request made before the load must remain selected through the async
+        // refresh — the actual scenario when a subscriber taps the VPN status pill.
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.selectPane(.vpn)
+        XCTAssertEqual(model.selectedPane, .vpn)
+
+        model.onAppear() // triggers the async subscription-state load
+        try await Task.sleep(interval: 0.1)
+
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertEqual(model.selectedPane, .vpn, "VPN pane must stay selected once entitlements load")
+    }
+
+    func testWhenVPNPaneIsSelectedBeforeStateLoadsWithoutEntitlementThenItDoesNotStickOnVPN() async throws {
+        // Completes the race for the no-entitlement case: the VPN pane never becomes visible, so
+        // once state loads the pre-load `.vpn` request must be corrected away from the inaccessible
+        // pane rather than sticking on it.
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockSubscriptionManager.resultFeatures = []
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.selectPane(.vpn)
+        XCTAssertEqual(model.selectedPane, .vpn)
+
+        model.onAppear() // triggers the async subscription-state load
+        try await Task.sleep(interval: 0.1)
+
+        XCTAssertFalse(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertNotEqual(model.selectedPane, .vpn, "Without the entitlement, selection must not stay on the inaccessible VPN pane")
+    }
+
+    func testWhenVPNPaneIsSelectedBeforeStateLoadsAndResolvedStateEqualsDefaultThenItDoesNotStickOnVPN() async throws {
+        // Regression: a signed-out user on an App Store build with no products available resolves to
+        // a subscription state that equals the default `currentSubscriptionState`. The equality guard
+        // in the refresh handler used to return before setting `hasLoadedInitialSubscriptionState`,
+        // so `adjustSelectedPaneIfNeeded()` stayed suppressed forever and a pre-load `.vpn` request
+        // parked on the inaccessible pane was never corrected. The first settled load must correct it.
+        mockSubscriptionManager.resultTokenContainer = nil
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.selectPane(.vpn)
+        XCTAssertEqual(model.selectedPane, .vpn)
+
+        model.onAppear() // triggers the async subscription-state load
+        try await Task.sleep(interval: 0.1)
+
+        XCTAssertFalse(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertNotEqual(model.selectedPane, .vpn, "A pane parked on the gated VPN pane must be corrected on the first settled load even when the resolved state equals the default")
+    }
+
     // MARK: Tests for `currentSubscriptionState`
 
     func testCurrentSubscriptionStateWhenNoSubscriptionPresent() async throws {
         // Given
-        mockSubscriptionManager.accessTokenResult = .failure(SubscriptionManagerError.noTokenAvailable)
+        mockSubscriptionManager.resultSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
+        mockSubscriptionManager.resultTokenContainer = nil
         XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
+        mockSubscriptionManager.resultFeatures = []
 
         // When
-        let model = PreferencesSidebarModel()
+        let model = createPreferencesSidebarModelWithDefaults()
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
         try await Task.sleep(interval: 0.1)
 
         // Then
         XCTAssertFalse(model.currentSubscriptionState.hasSubscription)
-        XCTAssertEqual(model.currentSubscriptionState.userEntitlements, [])
+        XCTAssertFalse(model.currentSubscriptionState.hasAnyEntitlement)
+    }
+
+    func testExpiredSubscriptionCacheDoesNotSkipRemoteFetch() async throws {
+        // Regression: the outer gate in refreshSubscriptionStateAndSectionsIfNeeded must use
+        // isUserAuthenticated, not isSubscriptionPresent(). isSubscriptionPresent() is backed by
+        // a TTL cache — when the cache expires, isPresent returns false even for active
+        // subscribers. The old code treated an expired cache as "no subscription" and returned
+        // immediately without ever calling currentSubscriptionFeatures / hitting the backend.
+        // The fix: gate on isUserAuthenticated (token-based, TTL-independent) so an expired cache
+        // triggers a remote fetch rather than an immediate signed-out state.
+
+        // Given: authenticated user whose subscription cache has expired (isSubscriptionPresent = false)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
+        // resultSubscription = nil → isSubscriptionPresent() returns false (simulates expired TTL)
+        mockSubscriptionManager.resultSubscription = nil
+        XCTAssertFalse(mockSubscriptionManager.isSubscriptionPresent())
+        mockSubscriptionManager.resultFeatures = [.networkProtection]
+
+        // When
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then: currentSubscriptionFeatures must have been called — the backend fetch was attempted.
+        // (With the old isSubscriptionPresent gate it would have been skipped entirely.)
+        XCTAssertEqual(mockSubscriptionManager.currentSubscriptionFeaturesCallCount, 1,
+                       "Backend fetch must be attempted even when the subscription cache is expired")
     }
 
     func testCurrentSubscriptionStateForAvailableSubscriptionFeatures() async throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
-        mockSubscriptionManager.accessTokenResult = .success("token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
 
-        mockSubscriptionManager.subscriptionFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
 
         // When
-        let model = PreferencesSidebarModel()
+        let model = createPreferencesSidebarModelWithDefaults(includeAIChat: true)
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
         try await Task.sleep(interval: 0.1)
 
         // Then
         XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
         XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatEnabled)
-        XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.networkProtection))
-        XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.dataBrokerProtection))
-        XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.identityTheftRestoration))
-        XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.paidAIChat))
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatAvailable)
     }
 
     func testCurrentSubscriptionStateIsPaidAIChatEnabledIsFalseWhenFeatureFlagIsOff() async throws {
+
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
+
         // When
-        let model = PreferencesSidebarModel()
+        let model = createPreferencesSidebarModelWithDefaults()
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
         try await Task.sleep(interval: 0.1)
 
@@ -189,22 +470,22 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     func testCurrentSubscriptionStateForUserEntitlements() async throws {
         // Given
-        mockSubscriptionManager.accessTokenResult = .success("token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
 
-        mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
 
         // When
-        let model = PreferencesSidebarModel()
+        let model = createPreferencesSidebarModelWithDefaults()
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
         try await Task.sleep(interval: 0.1)
 
         // Then
         XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
-        XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.networkProtection))
-        XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection))
-        XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration))
-        XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.paidAIChat))
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalEnabled)
+        XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationEnabled)
+        XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatEnabled)
 
         XCTAssertTrue(model.isSidebarItemEnabled(for: .vpn))
         XCTAssertTrue(model.isSidebarItemEnabled(for: .personalInformationRemoval))
@@ -214,22 +495,22 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     func testCurrentSubscriptionStateForMissingUserEntitlements() async throws {
         // Given
-        mockSubscriptionManager.accessTokenResult = .success("token")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
 
-        mockSubscriptionManager.enabledFeatures = []
+        mockSubscriptionManager.resultFeatures = []
 
         // When
-        let model = PreferencesSidebarModel()
+        let model = createPreferencesSidebarModelWithDefaults()
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
         try await Task.sleep(interval: 0.1)
 
         // Then
         XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
-        XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.networkProtection))
-        XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection))
-        XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration))
-        XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.paidAIChat))
+        XCTAssertFalse(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertFalse(model.currentSubscriptionState.isPersonalInformationRemovalEnabled)
+        XCTAssertFalse(model.currentSubscriptionState.isIdentityTheftRestorationEnabled)
+        XCTAssertFalse(model.currentSubscriptionState.isPaidAIChatEnabled)
 
         XCTAssertFalse(model.isSidebarItemEnabled(for: .vpn))
         XCTAssertFalse(model.isSidebarItemEnabled(for: .personalInformationRemoval))
@@ -237,7 +518,111 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.isSidebarItemEnabled(for: .paidAIChat))
     }
 
+    func testCurrentSubscriptionStateIsUnchangedOnTransientFeaturesError() async throws {
+        // Regression test: a transient currentSubscriptionFeatures error must not flip feature
+        // flags to false. The sidebar would otherwise show "Subscription Settings visible,
+        // sub-items hidden" until the next successful refresh.
+
+        // Given — model starts with a fully-featured subscription state
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Capture the known-good state
+        let stateBeforeError = model.currentSubscriptionState
+        XCTAssertTrue(stateBeforeError.hasSubscription)
+        XCTAssertTrue(stateBeforeError.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(stateBeforeError.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(stateBeforeError.isIdentityTheftRestorationAvailable)
+
+        // When — next refresh hits a transient 500
+        mockSubscriptionManager.resultFeaturesError = URLError(.badServerResponse)
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then — state must be unchanged
+        XCTAssertEqual(model.currentSubscriptionState, stateBeforeError,
+                       "Transient error must not overwrite subscription state")
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationAvailable)
+    }
+
     // MARK: Tests for subscribed refresh notification triggers
+
+    func testWhenNavigatingBetweenPanesThenPermissionRequestsAreUpdatedAndCleared() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = true
+        let model = makeWebsitePermissionsSidebarModel()
+        model.navigate(to: .websitePermission(.camera))
+        model.resetWebsitePermissionRequest()
+
+        model.navigate(to: .websitePermission(.autoplay))
+
+        XCTAssertEqual(model.selectedPane, .websitePermissions)
+        XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+        XCTAssertNil(model.scrollTarget)
+
+        model.resetWebsitePermissionRequest()
+        XCTAssertNil(model.websitePermissionTarget)
+        model.navigate(to: .websitePermission(.autoplay))
+        XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+
+        model.selectPane(.general)
+
+        XCTAssertEqual(model.selectedPane, .general)
+        XCTAssertNil(model.websitePermissionTarget)
+    }
+
+    func testWhenWebsitePermissionsFlagChangesThenAvailabilityAndNavigationUpdateWithoutReopeningSettings() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = false
+        let model = makeWebsitePermissionsSidebarModel()
+        XCTAssertFalse(model.sections.flatMap(\.panes).contains(.websitePermissions))
+        model.selectPane(.general)
+
+        model.navigate(to: .websitePermission(.autoplay))
+
+        XCTAssertEqual(model.selectedPane, .general)
+        XCTAssertNil(model.websitePermissionTarget)
+
+        for isEnabled in [true, false, true] {
+            let updated = expectation(description: "Website Permissions availability becomes \(isEnabled)")
+            let cancellable = model.$sections
+                .dropFirst()
+                .filter { $0.flatMap(\.panes).contains(.websitePermissions) == isEnabled }
+                .prefix(1)
+                .sink { _ in updated.fulfill() }
+
+            mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = isEnabled
+            mockFeatureFlagger.triggerUpdate()
+            await fulfillment(of: [updated], timeout: 1)
+            withExtendedLifetime(cancellable) {}
+
+            if isEnabled {
+                model.navigate(to: .websitePermission(.autoplay))
+                XCTAssertEqual(model.selectedPane, .websitePermissions)
+                XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+            } else {
+                XCTAssertNotEqual(model.selectedPane, .websitePermissions)
+            }
+        }
+    }
+
+    private func makeWebsitePermissionsSidebarModel() -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let featureFlagger: MockFeatureFlagger = mockFeatureFlagger
+        return PreferencesSidebarModel(loadSections: { state in
+            PreferencesSection.defaultSections(
+                includingDuckPlayer: false,
+                includingSync: false,
+                includingAIChat: false,
+                includingYouTubeAdBlocking: false,
+                includingWebsitePermissions: featureFlagger.isFeatureOn(.websitePermissionsSettings),
+                subscriptionState: state
+            )
+        })
+    }
 
     func testModelReloadsSectionsWhenRefreshSectionsCalled() async throws {
         // Given
@@ -306,8 +691,11 @@ final class PreferencesSidebarModelTests: XCTestCase {
         try await Task.sleep(interval: 0.1)
         startProcessingFulfilment = true
 
+        mockSubscriptionManager.resultFeatures = [] // Trigger change in all values
+
         // When
-        mockSubscriptionManager.accessTokenResult = .success("state_change_is_required_to_trigger_refresh")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
         testNotificationCenter.post(name: notification, object: self, userInfo: nil)
 
         // Then
@@ -374,5 +762,237 @@ final class PreferencesSidebarModelTests: XCTestCase {
         ]
 
         pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenSelectedPaneIsUpdatedToSubscriptionDuringTheWinBackOfferThenWinBackOfferPixelIsSent() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .subscription])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        // When
+        model.selectPane(.subscription)
+        model.selectPane(.appearance)
+        model.selectPane(.subscription)
+        model.selectPane(.appearance)
+
+        // Then
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown, frequency: .standard),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown, frequency: .standard),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    // MARK: - isPaneNew tests
+
+    func testIsPaneNewReturnsFalseForOtherPanes() throws {
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill, .general, .vpn])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        XCTAssertFalse(model.isPaneNew(pane: .appearance))
+        XCTAssertFalse(model.isPaneNew(pane: .autofill))
+        XCTAssertFalse(model.isPaneNew(pane: .general))
+        XCTAssertFalse(model.isPaneNew(pane: .vpn))
+        XCTAssertFalse(model.isPaneNew(pane: .personalInformationRemoval))
+        XCTAssertFalse(model.isPaneNew(pane: .identityTheftRestoration))
+        XCTAssertFalse(model.isPaneNew(pane: .paidAIChat))
+    }
+
+    // MARK: - shouldShowWinBackCampaignBadge tests
+
+    func testDoesPaneShowWinBackCampaignBadge() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+
+        // When
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .subscription])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        // Then
+        XCTAssertTrue(model.shouldShowWinBackCampaignBadge(pane: .subscription))
+    }
+
+    func testDoesPaneNotShowWinBackCampaignBadgeForOtherPanes() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = false
+
+        // When
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill, .general, .vpn])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        // Then
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .appearance))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .autofill))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .general))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .vpn))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .personalInformationRemoval))
+        XCTAssertFalse(model.shouldShowWinBackCampaignBadge(pane: .identityTheftRestoration))
+    }
+
+    // MARK: - PaidAIChat Status Tests
+
+    func testPaidAIChatStatusWhenBothSubscriptionAndAIFeaturesEnabled() async throws {
+        // Given
+        mockAIChatPreferences.isAIFeaturesEnabled = true
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
+        let model = createPreferencesSidebarModelWithDefaults()
+
+        // When
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        let protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .on)
+    }
+
+    func testPaidAIChatStatusWhenSubscriptionEnabledButAIFeaturesDisabled() async throws {
+        // Given
+        mockAIChatPreferences.isAIFeaturesEnabled = false
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
+        let model = createPreferencesSidebarModelWithDefaults()
+
+        // When
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        let protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .off)
+    }
+
+    func testPaidAIChatStatusWhenAIFeaturesEnabledButSubscriptionDisabled() async throws {
+        // Given
+        mockAIChatPreferences.isAIFeaturesEnabled = true
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [] // No paidAIChat
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockSubscriptionManager.resultFeatures = []
+        let model = createPreferencesSidebarModelWithDefaults()
+
+        // When
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        let protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .off)
+    }
+
+    func testPaidAIChatStatusUpdatesWhenAIFeaturesDisabled() async throws {
+        // Given - start with AI features enabled
+        mockAIChatPreferences.isAIFeaturesEnabled = true
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+        var protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .on)
+
+        let expectation = expectation(description: "Status should update to off when AI features disabled")
+
+        model.paidAIChatUpdates
+            .sink { status in
+                if status == .off {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When - disable AI features
+        mockAIChatPreferences.isAIFeaturesEnabled = false
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1.0)
+        protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .off)
+    }
+
+    func testPaidAIChatStatusUpdatesWhenAIFeaturesEnabled() async throws {
+        // Given - start with AI features disabled
+        mockAIChatPreferences.isAIFeaturesEnabled = false
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+        var protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .off)
+
+        let expectation = expectation(description: "Status should update to on when AI features enabled")
+
+        model.paidAIChatUpdates
+            .sink { status in
+                if status == .on {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        // When - enable AI features
+        mockAIChatPreferences.isAIFeaturesEnabled = true
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1.0)
+        protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .on)
+    }
+
+    func testPaidAIChatSidebarItemEnabledWhenBothConditionsMet() async throws {
+        // Given
+        mockAIChatPreferences.isAIFeaturesEnabled = true
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+
+        // When
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        XCTAssertTrue(model.isSidebarItemEnabled(for: .paidAIChat))
+        let protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .on)
+    }
+
+    func testPaidAIChatSidebarItemStaysEnabledWhenAIFeaturesOff() async throws {
+        // Given
+        mockAIChatPreferences.isAIFeaturesEnabled = false
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
+//        mockSubscriptionManager.enabledFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+
+        // When
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then - item should remain enabled but status should be off
+        XCTAssertTrue(model.isSidebarItemEnabled(for: .paidAIChat))
+        let protectionStatus = model.protectionStatus(for: .paidAIChat)
+        XCTAssertEqual(protectionStatus?.status, .off)
     }
 }

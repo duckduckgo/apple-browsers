@@ -17,14 +17,16 @@
 //
 
 import Cocoa
+import Combine
 
 final class TabBarFooter: NSView, NSCollectionViewElement {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarFooter")
 
-    private let visualStyle = NSApp.delegateTyped.visualStyle
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
-    let addButton = MouseOverButton(image: .add, target: nil, action: #selector(TabBarViewController.addButtonAction))
+    let addButton = MouseOverButton(image: NSImage(resource: .add), target: nil, action: #selector(TabBarViewController.addButtonAction))
 
     var target: MouseOverButtonDelegate? {
         get {
@@ -54,17 +56,20 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
         addButton.translatesAutoresizingMaskIntoConstraints = false
         addButton.isBordered = false
         addButton.bezelStyle = .shadowlessSquare
-        addButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-        addButton.mouseDownColor = .buttonMouseDown
-        addButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         addButton.imagePosition = .imageOnly
         addButton.imageScaling = .scaleNone
         addButton.registerForDraggedTypes([.string])
-        addButton.cornerRadius = visualStyle.toolbarButtonsCornerRadius
+        addButton.toolTip = UserText.newTabTooltip
+        addButton.setAccessibilityIdentifier("NewTabButton")
+        addButton.setAccessibilityTitle(UserText.newTabTooltip)
+
         toolTip = UserText.newTabTooltip
 
         addSubview(addButton)
-     }
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
+    }
 
     required init?(coder: NSCoder) {
         fatalError("TabBarFooter: Bad initializer")
@@ -73,11 +78,28 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
     override func layout() {
         super.layout()
 
-        let buttonSize = visualStyle.tabBarButtonSize
+        let buttonSize = theme.tabBarButtonSize
 
         addButton.frame = NSRect(x: ((bounds.width - buttonSize) * 0.5).rounded(), y: ((bounds.height - buttonSize) * 0.5).rounded(), width: buttonSize, height: buttonSize)
     }
 
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        addButton.cell?.setAccessibilityParent(addButton.superview?.superview) // make the AddButton a direct child of the TabBarCollectionView
+    }
+}
+
+extension TabBarFooter: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        let colorsProvider = theme.colorsProvider
+
+        addButton.cornerRadius = theme.toolbarButtonsCornerRadius
+        addButton.normalTintColor = colorsProvider.iconsColor
+        addButton.mouseDownColor = colorsProvider.buttonMouseOverColor
+        addButton.mouseOverColor = colorsProvider.buttonMouseOverColor
+    }
 }
 
 #if DEBUG

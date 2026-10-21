@@ -16,15 +16,129 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import AIChat
 import Combine
+import Common
+import FoundationExtensions
+import FeatureFlags_macOS
+import History
+import HistoryView
 import Onboarding
+@_spi(Testing) import Persistence
+@testable import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PrivacyDashboard
+import SharedTestUtilities
 import struct SwiftUI.AnyView
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
+class MockDefaultBrowserProvider: DefaultBrowserProvider {
+    var bundleIdentifier: String = "test"
+    var defaultBrowserURL: URL?
+    var isDefault: Bool = false
+
+    func presentDefaultBrowserPrompt() throws {}
+    func openSystemPreferences() {}
+}
+
+class MockDownloadsPreferencesPersistor: DownloadsPreferencesPersistor {
+
+    var selectedDownloadLocation: String?
+    var alwaysRequestDownloadLocation: Bool
+    var defaultDownloadLocation: URL?
+    var lastUsedCustomDownloadLocation: String?
+    var shouldOpenPopupOnCompletion: Bool
+
+    var _isDownloadLocationValid: (URL) -> Bool
+
+    func isDownloadLocationValid(_ location: URL) -> Bool {
+        _isDownloadLocationValid(location)
+    }
+
+    init(
+        selectedDownloadLocation: String? = nil,
+        alwaysRequestDownloadLocation: Bool = false,
+        shouldOpenPopupOnCompletion: Bool = true,
+        defaultDownloadLocation: URL? = FileManager.default.temporaryDirectory,
+        lastUsedCustomDownloadLocation: String? = nil,
+        isDownloadLocationValid: @escaping (URL) -> Bool = { _ in true }
+    ) {
+        self.selectedDownloadLocation = selectedDownloadLocation
+        self.alwaysRequestDownloadLocation = alwaysRequestDownloadLocation
+        self.shouldOpenPopupOnCompletion = shouldOpenPopupOnCompletion
+        self.defaultDownloadLocation = defaultDownloadLocation
+        self.lastUsedCustomDownloadLocation = lastUsedCustomDownloadLocation
+        self._isDownloadLocationValid = isDownloadLocationValid
+    }
+}
+
+class MockWebTrackingProtectionPreferencesPersistor: WebTrackingProtectionPreferencesPersistor {
+    var gpcEnabled: Bool = false
+}
+
+class MockCookiePopupProtectionPreferencesPersistor: CookiePopupProtectionPreferencesPersistor {
+    var autoconsentEnabled: Bool = false
+    var cookiePopupPreferenceRawValue: String?
+    var didMigrateCookiePopupPreference: Bool = false
+}
+
+class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
+    var isAIFeaturesEnabled: Bool = true
+    var didDisplayAIChatAddressBarOnboarding: Bool = true
+    var showShortcutOnNewTabPage: Bool = true
+    var showShortcutInApplicationMenu: Bool = true
+    var showShortcutInAddressBar: Bool = true
+    var showShortcutInAddressBarWhenTyping: Bool = true
+    var openAIChatInSidebar: Bool = true
+    var shouldAutomaticallySendPageContext: Bool = true
+    var showSearchAndDuckAIToggle: Bool = true
+    var userDidSeeToggleOnboarding: Bool = false
+    var lastUsedSidebarWidth: Double?
+    var hasAcceptedTermsAndConditions: Bool = false
+
+    let isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    let showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+
+    func reset() {
+        isAIFeaturesEnabled = true
+        showShortcutOnNewTabPage = true
+        showShortcutInApplicationMenu = true
+        showShortcutInAddressBar = true
+        showShortcutInAddressBarWhenTyping = true
+        didDisplayAIChatAddressBarOnboarding = true
+        openAIChatInSidebar = true
+        shouldAutomaticallySendPageContext = true
+        showSearchAndDuckAIToggle = true
+        userDidSeeToggleOnboarding = false
+        lastUsedSidebarWidth = nil
+        hasAcceptedTermsAndConditions = false
+    }
+}
+
+final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
+    var shouldDisplayMoreOptionsMenuShortcut = false
+    var shouldDisplayNewTabPageShortcut = false
+    var shouldDisplayApplicationMenuShortcut = false
+    var shouldDisplayAddressBarShortcut = false
+    var shouldDisplayAnyAIChatFeature = false
+    var shouldOpenAIChatInSidebar = false
+    var shouldDisplaySummarizationMenuItem = false
+    var shouldDisplayTranslationMenuItem = false
+    var shouldDisplaySelectionContextMenuItem = false
+    var shouldAutomaticallySendPageContext = false
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool?
+    let valuesChangedPublisher = PassthroughSubject<Void, Never>()
+}
+
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     var window: MockWindow!
@@ -38,13 +152,16 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     var cancellables: Set<AnyCancellable> = []
     lazy var expectation: XCTestExpectation! = XCTestExpectation(description: "CapturingDialogFactory.makeView called")
     var dialogTypeForTabExpectation: XCTestExpectation!
+    var upsellMetrics: SpyUpsellMetricsReporter!
 
     @MainActor override func setUp() {
         autoreleasepool {
-            let tabCollectionViewModel = TabCollectionViewModel()
             featureFlagger = MockFeatureFlagger()
-            featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
+            featureFlagger.featuresStub = [
+                FeatureFlag.contextualOnboarding.rawValue: true
+            ]
             pixelReporter = CapturingOnboardingPixelReporter()
+            upsellMetrics = SpyUpsellMetricsReporter()
             dialogProvider = MockDialogsProvider()
             factory = CapturingDialogFactory(expectation: expectation)
             schemeHandler = TestSchemeHandler { _ in
@@ -55,15 +172,46 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             NSError.disableSwizzledDescription = true
 
             tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
-            let tabViewModel = TabViewModel(tab: tab)
-            viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
-            viewController.tabViewModel = tabViewModel
+            let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab], isPopup: false))
+            let windowControllersManager = WindowControllersManagerMock()
+            viewController = BrowserTabViewController(
+                tabCollectionViewModel: tabCollectionViewModel,
+                onboardingPixelReporter: pixelReporter,
+                onboardingDialogTypeProvider: dialogProvider,
+                onboardingDialogFactory: factory,
+                subscriptionUpsellMetrics: upsellMetrics,
+                featureFlagger: featureFlagger,
+                defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+                downloadsPreferences: DownloadsPreferences(persistor: MockDownloadsPreferencesPersistor()),
+                searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                aiChatPreferences: AIChatPreferences(
+                    storage: MockAIChatPreferencesStorage(),
+                    aiChatMenuConfiguration: MockAIChatConfig(),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: MockFeatureFlagger()
+                ),
+                aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+                dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
+                                                      pixelFiring: nil),
+                accessibilityPreferences: AccessibilityPreferences(),
+                duckPlayer: DuckPlayer(
+                    preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                    internalUserDecider: featureFlagger.internalUserDecider
+                ),
+                permissionManager: PermissionManagerMock(),
+                pinningManager: MockPinningManager()
+            )
             _=viewController.view
             window = MockWindow()
             window.contentViewController = viewController
 
             viewController.viewWillAppear()
             viewController.viewDidAppear()
+            viewController.tabViewModel?.tab.setContent(.url(URL.duckDuckGo, credential: nil, source: .ui))
         }
     }
 
@@ -81,11 +229,12 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
             schemeHandler = nil
             expectation = nil
             pixelReporter = nil
+            upsellMetrics = nil
         }
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.featuresStub = [:]
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 
@@ -191,7 +340,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         withExtendedLifetime(cancellable) {}
     }
 
-    func testWhenNavigationCompletedAndWindowDidBecomeActiveCorrectDialogCapturedInFactory() throws {
+    func testWhenWindowDidBecomeActiveAndDisplayedDialogMatchesExpected_NoRePresentation() throws {
+        // When the displayed dialog still matches what the provider reports as the last dialog
+        // for this tab, windowDidBecomeKey must NOT re-present it — re-presenting recreates the
+        // NSHostingController and restarts the typewriter animation.
         dialogProvider.state = .ongoing
         dialogProvider.dialog = .tryFireButton
         tab.navigateFromOnboarding(to: .duckDuckGo)
@@ -203,7 +355,26 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         factory.capturedType = nil
         viewController.windowDidBecomeKey()
 
+        XCTAssertNil(factory.capturedType)
+    }
+
+    func testWhenWindowDidBecomeActiveAndExpectedDialogChanged_StaleDialogReplaced() throws {
+        // When state advances in another window while this one is backgrounded, the displayed
+        // dialog goes stale. windowDidBecomeKey must replace it with the now-expected dialog.
+        dialogProvider.state = .ongoing
+        dialogProvider.dialog = .tryFireButton
+        tab.navigateFromOnboarding(to: .duckDuckGo)
+
+        wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryFireButton)
+
+        // Simulate state advancing in another window: lastDialog now reports .highFive.
+        factory.capturedType = nil
+        dialogProvider.lastDialog = .highFive
+
+        viewController.windowDidBecomeKey()
+
+        XCTAssertEqual(factory.capturedType, .highFive)
     }
 
     func testWhenDialogIsDismissedViewHighlightsAreDismissed() throws {
@@ -309,21 +480,142 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertTrue(delegate.didCallDismissViewHighlight)
     }
 
-    func testWhenGotItButtonPressedAndStateIsShowFireButtonThenAskDelegateToHighlightFireButton() throws {
+    func testWhenTrackersAdvancesToFireThenAskDelegateToHighlightFireButton() throws {
         // GIVEN
-        dialogProvider.dialog = .tryFireButton
+        dialogProvider.dialog = .trackers(message: NSAttributedString(string: "trackers"), shouldFollowUp: true)
         let url = URL.duckDuckGo
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallHighlightFireButton)
         tab.navigateFromOnboarding(to: url)
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 5.0)
 
         // WHEN
         factory.performOnGotItPressed()
 
         // THEN
         XCTAssertTrue(delegate.didCallHighlightFireButton)
+    }
+
+    // MARK: - Subscription Upsell
+
+    @MainActor
+    private func presentDialog(_ dialog: ContextualDialogType) {
+        expectation.assertForOverFulfill = false
+        dialogProvider.dialog = dialog
+        tab.navigateFromOnboarding(to: URL.duckDuckGo)
+        wait(for: [expectation], timeout: 5.0)
+        XCTAssertEqual(factory.capturedType, dialog)
+    }
+
+    @MainActor
+    func testWhenFireIsSkippedThenInlineHighFiveAdvancesToUpsell() throws {
+        presentDialog(.trackers(message: NSAttributedString(string: "trackers"), shouldFollowUp: true))
+        let presentationsBefore = factory.makeViewCallCount
+
+        // Trackers advances to Fire in place, and Skip advances to High Five in place.
+        factory.performOnGotItPressed()
+        factory.performOnGotItPressed()
+        XCTAssertEqual(factory.capturedType, .trackers(message: NSAttributedString(string: "trackers"), shouldFollowUp: true))
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
+
+        // The inline High Five advances to the upsell after its visual dismissal.
+        factory.performOnGotItPressed()
+        factory.performOnDismiss()
+        XCTAssertEqual(factory.capturedType, .subscriptionUpsell)
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore + 1)
+        XCTAssertEqual(pixelReporter.gotItPressedDialog, .highFive)
+        XCTAssertEqual(pixelReporter.dismissedDialog, .highFive)
+    }
+
+    @MainActor
+    func testWhenHighFiveIsManuallyDismissedThenAnotherDialogIsNotPresented() throws {
+        presentDialog(.highFive)
+        let presentationsBefore = factory.makeViewCallCount
+
+        factory.performOnManualDismiss()
+
+        XCTAssertEqual(factory.capturedType, .highFive)
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
+        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .highFive)
+    }
+
+    @MainActor
+    func testWhenNonBlockingIsDisabledThenDismissingUpsellClearsLastDialog() {
+        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.control
+        presentDialog(.subscriptionUpsell)
+        let presentationsBefore = factory.makeViewCallCount
+
+        factory.performOnManualDismiss()
+
+        XCTAssertNil(dialogProvider.lastDialog)
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
+        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .subscriptionUpsell)
+        XCTAssertEqual(pixelReporter.dismissedDialog, .subscriptionUpsell)
+    }
+
+    @MainActor
+    func testWhenUpsellXCompletesFirstThenNonBlockingDismissalStillRuns() {
+        featureFlagger.resolveCohortStub = FeatureFlag.OnboardingNonBlockingCohort.treatment
+        dialogProvider.state = .ongoing
+        dialogProvider.isContextualOnboardingCompleted = false
+        presentDialog(.subscriptionUpsell)
+
+        factory.performOnGotItPressed()
+        dialogProvider.state = .onboardingCompleted
+        dialogProvider.isContextualOnboardingCompleted = true
+        let turnedOff = self.expectation(description: "X turns off contextual onboarding even after completion")
+        turnedOff.expectedFulfillmentCount = 2
+        dialogProvider.turnOffFeatureCalledExpectation = turnedOff
+
+        factory.performOnManualDismiss()
+        factory.performOnManualDismiss()
+
+        wait(for: [turnedOff], timeout: 1)
+        XCTAssertEqual(pixelReporter.gotItPressedDialog, .subscriptionUpsell)
+        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .subscriptionUpsell)
+        XCTAssertEqual(pixelReporter.dismissedDialog, .subscriptionUpsell)
+    }
+
+    @MainActor
+    func testWhenUpsellCTACompletesBeforeNavigationThenDismissalIsNotReported() throws {
+        presentDialog(.subscriptionUpsell)
+        let presentationsBefore = factory.makeViewCallCount
+
+        factory.performOnGotItPressed()
+        factory.performOnDismiss()
+
+        XCTAssertEqual(factory.makeViewCallCount, presentationsBefore)
+        XCTAssertTrue(upsellMetrics.reported.isEmpty)
+    }
+
+    @MainActor
+    func testWhenNavigationRemovesAVisibleUpsellThenDismissalIsReported() throws {
+        presentDialog(.subscriptionUpsell)
+        let destination = try XCTUnwrap(URL(string: "https://example.com"))
+
+        dialogProvider.dialog = nil
+        let expectation = self.expectation(description: "dialogTypeForTab")
+        dialogProvider.dialogTypeForTabExpectation = expectation
+        tab.navigateFromOnboarding(to: destination)
+        wait(for: [expectation], timeout: 5.0)
+
+        XCTAssertEqual(upsellMetrics.reported, [.upsellDismissed])
+        XCTAssertNil(dialogProvider.lastDialog)
+    }
+
+    @MainActor
+    func testWhenAnEarlierDialogIsRemovedByNavigationThenNoDismissalIsReported() throws {
+        presentDialog(.tryFireButton)
+        let destination = try XCTUnwrap(URL(string: "https://example.com"))
+
+        dialogProvider.dialog = nil
+        let expectation = self.expectation(description: "dialogTypeForTab")
+        dialogProvider.dialogTypeForTabExpectation = expectation
+        tab.navigateFromOnboarding(to: destination)
+        wait(for: [expectation], timeout: 5.0)
+
+        XCTAssertTrue(upsellMetrics.reported.isEmpty)
     }
 
     @MainActor
@@ -338,22 +630,36 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
 
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let windowControllersManager = WindowControllersManagerMock()
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let mainViewController = MainViewController(
-            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
-            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-            aiChatSidebarProvider: AIChatSidebarProvider(),
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+            aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )
         window.isVisible = false
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
-            popUp: false,
-            fireViewModel: fireCoordinator.fireViewModel
+            fireViewModel: fireCoordinator.fireViewModel,
+            themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.mainWindowControllers = [mainWindowController]
+        defer {
+            windowControllersManager.mainWindowControllers = []
+        }
 
         // WHEN
         window.isVisible = true
@@ -361,6 +667,57 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(delegate.didCallDismissViewHighlight)
+    }
+
+    func testWhenDialogSuggestionPressed_ThenPixelReporterMeasuresSuggestionPressed() throws {
+        // GIVEN
+        dialogProvider.dialog = .tryASearch
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertFalse(pixelReporter.measureSuggestionPressedCalled)
+
+        // WHEN
+        factory.performOnSuggestionPressed()
+
+        // THEN
+        XCTAssertTrue(pixelReporter.measureSuggestionPressedCalled)
+    }
+
+    func testWhenDialogManuallyDismissed_ThenPixelReporterMeasuresManuallyDismissed() throws {
+        // GIVEN
+        dialogProvider.dialog = .tryASearch
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertNil(pixelReporter.manuallyDismissedDialog)
+
+        // WHEN
+        factory.performOnManualDismiss()
+
+        // THEN
+        XCTAssertEqual(pixelReporter.manuallyDismissedDialog, .tryASearch)
+    }
+
+    func testWhenDialogGotItPressed_ThenPixelReporterMeasuresGotItPressed() {
+        // GIVEN
+        dialogProvider.dialog = .defaultSearchDone
+        let url = URL.duckDuckGo
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+        tab.navigateFromOnboarding(to: url)
+        wait(for: [expectation], timeout: 5.0)
+        XCTAssertNil(pixelReporter.gotItPressedDialog)
+
+        // WHEN
+        factory.performOnGotItPressed()
+
+        // THEN
+        XCTAssertEqual(pixelReporter.gotItPressedDialog, .defaultSearchDone)
     }
 
 }
@@ -373,6 +730,8 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
     var lastDialog: DuckDuckGo_Privacy_Browser.ContextualDialogType?
 
     var state: ContextualOnboardingState = .onboardingCompleted
+    @Published var isContextualOnboardingCompleted: Bool = true
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
     var turnOffFeatureCalledExpectation: XCTestExpectation?
 
     func updateStateFor(tab: DuckDuckGo_Privacy_Browser.Tab) {}
@@ -387,7 +746,20 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
         return dialog
     }
 
-    func gotItPressed() {}
+    func gotItPressed() {
+        switch lastDialog {
+        case .trackers:
+            lastDialog = .tryFireButton
+        case .tryFireButton:
+            lastDialog = .highFive
+        case .highFive:
+            lastDialog = .subscriptionUpsell
+        case .subscriptionUpsell:
+            lastDialog = nil
+        default:
+            break
+        }
+    }
 
     func fireButtonUsed() {}
 
@@ -400,23 +772,34 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
     var expectation: XCTestExpectation
     var capturedType: ContextualDialogType?
     var capturedDelegate: OnboardingNavigationDelegate?
+    /// Lets tests assert that a dialog was *not* re-presented, which `capturedType` alone can't show.
+    var makeViewCallCount = 0
 
+    private var onDismiss: (() -> Void)?
     private var onGotItPressed: (() -> Void)?
     private var onFireButtonPressed: (() -> Void)?
     private var onManualDismissPressed: (() -> Void)?
+    private var onSuggestionPressed: (() -> Void)?
 
     init(expectation: XCTestExpectation) {
         self.expectation = expectation
     }
 
-    func makeView(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> AnyView {
+    func makeView(for type: ContextualDialogType, delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
+        makeViewCallCount += 1
         capturedType = type
         capturedDelegate = delegate
+        self.onDismiss = onDismiss
         self.onGotItPressed = onGotItPressed
         self.onFireButtonPressed = onFireButtonPressed
-        self.onManualDismissPressed = onDismiss
+        self.onManualDismissPressed = onManualDismiss
+        self.onSuggestionPressed = onSuggestionPressed
         expectation.fulfill()
         return AnyView(OnboardingFinalDialog(highFiveAction: {}, onManualDismiss: {}))
+    }
+
+    func performOnDismiss() {
+        onDismiss?()
     }
 
     func performOnGotItPressed() {
@@ -429,6 +812,10 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
 
     func performOnManualDismiss() {
         onManualDismissPressed?()
+    }
+
+    func performOnSuggestionPressed() {
+        onSuggestionPressed?()
     }
 
 }
@@ -463,7 +850,11 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var measureFireButtonTryItCalled = false
     var measureLastDialogShownCalled = false
     var measureSiteVisitedCalled = false
+    var measureSuggestionPressedCalled = false
     var dismissedDialog: ContextualDialogType?
+    var manuallyDismissedDialog: ContextualDialogType?
+    var shownDialog: ContextualDialogType?
+    var gotItPressedDialog: ContextualDialogType?
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -495,5 +886,47 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
     func measureDialogDismissed(dialogType: ContextualDialogType) {
         dismissedDialog = dialogType
+    }
+
+    func measureDialogManuallyDismissed(dialogType: ContextualDialogType) {
+        manuallyDismissedDialog = dialogType
+    }
+
+    func measureSuggestionPressed() {
+        measureSuggestionPressedCalled = true
+    }
+
+    func measureDialogShown(dialogType: ContextualDialogType) {
+        shownDialog = dialogType
+    }
+
+    func measureGotItPressed(dialogType: ContextualDialogType) {
+        gotItPressedDialog = dialogType
+    }
+}
+ private class DockCustomizerMock: DockCustomization {
+
+     var supportsAddingToDock: Bool { false }
+     var isAddedToDock: Bool { false }
+     var shouldShowNotification: Bool { false }
+     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> {
+         Just(false).eraseToAnyPublisher()
+     }
+
+     @discardableResult
+     func addToDock() -> Bool { false }
+
+     func didCloseMoreOptionsMenu() { }
+
+     func synchronizeNotificationVisibilityWithFirstLaunchDate() { }
+
+     func resetData() { }
+ }
+
+final class SpyUpsellMetricsReporter: OnboardingSubscriptionUpsellMetricsReporting {
+    var reported: [OnboardingSubscriptionUpsellMetric] = []
+
+    func report(_ metric: OnboardingSubscriptionUpsellMetric) {
+        reported.append(metric)
     }
 }

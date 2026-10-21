@@ -1,0 +1,22 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_chat_tab_toolbar_buttons
+
+---
+
+- runFlow:
+    file: ../shared/open_chat_tab.yaml
+
+# Verify all toolbar buttons are present on the chat tab.
+# Note: ModelChip, Reasoning, Tools and Attach are UIButton-backed UIMenus
+# (showsMenuAsPrimaryAction); their menu items are not reachable via Maestro's a11y bridge,
+# so only the buttons themselves are verified here.
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+- assertVisible:
+    id: "AIChat.Toolbar.Button.Reasoning"
+- assertVisible: "Tools"
+- assertVisible: "Attach"

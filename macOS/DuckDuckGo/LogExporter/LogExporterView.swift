@@ -23,7 +23,9 @@ struct LogExporterConfiguration {
     let timeInterval: Int
     let includeAllDDG: Bool
     let includeNetworkProtection: Bool
+    let includePersonalInformationRemoval: Bool
     let includeSparkle: Bool
+    let includePixels: Bool
 }
 
 struct LogExporterView: View {
@@ -32,7 +34,9 @@ struct LogExporterView: View {
     @State private var timeIntervalString: String = "\(Self.defaultInterval)"
     @State private var includeAllDDG = true
     @State private var includeNetworkProtection = true
+    @State private var includePersonalInformationRemoval = true
     @State private var includeSparkle = true
+    @State private var includePixels = false
 
     let onComplete: (_ result: LogExporterConfiguration) -> Void
 
@@ -41,7 +45,7 @@ struct LogExporterView: View {
             Text(verbatim: "Time Interval:")
                 .font(.headline)
             HStack {
-                TextField("", text: $timeIntervalString)
+                TextField("" as String, text: $timeIntervalString)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 Text(verbatim: "Minutes")
                     .font(.body)
@@ -53,7 +57,11 @@ struct LogExporterView: View {
                     .font(.headline)
                 Toggle(UserText.duckDuckGo, isOn: $includeAllDDG)
                 Toggle(UserText.networkProtection, isOn: $includeNetworkProtection)
+                Toggle(UserText.personalInformationRemoval, isOn: $includePersonalInformationRemoval)
                 Toggle(UserText.update, isOn: $includeSparkle)
+                Toggle(isOn: $includePixels) {
+                    Text(verbatim: "Pixels")
+                }
             }
 
             Spacer()
@@ -66,7 +74,9 @@ struct LogExporterView: View {
                         timeInterval: Int(timeIntervalString) ?? Self.defaultInterval,
                         includeAllDDG: includeAllDDG,
                         includeNetworkProtection: includeNetworkProtection,
-                        includeSparkle: includeSparkle
+                        includePersonalInformationRemoval: includePersonalInformationRemoval,
+                        includeSparkle: includeSparkle,
+                        includePixels: includePixels
                     ))
                 }
                 Button(UserText.ok) {
@@ -75,15 +85,17 @@ struct LogExporterView: View {
                         timeInterval: Int(timeIntervalString) ?? Self.defaultInterval,
                         includeAllDDG: includeAllDDG,
                         includeNetworkProtection: includeNetworkProtection,
-                        includeSparkle: includeSparkle
+                        includePersonalInformationRemoval: includePersonalInformationRemoval,
+                        includeSparkle: includeSparkle,
+                        includePixels: includePixels
                     ))
                 }
-                .disabled(timeIntervalString.isEmpty || (includeAllDDG || includeNetworkProtection || includeSparkle) == false)
+                .disabled(timeIntervalString.isEmpty || (includeAllDDG || includeNetworkProtection || includePersonalInformationRemoval || includeSparkle || includePixels) == false)
                 .keyboardShortcut(.defaultAction)
 
             }
         }
         .padding(20)
-        .frame(minWidth: 250, maxWidth: 250, minHeight: 250, maxHeight: 250)
+        .frame(minWidth: 300, maxWidth: 300, minHeight: 280, maxHeight: 280)
     }
 }

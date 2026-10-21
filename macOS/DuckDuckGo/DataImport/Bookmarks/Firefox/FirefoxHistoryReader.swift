@@ -19,6 +19,8 @@
 import Foundation
 import GRDB
 import BrowserServicesKit
+import Common
+import FoundationExtensions
 
 final class FirefoxHistoryReader {
 
@@ -46,7 +48,7 @@ final class FirefoxHistoryReader {
     }
 
     final class FirefoxFrecentSite: FetchableRecord {
-        let url: String
+        var url: String
         let title: String?
         let frecency: Int
         let lastVisitDate: Int
@@ -59,14 +61,19 @@ final class FirefoxHistoryReader {
         }
     }
 
+    private let tld: TLD
     private let firefoxHistoryDatabaseURL: URL
     private var currentOperationType: ImportError.OperationType = .copyTemporaryFile
 
     /// Set of search engine hostnames that Firefox uses as a filter
     private let searchHosts: Set<String> = ["google", "search.yahoo", "yahoo", "bing", "ask", "duckduckgo"]
 
-    init(firefoxDataDirectoryURL: URL) {
+    /// When frecent sites are from one of these search sites, the Firefox shortcut uses the provided URL
+    private let searchShortcuts = ["amazon": "https://amazon.com", "baidu": "https://baidu.com", "google": "https://google.com", "yandex": "https://yandex.com"]
+
+    init(firefoxDataDirectoryURL: URL, tld: TLD) {
         self.firefoxHistoryDatabaseURL = firefoxDataDirectoryURL.appendingPathComponent(Constants.historyDatabaseName)
+        self.tld = tld
     }
 
     /// Returns a list of the most frequently, recently visited ("frecent") sites from the Firefox history database.
@@ -95,12 +102,36 @@ final class FirefoxHistoryReader {
             try FirefoxFrecentSite.fetchAll(database, sql: allFrecentSitesQuery())
         }
 
-        /// Remove invalid URLs
-        let validFrecentSites = frecentSites.filter { site in
-            guard let url = URL(string: site.url), let host = url.host else { return false }
-            return (url.isHttps || url.isHttp) && !searchHosts.contains(where: { host.contains($0) })
-        }
+        let validFrecentSites = frecentSites
+            .filter { site in
+                // Remove invalid URLs and match Firefox filtering (only HTTP/HTTPS URLs and not search engine hosts).
+                guard let url = URL(string: site.url), let host = url.host else { return false }
+                return (url.isHttps || url.isHttp) && !searchHosts.contains(where: { host.droppingWwwPrefix().hasPrefix("\($0).") })
+            }.map { site in
+                // If the site URL matches a search shortcut host, replace it with the corresponding shortcut URL.
+                if let shortcutURL = extractSearchShortcutURL(for: site.url) {
+                    site.url = shortcutURL
+                }
+                return site
+            }
         return validFrecentSites
+    }
+
+    /// Returns the search shortcut URL for a given URL string, if applicable.
+    ///
+    /// Search site URLs with common subdomains (`www`, `wwwN`, `m`, `mobile`) or different eTLDs are consolidated to a single shortcut:
+    /// - `www.amazon.com`, `m.amazon.de`, `amazon.co.uk` → `https://amazon.com`
+    ///
+    /// URLs from other sites or search sites with other subdomains are not consolidated and return `nil`:
+    /// - `photos.google.com`, `smile.amazon.com` → `nil`
+    private func extractSearchShortcutURL(for urlString: String) -> String? {
+        guard let host = URL(string: urlString)?.host,
+              let eTLD = tld.eTLD(forStringURL: urlString) else {
+            return nil
+        }
+        // Remove common subdomains ("www", "wwwN", "m", and "mobile") and eTLD to get the short hostname.
+        let shortHostname = host.replacing(regex: #"^(m|mobile|www\d*)\."#, with: "").dropping(suffix: ".\(eTLD)")
+        return searchShortcuts[shortHostname]
     }
 
     // MARK: - Database Queries

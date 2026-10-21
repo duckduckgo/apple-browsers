@@ -1,0 +1,338 @@
+//
+//  VPNUpsellPopoverViewModelTests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+import Combine
+import Common
+import FoundationExtensions
+import VPN
+import PrivacyConfig
+import SubscriptionTestingUtilities
+import Subscription
+@testable import DuckDuckGo_Privacy_Browser
+
+@MainActor
+final class MockVPNUpsellDismisser: VPNUpsellDismissing {
+    private(set) var dismissCount = 0
+    func dismissUpsell() { dismissCount += 1 }
+}
+
+@MainActor
+final class VPNUpsellPopoverViewModelTests: XCTestCase {
+    var sut: VPNUpsellPopoverViewModel!
+    var mockSubscriptionManager: SubscriptionManagerMock!
+    var mockFeatureFlagger: MockFeatureFlagger!
+    var mockDismisser: MockVPNUpsellDismisser!
+    var lastReceivedURL: URL?
+    var firedPixels: [SubscriptionPixel] = []
+    var cancellables: Set<AnyCancellable> = []
+
+    override func setUp() {
+        super.setUp()
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockFeatureFlagger = MockFeatureFlagger()
+        mockDismisser = MockVPNUpsellDismisser()
+        firedPixels = []
+
+        mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+
+        sut = VPNUpsellPopoverViewModel(
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            upsellDismisser: mockDismisser,
+            urlOpener: { url in
+                self.lastReceivedURL = url
+            },
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
+        )
+    }
+
+    override func tearDown() {
+        super.tearDown()
+        sut = nil
+        mockDismisser = nil
+        mockSubscriptionManager = nil
+        mockFeatureFlagger = nil
+        lastReceivedURL = nil
+        firedPixels = []
+        cancellables.removeAll()
+    }
+
+    func testWhenPopoverIsDismissed_ThenUpsellIsDismissed() throws {
+        // When
+        sut.dismiss()
+
+        // Then
+        XCTAssertEqual(mockDismisser.dismissCount, 1)
+    }
+
+    func testWhenPopoverIsDismissed_ThenDismissPixelIsFired() throws {
+        // Given
+        XCTAssertTrue(firedPixels.isEmpty)
+
+        // When
+        sut.dismiss()
+
+        // Then
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionToolbarButtonPopoverDismissButtonClicked.name)
+    }
+
+    func testWhenPrimaryCTAIsClicked_ThenUpsellIsNotDismissed() throws {
+        // Given
+        mockSubscriptionManager.resultURL = URL(string: "https://duckduckgo.com/pro/purchase")!
+
+        // When
+        sut.showSubscriptionLandingPage()
+
+        // Then
+        XCTAssertEqual(mockDismisser.dismissCount, 0)
+    }
+
+    func testWhenPrimaryCTAIsClicked_SubscriptionLandingPageIsOpened_AndOriginIsSet() throws {
+        // Given
+        let baseURL = URL(string: "https://duckduckgo.com/pro/purchase")!
+        mockSubscriptionManager.resultURL = baseURL
+
+        // When
+        sut.showSubscriptionLandingPage()
+
+        // Then
+        let receivedURL = try XCTUnwrap(lastReceivedURL)
+        let components = try XCTUnwrap(URLComponents(url: receivedURL, resolvingAgainstBaseURL: false))
+        let originQueryItem = try XCTUnwrap(components.queryItems?.first { $0.name == "origin" })
+        XCTAssertEqual(originQueryItem.value, SubscriptionFunnelOrigin.vpnToolbarUpsell.rawValue)
+        XCTAssertEqual(originQueryItem.value, "funnel_toolbar_macos__subscriptionvpnupsell")
+    }
+
+    func testWhenPrimaryCTAIsClicked_ThenProceedAndOfferScreenImpressionPixelsAreFired() throws {
+        // Given
+        let baseURL = URL(string: "https://duckduckgo.com/pro/purchase")!
+        mockSubscriptionManager.resultURL = baseURL
+        XCTAssertTrue(firedPixels.isEmpty)
+
+        // When
+        sut.showSubscriptionLandingPage()
+
+        // Then
+        XCTAssertEqual(firedPixels.count, 2)
+        XCTAssertEqual(firedPixels[0].name, SubscriptionPixel.subscriptionToolbarButtonPopoverProceedButtonClicked.name)
+        XCTAssertEqual(firedPixels[1].name, SubscriptionPixel.subscriptionOfferScreenImpression(origin: nil).name)
+        XCTAssertEqual(firedPixels[1].parameters?[AttributionParameter.origin], SubscriptionFunnelOrigin.vpnToolbarUpsell.rawValue)
+        XCTAssertEqual(lastReceivedURL?.getParameter(named: AttributionParameter.origin), SubscriptionFunnelOrigin.vpnToolbarUpsell.rawValue)
+    }
+
+    func testWhenUserIsEligibleForFreeTrial_ThenMainCTATitleIsTryForFree() throws {
+        // Given
+        let expectation = XCTestExpectation(description: "Feature set should be updated")
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
+
+        sut.$featureSet
+            .dropFirst()
+            .sink { featureSet in
+                // Then
+                XCTAssertEqual(featureSet.mainCTATitle, UserText.vpnUpsellPopoverFreeTrialCTA)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        sut = VPNUpsellPopoverViewModel(
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            upsellDismisser: mockDismisser,
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
+        )
+
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testWhenUserIsNotEligibleForFreeTrial_ThenMainCTATitleIsLearnMore() throws {
+        // Given
+        let expectation = XCTestExpectation(description: "Feature set should be updated")
+        mockSubscriptionManager.isEligibleForFreeTrialResult = false
+
+        sut.$featureSet
+            .dropFirst()
+            .sink { featureSet in
+                // Then
+                XCTAssertEqual(featureSet.mainCTATitle, UserText.vpnUpsellPopoverLearnMoreCTA)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        sut = VPNUpsellPopoverViewModel(
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            upsellDismisser: mockDismisser,
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
+        )
+
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testWhenListingPlusFeatures_ItAlwaysListsIdentityTheftProtection() throws {
+        // Given
+        let expectation = XCTestExpectation(description: "Feature set should be updated")
+
+        sut.$featureSet
+            .dropFirst()
+            .sink { featureSet in
+                // Then
+                XCTAssertTrue(featureSet.plus.contains(.identityTheftProtection))
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        sut = VPNUpsellPopoverViewModel(
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            upsellDismisser: mockDismisser,
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
+        )
+
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testWhenListingPlusFeatures_AndAIChatIsEnabled_ItListsAIChat() throws {
+        // Given
+        let expectation = XCTestExpectation(description: "Feature set should be updated")
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
+
+        sut.$featureSet
+            .dropFirst()
+            .sink { featureSet in
+                // Then
+                XCTAssertEqual(featureSet.plus.first, .aiChat)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        sut = VPNUpsellPopoverViewModel(
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            upsellDismisser: mockDismisser,
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
+        )
+
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testWhenListingPlusFeatures_AndPIRIsEnabled_ItListsPIR() throws {
+        // Given
+        let expectation = XCTestExpectation(description: "Feature set should be updated")
+//        mockSubscriptionManager.enabledFeatures = [.dataBrokerProtection]
+        mockSubscriptionManager.resultFeatures = [.dataBrokerProtection]
+
+        sut.$featureSet
+            .dropFirst()
+            .sink { featureSet in
+                // Then
+                XCTAssertEqual(featureSet.plus.last, .pir)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        sut = VPNUpsellPopoverViewModel(
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            upsellDismisser: mockDismisser,
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
+        )
+
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testWhenOnlyOnePlusFeatureIsEnabled_TheCopyDoesNotContainTheCount() throws {
+        // Given
+        let expectation = XCTestExpectation(description: "Feature set should be updated")
+
+        sut.$featureSet
+            .dropFirst()
+            .sink { featureSet in
+                // Then
+                XCTAssertEqual(featureSet.plusFeaturesSubtitle, UserText.vpnUpsellPopoverPlusFeaturesSubtitle)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        sut = VPNUpsellPopoverViewModel(
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            upsellDismisser: mockDismisser,
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
+        )
+
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testWhenMoreThanOnePlusFeatureIsEnabled_TheCopyContainsTheCorrectCount() throws {
+         // Given
+        let expectation = XCTestExpectation(description: "Feature set should be updated")
+//        mockSubscriptionManager.enabledFeatures = [.dataBrokerProtection, .paidAIChat]
+        mockSubscriptionManager.resultFeatures = [.dataBrokerProtection, .paidAIChat]
+
+        sut.$featureSet
+            .dropFirst()
+            .sink { featureSet in
+                // Then
+                XCTAssertEqual(featureSet.plusFeaturesSubtitle, String(format: UserText.vpnUpsellPopoverPlusFeaturesSubtitleCount, 2))
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        sut = VPNUpsellPopoverViewModel(
+            subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
+            upsellDismisser: mockDismisser,
+            onDismiss: {},
+            pixelHandler: { pixel in
+                self.firedPixels.append(pixel)
+            }
+        )
+
+        wait(for: [expectation], timeout: 1)
+    }
+}

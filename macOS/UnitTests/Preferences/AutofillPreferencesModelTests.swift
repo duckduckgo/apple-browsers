@@ -18,6 +18,7 @@
 
 import XCTest
 import Combine
+import PrivacyConfig
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
@@ -29,6 +30,8 @@ final class AutofillPreferencesPersistorMock: AutofillPreferencesPersistor {
     var passwordManager: PasswordManager = .duckduckgo
     var autolockLocksFormFilling: Bool = false
     var debugScriptEnabled: Bool = false
+    var showInMenuBar: Bool = false
+    var isManagedByExtension: Bool = false
 }
 
 final class UserAuthenticatorMock: UserAuthenticating {
@@ -43,6 +46,9 @@ final class UserAuthenticatorMock: UserAuthenticating {
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {
         didCallAuthenticate = true
         return _authenticateUser(reason)
+    }
+    func isAuthenticationPromptNeeded(reason: DeviceAuthenticator.AuthenticationReason) -> Bool {
+        true
     }
 }
 
@@ -119,5 +125,89 @@ final class AutofillPreferencesModelTests: XCTestCase {
         model.authorizeAutoLockSettingsChange(threshold: .oneHour)
         XCTAssertNotEqual(model.autoLockThreshold, .oneHour)
         XCTAssertEqual(persistor.autoLockThreshold, model.autoLockThreshold)
+    }
+
+    @MainActor
+    func testWhenDuckDuckGoIsThePasswordManagerThenActivePromoIsShown() throws {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = try AutofillPreferencesModel(persistor: AutofillPreferencesPersistorMock(), userAuthenticator: UserAuthenticatorMock(),
+                                                 neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: syncPromoManager)
+        XCTAssertFalse(model.showSyncPromo)
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        XCTAssertTrue(model.showSyncPromo)
+    }
+
+    @MainActor
+    func testWhenBitwardenIsThePasswordManagerThenActivePromoIsNotShown() throws {
+        let persistor = AutofillPreferencesPersistorMock()
+        persistor.passwordManager = .bitwarden
+        let syncPromoManager = MockSyncPromoManager()
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        let model = try AutofillPreferencesModel(persistor: persistor, userAuthenticator: UserAuthenticatorMock(),
+                                                 neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: syncPromoManager)
+
+        XCTAssertFalse(model.showSyncPromo)
+    }
+
+    // MARK: - Extension Managing Autofill
+
+    @MainActor
+    func testWhenAnExtensionManagesAutofill_ThenItIsShown() throws {
+        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
+
+        let model = try makeModel(takeover: makeTakeover(bitwarden))
+
+        XCTAssertEqual(model.managingExtension, bitwarden)
+    }
+
+    @MainActor
+    func testWhenTheUserUsesDuckDuckGoInstead_ThenAutofillIsGivenBack() throws {
+        var givenBackCount = 0
+        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
+        let model = try makeModel(takeover: makeTakeover(bitwarden) { givenBackCount += 1 })
+
+        model.useDuckDuckGoInstead()
+
+        XCTAssertEqual(givenBackCount, 1)
+    }
+
+    @MainActor
+    func testWhenAnExtensionTakesOverWhileSettingsAreOpen_ThenTheModelFollows() throws {
+        let bitwarden = AutofillManagingExtension(identifier: "bitwarden", name: "Bitwarden", icon: nil)
+        var managing: AutofillManagingExtension?
+        let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
+                                                    notificationCenter: NotificationCenter(),
+                                                    readManagingExtension: { managing },
+                                                    clearSettings: {})
+        let model = try makeModel(takeover: takeover)
+        XCTAssertNil(model.managingExtension)
+
+        managing = bitwarden
+        takeover.refresh()
+        NotificationCenter.default.post(name: .autofillUserSettingsDidChange, object: nil)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        XCTAssertEqual(model.managingExtension, bitwarden)
+    }
+
+    @MainActor
+    private func makeTakeover(_ managing: AutofillManagingExtension?,
+                              clearSettings: @escaping @MainActor () -> Void = {}) -> WebExtensionAutofillTakeover {
+        let takeover = WebExtensionAutofillTakeover(preferences: AutofillPreferencesPersistorMock(),
+                                                    notificationCenter: NotificationCenter(),
+                                                    readManagingExtension: { managing },
+                                                    clearSettings: clearSettings)
+        takeover.refresh()
+        return takeover
+    }
+
+    @MainActor
+    private func makeModel(takeover: WebExtensionAutofillTakeover) throws -> AutofillPreferencesModel {
+        try AutofillPreferencesModel(persistor: AutofillPreferencesPersistorMock(), userAuthenticator: UserAuthenticatorMock(),
+                                     neverPromptWebsitesManager: neverPromptWebsitesManager(), syncPromoManager: MockSyncPromoManager(),
+                                     autofillTakeover: takeover)
     }
 }

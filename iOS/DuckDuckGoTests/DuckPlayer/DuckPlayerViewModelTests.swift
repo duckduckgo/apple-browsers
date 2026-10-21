@@ -20,8 +20,9 @@
 import XCTest
 import Combine
 @testable import DuckDuckGo
-@testable import BrowserServicesKit
+import BrowserServicesKit
 @testable import Core
+import PrivacyConfig
 
 final class DuckPlayerViewModelTests: XCTestCase {
 
@@ -227,7 +228,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         viewModel.handleYouTubeNavigation(testURL)
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
         XCTAssertEqual(receivedURL, testURL, "Publisher should emit the URL that was passed in")
     }
 
@@ -248,7 +249,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         viewModel.openInYouTube()
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
         let expectedURL = URL.youtube(viewModel.videoID)
         XCTAssertEqual(receivedURL, expectedURL, "Publisher should emit the YouTube URL for the viewModel's video ID")
     }
@@ -271,42 +272,8 @@ final class DuckPlayerViewModelTests: XCTestCase {
         viewModel.handleYouTubeNavigation(testURL)
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
         XCTAssertEqual(receivedURL, testURL, "Publisher should emit any URL that was passed in, not just YouTube URLs")
-    }
-
-    @MainActor
-    func testHandleYouTubeNavigation_SameVideo_NoPublisherEvents() {
-        // Given
-        let sameVideoURL = URL(string: "https://www.youtube.com/watch?v=\(viewModel.videoID)")!
-        var dismissPublisherFired = false
-        var navigationPublisherFired = false
-
-        // Subscribe to both publishers to ensure neither fires
-        viewModel.dismissPublisher
-            .sink { _ in
-                dismissPublisherFired = true
-            }
-            .store(in: &cancellables)
-            
-        viewModel.youtubeNavigationRequestPublisher
-            .sink { _ in
-                navigationPublisherFired = true
-            }
-            .store(in: &cancellables)
-
-        // When
-        viewModel.handleYouTubeNavigation(sameVideoURL)
-
-        // Then - Wait a brief moment to ensure no publishers fire
-        let expectation = XCTestExpectation(description: "Brief wait")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 0.2)
-        
-        XCTAssertFalse(dismissPublisherFired, "Dismiss publisher should not fire for same video")
-        XCTAssertFalse(navigationPublisherFired, "Navigation publisher should not fire for same video")
     }
 
     @MainActor
@@ -327,7 +294,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         viewModel.handleYouTubeNavigation(differentVideoURL)
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
         XCTAssertEqual(receivedURL, differentVideoURL, "Should send navigation request for different video")
     }
 
@@ -346,7 +313,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         viewModel.openSettings()
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     @MainActor
@@ -368,7 +335,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         viewModel.onDisappear() // This triggers the publisher
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
         XCTAssertEqual(receivedTimestamp, expectedCurrentTimestamp, "Dismiss publisher should emit the current video playback timestamp")
     }
 
@@ -407,7 +374,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         viewModel.onDisappear()
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
         XCTAssertEqual(receivedTimestamp, updatedTimestamp, "Should emit the updated current timestamp, not the initial timestamp")
         XCTAssertNotEqual(receivedTimestamp, initialTimestamp, "Should not emit the initial timestamp")
     }

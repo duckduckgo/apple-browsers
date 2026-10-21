@@ -19,7 +19,6 @@
 import AppKit
 import Foundation
 
-@available(macOS 12.0, *)
 final class AddressBarTextSelectionNavigation: NSTextSelectionNavigation {
     private weak var dataSource: NSTextLayoutManager?
 
@@ -57,14 +56,22 @@ final class AddressBarTextSelectionNavigation: NSTextSelectionNavigation {
               let anchorRange = anchor.textRanges.first else { return selections }
 
         let range = textSelectionRange.union(anchorRange)
-        let extendedSelection = NSTextSelection(range: range, affinity: anchor.affinity, granularity: anchor.granularity)
+        // The affinity tells which end of a selection moves (Opt+Shift+Left/Right use it): it follows the side that went past the anchor
+        let affinity: NSTextSelection.Affinity
+        if textSelectionRange.location.compare(anchorRange.location) == .orderedAscending {
+            affinity = .upstream
+        } else if textSelectionRange.endLocation.compare(anchorRange.endLocation) == .orderedDescending {
+            affinity = .downstream
+        } else {
+            affinity = anchor.affinity
+        }
+        let extendedSelection = NSTextSelection(range: range, affinity: affinity, granularity: anchor.granularity)
 
         return [extendedSelection]
     }
 
 }
 
-@available(macOS 12.0, *)
 extension NSSelectionGranularity {
 
     init(_ textSelectionGranularity: NSTextSelection.Granularity) {

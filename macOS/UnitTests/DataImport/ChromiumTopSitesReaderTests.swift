@@ -16,12 +16,15 @@
 //  limitations under the License.
 //
 
+import Foundation
 import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class ChromiumTopSitesReaderTests {
 
-    @Test("Check if expected top sites are read from Chromium data")
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if expected top sites are read from Chromium data", .timeLimit(.minutes(1)))
     func readingTopSites() async throws {
         let topSitesReader = ChromiumTopSitesReader(chromiumDataDirectoryURL: resourceURL())
         let topSites = try topSitesReader.readTopSites().get()

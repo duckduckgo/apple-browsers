@@ -17,11 +17,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import PixelKit
 import XCTest
 @testable import Core
-@testable import BrowserServicesKit
-import Combine
-import PixelKit
 
 class AtbServerTests: XCTestCase {
     
@@ -37,22 +39,24 @@ class AtbServerTests: XCTestCase {
         PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger())
         store = MockStatisticsStore()
         loader = StatisticsLoader(statisticsStore: store)
-
     }
      
-    func testExtiCall() {
+    func testExtiCall() throws {
 
         let waitForCompletion = expectation(description: "wait for completion")
         loader.load {
             waitForCompletion.fulfill()
         }
-        
-        wait(for: [waitForCompletion], timeout: 5.0)
-        
+
+        let result = XCTWaiter.wait(for: [waitForCompletion], timeout: 5.0)
+        if result == .timedOut {
+            throw XCTSkip("Network request timed out — possible CI connectivity issue")
+        }
+
         XCTAssertNotNil(store.atb)
     }
     
-    func testApphRetentionAtb() {
+    func testApphRetentionAtb() throws {
 
         store.atb = "v117-2"
         store.appRetentionAtb = "v117-2"
@@ -61,30 +65,36 @@ class AtbServerTests: XCTestCase {
         loader.refreshAppRetentionAtb {
             waitForCompletion.fulfill()
         }
-        
-        wait(for: [waitForCompletion], timeout: 5.0)
+
+        let result = XCTWaiter.wait(for: [waitForCompletion], timeout: 5.0)
+        if result == .timedOut {
+            throw XCTSkip("Network request timed out — possible CI connectivity issue")
+        }
 
         XCTAssertNotNil(store.appRetentionAtb)
         XCTAssertNotEqual(store.atb, store.appRetentionAtb)
     }
-    
-    func testSearchRetentionAtb() {
-        
+
+    func testSearchRetentionAtb() throws {
+
         store.atb = "v117-2"
         store.searchRetentionAtb = "v117-2"
-        
+
         let waitForCompletion = expectation(description: "wait for completion")
         loader.refreshSearchRetentionAtb {
             waitForCompletion.fulfill()
         }
-        
-        wait(for: [waitForCompletion], timeout: 5.0)
-        
+
+        let result = XCTWaiter.wait(for: [waitForCompletion], timeout: 5.0)
+        if result == .timedOut {
+            throw XCTSkip("Network request timed out — possible CI connectivity issue")
+        }
+
         XCTAssertNotNil(store.searchRetentionAtb)
         XCTAssertNotEqual(store.atb, store.searchRetentionAtb)
     }
 
-    func testWhenAtbIsOldThenCohortIsGeneralizedForAppRetention() {
+    func testWhenAtbIsOldThenCohortIsGeneralizedForAppRetention() throws {
 
         store.atb = "v117-2"
         store.appRetentionAtb = "v117-2"
@@ -94,13 +104,16 @@ class AtbServerTests: XCTestCase {
             waitForCompletion.fulfill()
         }
 
-        wait(for: [waitForCompletion], timeout: 5.0)
+        let result = XCTWaiter.wait(for: [waitForCompletion], timeout: 5.0)
+        if result == .timedOut {
+            throw XCTSkip("Network request timed out — possible CI connectivity issue")
+        }
 
         XCTAssertNotNil(store.appRetentionAtb)
         XCTAssertEqual(store.atb, "v117-1")
     }
 
-    func testWhenAtbIsOldThenCohortIsGeneralizedForSearchRetention() {
+    func testWhenAtbIsOldThenCohortIsGeneralizedForSearchRetention() throws {
 
         store.atb = "v117-2"
         store.searchRetentionAtb = "v117-2"
@@ -110,20 +123,13 @@ class AtbServerTests: XCTestCase {
             waitForCompletion.fulfill()
         }
 
-        wait(for: [waitForCompletion], timeout: 5.0)
+        let result = XCTWaiter.wait(for: [waitForCompletion], timeout: 5.0)
+        if result == .timedOut {
+            throw XCTSkip("Network request timed out — possible CI connectivity issue")
+        }
 
         XCTAssertNotNil(store.searchRetentionAtb)
         XCTAssertEqual(store.atb, "v117-1")
     }
 
-}
-
-class MockInteranlUserDecider: InternalUserDecider {
-    var isInternalUser: Bool = false
-
-    var isInternalUserPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
-
-    func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-        return false
-    }
 }

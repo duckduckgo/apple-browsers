@@ -48,13 +48,13 @@ final class DownloadsCellView: NSTableCellView {
     private let detailLabel = NSTextField()
 
     private let progressView = CircularProgressView()
-    private let cancelButton = MouseOverButton(image: .cancelDownload,
+    private let cancelButton = MouseOverButton(image: NSImage(resource: .cancelDownload),
                                                target: nil,
                                                action: #selector(DownloadsViewController.cancelDownloadAction))
-    private let revealButton = MouseOverButton(image: .revealDownload,
+    private let revealButton = MouseOverButton(image: NSImage(resource: .revealDownload),
                                                target: nil,
                                                action: #selector(DownloadsViewController.revealDownloadAction))
-    private let restartButton = MouseOverButton(image: .restartDownload,
+    private let restartButton = MouseOverButton(image: NSImage(resource: .restartDownload),
                                                 target: nil,
                                                 action: #selector(DownloadsViewController.restartDownloadAction))
 
@@ -137,6 +137,11 @@ final class DownloadsCellView: NSTableCellView {
         titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         titleLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
         titleLabel.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
+        if let titleCell = titleLabel.cell as? NSTextFieldCell {
+            titleCell.wraps = false
+            titleCell.usesSingleLineMode = true
+            titleCell.lineBreakMode = .byTruncatingMiddle
+        }
 
         detailLabel.translatesAutoresizingMaskIntoConstraints = false
         detailLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -161,8 +166,8 @@ final class DownloadsCellView: NSTableCellView {
         cancelButton.imageScaling = .scaleProportionallyDown
         cancelButton.cornerRadius = 4
         cancelButton.backgroundInset = CGPoint(x: 2, y: 2)
-        cancelButton.mouseDownColor = .buttonMouseDown
-        cancelButton.mouseOverColor = .buttonMouseOver
+        cancelButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        cancelButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
 
         revealButton.translatesAutoresizingMaskIntoConstraints = false
         revealButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -174,8 +179,8 @@ final class DownloadsCellView: NSTableCellView {
         revealButton.imageScaling = .scaleProportionallyDown
         revealButton.cornerRadius = 4
         revealButton.backgroundInset = CGPoint(x: 2, y: 2)
-        revealButton.mouseDownColor = .buttonMouseDown
-        revealButton.mouseOverColor = .buttonMouseOver
+        revealButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        revealButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
 
         restartButton.translatesAutoresizingMaskIntoConstraints = false
         restartButton.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -187,8 +192,8 @@ final class DownloadsCellView: NSTableCellView {
         restartButton.imageScaling = .scaleProportionallyDown
         restartButton.cornerRadius = 4
         restartButton.backgroundInset = CGPoint(x: 2, y: 2)
-        restartButton.mouseDownColor = .buttonMouseDown
-        restartButton.mouseOverColor = .buttonMouseOver
+        restartButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        restartButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
 
         separator.boxType = .separator
         separator.translatesAutoresizingMaskIntoConstraints = false
@@ -307,6 +312,7 @@ final class DownloadsCellView: NSTableCellView {
                     .eraseToAnyPublisher()
             }
             .switchToLatest()
+            .throttle(for: 0.2, scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] progress in
                 guard let self else { return }
 
@@ -335,7 +341,7 @@ final class DownloadsCellView: NSTableCellView {
             updateButtons(for: state, animated: false)
         }
 
-        var attributes: [NSAttributedString.Key: Any]?
+        var attributes: [NSAttributedString.Key: Any] = [:]
         switch state {
         case .downloading(let progress, _):
             subscribe(to: progress)
@@ -355,6 +361,12 @@ final class DownloadsCellView: NSTableCellView {
         case .failed(let error):
             updateDownloadFailed(with: .downloadFailed(error))
         }
+
+        // Enforce middle truncation in the attributed paragraph style to avoid AppKit
+        // falling back to clipping/tail behavior when drawing attributed text.
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byTruncatingMiddle
+        attributes[.paragraphStyle] = paragraphStyle
 
         titleLabel.attributedStringValue = NSAttributedString(string: filename, attributes: attributes)
         titleLabel.toolTip = filename

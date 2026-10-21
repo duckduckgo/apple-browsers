@@ -20,13 +20,17 @@ import XCTest
 import Foundation
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
+
+private typealias MockURLProtocol = DataBrokerProtectionCoreTestsUtils.MockURLProtocol
 
 final class CaptchaServiceTests: XCTestCase {
     private let servicePixel = MockDataBrokerProtectionBackendServicePixels()
     let jsonEncoder = JSONEncoder()
     private let mockAuthenticationManager = MockAuthenticationManager()
     private let proxyUserDefaults = UserDefaults(suiteName: UUID().uuidString)!
+    private let dataBrokerURL = "fastpeoplesearch.com"
+    private let dataBrokerVersion = "1.0"
 
     enum MockError: Error {
         case someError
@@ -52,7 +56,11 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaInformation(GetCaptchaInfoResponse.mock, attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaInformation(GetCaptchaInfoResponse.mock,
+                                                       dataBrokerURL: dataBrokerURL,
+                                                       dataBrokerVersion: dataBrokerVersion,
+                                                       attemptId: UUID(),
+                                                       shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             if let error = error as? CaptchaServiceError, case .errorWhenSubmittingCaptcha = error {
@@ -72,7 +80,11 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaInformation(GetCaptchaInfoResponse.mock, attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaInformation(GetCaptchaInfoResponse.mock,
+                                                       dataBrokerURL: dataBrokerURL,
+                                                       dataBrokerVersion: dataBrokerVersion,
+                                                       attemptId: UUID(),
+                                                       shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             if let error = error as? CaptchaServiceError, case .criticalFailureWhenSubmittingCaptcha = error {
@@ -92,7 +104,11 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaInformation(GetCaptchaInfoResponse.mock, attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaInformation(GetCaptchaInfoResponse.mock,
+                                                       dataBrokerURL: dataBrokerURL,
+                                                       dataBrokerVersion: dataBrokerVersion,
+                                                       attemptId: UUID(),
+                                                       shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             if let error = error as? CaptchaServiceError, case .invalidRequestWhenSubmittingCaptcha = error {
@@ -116,7 +132,13 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaInformation(GetCaptchaInfoResponse.mock, retries: 2, pollingInterval: 0.01, attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaInformation(GetCaptchaInfoResponse.mock,
+                                                       dataBrokerURL: dataBrokerURL,
+                                                       dataBrokerVersion: dataBrokerVersion,
+                                                       retries: 2,
+                                                       pollingInterval: 0.01,
+                                                       attemptId: UUID(),
+                                                       shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             if let error = error as? CaptchaServiceError, case .timedOutWhenSubmittingCaptcha = error {
@@ -138,7 +160,11 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaToBeResolved(for: "123456", attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaToBeResolved(for: "123456",
+                                                        dataBrokerURL: dataBrokerURL,
+                                                        dataBrokerVersion: dataBrokerVersion,
+                                                        attemptId: UUID(),
+                                                        shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             if let error = error as? CaptchaServiceError, case .failureWhenFetchingCaptchaResult = error {
@@ -160,7 +186,11 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaToBeResolved(for: "123456", attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaToBeResolved(for: "123456",
+                                                        dataBrokerURL: dataBrokerURL,
+                                                        dataBrokerVersion: dataBrokerVersion,
+                                                        attemptId: UUID(),
+                                                        shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             if let error = error as? CaptchaServiceError, case .invalidRequestWhenFetchingCaptchaResult = error {
@@ -182,7 +212,11 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaToBeResolved(for: "123456", attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaToBeResolved(for: "123456",
+                                                        dataBrokerURL: dataBrokerURL,
+                                                        dataBrokerVersion: dataBrokerVersion,
+                                                        attemptId: UUID(),
+                                                        shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             if let error = error as? CaptchaServiceError, case .nilDataWhenFetchingCaptchaResult = error {
@@ -206,7 +240,13 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaToBeResolved(for: "123456", retries: 2, pollingInterval: 0.01, attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaToBeResolved(for: "123456",
+                                                        dataBrokerURL: dataBrokerURL,
+                                                        dataBrokerVersion: dataBrokerVersion,
+                                                        retries: 2,
+                                                        pollingInterval: 0.01,
+                                                        attemptId: UUID(),
+                                                        shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             if let error = error as? CaptchaServiceError, case .timedOutWhenFetchingCaptchaResult = error {
@@ -228,7 +268,13 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            let data = try await sut.submitCaptchaToBeResolved(for: "123456", retries: 2, pollingInterval: 1, attemptId: UUID(), shouldRunNextStep: { true })
+            let data = try await sut.submitCaptchaToBeResolved(for: "123456",
+                                                               dataBrokerURL: dataBrokerURL,
+                                                               dataBrokerVersion: dataBrokerVersion,
+                                                               retries: 2,
+                                                               pollingInterval: 1,
+                                                               attemptId: UUID(),
+                                                               shouldRunNextStep: { true })
             XCTAssertEqual(data, "some data")
         } catch {
             XCTFail("Unexpected error thrown: \(error).")
@@ -244,7 +290,13 @@ final class CaptchaServiceTests: XCTestCase {
                                  servicePixel: servicePixel)
 
         do {
-            _ = try await sut.submitCaptchaToBeResolved(for: "123456", retries: 2, pollingInterval: 1, attemptId: UUID(), shouldRunNextStep: { true })
+            _ = try await sut.submitCaptchaToBeResolved(for: "123456",
+                                                        dataBrokerURL: dataBrokerURL,
+                                                        dataBrokerVersion: dataBrokerVersion,
+                                                        retries: 2,
+                                                        pollingInterval: 1,
+                                                        attemptId: UUID(),
+                                                        shouldRunNextStep: { true })
             XCTFail("Expected an error to be thrown")
         } catch {
             guard let authenticationError = error as? AuthenticationError, authenticationError == .noAuthToken else {

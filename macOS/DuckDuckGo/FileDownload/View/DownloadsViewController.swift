@@ -18,6 +18,7 @@
 
 import Cocoa
 import Combine
+import DesignResourcesKitIcons
 import SwiftUI
 
 protocol DownloadsViewControllerDelegate: AnyObject {
@@ -30,8 +31,8 @@ final class DownloadsViewController: NSViewController {
 
     private lazy var titleLabel = NSTextField(string: UserText.downloadsDialogTitle)
 
-    private lazy var openDownloadsFolderButton = MouseOverButton(image: .openDownloadsFolder, target: self, action: #selector(openDownloadsFolderAction))
-    private lazy var clearDownloadsButton = MouseOverButton(image: .clearDownloads, target: self, action: #selector(clearDownloadsAction))
+    private lazy var openDownloadsFolderButton = MouseOverButton(image: NSImage(resource: .openDownloadsFolder), target: self, action: #selector(openDownloadsFolderAction))
+    private lazy var clearDownloadsButton = MouseOverButton(image: NSImage(resource: .clearDownloads), target: self, action: #selector(clearDownloadsAction))
 
     private lazy var scrollView = NSScrollView()
     private lazy var tableView = NSTableView()
@@ -44,15 +45,20 @@ final class DownloadsViewController: NSViewController {
 
     private let separator = NSBox()
     private let viewModel: DownloadListViewModel
-    private let visualStyle: VisualStyleProviding
+    private let preferences: DownloadsPreferences
     private var downloadsCancellable: AnyCancellable?
     private var errorBannerCancellable: AnyCancellable?
     private var errorBannerHostingView: NSHostingView<DownloadsErrorBannerView>?
 
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     init(viewModel: DownloadListViewModel,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         preferences: DownloadsPreferences,
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
         self.viewModel = viewModel
-        self.visualStyle = visualStyle
+        self.preferences = preferences
+        self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -61,7 +67,9 @@ final class DownloadsViewController: NSViewController {
     }
 
     override func loadView() {
-        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksPanelBackgroundColor)
+        let colorsProvider = themeManager.theme.colorsProvider
+
+        view = ColorView(frame: .zero, backgroundColor: colorsProvider.bookmarksPanelBackgroundColor)
 
         view.addSubview(titleLabel)
         view.addSubview(openDownloadsFolderButton)
@@ -87,9 +95,9 @@ final class DownloadsViewController: NSViewController {
         openDownloadsFolderButton.toolTip = UserText.openDownloadsFolderTooltip
         openDownloadsFolderButton.cornerRadius = 4
         openDownloadsFolderButton.backgroundInset = CGPoint(x: 2, y: 2)
-        openDownloadsFolderButton.normalTintColor = .button
-        openDownloadsFolderButton.mouseDownColor = .buttonMouseDown
-        openDownloadsFolderButton.mouseOverColor = .buttonMouseOver
+        openDownloadsFolderButton.normalTintColor = NSColor(resource: .button)
+        openDownloadsFolderButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        openDownloadsFolderButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
 
         clearDownloadsButton.translatesAutoresizingMaskIntoConstraints = false
         clearDownloadsButton.alignment = .center
@@ -101,9 +109,9 @@ final class DownloadsViewController: NSViewController {
         clearDownloadsButton.setAccessibilityIdentifier("DownloadsViewController.clearDownloadsButton")
         clearDownloadsButton.cornerRadius = 4
         clearDownloadsButton.backgroundInset = CGPoint(x: 2, y: 2)
-        clearDownloadsButton.normalTintColor = .button
-        clearDownloadsButton.mouseDownColor = .buttonMouseDown
-        clearDownloadsButton.mouseOverColor = .buttonMouseOver
+        clearDownloadsButton.normalTintColor = NSColor(resource: .button)
+        clearDownloadsButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        clearDownloadsButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
 
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
@@ -134,6 +142,7 @@ final class DownloadsViewController: NSViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.menu = setUpContextMenu()
+        tableView.setAccessibilityIdentifier("DownloadsViewController.table")
 
         scrollView.contentView = clipView
 
@@ -164,8 +173,8 @@ final class DownloadsViewController: NSViewController {
         ]
 
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 13),
 
             openDownloadsFolderButton.widthAnchor.constraint(equalToConstant: 32),
             openDownloadsFolderButton.heightAnchor.constraint(equalToConstant: 32),
@@ -175,12 +184,12 @@ final class DownloadsViewController: NSViewController {
             clearDownloadsButton.widthAnchor.constraint(equalToConstant: 32),
             clearDownloadsButton.heightAnchor.constraint(equalToConstant: 32),
             clearDownloadsButton.leadingAnchor.constraint(equalTo: openDownloadsFolderButton.trailingAnchor),
-            view.trailingAnchor.constraint(equalTo: clearDownloadsButton.trailingAnchor, constant: 11),
+            view.trailingAnchor.constraint(equalTo: clearDownloadsButton.trailingAnchor, constant: 16),
             clearDownloadsButton.centerYAnchor.constraint(equalTo: openDownloadsFolderButton.centerYAnchor),
 
             separator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             separator.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -2),
-            separator.topAnchor.constraint(equalTo: view.topAnchor, constant: 43),
+            separator.topAnchor.constraint(equalTo: view.topAnchor, constant: 44),
 
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -210,6 +219,7 @@ final class DownloadsViewController: NSViewController {
 
         preferredContentSize = Self.preferredContentSize
         setupDragAndDrop()
+        subscribeToThemeChanges()
     }
 
     override func viewWillAppear() {
@@ -269,15 +279,23 @@ final class DownloadsViewController: NSViewController {
     private func setUpContextMenu() -> NSMenu {
         let menu = NSMenu {
             NSMenuItem(title: UserText.downloadsOpenItem, action: #selector(openDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.open, visibleOnMacOS27: true)
             NSMenuItem(title: UserText.downloadsShowInFinderItem, action: #selector(revealDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.searchFind, visibleOnMacOS27: true)
             NSMenuItem.separator()
             NSMenuItem(title: UserText.downloadsCopyLinkItem, action: #selector(copyDownloadLinkAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.copy, visibleOnMacOS27: true)
             NSMenuItem(title: UserText.downloadsOpenWebsiteItem, action: #selector(openOriginatingWebsiteAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.globe, visibleOnMacOS27: true)
             NSMenuItem.separator()
             NSMenuItem(title: UserText.downloadsRemoveFromListItem, action: #selector(removeDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.close, visibleOnMacOS27: true)
             NSMenuItem(title: UserText.downloadsStopItem, action: #selector(cancelDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.close, visibleOnMacOS27: true)
             NSMenuItem(title: UserText.downloadsRestartItem, action: #selector(restartDownloadAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.reloadSmall, visibleOnMacOS27: true)
             NSMenuItem(title: UserText.downloadsClearAllItem, action: #selector(clearDownloadsAction), target: self)
+                .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: true)
         }
         menu.delegate = self
         return menu
@@ -312,13 +330,12 @@ final class DownloadsViewController: NSViewController {
     // MARK: User Actions
 
     @objc func openDownloadsFolderAction(_ sender: Any) {
-        let prefs = DownloadsPreferences.shared
         let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         var url: URL?
         var itemToSelect: URL?
 
-        if prefs.alwaysRequestDownloadLocation {
-            url = prefs.lastUsedCustomDownloadLocation
+        if preferences.alwaysRequestDownloadLocation {
+            url = preferences.lastUsedCustomDownloadLocation
 
             // reveal the last completed download
             if let lastDownloaded = viewModel.items.first/* last added */(where: {
@@ -336,7 +353,7 @@ final class DownloadsViewController: NSViewController {
 
         } else {
             // open preferred downlod location
-            url = prefs.effectiveDownloadLocation
+            url = preferences.effectiveDownloadLocation
         }
 
         let folder = url ?? downloads
@@ -416,10 +433,21 @@ final class DownloadsViewController: NSViewController {
 
     private func setupDragAndDrop() {
         tableView.registerForDraggedTypes([.fileURL])
-        tableView.setDraggingSourceOperationMask(NSDragOperation.none, forLocal: true)
+        tableView.setDraggingSourceOperationMask(NSDragOperation.copy, forLocal: true)
         tableView.setDraggingSourceOperationMask(NSDragOperation.move, forLocal: false)
     }
+}
 
+extension DownloadsViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
+        }
+
+        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+    }
 }
 
 extension DownloadsViewController: NSMenuDelegate {
@@ -453,7 +481,7 @@ extension DownloadsViewController: NSMenuDelegate {
             case #selector(removeDownloadAction(_:)):
                 menuItem.isHidden = !(item.state.progress == nil)
             case #selector(restartDownloadAction(_:)):
-                menuItem.isHidden = !(item.state.error != nil)
+                menuItem.isHidden = !(item.state.error?.isRetryable == true)
 
             case #selector(clearDownloadsAction(_:)):
                 continue
@@ -461,6 +489,8 @@ extension DownloadsViewController: NSMenuDelegate {
                 continue
             }
         }
+
+        menu.alignItemTextWithIconsRecursively()
     }
 }
 
@@ -563,7 +593,7 @@ struct DownloadsErrorBannerView: View {
 
     var body: some View {
         HStack {
-            Image("Clear-Recolorable-16")
+            Image(.clearRecolorable16)
             Text(errorType.errorMessage)
                 .font(.body)
             Button(errorType.title) {
@@ -587,7 +617,15 @@ struct DownloadsErrorBannerView: View {
     store.fetchBlock = { completion in
         completion(.success(previewDownloadListItems))
     }
-    let viewModel = DownloadListViewModel(fireWindowSession: nil, coordinator: DownloadListCoordinator(store: store))
-    return DownloadsViewController(viewModel: viewModel)
+    let downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+    let viewModel = DownloadListViewModel(
+        fireWindowSession: nil,
+        coordinator: DownloadListCoordinator(
+            store: store,
+            downloadManager: FileDownloadManager(preferences: downloadsPreferences),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+    )
+    return DownloadsViewController(viewModel: viewModel, preferences: downloadsPreferences)
 }() }
 #endif

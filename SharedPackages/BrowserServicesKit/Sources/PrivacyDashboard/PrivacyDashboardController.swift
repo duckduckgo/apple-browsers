@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import MaliciousSiteProtection
 import PrivacyDashboardResources
@@ -44,6 +44,7 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
                                     didRequestSubmitBrokenSiteReportWithCategory category: String,
                                     description: String)
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController)
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController)
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,
                                     didRequestSubmitToggleReportWithSource source: BrokenSiteReport.Source)
     func privacyDashboardControllerDidRequestClose(_ privacyDashboardController: PrivacyDashboardController)
@@ -62,7 +63,12 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
 
     public weak var delegate: PrivacyDashboardControllerDelegate?
 
+    /// Deprecated: Preserved for backwards compatibility. Please use the `style` property instead
     @Published public var theme: PrivacyDashboardTheme?
+
+    /// Sets the Theme + Appearance of the Privacy Dashboard
+    @Published public var style: PrivacyDashboardStyle?
+
     @Published public var allowedPermissions: [AllowedPermission] = []
     public var preferredLocale: String?
     public var dashboardHtmlName: String {
@@ -179,6 +185,7 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
         switch entryPoint {
         case .report: source = .appMenu
         case .dashboard: source = .dashboard
+        case .errorPage, .webKitTerminationErrorPage: source = .errorPage
         case .prompt: source = .prompt
         case .toggleReport: source = .onProtectionsOffMenu
         }
@@ -199,7 +206,6 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
     func didRequestClose() {
         delegate?.privacyDashboardControllerDidRequestClose(self)
     }
-
 }
 
 // MARK: - WKNavigationDelegate
@@ -218,6 +224,7 @@ extension PrivacyDashboardController: WKNavigationDelegate {
         cancellables.removeAll()
 
         subscribeToTheme()
+        subscribeToStyle()
         subscribeToTrackerInfo()
         subscribeToConnectionUpgradedTo()
         subscribeToServerTrust()
@@ -233,6 +240,17 @@ extension PrivacyDashboardController: WKNavigationDelegate {
             .sink(receiveValue: { [weak self] themeName in
                 guard let self, let webView else { return }
                 script.setTheme(themeName, webView: webView)
+            })
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToStyle() {
+        $style
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] style in
+                guard let self, let webView, let style else { return }
+                script.setThemeStyle(style, webView: webView)
             })
             .store(in: &cancellables)
     }
@@ -375,6 +393,7 @@ extension PrivacyDashboardController: PrivacyDashboardUserScriptDelegate {
         eventMapping.fire(.reportBrokenSiteShown, parameters: [
             PrivacyDashboardEvents.Parameters.source: source.rawValue
         ])
+        delegate?.privacyDashboardControllerDidShowBrokenSiteReport(self)
     }
 
     func userScript(_ userScript: PrivacyDashboardUserScript, setHeight height: Int) {

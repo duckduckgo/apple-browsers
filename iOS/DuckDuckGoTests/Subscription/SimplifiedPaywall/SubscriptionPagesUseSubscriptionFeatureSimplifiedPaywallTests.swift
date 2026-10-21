@@ -21,60 +21,78 @@ import XCTest
 import BrowserServicesKit
 import SubscriptionTestingUtilities
 import Core
-import PixelKit
+@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PixelExperimentKit
 @testable import Subscription
 @testable import DuckDuckGo
-
+import PrivacyConfig
+@_spi(Testing) import Networking
+import BrowserServicesKitTestsUtils
+import FeatureFlags_iOS
+import WebKit
 
 final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTestCase {
 
     private var sut: (any SubscriptionPagesUseSubscriptionFeature)!
 
     private var mockSubscriptionManager: SubscriptionManagerMock!
-    private var mockAccountManager: AccountManagerMock!
     private var mockStorePurchaseManager: StorePurchaseManagerMock!
     private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
+    private var mockAppStoreRestoreFlow: AppStoreRestoreFlowMock!
+    private var mockInternalUserDecider: PrivacyConfig.MockInternalUserDecider!
+    private var mockWideEvent: WideEventMock!
+    private var mockPendingTransactionHandler: MockPendingTransactionHandler!
+    private var mockRequestValidator: ScriptRequestValidatorMock!
+    private var mockExperimentFeatureFlagger: PrivacyConfig.MockFeatureFlagger!
 
     override func setUp() async throws {
         PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(), eventTracker: ExperimentEventTracker(), fire: { _, _, _ in })
 
-        mockAccountManager = AccountManagerMock()
         mockStorePurchaseManager = StorePurchaseManagerMock()
-        mockSubscriptionManager = SubscriptionManagerMock(
-            accountManager: mockAccountManager,
-            subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-            authEndpointService: AuthEndpointServiceMock(),
-            storePurchaseManager: mockStorePurchaseManager,
-            currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-            canPurchase: true,
-            subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
+        mockStorePurchaseManager.hasActiveSubscriptionResult = false
+
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
+        mockAppStoreRestoreFlow = AppStoreRestoreFlowMock()
+        mockInternalUserDecider = PrivacyConfig.MockInternalUserDecider(isInternalUser: true)
+        mockWideEvent = WideEventMock()
+        mockPendingTransactionHandler = MockPendingTransactionHandler()
+        mockRequestValidator = ScriptRequestValidatorMock()
+        mockExperimentFeatureFlagger = PrivacyConfig.MockFeatureFlagger(featuresStub: [
+            FeatureFlag.subscriptionConcurrentExperiments.rawValue: true
+        ])
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: mockAppStorePurchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: mockAppStorePurchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
-            appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
-        subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelper())
+            appStoreRestoreFlow: mockAppStoreRestoreFlow,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: mockPendingTransactionHandler,
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                featureFlagger: mockExperimentFeatureFlagger))
     }
 
     func testWhenSubscriptionSelectedIncludesExperimentParameters_thenSubscriptionPurchasedReceivesExperimentParameters() async throws {
 
         // Given
-        mockAccountManager.accessToken = nil
-        mockSubscriptionManager.canPurchase = true
-        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success("")
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
         mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
-        mockAppStorePurchaseFlow.purchaseSubscriptionBlock = { self.mockAccountManager.accessToken = "token" }
-
-        let experimentNameKey = "experimentName"
-        let experimentNameValue = "simplifiedPaywall"
-        let experimentTreatmentKey = "experimentCohort"
-        let experimentTreatmentValue = "treatment"
 
         let params: [String: Any] = [
             "id": "monthly-free-trial",
@@ -85,53 +103,171 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
         ]
 
         // When
-        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
 
         // Then
-        guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {
-            XCTFail("Additional params not found")
-            return
-        }
-
         XCTAssertEqual(
-            additionalParams[experimentNameKey],
-            experimentNameValue)
-        XCTAssertEqual(
-            additionalParams[experimentTreatmentKey],
-            experimentTreatmentValue)
+            mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution,
+            .multiple([SubscriptionExperiment(experimentName: "simplifiedPaywall", experimentCohort: "treatment")]))
     }
 
     func testWhenSubscriptionSelectedDoesntIncludeExperimentParameters_thenSubscriptionPurchasedDoesntReceiveExperimentParameters() async throws {
 
         // Given
-        mockAccountManager.accessToken = nil
-        mockSubscriptionManager.canPurchase = true
-        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success("")
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
         mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
-        mockAppStorePurchaseFlow.purchaseSubscriptionBlock = { self.mockAccountManager.accessToken = "token" }
-
-        let experimentNameKey = "experimentName"
-        let experimentTreatmentKey = "experimentCohort"
 
         let params: [String: Any] = [
             "id": "monthly-free-trial"
         ]
 
         // When
-        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
 
         // Then
-        guard let additionalParams = mockAppStorePurchaseFlow.completeSubscriptionAdditionalParams else {
+        XCTAssertNil(mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution)
+    }
 
-            // This is fine and acceptable.
-            return
+    func testWhenConcurrentExperimentsAreDisabledThenLegacyExperimentIsForwarded() async throws {
+        prepareSuccessfulPurchase()
+        mockExperimentFeatureFlagger.featuresStub[FeatureFlag.subscriptionConcurrentExperiments.rawValue] = false
+        setNativeExperiments(["native": "treatment"])
+        let params: [String: Any] = [
+            "id": "monthly-free-trial",
+            "experiment": ["name": "legacy", "cohort": "control"],
+            "experiments": [["name": "multiple", "cohort": "treatment"]]
+        ]
+
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
+
+        XCTAssertEqual(
+            mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution,
+            .legacy(SubscriptionExperiment(experimentName: "legacy", experimentCohort: "control")))
+    }
+
+    func testWhenConcurrentExperimentsAreDisabledAndLegacyExperimentIsAbsentThenAttributionIsOmitted() async throws {
+        prepareSuccessfulPurchase()
+        mockExperimentFeatureFlagger.featuresStub[FeatureFlag.subscriptionConcurrentExperiments.rawValue] = false
+        setNativeExperiments(["native": "treatment"])
+        let params: [String: Any] = [
+            "id": "monthly-free-trial",
+            "experiments": [["name": "multiple", "cohort": "treatment"]]
+        ]
+
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
+
+        XCTAssertNil(mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution)
+    }
+
+    func testWhenSubscriptionSelectedIncludesMultipleExperimentsThenAllAreForwarded() async throws {
+        prepareSuccessfulPurchase()
+        let params: [String: Any] = [
+            "id": "monthly-free-trial",
+            "experiments": [
+                ["name": "first", "cohort": "control"],
+                ["name": "second", "cohort": "treatment"]
+            ]
+        ]
+
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
+
+        XCTAssertEqual(mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution, .multiple([
+            SubscriptionExperiment(experimentName: "first", experimentCohort: "control"),
+            SubscriptionExperiment(experimentName: "second", experimentCohort: "treatment")
+        ]))
+    }
+
+    func testWhenBothMultipleAndLegacyExperimentsArePresentThenMultipleExperimentsTakePrecedence() async throws {
+        prepareSuccessfulPurchase()
+        let params: [String: Any] = [
+            "id": "monthly-free-trial",
+            "experiment": ["name": "legacy", "cohort": "control"],
+            "experiments": [["name": "multiple", "cohort": "treatment"]]
+        ]
+
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
+
+        XCTAssertEqual(
+            mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution,
+            .multiple([SubscriptionExperiment(experimentName: "multiple", experimentCohort: "treatment")]))
+    }
+
+    func testWhenMultipleExperimentsIsEmptyThenLegacyExperimentIsUsed() async throws {
+        prepareSuccessfulPurchase()
+        let params: [String: Any] = [
+            "id": "monthly-free-trial",
+            "experiment": ["name": "legacy", "cohort": "control"],
+            "experiments": []
+        ]
+
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
+
+        XCTAssertEqual(
+            mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution,
+            .multiple([SubscriptionExperiment(experimentName: "legacy", experimentCohort: "control")]))
+    }
+
+    func testWhenFrontEndAndNativeExperimentsOverlapThenFrontEndCohortTakesPrecedence() async throws {
+        prepareSuccessfulPurchase()
+        setNativeExperiments([
+            "shared": "native",
+            "native": "treatment"
+        ])
+        let params: [String: Any] = [
+            "id": "monthly-free-trial",
+            "experiments": [
+                ["name": "shared", "cohort": "front-end"],
+                ["name": "front-end", "cohort": "control"]
+            ]
+        ]
+
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
+
+        XCTAssertEqual(mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution, .multiple([
+            SubscriptionExperiment(experimentName: "shared", experimentCohort: "front-end"),
+            SubscriptionExperiment(experimentName: "front-end", experimentCohort: "control"),
+            SubscriptionExperiment(experimentName: "native", experimentCohort: "treatment")
+        ]))
+    }
+
+    func testWhenFrontEndRepeatsAnExperimentNameThenTheFirstAssignmentTakesPrecedence() async throws {
+        prepareSuccessfulPurchase()
+        let params: [String: Any] = [
+            "id": "monthly-free-trial",
+            "experiments": [
+                ["name": "duplicate", "cohort": "first"],
+                ["name": "duplicate", "cohort": "second"]
+            ]
+        ]
+
+        _ = await sut.subscriptionSelected(params: params, original: WKScriptMessage.mock())
+
+        XCTAssertEqual(
+            mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution,
+            .multiple([SubscriptionExperiment(experimentName: "duplicate", experimentCohort: "first")]))
+    }
+
+    func testWhenOnlyNativeExperimentIsActiveThenItIsForwarded() async throws {
+        prepareSuccessfulPurchase()
+        setNativeExperiments(["native": "treatment"])
+
+        _ = await sut.subscriptionSelected(params: ["id": "monthly-free-trial"], original: WKScriptMessage.mock())
+
+        XCTAssertEqual(
+            mockAppStorePurchaseFlow.completeSubscriptionExperimentAttribution,
+            .multiple([SubscriptionExperiment(experimentName: "native", experimentCohort: "treatment")]))
+    }
+
+    private func prepareSuccessfulPurchase() {
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+    }
+
+    private func setNativeExperiments(_ experiments: [String: String]) {
+        mockExperimentFeatureFlagger.allActiveExperiments = experiments.mapValues {
+            ExperimentData(parentID: PrivacyFeature.privacyPro.rawValue, cohortID: $0, enrollmentDate: Date())
         }
-
-        // Even though the above guard exiting is acceptable, we also check
-        // that the parameters that should be missing are missing, because
-        // other code changes could cause additional params to be added in
-        // the future, which should not make this test fail on its own.
-        XCTAssertNil(additionalParams[experimentNameKey])
-        XCTAssertNil(additionalParams[experimentTreatmentKey])
     }
 }

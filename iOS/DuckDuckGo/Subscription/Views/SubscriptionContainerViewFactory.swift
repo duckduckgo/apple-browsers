@@ -20,216 +20,384 @@
 import SwiftUI
 import Subscription
 import Common
+import FoundationExtensions
 import BrowserServicesKit
+import PrivacyConfig
+import DataBrokerProtection_iOS
+import PixelKit
+import WideEvent
+import FeatureFlags_iOS
+import Persistence
 
 enum SubscriptionContainerViewFactory {
 
-    static func makeSubscribeFlow(redirectURLComponents: URLComponents?,
-                                  navigationCoordinator: SubscriptionNavigationCoordinator,
-                                  subscriptionManager: SubscriptionManager,
-                                  subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                  privacyProDataReporter: PrivacyProDataReporting?,
-                                  tld: TLD,
-                                  internalUserDecider: InternalUserDecider) -> some View {
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
+    private static var subscriptionUserDefaults: UserDefaults {
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        return UserDefaults(suiteName: subscriptionAppGroup)!
+    }
+
+    /// Creates a tier-change performer for native cancel-pending-downgrade (Settings). Caller owns the instance.
+    static func makeSubscriptionFlowsExecuter(subscriptionManager: SubscriptionManager,
+                                              wideEvent: WideEventManaging) -> DefaultSubscriptionFlowsExecuter {
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManager.authEndpointService)
-        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
+                                                             pendingTransactionHandler: pendingTransactionHandler)
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
                                                                storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                               accountManager: subscriptionManager.accountManager,
                                                                appStoreRestoreFlow: appStoreRestoreFlow,
-                                                               authEndpointService: subscriptionManager.authEndpointService)
-        let appStoreAccountManagementFlow = DefaultAppStoreAccountManagementFlow(authEndpointService: subscriptionManager.authEndpointService,
-                                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                                 accountManager: subscriptionManager.accountManager)
+                                                               wideEvent: wideEvent,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
+        return DefaultSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
+                                                appStorePurchaseFlow: appStorePurchaseFlow,
+                                                wideEvent: wideEvent,
+                                                pendingTransactionHandler: pendingTransactionHandler)
+    }
 
-        let redirectPurchaseURL: URL? = {
-            guard let redirectURLComponents else { return nil }
-            return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
-        }()
+    static func makeSubscribeFlowV2(redirectURLComponents: URLComponents?,
+                                    landingURL: URL? = nil,
+                                    navigationCoordinator: SubscriptionNavigationCoordinator,
+                                    subscriptionManager: SubscriptionManager,
+                                    subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                    subscriptionDataReporter: SubscriptionDataReporting?,
+                                    userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                    tld: TLD,
+                                    internalUserDecider: InternalUserDecider,
+                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                    wideEvent: WideEventManaging,
+                                    featureFlagger: FeatureFlagger,
+                                    isDebugOverlayEnabled: Bool,
+                                    performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding,
+                                    onboardingKeyValueStore: ThrowingKeyValueStoring?,
+                                    meetsPIRLocaleRequirement: @escaping () -> Bool,
+                                    onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
 
-        let origin = redirectURLComponents?.url?.getParameter(named: AttributionParameter.origin)
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                             pendingTransactionHandler: pendingTransactionHandler)
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                               appStoreRestoreFlow: appStoreRestoreFlow,
+                                                               wideEvent: wideEvent,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
+                                                                   appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                   wideEvent: wideEvent,
+                                                                   pendingTransactionHandler: pendingTransactionHandler)
+
+        var initialURL = SubscribeFlowInitialURLBuilder.makeInitialURL(redirectURLComponents: redirectURLComponents,
+                                                                       landingURL: landingURL,
+                                                                       subscriptionManager: subscriptionManager,
+                                                                       tld: tld,
+                                                                       performanceOptimizedPaywalls: performanceOptimizedPaywallsProvider,
+                                                                       featureFlagger: featureFlagger)
+        if isDebugOverlayEnabled {
+            initialURL = initialURL.appendingParameter(name: "debug", value: "1")
+        }
+
+        let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
 
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
-            redirectPurchaseURL: redirectPurchaseURL,
+            initialURL: initialURL,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                        subscriptionAttributionOrigin: origin,
                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                       appStoreAccountManagementFlow: appStoreAccountManagementFlow,
-                                                                       privacyProDataReporter: privacyProDataReporter)
+                                                                       subscriptionDataReporter: subscriptionDataReporter,
+                                                                       internalUserDecider: internalUserDecider,
+                                                                       wideEvent: wideEvent,
+                                                                       pendingTransactionHandler: pendingTransactionHandler,
+                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                       expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: onboardingKeyValueStore,
+            meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+            onRequestDuckAIChat: onRequestDuckAIChat
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
-        return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel)
+        return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
     }
 
-    static func makeRestoreFlow(navigationCoordinator: SubscriptionNavigationCoordinator,
-                                subscriptionManager: SubscriptionManager,
-                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                internalUserDecider: InternalUserDecider) -> some View {
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
-                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManager.authEndpointService)
-        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                               accountManager: subscriptionManager.accountManager,
-                                                               appStoreRestoreFlow: appStoreRestoreFlow,
-                                                               authEndpointService: subscriptionManager.authEndpointService)
-        let appStoreAccountManagementFlow = DefaultAppStoreAccountManagementFlow(authEndpointService: subscriptionManager.authEndpointService,
-                                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                                 accountManager: subscriptionManager.accountManager)
-
-        let viewModel = SubscriptionContainerViewModel(
-            subscriptionManager: subscriptionManager,
-            isInternalUser: internalUserDecider.isInternalUser,
-            userScript: SubscriptionPagesUserScript(),
-            subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                       subscriptionAttributionOrigin: nil,
-                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                       appStoreAccountManagementFlow: appStoreAccountManagementFlow)
-        )
-        viewModel.email.setEmailFlowMode(.restoreFlow)
-        return SubscriptionContainerView(currentView: .restore, viewModel: viewModel)
-            .environmentObject(navigationCoordinator)
+    @ViewBuilder
+    static func makePurchaseFlowV2(redirectURLComponents: URLComponents?,
+                                   navigationCoordinator: SubscriptionNavigationCoordinator,
+                                   subscriptionManager: SubscriptionManager,
+                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                   subscriptionDataReporter: SubscriptionDataReporting?,
+                                   userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                   tld: TLD,
+                                   internalUserDecider: InternalUserDecider,
+                                   dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                   wideEvent: WideEventManaging,
+                                   featureFlagger: FeatureFlagger,
+                                   isDebugOverlayEnabled: Bool,
+                                   performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding,
+                                   onboardingKeyValueStore: ThrowingKeyValueStoring?,
+                                   meetsPIRLocaleRequirement: @escaping () -> Bool,
+                                   onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
+        if let redirectURLComponents,
+           SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
+            makePlansFlowV2(redirectURLComponents: redirectURLComponents,
+                            navigationCoordinator: navigationCoordinator,
+                            subscriptionManager: subscriptionManager,
+                            subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                            userScriptsDependencies: userScriptsDependencies,
+                            internalUserDecider: internalUserDecider,
+                            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                            wideEvent: wideEvent,
+                            featureFlagger: featureFlagger)
+        } else {
+            makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
+                                navigationCoordinator: navigationCoordinator,
+                                subscriptionManager: subscriptionManager,
+                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                subscriptionDataReporter: subscriptionDataReporter,
+                                userScriptsDependencies: userScriptsDependencies,
+                                tld: tld,
+                                internalUserDecider: internalUserDecider,
+                                dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                                wideEvent: wideEvent,
+                                featureFlagger: featureFlagger,
+                                isDebugOverlayEnabled: isDebugOverlayEnabled,
+                                performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
+                                onboardingKeyValueStore: onboardingKeyValueStore,
+                                meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+                                onRequestDuckAIChat: onRequestDuckAIChat)
+        }
     }
-
-    static func makeEmailFlow(navigationCoordinator: SubscriptionNavigationCoordinator,
-                              subscriptionManager: SubscriptionManager,
-                              subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                              internalUserDecider: InternalUserDecider,
-                              emailFlow: SubscriptionEmailViewModel.EmailViewFlow = .activationFlow,
-                              onDisappear: @escaping () -> Void) -> some View {
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
-                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManager.authEndpointService)
-        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                               accountManager: subscriptionManager.accountManager,
-                                                               appStoreRestoreFlow: appStoreRestoreFlow,
-                                                               authEndpointService: subscriptionManager.authEndpointService)
-        let appStoreAccountManagementFlow = DefaultAppStoreAccountManagementFlow(authEndpointService: subscriptionManager.authEndpointService,
-                                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                                 accountManager: subscriptionManager.accountManager)
-        let viewModel = SubscriptionContainerViewModel(
-            subscriptionManager: subscriptionManager,
-            isInternalUser: internalUserDecider.isInternalUser,
-            userScript: SubscriptionPagesUserScript(),
-            subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                       subscriptionAttributionOrigin: nil,
-                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                       appStoreAccountManagementFlow: appStoreAccountManagementFlow)
-        )
-
-        viewModel.email.setEmailFlowMode(emailFlow)
-
-        return SubscriptionContainerView(currentView: .email, viewModel: viewModel)
-            .environmentObject(navigationCoordinator)
-            .onDisappear(perform: { onDisappear() })
-    }
-
-    // MARK: - V2
-
-    static func makeSubscribeFlowV2(redirectURLComponents: URLComponents?,
-                                    navigationCoordinator: SubscriptionNavigationCoordinator,
-                                    subscriptionManager: SubscriptionManagerV2,
-                                    subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                    privacyProDataReporter: PrivacyProDataReporting?,
-                                    tld: TLD,
-                                    internalUserDecider: InternalUserDecider) -> some View {
-
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
-                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
-        let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
-                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
-
-        let redirectPurchaseURL: URL? = {
-            guard let redirectURLComponents else { return nil }
-            return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
-        }()
-
-        let origin = redirectURLComponents?.url?.getParameter(named: AttributionParameter.origin)
-
-
-        let viewModel = SubscriptionContainerViewModel(
-            subscriptionManager: subscriptionManager,
-            redirectPurchaseURL: redirectPurchaseURL,
-            isInternalUser: internalUserDecider.isInternalUser,
-            userScript: SubscriptionPagesUserScript(),
-            subFeature: DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
-                                                                         subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                         subscriptionAttributionOrigin: origin,
-                                                                         appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                         privacyProDataReporter: privacyProDataReporter)
-        )
-        viewModel.email.setEmailFlowMode(.restoreFlow)
-        return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel)
-            .environmentObject(navigationCoordinator)
-    }
-
 
     static func makeRestoreFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
-                                  subscriptionManager: SubscriptionManagerV2,
+                                  subscriptionManager: SubscriptionManager,
                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                  internalUserDecider: InternalUserDecider) -> some View {
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
-                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
-        let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
+                                  userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                  internalUserDecider: InternalUserDecider,
+                                  wideEvent: WideEventManaging,
+                                  dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                  featureFlagger: FeatureFlagger) -> some View {
+
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                             pendingTransactionHandler: pendingTransactionHandler)
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
-        let subscriptionPagesUseSubscriptionFeature = DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
-                                                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                                                       subscriptionAttributionOrigin: nil,
-                                                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                                                       appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                               wideEvent: wideEvent,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
+                                                                   appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                   wideEvent: wideEvent,
+                                                                   pendingTransactionHandler: pendingTransactionHandler)
+        let subscriptionPagesUseSubscriptionFeature = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                                                     subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                                                     subscriptionAttributionOrigin: nil,
+                                                                                                     appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                                                     internalUserDecider: internalUserDecider,
+                                                                                                     wideEvent: wideEvent,
+                                                                                                     pendingTransactionHandler: pendingTransactionHandler,
+                                                                                                     subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                                                     requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                                                     expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
+                                                                                                     isExpirationReminderFeatureEnabled: {
+                                                                                                         featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                                                     },
+                                                                                                     subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                                                         featureFlagger: featureFlagger))
+
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
                                                        userScript: SubscriptionPagesUserScript(),
-                                                       subFeature: subscriptionPagesUseSubscriptionFeature)
+                                                       userScriptsDependencies: userScriptsDependencies,
+                                                       subFeature: subscriptionPagesUseSubscriptionFeature,
+                                                       dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                                                       onboardingKeyValueStore: nil,
+                                                       meetsPIRLocaleRequirement: { false })
         viewModel.email.setEmailFlowMode(.restoreFlow)
-        return SubscriptionContainerView(currentView: .restore, viewModel: viewModel)
+        return SubscriptionContainerView(currentView: .restore, viewModel: viewModel, featureFlagger: featureFlagger)
+            .environmentObject(navigationCoordinator)
+    }
+
+    static func makePlansFlowV2(redirectURLComponents: URLComponents?,
+                                navigationCoordinator: SubscriptionNavigationCoordinator,
+                                subscriptionManager: SubscriptionManager,
+                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                internalUserDecider: InternalUserDecider,
+                                dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                wideEvent: WideEventManaging,
+                                featureFlagger: FeatureFlagger) -> some View {
+
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                             pendingTransactionHandler: pendingTransactionHandler)
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                               appStoreRestoreFlow: appStoreRestoreFlow,
+                                                               wideEvent: wideEvent,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
+                                                                   appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                   wideEvent: wideEvent,
+                                                                   pendingTransactionHandler: pendingTransactionHandler)
+
+        let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
+
+        // Build plans URL from subscription manager (respects custom base URL)
+        // and preserve all query parameters from redirectURLComponents
+        var plansURL = subscriptionManager.url(for: .plans)
+        if let queryItems = redirectURLComponents?.queryItems {
+            for item in queryItems {
+                if let value = item.value {
+                    plansURL = plansURL.appendingParameter(name: item.name, value: value)
+                }
+            }
+        }
+
+        let viewModel = SubscriptionContainerViewModel(
+            subscriptionManager: subscriptionManager,
+            initialURL: plansURL,
+            flowType: .planUpdate,
+            isInternalUser: internalUserDecider.isInternalUser,
+            userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                       subscriptionAttributionOrigin: origin,
+                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                       internalUserDecider: internalUserDecider,
+                                                                       wideEvent: wideEvent,
+                                                                       pendingTransactionHandler: pendingTransactionHandler,
+                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                       expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: nil,
+            meetsPIRLocaleRequirement: { false }
+        )
+        return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
     }
 
     static func makeEmailFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
-                                subscriptionManager: SubscriptionManagerV2,
+                                subscriptionManager: SubscriptionManager,
                                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                 internalUserDecider: InternalUserDecider,
                                 emailFlow: SubscriptionEmailViewModel.EmailViewFlow = .activationFlow,
+                                dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                wideEvent: WideEventManaging,
+                                featureFlagger: FeatureFlagger,
                                 onDisappear: @escaping () -> Void) -> some View {
-        let appStoreRestoreFlow: AppStoreRestoreFlowV2 = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
-                                                                                      storePurchaseManager: subscriptionManager.storePurchaseManager())
-        let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
-                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let appStoreRestoreFlow: AppStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                                                  pendingTransactionHandler: pendingTransactionHandler)
+
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                               appStoreRestoreFlow: appStoreRestoreFlow,
+                                                               wideEvent: wideEvent,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
+                                                                   appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                   wideEvent: wideEvent,
+                                                                   pendingTransactionHandler: pendingTransactionHandler)
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
-            subFeature: DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
-                                                                         subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                         subscriptionAttributionOrigin: nil,
-                                                                         appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                         appStoreRestoreFlow: appStoreRestoreFlow)
+            userScriptsDependencies: userScriptsDependencies,
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                       subscriptionAttributionOrigin: nil,
+                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                       internalUserDecider: internalUserDecider,
+                                                                       wideEvent: wideEvent,
+                                                                       pendingTransactionHandler: pendingTransactionHandler,
+                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                       expirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
+                                                                       isExpirationReminderFeatureEnabled: {
+                                                                           featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
+                                                                       },
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: nil,
+            meetsPIRLocaleRequirement: { false }
         )
 
         viewModel.email.setEmailFlowMode(emailFlow)
         
-        return SubscriptionContainerView(currentView: .email, viewModel: viewModel)
+        return SubscriptionContainerView(currentView: .email, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
             .onDisappear(perform: { onDisappear() })
+    }
+}
+
+enum SubscribeFlowInitialURLBuilder {
+
+    static func makeInitialURL(redirectURLComponents: URLComponents?,
+                               landingURL: URL?,
+                               subscriptionManager: SubscriptionManager,
+                               tld: TLD,
+                               performanceOptimizedPaywalls: any PerformanceOptimizedPaywallsProviding,
+                               featureFlagger: FeatureFlagger) -> URL {
+        // A landing URL is an explicit destination, like the post-purchase welcome page, never a paywall.
+        if let landingURL { return landingURL }
+
+        let purchaseURL = redirectURLComponents.map {
+            subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: $0, tld: tld)
+        } ?? subscriptionManager.url(for: .purchase)
+
+        // Existing subscribers and intercepted `/pro` URLs keep the legacy paywall.
+        guard !subscriptionManager.isSubscriptionPresent(),
+              redirectURLComponents?.path != SubscriptionPurchaseFlowPath.pro.rawValue else { return purchaseURL }
+
+        guard let performanceOptimizedPaywallURL = SubscriptionURL.performanceOptimizedPaywallURL(
+            basedOn: purchaseURL,
+            paths: performanceOptimizedPaywalls.paths,
+            isTrialEligible: subscriptionManager.isUserEligibleForFreeTrial(),
+            isPersonalInformationRemovalAvailable: subscriptionManager.currentStorefrontRegion == .usa
+        ) else { return purchaseURL }
+
+        // Only enroll users who can be shown either paywall.
+        guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.performanceOptimizedPaywalls)
+            as? FeatureFlag.PerformanceOptimizedPaywallsCohort else {
+            return purchaseURL
+        }
+        let paywallURL = cohort == .treatment ? performanceOptimizedPaywallURL : purchaseURL
+        return paywallURL.removingParameters(named: ["experiment_perfpaywall"])
+            .appendingParameter(name: "experiment_perfpaywall", value: cohort.rawValue)
     }
 }

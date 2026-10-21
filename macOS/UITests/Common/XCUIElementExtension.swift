@@ -18,7 +18,50 @@
 
 import XCTest
 
+extension XCUIElementSnapshot {
+    var accessibilityElement: AXElement? {
+        guard let accessibilityElement = (self as! NSObject).value(forKey: "accessibilityElement") as? NSObject else {
+            Logger.log("Could not get accessibilityElement of \(self)")
+            return nil
+        }
+        return unsafeBitCast(accessibilityElement, to: AXElement.self)
+    }
+}
 extension XCUIElement {
+
+    private var bookmarksPanel: XCUIElement {
+        popovers.containing(.button, identifier: "BookmarkListViewController.sortBookmarksButton").firstMatch
+    }
+
+    @nonobjc var application: XCUIApplication {
+        return self.value(forKey: "application") as! XCUIApplication
+    }
+
+    var url: String? {
+        do {
+            guard let values = try self.queryAXAttributes([kAXURLAttribute]) else { return nil }
+            return values[kAXURLAttribute] as? String
+        } catch {
+            Logger.log("\(self): queryAXAttributes error: \(error)")
+            return nil
+        }
+    }
+
+    func queryAXAttributes(_ attributes: [String]) throws -> [String: Any]? {
+        let snapshot = try self.snapshot()
+        guard let accessibilityElement = snapshot.accessibilityElement,
+              var result = try self.application.automationSession?.attributes(for: accessibilityElement, attributes: attributes) as? [String: Any] else {
+            return nil
+        }
+        let prefix = "Unsafe value, description '"
+        for (key, value) in result {
+            if let value = value as? String, value.hasPrefix(prefix), value.hasSuffix("'") {
+                result[key] = String(value.dropFirst(prefix.count).dropLast(1))
+            }
+        }
+        return result
+    }
+
     // https://stackoverflow.com/a/63089781/119717
     // Licensed under https://creativecommons.org/licenses/by-sa/4.0/
     // Credit: Adil Hussain
@@ -109,6 +152,27 @@ extension XCUIElement {
         self.typeURL(url, pressingEnter: pressingEnter)
     }
 
+    /// Opens the bookmarks panel if it is not already visible.
+    func openBookmarksPanel() {
+        if bookmarksPanel.exists { return }
+
+        let bookmarksPanelShortcutButton = buttons[XCUIApplication.AccessibilityIdentifiers.bookmarksPanelShortcutButton]
+        if !bookmarksPanelShortcutButton.exists {
+            typeKey("k", modifierFlags: [.command, .shift])
+        }
+
+        bookmarksPanelShortcutButton.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(bookmarksPanel.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Bookmarks panel should open")
+    }
+
+    func closeBookmarksPanel() {
+        guard bookmarksPanel.exists else { return }
+
+        let bookmarksPanelShortcutButton = buttons[XCUIApplication.AccessibilityIdentifiers.bookmarksPanelShortcutButton]
+        bookmarksPanelShortcutButton.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(bookmarksPanel.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Bookmarks panel should close")
+    }
+
     func clickAfterExistenceTestSucceeds() {
         XCTAssertTrue(
             self.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -124,4 +188,99 @@ extension XCUIElement {
         )
         self.hover()
     }
+
+    /// Toggles a checkbox or switch element to the desired boolean value if needed.
+    /// Supports value types: String ("1"/"on"), NSNumber (non-zero), or falls back to single click.
+    func toggleCheckboxIfNeeded(to enabled: Bool, validate: Bool = false, ensureHittable: (XCUIElement) -> Void) {
+        if !exists {
+            ensureHittable(self)
+        }
+        XCTAssertTrue(self.exists, "Control should exist before toggling")
+        Logger.log("Checkbox value is \(self.value.map { type(of: $0) } ??? ""): `\(self.value ??? "<nil>")`: isOn: \(isOn): \(isOn == enabled ? "skip" : "switching to \(enabled)")")
+        if isOn == enabled { return }
+
+        if !isHittable {
+            ensureHittable(self)
+        }
+        self.click()
+        if validate {
+            XCTAssertEqual(isOn, enabled, "value of \(self) does not match expected after toggling")
+        }
+    }
+
+    var isOn: Bool {
+        let isOn: Bool
+        if let valueString = self.value as? String {
+            isOn = valueString == "1" || valueString.lowercased() == "on"
+        } else if let valueNumber = self.value as? NSNumber {
+            isOn = valueNumber.intValue != 0
+        } else {
+            XCTFail("\(self.value ??? "<nil>") (\(self.value.map { type(of: $0) } ??? "")) is not a String or NSNumber")
+            return false
+        }
+        return isOn
+    }
+
+    public var tabs: XCUIElementQuery {
+        var element = self
+        if element is XCUIApplication {
+            element = windows.firstMatch
+        }
+
+        return element.tabGroups["TabBarViewController.CollectionView"].radioButtons
+    }
+
+    /// Returns the collection of pinned tabs
+    var pinnedTabs: XCUIElementQuery {
+        var element = self
+        if element is XCUIApplication {
+            element = windows.firstMatch
+        }
+
+        return element.tabGroups["PinnedTabsView"].radioButtons
+    }
+
+    @objc func closeTab() throws {
+        rightClick()
+        let contextMenu = children(matching: .menu).firstMatch
+        contextMenu.menuItems["Close Tab"].clickAfterExistenceTestSucceeds()
+    }
+
+    /// Performs a middle mouse click on the element
+    func middleClick() {
+        UITestCase.$shouldReplaceButtonWithMiddleMouseButton.withValue(true) {
+            rightClick()
+        }
+    }
+
+}
+
+extension XCUIElement.KeyModifierFlags {
+
+    /// Converts XCUIElement.KeyModifierFlags to NSEvent.ModifierFlags
+    func toNSEventModifierFlags() -> NSEvent.ModifierFlags {
+        var nsFlags: NSEvent.ModifierFlags = []
+
+        if contains(.command) {
+            nsFlags.insert(.command)
+        }
+        if contains(.shift) {
+            nsFlags.insert(.shift)
+        }
+        if contains(.control) {
+            nsFlags.insert(.control)
+        }
+        if contains(.option) {
+            nsFlags.insert(.option)
+        }
+        if contains(.function) {
+            nsFlags.insert(.function)
+        }
+        if contains(.alphaShift) {
+            nsFlags.insert(.capsLock)
+        }
+
+        return nsFlags
+    }
+
 }

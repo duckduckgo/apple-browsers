@@ -53,20 +53,15 @@ struct SecureVaultSorting: Equatable {
 
         var backgroundColor: NSColor {
             switch self {
-            case .allItems: .secureVaultCategoryDefault
-            case .logins: .logins
-            case .identities: .identities
-            case .cards: .cards
+            case .allItems:
+                return NSColor(designSystemColor: .controlsFillPrimary)
+            default:
+                return NSColor(designSystemColor: .accentAltPrimary)
             }
         }
 
         var foregroundColor: NSColor? {
-            switch self {
-            case .allItems: return nil // Show white or black depending on system appearance
-            case .logins: return .black
-            case .identities: return .black
-            case .cards: return .white
-            }
+            NSColor(designSystemColor: .textPrimary)
         }
     }
 

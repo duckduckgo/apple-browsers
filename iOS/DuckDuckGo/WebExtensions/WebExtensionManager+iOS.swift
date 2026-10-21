@@ -1,0 +1,149 @@
+//
+//  WebExtensionManager+iOS.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Combine
+import Core
+import FeatureFlags_iOS
+import PrivacyConfig
+import UIKit
+import WebExtensions
+import WebKit
+
+@available(iOS 18.4, *)
+@MainActor
+private final class IOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    var isBackgroundDelegateProxyEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
+    }
+
+    var isBackgroundGraveyardTreatmentEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
+    }
+
+    var updatesPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+    }
+}
+
+// MARK: - AutoconsentPreferencesProviding
+
+final class AutoconsentPreferencesAdapter: AutoconsentPreferencesProviding {
+    private let preferences: AutoconsentPreferences
+
+    init(preferences: AutoconsentPreferences) {
+        self.preferences = preferences
+    }
+
+    var cookiePopupPreference: CookiePopupPreference {
+        preferences.cookiePopupPreference
+    }
+}
+
+// MARK: - Factory
+
+@available(iOS 18.4, *)
+public enum WebExtensionManagerFactory {
+
+    private static var extensionsDirectory: URL {
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Application Support directory not found")
+        }
+        return appSupport.appendingPathComponent("WebExtensions", isDirectory: true)
+    }
+
+    @MainActor
+    static func makeManager(
+        mainViewController: MainViewController,
+        appSession: AppSessionInfo? = nil,
+        featureFlagger: FeatureFlagger,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        autoconsentPreferences: AutoconsentPreferences,
+        darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
+        searchTokenProvider: SearchTokenProviding? = nil,
+        scriptletConfiguration: ScriptletConfiguration? = nil
+    ) -> WebExtensionManager {
+        let preferencesAdapter = AutoconsentPreferencesAdapter(preferences: autoconsentPreferences)
+        let pixelFiring = iOSWebExtensionPixelFiring()
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        let cpmDiagnosticsRecorder = featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
+            tabResolver: { [weak mainViewController] tabIdentifier in
+                guard let mainViewController,
+                      let tab = mainViewController.tabManager.allTabsModel.tabs.first(where: { $0.uid == tabIdentifier }),
+                      let controller = mainViewController.tabManager.controller(for: tab) else {
+                    return nil
+                }
+                return (webView: controller.webView, extensionTab: controller)
+            },
+            featureFlags: IOSCPMDiagnosticsFeatureFlags(featureFlagger: featureFlagger),
+            appSession: appSession.map { session in
+                let change: CPMAppSessionDiagnostics.VersionChange?
+                switch session.appVersionChange {
+                case .updated: change = .updated
+                case .downgraded: change = .downgraded
+                case nil: change = nil
+                }
+                return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate) {
+                    switch UIApplication.shared.applicationState {
+                    case .active: return .active
+                    case .inactive: return .inactive
+                    case .background: return .background
+                    @unknown default: return .inactive
+                    }
+                }
+            }
+        ) : nil
+
+        return WebExtensionManager(
+            configuration: WebExtensionConfigurationProvider(),
+            windowTabProvider: WebExtensionWindowTabProvider(mainViewController: mainViewController),
+            storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
+            pixelFiring: pixelFiring,
+            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+            cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
+            isCPMMessagingHangRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
+            },
+            isCPMNetworkProcessRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isApplicationInBackground: { UIApplication.shared.applicationState == .background },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
+            handlerProvider: WebExtensionHandlerProvider(
+                privacyConfigurationManager: privacyConfigurationManager,
+                autoconsentPreferences: preferencesAdapter,
+                cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
+                searchTokenProvider: searchTokenProvider
+            ),
+            scriptletConfiguration: scriptletConfiguration
+        )
+    }
+}

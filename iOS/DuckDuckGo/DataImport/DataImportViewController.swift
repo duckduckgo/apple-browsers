@@ -25,6 +25,9 @@ import Core
 import Persistence
 import Bookmarks
 import DDGSync
+import PrivacyConfig
+import FeatureFlags_iOS
+import PixelKit
 
 protocol DataImportViewControllerDelegate: AnyObject {
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController)
@@ -40,13 +43,17 @@ final class DataImportViewController: UIViewController {
     private let featureFlagger: FeatureFlagger
     private let importScreen: DataImportViewModel.ImportScreen
     private var summaryPresented: Bool = false
+    private let onFinished: (() -> Void)?
+    private let onCancelled: (() -> Void)?
 
-    init(importManager: DataImportManager, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing, keyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+    init(importManager: DataImportManager, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing, keyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger, onFinished: (() -> Void)? = nil, onCancelled: (() -> Void)? = nil) {
         self.viewModel = DataImportViewModel(importScreen: importScreen, importManager: importManager)
         self.importScreen = importScreen
         self.syncService = syncService
         self.keyValueStore = keyValueStore
         self.featureFlagger = featureFlagger
+        self.onFinished = onFinished
+        self.onCancelled = onCancelled
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -59,19 +66,24 @@ final class DataImportViewController: UIViewController {
         super.viewDidLoad()
 
         setupView()
-        Pixel.fire(pixel: .importInstructionsDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        PixelKit.fire(Pixel.Event.importInstructionsDisplayed, options: .parameters([PixelParameters.source: importScreen.rawValue]))
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if !summaryPresented {
-            Pixel.fire(pixel: .importInstructionsCancelled, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+            onCancelled?()
+            PixelKit.fire(Pixel.Event.importInstructionsCancelled, options: .parameters([PixelParameters.source: importScreen.rawValue]))
+        } else {
+            onFinished?()
         }
     }
 
     // MARK: - Private
 
     private func setupView() {
+        decorateNavigationBar()
+
         viewModel.delegate = self
         let controller = UIHostingController(rootView: DataImportView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
@@ -88,7 +100,7 @@ final class DataImportViewController: UIViewController {
             present(documentPicker, animated: true)
         }
 
-        Pixel.fire(pixel: .importInstructionsFileButtonTapped, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+        PixelKit.fire(Pixel.Event.importInstructionsFileButtonTapped, options: .parameters([PixelParameters.source: viewModel.state.importScreen.rawValue]))
     }
 
     private func presentDataTypePicker(for contents: ImportArchiveContents) {
@@ -126,20 +138,41 @@ final class DataImportViewController: UIViewController {
 
     private func presentSummary(for summary: DataImportSummary) {
         summaryPresented = true
+        AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-
-            self.navigationController?.present(DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService), animated: true) { [weak self] in
+            
+            let summaryViewController = DataImportSummaryViewController(
+                summary: summary,
+                importScreen: importScreen,
+                syncService: syncService,
+                isSafariImportFlow: viewModel.state.browser == .safari
+            ) { [weak self] source in
                 guard let self = self else { return }
-
-                if featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) {
-                    try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
-                    try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                let mainVC = self.presentingViewController as? MainViewController ?? self.navigationController?.presentingViewController as? MainViewController
+                
+                if let mainViewController = mainVC {
+                    mainViewController.dismiss(animated: true) {
+                        mainViewController.segueToSettingsSync(with: source)
+                    }
                 }
-                self.navigationController?.popViewController(animated: false)
-                delegate?.dataImportViewControllerDidFinish(self)
+            } onCompletion: { [weak self] in
+                guard let self = self else { return }
+                if self.navigationController?.children.first is DataImportViewController {
+                    self.presentingViewController?.dismiss(animated: true)
+                } else if importScreen == .whatsNew {
+                    navigationController?.popViewController(animated: true)
+                } else {
+                    navigationController?.popViewController(animated: false)
+                    delegate?.dataImportViewControllerDidFinish(self)
+                }
             }
+
+            self.present(summaryViewController, animated: true)
+
+            try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+            try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
         }
     }
 
@@ -154,7 +187,7 @@ extension DataImportViewController: DataImportViewModelDelegate {
         presentDocumentPicker()
     }
 
-    func dataImportViewModelDidRequestPresentDataPicker(_ viewModel: DataImportViewModel, contents: Core.ImportArchiveContents) {
+    func dataImportViewModelDidRequestPresentDataPicker(_ viewModel: DataImportViewModel, contents: ImportArchiveContents) {
         presentDataTypePicker(for: contents)
     }
 
@@ -198,12 +231,12 @@ extension DataImportViewController: UIDocumentPickerDelegate {
             viewModel.handleFileSelection(selectedFileURL, type: fileType)
 
             switch fileType {
-            case .zip:
-                Pixel.fire(pixel: .importInstructionsFileSelectedZip, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+            case .zip, .json:
+                PixelKit.fire(Pixel.Event.importInstructionsFileSelectedZip, options: .parameters([PixelParameters.source: viewModel.state.importScreen.rawValue]))
             case .csv:
-                Pixel.fire(pixel: .importInstructionsFileSelectedCsv, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+                PixelKit.fire(Pixel.Event.importInstructionsFileSelectedCsv, options: .parameters([PixelParameters.source: viewModel.state.importScreen.rawValue]))
             case .html:
-                Pixel.fire(pixel: .importInstructionsFileSelectedHtml, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+                PixelKit.fire(Pixel.Event.importInstructionsFileSelectedHtml, options: .parameters([PixelParameters.source: viewModel.state.importScreen.rawValue]))
             }
 
         } catch {
@@ -214,5 +247,6 @@ extension DataImportViewController: UIDocumentPickerDelegate {
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         viewModel.isLoading = false
+        viewModel.documentPickerCancelled()
     }
 }

@@ -33,6 +33,11 @@ public struct Global {
         }
         return groupIdPrefix
     }()
+
+    public static let appConfigurationGroupName: String = {
+        groupIdPrefix + ".app-configuration"
+    }()
+
 }
 
 /// Allows Bundle.for() calls to be made without comprising encapsulation

@@ -19,11 +19,9 @@
 import XCTest
 
 class BookmarkSearchTests: UITestCase {
-    private var app: XCUIApplication!
 
     private enum AccessibilityIdentifiers {
         static let bookmarkButton = "AddressBarButtonsViewController.bookmarkButton"
-        static let addressBarTextField = "AddressBarViewController.addressBarTextField"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let bookmarksMenu = "MainMenu.bookmarks"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
@@ -38,13 +36,8 @@ class BookmarkSearchTests: UITestCase {
         static let newFolderButton = "BookmarkListViewController.newFolderButton"
     }
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         app.resetBookmarks()
         enforceSingleWindow()
@@ -64,7 +57,6 @@ class BookmarkSearchTests: UITestCase {
 
     func testFilteredResultsInPanel() {
         addThreeBookmarks()
-        closeShowBookmarksBarAlert()
         app.openBookmarksPanel()
         searchInBookmarksPanel(for: "Bookmark #2")
         assertOnlyBookmarkExists(on: app.outlines.firstMatch, bookmarkTitle: "Bookmark #2")
@@ -102,13 +94,12 @@ class BookmarkSearchTests: UITestCase {
     // MARK: - Utilities
 
     private func enforceSingleWindow() {
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 
     private func addBookmarkAndOpenBookmarksPanel(bookmarkPageTitle: String, in folder: String? = nil) {
         addBookmark(pageTitle: bookmarkPageTitle, in: folder)
-        closeShowBookmarksBarAlert()
+        app.dismissBookmarksBarPopover()
         app.openBookmarksPanel()
     }
 
@@ -135,12 +126,14 @@ class BookmarkSearchTests: UITestCase {
 
     private func searchInBookmarksPanel(for title: String) {
         bringFocusToBookmarksPanelSearchBar()
-        app.popovers.firstMatch.searchFields[AccessibilityIdentifiers.bookmarksPanelSearchBar].typeText(title)
+        let searchField = app.popovers.firstMatch.searchFields[AccessibilityIdentifiers.bookmarksPanelSearchBar]
+        searchField.clickAfterExistenceTestSucceeds()
+        searchField.typeText(title)
     }
 
     private func searchInBookmarksManager(for title: String) {
         let searchField = app.searchFields[AccessibilityIdentifiers.bookmarksManagerSearchBar]
-        searchField.tap()
+        searchField.clickAfterExistenceTestSucceeds()
         searchField.typeText(title)
     }
 
@@ -176,7 +169,7 @@ class BookmarkSearchTests: UITestCase {
 
     private func bringFocusToBookmarksPanelSearchBar() {
         let popover = app.popovers.firstMatch
-        popover.buttons[AccessibilityIdentifiers.searchBookmarksButton].tap()
+        popover.buttons[AccessibilityIdentifiers.searchBookmarksButton].clickAfterExistenceTestSucceeds()
     }
 
     private func openBookmarksManager() {
@@ -184,14 +177,14 @@ class BookmarkSearchTests: UITestCase {
     }
 
     private func openNewTab() {
-        app.typeKey("t", modifierFlags: .command)
+        app.openNewTab()
     }
 
     private func testShowInFolderFunctionality(in mode: BookmarkMode) {
         createFolderWithSubFolder()
         openNewTab()
         addBookmark(pageTitle: "Bookmark #1", in: "Folder #2")
-        closeShowBookmarksBarAlert()
+        app.dismissBookmarksBarPopover()
 
         if mode == .panel {
             app.openBookmarksPanel()
@@ -201,11 +194,17 @@ class BookmarkSearchTests: UITestCase {
             searchInBookmarksManager(for: "Bookmark #1")
         }
 
-        let result = app.staticTexts["Bookmark #1"]
-        result.rightClick()
+        let results = mode == .panel ? app.popovers.firstMatch.outlines.firstMatch : app.tables.firstMatch
+        let result = results.staticTexts["Bookmark #1"]
+        XCTAssertTrue(result.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Failed to find Bookmark #1 in search results")
+        if mode == .manager {
+            result.hover()
+            results.cells.firstMatch.buttons["BookmarkTableCellView.menuButton"].clickAfterExistenceTestSucceeds()
+        } else {
+            result.rightClick()
+        }
         let showInFolderMenuItem = app.menuItems["Show in Folder"]
-        XCTAssertTrue(showInFolderMenuItem.exists)
-        showInFolderMenuItem.tap()
+        showInFolderMenuItem.clickAfterExistenceTestSucceeds()
 
         assertSearchBarVisibilityAfterShowInFolder(mode: mode)
         assertFolderStructure(mode: mode)
@@ -237,7 +236,6 @@ class BookmarkSearchTests: UITestCase {
     private func testDragAndDropToReorder(in mode: BookmarkMode) {
         addThreeBookmarks()
         if mode == .panel {
-            closeShowBookmarksBarAlert()
             app.openBookmarksPanel()
         } else {
             openBookmarksManager()
@@ -308,21 +306,19 @@ class BookmarkSearchTests: UITestCase {
     private func createFolderWithSubFolder() {
         app.openBookmarksPanel()
         let bookmarksPanel = app.popovers.firstMatch
-        bookmarksPanel.buttons[AccessibilityIdentifiers.newFolderButton].tap()
+        bookmarksPanel.buttons[AccessibilityIdentifiers.newFolderButton].clickAfterExistenceTestSucceeds()
 
         let folderTitleTextField = app.textFields["bookmark.add.name.textfield"]
+        folderTitleTextField.clickAfterExistenceTestSucceeds()
         folderTitleTextField.typeText("Folder #1")
-        app.buttons["Add Folder"].tap()
+        app.buttons["Add Folder"].clickAfterExistenceTestSucceeds()
 
-        bookmarksPanel.buttons[AccessibilityIdentifiers.newFolderButton].tap()
+        bookmarksPanel.buttons[AccessibilityIdentifiers.newFolderButton].clickAfterExistenceTestSucceeds()
+        folderTitleTextField.clickAfterExistenceTestSucceeds()
         folderTitleTextField.typeText("Folder #2")
         let folderLocationButton = app.popUpButtons["bookmark.folder.folder.dropdown"]
-        folderLocationButton.tap()
-        folderLocationButton.menuItems["Folder #1"].tap()
-        app.buttons["Add Folder"].tap()
-    }
-
-    private func closeShowBookmarksBarAlert() {
-        app.dismissPopover(buttonIdentifier: "Hide")
+        folderLocationButton.clickAfterExistenceTestSucceeds()
+        folderLocationButton.menuItems["Folder #1"].clickAfterExistenceTestSucceeds()
+        app.buttons["Add Folder"].clickAfterExistenceTestSucceeds()
     }
 }

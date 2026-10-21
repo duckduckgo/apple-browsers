@@ -23,9 +23,9 @@ import Common
 import Swifter
 import WebKit
 import XCTest
-@testable import Navigation
+@testable import DDGNavigation
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
     func testDownloadNavigationAction() throws {
@@ -48,7 +48,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(URLRequest(url: urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -93,7 +93,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -116,7 +116,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data, urls] request in
             guard request.path == "/" else { return nil }
             return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
-                try! writer.write(data.empty)
+                try writer.write(data.empty)
             }
         }, { [data] request in
             return .ok(.data(data.html, contentType: "application/zip"))
@@ -144,7 +144,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -178,7 +178,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         var frameID: UInt64!
         responder(at: 0).onNavigationAction = { [urls] navAction, _ in
@@ -207,7 +207,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             webView.evaluateJavaScript("window.frames[0].location.href = '\(urls.local1.string)'")
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1, defaultHeaders + ["Referer": urls.local.separatedString]), .other, from: history[1], src: frame(main(responderIdx: 0).handle.frameID, urls.local), targ: frame(frameID, urls.local3)),
@@ -231,7 +231,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
         var frameIDs = [String: UInt64]()
         responder(at: 0).onNavigationAction = { [urls] navAction, _ in
-            guard navAction.url.matches(urls.local) else {
+            guard navAction.url.equals(urls.local, by: .fuzzyIdentity) else {
 #if _FRAME_HANDLE_ENABLED
                 frameIDs[navAction.url.path] = navAction.targetFrame?.handle.frameID
                 XCTAssertNotEqual(navAction.targetFrame?.handle.frameID, WKFrameInfo.defaultMainFrameHandle)
@@ -254,7 +254,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -293,7 +293,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
         var frameIDs = [String: UInt64]()
         responder(at: 0).onNavigationAction = { [urls] navAction, _ in
-            if !navAction.url.matches(urls.local) {
+            if !navAction.url.equals(urls.local, by: .fuzzyIdentity) {
 #if _FRAME_HANDLE_ENABLED
                 frameIDs[navAction.url.path] = navAction.targetFrame?.handle.frameID
                 XCTAssertNotEqual(navAction.targetFrame?.handle.frameID, WKFrameInfo.defaultMainFrameHandle)
@@ -302,7 +302,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
             return .allow
         }
         responder(at: 0).onNavigationResponse = { [urls] navResponse in
-            guard navResponse.url.matches(urls.local) else {
+            guard navResponse.url.equals(urls.local, by: .fuzzyIdentity) else {
                 return .download
             }
             return .allow
@@ -321,7 +321,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local), .other, src: main()),
@@ -370,7 +370,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         withWebView { webView in
             _=webView.load(URLRequest(url: urls.local))
         }
-        waitForExpectations(timeout: 5)
+        waitForExpectations()
     }
 
 }

@@ -25,6 +25,7 @@ public struct HistoryEvent: Identifiable, Sendable {
         case error(error: DataBrokerProtectionError)
         case optOutStarted
         case optOutRequested
+        case optOutSubmittedAndAwaitingEmailConfirmation
         case optOutConfirmed
         case scanStarted
         case reAppearence
@@ -74,6 +75,36 @@ public struct HistoryEvent: Identifiable, Sendable {
     func isMatchesFoundEvent() -> Bool {
         switch type {
         case .matchesFound:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Whether this event signals that our form submission to the broker successfully completed.
+    /// For legacy email-confirming records that only carry `.optOutRequested` (broker acknowledgement,
+    /// not form submission), this is the best signal available.
+    func isFormSubmittedEvent() -> Bool {
+        switch type {
+        case .optOutRequested, .optOutSubmittedAndAwaitingEmailConfirmation:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func isOptOutClearEvent() -> Bool {
+        switch type {
+        case .optOutConfirmed, .matchRemovedByUser:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func isScanSuccessEvent() -> Bool {
+        switch type {
+        case .matchesFound, .noMatchFound:
             return true
         default:
             return false

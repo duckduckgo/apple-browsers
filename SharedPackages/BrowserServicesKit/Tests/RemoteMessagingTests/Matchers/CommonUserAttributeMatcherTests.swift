@@ -26,6 +26,7 @@ import XCTest
 class CommonUserAttributeMatcherTests: XCTestCase {
 
     var mockStatisticsStore: MockStatisticsStore!
+    var mockFeatureDiscovery: MockFeatureDiscovery!
     var manager: MockVariantManager!
     var emailManager: EmailManager!
     var matcher: CommonUserAttributeMatcher!
@@ -41,6 +42,8 @@ class CommonUserAttributeMatcherTests: XCTestCase {
         mockStatisticsStore.appRetentionAtb = "v105-44"
         mockStatisticsStore.searchRetentionAtb = "v105-88"
         mockStatisticsStore.installDate = dateYesterday
+
+        mockFeatureDiscovery = MockFeatureDiscovery()
 
         manager = MockVariantManager(isSupportedReturns: true,
                                          currentVariant: MockVariant(name: "zo", weight: 44, isIncluded: { return true }, features: [.dummy]))
@@ -190,7 +193,7 @@ class CommonUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    // MARK: - Privacy Pro
+    // MARK: - Subscription
 
     func testWhenDaysSinceNetPEnabledMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceNetPEnabledMatchingAttribute(min: 1, fallback: nil)),
@@ -202,65 +205,199 @@ class CommonUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    func testWhenIsPrivacyProEligibleUserMatchesThenReturnMatch() throws {
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsPrivacyProEligibleUserMatchingAttribute(value: true, fallback: nil)),
+    func testWhenisSubscriptionEligibleUserMatchesThenReturnMatch() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsSubscriptionEligibleUserMatchingAttribute(value: true, fallback: nil)),
                        .match)
     }
 
-    func testWhenIsPrivacyProEligibleUserDoesNotMatchThenReturnFail() throws {
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsPrivacyProEligibleUserMatchingAttribute(value: false, fallback: nil)),
+    func testWhenisSubscriptionEligibleUserDoesNotMatchThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsSubscriptionEligibleUserMatchingAttribute(value: false, fallback: nil)),
                        .fail)
     }
 
-    func testWhenIsPrivacyProSubscriberMatchesThenReturnMatch() throws {
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsPrivacyProSubscriberUserMatchingAttribute(value: true, fallback: nil)),
+    func testWhenisDuckDuckGoSubscriberMatchesThenReturnMatch() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckDuckGoSubscriberUserMatchingAttribute(value: true, fallback: nil)),
                        .match)
     }
 
-    func testWhenIsPrivacyProSubscriberDoesNotMatchThenReturnFail() throws {
-        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsPrivacyProSubscriberUserMatchingAttribute(value: false, fallback: nil)),
+    func testWhenisDuckDuckGoSubscriberDoesNotMatchThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckDuckGoSubscriberUserMatchingAttribute(value: false, fallback: nil)),
                        .fail)
     }
 
-    func testWhenPrivacyProPurchasePlatformMatchesThenReturnMatch() throws {
+    func testWhenSubscriptionPurchasePlatformMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(
-            matchingAttribute: PrivacyProPurchasePlatformMatchingAttribute(
+            matchingAttribute: SubscriptionPurchasePlatformMatchingAttribute(
                 value: ["apple"], fallback: nil
             )
         ), .match)
     }
 
-    func testWhenPrivacyProPurchasePlatformDoesNotMatchThenReturnFail() throws {
+    func testWhenSubscriptionPurchasePlatformDoesNotMatchThenReturnFail() throws {
         XCTAssertEqual(matcher.evaluate(
-            matchingAttribute: PrivacyProPurchasePlatformMatchingAttribute(
+            matchingAttribute: SubscriptionPurchasePlatformMatchingAttribute(
                 value: ["stripe"], fallback: nil
             )
         ), .fail)
     }
 
-    func testWhenPrivacyProSubscriptionStatusMatchesThenReturnMatch() throws {
+    func testWhenSubscriptionTierMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(
-            matchingAttribute: PrivacyProSubscriptionStatusMatchingAttribute(value: ["active"], fallback: nil)
+            matchingAttribute: SubscriptionTierMatchingAttribute(
+                value: ["pro"], fallback: nil
+            )
         ), .match)
     }
 
-    func testWhenPrivacyProSubscriptionStatusHasMultipleAttributesAndOneMatchesThenReturnMatch() throws {
+    func testWhenSubscriptionTierHasMultipleValuesAndOneMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(
-            matchingAttribute: PrivacyProSubscriptionStatusMatchingAttribute(value: ["active", "expiring", "expired"], fallback: nil)
+            matchingAttribute: SubscriptionTierMatchingAttribute(
+                value: ["plus", "pro"], fallback: nil
+            )
         ), .match)
     }
 
-    func testWhenPrivacyProSubscriptionStatusDoesNotMatchThenReturnFail() throws {
+    func testWhenSubscriptionTierDoesNotMatchThenReturnFail() throws {
         XCTAssertEqual(matcher.evaluate(
-            matchingAttribute: PrivacyProSubscriptionStatusMatchingAttribute(value: ["expiring"], fallback: nil)
+            matchingAttribute: SubscriptionTierMatchingAttribute(
+                value: ["plus"], fallback: nil
+            )
         ), .fail)
     }
 
-    func testWhenPrivacyProSubscriptionStatusHasUnsupportedStatusThenReturnFail() throws {
+    func testWhenSubscriptionStatusMatchesThenReturnMatch() throws {
         XCTAssertEqual(matcher.evaluate(
-            matchingAttribute: PrivacyProSubscriptionStatusMatchingAttribute(value: ["unsupported_status"], fallback: nil)
+            matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["active"], fallback: nil)
+        ), .match)
+    }
+
+    func testWhenSubscriptionStatusHasMultipleAttributesAndOneMatchesThenReturnMatch() throws {
+        XCTAssertEqual(matcher.evaluate(
+            matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["active", "expiring", "expired"], fallback: nil)
+        ), .match)
+    }
+
+    func testWhenSubscriptionStatusDoesNotMatchThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(
+            matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["expiring"], fallback: nil)
         ), .fail)
     }
+
+    func testWhenSubscriptionStatusHasUnsupportedStatusThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(
+            matchingAttribute: SubscriptionStatusMatchingAttribute(value: ["unsupported_status"], fallback: nil)
+        ), .fail)
+    }
+
+    func testWhenSubscriptionFreeTrialActiveMatchesThenReturnMatch() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: SubscriptionFreeTrialActiveMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenSubscriptionFreeTrialActiveDoesNotMatchThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: SubscriptionFreeTrialActiveMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
+    // MARK: - Duck.ai
+
+    func testWhenDaysSinceDuckAiUsedEqualOrLowerThanMaxThenReturnMatch() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(max: 1, fallback: nil)), .match)
+    }
+
+    func testWhenDaysSinceDuckAiUsedGreaterThanMaxThenReturnFail() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(max: 0, fallback: nil)), .fail)
+    }
+
+    func testWhenDaysSinceDuckAiUsedEqualOrGreaterThanMinThenReturnMatch() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(min: 1, fallback: nil)), .match)
+    }
+
+    func testWhenDaysSinceDuckAiUsedLowerThanMinThenReturnFail() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(min: 2, fallback: nil)), .fail)
+    }
+
+    func testWhenDaysSinceDuckAiUsedInRangeThenReturnMatch() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(min: 0, max: 1, fallback: nil)), .match)
+    }
+
+    func testWhenDaysSinceDuckAiUsedNotInRangeThenReturnFail() throws {
+        mockFeatureDiscovery.setDaysSinceLastUsedValue(1, for: .aiChat)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(min: 2, max: 44, fallback: nil)), .fail)
+    }
+
+    func testWhenDaysSinceDuckAiUsedIsNilThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: DaysSinceDuckAIUsedMatchingAttribute(max: 0, fallback: nil)), .fail)
+    }
+
+    func testWhenIsReturningUserMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isReturningUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: true, fallback: nil)), .match)
+    }
+
+    func testWhenIsReturningUserDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isReturningUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: false, fallback: nil)), .fail)
+    }
+
+    func testWhenIsReturningUserIsUnknownThenReturnFail() throws {
+        setUpUserAttributeMatcher(isReturningUser: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: false, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsReturningUserMatchingAttribute(value: true, fallback: nil)), .fail)
+    }
+
+    func testWhenIsDuckAIEnabledMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isAIChatEnabled: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: true, fallback: nil)), .match)
+    }
+
+    func testWhenIsDuckAIEnabledDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isAIChatEnabled: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: false, fallback: nil)), .fail)
+    }
+
+    func testWhenIsDuckAIDisabledAndRuleExpectsDisabledThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isAIChatEnabled: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIEnabledMatchingAttribute(value: false, fallback: nil)), .match)
+    }
+
+    func testWhenTriedDuckAIDuringOnboardingMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(triedAIChatDuringOnboarding: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: true, fallback: nil)), .match)
+    }
+
+    func testWhenTriedDuckAIDuringOnboardingDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(triedAIChatDuringOnboarding: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .fail)
+    }
+
+    func testWhenDidNotTryDuckAIDuringOnboardingAndRuleExpectsNotTriedThenReturnMatch() throws {
+        setUpUserAttributeMatcher(triedAIChatDuringOnboarding: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil)), .match)
+    }
+
+    func testWhenIsDuckAIBoostActiveMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isAIChatBoostActive: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: true, fallback: nil)), .match)
+    }
+
+    func testWhenIsDuckAIBoostActiveDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isAIChatBoostActive: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil)), .fail)
+    }
+
+    func testWhenIsDuckAIBoostActiveIsUnknownThenReturnFail() throws {
+        setUpUserAttributeMatcher(isAIChatBoostActive: nil)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil)), .fail)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: IsDuckAIBoostActiveMatchingAttribute(value: true, fallback: nil)), .fail)
+    }
+
+    // MARK: - Dismissed Messages
 
     func testWhenOneDismissedMessageIdMatchesThenReturnMatch() throws {
         setUpUserAttributeMatcher(dismissedMessageIds: ["1"])
@@ -388,28 +525,41 @@ class CommonUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], shownMessageIds: [String] = [], enabledFeatureFlags: [String] = []) {
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [],
+                                           shownMessageIds: [String] = [],
+                                           enabledFeatureFlags: [String] = [],
+                                           isReturningUser: Bool? = nil,
+                                           isAIChatEnabled: Bool = false,
+                                           triedAIChatDuringOnboarding: Bool = false,
+                                           isAIChatBoostActive: Bool? = nil) {
         matcher = CommonUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
+            featureDiscovery: mockFeatureDiscovery,
             variantManager: manager,
             emailManager: emailManager,
             bookmarksCount: 44,
             favoritesCount: 88,
             appTheme: "default",
             daysSinceNetPEnabled: 3,
-            isPrivacyProEligibleUser: true,
-            isPrivacyProSubscriber: true,
-            privacyProDaysSinceSubscribed: 5,
-            privacyProDaysUntilExpiry: 25,
-            privacyProPurchasePlatform: "apple",
-            isPrivacyProSubscriptionActive: true,
-            isPrivacyProSubscriptionExpiring: false,
-            isPrivacyProSubscriptionExpired: false,
+            isSubscriptionEligibleUser: true,
+            isDuckDuckGoSubscriber: true,
+            subscriptionDaysSinceSubscribed: 5,
+            subscriptionDaysUntilExpiry: 25,
+            subscriptionPurchasePlatform: "apple",
+            subscriptionTier: "pro",
+            isSubscriptionActive: true,
+            isSubscriptionExpiring: false,
+            isSubscriptionExpired: false,
+            subscriptionFreeTrialActive: true,
             isDuckPlayerOnboarded: false,
             isDuckPlayerEnabled: false,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags
+            enabledFeatureFlags: enabledFeatureFlags,
+            isReturningUser: isReturningUser,
+            isAIChatEnabled: isAIChatEnabled,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 }

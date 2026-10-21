@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "messages": [
+    {
+      "id": "whats_new_v1",
+      "surfaces": ["modal", "dedicated_tab"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "What's New",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "hide_search_images",
+            "type": "two_line_list_item",
+            "titleText": "Hide AI Images in Search",
+            "descriptionText": "Easily hide AI images from your search results",
+            "placeholder": "Announce",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "enhanced_scam_blocker",
+            "type": "two_line_list_item",
+            "titleText": "Enhanced Scam Blocker",
+            "descriptionText": "Browse confidently with protection against scam sites",
+            "placeholder": "PrivacyShield",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "duck_ai_chat",
+            "type": "two_line_list_item",
+            "titleText": "Duck AI Chat",
+            "descriptionText": "Private AI chat built into your browser",
+            "placeholder": "Duck.ai",
+            "primaryAction": {
+              "type": "navigation",
+              "value": "import.passwords"
+            }
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_with_duplicate_ids",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "Features",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "feature_1",
+            "type": "two_line_list_item",
+            "titleText": "First Occurrence",
+            "descriptionText": "This should be kept",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "feature_1",
+            "type": "two_line_list_item",
+            "titleText": "Duplicate ID",
+            "descriptionText": "This should be discarded",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_with_invalid_items",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "Mixed Valid and Invalid",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "",
+            "type": "two_line_list_item",
+            "titleText": "Invalid - Empty ID",
+            "descriptionText": "Should be discarded",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "valid_item",
+            "type": "two_line_list_item",
+            "titleText": "Valid Item",
+            "descriptionText": "Should be kept",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "invalid_type_item",
+            "type": "invalid_type",
+            "titleText": "Invalid Type",
+            "descriptionText": "Should be discarded",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_empty_items",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "Empty List",
+        "descriptionText": "",
+        "listItems": [],
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_nil_items",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "Nil List",
+        "descriptionText": "",
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_all_invalid_items",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "All Invalid Items",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "",
+            "type": "two_line_list_item",
+            "titleText": "Empty ID",
+            "descriptionText": "Invalid",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "item2",
+            "type": "two_line_list_item",
+            "titleText": "",
+            "descriptionText": "Empty title",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_with_all_placeholders",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "All Placeholder Types",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "announce",
+            "type": "two_line_list_item",
+            "titleText": "Announce",
+            "descriptionText": "Default placeholder",
+            "placeholder": "Announce",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "ddg_announce",
+            "type": "two_line_list_item",
+            "titleText": "DDG Announce",
+            "descriptionText": "DDG branded",
+            "placeholder": "DDGAnnounce",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "nil_placeholder",
+            "type": "two_line_list_item",
+            "titleText": "Nil Placeholder",
+            "descriptionText": "Should default to Announce",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "OK",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    }
+  ],
+  "rules": []
+}

@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -19,45 +19,32 @@
 //
 
 import PackageDescription
+import Foundation
 
 let package = Package(
     name: "CommonObjCExtensions",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
-        .library(name: "BWIntegration", targets: ["BWIntegration"]),
         .library(name: "CommonObjCExtensions", targets: ["CommonObjCExtensions"]),
     ],
-    dependencies: [
-        .package(url: "https://github.com/duckduckgo/OpenSSL-XCFramework", exact: "3.3.2000")
-    ],
+    dependencies: [],
     targets: [
-        .target(
-            name: "BWIntegration",
-            dependencies: [
-                .product(name: "OpenSSL", package: "OpenSSL-XCFramework")
-            ],
-            sources: [
-                "BWEncryption.m",
-                "BWEncryptionOutput.m",
-            ],
-            publicHeadersPath: "include",
-            cSettings: [
-                .headerSearchPath("include")
-            ]
-        ),
         .target(
             name: "CommonObjCExtensions",
             dependencies: [],
             sources: [
                 "NSException+Catch.m",
-                "NSObject+performSelector.m",
+                "NSObject+valueForIvar.m",
             ],
             publicHeadersPath: "include",
             cSettings: [
                 .headerSearchPath("include"),
+                // disable code coverage for the ObjC target due to a known SPM linking issue:
+                // https://forums.swift.org/t/undefined-symbols-llvm-profile-runtime-when-building-a-package-with-code-coverage-turned-on/49701
+                .unsafeFlags(["-fno-profile-instr-generate", "-fno-coverage-mapping"]),
             ]
         )
     ]

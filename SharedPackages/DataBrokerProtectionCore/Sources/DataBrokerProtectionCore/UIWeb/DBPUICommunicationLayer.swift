@@ -19,17 +19,30 @@
 import Foundation
 import WebKit
 import BrowserServicesKit
+import PrivacyConfig
 import UserScript
 import Common
 import os.log
 
-enum DBPDeviceCapability: String, Codable {
-    case useUnifiedFeedback
-    case excludeVpnTraffic
+public struct DBPUIFeatureConfigurationResponse: Encodable {
+    public let useUnifiedFeedback: Bool
+    public let excludeVpnTraffic: Bool
+    public let brokerRemovalEnabled: Bool
+    public let needBackgroundAppRefresh: Bool
+
+    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool, needBackgroundAppRefresh: Bool) {
+        self.useUnifiedFeedback = useUnifiedFeedback
+        self.excludeVpnTraffic = excludeVpnTraffic
+        self.brokerRemovalEnabled = brokerRemovalEnabled
+        self.needBackgroundAppRefresh = needBackgroundAppRefresh
+    }
+}
+
+public protocol DBPUIHandshakeDelegate: AnyObject {
+    @MainActor func getHandshakeUserData() async -> DBPUIHandshakeUserData?
 }
 
 public protocol DBPUICommunicationDelegate: AnyObject {
-    func getHandshakeUserData() -> DBPUIHandshakeUserData?
     func saveProfile() async throws
     func getUserProfile() -> DBPUIUserProfile?
     func deleteProfileData() throws
@@ -48,6 +61,8 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func openSendFeedbackModal() async
     func applyVPNBypassSetting(_ bypass: Bool) async
     func removeOptOutFromDashboard(_ id: Int64) async
+    func needBackgroundAppRefresh() async -> Bool
+    func enableBackgroundAppRefresh() async
 }
 
 public enum DBPUIReceivedMethodName: String {
@@ -72,10 +87,12 @@ public enum DBPUIReceivedMethodName: String {
     case getVPNBypassSetting = "getVpnExclusionSetting"
     case setVPNBypassSetting = "setVpnExclusionSetting"
     case removeOptOutFromDashboard
+    case enableBackgroundAppRefresh
 }
 
 public enum DBPUISendableMethodName: String {
     case setState
+    case backgroundAppRefreshDidChange
 }
 
 public struct DBPUICommunicationLayer: Subfeature {
@@ -87,16 +104,21 @@ public struct DBPUICommunicationLayer: Subfeature {
     public var featureName: String = "dbpuiCommunication"
     weak public var broker: UserScriptMessageBroker?
 
+    private let outboundBroker: UserScriptMessageBroker = UserScriptMessageBroker(context: "dbpui", requiresRunInPageContentWorld: true)
+
     weak public var delegate: DBPUICommunicationDelegate?
+    weak private var handshakeDelegate: DBPUIHandshakeDelegate?
 
     private enum Constants {
-        static let version = 11
+        static let version = 12
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
+                handshakeDelegate: DBPUIHandshakeDelegate,
                 vpnBypassService: VPNBypassServiceProvider? = nil,
                 privacyConfig: PrivacyConfigurationManaging) {
         self.webURLSettings = webURLSettings
+        self.handshakeDelegate = handshakeDelegate
         self.vpnBypassService = vpnBypassService
         self.privacyConfig = privacyConfig
         self.messageOriginPolicy = .only(rules: [
@@ -132,6 +154,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .getVPNBypassSetting: return getVPNBypassSetting
         case .setVPNBypassSetting: return setVPNBypassSetting
         case .removeOptOutFromDashboard: return removeOptOutFromDashboard
+        case .enableBackgroundAppRefresh: return enableBackgroundAppRefresh
         }
 
     }
@@ -143,8 +166,7 @@ public struct DBPUICommunicationLayer: Subfeature {
             throw DBPUIError.malformedRequest
         }
 
-        // Attempt to get handshake user data, but fallback to a default
-        let userData = delegate?.getHandshakeUserData() ?? DBPUIHandshakeUserData(isAuthenticatedUser: true)
+        let userData = (await handshakeDelegate?.getHandshakeUserData()) ?? DBPUIHandshakeUserData(isAuthenticatedUser: true)
 
         if result.version != Constants.version {
             Logger.dataBrokerProtection.log("Incorrect protocol version presented by UI")
@@ -320,9 +342,22 @@ public struct DBPUICommunicationLayer: Subfeature {
         broker?.push(method: method.rawValue, params: params, for: self, into: webView)
     }
 
+    public func sendBackgroundAppRefreshDidChange(needBackgroundAppRefresh: Bool, into webView: WKWebView) {
+        Logger.dataBrokerProtection.log("needBackgroundAppRefresh changed to \(needBackgroundAppRefresh)")
+
+        let params = DBPUIBackgroundAppRefreshDidChange(needBackgroundAppRefresh: needBackgroundAppRefresh)
+        outboundBroker.push(method: DBPUISendableMethodName.backgroundAppRefreshDidChange.rawValue,
+                            params: params, for: self, into: webView)
+    }
+
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return [DBPDeviceCapability.useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
-                DBPDeviceCapability.excludeVpnTraffic: vpnBypassService?.isSupported ?? false]
+        // brokerRemovalEnabled is hardcoded to true, given it's an "inaugural" flag for Data Broker Removal
+        return DBPUIFeatureConfigurationResponse(
+            useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
+            excludeVpnTraffic: vpnBypassService?.isSupported ?? false,
+            brokerRemovalEnabled: true,
+            needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false
+        )
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -363,5 +398,10 @@ public struct DBPUICommunicationLayer: Subfeature {
         await delegate?.removeOptOutFromDashboard(result.recordId)
 
         return DBPUIRemoveOptOutFromDashboardResult(success: true)
+    }
+
+    func enableBackgroundAppRefresh(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        await delegate?.enableBackgroundAppRefresh()
+        return nil
     }
 }

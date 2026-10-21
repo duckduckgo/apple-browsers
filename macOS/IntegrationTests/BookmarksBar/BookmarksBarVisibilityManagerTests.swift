@@ -16,8 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class BookmarksBarVisibilityManagerTests: XCTestCase {
@@ -31,7 +35,7 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
         .settings(pane: nil),
         .bookmarks,
         .onboarding,
-        .dataBrokerProtection,
+        .dataBrokerProtection(.subscribed),
         .subscription(URL.duckDuckGo),
         .identityTheftRestoration(URL.duckDuckGo)
     ]
@@ -43,7 +47,8 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
         appearance = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
     }
 

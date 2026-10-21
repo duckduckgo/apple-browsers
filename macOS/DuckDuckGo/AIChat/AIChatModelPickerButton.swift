@@ -1,0 +1,459 @@
+//
+//  AIChatModelPickerButton.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AppKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
+
+/// A pill-shaped button that displays the current AI model name with a dropdown chevron.
+/// Used in the AI Chat omnibar to allow model selection via a context menu.
+final class AIChatModelPickerButton: NSView {
+
+    private enum Constants {
+        static let height: CGFloat = 28
+        static let horizontalPadding: CGFloat = 13
+        static let iconTextSpacing: CGFloat = 3
+        static let chevronSize: CGFloat = 16
+        static let fontSize: CGFloat = 12
+        static let cornerRadius: CGFloat = 14
+        static let borderWidth: CGFloat = 1
+    }
+
+    private let nameLabel: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: Constants.fontSize, weight: .regular)
+        label.isEditable = false
+        label.isSelectable = false
+        label.isBezeled = false
+        label.drawsBackground = false
+        label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return label
+    }()
+
+    private let chevronImageView: NSImageView = {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.image = DesignSystemImages.Glyphs.Size16.chevronDownMedium
+        return imageView
+    }()
+
+    private let backgroundLayer = CALayer()
+
+    /// Own layer because `backgroundLayer` fades in and out for hover/press, and the outline has
+    /// to stay visible in every state.
+    private let borderLayer: CALayer = {
+        let layer = CALayer()
+        layer.cornerRadius = Constants.cornerRadius
+        layer.borderWidth = Constants.borderWidth
+        return layer
+    }()
+
+    private let focusRingLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.fillColor = nil
+        layer.lineWidth = 1.5
+        layer.lineCap = .round
+        layer.lineJoin = .round
+        layer.isHidden = true
+        return layer
+    }()
+
+    weak var target: AnyObject?
+    var action: Selector?
+
+    var modelName: String = "" {
+        didSet {
+            nameLabel.stringValue = modelName
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    var isReadOnly = false {
+        didSet {
+            guard isReadOnly != oldValue else { return }
+            chevronImageView.isHidden = isReadOnly
+            isHovered = false
+            isMouseDown = false
+            setAccessibilityRole(isReadOnly ? .staticText : .popUpButton)
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    var tintColor: NSColor? {
+        didSet {
+            updateAppearance()
+        }
+    }
+
+    /// Greys the chip out and makes it inert, for the usage-limit block. Not an `NSControl`, so
+    /// there is no inherited `isEnabled` to lean on.
+    var isEnabled: Bool = true {
+        didSet {
+            guard isEnabled != oldValue else { return }
+            if !isEnabled {
+                isMouseDown = false
+                isHovered = false
+            }
+            updateAppearance()
+        }
+    }
+
+    /// Stroke colour for the keyboard-focus ring. Defaults to the design-system primary
+    /// accent; the container VC re-assigns this from `theme.colorsProvider.accentPrimaryColor`
+    /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
+    var focusRingColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
+        didSet { updateFocusRingStrokeColor() }
+    }
+
+    /// A `CGColor` freezes the appearance it's resolved in, and `NSApp`'s would be wrong in a
+    /// burner window's dark override.
+    private func updateBorderColor() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            borderLayer.borderColor = NSColor(designSystemColor: .lines).cgColor
+        }
+        CATransaction.commit()
+    }
+
+    private func updateFocusRingStrokeColor() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            focusRingLayer.strokeColor = focusRingColor.cgColor
+        }
+        CATransaction.commit()
+    }
+
+    var hoverBackgroundColor: NSColor = .clear
+    var pressedBackgroundColor: NSColor = .clear
+
+    private var isHovered = false {
+        didSet {
+            updateAppearance()
+        }
+    }
+
+    private var isMouseDown = false {
+        didSet {
+            updateAppearance()
+        }
+    }
+
+    override var intrinsicContentSize: NSSize {
+        let labelWidth = nameLabel.intrinsicContentSize.width
+        let menuIndicatorWidth = isReadOnly ? 0 : Constants.iconTextSpacing + Constants.chevronSize
+        let totalWidth = Constants.horizontalPadding * 2 + labelWidth + menuIndicatorWidth
+        return NSSize(width: totalWidth, height: Constants.height)
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupView()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupView()
+    }
+
+    var onTabPressed: (() -> Void)?
+
+    override var acceptsFirstResponder: Bool { isEnabled && !isReadOnly }
+    override var canBecomeKeyView: Bool { isEnabled && !isReadOnly }
+
+    override func becomeFirstResponder() -> Bool {
+        let didBecome = super.becomeFirstResponder()
+        if didBecome { isFocused = true }
+        return didBecome
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let didResign = super.resignFirstResponder()
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
+        return didResign
+    }
+
+    func takeKeyboardFocus() {
+        guard isEnabled, !isReadOnly else { return }
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus can't gate the ring.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
+    }
+
+    private func setFocusRingHidden(_ hidden: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        focusRingLayer.isHidden = hidden
+        CATransaction.commit()
+    }
+
+    private func setupView() {
+        wantsLayer = true
+        // The focus ring sublayer extends 1pt past the view's bounds. On macOS Monterey
+        // the hosting layer clips its sublayers to bounds by default, which would hide
+        // the ring; explicitly disable masking so the ring renders on every supported OS.
+        layer?.masksToBounds = false
+        setAccessibilityRole(.popUpButton)
+
+        // Setup background layer (pill shape)
+        backgroundLayer.cornerRadius = Constants.cornerRadius
+        backgroundLayer.opacity = 0
+        layer?.insertSublayer(backgroundLayer, at: 0)
+
+        // Below the focus ring, so a focused pill doesn't read as double-stroked.
+        layer?.addSublayer(borderLayer)
+        updateBorderColor()
+
+        // Focus ring sublayer sits above the background so it stays visible while hovered.
+        // Stroke colour follows `focusRingColor` and re-resolves against the view's effective
+        // appearance — see `updateFocusRingStrokeColor()`.
+        layer?.addSublayer(focusRingLayer)
+        updateFocusRingStrokeColor()
+
+        // Add subviews
+        addSubview(nameLabel)
+        addSubview(chevronImageView)
+
+        NSLayoutConstraint.activate([
+            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.horizontalPadding),
+            nameLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            chevronImageView.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: Constants.iconTextSpacing),
+            chevronImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            chevronImageView.widthAnchor.constraint(equalToConstant: Constants.chevronSize),
+            chevronImageView.heightAnchor.constraint(equalToConstant: Constants.chevronSize),
+        ])
+
+        updateAppearance()
+        setupHoverTracking()
+    }
+
+    override func layout() {
+        super.layout()
+        backgroundLayer.frame = bounds
+        borderLayer.frame = bounds
+
+        // Focus ring sits 1pt outside the pill. Rendered as a sublayer rather than
+        // in `draw(_:)` so the 1pt overflow is not clipped by the view's backing layer
+        // (which was the cause of the broken ring on macOS Monterey).
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let ringRect = bounds.insetBy(dx: -1, dy: -1)
+        focusRingLayer.frame = ringRect
+        focusRingLayer.path = CGPath(
+            roundedRect: focusRingLayer.bounds,
+            cornerWidth: ringRect.height / 2,
+            cornerHeight: ringRect.height / 2,
+            transform: nil
+        )
+        CATransaction.commit()
+    }
+
+    private func updateAppearance() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
+        NSAppearance.withAppAppearance {
+            // Checked before the transient flags, so a press or hover recorded on the way into the
+            // disabled state can't leave a fill behind.
+            if !isEnabled {
+                backgroundLayer.opacity = 0
+            } else if !isReadOnly && isMouseDown {
+                backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
+                backgroundLayer.opacity = 1
+            } else if !isReadOnly && isHovered {
+                backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
+                backgroundLayer.opacity = 1
+            } else {
+                backgroundLayer.opacity = 0
+            }
+
+            let contentColor = isEnabled ? tintColor : NSColor.secondaryLabelColor
+            nameLabel.textColor = contentColor
+            chevronImageView.contentTintColor = contentColor
+        }
+
+        CATransaction.commit()
+    }
+
+    // MARK: - Hover Tracking
+
+    private var trackingArea: NSTrackingArea?
+    private var lastHoverEventTimestamp: TimeInterval = 0
+
+    private func setupHoverTracking() {
+        updateTrackingAreas()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+
+        if let existingArea = trackingArea {
+            removeTrackingArea(existingArea)
+        }
+
+        let newTrackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(newTrackingArea)
+        trackingArea = newTrackingArea
+
+        // A new tracking area reports nothing about a pointer already outside it.
+        refreshHoverState()
+    }
+
+    /// Re-derives hover from the pointer's real position when event ordering or modal menu tracking makes callbacks unreliable.
+    private func refreshHoverState() {
+        guard isEnabled, !isReadOnly, let window else {
+            isHovered = false
+            return
+        }
+        isHovered = bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))
+    }
+
+    func resetTransientFillState() {
+        isMouseDown = false
+        refreshHoverState()
+    }
+
+    /// AppKit can deliver an older enter event after a newer exit event. Trusting that enter
+    /// unconditionally would leave the hover fill visible until the pointer crosses the view again.
+    private func updateHoverState(_ hovering: Bool, from event: NSEvent) {
+        guard event.timestamp >= lastHoverEventTimestamp else {
+            resetTransientFillState()
+            return
+        }
+        lastHoverEventTimestamp = event.timestamp
+        let canShowHover = NSEvent.pressedMouseButtons == 0 || isMouseDown
+        isHovered = hovering && isEnabled && !isReadOnly && canShowHover
+        if !hovering {
+            isMouseDown = false
+        }
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        updateHoverState(true, from: event)
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        isMouseDown = false
+        updateHoverState(true, from: event)
+        NSCursor.arrow.set()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        updateHoverState(false, from: event)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled, !isReadOnly else { return }
+        wantsFocusRing = false
+        isMouseDown = true
+        trackMouseInteraction()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard isEnabled, !isReadOnly else { return }
+        let locationInView = convert(event.locationInWindow, from: nil)
+        isMouseDown = bounds.contains(locationInView)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard isEnabled, !isReadOnly else { return }
+        let locationInView = convert(event.locationInWindow, from: nil)
+        if bounds.contains(locationInView) && isMouseDown {
+            if let action, let target {
+                sendMenuOpeningAction {
+                    NSApp.sendAction(action, to: target, from: self)
+                }
+                return
+            }
+        }
+        resetTransientFillState()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        guard !isReadOnly else {
+            if event.keyCode == 48 {
+                onTabPressed?()
+            } else {
+                super.keyDown(with: event)
+            }
+            return
+        }
+        switch event.keyCode {
+        case 48: // Tab
+            if let onTabPressed {
+                onTabPressed()
+            } else {
+                super.keyDown(with: event)
+            }
+        case 49, 36: // Space, Return - trigger action
+            if isEnabled, let action, let target {
+                NSApp.sendAction(action, to: target, from: self)
+            }
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
+        updateBorderColor()
+        updateFocusRingStrokeColor()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard !isHidden, !isReadOnly, frame.contains(point) else { return nil }
+        return self
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .arrow)
+    }
+}
+
+extension AIChatModelPickerButton: FocusRingControlling {}

@@ -1,0 +1,39 @@
+{
+  "configurations" : [
+    {
+      "id" : "7A44C4E9-5C59-4164-8AB3-42CB95E5427A",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:LocalPackages\/AppUpdater",
+        "identifier" : "SparkleAppUpdaterTests",
+        "name" : "SparkleAppUpdaterTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:LocalPackages\/AppUpdater",
+        "identifier" : "AppStoreAppUpdaterTests",
+        "name" : "AppStoreAppUpdaterTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:LocalPackages\/AppUpdater",
+        "identifier" : "AppUpdaterSharedTests",
+        "name" : "AppUpdaterSharedTests"
+      }
+    }
+  ],
+  "version" : 1
+}

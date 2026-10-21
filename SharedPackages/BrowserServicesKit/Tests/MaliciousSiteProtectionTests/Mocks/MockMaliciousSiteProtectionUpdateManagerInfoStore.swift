@@ -19,7 +19,7 @@
 import Foundation
 @testable import MaliciousSiteProtection
 
-final class MockMaliciousSiteProtectionUpdateManagerInfoStore: MaliciousSiteProtectioUpdateManagerInfoStorage {
+final class MockMaliciousSiteProtectionUpdateManagerInfoStore: MaliciousSiteProtectionUpdateManagerInfoStorage {
     var lastHashPrefixSetsUpdateDate: Date = .distantPast
     var lastFilterSetsUpdateDate: Date = .distantPast
 }

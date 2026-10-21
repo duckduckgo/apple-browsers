@@ -18,6 +18,7 @@
 
 import Foundation
 import SwiftUI
+import UIComponents
 
 struct AddExcludedDomainButtonsView: View {
     private let viewState: ViewState
@@ -56,7 +57,7 @@ struct AddExcludedDomainButtonsView: View {
                 .frame(height: viewState.height)
                 .frame(maxWidth: viewState.maxWidth)
         }
-        .keyboardShortcut(action.keyboardShortCut)
+        .ifLet(action.keyboardShortCut) { $0.keyboardShortcut($1) }
         .disabled(action.isDisabled)
         .ifLet(action.accessibilityIdentifier) { view, value in
             view.accessibilityIdentifier(value)

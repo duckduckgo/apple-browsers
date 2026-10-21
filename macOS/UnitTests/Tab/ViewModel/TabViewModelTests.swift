@@ -16,13 +16,16 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
+import DesignResourcesKit
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import MaliciousSiteProtection
-import Navigation
-import PersistenceTestingUtils
+import DDGNavigation
+@_spi(Testing) import Persistence
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import SharedTestUtilities
 import Subscription
 import WebKit
 import XCTest
@@ -33,8 +36,14 @@ final class TabViewModelTests: XCTestCase {
 
     let maliciousSite = URL("https://www.google.com")!
     var cancellables = Set<AnyCancellable>()
+    var accessibilityPreferences: AccessibilityPreferences!
+
+    override func setUp() {
+        accessibilityPreferences = AccessibilityPreferences()
+    }
 
     override func tearDown() {
+        accessibilityPreferences = nil
         cancellables = []
     }
 
@@ -93,7 +102,8 @@ final class TabViewModelTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(showFullURL: false),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
@@ -117,7 +127,8 @@ final class TabViewModelTests: XCTestCase {
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(showFullURL: true),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
@@ -243,7 +254,7 @@ final class TabViewModelTests: XCTestCase {
 
         tabViewModel.$favicon.debounce(for: 0.1, scheduler: RunLoop.main).sink { favicon in
             guard favicon != nil else { return }
-            if favicon?.pngData() == NSImage.homeFavicon.pngData(),
+            if favicon?.pngData() == NSImage(resource: .homeFavicon).pngData(),
                 !fulfilled {
                 faviconExpectation.fulfill()
                 fulfilled = true
@@ -251,7 +262,7 @@ final class TabViewModelTests: XCTestCase {
         } .store(in: &cancellables)
         waitForExpectations(timeout: 5, handler: nil)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .homeFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .homeFavicon))
     }
 
     // MARK: - TabContent+DisplayedFavicon Tests
@@ -266,7 +277,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = sslError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .redAlertCircle16))
     }
 
     @MainActor
@@ -275,7 +286,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .redAlertCircle16))
     }
 
     @MainActor
@@ -284,7 +295,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .redAlertCircle16))
     }
 
     @MainActor
@@ -293,7 +304,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .redAlertCircle16))
     }
 
     @MainActor
@@ -302,7 +313,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = wkError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .alertCircleColor16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .alertCircleColor16))
     }
 
     @MainActor
@@ -311,22 +322,20 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = genericError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .alertCircleColor16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .alertCircleColor16))
     }
 
     @MainActor
     func testDisplayedFaviconForDataBrokerProtection() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.dataBrokerProtection)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .personalInformationRemovalMulticolor16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .personalInformationRemovalMulticolor16))
     }
 
     @MainActor
     func testDisplayedFaviconForNewTabWithBurnerNewStyle() {
-        let mockVisualStyle = MockVisualStyle(isNewStyle: true)
         let tabViewModel = TabViewModel.forTabWithURL(
             URL.newtab,
-            visualStyle: mockVisualStyle,
             burnerMode: BurnerMode(isBurner: true)
         )
 
@@ -334,22 +343,10 @@ final class TabViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testDisplayedFaviconForNewTabWithBurnerOldStyle() {
-        let mockVisualStyle = MockVisualStyle(isNewStyle: false)
-        let tabViewModel = TabViewModel.forTabWithURL(
-            URL.newtab,
-            visualStyle: mockVisualStyle,
-            burnerMode: BurnerMode(isBurner: true)
-        )
-
-        XCTAssertImagesEqual(tabViewModel.favicon, .burnerTabFavicon)
-    }
-
-    @MainActor
     func testDisplayedFaviconForNewTabNonBurner() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.newtab)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .homeFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .homeFavicon))
     }
 
     @MainActor
@@ -360,7 +357,7 @@ final class TabViewModelTests: XCTestCase {
             if pane == .otherPlatforms /* this is a link */ {
                 XCTAssertNil(tabViewModel.favicon)
             } else {
-                XCTAssertImagesEqual(tabViewModel.favicon, .settingsMulticolor16, "Failed for \(pane)")
+                XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.settings, "Failed for \(pane)")
             }
         }
     }
@@ -368,68 +365,54 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testDisplayedFaviconForBookmarks() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.bookmarks)
-
-        XCTAssertImagesEqual(tabViewModel.favicon, .bookmarksFolder)
+        let expectedFavicon = DesignSystemImages.Color.Size16.bookmarksNew
+        XCTAssertImagesEqual(tabViewModel.favicon, expectedFavicon)
     }
 
     @MainActor
-    func testDisplayedFaviconForHistoryWithFeatureEnabled() {
-        let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
+    func testDisplayedFaviconForHistory() {
+        let tabViewModel = TabViewModel.forTabWithURL(URL.history)
 
-        let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-
-        XCTAssertImagesEqual(tabViewModel.favicon, .historyFavicon)
-    }
-
-    @MainActor
-    func testDisplayedFaviconForHistoryWithFeatureDisabled() {
-        let mockFeatureFlagger = MockFeatureFlagger() // .historyView defaults to nil/false
-
-        let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-
-        XCTAssertNil(tabViewModel.favicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.history)
     }
 
     @MainActor
     func testDisplayedFaviconForSubscription() {
         let tabViewModel = TabViewModel.forTabWithURL(SubscriptionURL.baseURL.subscriptionURL(environment: .production))
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .privacyPro)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.subscription)
     }
 
     @MainActor
     func testDisplayedFaviconForIdentityTheftRestoration() {
         let tabViewModel = TabViewModel.forTabWithURL(SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production))
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .identityTheftRestorationMulticolor16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .identityTheftRestorationMulticolor16))
     }
 
     @MainActor
     func testDisplayedFaviconForReleaseNotes() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.releaseNotes)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .homeFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .homeFavicon))
     }
 
     @MainActor
     func testDisplayedFaviconForAIChat() {
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar]
         let aiChatURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
         let tabViewModel = TabViewModel.forTabWithURL(aiChatURL, featureFlagger: mockFeatureFlagger)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .aiChatPreferences)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.duckAI)
     }
 
     @MainActor
     func testDisplayedFaviconForDuckAIURL() {
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar]
         let duckAIURL = URL(string: "https://duck.ai/chat")!
         let tabViewModel = TabViewModel.forTabWithURL(duckAIURL, featureFlagger: mockFeatureFlagger)
 
-        XCTAssertNil(tabViewModel.favicon) // not an actual ai chat url: loaded by the Tab
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.duckAI)
     }
 
     @MainActor
@@ -437,33 +420,14 @@ final class TabViewModelTests: XCTestCase {
         let duckPlayerURL = URL.duckPlayer("test")
         let tabViewModel = TabViewModel.forTabWithURL(duckPlayerURL)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .duckPlayerSettings)
-    }
-
-    @MainActor
-    func testDisplayedFaviconForHistoryURLWithFeatureEnabled() {
-        let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
-        let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-
-        XCTAssertImagesEqual(tabViewModel.favicon, .historyFavicon)
-    }
-
-    @MainActor
-    func testDisplayedFaviconForHistoryURLWithFeatureDisabled() {
-        let mockFeatureFlagger = MockFeatureFlagger() // .historyView defaults to nil/false
-
-        let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-
-        XCTAssertNil(tabViewModel.favicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .duckPlayerSettings))
     }
 
     @MainActor
     func testDisplayedFaviconForEmailProtectionURL() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGoEmail)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .emailProtectionIcon)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.emailProtection)
     }
 
     @MainActor
@@ -489,13 +453,14 @@ final class TabViewModelTests: XCTestCase {
 
     @MainActor
     func testDisplayedFaviconForOnboardingWithActualFavicon() {
+        let expectedFavicon = NSImage(resource: .onboardingDax)
         let actualFavicon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)!
 
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.setContent(.onboarding)
         tabViewModel.tab.favicon = actualFavicon
 
-        XCTAssertImagesEqual(tabViewModel.favicon, actualFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, expectedFavicon)
     }
 
     @MainActor
@@ -531,7 +496,8 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
             ),
             accessibilityPreferences: AccessibilityPreferences()
         )
@@ -542,10 +508,10 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testWhenPreferencesDefaultZoomLevelIsSetThenTabsWebViewZoomLevelIsUpdated() {
         UserDefaultsWrapper<Any>.clearAll()
-        let tabVM = TabViewModel(tab: Tab())
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let tabVM = TabViewModel(tab: Tab(), accessibilityPreferences: accessibilityPreferences)
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
-        AccessibilityPreferences.shared.defaultPageZoom = randomZoomLevel
+        accessibilityPreferences.defaultPageZoom = randomZoomLevel
 
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, randomZoomLevel)
     }
@@ -553,17 +519,19 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testWhenPreferencesDefaultZoomLevelIsSetAndANewTabIsOpenThenItsWebViewHasTheLatestValueOfZoomLevel() throws {
         UserDefaultsWrapper<Any>.clearAll()
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
-        AccessibilityPreferences.shared.defaultPageZoom = randomZoomLevel
+        accessibilityPreferences.defaultPageZoom = randomZoomLevel
 
         let tabVM = TabViewModel(
             tab: Tab(),
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
-            )
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
+            ),
+            accessibilityPreferences: accessibilityPreferences
         )
 
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, randomZoomLevel)
@@ -575,16 +543,16 @@ final class TabViewModelTests: XCTestCase {
         UserDefaultsWrapper<Any>.clearAll()
         let url = URL(string: "https://app.asana.com/0/1")!
         let hostURL = "https://app.asana.com/"
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         var tab = Tab(url: url)
-        var tabVM = TabViewModel(tab: tab)
+        var tabVM = TabViewModel(tab: tab, accessibilityPreferences: accessibilityPreferences)
 
         // WHEN
-        AccessibilityPreferences.shared.defaultPageZoom = .percent50
+        accessibilityPreferences.defaultPageZoom = .percent50
         tab = Tab(url: url)
-        tabVM = TabViewModel(tab: tab)
+        tabVM = TabViewModel(tab: tab, accessibilityPreferences: accessibilityPreferences)
 
         // THEN
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, randomZoomLevel)
@@ -596,19 +564,19 @@ final class TabViewModelTests: XCTestCase {
         UserDefaultsWrapper<Any>.clearAll()
         let url = URL(string: "https://app.asana.com/0/1")!
         let hostURL = "https://app.asana.com/"
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         let tab = Tab(url: url)
-        var tabVM = TabViewModel(tab: tab)
+        var tabVM = TabViewModel(tab: tab, accessibilityPreferences: accessibilityPreferences)
 
         // WHEN
-        AccessibilityPreferences.shared.defaultPageZoom = .percent50
+        accessibilityPreferences.defaultPageZoom = .percent50
         let burnerTab = Tab(content: .url(url, credential: nil, source: .ui), burnerMode: BurnerMode(isBurner: true))
-        tabVM = TabViewModel(tab: burnerTab)
+        tabVM = TabViewModel(tab: burnerTab, accessibilityPreferences: accessibilityPreferences)
 
         // THEN
-        XCTAssertEqual(tabVM.tab.webView.zoomLevel, AccessibilityPreferences.shared.defaultPageZoom)
+        XCTAssertEqual(tabVM.tab.webView.zoomLevel, accessibilityPreferences.defaultPageZoom)
     }
 
     @MainActor
@@ -617,9 +585,9 @@ final class TabViewModelTests: XCTestCase {
         UserDefaultsWrapper<Any>.clearAll()
         let url = URL(string: "https://app.asana.com/0/1")!
         let hostURL = "https://app.asana.com/"
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
 
         // WHEN
         let tab = Tab(url: url)
@@ -628,8 +596,10 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
-            )
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
+            ),
+            accessibilityPreferences: accessibilityPreferences
         )
 
         // THEN
@@ -642,9 +612,9 @@ final class TabViewModelTests: XCTestCase {
         UserDefaultsWrapper<Any>.clearAll()
         let url = URL(string: "https://app.asana.com/0/1")!
         let hostURL = "https://app.asana.com/"
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
 
         // WHEN
         let burnerTab = Tab(content: .url(url, credential: nil, source: .ui), burnerMode: BurnerMode(isBurner: true))
@@ -653,12 +623,14 @@ final class TabViewModelTests: XCTestCase {
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: MockFeatureFlagger()
-            )
+                featureFlagger: MockFeatureFlagger(),
+                aiChatMenuConfig: MockAIChatConfig()
+            ),
+            accessibilityPreferences: accessibilityPreferences
         )
 
         // THEN
-        XCTAssertEqual(tabVM.tab.webView.zoomLevel, AccessibilityPreferences.shared.defaultPageZoom)
+        XCTAssertEqual(tabVM.tab.webView.zoomLevel, accessibilityPreferences.defaultPageZoom)
     }
 
     @MainActor
@@ -668,12 +640,12 @@ final class TabViewModelTests: XCTestCase {
         let url = URL(string: "https://app.asana.com/0/1")!
         let hostURL = "https://app.asana.com/"
         let tab = Tab(url: url)
-        let tabVM = TabViewModel(tab: tab)
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let tabVM = TabViewModel(tab: tab, accessibilityPreferences: accessibilityPreferences)
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
 
         // WHEN
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
 
         // THEN
         await MainActor.run {
@@ -688,16 +660,16 @@ final class TabViewModelTests: XCTestCase {
         let url = URL(string: "https://app.asana.com/0/1")!
         let hostURL = "https://app.asana.com/"
         let burnerTab = Tab(content: .url(url, credential: nil, source: .ui), burnerMode: BurnerMode(isBurner: true))
-        let tabVM = TabViewModel(tab: burnerTab)
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let tabVM = TabViewModel(tab: burnerTab, accessibilityPreferences: accessibilityPreferences)
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
 
         // WHEN
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
 
         // THEN
         await MainActor.run {
-            XCTAssertEqual(tabVM.tab.webView.zoomLevel, AccessibilityPreferences.shared.defaultPageZoom)
+            XCTAssertEqual(tabVM.tab.webView.zoomLevel, accessibilityPreferences.defaultPageZoom)
         }
     }
 
@@ -708,15 +680,15 @@ final class TabViewModelTests: XCTestCase {
         let hostURL = "https://app.asana.com/"
         UserDefaultsWrapper<Any>.clearAll()
         let tab = Tab(url: url)
-        let tabVM = TabViewModel(tab: tab)
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 !=  AccessibilityPreferences.shared.defaultPageZoom }
+        let tabVM = TabViewModel(tab: tab, accessibilityPreferences: accessibilityPreferences)
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 !=  accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
 
         // WHEN
         tabVM.zoomWasSet(to: randomZoomLevel)
 
         // THEN
-        XCTAssertEqual(AccessibilityPreferences.shared.zoomPerWebsite(url: hostURL), randomZoomLevel)
+        XCTAssertEqual(accessibilityPreferences.zoomPerWebsite(url: hostURL), randomZoomLevel)
     }
 
     @MainActor
@@ -724,11 +696,11 @@ final class TabViewModelTests: XCTestCase {
         // GIVEN
         let url = URL(string: "https://app.asana.com/0/1")!
         let hostURL = "https://app.asana.com/"
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: AccessibilityPreferences.shared.defaultPageZoom, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: accessibilityPreferences.defaultPageZoom, url: hostURL)
         UserDefaultsWrapper<Any>.clearAll()
         let burnerTab = Tab(content: .url(url, credential: nil, source: .ui), burnerMode: BurnerMode(isBurner: true))
-        let tabVM = TabViewModel(tab: burnerTab)
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 !=  AccessibilityPreferences.shared.defaultPageZoom }
+        let tabVM = TabViewModel(tab: burnerTab, accessibilityPreferences: accessibilityPreferences)
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 !=  accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
 
         // WHEN
@@ -736,7 +708,7 @@ final class TabViewModelTests: XCTestCase {
         tabVM.zoomWasSet(to: randomZoomLevel)
 
         // THEN
-        XCTAssertEqual(AccessibilityPreferences.shared.zoomPerWebsite(url: hostURL), nil)
+        XCTAssertEqual(accessibilityPreferences.zoomPerWebsite(url: hostURL), nil)
     }
 
     @MainActor
@@ -745,17 +717,17 @@ final class TabViewModelTests: XCTestCase {
         let url = URL(string: "https://app.asana.com/0/1")!
         let hostURL = "https://app.asana.com/"
         UserDefaultsWrapper<Any>.clearAll()
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 != accessibilityPreferences.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         let tab = Tab(url: url)
-        let tabView = TabViewModel(tab: tab)
+        let tabView = TabViewModel(tab: tab, accessibilityPreferences: accessibilityPreferences)
 
         // WHEN
         tabView.tab.webView.resetZoomLevel()
 
         // THEN
-        XCTAssertEqual(AccessibilityPreferences.shared.zoomPerWebsite(url: hostURL), nil)
+        XCTAssertEqual(accessibilityPreferences.zoomPerWebsite(url: hostURL), nil)
     }
 
     @MainActor
@@ -767,20 +739,20 @@ final class TabViewModelTests: XCTestCase {
         let (randomZoomLevel, nextZoomLevel, _) = randomLevelAndAdjacent()
         let window = MockWindow()
         window.contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         let tab = Tab(url: url)
         window.contentView?.addSubview(tab.webView)
         tab.webView.frame = window.contentView!.bounds
-        let tabView = TabViewModel(tab: tab)
+        let tabView = TabViewModel(tab: tab, accessibilityPreferences: accessibilityPreferences)
 
         // WHEN
         tabView.tab.webView.zoomIn()
 
         // THEN
-        if nextZoomLevel == AccessibilityPreferences.shared.defaultPageZoom {
-            XCTAssertNil(AccessibilityPreferences.shared.zoomPerWebsite(url: hostURL))
+        if nextZoomLevel == accessibilityPreferences.defaultPageZoom {
+            XCTAssertNil(accessibilityPreferences.zoomPerWebsite(url: hostURL))
         } else {
-            XCTAssertEqual(AccessibilityPreferences.shared.zoomPerWebsite(url: hostURL), nextZoomLevel)
+            XCTAssertEqual(accessibilityPreferences.zoomPerWebsite(url: hostURL), nextZoomLevel)
         }
     }
 
@@ -793,20 +765,20 @@ final class TabViewModelTests: XCTestCase {
         let (randomZoomLevel, _, previousZoomLevel) = randomLevelAndAdjacent()
         let window = MockWindow()
         window.contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))
-        AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
+        accessibilityPreferences.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         let tab = Tab(url: url)
         window.contentView?.addSubview(tab.webView)
         tab.webView.frame = window.contentView!.bounds
-        let tabView = TabViewModel(tab: tab)
+        let tabView = TabViewModel(tab: tab, accessibilityPreferences: accessibilityPreferences)
 
         // WHEN
         tabView.tab.webView.zoomOut()
 
         // THEN
-        if previousZoomLevel == AccessibilityPreferences.shared.defaultPageZoom {
-            XCTAssertNil(AccessibilityPreferences.shared.zoomPerWebsite(url: hostURL))
+        if previousZoomLevel == accessibilityPreferences.defaultPageZoom {
+            XCTAssertNil(accessibilityPreferences.zoomPerWebsite(url: hostURL))
         } else {
-            XCTAssertEqual(AccessibilityPreferences.shared.zoomPerWebsite(url: hostURL), previousZoomLevel)
+            XCTAssertEqual(accessibilityPreferences.zoomPerWebsite(url: hostURL), previousZoomLevel)
         }
     }
 
@@ -829,14 +801,13 @@ extension TabViewModel {
     @MainActor
     static var aTabViewModel: TabViewModel {
         let tab = Tab()
-        return TabViewModel(tab: tab)
+        return TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
     }
 
     @MainActor
     static func forTabWithURL(
         _ url: URL,
         featureFlagger: FeatureFlagger? = nil,
-        visualStyle: VisualStyleProviding? = nil,
         burnerMode: BurnerMode = .regular
     ) -> TabViewModel {
         let tab = Tab(
@@ -848,16 +819,16 @@ extension TabViewModel {
             let appearancePreferences = AppearancePreferences(
                 keyValueStore: try! MockKeyValueFileStore(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                aiChatMenuConfig: MockAIChatConfig()
             )
             return TabViewModel(
                 tab: tab,
                 appearancePreferences: appearancePreferences,
-                featureFlagger: featureFlagger,
-                visualStyle: visualStyle ?? NSApp.delegateTyped.visualStyle
+                featureFlagger: featureFlagger
             )
         } else {
-            return TabViewModel(tab: tab, visualStyle: visualStyle ?? NSApp.delegateTyped.visualStyle)
+            return TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
         }
     }
 
@@ -875,45 +846,4 @@ private extension Tab {
     convenience init(url: URL? = nil) {
         self.init(content: url.map { TabContent.url($0, source: .link) } ?? .none)
     }
-}
-
-// MARK: - Test Mocks
-
-final class MockVisualStyle: VisualStyleProviding {
-    var toolbarButtonsCornerRadius: CGFloat = 0
-
-    var fireWindowGraphic: NSImage = .fireHeader
-
-    var areNavigationBarCornersRound: Bool = false
-
-    var fireButtonSize: CGFloat = 0
-
-    var navigationToolbarButtonsSpacing: CGFloat = 0
-
-    var tabBarButtonSize: CGFloat = 0
-
-    var addToolbarShadow: Bool = false
-
-    let isNewStyle: Bool
-
-    init(isNewStyle: Bool) {
-        self.isNewStyle = isNewStyle
-    }
-
-    var addressBarStyleProvider: DuckDuckGo_Privacy_Browser.AddressBarStyleProviding {
-        fatalError("Not implemented for test")
-    }
-
-    var colorsProvider: DuckDuckGo_Privacy_Browser.ColorsProviding {
-        fatalError("Not implemented for test")
-    }
-
-    var iconsProvider: DuckDuckGo_Privacy_Browser.IconsProviding {
-        fatalError("Not implemented for test")
-    }
-
-    var tabStyleProvider: any DuckDuckGo_Privacy_Browser.TabStyleProviding {
-        fatalError("Not implemented for test")
-    }
-
 }

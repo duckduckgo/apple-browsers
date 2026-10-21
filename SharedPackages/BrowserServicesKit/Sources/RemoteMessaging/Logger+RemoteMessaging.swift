@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var remoteMessaging = { Logger(subsystem: "Remote Messaging", category: "") }()
+    static let remoteMessaging = Logger(subsystem: "Remote Messaging", category: "")
 }

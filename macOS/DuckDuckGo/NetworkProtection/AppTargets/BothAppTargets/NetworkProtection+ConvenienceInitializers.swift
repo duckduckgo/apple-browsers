@@ -20,35 +20,25 @@ import Foundation
 import VPN
 import NetworkProtectionIPC
 import Common
+import FoundationExtensions
 import Subscription
 import BrowserServicesKit
 import Networking
+import PrivacyDashboard
 
-extension NetworkProtectionKeychainTokenStore {
-    convenience init() {
-        self.init(useAccessTokenProvider: true)
-    }
-
-    convenience init(useAccessTokenProvider: Bool) { // only used in AuthV1
-        let accessTokenProvider: AccessTokenProvider = { Application.appDelegate.subscriptionManagerV1?.accountManager.accessToken }
-        self.init(keychainType: .default,
-                  errorEvents: .networkProtectionAppDebugEvents,
-                  useAccessTokenProvider: useAccessTokenProvider,
-                  accessTokenProvider: accessTokenProvider)
+extension ConnectivityIssueObserverThroughDistributedNotifications: @retroactive VPNConnectivityIssuesProviding {
+    public func isExperiencingVPNConnectivityIssues() async -> Bool {
+        recentValue
     }
 }
+
+extension HostnamePinger: @retroactive PingQualityProviding {}
 
 extension NetworkProtectionLocationListCompositeRepository {
     convenience init() {
         let settings = Application.appDelegate.vpnSettings
-
-        var tokenHandler: any SubscriptionTokenHandling
-        if !Application.appDelegate.isUsingAuthV2 {
-            tokenHandler = NetworkProtectionKeychainTokenStore()
-        } else {
-            // swiftlint:disable:next force_cast
-            tokenHandler = Application.appDelegate.subscriptionManagerV2 as! DefaultSubscriptionManagerV2
-        }
+        // swiftlint:disable:next force_cast
+        let tokenHandler: any SubscriptionTokenHandling = Application.appDelegate.subscriptionManager as! DefaultSubscriptionManager
         self.init(
             environment: settings.selectedEnvironment,
             tokenHandler: tokenHandler,

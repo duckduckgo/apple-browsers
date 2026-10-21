@@ -70,6 +70,26 @@ extension UserText {
         value: "Send Feedback",
         comment: "The VPN status view's 'Send Feedback' menu item for our main app")
 
+    static let vpnSettingsCopyDiagnosticsButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics.button.title",
+        value: "Copy VPN Diagnostics",
+        comment: "The VPN settings button that copies VPN diagnostic information to the clipboard.")
+
+    static let vpnSettingsCopyDiagnosticsCaption = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics.caption",
+        value: "Include a copy of these anonymized VPN diagnostics when contacting Support to help us troubleshoot your connection.",
+        comment: "Caption beneath the Copy VPN Diagnostics button in VPN settings, explaining what the button does.")
+
+    static let vpnSettingsCopyDiagnosticsCopiedButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics-copied.button.title",
+        value: "Copied to clipboard",
+        comment: "Temporary VPN settings button title shown after VPN diagnostic information is copied to the clipboard.")
+
+    static let vpnSettingsCopyDiagnosticsFailedButtonTitle = NSLocalizedString(
+        "vpn.preferences.copy-diagnostics-failed.button.title",
+        value: "Couldn't copy to clipboard",
+        comment: "Temporary VPN settings button title shown when VPN diagnostic information could not be copied to the clipboard.")
+
     static let vpnStatusViewFAQMenuItemTitle = NSLocalizedString(
         "vpn.status-view.faq.menu-item.title",
         value: "FAQs and Support",
@@ -80,7 +100,7 @@ extension UserText {
 
     // MARK: - Feedback Form
 
-    static let feedbackFormTitle = NSLocalizedString("feedback-form.title", value: "Help Improve Privacy Pro", comment: "Title for each screen of the feedback form")
+    static let feedbackFormTitle = NSLocalizedString("feedback-form.title", value: "Help Improve the DuckDuckGo Subscription", comment: "Title for each screen of the feedback form")
 
     static let generalFeedbackFormCategorySelect = NSLocalizedString("general.feedback-form.category.select-feature", value: "Select a category", comment: "Title for the feature selection state of the general feedback form")
 
@@ -97,6 +117,8 @@ extension UserText {
     static let pproFeedbackFormCategorySelect = NSLocalizedString("ppro.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the feedback form")
 
     static let pproFeedbackFormCategoryOTP = NSLocalizedString("ppro.feedback-form.category.otp", value: "Issue with one-time password", comment: "Description for the feedback form when there is an issue with the one-time password")
+
+    static let pproFeedbackFormCategoryUnableToAccessFeatures = NSLocalizedString("ppro.feedback-form.category.unable-to-access-features", value: "Unable to access Plus or Pro tier features", comment: "Description for the feedback form when there is an issue with accessing Plus or Pro tier features")
 
     static let pproFeedbackFormCategoryOther = NSLocalizedString("ppro.feedback-form.category.something-else", value: "Something else", comment: "Description for the feedback form when the user has an issue not categorized in other options")
 
@@ -142,13 +164,15 @@ extension UserText {
 
     static let paidDuckAIFeedbackFormCategorySelect = NSLocalizedString("paid-duck-ai.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the paid duck.ai feedback form")
 
-    static let paidDuckAIFeedbackFormCategoryAccessSubscriptionModels = NSLocalizedString("paid-duck-ai.feedback-form.category.access-subscription-models", value: "Unable to access the subscription Duck.ai models", comment: "Description for the feedback form when there is an issue with accessing the paid tier models")
+    static let paidDuckAIFeedbackFormCategoryAccessSubscriptionModels = NSLocalizedString("paid-duck-ai.feedback-form.category.access-subscription-models", value: "Unable to access the subscriber-only Duck.ai models", comment: "Description for the feedback form when there is an issue with accessing the paid tier models")
 
-    static let paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser = NSLocalizedString("paid-duck-ai.feedback-form.category.login-third-party-browser", value: "Can’t log in to Duck.ai with my subscription", comment: "Description for the feedback form when there is an issue with logging into Duck.ai")
+    static let paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser = NSLocalizedString("paid-duck-ai.feedback-form.category.login-third-party-browser", value: "Can't access Duck.ai with my subscription in other browsers", comment: "Description for the feedback form when there is an issue with logging into Duck.ai")
 
     static let paidDuckAIFeedbackFormCategorySomethingElse = NSLocalizedString("paid-duck-ai.feedback-form.category.something-else", value: "Other Duck.ai feedback", comment: "Description for the feedback form when the user has an issue not categorized in other options")
 
     static let pproFeedbackFormText1 = NSLocalizedString("ppro.feedback-form.text-1", value: "Found an issue not covered in our [help center](duck://)? We definitely want to know about it.\n\nTell us what's going on:", comment: "Text for the body of the PPro feedback form")
+
+    static let pproFeedbackFormSupportText = NSLocalizedString("ppro.feedback-form.support.text", value: "Need help? [Contact support.](https://duckduckgo.com/subscription-support)", comment: "Support link text displayed beneath the feedback form description")
 
     static let pproFeedbackFormText2 = NSLocalizedString("ppro.feedback-form.text-2", value: "In addition to the details entered into this form, your app issue report will contain:", comment: "Text for the body of the PPro feedback form")
 
@@ -160,13 +184,9 @@ extension UserText {
 
     static let pproFeedbackFormDisclaimer = NSLocalizedString("ppro.feedback-form.disclaimer", value: "Reports are anonymous and sent to DuckDuckGo to help improve our service", comment: "Text for the disclaimer of the PPro feedback form")
 
-    static let pproFeedbackFormEmailLabel = NSLocalizedString("ppro.feedback-form.email.label", value: "Provide an email if you’d like us to contact you about this issue (we may not be able to respond to all issues):", comment: "Label for the email field of the PPro feedback form")
-
-    static let pproFeedbackFormEmailPlaceholder = NSLocalizedString("ppro.feedback-form.email.placeholder", value: "Email (optional)", comment: "Placeholder for the email field of the PPro feedback form")
-
     static let pproFeedbackFormSendingConfirmationTitle = NSLocalizedString("ppro.feedback-form.sending-confirmation.title", value: "Thank you!", comment: "Title for the feedback sent view title of the feedback form")
 
-    static let pproFeedbackFormSendingConfirmationDescription = NSLocalizedString("ppro.feedback-form.sending-confirmation.description", value: "Your Feedback will help us improve Privacy Pro.", comment: "Title for the feedback sent view description of the feedback form")
+    static let pproFeedbackFormSendingConfirmationDescription = NSLocalizedString("ppro.feedback-form.sending-confirmation.description", value: "Your Feedback will help us improve the DuckDuckGo Subscription.", comment: "Title for the feedback sent view description of the feedback form")
 
     static let pproFeedbackFormSendingConfirmationError = NSLocalizedString("ppro.feedback-form.sending-confirmation.error", value: "We couldn't send your feedback right now, please try again.", comment: "Title for the feedback sending error text of the feedback form")
 
@@ -220,6 +240,8 @@ extension UserText {
 
     static let vpnShortcutsSettingsTitle = NSLocalizedString("vpn.shortcuts.settings.title", value: "Shortcuts", comment: "Shortcuts section title in VPN settings")
 
+    static let vpnTroubleshootingTitle = NSLocalizedString("vpn.troubleshooting.title", value: "Troubleshooting", comment: "Troubleshooting section title in VPN settings")
+
     static let vpnNotificationsSettingsTitle = NSLocalizedString("vpn.notifications.settings.title", value: "Notifications", comment: "Notifications section title in VPN settings")
 
     static let vpnAdvancedSettingsTitle = NSLocalizedString("vpn.advanced.settings.title", value: "Advanced", comment: "VPN Advanced section title in VPN settings")
@@ -242,7 +264,7 @@ extension UserText {
 
     static let vpnLocationCustomSectionTitle = NSLocalizedString("vpn.location.custom.section.title", value: "Custom", comment: "Title of the VPN location list custom section")
 
-    static let vpnLocationSubmitButtonTitle = NSLocalizedString("vpn.location.submit.button.title", value: "Submit", comment: "Title of the VPN location list submit button")
+    static let vpnLocationSubmitButtonTitle = NSLocalizedString("vpn.location.submit.button.title", value: "Update Location", comment: "Title of the VPN location list submit button")
 
     static let vpnLocationCancelButtonTitle = NSLocalizedString("vpn.location.cancel.button.title", value: "Cancel", comment: "Title of the VPN location list cancel button (Note: seems like a duplicate key with a different purpose, please check)")
 
@@ -303,7 +325,7 @@ extension UserText {
 
     static let vpnDnsServerIPv4Description = NSLocalizedString("vpn.dns.server.ipv4.description", value: "IPv4 Address:", comment: "Description of the IPv4 text field")
 
-    static let vpnDnsServerIPv4Disclaimer = NSLocalizedString("vpn.dns.server.disclaimer", value: "Using a custom DNS server can impact browsing speeds and expose your activity to third parties if the server isn't secure or reliable.", comment: "Disclaimer for the custom DNS server option")
+    static let vpnDnsServerIPv4Disclaimer = NSLocalizedString("vpn.dns.server.disclaimer", value: "Using a custom DNS server can impact browsing speeds and expose your activity to 3rd parties if the server isn't secure or reliable.", comment: "Disclaimer for the custom DNS server option")
 
     static let vpnDnsServerApplyButtonTitle = NSLocalizedString("vpn.dns.server.apply.button.title", value: "Apply", comment: "Title for the Apply custom DNS server button")
 
@@ -320,6 +342,14 @@ extension UserText {
     static let vpnExcludeLocalNetworksSettingTitle = NSLocalizedString("vpn.setting.title.exclude.local.networks", value: "Exclude local networks", comment: "Exclude Local Networks setting title")
 
     static let vpnExcludeLocalNetworksSettingDescription = NSLocalizedString("vpn.setting.description.exclude.local.networks", value: "Bypass the VPN for local network connections, like to a printer.", comment: "Exclude Local Networks setting description")
+
+    static let vpnStrictRoutingSettingTitle = NSLocalizedString("vpn.setting.title.strict.routing", value: "Enforce Strict Routing (Recommended)", comment: "Strict routing setting title")
+
+    static let vpnStrictRoutingSettingDescription = NSLocalizedString("vpn.setting.description.strict.routing", value: "Block apps from bypassing the VPN. If you have problems with Wi-Fi features (such as AirDrop or iPhone Mirroring), turning it off may help. Strongly recommended on networks you don’t trust, such as public Wi-Fi. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/security-reports/2024-audit#resolved-tunnelvision-and-tunnelcrack).", comment: "Strict routing setting description. The 'Learn more' text is a Markdown link.")
+
+    static let vpnExcludeCGNATSettingTitle = NSLocalizedString("vpn.setting.title.exclude.cgnat", value: "Exclude Carrier Services", comment: "Exclude CGNAT setting title")
+
+    static let vpnExcludeCGNATSettingDescription = NSLocalizedString("vpn.setting.description.exclude.cgnat", value: "Bypass the VPN for carrier services, such as Wi-Fi calling and voicemail.", comment: "Exclude CGNAT setting description")
 
     static let openVPNButtonTitle = NSLocalizedString("vpn.button.title.open.vpn", value: "Open VPN…", comment: "Uninstall VPN button title")
 

@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -22,14 +22,27 @@ import PackageDescription
 
 let package = Package(
     name: "Utilities",
+    platforms: [
+        .macOS("12.3")
+    ],
     products: [
         .library(
             name: "Utilities",
             targets: ["Utilities"]),
     ],
+    dependencies: [
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
+    ],
     targets: [
         .target(
-            name: "Utilities"
+            name: "Utilities",
+            dependencies: [
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+            ]
         )
     ]
 )

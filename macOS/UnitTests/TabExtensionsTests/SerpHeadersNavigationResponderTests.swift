@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
+import PrivacyConfigTestsUtils
+import SharedTestUtilities
 import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 class SerpHeadersNavigationResponderTests: XCTestCase {
 
     let ddgUrls = [
@@ -36,7 +37,7 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
     ]
 
     let nonDdgUrls = [
-        URL(string: "https://duckduckgo.com.local/")!,
+        URL(string: "https://duckduckgo.com.test/")!,
         URL(string: "https://my.duckduckgo.com/")!,
         URL(string: "https://youtube.com/")!,
 
@@ -60,7 +61,7 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 

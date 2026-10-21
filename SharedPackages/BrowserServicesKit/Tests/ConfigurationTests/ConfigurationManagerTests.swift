@@ -17,11 +17,9 @@
 //
 
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import Configuration
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 final class MockConfigurationManager: DefaultConfigurationManager {
 
@@ -37,8 +35,8 @@ final class MockConfigurationManager: DefaultConfigurationManager {
 
     func fetchConfigDependencies(isDebug: Bool) async -> Bool {
         do {
-            try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
-            return true
+            let fetchResult = try await fetcher.fetch(.privacyConfiguration, isDebug: isDebug)
+            return fetchResult == .updated
         } catch {
             return false
         }
@@ -74,11 +72,13 @@ final class MockDependencyProvider {
 final class ConfigurationManagerTests: XCTestCase {
 
     // Shared "UserDefaults" to mock app group defaults
-    var sharedDefaults = MockKeyValueStore()
+    var sharedDefaults: MockKeyValueStore!
+    private var configurationManagers: [DefaultConfigurationManager] = []
 
     override func setUp() {
+        sharedDefaults = MockKeyValueStore()
+
         APIRequest.Headers.setUserAgent("")
-        Configuration.setURLProvider(MockConfigurationURLProvider())
         sharedDefaults.clearAll()
         MockStoreWithStorage.clearTempConfigs()
     }
@@ -86,6 +86,20 @@ final class ConfigurationManagerTests: XCTestCase {
     override func tearDown() {
         MockURLProtocol.lastRequest = nil
         MockURLProtocol.requestHandler = nil
+        sharedDefaults = nil
+        configurationManagers.forEach { $0.tearDown() }
+        configurationManagers = []
+    }
+
+    func testWhenTryAgainSoonIsCalledThenRefreshIsDeferredRatherThanTriggeredImmediately() {
+        let manager = makeConfigurationManager()
+
+        manager.tryAgainSoon()
+
+        XCTAssertFalse(manager.isReadyToRefresh,
+                       "tryAgainSoon() must delay the next refresh; dating lastUpdateTime in the past makes every subsequent check refresh immediately")
+        XCTAssertGreaterThan(manager.lastUpdateTime, Date(),
+                             "The retry is scheduled by pushing lastUpdateTime forward, not back")
     }
 
     func makeConfigurationFetcher(store: ConfigurationStoring,
@@ -94,7 +108,8 @@ final class ConfigurationManagerTests: XCTestCase {
         testConfiguration.protocolClasses = [MockURLProtocol.self]
         return ConfigurationFetcher(store: store,
                                     validator: validator,
-                                    urlSession: URLSession(configuration: testConfiguration))
+                                    sessionProvider: { URLSession(configuration: testConfiguration) },
+                                    configurationURLProvider: MockConfigurationURLProvider())
     }
 
     func makeConfigurationManager(name: String? = nil) -> MockConfigurationManager {
@@ -103,6 +118,8 @@ final class ConfigurationManagerTests: XCTestCase {
                                                store: configStore,
                                                defaults: sharedDefaults)
         manager.name = name
+
+        configurationManagers.append(manager)
         return manager
     }
 
@@ -120,11 +137,16 @@ final class ConfigurationManagerTests: XCTestCase {
 
     func testWhenConfigIsNotModifiedThenDependencyIsNotUpdated() async {
         let configurationManager = makeConfigurationManager()
+        var didUpdateDependencies = false
+        configurationManager.onDependenciesUpdated = {
+            didUpdateDependencies = true
+        }
 
         MockURLProtocol.requestHandler = { _ in (HTTPURLResponse.notModified, nil) }
         await configurationManager.refreshNow()
 
         XCTAssertNotNil(MockURLProtocol.lastRequest)
+        XCTAssertFalse(didUpdateDependencies)
         XCTAssertNil(configurationManager.dependencyProvider.privacyConfigData)
         XCTAssertNil(configurationManager.dependencyProvider.privacyConfigEtag)
     }

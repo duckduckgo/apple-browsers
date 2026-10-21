@@ -1,0 +1,644 @@
+//
+//  AttributedMetricManager.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+//
+
+import Foundation
+import PixelKit
+import Combine
+import PrivacyConfig
+import os.log
+
+/// macOS: `SystemDefaultBrowserProvider`
+/// iOS: `DefaultBrowserManager` limited to 4 times p/y, cached value
+public protocol AttributedMetricDefaultBrowserProviding {
+    var isDefaultBrowser: Bool { get }
+}
+
+public protocol SubscriptionStateProviding {
+    func isFreeTrial() async -> Bool
+    var isActive: Bool { get }
+}
+
+public protocol DateProviding {
+    func now() -> Date
+    var debugDate: Date? { get set }
+}
+
+public class DefaultDateProvider: DateProviding {
+    public init() {}
+
+    public func now() -> Date {
+        if let debugOverride = debugDate {
+            return debugOverride
+        } else {
+            return Date()
+        }
+    }
+
+    public var debugDate: Date?
+}
+
+public protocol AttributedMetricSettingsProviding {
+    var bucketsSettings: [String: Any] { get }
+    var originSendList: [String] { get }
+}
+
+/// Provides the install date used for all AttributedMetrics day-based calculations
+public protocol AttributedMetricInstallDateProviding {
+    var installDate: Date? { get }
+}
+
+/// Indicates whether the current user is a returning (reinstalling) user.
+///
+/// iOS: checks the variant stored in `StatisticsStore` for the `"ru"` value.
+/// macOS: checks `DefaultReinstallUserDetection.isReinstallingUser` (Sparkle builds only).
+public protocol AttributedMetricReturningUserProviding {
+    var isReturningUser: Bool { get }
+}
+
+/// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053?focus=true
+/// Mutable state needs to be accessed through `workQueue` in order for Sendable conformance to be accurate.
+public final class AttributedMetricManager: @unchecked Sendable {
+
+    struct Constants {
+        static let monthTimeInterval: TimeInterval = Double(Constants.daysInAMonth) * .day
+        static let daysInAMonth: Int = 28
+    }
+
+    private let pixelKit: PixelKit?
+    private var dataStorage: any AttributedMetricDataStoring
+    private let originProvider: (any AttributedMetricOriginProvider)?
+    private let featureFlagger: any FeatureFlagger
+    private let defaultBrowserProvider: any AttributedMetricDefaultBrowserProviding
+    private let subscriptionStateProvider: any SubscriptionStateProviding
+    private let returningUserProvider: any AttributedMetricReturningUserProviding
+    private let installDateProvider: any AttributedMetricInstallDateProviding
+    private var dateProvider: any DateProviding
+    private let featureSettings: any AttributedMetricSettingsProviding
+    private var bucketModifier: any BucketModifier = DefaultBucketModifier()
+    public let workQueue = DispatchQueue(label: "com.duckduckgo.AttributedMetricManager", qos: .background)
+    public var cancellables = Set<AnyCancellable>()
+
+    public init(pixelKit: PixelKit?,
+                dataStoring: any AttributedMetricDataStoring,
+                featureFlagger: any FeatureFlagger,
+                originProvider: (any AttributedMetricOriginProvider)?,
+                defaultBrowserProviding: any AttributedMetricDefaultBrowserProviding,
+                subscriptionStateProvider: any SubscriptionStateProviding,
+                returningUserProvider: any AttributedMetricReturningUserProviding,
+                installDateProvider: any AttributedMetricInstallDateProviding,
+                dateProvider: any DateProviding = DefaultDateProvider(),
+                settingsProvider: any AttributedMetricSettingsProviding) {
+        self.pixelKit = pixelKit
+        self.dataStorage = dataStoring
+        self.originProvider = originProvider
+        self.featureFlagger = featureFlagger
+        self.defaultBrowserProvider = defaultBrowserProviding
+        self.subscriptionStateProvider = subscriptionStateProvider
+        self.returningUserProvider = returningUserProvider
+        self.installDateProvider = installDateProvider
+        self.dateProvider = dateProvider
+
+        // Buckets
+        self.featureSettings = settingsProvider
+        updateBucketSettings()
+
+        if let debugDate = dataStorage.debugDate {
+            self.dateProvider.debugDate = debugDate
+        }
+    }
+
+    // MARK: - Private
+
+    var installDate: Date? {
+        installDateProvider.installDate
+    }
+
+    var isEnabled: Bool {
+        featureFlagger.isFeatureOn(for: AttributedMetricFeatureFlag.attributedMetrics)
+    }
+
+    /// The number of whole ET calendar days elapsed since the app was first installed.
+    ///
+    /// Uses Eastern Time calendar day boundaries (matching ATB and RollingEightDays).
+    /// Returns `0` if the install date has not been recorded yet, or if the current date is still within the same ET calendar day as installation.
+    var daysSinceInstalled: Int {
+        guard let installDate = installDate else {
+            return 0
+        }
+        return QuantisedTimePast.daysBetween(from: installDate, to: dateProvider.now())
+    }
+
+    /// The quantised time period elapsed since the app was installed.
+    ///
+    /// Delegates to ``QuantisedTimePast/timePastFrom(date:andInstallationDate:)`` which
+    /// buckets the elapsed time into weeks (1–4) then 28-day months (2+), providing
+    /// a privacy-preserving approximation used by retention and average-usage pixels.
+    ///
+    /// Returns `nil` when the install date has not been recorded yet.
+    ///
+    /// ## Examples
+    /// ```
+    /// // Install date: Jan 1 — Current date: Jan 1 (same day)
+    /// timePastFromInstall // → .none
+    ///
+    /// // Install date: Jan 1 — Current date: Jan 5 (4 days later)
+    /// timePastFromInstall // → .weeks(1)
+    ///
+    /// // Install date: Jan 1 — Current date: Jan 10 (9 days later)
+    /// timePastFromInstall // → .weeks(2)
+    ///
+    /// // Install date: Jan 1 — Current date: Feb 5 (35 days later)
+    /// timePastFromInstall // → .months(2)  (month 1 is skipped)
+    ///
+    /// // Install date not set
+    /// timePastFromInstall // → nil
+    /// ```
+    var timePastFromInstall: QuantisedTimePast? {
+        guard let installDate = installDate else {
+            Logger.attributedMetric.error("Install date missing")
+            return nil
+        }
+        let now = dateProvider.now()
+        return QuantisedTimePast.timePastFrom(date: now, andInstallationDate: installDate)
+    }
+
+    var originOrInstall: (origin: String?, installDate: String?) {
+        if let origin = dataStorage.debugOrigin ?? originProvider?.origin,
+           origin.containsAny(of: self.featureSettings.originSendList) {
+            return (origin, nil)
+        } else {
+            return (nil, installDate?.ISO8601ETFormat())
+        }
+    }
+
+    var isDefaultBrowser: Bool { defaultBrowserProvider.isDefaultBrowser }
+
+    var isLessThanSixMonths: Bool {
+        guard installDate != nil else {
+            return true
+        }
+        return daysSinceInstalled < Constants.daysInAMonth * 6
+    }
+
+    var isSameDayOfInstallDate: Bool {
+        guard let installDate = installDate else {
+            return false
+        }
+        return Calendar.eastern.isDate(dateProvider.now(), inSameDayAs: installDate)
+    }
+
+    // MARK: - Buckets settings
+
+    public func updateBucketSettings() {
+        do {
+            try bucketModifier.parseConfigurations(from: self.featureSettings.bucketsSettings)
+        } catch {
+            Logger.attributedMetric.fault("Failed to parse buckets settings: \(error, privacy: .public)")
+            assertionFailure("Failed to parse buckets settings: \(error)")
+        }
+    }
+
+    // MARK: - Triggers
+
+    public enum Trigger: CustomDebugStringConvertible {
+        case appDidStart
+        case userDidSearch
+        case userDidSelectAD
+        case userDidDuckAIChat
+        case userDidSubscribe
+        case userDidSync(devicesCount: Int)
+
+        public var debugDescription: String {
+            switch self {
+            case .appDidStart:
+                "AppDidStart"
+            case .userDidSearch:
+                "UserDidSearch"
+            case .userDidSelectAD:
+                "UserDidSelectAD"
+            case .userDidDuckAIChat:
+                "UserDidDuckAIChat"
+            case .userDidSubscribe:
+                "UserDidSubscribe"
+            case .userDidSync:
+                "UserDidSync"
+            }
+        }
+    }
+
+    public func process(trigger: Trigger) {
+        Logger.attributedMetric.log("Processing \(trigger.debugDescription, privacy: .public)")
+
+        guard isEnabled else {
+            Logger.attributedMetric.log("Feature disabled")
+            return
+        }
+
+        guard let installDate = installDateProvider.installDate else {
+            Logger.attributedMetric.log("Install date is nil")
+            return
+        }
+
+        Logger.attributedMetric.debug("Install date: \(installDate)")
+
+        guard !returningUserProvider.isReturningUser else {
+            Logger.attributedMetric.log("Returning user, skipping")
+            return
+        }
+
+        guard isLessThanSixMonths else {
+            dataStorage.removeAll()
+            return
+        }
+
+        switch trigger {
+        case .appDidStart:
+            processRetention()
+            processActiveSearchDays()
+            processSubscriptionCheck()
+        case .userDidSearch:
+            recordActiveSearchDay()
+            processAverageSearchCount()
+        case .userDidSelectAD:
+            recordAdClick()
+            processAverageAdClick()
+        case .userDidDuckAIChat:
+            recordDuckAIChat()
+            processAverageDuckAIChat()
+        case .userDidSubscribe:
+            processSubscriptionDay()
+        case .userDidSync(devicesCount: let devicesCount):
+            processSyncCheck(devicesCount: devicesCount)
+        }
+    }
+
+    // MARK: - Retention
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929607?focus=true
+    /// Example retention pixels from install day through month 7:
+    /// - Day 0: no pixel
+    /// - Days 1-7: attributed_metric_retention_week (week 1)
+    /// ...
+    /// - Days 22-28: attributed_metric_retention_week (week 4)
+    /// - Days 29-56: attributed_metric_retention_month (month 2)
+    /// ...
+    /// - Days 141-168: attributed_metric_retention_month (month 6)
+    /// - Days 169-196: not sent (data cleared at 6 months)
+    func processRetention() {
+        guard let timePastFromInstall: QuantisedTimePast = timePastFromInstall else {
+            Logger.attributedMetric.error("Time past from install is nil")
+            return
+        }
+        let lastRetentionThreshold: QuantisedTimePast = dataStorage.lastRetentionThreshold ?? .none
+        guard lastRetentionThreshold != timePastFromInstall else {
+            Logger.attributedMetric.error("Threshold not changed")
+            return
+        }
+        Logger.attributedMetric.log("Threshold changed from \(lastRetentionThreshold.description) to \(timePastFromInstall.description)")
+        dataStorage.lastRetentionThreshold = timePastFromInstall
+        switch timePastFromInstall {
+        case .none:
+            Logger.attributedMetric.log("Less than a week from installation")
+        case .weeks(let week):
+            Logger.attributedMetric.log("\(week, privacy: .public) week(s) from installation")
+            guard let bucket = try? bucketModifier.bucket(value: week, pixelName: .userRetentionWeek) else {
+                Logger.attributedMetric.error("Failed to bucket week value")
+                return
+            }
+            pixelKit?.fire(AttributedMetricPixel.userRetentionWeek(origin: originOrInstall.origin,
+                                                                   installDate: originOrInstall.installDate,
+                                                                   defaultBrowser: isDefaultBrowser,
+                                                                   count: bucket.value,
+                                                                   bucketVersion: bucket.version),
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false)
+        case .months(let month):
+            Logger.attributedMetric.log("\(month, privacy: .public) month(s) from installation")
+            guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userRetentionMonth) else {
+                Logger.attributedMetric.error("Failed to bucket month value")
+                return
+            }
+            pixelKit?.fire(AttributedMetricPixel.userRetentionMonth(origin: originOrInstall.origin,
+                                                                    installDate: originOrInstall.installDate,
+                                                                    defaultBrowser: isDefaultBrowser,
+                                                                    count: bucket.value,
+                                                                    bucketVersion: bucket.version),
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false)
+        }
+    }
+
+    // MARK: - Active search days
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929609?focus=true
+
+    func recordActiveSearchDay() {
+        Logger.attributedMetric.log("Recording active search day")
+        let search8Days = dataStorage.search8Days
+        search8Days.increment(dateProvider: dateProvider)
+        dataStorage.search8Days = search8Days
+    }
+
+    func processActiveSearchDays() {
+        Logger.attributedMetric.log("Processing active search days")
+        let daysSinceInstalled = daysSinceInstalled
+
+        // Check if is not the same day, this limits to 1 pixel per day
+        // Note: We previously relied on PixelKit `.legacyDailyNoSuffix` frequency check, but AttributedMetric works on 24h windows and PixelKit works calculating calendar days, this approach difference can cause to fire 2 pixels in a single 24h winndow
+        guard dataStorage.activeSearchDaysLastThreshold != daysSinceInstalled else { return }
+
+        var addDaysSinceInstalled: Bool = false
+        switch daysSinceInstalled {
+        case 0:
+            return
+        case 1...7:
+            addDaysSinceInstalled = true
+        default:
+            addDaysSinceInstalled = false
+        }
+
+        let search8Days = dataStorage.search8Days
+        let searchCount = search8Days.countPast7Days
+        guard searchCount > 0 else { return }
+        Logger.attributedMetric.log("\(searchCount, privacy: .public) searches performed in the last week")
+        guard let bucket = try? bucketModifier.bucket(value: searchCount, pixelName: .userActivePastWeek) else {
+            Logger.attributedMetric.error("Failed to bucket search count value")
+            return
+        }
+        dataStorage.activeSearchDaysLastThreshold = daysSinceInstalled
+        pixelKit?.fire(AttributedMetricPixel.userActivePastWeek(origin: originOrInstall.origin,
+                                                                installDate: originOrInstall.installDate,
+                                                                days: bucket.value,
+                                                                daysSinceInstalled: addDaysSinceInstalled ? daysSinceInstalled : nil,
+                                                                bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false)
+    }
+
+    // MARK: - Average searches
+    // https://app.asana.com/1/137249556945/project/1205842942115003/task/1211313432282643?focus=true
+
+    func processAverageSearchCount() {
+        Logger.attributedMetric.log("Calculating average search count")
+        guard let timePastFromInstall = timePastFromInstall else { return }
+
+        let daysSinceInstalled = daysSinceInstalled
+        guard dataStorage.searchLastThreshold != daysSinceInstalled else { return }
+
+        let search8Days = dataStorage.search8Days
+        let result = search8Days.past7DaysAverage(daysSinceInstalled: daysSinceInstalled)
+
+        guard result.average > 0 else { return }
+
+        switch timePastFromInstall {
+        case .none:
+            return
+        case .weeks:
+            guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageSearchesPastWeekFirstMonth) else {
+                Logger.attributedMetric.error("Failed to bucket average search count value")
+                return
+            }
+            Logger.attributedMetric.debug("Average last week (first month) search count: \(result.average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
+            dataStorage.searchLastThreshold = daysSinceInstalled
+            pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeekFirstMonth(origin: originOrInstall.origin,
+                                                                                       installDate: originOrInstall.installDate,
+                                                                                       count: bucket.value,
+                                                                                       dayAverage: result.dayAverage,
+                                                                                       bucketVersion: bucket.version),
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false)
+        case .months:
+            guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageSearchesPastWeek) else {
+                Logger.attributedMetric.error("Failed to bucket average search count value")
+                return
+            }
+            Logger.attributedMetric.debug("Average last week search count: \(result.average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
+            dataStorage.searchLastThreshold = daysSinceInstalled
+            pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin,
+                                                                             installDate: originOrInstall.installDate,
+                                                                             count: bucket.value,
+                                                                             dayAverage: result.dayAverage,
+                                                                             bucketVersion: bucket.version),
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false)
+        }
+    }
+
+    // MARK: - Average AD clicks
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929610?focus=true
+
+    func recordAdClick() {
+        Logger.attributedMetric.log("Record AD click")
+        let adClick8Days = dataStorage.adClick8Days
+        adClick8Days.increment(dateProvider: dateProvider)
+        dataStorage.adClick8Days = adClick8Days
+    }
+
+    func processAverageAdClick() {
+        Logger.attributedMetric.log("Process average AD click")
+        guard !isSameDayOfInstallDate else { return }
+
+        let daysSinceInstalled = daysSinceInstalled
+        guard dataStorage.adClickLastThreshold != daysSinceInstalled else { return }
+
+        let adClick8Days = dataStorage.adClick8Days
+        guard adClick8Days.countPast7Days > 0 else { return }
+        let result = adClick8Days.past7DaysAverage(daysSinceInstalled: daysSinceInstalled)
+        guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageAdClicksPastWeek) else {
+            Logger.attributedMetric.error("Failed to bucket average AD click value")
+            return
+        }
+        Logger.attributedMetric.log("Average AD click count in the last week: \(bucket.value, privacy: .public)")
+        dataStorage.adClickLastThreshold = daysSinceInstalled
+        pixelKit?.fire(AttributedMetricPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin,
+                                                                         installDate: originOrInstall.installDate,
+                                                                         count: bucket.value,
+                                                                         dayAverage: result.dayAverage,
+                                                                         bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false)
+    }
+
+    // MARK: - Average Duck.ai chats
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929612?focus=true
+
+    func recordDuckAIChat() {
+        Logger.attributedMetric.log("Record DuckAI chat")
+        let duckAIChat8Days = dataStorage.duckAIChat8Days
+        duckAIChat8Days.increment(dateProvider: dateProvider)
+        dataStorage.duckAIChat8Days = duckAIChat8Days
+    }
+
+    func processAverageDuckAIChat() {
+        Logger.attributedMetric.log("Process average DuckAI chat")
+        guard !isSameDayOfInstallDate else { return }
+
+        let daysSinceInstalled = daysSinceInstalled
+        guard dataStorage.duckAILastThreshold != daysSinceInstalled else { return }
+
+        let duckAIChat8Days = dataStorage.duckAIChat8Days
+        guard duckAIChat8Days.countPast7Days > 0 else { return }
+        let result = duckAIChat8Days.past7DaysAverage(daysSinceInstalled: daysSinceInstalled)
+        guard let bucket = try? bucketModifier.bucket(value: result.average, pixelName: .userAverageDuckAiUsagePastWeek) else {
+            Logger.attributedMetric.error("Failed to bucket average Duck.AI chat value")
+            return
+        }
+        Logger.attributedMetric.log("Average Duck.AI chats count in the last week: \(bucket.value, privacy: .public)")
+        dataStorage.duckAILastThreshold = daysSinceInstalled
+        pixelKit?.fire(AttributedMetricPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin,
+                                                                            installDate: originOrInstall.installDate,
+                                                                            count: bucket.value,
+                                                                            dayAverage: result.dayAverage,
+                                                                            bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false)
+    }
+
+    // MARK: - Subscription
+    // https://app.asana.com/1/137249556945/project/1205842942115003/task/1211301604929613?focus=true
+
+    func processSubscriptionDay() {
+        Logger.attributedMetric.log("Processing subscription purchase")
+        guard dataStorage.subscriptionDate == nil else { return }
+        dataStorage.subscriptionDate = dateProvider.now()
+
+        Task {
+            let isFreeTrial = await subscriptionStateProvider.isFreeTrial()
+            workQueue.async { [self] in
+                processSubscriptionDay(isFreeTrial: isFreeTrial)
+            }
+        }
+    }
+
+    private func processSubscriptionDay(isFreeTrial: Bool) {
+        if isFreeTrial {
+            dataStorage.subscriptionFreeTrialFired = true
+        } else {
+            dataStorage.subscriptionMonth1Fired = true
+        }
+
+        let month = isFreeTrial ? 0 : 1
+        guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userSubscribed) else {
+            Logger.attributedMetric.error("Failed to bucket month value")
+            return
+        }
+        pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                            installDate: originOrInstall.installDate,
+                                                            month: bucket.value,
+                                                            bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false)
+    }
+
+    func processSubscriptionCheck() {
+        guard let subscriptionDate = dataStorage.subscriptionDate,
+              subscriptionStateProvider.isActive
+        else {
+            Logger.attributedMetric.log("Not subscribed or subscription date is missing")
+            return
+        }
+
+        let now = dateProvider.now()
+        let freeTrialPixelSent = dataStorage.subscriptionFreeTrialFired
+        let firstMonthPixelSent = dataStorage.subscriptionMonth1Fired
+
+        Task {
+            let isFreeTrial = await subscriptionStateProvider.isFreeTrial()
+            workQueue.async { [self] in
+                processSubscriptionCheck(subscriptionDate: subscriptionDate,
+                                         now: now,
+                                         freeTrialPixelSent: freeTrialPixelSent,
+                                         firstMonthPixelSent: firstMonthPixelSent,
+                                         isFreeTrial: isFreeTrial)
+            }
+        }
+    }
+
+    private func processSubscriptionCheck(subscriptionDate: Date,
+                                          now: Date,
+                                          freeTrialPixelSent: Bool,
+                                          firstMonthPixelSent: Bool,
+                                          isFreeTrial: Bool) {
+        let monthsActive = Double(QuantisedTimePast.daysBetween(from: subscriptionDate, to: now)) / Double(Constants.daysInAMonth)
+        let activeFromMoreThan1Month = monthsActive > 1.0
+
+        if freeTrialPixelSent && !firstMonthPixelSent && !isFreeTrial {
+            // First launch after a free trial converts to paid: send month=1 once. The !firstMonthPixelSent guard stops it re-firing on every later launch.
+            do {
+                let bucket = try bucketModifier.bucket(value: 1, pixelName: .userSubscribed)
+                pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                                    installDate: originOrInstall.installDate,
+                                                                    month: bucket.value,
+                                                                    bucketVersion: bucket.version),
+                               frequency: .legacyDailyNoSuffix,
+                               includeAppVersionParameter: false)
+                dataStorage.subscriptionMonth1Fired = true
+            } catch {
+                Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
+            }
+        } else if firstMonthPixelSent && activeFromMoreThan1Month {
+            // At each app startup, check the subscription state. If the a month=1 pixel was sent, the state is autoRenewable or notAutoRenewable, and the subscription has been active for more than a month, send this pixel with month=2+.
+            do {
+                let subscriptionMonth = Int(monthsActive.rounded(.up))
+                guard subscriptionMonth > (dataStorage.subscriptionLastMonthFired ?? 1) else { return }
+                let bucket = try bucketModifier.bucket(value: subscriptionMonth, pixelName: .userSubscribed)
+                pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
+                                                                    installDate: originOrInstall.installDate,
+                                                                    month: bucket.value,
+                                                                    bucketVersion: bucket.version),
+                               frequency: .legacyDailyNoSuffix,
+                               includeAppVersionParameter: false)
+                dataStorage.subscriptionLastMonthFired = subscriptionMonth
+            } catch {
+                Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
+            }
+        }
+    }
+
+    // MARK: - Sync
+    // https://app.asana.com/1/137249556945/project/1113117197328546/task/1211301604929616?focus=true
+
+    func processSyncCheck(devicesCount: Int) {
+        Logger.attributedMetric.log("Device Sync")
+
+        // check if the number of devices is changed
+        let currentDevicesCount = dataStorage.syncDevicesCount
+        guard devicesCount > currentDevicesCount else {
+            Logger.attributedMetric.debug("No changes in the sync devices count")
+            return
+        }
+
+        guard devicesCount < 3 else {
+            Logger.attributedMetric.debug("Devices count higher than 2")
+            return
+        }
+
+        dataStorage.syncDevicesCount = devicesCount
+
+        guard let bucket = try? bucketModifier.bucket(value: devicesCount, pixelName: .userSyncedDevice) else {
+            Logger.attributedMetric.error("Failed to bucket devices value")
+            assertionFailure("Failed to bucket devices value")
+            return
+        }
+        pixelKit?.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin,
+                                                              installDate: originOrInstall.installDate,
+                                                              devices: bucket.value,
+                                                              bucketVersion: bucket.version),
+                       frequency: .standard,
+                       includeAppVersionParameter: false)
+    }
+}

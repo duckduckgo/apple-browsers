@@ -18,6 +18,7 @@
 
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 struct BookmarkDialogStackedContentView: View {
     private let items: [Item]
@@ -39,7 +40,7 @@ struct BookmarkDialogStackedContentView: View {
                 ForEach(items, id: \.title) { item in
                     if !item.isContentViewHidden {
                         Text(item.title)
-                            .foregroundColor(.primary)
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
                             .fontWeight(.medium)
                     }
                 }
@@ -82,7 +83,7 @@ extension BookmarkDialogStackedContentView {
         .init(
             title: "Name",
             content:
-                TextField("", text: $name)
+                TextField("" as String, text: $name)
                 .textFieldStyle(.roundedBorder)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .font(.system(size: 14))
@@ -91,7 +92,7 @@ extension BookmarkDialogStackedContentView {
         .init(
             title: "URL",
             content:
-                TextField("", text: $url)
+                TextField("" as String, text: $url)
                 .textFieldStyle(.roundedBorder)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .font(.system(size: 14))

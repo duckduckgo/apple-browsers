@@ -28,10 +28,12 @@ public enum RemoteMessageResponse {
 
     struct JsonRemoteMessage: Decodable, Equatable {
         let id: String
+        let surfaces: [String]?
         let content: JsonContent
         let translations: [String: JsonContentTranslation]?
         let matchingRules, exclusionRules: [Int]?
         let metrics: JsonMetrics?
+        let displayConditions: JsonDisplayConditions?
 
         static func == (lhs: JsonRemoteMessage, rhs: JsonRemoteMessage) -> Bool {
             return lhs.id == rhs.id
@@ -39,6 +41,18 @@ public enum RemoteMessageResponse {
 
         var isMetricsEnabled: Bool {
             metrics?.state.flatMap(JsonMetrics.MetricsState.init) != .disabled
+        }
+    }
+
+    struct JsonDisplayConditions: Decodable, Equatable {
+        let trigger: String?
+        let dismissAfterDaysShown: Int?
+        let maxImpressions: Int?
+
+        init(trigger: String?, dismissAfterDaysShown: Int?, maxImpressions: Int? = nil) {
+            self.trigger = trigger
+            self.dismissAfterDaysShown = dismissAfterDaysShown
+            self.maxImpressions = maxImpressions
         }
     }
 
@@ -51,17 +65,53 @@ public enum RemoteMessageResponse {
         }
     }
 
-    struct JsonContent: Decodable {
+    package struct JsonContent: Decodable {
         let messageType: String
         let titleText: String
         let descriptionText: String
+        let listItems: [JsonListItem]?
         let placeholder: String?
+        let imageUrl: String?
         let actionText: String?
         let action: JsonMessageAction?
         let primaryActionText: String?
         let primaryAction: JsonMessageAction?
         let secondaryActionText: String?
         let secondaryAction: JsonMessageAction?
+    }
+
+    struct JsonListItem: Decodable {
+        let id: String
+        let type: String
+        let titleText: String
+        let descriptionText: String?
+        let placeholder: String?
+        let primaryActionText: String?
+        let primaryAction: JsonMessageAction?
+        let matchingRules: [Int]?
+        let exclusionRules: [Int]?
+        /// Array of item IDs that belong to this section. Only applicable for `section_title` type.
+        /// Used to determine which items belong under a section header. After filtering items
+        /// by their rules, sections are removed if none of their referenced itemIds exist.
+        /// Ignored for `two_line_list_item` type.
+        let itemIDs: [String]?
+        /// Optional remote image URL for this item. Only applicable to `two_line_list_item`
+        /// and `featured_two_line_single_action_list_item` types. Ignored for `section_title`.
+        let imageUrl: String?
+    }
+
+    enum JsonListItemType: String, CaseIterable {
+        case featuredTwoLinesSingleActionItem = "featured_two_line_single_action_list_item"
+        case twoLinesItem = "two_line_list_item"
+        case titledSection = "section_title"
+    }
+
+    enum JsonSurface: String, CaseIterable {
+        case newTabPage = "new_tab_page"
+        case modal
+        // Used for 'What's New' (macOS)
+        case dedicatedTab = "dedicated_tab"
+        case tabBar = "tab_bar"
     }
 
     struct JsonMessageAction: Decodable {
@@ -76,6 +126,13 @@ public enum RemoteMessageResponse {
         let descriptionText: String?
         let primaryActionText: String?
         let secondaryActionText: String?
+        let listItems: [String: JsonListItemTranslation]?
+    }
+
+    struct JsonListItemTranslation: Decodable {
+        let titleText: String?
+        let descriptionText: String?
+        let primaryActionText: String?
     }
 
     struct JsonTargetPercentile: Decodable {
@@ -94,11 +151,13 @@ public enum RemoteMessageResponse {
         case bigSingleAction = "big_single_action"
         case bigTwoAction = "big_two_action"
         case promoSingleAction = "promo_single_action"
+        case cardsList = "cards_list"
     }
 
     enum JsonActionType: String, CaseIterable {
         case share
         case url
+        case urlInContext = "url_in_context"
         case appStore = "appstore"
         case dismiss
         case survey = "survey"
@@ -112,9 +171,22 @@ public enum RemoteMessageResponse {
         case appUpdate = "AppUpdate"
         case macComputer = "MacComputer"
         case newForMacAndWindows = "NewForMacAndWindows"
+        case macAndWindows = "MacAndWindows"
         case privacyShield = "PrivacyShield"
         case aiChat = "Duck.ai"
         case visualDesignUpdate = "VisualDesignUpdate"
+        case imageAI = "ImageAI"
+        case radar = "Radar"
+        case radarCheckGreen = "RadarCheckGreen"
+        case radarCheckPurple = "RadarCheckPurple"
+        case keyImport = "KeyImport"
+        case mobileCustomization = "MobileCustomization"
+        case newTabOptions = "NewTabOptions"
+        case splitBarMobile = "SplitBarMobile"
+        case pir = "PIR"
+        case subscription = "Subscription"
+        case veryCriticalUpdate = "VeryCriticalUpdate"
+        case youtubeNew = "YoutubeNew"
     }
 
     public enum StatusError: Error {

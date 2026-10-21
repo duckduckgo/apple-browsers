@@ -24,7 +24,9 @@ final class CapturingContextMenuPresenter: HistoryView.ContextMenuPresenting {
 
     func showContextMenu(_ menu: NSMenu) {
         showContextMenuCalls.append(menu)
+        onShowContextMenu?(menu)
     }
 
     var showContextMenuCalls: [NSMenu] = []
+    var onShowContextMenu: ((NSMenu) -> Void)?
 }

@@ -18,10 +18,24 @@
 
 import AIChat
 import AppKit
-import BrowserServicesKit
 import Combine
+import PrivacyConfig
 
 protocol AIChatMenuVisibilityConfigurable {
+
+    /// Indicates whether any AI Chat feature should be displayed to the user.
+    ///
+    /// This property checks both remote setting and local global switch value to determine
+    /// if any of the AI Chat-related features should be visible in the UI.
+    ///
+    /// - Returns: `true` if any AI Chat feature should be shown; otherwise, `false`.
+    var shouldDisplayAnyAIChatFeature: Bool { get }
+
+    /// This property validates user settings to determine if the shortcut
+    /// should be presented to the user.
+    ///
+    /// - Returns: `true` if the New Tab Page omnibar shortcut should be displayed; otherwise, `false`.
+    var shouldDisplayNewTabPageShortcut: Bool { get }
 
     /// This property validates user settings to determine if the shortcut
     /// should be presented to the user.
@@ -30,15 +44,55 @@ protocol AIChatMenuVisibilityConfigurable {
     var shouldDisplayAddressBarShortcut: Bool { get }
 
     /// This property validates user settings to determine if the shortcut
+    /// should be presented to the user when typing.
+    ///
+    /// - Returns: `true` if the address bar shortcut when typing should be displayed; otherwise, `false`.
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool { get }
+
+    /// This property validates user settings to determine if the shortcut
     /// should be presented to the user.
     ///
     /// - Returns: `true` if the application menu shortcut should be displayed; otherwise, `false`.
     var shouldDisplayApplicationMenuShortcut: Bool { get }
 
+    /// This property validates user settings to determine if the Duck.ai submenu
+    /// should be presented in the more options (hamburger) menu.
+    ///
+    /// - Returns: `true` if the more options menu shortcut should be displayed; otherwise, `false`.
+    var shouldDisplayMoreOptionsMenuShortcut: Bool { get }
+
     /// This property determines whether AI Chat should open in the sidebar.
     ///
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
-    var openAIChatInSidebar: Bool { get }
+    var shouldOpenAIChatInSidebar: Bool { get }
+
+    /// This property determines whether websites should automatically send page context to the AI Chat sidebar.
+    ///
+    /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
+    var shouldAutomaticallySendPageContext: Bool { get }
+
+    /// This property is used for telemetry.
+    ///
+    /// - Returns: The value of `shouldAutomaticallySendPageContext` if the feature flag is enabled, otherwise it returns `nil`.
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool? { get }
+
+    /// This property validates user settings to determine if the text summarization
+    /// feature should be presented to the user.
+    ///
+    /// - Returns: `true` if the text summarization menu action should be displayed; otherwise, `false`.
+    var shouldDisplaySummarizationMenuItem: Bool { get }
+
+    /// This property validates user settings to determine if the text translation
+    /// feature should be presented to the user.
+    ///
+    /// - Returns: `true` if the text translation menu action should be displayed; otherwise, `false`.
+    var shouldDisplayTranslationMenuItem: Bool { get }
+
+    /// This property validates user settings and the `selectionContext` subfeature to determine
+    /// whether the "Attach to Duck.ai" context-menu action should be presented to the user.
+    ///
+    /// - Returns: `true` if the attach-selection menu action should be displayed; otherwise, `false`.
+    var shouldDisplaySelectionContextMenuItem: Bool { get }
 
     /// A publisher that emits a value when either the `shouldDisplayApplicationMenuShortcut`  settings, backed by storage, are changed.
     ///
@@ -58,49 +112,102 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
 
     private var cancellables = Set<AnyCancellable>()
     private var storage: AIChatPreferencesStorage
-    private let notificationCenter: NotificationCenter
     private let remoteSettings: AIChatRemoteSettingsProvider
+    private let featureFlagger: FeatureFlagger
 
     var valuesChangedPublisher = PassthroughSubject<Void, Never>()
 
+    var shouldDisplayAnyAIChatFeature: Bool {
+        let isAIChatEnabledRemotely = remoteSettings.isAIChatEnabled
+        let isAIChatEnabledLocally = storage.isAIFeaturesEnabled
+
+        return isAIChatEnabledRemotely && isAIChatEnabledLocally
+    }
+
+    var shouldDisplayNewTabPageShortcut: Bool {
+        shouldDisplayAnyAIChatFeature && storage.showShortcutOnNewTabPage
+    }
+
+    var shouldDisplaySummarizationMenuItem: Bool {
+        shouldDisplayAnyAIChatFeature
+    }
+
+    var shouldDisplayTranslationMenuItem: Bool {
+        shouldDisplayAnyAIChatFeature
+    }
+
+    var shouldDisplaySelectionContextMenuItem: Bool {
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatSelectionContext)
+    }
+
     var shouldDisplayApplicationMenuShortcut: Bool {
-        return storage.showShortcutInApplicationMenu
+        return shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatMainMenuShortcut)
+    }
+
+    var shouldDisplayMoreOptionsMenuShortcut: Bool {
+        return shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatMoreOptionsMenuShortcut)
     }
 
     var shouldDisplayAddressBarShortcut: Bool {
-        storage.showShortcutInAddressBar
+        shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBar
     }
 
-    var openAIChatInSidebar: Bool {
-        storage.openAIChatInSidebar
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool {
+        return shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBarWhenTyping
     }
 
-    init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         notificationCenter: NotificationCenter = .default,
-         remoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings()) {
+    var shouldOpenAIChatInSidebar: Bool {
+        shouldDisplayAnyAIChatFeature && storage.openAIChatInSidebar
+    }
+
+    var shouldAutomaticallySendPageContext: Bool {
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatPageContext) && storage.shouldAutomaticallySendPageContext
+    }
+
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool? {
+        guard featureFlagger.isFeatureOn(.aiChatPageContext) else {
+            return nil
+        }
+        return shouldAutomaticallySendPageContext
+    }
+
+    init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {
         self.storage = storage
-        self.notificationCenter = notificationCenter
         self.remoteSettings = remoteSettings
+        self.featureFlagger = featureFlagger
 
         self.subscribeToValuesChanged()
     }
 
     private func subscribeToValuesChanged() {
-        storage.showShortcutInApplicationMenuPublisher
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.valuesChangedPublisher.send()
-            }.store(in: &cancellables)
+        let storagePublishers: [AnyPublisher<Bool, Never>] = [
+            storage.isAIFeaturesEnabledPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutOnNewTabPagePublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInApplicationMenuPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInAddressBarPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showShortcutInAddressBarWhenTypingPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.openAIChatInSidebarPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates().eraseToAnyPublisher(),
+            storage.showSearchAndDuckAITogglePublisher.removeDuplicates().eraseToAnyPublisher(),
+        ]
 
-        storage.showShortcutInAddressBarPublisher
+        let mainMenuShortcutFlagPublisher = featureFlagger.updatesPublisher
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatMainMenuShortcut) ?? false }
             .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.valuesChangedPublisher.send()
-            }.store(in: &cancellables)
+            .map { _ in () }
+            .eraseToAnyPublisher()
 
-        storage.openAIChatInSidebarPublisher
+        let moreOptionsMenuShortcutFlagPublisher = featureFlagger.updatesPublisher
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatMoreOptionsMenuShortcut) ?? false }
             .removeDuplicates()
-            .sink { [weak self] _ in
+            .map { _ in () }
+            .eraseToAnyPublisher()
+
+        Publishers.MergeMany(storagePublishers)
+            .map { _ in () }
+            .merge(with: mainMenuShortcutFlagPublisher)
+            .merge(with: moreOptionsMenuShortcutFlagPublisher)
+            .sink { [weak self] in
                 self?.valuesChangedPublisher.send()
             }.store(in: &cancellables)
     }

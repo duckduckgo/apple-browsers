@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import SwiftUI
 
 @resultBuilder
 struct NSViewBuilder {
@@ -26,6 +27,58 @@ struct NSViewBuilder {
 }
 
 #if DEBUG
+/// Used to preview an NSView or SwiftUI view using Xcode #Preview macro
+/// Usage:
+/// ```
+/// @available(macOS 14.0, *)
+/// #Preview {
+///     PreviewView(adjustWindowFrame: true) {
+///         MyView()
+///     }
+/// }
+/// ```
+@available(macOS 14.0, *)
+struct PreviewView<Content: View>: View {
+    private let showWindowTitle: Bool
+    private let adjustWindowFrame: Bool
+    private let content: Content
+
+    init(showWindowTitle: Bool = true, adjustWindowFrame: Bool = false, @ViewBuilder content: () -> Content) {
+        self.showWindowTitle = showWindowTitle
+        self.adjustWindowFrame = adjustWindowFrame
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .background(PreviewWindowModifier(showWindowTitle: showWindowTitle, adjustWindowFrame: adjustWindowFrame))
+    }
+}
+
+@available(macOS 14.0, *)
+private struct PreviewWindowModifier: NSViewRepresentable {
+    let showWindowTitle: Bool
+    let adjustWindowFrame: Bool
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            guard let window = view.window else { return }
+            if !showWindowTitle {
+                window.titlebarAppearsTransparent = true
+                window.titleVisibility = .hidden
+                window.styleMask = []
+            }
+            if adjustWindowFrame {
+                window.setFrame(NSRect(origin: .zero, size: view.bounds.size), display: true)
+            }
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
 /// Used to preview an NSView using Xcode #Preview macro
 /// Usage:
 /// ```
@@ -47,7 +100,6 @@ final class PreviewViewController: NSViewController {
         super.init(nibName: nil, bundle: nil)
         self.view = builder()
     }
-
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
     }
@@ -63,9 +115,18 @@ final class PreviewViewController: NSViewController {
             window.setFrame(NSRect(origin: .zero, size: view.bounds.size), display: true)
         }
     }
-
 }
 #else
+struct PreviewView<Content: View>: View {
+    init(showWindowTitle: Bool = true, adjustWindowFrame: Bool = false, @ViewBuilder content: () -> Content) {
+        fatalError("only for DEBUG")
+    }
+
+    var body: some View {
+        fatalError("only for DEBUG")
+    }
+}
+
 final class PreviewViewController: NSViewController {
     init(showWindowTitle: Bool = true, adjustWindowFrame: Bool = false, @NSViewBuilder builder: () -> NSView) {
         fatalError("only for DEBUG")

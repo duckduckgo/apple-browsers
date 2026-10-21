@@ -16,10 +16,15 @@
 //  limitations under the License.
 //
 
+import Combine
+import Common
+import FoundationExtensions
+import History
+import HistoryView
+import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
 
 final class WindowManagerStateRestorationTests: XCTestCase {
 
@@ -31,21 +36,21 @@ final class WindowManagerStateRestorationTests: XCTestCase {
         WindowsManager.closeWindows()
     }
 
-    func isTab(_ a: Tab, equalTo b: Tab) -> Bool {
+    func isTabEqual(_ a: AnyTab, _ b: AnyTab) -> Bool {
         a.url == b.url
         && a.title == b.title
-        && a.getActualInteractionStateData() == b.getActualInteractionStateData()
-        && a.webView.configuration.websiteDataStore.isPersistent == b.webView.configuration.websiteDataStore.isPersistent
+        && a.interactionStateData == b.interactionStateData
+        && a.burnerMode == b.burnerMode
     }
 
-    func areTabsEqual(_ a: [Tab], _ b: [Tab]) -> Bool {
+    func areTabsEqual(_ a: [AnyTab], _ b: [AnyTab]) -> Bool {
         a.count == b.count &&
-            !a.enumerated().contains { !isTab($0.1, equalTo: b[$0.0]) }
+            !a.enumerated().contains { !isTabEqual($0.1, b[$0.0]) }
     }
 
     @MainActor
     func areTabCollectionViewModelsEqual(_ a: TabCollectionViewModel, _ b: TabCollectionViewModel) -> Bool {
-        a.selectionIndex == b.selectionIndex && areTabsEqual(a.tabCollection.tabs, b.tabCollection.tabs)
+        return a.selectionIndex == b.selectionIndex && areTabsEqual(a.tabCollection.tabs, b.tabCollection.tabs)
     }
 
     // MARK: -
@@ -84,14 +89,31 @@ final class WindowManagerStateRestorationTests: XCTestCase {
         let pinnedTabsManagerProvidingMock = PinnedTabsManagerProvidingMock()
         pinnedTabsManagerProvidingMock.newPinnedTabsManager = pinnedTabManager
 
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: WindowControllersManagerMock(),
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
-        let mainViewController1 = MainViewController(tabCollectionViewModel: model1, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
+        let mainViewController1 = MainViewController(tabCollectionViewModel: model1,
+                                                     autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+                                                     aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
+                                                     fireCoordinator: fireCoordinator)
         let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
-        let mainViewController2 = MainViewController(tabCollectionViewModel: model2, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
-        let windowController1 = MainWindowController(mainViewController: mainViewController1, popUp: false, fireViewModel: FireViewModel(tld: Application.appDelegate.tld, visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider()))
-        let windowController2 = MainWindowController(mainViewController: mainViewController2, popUp: false, fireViewModel: FireViewModel(tld: Application.appDelegate.tld, visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider()))
+        let mainViewController2 = MainViewController(tabCollectionViewModel: model2,
+                                                     autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+                                                     aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
+                                                     fireCoordinator: fireCoordinator)
+        let windowController1 = MainWindowController(mainViewController: mainViewController1, fireWindowSession: nil, fireViewModel: FireViewModel(tld: Application.appDelegate.tld, visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider()), themeManager: MockThemeManager())
+        let windowController2 = MainWindowController(mainViewController: mainViewController2, fireWindowSession: nil, fireViewModel: FireViewModel(tld: Application.appDelegate.tld, visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider()), themeManager: MockThemeManager())
 
-        let state = WindowManagerStateRestoration(mainWindowControllers: [windowController1, windowController2], lastKeyMainWindowController: windowController2, applicationPinnedTabs: pinnedTabManager.tabCollection, aiChatSidebarsByTab: AIChatSidebarsByTab())
+        let state = WindowManagerStateRestoration(mainWindowControllers: [windowController1, windowController2], lastKeyMainWindowController: windowController2, applicationPinnedTabs: pinnedTabManager.tabCollection, aiChatStatesByTab: AIChatStatesByTab())
 
         for (idx, window) in state.windows.enumerated() {
             XCTAssertTrue(areTabCollectionViewModelsEqual(window.model, state.windows[idx].model))
@@ -108,7 +130,7 @@ final class WindowManagerStateRestorationTests: XCTestCase {
             return XCTFail("Could not unarchive WindowManagerStateRestoration")
         }
 
-        XCTAssertTrue(areTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs))
+        XCTAssertTrue(areTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs.map { .loaded($0) }))
         XCTAssertEqual(restored.windows.count, 2)
         XCTAssertEqual(restored.keyWindowIndex, 1)
 
@@ -122,8 +144,12 @@ private extension Tab {
     }
 }
 
-final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+final class MockVisualizeFireAnimationDecider: VisualizeFireSettingsDecider {
     var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()
 
     var shouldShowFireAnimation: Bool = false
+
+    var isOpenFireWindowByDefaultEnabled: Bool = false
+
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
 }

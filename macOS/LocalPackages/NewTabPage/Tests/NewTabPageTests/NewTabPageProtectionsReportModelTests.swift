@@ -18,7 +18,7 @@
 
 import Combine
 import PrivacyStats
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import TrackerRadarKit
 import XCTest
 @testable import NewTabPage
@@ -34,9 +34,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         privacyStats = CapturingPrivacyStats()
         settingsPersistor = MockNewTabPageProtectionsReportSettingsPersistor()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
     }
 
     // MARK: - Initialization Tests
@@ -52,9 +54,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         settingsPersistor.activeFeed = .activity
 
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
         XCTAssertFalse(model.isViewExpanded)
         XCTAssertEqual(model.activeFeed, .activity)
@@ -156,6 +160,72 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         XCTAssertFalse(model.isRecentActivityVisible)
     }
 
+    // MARK: - Widget New Label Tests
+
+    func testWhenNoWidgetNewLabelDateIsStoredThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        settingsPersistor.widgetNewLabelFirstShownDate = nil
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+        XCTAssertNotNil(settingsPersistor.widgetNewLabelFirstShownDate, "Should store current date when first accessed")
+    }
+
+    func testWhenWidgetNewLabelDateIsWithinSevenDaysThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let recentDate = Date().addingTimeInterval(-6 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = recentDate
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsOlderThanSevenDaysThenShouldShowProtectionsReportNewLabelReturnsFalse() {
+        let eightDaysAgo = Date().addingTimeInterval(-8 * 24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = eightDaysAgo
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertFalse(model.shouldShowProtectionsReportNewLabel)
+    }
+
+    func testWhenWidgetNewLabelDateIsInTheFutureThenShouldShowProtectionsReportNewLabelReturnsTrue() {
+        let futureDate = Date().addingTimeInterval(24 * 60 * 60)
+        settingsPersistor.widgetNewLabelFirstShownDate = futureDate
+
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
+            showBurnAnimation: true,
+            isAutoconsentEnabled: { true }
+        )
+
+        XCTAssertTrue(model.shouldShowProtectionsReportNewLabel)
+    }
+
     // MARK: - Burn Animation Tests
 
     func testWhenInitializedWithShowBurnAnimationTrueThenShouldShowBurnAnimationIsTrue() {
@@ -164,92 +234,115 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
 
     func testWhenInitializedWithShowBurnAnimationFalseThenShouldShowBurnAnimationIsFalse() {
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
-                                                 showBurnAnimation: false)
+                                                 showBurnAnimation: false,
+                                                 isAutoconsentEnabled: { true })
         XCTAssertFalse(model.shouldShowBurnAnimation)
     }
 
-    func testWhenBurnAnimationSettingChangesToTrueThenShouldShowBurnAnimationIsTrue() async {
-        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-                                                 settingsPersistor: settingsPersistor,
-                                                 burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
-                                                 showBurnAnimation: false)
-
+    @MainActor
+    func testWhenBurnAnimationSettingChangesToTrueThenShouldShowBurnAnimationIsTrue() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
-        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-                                                 settingsPersistor: settingsPersistor,
-                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-                                                 showBurnAnimation: false)
+        model = NewTabPageProtectionsReportModel(
+            privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
+            settingsPersistor: settingsPersistor,
+            burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
+            showBurnAnimation: false,
+            isAutoconsentEnabled: { true }
+        )
 
-        XCTAssertFalse(model.shouldShowBurnAnimation)
-
-        let expectation = expectation(description: "shouldShowBurnAnimation should be updated")
-        let cancellable = model.$shouldShowBurnAnimation
-            .dropFirst()
-            .sink { shouldShow in
-                if shouldShow {
-                    expectation.fulfill()
-                }
-            }
-
+        try makeShouldShowBurnAnimationStream()
         burnAnimationSubject.send(true)
-
-        await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertTrue(model.shouldShowBurnAnimation)
-        cancellable.cancel()
+        let shouldShowBurnAnimation = try await getShouldShowBurnAnimationValue()
+        XCTAssertTrue(shouldShowBurnAnimation)
     }
 
-    func testWhenBurnAnimationSettingChangesToFalseThenShouldShowBurnAnimationIsFalse() async {
+    @MainActor
+    func testWhenBurnAnimationSettingChangesToFalseThenShouldShowBurnAnimationIsFalse() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
         XCTAssertTrue(model.shouldShowBurnAnimation)
 
-        let expectation = expectation(description: "shouldShowBurnAnimation should be updated")
-        let cancellable = model.$shouldShowBurnAnimation
-            .dropFirst()
-            .sink { shouldShow in
-                if !shouldShow {
-                    expectation.fulfill()
-                }
-            }
-
+        try makeShouldShowBurnAnimationStream()
         burnAnimationSubject.send(false)
-
-        await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertFalse(model.shouldShowBurnAnimation)
-        cancellable.cancel()
+        let shouldShowBurnAnimation = try await getShouldShowBurnAnimationValue()
+        XCTAssertFalse(shouldShowBurnAnimation)
     }
 
-    func testWhenBurnAnimationSettingChangesMultipleTimesThenShouldShowBurnAnimationFollowsChanges() async {
+    @MainActor
+    func testWhenBurnAnimationSettingChangesMultipleTimesThenShouldShowBurnAnimationFollowsChanges() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
-        var receivedValues: [Bool] = []
-        let expectation = expectation(description: "shouldShowBurnAnimation should receive multiple updates")
-        expectation.expectedFulfillmentCount = 3
-
-        let cancellable = model.$shouldShowBurnAnimation
-            .dropFirst()
-            .sink { shouldShow in
-                receivedValues.append(shouldShow)
-                expectation.fulfill()
-            }
+        try makeShouldShowBurnAnimationStream()
 
         burnAnimationSubject.send(false)
         burnAnimationSubject.send(true)
         burnAnimationSubject.send(false)
 
-        await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedValues, [false, true, false])
+        let shouldShowBurnAnimationValues = try await getShouldShowBurnAnimationValues(3)
+        XCTAssertEqual(shouldShowBurnAnimationValues, [false, true, false])
         XCTAssertFalse(model.shouldShowBurnAnimation)
-        cancellable.cancel()
+    }
+
+    // MARK: - Helpers
+
+    @MainActor
+    private var shouldShowBurnAnimationStream: AsyncStream<Bool>!
+    private struct ShouldShowBurnAnimationNotReceivedError: Error {}
+
+    /// Creates AsyncStream that emits updates to `model.shouldShowBurnAnimation`.
+    @MainActor
+    private func makeShouldShowBurnAnimationStream() throws {
+        shouldShowBurnAnimationStream = AsyncStream { continuation in
+            let cancellable = model.$shouldShowBurnAnimation.dropFirst()
+                .sink { value in
+                    continuation.yield(value)
+                }
+
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+
+    /// Awaits first event emitted by the shouldShowBurnAnimation AsyncStream.
+    @MainActor
+    private func getShouldShowBurnAnimationValue() async throws -> Bool {
+        let values = try await getShouldShowBurnAnimationValues(1)
+        guard let value = values.first else {
+            throw ShouldShowBurnAnimationNotReceivedError()
+        }
+        return value
+    }
+
+    /// Awaits first `count` events emitted by the shouldShowBurnAnimation AsyncStream.
+    @MainActor
+    private func getShouldShowBurnAnimationValues(_ count: Int) async throws -> [Bool] {
+        var iterator = shouldShowBurnAnimationStream.makeAsyncIterator()
+        var values: [Bool] = []
+
+        for _ in 0..<count {
+            guard let value = await iterator.next() else {
+                throw ShouldShowBurnAnimationNotReceivedError()
+            }
+            values.append(value)
+        }
+
+        return values
     }
 }

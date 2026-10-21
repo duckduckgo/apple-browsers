@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import os.log
 import Foundation
 import Configuration
@@ -134,7 +135,7 @@ final class ConfigurationStore: ConfigurationStoring {
     func loadEmbeddedEtag(for configuration: Configuration) -> String? {
         switch configuration {
         case .trackerDataSet: return AppTrackerDataSetProvider.Constants.embeddedDataETag
-        case .privacyConfiguration: return AppPrivacyConfigurationDataProvider.Constants.embeddedDataSHA
+        case .privacyConfiguration: return AppPrivacyConfigurationDataProvider.Constants.embeddedDataETag
         default: return nil
         }
     }
@@ -165,15 +166,16 @@ final class ConfigurationStore: ConfigurationStoring {
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
-                        let parameters = [
+                    let pixel = GeneralPixel.couldNotLoadConfiguration(configuration: config)
+                    let parameters: [String: String] = if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
+                        [
                             "experimentName": experimentName,
                             "etag": loadEtag(for: .trackerDataSet) ?? ""
                         ]
-                        PixelKit.fire(DebugEvent(GeneralPixel.trackerDataCouldNotBeLoaded, error: error), withAdditionalParameters: parameters)
                     } else {
-                        PixelKit.fire(DebugEvent(GeneralPixel.trackerDataCouldNotBeLoaded, error: error))
+                        [:]
                     }
+                    PixelKit.fire(DebugEvent(pixel, error: error), frequency: .dailyAndCount, withAdditionalParameters: parameters)
                 }
             }
         }

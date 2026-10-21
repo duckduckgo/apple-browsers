@@ -18,13 +18,14 @@
 
 import XCTest
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class PrivacyConfigurationReferenceTests: XCTestCase {
 
     private enum Resource {
-        static let configRootPath = "Resources/privacy-reference-tests/privacy-configuration"
-        static let tests = "Resources/privacy-reference-tests/privacy-configuration/tests.json"
+        static let configRootPath = "Res/privacy-reference-tests/privacy-configuration"
+        static let tests = "Res/privacy-reference-tests/privacy-configuration/tests.json"
     }
 
     func testPrivacyConfiguration() throws {

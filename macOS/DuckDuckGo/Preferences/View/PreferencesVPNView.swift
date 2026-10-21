@@ -69,6 +69,26 @@ extension Preferences {
                             spacing: 12
                         )
                     }
+
+                    SpacedCheckbox {
+                        ToggleMenuItemWithDescription(
+                            UserText.vpnExcludeCGNATSettingTitle,
+                            UserText.vpnExcludeCGNATSettingDescription,
+                            isOn: $model.excludeCGNAT,
+                            spacing: 12
+                        )
+                    }
+
+                    if model.isStrictRoutingAvailable {
+                        SpacedCheckbox {
+                            ToggleMenuItemWithDescription(
+                                UserText.vpnStrictRoutingSettingTitle,
+                                UserText.vpnStrictRoutingSettingDescription,
+                                isOn: $model.enforceRoutes,
+                                spacing: 12
+                            )
+                        }
+                    }
                 }
                 .padding(.bottom, 12)
 
@@ -126,28 +146,34 @@ extension Preferences {
 
                 PreferencePaneSection(UserText.vpnDnsServerTitle) {
                     PreferencePaneSubSection {
+                        if model.isCustomDNSSelected {
+                            TextMenuItemCaption(UserText.vpnDnsServerIPv4Disclaimer)
+                        } else {
+                            TextMenuItemCaption(UserText.vpnSecureDNSSettingDescription)
+                        }
+
                         Picker(selection: $model.isCustomDNSSelected, label: EmptyView()) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(UserText.vpnDnsServerPickerDefaultTitle)
-                                if model.isRiskySitesProtectionFeatureEnabled && model.didRiskySitesProtectionDefaultToTrue {
-                                    NativeCheckboxToggle(isOn: $model.isBlockRiskyDomainsOn, label: UserText.vpnDnsServerBlockRiskyDomainsToggleTitle)
-                                        .disabled(model.isCustomDNSSelected)
-                                    VStack(alignment: .leading, spacing: 0, content: {
-                                        TextMenuItemCaption(UserText.vpnDnsServerBlockRiskyDomainsToggleFooter)
-                                        TextButton(UserText.learnMore) {
-                                            model.openNewTab(with: .dnsBlocklistLearnMore)
-                                        }
-                                    })
-                                    .padding(.leading, 20)
-                                    .padding(.bottom, 8)
-                                }
+                                NativeCheckboxToggle(isOn: $model.isBlockRiskyDomainsOn, label: UserText.vpnDnsServerBlockRiskyDomainsToggleTitle)
+                                    .disabled(model.isCustomDNSSelected)
+                                VStack(alignment: .leading, spacing: 0, content: {
+                                    TextMenuItemCaption(UserText.vpnDnsServerBlockRiskyDomainsToggleFooter)
+                                    TextButton(UserText.learnMore) {
+                                        model.openNewTab(with: .dnsBlocklistLearnMore)
+                                    }
+                                })
+                                .padding(.leading, 20)
+                                .padding(.bottom, 8)
                             }.tag(false)
                             VStack(alignment: .leading, spacing: 0) {
                                 HStack(spacing: 15) {
                                     Text(UserText.vpnDnsServerPickerCustomTitle)
                                     Button(UserText.vpnDnsServerPickerCustomButtonTitle) {
                                         showsCustomDNSServerPageSheet.toggle()
-                                    }.disabled(!model.isCustomDNSSelected)
+                                    }
+                                    .tint(nil)
+                                    .disabled(!model.isCustomDNSSelected)
                                 }
                                 if let dnsServersText = model.customDNSServers {
                                     TextMenuItemCaption(dnsServersText)
@@ -156,6 +182,7 @@ extension Preferences {
                             }.tag(true)
                         }
                         .pickerStyle(.radioGroup)
+                        .rebrandedControlTint()
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .onChange(of: model.isCustomDNSSelected) { isCustomDNSSelected in
                             if isCustomDNSSelected && (model.customDNSServers?.isEmpty ?? true) {
@@ -172,29 +199,47 @@ extension Preferences {
                                 model.isCustomDNSSelected = false
                             }
                         }
-
-                        if model.isCustomDNSSelected {
-                            TextMenuItemCaption(UserText.vpnDnsServerIPv4Disclaimer)
-                        } else {
-                            TextMenuItemCaption(UserText.vpnSecureDNSSettingDescription)
-                        }
                     }
                 }.sheet(isPresented: $showsCustomDNSServerPageSheet) {
                     CustomDNSServerPageSheet(model: model,
                                              isSheetPresented: $showsCustomDNSServerPageSheet)
                 }
 
-                // SECTION: Uninstall
+                // SECTION: Troubleshooting
 
-                if model.showUninstallVPN {
-                    PreferencePaneSection {
-                        Button(UserText.uninstallVPNButtonTitle) {
+                PreferencePaneSection(UserText.vpnTroubleshootingTitle) {
+                    PreferencePaneSubSection {
+                        Button(copyDiagnosticsButtonTitle) {
                             Task { @MainActor in
-                                await model.uninstallVPN()
+                                await model.copySupportInfo()
+                            }
+                        }
+                        .disabled(model.copySupportInfoState != .idle)
+
+                        TextMenuItemCaption(UserText.vpnSettingsCopyDiagnosticsCaption)
+                    }
+
+                    if model.showUninstallVPN {
+                        PreferencePaneSubSection {
+                            Button(UserText.uninstallVPNButtonTitle) {
+                                Task { @MainActor in
+                                    await model.uninstallVPN()
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+
+        private var copyDiagnosticsButtonTitle: String {
+            switch model.copySupportInfoState {
+            case .idle, .copying:
+                return UserText.vpnSettingsCopyDiagnosticsButtonTitle
+            case .copied:
+                return UserText.vpnSettingsCopyDiagnosticsCopiedButtonTitle
+            case .failed:
+                return UserText.vpnSettingsCopyDiagnosticsFailedButtonTitle
             }
         }
 
@@ -229,7 +274,7 @@ struct CustomDNSServerPageSheet: View {
                     Text(UserText.vpnDnsServerIPv4Description)
                         .padding(.trailing, 10)
                     Spacer()
-                    TextField("0.0.0.0", text: $customDNSServers)
+                    TextField("0.0.0.0" as String, text: $customDNSServers)
                         .frame(width: 250)
                         .onChange(of: customDNSServers) { newValue in
                             validateDNSServers(newValue)

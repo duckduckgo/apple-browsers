@@ -17,6 +17,7 @@
 //
 
 import AppLauncher
+import Common
 import Foundation
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -35,7 +36,8 @@ final class VPNUIActionHandler: VPNUIActionHandling {
     }
 
     public func moveAppToApplications() async {
-#if !APPSTORE && !DEBUG
+#if !DEBUG
+        guard !AppVersion.isAppStoreBuild else { return }
         try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.moveAppToApplications)
 #endif
     }
@@ -52,11 +54,19 @@ final class VPNUIActionHandler: VPNUIActionHandling {
         try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showVPNLocations)
     }
 
-    public func showPrivacyPro() async {
-        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showPrivacyPro)
+    public func showVPNSettings() async {
+        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSettings)
+    }
+
+    public func showSubscription(origin: String?) async {
+        try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSubscription(origin: origin))
     }
 
     public func willStopVPN() async -> Bool {
         true
+    }
+
+    public func didStartVPN() {
+        // No-op: Free trial conversion tracking is handled by the browser app
     }
 }

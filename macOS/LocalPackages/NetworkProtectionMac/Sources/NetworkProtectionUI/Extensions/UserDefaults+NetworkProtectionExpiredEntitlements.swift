@@ -34,7 +34,7 @@ public extension UserDefaults {
     @objc
     dynamic var networkProtectionEntitlementsExpired: Bool {
         get {
-            value(forKey: networkProtectionEntitlementsExpiredRawValueKey) as? Bool ?? false
+            value(forKey: networkProtectionEntitlementsExpiredRawValueKey) as? Bool ?? true
         }
 
         set {

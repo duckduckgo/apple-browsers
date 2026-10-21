@@ -698,4 +698,23 @@ final class AutofillPixelReporterTests: XCTestCase {
         return standardDefaults.object(forKey: AutofillUsageStore.Keys.autofillOnboardedUserKey) as? Bool
     }
 
+    func testAccountsBucketNameFrom() {
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 0), "none")
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 1), "few")
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 3), "few")
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 4), "some")
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 10), "some")
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 11), "many")
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 49), "many")
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 50), "lots")
+        XCTAssertEqual(AutofillPixelReporter.accountsBucketNameFrom(count: 100), "lots")
+    }
+
+    func testCreditCardsBucketNameFrom() {
+        XCTAssertEqual(AutofillPixelReporter.creditCardsBucketNameFrom(count: 0), "none")
+        XCTAssertEqual(AutofillPixelReporter.creditCardsBucketNameFrom(count: 1), "some")
+        XCTAssertEqual(AutofillPixelReporter.creditCardsBucketNameFrom(count: 3), "some")
+        XCTAssertEqual(AutofillPixelReporter.creditCardsBucketNameFrom(count: 4), "many")
+        XCTAssertEqual(AutofillPixelReporter.creditCardsBucketNameFrom(count: 10), "many")
+    }
 }

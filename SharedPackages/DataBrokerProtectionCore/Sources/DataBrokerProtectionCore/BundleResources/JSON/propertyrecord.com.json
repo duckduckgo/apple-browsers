@@ -1,0 +1,279 @@
+{
+  "name": "PropertyRecord",
+  "url": "propertyrecord.com",
+  "version": "0.8.0",
+  "addedDatetime": 1775736000000,
+  "optOutUrl": "https://dashboard.propertyrecord.com/opt-out",
+  "steps": [
+    {
+      "stepType": "scan",
+      "scanType": "templatedUrl",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://dashboard.propertyrecord.com/opt-out/records?name=${firstName}%20${lastName}&city=${city|downcase}&state=${state|upcase}&cityState=${city},%20${state|upcase}",
+          "id": "d0030ece-5888-40ae-8b93-3f9f157da3cd"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//div[contains(text(), 'Search Results')]"
+            }
+          ],
+          "id": "887cead7-38bf-4f93-9f98-402659ffac91"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "Click Use Original when the site offers a spelling correction.",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#spellcheck-original",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "click",
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#spellcheck-original"
+                }
+              ],
+              "id": "433039ee-c3e7-44c4-9056-e7ad09abe618"
+            }
+          ],
+          "id": "9cbacc8a-2afa-46bb-b72a-d39f46ec9046"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//div[contains(text(), 'Search Results')]"
+            }
+          ],
+          "id": "441dce5c-d29f-4f01-847e-405795aae7d1"
+        },
+        {
+          "actionType": "extract",
+          "id": "8b02aa75-9acb-4f22-9ed5-efda7fd0b2fa",
+          "selector": "//ul[@id='people-search-results']/li",
+          "noResultsSelector": "//h3[contains(text(), 'No results found')]",
+          "profile": {
+            "name": {
+              "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(concat(' ', normalize-space(@class), ' '), ' !text-black-900 ') and contains(concat(' ', normalize-space(@class), ' '), ' text-lg ')]"
+            },
+            "addressCityState": {
+              "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(@class,'!leading-tight')]"
+            },
+            "age": {
+              "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(.,'Years Old') or contains(.,'Deceased')]"
+            },
+            "addressCityStateList": {
+              "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Locations Include']/following-sibling::div",
+              "findElements": true
+            },
+            "relativesList": {
+              "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Possible Relatives']/following-sibling::div",
+              "findElements": true
+            },
+            "profileUrl": {
+              "identifierType": "hash"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "stepType": "optOut",
+      "optOutType": "formOptOut",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://dashboard.propertyrecord.com/opt-out/records?name=${firstName}%20${lastName}&city=${city|downcase}&state=${state|upcase}&cityState=${city},%20${state|upcase}",
+          "id": "ee4a70fa-f0da-4f6b-a5d0-db42a0bca5a0"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//div[contains(text(), 'Search Results')]"
+            }
+          ],
+          "id": "e5b89938-508a-4264-9a9b-47c9ab6789a9"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "Click Use Original when the site offers a spelling correction.",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#spellcheck-original",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "click",
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#spellcheck-original"
+                }
+              ],
+              "id": "672b570b-75d7-42f5-9abb-e767b3901b1e"
+            }
+          ],
+          "id": "8d2d1ab8-54d9-434d-92f1-27175a57b93b"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//div[contains(text(), 'Search Results')]"
+            }
+          ],
+          "id": "848b3be4-8d48-440e-8ce0-b640281d8872"
+        },
+        {
+          "actionType": "getCaptchaInfo",
+          "id": "2393aa3b-3997-48d6-89fa-715acfe5f6e2",
+          "captchaType": "recaptcha2",
+          "selector": ".g-recaptcha",
+          "parent": {
+            "profileMatch": {
+              "selector": "//ul[@id='people-search-results']/li",
+              "profile": {
+                "name": {
+                  "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(concat(' ', normalize-space(@class), ' '), ' !text-black-900 ') and contains(concat(' ', normalize-space(@class), ' '), ' text-lg ')]"
+                },
+                "addressCityState": {
+                  "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(@class,'!leading-tight')]"
+                },
+                "age": {
+                  "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(.,'Years Old') or contains(.,'Deceased')]"
+                },
+                "addressCityStateList": {
+                  "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Locations Include']/following-sibling::div",
+                  "findElements": true
+                },
+                "relativesList": {
+                  "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Possible Relatives']/following-sibling::div",
+                  "findElements": true
+                },
+                "profileUrl": {
+                  "identifierType": "hash"
+                }
+              }
+            }
+          }
+        },
+        {
+          "actionType": "solveCaptcha",
+          "id": "3fbe6cca-2c24-4d45-a8e0-05a523e6726d",
+          "captchaType": "recaptcha2",
+          "selector": ".g-recaptcha",
+          "parent": {
+            "profileMatch": {
+              "selector": "//ul[@id='people-search-results']/li",
+              "profile": {
+                "name": {
+                  "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(concat(' ', normalize-space(@class), ' '), ' !text-black-900 ') and contains(concat(' ', normalize-space(@class), ' '), ' text-lg ')]"
+                },
+                "addressCityState": {
+                  "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(@class,'!leading-tight')]"
+                },
+                "age": {
+                  "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(.,'Years Old') or contains(.,'Deceased')]"
+                },
+                "addressCityStateList": {
+                  "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Locations Include']/following-sibling::div",
+                  "findElements": true
+                },
+                "relativesList": {
+                  "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Possible Relatives']/following-sibling::div",
+                  "findElements": true
+                },
+                "profileUrl": {
+                  "identifierType": "hash"
+                }
+              }
+            }
+          }
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": ".//button[contains(normalize-space(.), 'Remove My Info')]",
+              "parent": {
+                "profileMatch": {
+                  "selector": "//ul[@id='people-search-results']/li",
+                  "profile": {
+                    "name": {
+                      "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(concat(' ', normalize-space(@class), ' '), ' !text-black-900 ') and contains(concat(' ', normalize-space(@class), ' '), ' text-lg ')]"
+                    },
+                    "addressCityState": {
+                      "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(@class,'!leading-tight')]"
+                    },
+                    "age": {
+                      "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(.,'Years Old') or contains(.,'Deceased')]"
+                    },
+                    "addressCityStateList": {
+                      "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Locations Include']/following-sibling::div",
+                      "findElements": true
+                    },
+                    "relativesList": {
+                      "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Possible Relatives']/following-sibling::div",
+                      "findElements": true
+                    },
+                    "profileUrl": {
+                      "identifierType": "hash"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "id": "f47133ae-dc60-42ea-a1c7-be42d843ec6e"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h3[normalize-space(.)='Success: Information Removed']",
+              "failSilently": true
+            }
+          ],
+          "id": "aeb7b984-95cb-42fc-a50b-537c332df23a",
+          "_comment": "This fail-silent check adds one action interval for PropertyRecord to finish the POST navigation before the required success check."
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h3[normalize-space(.)='Success: Information Removed']"
+            }
+          ],
+          "id": "eb466716-5675-48c0-adc8-9823099c1c61"
+        }
+      ]
+    }
+  ],
+  "schedulingConfig": {
+    "retryError": 48,
+    "confirmOptOutScan": 72,
+    "maintenanceScan": 120,
+    "maxAttempts": -1
+  },
+  "removedAt": null
+}

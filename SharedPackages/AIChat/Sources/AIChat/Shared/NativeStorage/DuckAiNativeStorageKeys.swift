@@ -1,0 +1,45 @@
+//
+//  DuckAiNativeStorageKeys.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Persistence
+
+public enum DuckAiNativeStorageKeyNames: String, StorageKeyDescribing {
+    case migrationStatus = "duckAiNativeStorage-migrationStatus"
+    case settings = "duckAiNativeStorage-settings"
+}
+
+public struct DuckAiNativeStorageSettings: StoringKeys {
+    public init() {}
+
+    public let migrationStatus = StorageKey<Data>(DuckAiNativeStorageKeyNames.migrationStatus)
+    public let settings = StorageKey<Data>(DuckAiNativeStorageKeyNames.settings)
+}
+
+/// Well-known entry keys that carry a contract with the Duck.ai web app. The direction differs per key.
+public enum DuckAiNativeStorageReservedEntryKeys: String, CaseIterable {
+    /// Native-written, web-read: the web app reconciles deletions it did not itself initiate. Value: `[String]`.
+    case locallyDeletedChatIds
+
+    /// Web-written, native-read. JSON-encoded `String`; decode with `DuckAiUsageSnapshot.make`.
+    case usageLimits
+
+    /// Web-written, native-read: `true` once the web app has shown the file-upload privacy
+    /// disclosure. Native adopts it once and owns the count from then on.
+    case fileUploadDisclaimerShown = "duckaiFileUploadDisclaimerShown"
+}

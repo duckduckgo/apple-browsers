@@ -17,14 +17,17 @@
 //
 
 import Combine
-import VPN
-import NetworkProtectionUI
-import XCTest
-import Subscription
-import SubscriptionTestingUtilities
-import BrowserServicesKit
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
+import NetworkProtectionUI
+import Persistence
+import PrivacyConfig
+import SharedTestUtilities
+import Subscription
+import SubscriptionTestingUtilities
+import VPN
+import XCTest
+@_spi(Testing) import Networking
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -38,10 +41,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     var internalUserDecider: MockInternalUserDecider!
     var defaultBrowserProvider: DefaultBrowserProviderMock!
     var dockCustomizer: DockCustomizerMock!
-
-    var storePurchaseManager: StorePurchaseManager!
-
-    var subscriptionManager: SubscriptionManagerMock!
+    var mockSubscriptionManager: SubscriptionManagerMock!
 
     private var mockFreemiumDBPPresenter: MockFreemiumDBPPresenter! = .init()
     private var mockFreemiumDBPFeature: MockFreemiumDBPFeature!
@@ -49,15 +49,16 @@ final class MoreOptionsMenuTests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
 
     var moreOptionsMenu: MoreOptionsMenu!
 
     @MainActor
     override func setUp() {
         super.setUp()
-        tabCollectionViewModel = TabCollectionViewModel()
+        tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
         fireproofDomains = MockFireproofDomains(domains: [])
-        passwordManagerCoordinator = PasswordManagerCoordinator()
+        passwordManagerCoordinator = PasswordManagerCoordinator(bitwardenManagement: nil)
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)
         capturingActionDelegate = CapturingOptionsButtonMenuDelegate()
         internalUserDecider = MockInternalUserDecider()
@@ -65,24 +66,14 @@ final class MoreOptionsMenuTests: XCTestCase {
         dockCustomizer = DockCustomizerMock()
         dockCustomizer.addToDock()
         defaultBrowserProvider.isDefault = true
-
-        storePurchaseManager = StorePurchaseManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
-
-        subscriptionManager = SubscriptionManagerMock(accountManager: AccountManagerMock(),
-                                                      subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-                                                      authEndpointService: AuthEndpointServiceMock(),
-                                                      storePurchaseManager: storePurchaseManager,
-                                                      currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
-                                                                                                  purchasePlatform: .appStore),
-                                                      canPurchase: false,
-                                                      subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
-
+        mockSubscriptionManager = SubscriptionManagerMock()
         mockFreemiumDBPFeature = MockFreemiumDBPFeature()
 
         mockNotificationCenter = MockNotificationCenter()
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
+        mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
     }
 
     @MainActor
@@ -90,7 +81,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         tabCollectionViewModel = nil
         passwordManagerCoordinator = nil
         capturingActionDelegate = nil
-        subscriptionManager = nil
+        mockSubscriptionManager = nil
         moreOptionsMenu = nil
         defaultBrowserProvider = nil
         dockCustomizer = nil
@@ -103,29 +94,48 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockNotificationCenter = nil
         mockPixelHandler = nil
         networkProtectionVisibilityMock = nil
-        storePurchaseManager = nil
+        mockWinBackOfferVisibilityManager = nil
     }
 
     @MainActor
-    private func setupMoreOptionsMenu() {
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
+                                      freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
+        setupMoreOptionsMenu(isFireWindowDefault: isFireWindowDefault, dockCustomizer: self.dockCustomizer, freeTrialBadgePersistor: freeTrialBadgePersistor)
+    }
+    @MainActor
+    private func setupMoreOptionsMenu(isFireWindowDefault: Bool = false,
+                                      dockCustomizer: DockCustomization,
+                                      freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard)) {
+        let aiChatPreferencesStorage = MockAIChatPreferencesStorage()
+        aiChatPreferencesStorage.showShortcutInApplicationMenu = true
+
         moreOptionsMenu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                           bookmarkManager: MockBookmarkManager(),
                                           historyCoordinator: HistoryCoordinatingMock(),
+                                          recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
                                           fireproofDomains: fireproofDomains,
                                           passwordManagerCoordinator: passwordManagerCoordinator,
                                           vpnFeatureGatekeeper: networkProtectionVisibilityMock,
                                           subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
                                           sharingMenu: NSMenu(),
                                           internalUserDecider: internalUserDecider,
-                                          subscriptionManager: subscriptionManager,
+                                          subscriptionManager: mockSubscriptionManager,
                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                           freemiumDBPFeature: mockFreemiumDBPFeature,
                                           freemiumDBPPresenter: mockFreemiumDBPPresenter,
-                                          dockCustomizer: dockCustomizer,
+                                          dockCustomizer: dockCustomizer ?? self.dockCustomizer,
                                           defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
                                           notificationCenter: mockNotificationCenter,
                                           featureFlagger: mockFeatureFlagger,
-                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler)
+                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+                                          aiChatMenuConfiguration: AIChatMenuConfiguration(
+                                            storage: aiChatPreferencesStorage,
+                                            remoteSettings: MockRemoteAISettings(),
+                                            featureFlagger: mockFeatureFlagger
+                                          ),
+                                          isFireWindowDefault: isFireWindowDefault,
+                                          freeTrialBadgePersistor: freeTrialBadgePersistor,
+                                          winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -149,55 +159,52 @@ final class MoreOptionsMenuTests: XCTestCase {
     // MARK: - Subscription & Freemium
 
     private func mockAuthentication() {
-        subscriptionManager.accountManager.storeAuthToken(token: "")
-        subscriptionManager.accountManager.storeAccount(token: "", email: "", externalID: "")
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
     }
 
     @MainActor
-    func testThatPrivacyProIsNotPresentWhenUnauthenticatedAndPurchaseNotAllowedOnAppStore () {
-        subscriptionManager.canPurchase = false
-        subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+    func testThatSubscriptionIsNotPresentWhenUnauthenticatedAndPurchaseNotAllowedOnAppStore() {
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
         XCTAssertFalse(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
     @MainActor
-    func testThatPrivacyProIsPresentWhenUnauthenticatedAndPurchaseAllowedOnAppStore () {
-        subscriptionManager.canPurchase = true
-        subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+    func testThatSubscriptionIsPresentWhenUnauthenticatedAndPurchaseAllowedOnAppStore() {
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
         XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
     @MainActor
-    func testThatPrivacyProIsPresentDespiteCanPurchaseFlagOnStripe () {
-        subscriptionManager.canPurchase = false
-        subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+    func testThatSubscriptionIsPresentDespiteCanPurchaseFlagOnStripe() {
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
         XCTAssertTrue(moreOptionsMenu.items.map { $0.title }.contains(UserText.subscriptionOptionsMenuItem))
     }
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureUnavailable() {
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
-        subscriptionManager.canPurchase = true
-        subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = false
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertTrue(subscriptionManager.canPurchase)
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
+        XCTAssertTrue(mockSubscriptionManager.hasAppStoreProductsAvailable)
 
         XCTAssertEqual(moreOptionsMenu.items[0].title, UserText.sendFeedback)
         XCTAssertTrue(moreOptionsMenu.items[1].isSeparatorItem)
@@ -231,16 +238,14 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureAvailable() {
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
-        subscriptionManager.canPurchase = true
-        subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
 
         setupMoreOptionsMenu()
 
-        XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertTrue(subscriptionManager.canPurchase)
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
+        XCTAssertTrue(mockSubscriptionManager.hasAppStoreProductsAvailable)
 
         XCTAssertEqual(moreOptionsMenu.items[0].title, UserText.sendFeedback)
         XCTAssertTrue(moreOptionsMenu.items[1].isSeparatorItem)
@@ -276,8 +281,8 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenClickingFreemiumDBPOptionThenFreemiumPresenterIsCalledAndNotificationIsPostedAndPixelFired() throws {
         // Given
-        subscriptionManager.canPurchase = true
-        subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
         setupMoreOptionsMenu()
 
@@ -291,14 +296,15 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(mockNotificationCenter.didCallPostNotification)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPEntryPointActivated)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.overFlowScan)
+        XCTAssertEqual(mockFreemiumDBPPresenter.lastEntryPoint, .appMenuPreScan)
     }
 
     @MainActor
     func testWhenClickingFreemiumDBPOptionAndFreemiumActivatedThenFreemiumPresenterIsCalledAndNotificationIsPostedAndPixelFired() throws {
         // Given
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
-        subscriptionManager.canPurchase = true
-        subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
         setupMoreOptionsMenu()
 
@@ -312,25 +318,90 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(mockNotificationCenter.didCallPostNotification)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPEntryPointActivated)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.overFlowResults)
+        XCTAssertEqual(mockFreemiumDBPPresenter.lastEntryPoint, .appMenuPostScan)
+    }
+
+    @MainActor
+    func testWhenMoreOptionsMenuBuiltAndFreemiumAvailableThenOnlyScanImpressionPixelsFire() {
+        // Given
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockFreemiumDBPFeature.featureAvailable = true
+
+        // When
+        setupMoreOptionsMenu()
+
+        // Then
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(.overFlowScanImpressionCount))
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(.overFlowScanImpression))
+        XCTAssertFalse(mockPixelHandler.allFiredEvents.contains(.overFlowResultsImpressionCount))
+        XCTAssertFalse(mockPixelHandler.allFiredEvents.contains(.overFlowResultsImpression))
+    }
+
+    @MainActor
+    func testWhenMoreOptionsMenuBuiltAndFreemiumActivatedThenOnlyResultsImpressionPixelsFire() {
+        // Given
+        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockFreemiumDBPFeature.featureAvailable = true
+
+        // When
+        setupMoreOptionsMenu()
+
+        // Then
+        XCTAssertFalse(mockPixelHandler.allFiredEvents.contains(.overFlowScanImpressionCount))
+        XCTAssertFalse(mockPixelHandler.allFiredEvents.contains(.overFlowScanImpression))
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(.overFlowResultsImpressionCount))
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(.overFlowResultsImpression))
+    }
+
+    @MainActor
+    func testWhenMoreOptionsMenuBuiltAndFreemiumUnavailableThenNoImpressionPixelsFire() {
+        // Given
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockFreemiumDBPFeature.featureAvailable = false
+
+        // When
+        setupMoreOptionsMenu()
+
+        // Then
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.isEmpty)
+    }
+
+    @MainActor
+    func testWhenClickingWinBackOfferPurchasePageThenActionDelegateIsCalled() throws {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        setupMoreOptionsMenu()
+
+        let subscriptionItemIndex = try XCTUnwrap(moreOptionsMenu.indexOfItem(with: #selector(MoreOptionsMenu.openWinBackOfferPurchasePage(_:))))
+
+        // When
+        moreOptionsMenu.performActionForItem(at: subscriptionItemIndex)
+
+        // Then
+        XCTAssertTrue(capturingActionDelegate.optionsButtonMenuRequestedWinBackOfferPurchasePageCalled)
     }
 
     // MARK: - Paid AI Chat
 
     @MainActor
     func testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
-        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1201037661562251/task/1210671860096867?focus=true")
         // Given
         mockAuthentication()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
 
         // Then
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
@@ -341,15 +412,15 @@ final class MoreOptionsMenuTests: XCTestCase {
     func testWhenUserIsAuthenticatedWithPaidAIChatFeatureButFeatureFlagDisabledThenPaidAIChatItemDoesNotAppear() async throws {
         // Given
         mockAuthentication()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
 
         // Then
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
@@ -358,20 +429,18 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenUserIsAuthenticatedWithoutPaidAIChatFeatureThenPaidAIChatItemDoesNotAppear() async throws {
-        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1201037661562251/task/1210671860096867?focus=true")
-
         // Given
         mockAuthentication()
-        subscriptionManager.subscriptionFeatures = []
+        mockSubscriptionManager.resultFeatures = []
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
 
         await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
 
         // Then
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
@@ -380,67 +449,14 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenClickingPaidAIChatItemThenActionDelegateIsCalled() async throws {
-        throw XCTSkip("Flaky: SubscriptionSubMenu inserted while menu was enumerated")
-        /*
-         <unknown>:0: error: -[Unit_Tests.MoreOptionsMenuTests testWhenClickingPaidAIChatItemThenActionDelegateIsCalled] : *** Collection <__NSArrayM: 0x600003c0a7c0> was mutated while being enumerated. (NSGenericException)
-         2025-07-09 12:35:26.437716+0000 DuckDuckGo[31381:106091] [Default] Flushing outgoing messages to the IDE with timeout 30.00s
-         2025-07-09 12:35:26.438057+0000 DuckDuckGo[31381:112916] [Default] Received confirmation that IDE processed remaining outgoing messages
-         2025-07-09 12:35:26.438344+0000 DuckDuckGo[31381:106091] *** Terminating app due to uncaught exception 'NSGenericException', reason: '*** Collection <__NSArrayM: 0x600003c0a7c0> was mutated while being enumerated.'
-         *** First throw call stack:
-         (
-             0   CoreFoundation                      0x000000018799aca0 __exceptionPreprocess + 176
-             1   libobjc.A.dylib                     0x000000018745eb90 objc_exception_throw + 88
-             2   CoreFoundation                      0x0000000187a4998c -[__NSSingleObjectEnumerator init] + 0
-             3   AppKit                              0x000000018b82e49c -[NSMenuItem _titlePathForUserKeyEquivalents] + 172
-             4   AppKit                              0x000000018b82e240 -[NSMenuItem _fetchFreshUserKeyEquivalentInfo] + 72
-             5   AppKit                              0x000000018b82e13c -[NSMenuItem userKeyEquivalent] + 56
-             6   AppKit                              0x000000018c08bec0 -[NSMenuItem _desiredKeyEquivalent:] + 64
-             7   AppKit                              0x000000018b8454b4 -[NSMenu insertItem:atIndex:] + 604
-             8   DuckDuckGo.debug.dylib              0x
-         *** Terminating app due to uncaught exception 'NSGenericException', reason: '*** Collection <__NSArrayM: 0x600003c0a7c0> was mutated while being enumerated.'
-         *** First throw call stack:
-         (
-             0   CoreFoundation                      0x000000018799aca0 __exceptionPreprocess + 176
-             1   libobjc.A.dylib                     0x000000018745eb90 objc_exception_throw + 88
-             2   CoreFoundation                      0x0000000187a4998c -[__NSSingleObjectEnumerator init] + 0
-             3   AppKit                              0x000000018b82e49c -[NSMenuItem _titlePathForUserKeyEquivalents] + 172
-             4   AppKit                              0x000000018b82e240 -[NSMenuItem _fetchFreshUserKeyEquivalentInfo] + 72
-             5   AppKit                              0x000000018b82e13c -[NSMenuItem userKeyEquivalent] + 56
-             6   AppKit                              0x000000018c08bec0 -[NSMenuItem _desiredKeyEquivalent:] + 64
-             7   AppKit                              0x000000018b8454b4 -[NSMenu insertItem:atIndex:] + 604
-             8   DuckDuckGo.debug.dylib              0x000000010b0ee86c $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC03addG5Items33_EA0A2B0DCF19AB0FA0F1ECC6111E38C7LLyyYaFTY2_ + 1304
-             9   DuckDuckGo.debug.dylib              0x000000010b0ee0c9 $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC9targeting31subscriptionFeatureAvailability0I7Manager011moreOptionsG13IconsProvider14featureFlagger10onCompleteACyXl_0D11ServicesKit0ejK0_p0E00E    10  DuckDuckGo.debug.dylib              0x000000010b0f0f8d $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC9targeting31subscriptionFeatureAvailability0I7Manager011moreOptionsG13IconsProvider14featureFlagger10onCompleteACyXl_0D11ServicesKit0ejK0_p0E00E    11  DuckDuckGo.debug.dylib              0x000000010a35b429 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
-             12  DuckDuckGo.debug.dylib              0x000000010a35b595 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
-             13  libswift_Concurrency.dylib          0x000000027063083d _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
-         )
-         2025-07-09 12:35:26.439514+0000 DuckDuckGo[31381:106091] [General] An uncaught exception was raised
-         2025-07-09 12:35:26.441185+0000 DuckDuckGo[31381:106091] [General] *** Collection <__NSArrayM: 0x600003c0a7c0> was mutated while being enumerated.
-         2025-07-09 12:35:26.441313+0000 DuckDuckGo[31381:106091] [General] (
-             0   CoreFoundation                      0x000000018799aca0 __exceptionPreprocess + 176
-             1   libobjc.A.dylib                     0x000000018745eb90 objc_exception_throw + 88
-             2   CoreFoundation                      0x0000000187a4998c -[__NSSingleObjectEnumerator init] + 0
-             3   AppKit                              0x000000018b82e49c -[NSMenuItem _titlePathForUserKeyEquivalents] + 172
-             4   AppKit                              0x000000018b82e240 -[NSMenuItem _fetchFreshUserKeyEquivalentInfo] + 72
-             5   AppKit                              0x000000018b82e13c -[NSMenuItem userKeyEquivalent] + 56
-             6   AppKit                              0x000000018c08bec0 -[NSMenuItem _desiredKeyEquivalent:] + 64
-             7   AppKit                              0x000000018b8454b4 -[NSMenu insertItem:atIndex:] + 604
-             8   DuckDuckGo.debug.dylib              0x000000010b0ee86c $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC03addG5Items33_EA0A2B0DCF19AB0FA0F1ECC6111E38C7LLyyYaFTY2_ + 1304
-             9   DuckDuckGo.debug.dylib              0x000000010b0ee0c9 $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC9targeting31subscriptionFeatureAvailability0I7Manager011moreOptionsG13IconsProvider14featureFlagger10onCompleteACyXl_0D11ServicesKit0ejK0_p0E00E16AuthV1toV2Bridge_pAA04MorengO9Providing_pAJ0jR0_pyyctcfcyyYacfU_TQ1_ + 1
-             10  DuckDuckGo.debug.dylib              0x000000010b0f0f8d $s04DuckA18Go_Privacy_Browser19SubscriptionSubMenuC9targeting31subscriptionFeatureAvailability0I7Manager011moreOptionsG13IconsProvider14featureFlagger10onCompleteACyXl_0D11ServicesKit0ejK0_p0E00E16AuthV1toV2Bridge_pAA04MorengO9Providing_pAJ0jR0_pyyctcfcyyYacfU_TATQ0_ + 1
-             11  DuckDuckGo.debug.dylib              0x000000010a35b429 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
-             12  DuckDuckGo.debug.dylib              0x000000010a35b595 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
-             13  libswift_Concurrency.dylib          0x000000027063083d _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
-         )
-        */
-
         // Given
         mockAuthentication()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        mockSubscriptionManager.resultFeatures = [.paidAIChat]
         mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
-        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
 
         await waitForSubscriptionSubmenuBuilding()
 
@@ -501,10 +517,8 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     // MARK: - Default Browser Action and Add To Dock
 
-#if SPARKLE
     @MainActor
     func testWhenBrowserIsNotAddedToDockThenMenuItemIsVisible() {
-        dockCustomizer.didShowFeatureFromMoreOptionsMenu = true
         dockCustomizer.dockStatus = false
 
         setupMoreOptionsMenu()
@@ -515,7 +529,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenBrowserIsNotInTheDockAndIsNotSetAsDefaultThenTheOrderIsCorrect() {
-        dockCustomizer.didShowFeatureFromMoreOptionsMenu = true
         dockCustomizer.dockStatus = false
         defaultBrowserProvider.isDefault = false
 
@@ -525,7 +538,19 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
         XCTAssertEqual(moreOptionsMenu.items[2].title, UserText.setAsDefaultBrowser)
     }
-#endif
+
+    @MainActor
+    func testWhenAddingToDockIsNotSupportedThenAddToDockMenuItemIsNotVisible() {
+        defaultBrowserProvider.isDefault = false
+        dockCustomizer.supportsAddingToDock = false
+        dockCustomizer.dockStatus = false
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        XCTAssertNotEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
+        XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.setAsDefaultBrowser)
+    }
 
     @MainActor
     func testWhenBrowserIsAddedToDockThenMenuItemIsNotVisible() {
@@ -604,6 +629,20 @@ final class MoreOptionsMenuTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenTabIsDuckAiThenFireproofSiteItemIsPresentAndDisabled() throws {
+        let url = try XCTUnwrap("https://duck.ai".url)
+        let tab = Tab(content: .url(url, source: .link))
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+        tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.fireproofSite })
+        XCTAssertFalse(fireproofingItem.isEnabled)
+    }
+
+    @MainActor
     func testWhenTabSupportsFindInPageThenFindInPageItemIsPresentAndEnabled() throws {
         let tabContentsSupportingFindInPage: [Tab.TabContent] = [
             .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
@@ -632,9 +671,9 @@ final class MoreOptionsMenuTests: XCTestCase {
             .newtab,
             .settings(pane: nil),
             .bookmarks,
-            .history,
+            .anyHistoryPane,
             .onboarding,
-            .dataBrokerProtection
+            .dataBrokerProtection(.subscribed)
         ]
         for tabContent in tabContentsNotSupportingFindInPage {
             let tab = Tab(content: tabContent)
@@ -653,7 +692,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         let tabContentsSupportingSharing: [Tab.TabContent] = [
             .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
             .url(try XCTUnwrap("https://duckduckgo.com".url), credential: nil, source: .ui),
-            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui)
+            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui)
         ]
         for tabContent in tabContentsSupportingSharing {
             let tab = Tab(content: tabContent)
@@ -670,14 +710,13 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenTabDoesNotSupportSharingThenShareItemIsPresentAndDisabled() throws {
         let tabContentsNotSupportingSharing: [Tab.TabContent] = [
-            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui),
             .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
             .subscription(.aboutDuckDuckGo),
             .identityTheftRestoration(.aboutDuckDuckGo),
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -722,7 +761,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             .releaseNotes,
             .webExtensionUrl(.aboutDuckDuckGo),
             .newtab,
-            .history,
+            .anyHistoryPane,
             .bookmarks,
             .settings(pane: nil)
         ]
@@ -740,70 +779,77 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     // MARK: - Feedback sub-menu tests
 
-    func testCorrectItemsAreShown_whenNotInternalAndNotPrivacyProUser() {
+    func testCorrectItemsAreShown_whenNotInternalAndNotSubscriptionUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
                                   internalUserDecider: MockInternalUserDecider(),
-                                  featureFlagger: MockFeatureFlagger(),
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 2)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
+        XCTAssertTrue(sut.items.count == 4)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
     }
 
-    func testCorrectItemsAreShown_whenNotInternalUserAndPrivacyProUser() {
+    func testCorrectItemsAreShown_whenNotInternalUserAndSubscriptionUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(),
-                                  featureFlagger: MockFeatureFlagger(),
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: MockFeatureFlagger())
 
-        XCTAssertTrue(sut.items.count == 4)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendPProFeedback)
+        XCTAssertTrue(sut.items.count == 6)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
+        XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback)
     }
 
-    func testCorrectItemsAreShown_whenInternalUserAndNotPrivacyProUser() {
+    func testCorrectItemsAreShown_whenInternalUserAndNotSubscriptionUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: false),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),
-                                  featureFlagger: MockFeatureFlagger(),
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
-
-        XCTAssertTrue(sut.items.count == 4)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, "Copy Version")
-    }
-
-    func testCorrectItemsAreShown_whenInternalUserAndPrivacyProUser() {
-        let sut = FeedbackSubMenu(targetting: self,
-                                  authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
-                                  internalUserDecider: MockInternalUserDecider(isInternalUser: true),
-                                  featureFlagger: MockFeatureFlagger(),
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: MockFeatureFlagger())
 
         XCTAssertTrue(sut.items.count == 6)
-        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
-        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
-        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendPProFeedback)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
         XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
         XCTAssertEqual(sut.item(at: 5)?.title, "Copy Version")
     }
 
-    func testCorrectItemsAreShown_whenNewFeedbackFeatureFlagIsOn() {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.newFeedbackForm]
+    func testCorrectItemsAreShown_whenInternalUserAndSubscriptionUser() {
         let sut = FeedbackSubMenu(targetting: self,
                                   authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
                                   internalUserDecider: MockInternalUserDecider(isInternalUser: true),
-                                  featureFlagger: featureFlagger,
-                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: MockFeatureFlagger())
+
+        XCTAssertTrue(sut.items.count == 8)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, UserText.reportBrowserProblem)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.requestNewFeature)
+        XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback)
+        XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
+    }
+
+    func testCorrectItemsAreShown_whenNewFeedbackFeatureFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger()
+        let sut = FeedbackSubMenu(targetting: self,
+                                  authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
+                                  internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons(),
+                                  featureFlagger: featureFlagger)
 
         XCTAssertTrue(sut.items.count == 8)
         XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
@@ -811,9 +857,122 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(sut.item(at: 2)?.title, "Report a Browser Problem")
         XCTAssertEqual(sut.item(at: 3)?.title, "Request a New Feature")
         XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
-        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendPProFeedback)
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendSubscriptionFeedback)
         XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
         XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
+    }
+
+    @MainActor
+    func testOpenNewWindowItemsAreInCorrectPosition_whenOpenFireWindowByDefaultChanges() {
+        setupMoreOptionsMenu()
+
+        XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newWindowMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newBurnerWindowMenuItem)
+
+        setupMoreOptionsMenu(isFireWindowDefault: true)
+
+        XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newBurnerWindowMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newWindowMenuItem)
+    }
+
+    // MARK: - Free Trial Badge Visibility
+
+    @MainActor
+    func testSubscriptionBadge_ShowsWhenEligibleAndUnderCap() {
+        // Given
+        let persistor = MockFreeTrialBadgePersistor(initialCount: 3, cap: 4)
+
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
+
+        setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNotNil(subscriptionItem?.view, "Free trial badge should be shown when under view limit and eligible")
+    }
+
+    @MainActor
+    func testSubscriptionBadge_HidesWhenEligibleAndAtOrAboveCap() {
+        // Given
+        let persistor = MockFreeTrialBadgePersistor(initialCount: 4, cap: 4)
+
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+        mockSubscriptionManager.isEligibleForFreeTrialResult = true
+
+        setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNil(subscriptionItem?.view, "Free trial badge should be hidden when view limit has been reached")
+    }
+
+    // MARK: - Win-back Offer
+
+    @MainActor
+    func testSubscriptionBadge_ShowsWhenWinBackOfferIsAvailable() {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+
+        setupMoreOptionsMenu()
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openWinBackOfferPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNotNil(subscriptionItem?.view, "Win-back offer badge should be shown when available")
+    }
+
+    @MainActor
+    func testSubscriptionBadge_HidesWhenWinBackOfferIsNotAvailable() {
+        // Given
+        mockWinBackOfferVisibilityManager.isOfferAvailable = false
+
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
+
+        setupMoreOptionsMenu()
+
+        // When
+        let subscriptionItem = moreOptionsMenu.items.first {
+            $0.action == #selector(MoreOptionsMenu.openSubscriptionPurchasePage(_:))
+        }
+
+        // Then
+        XCTAssertNotNil(subscriptionItem, "Subscription item should be present")
+        XCTAssertNil(subscriptionItem?.view, "Win-back offer badge should be hidden when not available")
+    }
+}
+
+// MARK: - Test Doubles
+
+private final class MockFreeTrialBadgePersistor: FreeTrialBadgePersisting {
+    private(set) var viewCount: Int
+    private let cap: Int
+
+    init(initialCount: Int, cap: Int) {
+        self.viewCount = initialCount
+        self.cap = cap
+    }
+
+    var hasReachedViewLimit: Bool { viewCount >= cap }
+
+    func incrementViewCount() {
+        if viewCount < cap { viewCount += 1 }
     }
 }
 
@@ -868,8 +1027,19 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
     }
     var isAvailableSubject = PassthroughSubject<Bool, Never>()
 
+    var mockFeatureFlagEnabled: Bool?
+    var mockIsAvailableIgnoringPurchaseCapability: Bool?
+
+    var isFeatureFlagEnabled: Bool {
+        mockFeatureFlagEnabled ?? featureAvailable
+    }
+
     var isAvailable: Bool {
         featureAvailable
+    }
+
+    var isAvailableIgnoringPurchaseCapability: Bool {
+        mockIsAvailableIgnoringPurchaseCapability ?? featureAvailable
     }
 
     var isAvailablePublisher: AnyPublisher<Bool, Never> {
@@ -881,8 +1051,135 @@ final class MockFreemiumDBPFeature: FreemiumDBPFeature {
 
 final class MockFreemiumDBPPresenter: FreemiumDBPPresenter {
     var didCallShowFreemium = false
+    var lastEntryPoint: FreemiumDBPEntryPoint?
 
-    func showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManagerProtocol? = nil) {
+    func showFreemiumDBPAndSetActivated(entryPoint: FreemiumDBPEntryPoint,
+                                        windowControllersManager: WindowControllersManagerProtocol? = nil) {
         didCallShowFreemium = true
+        lastEntryPoint = entryPoint
+    }
+}
+
+// MARK: - Lazy submenu population tests
+
+@MainActor
+final class LazyMoreOptionsMenuSubMenuTests: XCTestCase {
+
+    // MARK: FeedbackSubMenu
+
+    func testFeedbackSubMenuHasPlaceholderBeforeOpenWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = FeedbackSubMenu(targetting: NSObject(),
+                                     authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
+                                     internalUserDecider: MockInternalUserDecider(),
+                                     moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                     featureFlagger: featureFlagger)
+        XCTAssertEqual(submenu.items.count, 1)
+    }
+
+    func testFeedbackSubMenuIsPopulatedAfterMenuNeedsUpdateWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = FeedbackSubMenu(targetting: self,
+                                     authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
+                                     internalUserDecider: MockInternalUserDecider(),
+                                     moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                     featureFlagger: featureFlagger)
+        submenu.menuNeedsUpdate(submenu)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    func testFeedbackSubMenuIsBuiltEagerlyWhenFlagIsOff() {
+        let featureFlagger = MockFeatureFlagger()
+        let submenu = FeedbackSubMenu(targetting: NSObject(),
+                                     authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
+                                     internalUserDecider: MockInternalUserDecider(),
+                                     moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                     featureFlagger: featureFlagger)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    // MARK: ZoomSubMenu
+
+    func testZoomSubMenuHasPlaceholderBeforeOpenWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = ZoomSubMenu(targetting: NSObject(),
+                                  tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
+                                  moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                  featureFlagger: featureFlagger)
+        XCTAssertEqual(submenu.items.count, 1)
+    }
+
+    func testZoomSubMenuIsPopulatedAfterMenuNeedsUpdateWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let tabCollectionViewModel = TabCollectionViewModel(isPopup: false)
+        let submenu = ZoomSubMenu(targetting: self,
+                                  tabCollectionViewModel: tabCollectionViewModel,
+                                  moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                  featureFlagger: featureFlagger)
+        submenu.menuNeedsUpdate(submenu)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    func testZoomSubMenuIsBuiltEagerlyWhenFlagIsOff() {
+        let featureFlagger = MockFeatureFlagger()
+        let submenu = ZoomSubMenu(targetting: NSObject(),
+                                  tabCollectionViewModel: TabCollectionViewModel(isPopup: false),
+                                  moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                  featureFlagger: featureFlagger)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    // MARK: LoginsSubMenu
+
+    func testLoginsSubMenuHasPlaceholderBeforeOpenWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = LoginsSubMenu(targetting: NSObject(),
+                                    passwordManagerCoordinator: PasswordManagerCoordinator(bitwardenManagement: nil),
+                                    moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                    featureFlagger: featureFlagger)
+        XCTAssertEqual(submenu.items.count, 1)
+    }
+
+    func testLoginsSubMenuIsPopulatedAfterMenuNeedsUpdateWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = LoginsSubMenu(targetting: self,
+                                    passwordManagerCoordinator: PasswordManagerCoordinator(bitwardenManagement: nil),
+                                    moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                    featureFlagger: featureFlagger)
+        submenu.menuNeedsUpdate(submenu)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    func testLoginsSubMenuIsBuiltEagerlyWhenFlagIsOff() {
+        let featureFlagger = MockFeatureFlagger()
+        let submenu = LoginsSubMenu(targetting: NSObject(),
+                                    passwordManagerCoordinator: PasswordManagerCoordinator(bitwardenManagement: nil),
+                                    moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider(),
+                                    featureFlagger: featureFlagger)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    // MARK: HelpSubMenu
+
+    func testHelpSubMenuHasPlaceholderBeforeOpenWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = HelpSubMenu(targetting: NSObject(),
+                                  featureFlagger: featureFlagger)
+        XCTAssertEqual(submenu.items.count, 1)
+    }
+
+    func testHelpSubMenuIsPopulatedAfterMenuNeedsUpdateWhenFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger(featuresStub: ["lazyMenuRebuild": true])
+        let submenu = HelpSubMenu(targetting: self,
+                                  featureFlagger: featureFlagger)
+        submenu.menuNeedsUpdate(submenu)
+        XCTAssertGreaterThan(submenu.items.count, 1)
+    }
+
+    func testHelpSubMenuIsBuiltEagerlyWhenFlagIsOff() {
+        let featureFlagger = MockFeatureFlagger()
+        let submenu = HelpSubMenu(targetting: NSObject(),
+                                  featureFlagger: featureFlagger)
+        XCTAssertGreaterThan(submenu.items.count, 1)
     }
 }

@@ -17,13 +17,12 @@
 //
 
 import Foundation
-import BrowserServicesKit
 import Configuration
 
 struct VPNAgentConfigurationURLProvider: ConfigurationURLProviding {
     func url(for configuration: Configuration) -> URL {
         guard configuration == .privacyConfiguration else { fatalError("\(configuration.rawValue) is not supported on this target") }
 
-        return URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json")!
+        return URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/v6/macos-config.json")!
     }
 }

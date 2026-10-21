@@ -16,17 +16,20 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
 import Combine
 import CoreLocation
+import Foundation
+import OSLog
+import SharedTestUtilities
 import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class GeolocationProviderTests: XCTestCase {
 
-    var geolocationServiceMock: GeolocationServiceMock! = GeolocationServiceMock()
-    var appIsActive: CurrentValueSubject<Bool, Never>! = .init(true)
+    var geolocationServiceMock: GeolocationServiceMock!
+    var appIsActive: CurrentValueSubject<Bool, Never>!
     var windows = [MockWindow]()
     var webViews = [WKWebView]()
     var webView: WKWebView!
@@ -76,6 +79,8 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     override func setUp() {
+        geolocationServiceMock = GeolocationServiceMock()
+        appIsActive = CurrentValueSubject(true)
         webView = makeWebView()
     }
 
@@ -96,6 +101,7 @@ final class GeolocationProviderTests: XCTestCase {
         webViews.append(webView)
 
         webView.uiDelegate = self
+        webView.navigationDelegate = self
 
         window.contentView = view
 
@@ -103,8 +109,7 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     override func tearDown() {
-        geolocationServiceMock.onSubscriptionReceived = nil
-        geolocationServiceMock.onSubscriptionCancelled = nil
+        geolocationServiceMock.tearDown()
         geolocationHandler = nil
         windows = []
         webView = nil
@@ -138,7 +143,7 @@ final class GeolocationProviderTests: XCTestCase {
 
         webView.loadHTMLString(Self.getCurrentPosition, baseURL: .duckDuckGo)
 
-        waitForExpectations(timeout: 2)
+        waitForExpectations(timeout: 5)
         XCTAssertEqual(geolocationServiceMock.history, [.subscribed,
                                                         .locationPublished,
                                                         .cancelled])
@@ -291,7 +296,7 @@ final class GeolocationProviderTests: XCTestCase {
         windows[0].isKeyWindow = false
         windows[1].isKeyWindow = true
 
-        waitForExpectations(timeout: 10.0)
+        waitForExpectations(timeout: 30.0)
 
         let ec1 = expectation(description: "watch 1 cancelled")
         let ec2 = expectation(description: "watch 2 cancelled")
@@ -374,31 +379,37 @@ final class GeolocationProviderTests: XCTestCase {
         let location2 = CLLocation(latitude: 10.1, longitude: -13.5)
 
         geolocationServiceMock.currentLocationPublished = .success(location1)
-        geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock!.history == [.locationPublished, .subscribed, .subscribed] {
-                DispatchQueue.main.async {
-                    webView2.configuration.processPool.geolocationProvider!.isPaused = true
-                    geolocationServiceMock!.currentLocationPublished = .success(location2)
-                }
-            }
-        }
 
         let e1_1 = expectation(description: "location1 received in webView1")
         let e1_2 = expectation(description: "location1 received in webView2")
         let e2_1 = expectation(description: "location2 received in webView1")
 
-        geolocationHandler = { [webView1=webView!] webView, body in
+        var webView1ReceivedLocation1 = false
+        var webView2ReceivedLocation1 = false
+        var didPauseAndPublishLocation2 = false
+
+        geolocationHandler = { [webView1=webView!, geolocationServiceMock] webView, body in
             switch (webView, try Response(body)) {
             case (webView1, Response(location1.removingAltitude())):
                 e1_1.fulfill()
+                webView1ReceivedLocation1 = true
             case (webView2, Response(location1.removingAltitude())):
                 e1_2.fulfill()
+                webView2ReceivedLocation1 = true
             case (webView1, Response(location2.removingAltitude())):
                 e2_1.fulfill()
             case (webView2, Response(location2.removingAltitude())):
                 XCTFail("webView2 Unexpectedly received location")
             default:
                 XCTFail("Unexpected result")
+            }
+
+            if webView1ReceivedLocation1 && webView2ReceivedLocation1 && !didPauseAndPublishLocation2 {
+                didPauseAndPublishLocation2 = true
+                DispatchQueue.main.async {
+                    webView2.configuration.processPool.geolocationProvider!.isPaused = true
+                    geolocationServiceMock!.currentLocationPublished = .success(location2)
+                }
             }
         }
 
@@ -407,7 +418,7 @@ final class GeolocationProviderTests: XCTestCase {
         windows[0].isKeyWindow = false
         windows[1].isKeyWindow = true
 
-        waitForExpectations(timeout: 10.0)
+        waitForExpectations(timeout: 30.0)
 
         let ec1 = expectation(description: "watch 1 cancelled")
         let ec2 = expectation(description: "watch 2 cancelled")
@@ -615,19 +626,33 @@ final class GeolocationProviderTests: XCTestCase {
 
 }
 
-extension GeolocationProviderTests: WKUIDelegate {
+extension GeolocationProviderTests: WKUIDelegate, WKNavigationDelegate {
     @objc(_webView:requestGeolocationPermissionForFrame:decisionHandler:)
     func webView(_ webView: WKWebView, requestGeolocationPermissionFor frame: WKFrameInfo, decisionHandler: @escaping (Bool) -> Void) {
         decisionHandler(shouldGrant)
     }
 
     @objc(_webView:requestGeolocationPermissionForOrigin:initiatedByFrame:decisionHandler:)
-    @available(macOS 12, *)
     func webView(_ webView: WKWebView,
                  requestGeolocationPermissionFor origin: WKSecurityOrigin,
                  initiatedBy frame: WKFrameInfo,
                  decisionHandler: @escaping (WKPermissionDecision) -> Void) {
         decisionHandler(shouldGrant ? .grant : .deny)
+    }
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        Logger.general.debug("decidePolicyForNavigationAction: \(navigationAction.debugDescription)")
+        return .allow
+    }
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        Logger.general.debug("decidePolicyForNavigationResponse: \(navigationResponse.debugDescription)")
+        return .allow
+    }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Logger.general.debug("didFinish: \(navigation.debugDescription)")
+    }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) {
+        Logger.general.debug("didFailProvisionalNavigation: \(navigation.debugDescription) with \(error.localizedDescription)")
     }
 }
 

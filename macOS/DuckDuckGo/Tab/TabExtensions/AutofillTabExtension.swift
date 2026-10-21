@@ -21,7 +21,9 @@ import BrowserServicesKit
 import Combine
 import Foundation
 import PixelKit
+import PrivacyConfig
 import SecureStorage
+import enum UserScript.UserScriptError
 
 final class AutofillTabExtension: TabExtension {
 
@@ -34,7 +36,7 @@ final class AutofillTabExtension: TabExtension {
     static var featureFlagger = NSApp.delegateTyped.featureFlagger
 
     static var vaultManagerProvider: (SecureVaultManagerDelegate) -> AutofillSecureVaultDelegate = { delegate in
-        let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
+        let manager = SecureVaultManager(passwordManager: Application.appDelegate.passwordManagerCoordinator,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
                                          tld: Application.appDelegate.tld)
         manager.delegate = delegate
@@ -59,19 +61,22 @@ final class AutofillTabExtension: TabExtension {
     private var emailManager: AutofillEmailDelegate?
     private var vaultManager: AutofillSecureVaultDelegate?
     private let credentialsImportManager: AutofillCredentialsImportManager
-    private var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
+    private var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let isBurner: Bool
 
     @Published var autofillDataToSave: AutofillData?
 
     init(autofillUserScriptPublisher: some Publisher<WebsiteAutofillUserScript?, Never>,
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          isBurner: Bool) {
         self.isBurner = isBurner
         self.privacyConfigurationManager = privacyConfigurationManager
         self.credentialsImportManager = AutofillCredentialsImportManager(isBurnerWindow: isBurner)
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
 
         autofillUserScriptCancellable = autofillUserScriptPublisher.sink { [weak self] autofillScript in
             guard let self, let autofillScript else { return }
@@ -95,6 +100,7 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
 
     func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
         let prefs = AutofillPreferences()
+        guard !prefs.isManagedByExtension else { return false }
         switch type {
         case .card:
             return prefs.askToSavePaymentMethods
@@ -108,7 +114,7 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
     }
 
     func secureVaultManagerShouldSaveData(_: BrowserServicesKit.SecureVaultManager) -> Bool {
-        return !isBurner
+        return !isBurner && !AutofillPreferences().isManagedByExtension
     }
 
     func secureVaultManager(_: SecureVaultManager, promptUserToStoreAutofillData data: AutofillData, withTrigger trigger: AutofillUserScript.GetTriggerType?) {
@@ -133,6 +139,12 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
     }
 
     func secureVaultManager(_: SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {
+        // no-op on macOS
+    }
+
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToImportCredentialsForDomain domain: String,
+                            completionHandler: @escaping (Bool) -> Void) {
         // no-op on macOS
     }
 
@@ -206,12 +218,19 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
     }
 
     func secureVaultManager(_: SecureVaultManager, didRequestRuntimeConfigurationForDomain domain: String, completionHandler: @escaping (String?) -> Void) {
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                                         properties: buildContentScopePropertiesForDomain(domain))
-            .build()
-            .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                 properties: buildContentScopePropertiesForDomain(domain))
+                .build()
+                .buildRuntimeConfigResponse()
 
-        completionHandler(runtimeConfiguration)
+            completionHandler(runtimeConfiguration)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 
     private func buildContentScopePropertiesForDomain(_ domain: String) -> ContentScopeProperties {
@@ -222,10 +241,13 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
             supportedFeatures.passwordGeneration = false
         }
 
-        return ContentScopeProperties(gpcEnabled: WebTrackingProtectionPreferences.shared.isGPCEnabled,
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
+
+        return ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                       sessionKey: autofillScript?.sessionKey ?? "",
                                       messageSecret: autofillScript?.messageSecret ?? "",
-                                      featureToggles: supportedFeatures)
+                                      featureToggles: supportedFeatures,
+                                      themeVariant: themeVariant)
     }
 }
 

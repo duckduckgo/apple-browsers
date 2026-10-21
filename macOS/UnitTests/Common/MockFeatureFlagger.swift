@@ -16,10 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import FeatureFlags
-
-typealias MockFeatureFlagger = BrowserServicesKit.MockFeatureFlagger
+import PrivacyConfig
+import FeatureFlags_macOS
 
 extension MockFeatureFlagger {
 
@@ -32,6 +30,10 @@ extension MockFeatureFlagger {
                 result[feature.rawValue] = true
             }
         }
+    }
+
+    func enableFeatures(_ features: [FeatureFlag]) {
+        enabledFeatureFlags = features
     }
 
 }

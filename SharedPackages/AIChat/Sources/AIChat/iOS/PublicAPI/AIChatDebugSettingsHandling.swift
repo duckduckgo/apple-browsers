@@ -22,12 +22,15 @@ import Foundation
 public protocol AIChatDebugSettingsHandling {
     var messagePolicyHostname: String? { get set }
     var customURL: String? { get set }
+    var contextualSessionTimerSeconds: Int? { get set }
     func reset()
+    func matchesCustomURL(_ url: URL) -> Bool
 }
 
 public class AIChatDebugSettings: AIChatDebugSettingsHandling {
     private let hostnameUserDefaultsKey = "aichat.debug.messagePolicyHostname"
     private let customURLUserDefaultsKey = "aichat.debug.customURL"
+    private let contextualSessionTimerSecondsKey = "aichat.debug.contextualSessionTimerSeconds"
     private let userDefault: UserDefaults
 
     public init(userDefault: UserDefaults = .standard) {
@@ -62,9 +65,40 @@ public class AIChatDebugSettings: AIChatDebugSettingsHandling {
         }
     }
 
+    public var contextualSessionTimerSeconds: Int? {
+        get {
+            let value = userDefault.integer(forKey: contextualSessionTimerSecondsKey)
+            return value > 0 ? value : nil
+        }
+        set {
+            if let newValue = newValue, newValue > 0 {
+                userDefault.set(newValue, forKey: contextualSessionTimerSecondsKey)
+            } else {
+                userDefault.removeObject(forKey: contextualSessionTimerSecondsKey)
+            }
+        }
+    }
+
     public func reset() {
         messagePolicyHostname = nil
         customURL = nil
+        contextualSessionTimerSeconds = nil
+    }
+
+    /// Checks if the given URL belongs to the custom debug URL's origin by comparing scheme and host.
+    /// Path and query are ignored so that in-host redirects on a dev frontend (for example `/` to `/chat`)
+    /// still count as the debug Duck.ai, matching how `isDuckAIURL` treats the production host.
+    /// - Parameter url: The URL to compare against the custom debug URL
+    /// - Returns: `true` if the URL shares the custom debug URL's scheme and host, `false` otherwise
+    public func matchesCustomURL(_ url: URL) -> Bool {
+        guard let customURLString = customURL?.trimmingCharacters(in: .whitespaces),
+              let customComponents = URLComponents(string: customURLString),
+              let currentComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return false
+        }
+
+        return customComponents.scheme == currentComponents.scheme &&
+               customComponents.host == currentComponents.host
     }
 }
 #endif

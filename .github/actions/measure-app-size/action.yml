@@ -1,0 +1,69 @@
+name: 'Measure iOS App Size'
+description: 'Extract download and installation sizes from iOS App Thinning Size Report and send pixel metrics'
+author: 'DuckDuckGo'
+
+inputs:
+  report-file:
+    description: 'Path to the App Thinning Size Report.txt file'
+    required: true
+  download-size-pixel-name:
+    description: 'Pixel name for download size metric'
+    required: false
+  installation-size-pixel-name:
+    description: 'Pixel name for installation size metric'
+    required: false
+  app-version:
+    description: 'App version to include in pixel data'
+    required: false
+  build-number:
+    description: 'Build number to include in pixel data'
+    required: false
+  suffix:
+    description: 'Optional suffix to append to version (applies only for ad-hoc builds)'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Parse App Thinning Size Report
+      id: parse
+      shell: bash
+      run: |
+        echo "Parsing App Thinning Size Report..."
+        ${{ github.action_path }}/parse_app_size.sh "${{ inputs.report-file }}"
+
+    - name: Build app version string
+      id: app-version
+      shell: bash
+      run: |
+        # Concatenate app version, build number, and optional suffix (e.g., 7.10.15.5 or 7.10.15.5.adhoc)
+        VERSION="${{ inputs.app-version }}.${{ inputs.build-number }}${{ inputs.suffix != '' && format('.{0}', inputs.suffix) || '' }}"
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Sanitize sizes
+      id: sanitize-sizes
+      shell: bash
+      run: |
+        # Remove unit suffixes (MB, GB, etc.) to get clean numeric values for easier metric transformations
+        SANITIZED_DOWNLOAD_SIZE=$(echo "${{ steps.parse.outputs.download_size }}" | sed 's/[A-Z]*$//')
+        SANITIZED_INSTALLATION_SIZE=$(echo "${{ steps.parse.outputs.installation_size }}" | sed 's/[A-Z]*$//')
+        echo "download_size=${SANITIZED_DOWNLOAD_SIZE}" >> $GITHUB_OUTPUT
+        echo "installation_size=${SANITIZED_INSTALLATION_SIZE}" >> $GITHUB_OUTPUT
+
+    - name: Send Download Size Pixel
+      if: ${{ inputs.download-size-pixel-name != '' }}
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: ${{ inputs.download-size-pixel-name }}
+        query-params: |
+          size: ${{ steps.sanitize-sizes.outputs.download_size }}
+          appVersion: ${{ steps.app-version.outputs.version }}
+
+    - name: Send Installation Size Pixel
+      if: ${{ inputs.installation-size-pixel-name != '' }}
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: ${{ inputs.installation-size-pixel-name }}
+        query-params: |
+          size: ${{ steps.sanitize-sizes.outputs.installation_size }}
+          appVersion: ${{ steps.app-version.outputs.version }}

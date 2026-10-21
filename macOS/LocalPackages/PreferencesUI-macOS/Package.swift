@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,13 +6,13 @@ import PackageDescription
 let package = Package(
     name: "PreferencesUI-macOS",
     defaultLocalization: "en",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("12.3") ],
     products: [
         .library(name: "PreferencesUI-macOS", targets: ["PreferencesUI-macOS"]),
     ],
     dependencies: [
         .package(path: "../SwiftUIExtensions"),
-        .package(path: "../../../SharedPackages/DesignResourcesKit")
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit")
     ],
     targets: [
         .target(

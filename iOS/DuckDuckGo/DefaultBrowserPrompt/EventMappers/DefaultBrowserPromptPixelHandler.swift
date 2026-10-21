@@ -19,25 +19,35 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Core
+import PixelKit
 import SetDefaultBrowserCore
 
 final class DefaultBrowserPromptPixelHandler: EventMapping<DefaultBrowserPromptEvent>, DefaultBrowserPromptEventMapping {
-    private let pixelFiring: PixelFiring.Type
+    private let pixelFiring: (any PixelKitFiring)?
 
-    public init(pixelFiring: PixelFiring.Type = Pixel.self) {
+    public init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.pixelFiring = pixelFiring
 
         super.init { event, _, _, _ in
             switch event {
-            case let .modalShown(numberOfModalShown):
-                pixelFiring.fire(.defaultBrowserPromptModalShown, withAdditionalParameters: Self.parameters(forNumberOfModalsShown: numberOfModalShown))
-            case .modalDismissed:
-                pixelFiring.fire(.defaultBrowserPromptModalClosedButtonTapped, withAdditionalParameters: [:])
-            case .modalDismissedPermanently:
-                pixelFiring.fire(.defaultBrowserPromptModalDoNotAskAgainButtonTapped, withAdditionalParameters: [:])
-            case let .modalActioned(numberOfModalShown):
-                pixelFiring.fire(.defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped, withAdditionalParameters: Self.parameters(forNumberOfModalsShown: numberOfModalShown))
+            case let .activeModalShown(numberOfModalShown):
+                pixelFiring?.fire(Pixel.Event.defaultBrowserPromptModalShown, options: .parameters(Self.parameters(forNumberOfModalsShown: numberOfModalShown)))
+            case .activeModalDismissed:
+                pixelFiring?.fire(Pixel.Event.defaultBrowserPromptModalClosedButtonTapped, options: .parameters([:]))
+            case .activeModalDismissedPermanently:
+                pixelFiring?.fire(Pixel.Event.defaultBrowserPromptModalDoNotAskAgainButtonTapped, options: .parameters([:]))
+            case let .activeModalActioned(numberOfModalShown):
+                pixelFiring?.fire(Pixel.Event.defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped, options: .parameters(Self.parameters(forNumberOfModalsShown: numberOfModalShown)))
+            case .inactiveModalShown:
+                pixelFiring?.fire(Pixel.Event.defaultBrowserPromptInactiveUserModalShown, options: .parameters([:]))
+            case .inactiveModalDismissed:
+                pixelFiring?.fire(Pixel.Event.defaultBrowserPromptInactiveUserModalClosedButtonTapped, options: .parameters([:]))
+            case .inactiveModalActioned:
+                pixelFiring?.fire(Pixel.Event.defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped, options: .parameters([:]))
+            case .inactiveModalMoreProtectionsAction:
+                pixelFiring?.fire(Pixel.Event.defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped, options: .parameters([:]))
             }
         }
     }

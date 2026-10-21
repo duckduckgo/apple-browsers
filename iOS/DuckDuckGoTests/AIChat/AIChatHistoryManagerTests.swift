@@ -1,0 +1,254 @@
+//
+//  AIChatHistoryManagerTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+import Combine
+import AIChat
+import AIChatTestingUtilities
+@testable import DuckDuckGo
+
+@MainActor
+final class AIChatHistoryManagerTests: XCTestCase {
+
+    private var mockSuggestionsReader: MockAIChatSuggestionsReader!
+    private var viewModel: AIChatSuggestionsViewModel!
+    private var mockHistoryCleaner: MockHistoryCleaner!
+    private var mockChatSyncCleaner: MockAIChatSyncCleaning!
+    private var sut: AIChatHistoryManager!
+
+    override func setUp() {
+        super.setUp()
+        mockSuggestionsReader = MockAIChatSuggestionsReader()
+        viewModel = AIChatSuggestionsViewModel()
+
+        let historyCleaner = MockHistoryCleaner()
+        mockHistoryCleaner = historyCleaner
+
+        mockChatSyncCleaner = MockAIChatSyncCleaning()
+
+        sut = AIChatHistoryManager(
+            suggestionsReader: mockSuggestionsReader,
+            aiChatDeleter: AIChatDeleter(
+                historyCleanerProvider: { _, _ in historyCleaner },
+                aiChatSyncCleaner: mockChatSyncCleaner
+            ),
+            viewModel: viewModel,
+            isFireTab: false
+        )
+    }
+
+    override func tearDown() {
+        sut = nil
+        viewModel = nil
+        mockHistoryCleaner = nil
+        mockSuggestionsReader = nil
+        mockChatSyncCleaner = nil
+        super.tearDown()
+    }
+
+    // MARK: - Text Subscription Tests
+
+    func testSubscribeToTextChanges_FetchesSuggestionsOnTextChange() async {
+        let textSubject = PassthroughSubject<String, Never>()
+        sut.subscribeToTextChanges(textSubject)
+
+        let expectedSuggestions = [
+            AIChatSuggestion(id: "1", title: "Test Chat", isPinned: false, chatId: "chat-1")
+        ]
+        mockSuggestionsReader.suggestionsToReturn = (pinned: [], recent: expectedSuggestions)
+
+        textSubject.send("test query")
+
+        let predicate = NSPredicate { _, _ in
+            self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
+        }
+        let exp = expectation(for: predicate, evaluatedWith: nil)
+        await fulfillment(of: [exp], timeout: 5.0)
+
+        XCTAssertEqual(mockSuggestionsReader.fetchSuggestionsCallCount, 1)
+        XCTAssertEqual(mockSuggestionsReader.lastQuery, "test query")
+    }
+
+    func testSubscribeToTextChanges_EmptyQueryFetchesRecentChats() async {
+        let textSubject = PassthroughSubject<String, Never>()
+        sut.subscribeToTextChanges(textSubject)
+
+        textSubject.send("")
+
+        let predicate = NSPredicate { _, _ in
+            self.mockSuggestionsReader.fetchSuggestionsCallCount == 1
+        }
+        let exp = expectation(for: predicate, evaluatedWith: nil)
+        await fulfillment(of: [exp], timeout: 5.0)
+
+        XCTAssertNil(mockSuggestionsReader.lastQuery)
+    }
+
+    // MARK: - TearDown Tests
+
+    func testTearDown_CleansUpResources() {
+        sut.tearDown()
+
+        XCTAssertTrue(mockSuggestionsReader.tearDownCalled)
+        XCTAssertTrue(viewModel.filteredSuggestions.isEmpty)
+    }
+
+    func testTearDown_CancelsPendingFetchTask() async {
+        let textSubject = PassthroughSubject<String, Never>()
+        sut.subscribeToTextChanges(textSubject)
+
+        // Trigger a fetch
+        textSubject.send("query")
+
+        // Immediately tear down
+        sut.tearDown()
+
+        XCTAssertTrue(mockSuggestionsReader.tearDownCalled)
+    }
+
+    // MARK: - hasSuggestions Tests
+
+    func testWhenNoSuggestionsThenHasSuggestionsIsFalse() {
+        XCTAssertFalse(sut.hasSuggestions)
+    }
+
+    func testWhenSuggestionsExistThenHasSuggestionsIsTrue() {
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "1", title: "Chat", isPinned: false, chatId: "c1")
+        ])
+
+        XCTAssertTrue(sut.hasSuggestions)
+    }
+
+    func testWhenSuggestionsClearedThenHasSuggestionsReturnsFalse() {
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "1", title: "Chat", isPinned: false, chatId: "c1")
+        ])
+        XCTAssertTrue(sut.hasSuggestions)
+
+        viewModel.clearAllChats()
+
+        XCTAssertFalse(sut.hasSuggestions)
+    }
+
+    // MARK: - hasSuggestionsPublisher Tests
+
+    func testWhenSuggestionsChangeThenPublisherEmitsExpectedValues() {
+        var emittedValues: [Bool] = []
+        let cancellable = sut.hasSuggestionsPublisher
+            .sink { emittedValues.append($0) }
+
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "1", title: "Chat", isPinned: false, chatId: "c1")
+        ])
+        viewModel.clearAllChats()
+
+        XCTAssertEqual(emittedValues, [false, true, false])
+        cancellable.cancel()
+    }
+
+    func testWhenSuggestionsRemainEmptyThenPublisherDeduplicates() {
+        var emittedValues: [Bool] = []
+        let cancellable = sut.hasSuggestionsPublisher
+            .sink { emittedValues.append($0) }
+
+        // Multiple updates that keep suggestions empty
+        viewModel.setChats(pinned: [], recent: [])
+        viewModel.setChats(pinned: [], recent: [])
+
+        // Should only get the initial false, duplicates removed
+        XCTAssertEqual(emittedValues, [false])
+        cancellable.cancel()
+    }
+
+    func testWhenSuggestionsRemainNonEmptyThenPublisherDeduplicates() {
+        var emittedValues: [Bool] = []
+        let cancellable = sut.hasSuggestionsPublisher
+            .sink { emittedValues.append($0) }
+
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "1", title: "Chat 1", isPinned: false, chatId: "c1")
+        ])
+        viewModel.setChats(pinned: [], recent: [
+            AIChatSuggestion(id: "2", title: "Chat 2", isPinned: false, chatId: "c2")
+        ])
+
+        // initial false, then true — second true is deduplicated
+        XCTAssertEqual(emittedValues, [false, true])
+        cancellable.cancel()
+    }
+
+    // MARK: - SyncCleaner Tests
+
+    func testRemoveChatSuggestion_RecordsDeletionWithSyncCleaner() async {
+        let chat = AIChatSuggestion(id: "1", title: "Test Chat", isPinned: false, chatId: "chat-1")
+        sut.deleteChatSuggestion(suggestion: chat)
+
+        let predicate = NSPredicate { _, _ in
+            self.mockChatSyncCleaner.recordChatDeletionCalls == ["chat-1"]
+        }
+        let exp = expectation(for: predicate, evaluatedWith: nil)
+        await fulfillment(of: [exp], timeout: 5.0)
+    }
+}
+
+// MARK: - Mock Classes
+
+@MainActor
+private final class MockAIChatSuggestionsReader: AIChatSuggestionsReading {
+    var suggestionsToReturn: (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) = ([], [])
+    var fetchSuggestionsCallCount = 0
+    var lastQuery: String?
+    var lastMaxChats: Int?
+    var tearDownCalled = false
+    var maxHistoryCount: Int = 10
+
+    func fetchSuggestions(query: String?, maxChats: Int) async -> (pinned: [AIChatSuggestion], recent: [AIChatSuggestion]) {
+        fetchSuggestionsCallCount += 1
+        lastQuery = query
+        lastMaxChats = maxChats
+        return suggestionsToReturn
+    }
+
+    func tearDown() {
+        tearDownCalled = true
+    }
+}
+
+private final class MockHistoryCleaner: HistoryCleaning {
+    var cleanAIChatHistoryResult: Result<Void, Error> = .success(())
+    private(set) var cleanAIChatHistoryCallCount = 0
+
+    var deleteAIChatResult: Result<Void, Error> = .success(())
+    private(set) var deleteAIChatCalls: [String] = []
+
+    func cleanAIChatHistory() async -> Result<Void, Error> {
+        cleanAIChatHistoryCallCount += 1
+        return cleanAIChatHistoryResult
+    }
+
+    func deleteAIChat(chatID: String) async -> Result<Void, Error> {
+        deleteAIChatCalls.append(chatID)
+        return deleteAIChatResult
+    }
+
+    func deleteAIChats(chatIDs: [String]) async -> Result<Void, Error> {
+        .success(())
+    }
+}

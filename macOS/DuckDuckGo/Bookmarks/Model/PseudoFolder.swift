@@ -18,11 +18,12 @@
 
 import AppKit
 import Foundation
+import DesignResourcesKitIcons
 
 final class PseudoFolder: Equatable {
 
-    static let favorites = PseudoFolder(id: UUID().uuidString, name: UserText.favorites, icon: .favoriteFilledBorder)
-    static let bookmarks = PseudoFolder(id: UUID().uuidString, name: UserText.bookmarks, icon: .bookmarksFolder)
+    static let favorites = PseudoFolder(id: UUID().uuidString, name: UserText.favorites, icon: DesignSystemImages.Color.Size16.favorite)
+    static let bookmarks = PseudoFolder(id: UUID().uuidString, name: UserText.bookmarks, icon: DesignSystemImages.Color.Size16.bookmarksNew)
 
     let id: String
     let name: String

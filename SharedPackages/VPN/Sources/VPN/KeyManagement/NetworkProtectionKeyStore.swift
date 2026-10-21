@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 
@@ -24,7 +25,7 @@ public protocol NetworkProtectionKeyStore {
 
     /// Obtain the current expiration date
     ///
-    var currentExpirationDate: Date? { get }
+    var currentExpirationDate: Date? { get set }
 
     /// Obtain the current `KeyPair`.
     ///

@@ -17,8 +17,11 @@
 //
 //  Implementation guidelines: https://app.asana.com/0/1198207348643509/1200202563872939/f
 
+import DDGNavigation
 import Foundation
 import Common
+import FoundationExtensions
+import WebKit
 
 public struct BrokenSiteReport {
 
@@ -35,6 +38,8 @@ public struct BrokenSiteReport {
         case appMenu
         /// From the privacy dashboard's "Website not working?"
         case dashboard
+        /// From a browser error page
+        case errorPage
         /// From the app menu's "Disable Privacy Protection"
         case onProtectionsOffMenu
         /// From the privacy dashboard's on protections toggle off
@@ -48,6 +53,7 @@ public struct BrokenSiteReport {
             switch self {
             case .appMenu: return "menu"
             case .dashboard: return "dashboard"
+            case .errorPage: return "error_page"
             case .onProtectionsOffMenu: return "on_protections_off_menu"
             case .onProtectionsOffDashboard: return "on_protections_off_dashboard_main"
             case .prompt: return "reload-three-times-within-20-seconds" // previously multiple events were under this; now there's only one
@@ -94,18 +100,35 @@ public struct BrokenSiteReport {
     let httpStatusCodes: [Int]?
     let openerContext: OpenerContext?
     let vpnOn: Bool
+    let networkSignals: NetworkSignals?
+    let dnsResolution: DNSResolution?
+    let memoryPressure: MemoryPressureLevel?
+    let pageSignals: PageSignals?
+    let pageSignalsEntryLimit: Int
     let jsPerformance: [Double]?
+    let extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics?
     let userRefreshCount: Int
     let locale: Locale
     let cookieConsentInfo: CookieConsentInfo?
     let debugFlags: String
     let privacyExperiments: String
     let isPirEnabled: Bool?
+    let pageLoadTiming: WKPageLoadTiming?
+    let breakageData: String?
+    let isForceDarkModeEnabled: Bool?
+    let autoplayBlockingMode: String?
+    let loadedWebExtensions: String?
+    let adBlockingExtensionScriptletsVersion: String?
+    let isAfterTabTermination: Bool
 #if os(iOS)
     let siteType: SiteType
-    let atb: String
     let model: String
     let variant: String
+    let isAfterSuppressedXSafariRedirect: Bool
+#endif
+
+#if os(macOS)
+    let lastTabSuspension: String?
 #endif
 
 #if os(macOS)
@@ -130,12 +153,26 @@ public struct BrokenSiteReport {
         openerContext: OpenerContext?,
         vpnOn: Bool,
         jsPerformance: [Double]?,
+        extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics? = nil,
         userRefreshCount: Int,
         locale: Locale = Locale.current,
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
         privacyExperiments: String,
-        isPirEnabled: Bool?
+        isPirEnabled: Bool?,
+        isForceDarkModeEnabled: Bool?,
+        isAfterTabTermination: Bool = false,
+        lastTabSuspension: String?,
+        autoplayBlockingMode: String? = nil,
+        pageLoadTiming: WKPageLoadTiming?,
+        breakageData: String? = nil,
+        loadedWebExtensions: String? = nil,
+        adBlockingExtensionScriptletsVersion: String? = nil,
+        networkSignals: NetworkSignals? = nil,
+        dnsResolution: DNSResolution? = nil,
+        memoryPressure: MemoryPressureLevel? = nil,
+        pageSignals: PageSignals? = nil,
+        pageSignalsEntryLimit: Int = PageSignalsSettings.defaultMaxEntries
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -156,13 +193,27 @@ public struct BrokenSiteReport {
         self.httpStatusCodes = httpStatusCodes
         self.openerContext = openerContext
         self.vpnOn = vpnOn
+        self.networkSignals = networkSignals
+        self.dnsResolution = dnsResolution
+        self.memoryPressure = memoryPressure
+        self.pageSignals = pageSignals
+        self.pageSignalsEntryLimit = pageSignalsEntryLimit
         self.jsPerformance = jsPerformance
+        self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
         self.locale = locale
         self.cookieConsentInfo = cookieConsentInfo
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
+        self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.isAfterTabTermination = isAfterTabTermination
+        self.lastTabSuspension = lastTabSuspension
+        self.autoplayBlockingMode = autoplayBlockingMode
+        self.pageLoadTiming = pageLoadTiming
+        self.breakageData = breakageData
+        self.loadedWebExtensions = loadedWebExtensions
+        self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
     }
 #endif
 
@@ -184,20 +235,33 @@ public struct BrokenSiteReport {
         protectionsState: Bool,
         reportFlow: Source,
         siteType: SiteType,
-        atb: String,
         model: String,
         errors: [Error]?,
         httpStatusCodes: [Int]?,
         openerContext: OpenerContext?,
         vpnOn: Bool,
         jsPerformance: [Double]?,
+        extendedPerformanceMetrics: PrivacyAwarePerformanceMetrics? = nil,
         userRefreshCount: Int,
         variant: String,
         locale: Locale = Locale.current,
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
         privacyExperiments: String,
-        isPirEnabled: Bool?
+        isPirEnabled: Bool?,
+        isForceDarkModeEnabled: Bool?,
+        autoplayBlockingMode: String? = nil,
+        isAfterSuppressedXSafariRedirect: Bool = false,
+        isAfterTabTermination: Bool = false,
+        pageLoadTiming: WKPageLoadTiming? = nil,
+        breakageData: String? = nil,
+        loadedWebExtensions: String? = nil,
+        adBlockingExtensionScriptletsVersion: String? = nil,
+        networkSignals: NetworkSignals? = nil,
+        dnsResolution: DNSResolution? = nil,
+        memoryPressure: MemoryPressureLevel? = nil,
+        pageSignals: PageSignals? = nil,
+        pageSignalsEntryLimit: Int = PageSignalsSettings.defaultMaxEntries
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -215,13 +279,18 @@ public struct BrokenSiteReport {
         self.urlParametersRemoved = urlParametersRemoved
         self.reportFlow = reportFlow
         self.siteType = siteType
-        self.atb = atb
         self.model = model
         self.errors = errors
         self.httpStatusCodes = httpStatusCodes
         self.openerContext = openerContext
         self.vpnOn = vpnOn
+        self.networkSignals = networkSignals
+        self.dnsResolution = dnsResolution
+        self.memoryPressure = memoryPressure
+        self.pageSignals = pageSignals
+        self.pageSignalsEntryLimit = pageSignalsEntryLimit
         self.jsPerformance = jsPerformance
+        self.extendedPerformanceMetrics = extendedPerformanceMetrics
         self.userRefreshCount = userRefreshCount
         self.variant = variant
         self.locale = locale
@@ -229,18 +298,27 @@ public struct BrokenSiteReport {
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
         self.isPirEnabled = isPirEnabled
+        self.pageLoadTiming = pageLoadTiming
+        self.isForceDarkModeEnabled = isForceDarkModeEnabled
+        self.autoplayBlockingMode = autoplayBlockingMode
+        self.isAfterSuppressedXSafariRedirect = isAfterSuppressedXSafariRedirect
+        self.isAfterTabTermination = isAfterTabTermination
+        self.breakageData = breakageData
+        self.loadedWebExtensions = loadedWebExtensions
+        self.adBlockingExtensionScriptletsVersion = adBlockingExtensionScriptletsVersion
     }
 #endif
 
     /// A dictionary containing all the parameters needed from the Report Broken Site Pixel
     public var requestParameters: [String: String] { getRequestParameters(forReportMode: .regular) }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func getRequestParameters(forReportMode mode: Mode) -> [String: String] {
         var result: [String: String] = [
             "siteUrl": siteUrl.trimmingQueryItemsAndFragment().absoluteString,
             "upgradedHttps": upgradedHttps.description,
             "tds": tdsETag?.trimmingCharacters(in: CharacterSet(charactersIn: "\"")) ?? "",
-            "remote_config_version": configVersion ?? "",
+            "remoteConfigVersion": configVersion ?? "",
             "blockedTrackers": blockedTrackerDomains.joined(separator: ","),
             "surrogates": installedSurrogates.joined(separator: ","),
             "gpc": isGPCEnabled.description,
@@ -256,6 +334,16 @@ public struct BrokenSiteReport {
             "consentManaged": boolToStringValue(cookieConsentInfo?.consentManaged),
             "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed),
             "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed),
+            "consentReloadLoop": boolToStringValue(cookieConsentInfo?.consentReloadLoop),
+            "consentHeuristicEnabled": boolToStringValue(cookieConsentInfo?.consentHeuristicEnabled),
+            "consentRule": cookieConsentInfo?.consentRule ?? "",
+            "cpmExtensionDroppedCallbacks": intToStringValue(cookieConsentInfo?.cpmExtensionDroppedCallbacks),
+            "cpmExtensionLoaded": boolToStringValue(cookieConsentInfo?.cpmExtensionLoaded),
+            "cpmDashboardState": cookieConsentInfo?.cpmDashboardState?.rawValue ?? "",
+            "cpmStage": cookieConsentInfo?.cpmStage?.rawValue ?? "",
+            "cpmErrors": cookieConsentInfo?.cpmErrors ?? "",
+            "cpmQueueSize": intToStringValue(cookieConsentInfo?.cpmQueueSize),
+            "cpmConfigVersion": cookieConsentInfo?.cpmConfigVersion ?? "",
             "debugFlags": debugFlags,
             "contentScopeExperiments": privacyExperiments
         ]
@@ -284,16 +372,70 @@ public struct BrokenSiteReport {
             result["jsPerformance"] = perf
         }
 
+        if let extendedPerformanceMetrics {
+            let metricsDict = extendedPerformanceMetrics.toDictionary()
+            for (key, value) in metricsDict {
+                result["extendedPerformance.\(key)"] = String(describing: value)
+            }
+        }
+
         if isPirEnabled == true {
             result["isPirEnabled"] = "true"
         }
 
+        if let pageLoadTiming = pageLoadTiming {
+            addPageLoadTimingParameters(to: &result, timing: pageLoadTiming)
+        }
+
+        if let isForceDarkModeEnabled {
+            result["isForceDarkModeEnabled"] = isForceDarkModeEnabled.description
+        }
+
+        if let autoplayBlockingMode {
+            result["autoplayBlockingMode"] = autoplayBlockingMode
+        }
+
+        if isAfterTabTermination {
+            result["isAfterTabTermination"] = "true"
+        }
 #if os(iOS)
         result["siteType"] = siteType.rawValue
-        result["atb"] = atb
         result["model"] = model
         result["variant"] = variant
+        if isAfterSuppressedXSafariRedirect {
+            result["isAfterSuppressedXSafariRedirect"] = "true"
+        }
 #endif
+
+#if os(macOS)
+        if let lastTabSuspension {
+            result["lastTabSuspension"] = lastTabSuspension
+        }
+#endif
+
+        if let breakageData {
+            result["breakageData"] = breakageData
+        }
+
+        if let loadedWebExtensions {
+            result["loadedWebExtensions"] = loadedWebExtensions
+            result["adBlockingExtensionScriptletsVersion"] = adBlockingExtensionScriptletsVersion ?? "nil"
+        }
+
+        result["isNetworkAvailable"] = networkSignals?.isNetworkAvailable.description
+        result["networkType"] = networkSignals?.networkType.rawValue
+        result["isLowDataModeEnabled"] = networkSignals?.isLowDataModeEnabled.description
+        result["hasVPNConnectivityIssues"] = networkSignals?.hasVPNConnectivityIssues.description
+        result["networkPingQuality"] = networkSignals?.pingQuality.rawValue
+        result["memoryPressure"] = memoryPressure?.rawValue
+        result["dnsResolution"] = dnsResolution?.rawValue
+
+        if let pageSignals {
+            result["resourceLoadErrors"] = pageSignals.formattedResourceLoadErrors(maxEntries: pageSignalsEntryLimit)
+            result["contentBlockedLoads"] = String(pageSignals.blockedLoads)
+            result["contentBlockedDomains"] = pageSignals.formattedContentBlockedDomains(maxEntries: pageSignalsEntryLimit)
+        }
+
         return result
     }
 
@@ -308,6 +450,10 @@ public struct BrokenSiteReport {
         }
     }
 
+    private func intToStringValue(_ value: Int?) -> String {
+        value.map(String.init) ?? ""
+    }
+
     private func encodeErrors(_ errors: [Error]) -> String {
         let errorDescriptions: [String] = errors.map {
             let error = $0 as NSError
@@ -315,6 +461,31 @@ public struct BrokenSiteReport {
         }
         let jsonString = try? String(data: JSONSerialization.data(withJSONObject: errorDescriptions), encoding: .utf8)!
         return jsonString ?? ""
+    }
+
+    private func addPageLoadTimingParameters(to result: inout [String: String], timing: WKPageLoadTiming) {
+        guard let navigationStart = timing.navigationStart else { return }
+
+        // Calculate all timing data as durations from navigation start (in milliseconds)
+        if let firstVisual = timing.firstVisualLayout {
+            let duration = firstVisual.timeIntervalSince(navigationStart)
+            result["webKitFirstVisualLayoutMs"] = String(Int(duration * 1000))
+        }
+
+        if let firstPaint = timing.firstMeaningfulPaint {
+            let duration = firstPaint.timeIntervalSince(navigationStart)
+            result["webKitFirstMeaningfulPaintMs"] = String(Int(duration * 1000))
+        }
+
+        if let docComplete = timing.documentFinishedLoading {
+            let duration = docComplete.timeIntervalSince(navigationStart)
+            result["webKitDocumentCompleteMs"] = String(Int(duration * 1000))
+        }
+
+        if let allResources = timing.allSubresourcesFinishedLoading {
+            let duration = allResources.timeIntervalSince(navigationStart)
+            result["webKitAllResourcesCompleteMs"] = String(Int(duration * 1000))
+        }
     }
 
 }

@@ -24,17 +24,34 @@ import SwiftUI
 struct QRCodeView: View {
     let string: String
     let desiredSize: Int
+    let backgroundColor: Color
+    let flexible: Bool
+
+    init(string: String, desiredSize: Int, backgroundColor: Color = .white, flexible: Bool = false) {
+        self.string = string
+        self.desiredSize = desiredSize
+        self.backgroundColor = backgroundColor
+        self.flexible = flexible
+    }
 
     var body: some View {
-        Image(uiImage: generateQRCode(from: string, renderSize: 2 * desiredSize))
+        let image = Image(uiImage: generateQRCode(from: string, renderSize: 2 * desiredSize, backgroundColor: backgroundColor))
             .resizable()
             .interpolation(.none)
             .padding(4)
-            .background(Color.white)
-            .frame(width: CGFloat(desiredSize), height: CGFloat(desiredSize))
+            .background(backgroundColor)
+
+        if flexible {
+            image
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: CGFloat(desiredSize), maxHeight: CGFloat(desiredSize))
+        } else {
+            image
+                .frame(width: CGFloat(desiredSize), height: CGFloat(desiredSize))
+        }
     }
 
-    func generateQRCode(from text: String, renderSize: Int) -> UIImage {
+    func generateQRCode(from text: String, renderSize: Int, backgroundColor: Color) -> UIImage {
         let context = CIContext()
         let data = Data(text.utf8)
 
@@ -61,7 +78,7 @@ struct QRCodeView: View {
         let transformed = outputImage.transformed(by: .init(scaleX: scaleFactor, y: scaleFactor))
         let colored = transformed.applyingFilter("CIFalseColor", parameters: [
             "inputColor0": CIColor(color: .black),
-            "inputColor1": CIColor(color: .white)
+            "inputColor1": CIColor(color: UIColor(backgroundColor))
         ])
 
         if let cgImage = context.createCGImage(colored, from: colored.extent) {

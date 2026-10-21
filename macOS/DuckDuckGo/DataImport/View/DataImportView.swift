@@ -17,26 +17,35 @@
 //
 
 import AppKit
-import SwiftUI
 import BrowserServicesKit
-import Common
+import DesignResourcesKitIcons
+import PixelKit
+import PrivacyConfig
+import SwiftUI
+import UIComponents
+import UniformTypeIdentifiers
+import SwiftUIExtensions
 
 @MainActor
 struct DataImportView: ModalView {
-
-    private let isDataTypePickerExpanded: Bool
     @Environment(\.dismiss) private var dismiss
 
     @State var model: DataImportViewModel
-    let title: String
+
+    let importFlowLauncher: DataImportFlowRelaunching
 
     @State private var isInternalUser = false
     let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
 
-    init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool) {
+    private let syncFeatureVisibility: SyncFeatureVisibility
+    private let pinningManager: PinningManager
+
+    init(model: DataImportViewModel? = nil, importFlowLauncher: DataImportFlowRelaunching, syncFeatureVisibility: SyncFeatureVisibility, pinningManager: PinningManager) {
+        let model = model ?? DataImportViewModel(syncFeatureVisibility: syncFeatureVisibility)
         self._model = State(initialValue: model)
-        self.title = title
-        self.isDataTypePickerExpanded = isDataTypePickerExpanded
+        self.importFlowLauncher = importFlowLauncher
+        self.syncFeatureVisibility = syncFeatureVisibility
+        self.pinningManager = pinningManager
     }
 
     struct ProgressState {
@@ -46,32 +55,115 @@ struct DataImportView: ModalView {
     }
     @State private var progress: ProgressState?
 
-#if DEBUG || REVIEW
-    @State private var debugViewDisabled: Bool = false
+#if DEBUG
+    @State private var debugViewDisabled: Bool = true
 #endif
 
+    @State private var areErrorsExpanded = false
+
+    private var errorMessages: [String] {
+        model.errors.flatMap { errorsByDataType in
+            DataImport.DataType.allCases.compactMap { dataType in
+                errorsByDataType[dataType].map { "\(dataType.rawValue.uppercased()): \($0)" }
+            }
+        }
+    }
+
     private var shouldShowDebugView: Bool {
-#if DEBUG || REVIEW
-        return !debugViewDisabled
+#if DEBUG
+        return !debugViewDisabled || !errorMessages.isEmpty
 #else
-        return (!model.errors.isEmpty && isInternalUser)
+        return !errorMessages.isEmpty && isInternalUser
 #endif
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            viewHeader()
-                .padding(.top, 20)
-                .padding(.leading, 20)
-                .padding(.trailing, 20)
-
-            viewBody()
-                .padding(.leading, 20)
-                .padding(.trailing, 20)
-                .padding(.bottom, 20)
+        VStack(alignment: .center, spacing: 0) {
+            switch model.screen {
+            case .sourceAndDataTypesPicker:
+                ImportSourcePickerView(
+                    availableSources: model.availableImportSources,
+                    selectedSource: model.importSource,
+                    selectedImportTypes: Array(model.selectedDataTypes),
+                    selectableImportTypes: Array(model.selectableImportTypes),
+                    shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
+                    isPickerExpanded: model.isPickerExpanded,
+                    onSourceSelected: { source in
+                        model.update(with: source)
+                    },
+                    onTypeSelected: { type, isSelected in
+                        model.setDataType(type, selected: isSelected)
+                    },
+                    onSyncSelected: {
+                        model.launchSync(using: dismiss.callAsFunction) {
+                            importFlowLauncher.relaunchDataImport(model: model)
+                        }
+                    },
+                    onExpandedStateChanged: { isExpanded in
+                        model.isPickerExpanded = isExpanded
+                    }
+                )
+            case .profilePicker:
+                NewProfilePickerView(
+                    profiles: model.browserProfiles?.validImportableProfiles ?? [],
+                    selectedProfile: model.selectedProfile
+                ) { profile in
+                    model.selectProfile(profile)
+                }
+            case .fileImport(let dataType, let summary):
+                FileImportScreenView(
+                    importSource: model.importSource,
+                    kind: .individual(dataType: dataType),
+                    summary: summary,
+                    isSelectFileButtonDisabled: model.isSelectFileButtonDisabled,
+                    selectFile: { model.selectFile() },
+                    onFileDrop: { model.initiateImport(fileURL: $0) }
+                )
+            case .archiveImport(_, let summary):
+                FileImportScreenView(
+                    importSource: model.importSource,
+                    kind: .archive,
+                    summary: summary,
+                    isSelectFileButtonDisabled: model.isSelectFileButtonDisabled,
+                    selectFile: { model.selectFile() },
+                    onFileDrop: { model.initiateImport(fileURL: $0) }
+                )
+            case .moreInfo:
+                NewImportMoreInfoView()
+            case .getFileReadPermission(let url):
+                RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
+                    model.initiateImport()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+            case .getDirectoryReadPermission:
+                RequestDirectoryReadPermissionView(source: model.importSource)
+            case .directoryReadPermissionCancelled:
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterCancel)
+            case .directoryReadPermissionDenied:
+                RequestDirectoryReadPermissionView(source: model.importSource, mode: .retryAfterError)
+            case .passwordEntryHelp:
+                PasswordEntryRetryPromptView()
+            case .summary(let summary):
+                NewImportSummaryView(
+                    summary: summary,
+                    sourceImage: model.importSource.importSourceImage ?? DesignSystemImages.Color.Size24.document,
+                    reportModel: $model.reportModel,
+                    pinningManager: pinningManager
+                ) { type in
+                    model.showSummaryDetail(summary: summary, type: type)
+                }
+            case .summaryDetail(let summary, _):
+                // This view is currently only used for passwords
+                if let result = summary[.passwords] {
+                    DataImportSummaryDetailView(result: result)
+                } else {
+                    EmptyView()
+                }
+            }
 
             // if import in progress…
-            if let importProgress = model.importProgress {
+            if let importProgress = model.importProgress, !model.shouldHideProgress {
                 progressView(importProgress)
                     .padding(.leading, 20)
                     .padding(.trailing, 20)
@@ -79,9 +171,8 @@ struct DataImportView: ModalView {
             }
 
             viewFooter()
-                .padding(.top, 16)
-                .padding(.bottom, 16)
-                .padding(.trailing, 20)
+                .padding(.bottom, 26)
+                .padding(.horizontal, 20)
 
             if shouldShowDebugView {
                 debugView()
@@ -90,184 +181,19 @@ struct DataImportView: ModalView {
         .font(.system(size: 13))
         .frame(width: 420)
         .fixedSize()
+        .background(
+            Color(designSystemColor: .surfaceSecondary)
+        )
         .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
             isInternalUser = $0
         }
-    }
-
-    @ViewBuilder
-    private func viewHeader() -> some View {
-        switch model.screen {
-        case .summary where !model.hasAnySummaryError:
-            summarySuccessHeader
-        case .shortcuts:
-            shortcutsHeader
-        default:
-            defaultHeader
-        }
-    }
-
-    @ViewBuilder
-    private var summarySuccessHeader: some View {
-        VStack(alignment: .leading) {
-            Image(.success96)
-            Text(UserText.importDataSuccessTitle)
-                .foregroundColor(.primary)
-                .font(.system(size: 17, weight: .bold))
-        }
-        .padding(.bottom, 16)
-    }
-
-    private var shortcutsHeader: some View {
-        Text(UserText.importDataShortcutsTitle)
-            .font(.title2.weight(.semibold))
-            .padding(.bottom, 20)
-    }
-
-    @ViewBuilder
-    private var defaultHeader: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // If screen is not the first screen where the user choose the type of import they want to do show the generic title.
-            // Otherwise show the injected title.
-            let title = model.screen == .profileAndDataTypesPicker ? self.title : UserText.importDataTitle
-
-            Text(title)
-                .font(.title2.weight(.semibold))
-                .padding(.bottom, 20)
-        }
-    }
-
-    @ViewBuilder var importSourcePicker: some View {
-        // browser to import data from picker popup
-        DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
-            model.update(with: importSource)
-        }
-        .padding(.bottom, 8)
-        .disabled(model.isImportSourcePickerDisabled)
-    }
-
-    @ViewBuilder
-    private func viewBody() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // body
-            switch model.screen {
-            case .profileAndDataTypesPicker:
-                profileAndDataTypesPickerBody
-            case .moreInfo:
-                // you will be asked for your keychain password blah blah...
-                moreInfoBody
-            case .getReadPermission(let url):
-                // give request to Safari folder, select Bookmarks.plist using open panel
-                getReadPermissionBody(url: url)
-            case .fileImport(let dataType, let summaryTypes):
-                fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
-            case .summary(let dataTypes, let isFileImport):
-                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)
-            case .feedback:
-                feedbackBody
-            case .shortcuts(let dataTypes):
-                DataImportShortcutsView(dataTypes: dataTypes)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var profileAndDataTypesPickerBody: some View {
-        importPickerPanel {
-            VStack(alignment: .leading, spacing: 8) {
-                // Browser Profile picker
-                if model.browserProfiles?.validImportableProfiles.count ?? 0 > 1 {
-                    DataImportProfilePicker(profileList: model.browserProfiles,
-                                            selectedProfile: $model.selectedProfile)
-                    .padding(.bottom, 8)
-                    .disabled(model.isImportSourcePickerDisabled)
-                }
-
-                DataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
-                    .disabled(model.isImportSourcePickerDisabled)
-                .padding(.top, 8)
-            }
-        }
-        passwordsExplainerView().padding(.top, 12)
-    }
-
-    @ViewBuilder
-    private var moreInfoBody: some View {
-        importPickerPanel {
-            BrowserImportMoreInfoView(source: model.importSource)
-        }
-    }
-
-    @ViewBuilder
-    private var feedbackBody: some View {
-        importSourceDataTitle
-        VStack(alignment: .leading, spacing: 0) {
-            DataImportSummaryView(model)
-                .padding(.bottom, 20)
-            ReportFeedbackView(model: $model.reportModel)
-        }
-    }
-
-    @ViewBuilder
-    private func getReadPermissionBody(url: URL) -> some View {
-        importPickerPanel {
-            RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
-                model.initiateImport()
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func fileImportBody(dataType: DataImport.DataType, summaryTypes: Set<DataImport.DataType>) -> some View {
-        importPickerPanel {
-            VStack(alignment: .leading, spacing: 0) {
-                if !summaryTypes.isEmpty {
-                    DataImportSummaryView(model, dataTypes: summaryTypes)
-                        .padding(.bottom, 24)
-                }
-
-                // if no data to import
-                if model.summary(for: dataType)?.isEmpty == true
-                    || model.error(for: dataType)?.errorType == .noData {
-                    DataImportNoDataView(source: model.importSource, dataType: dataType)
-                        .padding(.bottom, 24)
-                // if browser importer failed - display error message
-                } else if model.error(for: dataType) != nil {
-                    DataImportErrorView(source: model.importSource, dataType: dataType)
-                        .padding(.bottom, 24)
-                }
-
-                // manual file import instructions for CSV/HTML
-                FileImportView(source: model.importSource, dataType: dataType, isButtonDisabled: model.isSelectFileButtonDisabled) {
-                    model.selectFile()
-                } onFileDrop: { url in
-                    model.initiateImport(fileURL: url)
+        .onChange(of: model.importTaskId) { _ in
+            Task {
+                if let importProgress = model.importProgress {
+                    await handleImportProgress(importProgress)
                 }
             }
         }
-        if dataType == .passwords {
-            passwordsExplainerView().padding(.top, 20)
-        }
-    }
-
-    private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            importSourceDataTitle
-            importSourcePicker
-            content()
-        }
-        .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
-        .padding(12)
-        .background(Color.surfaceSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.decorationTertiary, lineWidth: 1)
-        )
-    }
-
-    private var importSourceDataTitle: some View {
-        Text(UserText.importDataSourceTitle)
     }
 
     private func progressView(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) -> some View {
@@ -275,44 +201,71 @@ struct DataImportView: ModalView {
         ProgressView(value: self.progress?.fraction) {
             Text(self.progress?.text ?? "")
         }
-        .task {
-            // when model.importProgress async sequence not nil
-            // receive progress updates events and update model on completion
-            await handleImportProgress(progress)
-        }
     }
 
     // under line buttons
     private func viewFooter() -> some View {
         HStack(spacing: 8) {
+            if !model.shouldHidePasswordExplainerView {
+                passwordsExplainerView()
+            }
             Spacer()
-
-            ForEach(model.buttons.indices, id: \.self) { idx in
+            ForEach(Array(model.buttons.enumerated()), id: \.offset) { _, button in
                 Button {
-                    model.performAction(for: model.buttons[idx],
-                                        dismiss: dismiss.callAsFunction)
+                    model.performAction(for: button, dismiss: dismiss.callAsFunction)
                 } label: {
-                    Text(model.buttons[idx].title(dataType: model.screen.fileImportDataType))
+                    Text(button.title(dataType: model.screen.fileImportDataType))
                         .frame(minWidth: 80 - 16 - 1)
                 }
-                .keyboardShortcut(model.buttons[idx].shortcut)
-                .disabled(model.buttons[idx].isDisabled)
+                .ifLet(button.shortcut) { $0.keyboardShortcut($1) }
+                .disabled(button.isDisabled)
+                .applyFooterButtonStyle(for: button)
             }
         }
+        .opacity(model.shouldHideFooter ? 0 : 1)
     }
 
+    @State private var showPasswordsExplainerPopover = false
+    @State private var popoverCloseTask: Task<Void, Never>?
+
     private func passwordsExplainerView() -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            (
-                Text(Image(.lockSolid16)).baselineOffset(-1.0)
-                +
-                Text(verbatim: " ")
-                +
-                Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
-            )
-            .font(.system(size: 10))
-            .foregroundColor(.secondary)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+        HStack(spacing: 8) {
+            ZStack(alignment: .center) {
+                // Invisible rectangle to push the popover away from the icon slightly
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: 16, height: 24)
+                    .popover(isPresented: $showPasswordsExplainerPopover, arrowEdge: .bottom) {
+                        Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
+                            .padding()
+                            .frame(width: 280)
+                    }
+
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))
+            }
+            Text(UserText.importLoginsPasswordsExplainerEncrypted)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))
+
+        }
+        .padding(8) // Increase the hit area of the view by 8px on all sides
+        .contentShape(Rectangle())
+        .padding(-8)
+        .onHover { isHovering in
+            popoverCloseTask?.cancel()
+
+            if isHovering {
+                showPasswordsExplainerPopover = true
+            } else {
+                popoverCloseTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 600_000_000)
+                    if !Task.isCancelled {
+                        showPasswordsExplainerPopover = false
+                    }
+                }
+            }
         }
     }
 
@@ -341,45 +294,29 @@ struct DataImportView: ModalView {
     private func debugView() -> some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 10) {
-#if DEBUG || REVIEW
-                Text("REVIEW:" as String).bold()
+#if DEBUG
+                Text("DEBUG:" as String).bold()
                     .padding(.top, 10)
                     .padding(.leading, 20)
 
-                ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
+                ForEach(model.selectableImportTypes.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
                     failureReasonPicker(for: selectedDataType)
                         .padding(.leading, 20)
                         .padding(.trailing, 20)
                 }
 
-                if model.errors.count > 0 && isInternalUser {
+                if !errorMessages.isEmpty {
                     Divider()
                 }
 #endif
 
-                if model.errors.count > 0 && isInternalUser {
-                    Text(verbatim: "ERRORS:" as String).bold()
-                        .padding(.top, 10)
-                        .padding(.leading, 20)
-
-                    ForEach(model.errors.indices, id: \.self) { i in
-                        ForEach(Array(model.errors[i].keys), id: \.self) { key in
-                            if let value = model.errors[i][key] {
-                                if #available(macOS 12.0, *) {
-                                    Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
-                                } else {
-                                    Text(verbatim: "\(key.rawValue.uppercased()): \(value)")
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 10)
+                if !errorMessages.isEmpty {
+                    errorsView(errorMessages)
                 }
             }
             Spacer()
             Button {
-#if DEBUG || REVIEW
+#if DEBUG
                 debugViewDisabled = true
 #endif
                 model.errors.removeAll()
@@ -392,7 +329,38 @@ struct DataImportView: ModalView {
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
     }
 
-#if DEBUG || REVIEW
+    private func errorsView(_ messages: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                areErrorsExpanded.toggle()
+            } label: {
+                HStack(spacing: 4) {
+                    Text(verbatim: messages.count == 1 ? "1 error" : "\(messages.count) errors").bold()
+                    Image(systemName: "chevron.right")
+                        .rotationEffect(.degrees(areErrorsExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.link)
+
+            if areErrorsExpanded {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(messages.indices, id: \.self) { idx in
+                            Text(verbatim: messages[idx])
+                                .textSelection(.enabled)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+                .frame(height: 100)
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.leading, 20)
+    }
+
+#if DEBUG
     private var noFailure: String { "No failure" }
     private var zeroSuccess: String { "Success (0 imported)" }
     private var allFailureReasons: [String?] {
@@ -443,6 +411,8 @@ extension DataImportProgressEvent {
             fraction
         case .importingPasswords(numberOfPasswords: _, fraction: let fraction):
             fraction
+        case .importingCreditCards(numberOfCreditCards: _, fraction: let fraction):
+            fraction
         case .done:
             nil
         }
@@ -456,6 +426,8 @@ extension DataImportProgressEvent {
             UserText.importingBookmarks(num)
         case .importingPasswords(numberOfPasswords: let num, fraction: _):
             UserText.importingPasswords(num)
+        case .importingCreditCards(numberOfCreditCards: let num, fraction: _):
+            UserText.importingCreditCards(num)
         case .done:
             nil
         }
@@ -467,229 +439,77 @@ extension DataImportViewModel.ButtonType {
 
     var shortcut: KeyboardShortcut? {
         switch self {
-        case .next: .defaultAction
         case .initiateImport: .defaultAction
+        case .selectFile: .defaultAction
         case .skip: .cancelAction
         case .cancel: .cancelAction
-        case .back: nil
-        case .done: .defaultAction
+        case .cancelImport: .cancelAction
+        case .back: .cancelAction
+        case .close: .cancelAction
+        case .done: .cancelAction
         case .submit: .defaultAction
+        case .continue: .defaultAction
+        case .sync: .defaultAction
+        case .grantDirectoryAccess: .defaultAction
+        case .showSystemPasswordPrompt: .defaultAction
         }
     }
 
+    var isPrimaryAction: Bool {
+        shortcut == .defaultAction
+    }
+}
+
+private extension View {
+
+    @ViewBuilder
+    func applyFooterButtonStyle(for button: DataImportViewModel.ButtonType) -> some View {
+        if button.isPrimaryAction {
+            buttonStyle(DefaultActionButtonStyle(enabled: !button.isDisabled, stateColors: .themedActionButton))
+        } else {
+            buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
+        }
+    }
 }
 
 extension DataImportViewModel.ButtonType {
 
     func title(dataType: DataImport.DataType?) -> String {
         switch self {
-        case .next:
-            UserText.next
         case .initiateImport:
-            UserText.initiateImport
+            UserText.importNowButtonTitle
         case .skip:
             switch dataType {
-            case .bookmarks:
+            case .some(.bookmarks):
                 UserText.skipBookmarksImport
-            case .passwords:
+            case .some(.passwords):
                 UserText.skipPasswordsImport
-            case nil:
-                UserText.skip
+            case .some(.creditCards), nil: // Shouldn't really happen
+                UserText.cancel
             }
         case .cancel:
             UserText.cancel
+        case .cancelImport:
+            UserText.importBrowserDataRequestAccessDeniedCancelTitle
         case .back:
             UserText.navigateBack
         case .done:
             UserText.done
         case .submit:
             UserText.submitReport
+        case .continue:
+            UserText.continue
+        case .selectFile:
+            UserText.importDataSelectFileButtonTitle
+        case .sync:
+            UserText.importDataCompleteSyncButtonTitle
+        case .close:
+            UserText.close
+        case .grantDirectoryAccess(let source):
+            UserText.importBrowserDataRequestAccessButton(for: source)
+        case .showSystemPasswordPrompt:
+            UserText.passwordEntryHelpShowMacOSMessageButton
         }
     }
 
 }
-
-// MARK: - Preview
-#if DEBUG
-private final class PreviewPreferences: ObservableObject {
-    @Published var shouldDisplayProgress = false
-    static let shared = PreviewPreferences()
-}
-extension DataImportView {
-
-    struct PreviewPreferencesView: View {
-        @ObservedObject fileprivate var prefs = PreviewPreferences.shared
-
-        var body: some View {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Toggle("Display progress", isOn: $prefs.shouldDisplayProgress)
-                        .padding(.leading, 20)
-                        .padding(.bottom, 20)
-                    Spacer()
-                }
-            }
-            .frame(width: 512)
-            .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
-        }
-    }
-}
-extension DataImportViewModel {
-    final class MockDataImporter: DataImporter {
-
-        struct MockError: Error { }
-
-        enum ImportError: DataImportError {
-            enum OperationType: Int {
-                case imp
-            }
-
-            var type: OperationType { .imp }
-            var action: DataImportAction { .generic }
-            var underlyingError: Error? {
-                if case .err(let err) = self {
-                    return err
-                }
-                return nil
-            }
-            var errorType: DataImport.ErrorType { .noData }
-
-            case err(Error)
-        }
-        let source: DataImport.Source
-        var dataType: DataImport.DataType?
-        var importableTypes: [DataImport.DataType] {
-            [.safari, .yandex].contains(source) && dataType == nil ? [.bookmarks] : [.bookmarks, .passwords]
-        }
-
-        func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
-            source == .firefox && types.contains(.passwords) ? [.passwords: FirefoxLoginReader.ImportError(type: .requiresPrimaryPassword, underlyingError: nil)] : nil
-        }
-
-        func requiresKeychainPassword(for selectedDataTypes: Set<DataImport.DataType>) -> Bool {
-            source == .chrome && selectedDataTypes.contains(.passwords) ? true : false
-        }
-
-        init(source: DataImport.Source, dataType: DataImport.DataType? = nil) {
-            self.source = source
-            self.dataType = dataType
-        }
-
-        func importData(types: Set<DataImport.DataType>) -> DataImportTask {
-            .detachedWithProgress(.initial) { progressUpdate in
-                func makeProgress(_ op: (Double) throws -> Void) async throws {
-                    guard PreviewPreferences.shared.shouldDisplayProgress else { return }
-                    let n = 20
-                    for i in 0..<n {
-                        let ticksInS = 1.0 / Double(n)
-                        try op(Double(i) / ticksInS)
-                        try await Task.sleep(interval: ticksInS)
-                    }
-                }
-                print("importing 1")
-                do {
-                    if types.contains(.bookmarks) {
-                        try await makeProgress { fraction in
-                            try progressUpdate(
-                                .importingBookmarks(
-                                    numberOfBookmarks: nil,
-                                    fraction: fraction
-                                )
-                            )
-                        }
-
-                        try await makeProgress { fraction in
-                            try progressUpdate(
-                                .importingBookmarks(
-                                    numberOfBookmarks: 42,
-                                    fraction: fraction
-                                )
-                            )
-                        }
-                    }
-
-                    if types.contains(.passwords) {
-                        print("importing 3")
-                        try await makeProgress { fraction in
-                            try progressUpdate(
-                                .importingPasswords(
-                                    numberOfPasswords: nil,
-                                    fraction: fraction
-                                )
-                            )
-                        }
-                        print("importing 4")
-                        try await makeProgress { fraction in
-                            try progressUpdate(
-                                .importingPasswords(
-                                    numberOfPasswords: 2442,
-                                    fraction: fraction
-                                )
-                            )
-                        }
-                    }
-                    print("importing done")
-                    try progressUpdate(
-                        .done
-                    )
-
-                    var result = DataImportSummary()
-                    for type in types {
-                        result[type] = .success(.init(successful: Int.random(in: 0..<100000), duplicate: 0, failed: 0))
-                    }
-                    return result
-
-                } catch {
-                    print("import cancelled", error)
-                    return types.reduce(into: [:]) { $0[$1] = .failure(ImportError.err(error)) }
-                }
-            }
-        }
-    }
-    // swiftlint:disable:next identifier_name
-    static func _mockPreviewViewModel() -> DataImportViewModel {
-        DataImportViewModel(importSource: .bookmarksHTML, availableImportSources: DataImport.Source.allCases) { browser in
-            guard case .chrome = browser else {
-                print("empty profiles")
-                return .init(browser: browser, profiles: [])
-            }
-            print("chrome profiles")
-            return .init(browser: browser, profiles: [
-                .init(browser: .chrome,
-                      profileURL: URL(fileURLWithPath: "/test/Default Profile")),
-                .init(browser: .chrome,
-                      profileURL: URL(fileURLWithPath: "/test/Profile 1")),
-                .init(browser: .chrome,
-                      profileURL: URL(fileURLWithPath: "/test/Profile 2")),
-            ], validateProfileData: { _ in { .init(logins: .available, bookmarks: .available) } // swiftlint:disable:this opening_brace
-            })
-        } dataImporterFactory: { source, type, _, _ in
-            return MockDataImporter(source: source, dataType: type)
-        } requestPrimaryPasswordCallback: { _ in
-            print("primary password requested")
-            return "password"
-        } openPanelCallback: { _ in
-            URL(fileURLWithPath: "/test/path")
-        } reportSenderFactory: {
-            { feedback in
-                print("send feedback:", feedback)
-            }
-        }
-    }
-}
-
-#Preview {
-    VStack(alignment: .leading, spacing: 0) { @MainActor in
-        DataImportView(model: ._mockPreviewViewModel(), isDataTypePickerExpanded: false)
-            // swiftlint:disable:next force_cast
-            .environment(\EnvironmentValues.presentationMode as! WritableKeyPath,
-                          Binding<PresentationMode> {
-                print("DISMISS!")
-            })
-
-        DataImportView.PreviewPreferencesView()
-        Spacer()
-    }
-    .frame(minHeight: 666)
-}
-#endif

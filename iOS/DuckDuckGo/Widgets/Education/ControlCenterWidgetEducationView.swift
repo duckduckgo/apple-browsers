@@ -45,11 +45,14 @@ struct ControlCenterWidgetEducationView: View {
     @Environment(\.dismiss) private var dismiss
 
     let navBarTitle: String
+    let fourthParagraphText: String
     let widgetIconDetail: Detail
 
-    init(navBarTitle: String, widget: ControlCenterWidget) {
+    init(navBarTitle: String, widget: ControlCenterWidget,
+         fourthParagraphText: String = UserText.controlCenterVPNWidgetEducationParagraph) {
 
         self.navBarTitle = navBarTitle
+        self.fourthParagraphText = fourthParagraphText
 
         let icon = widget.image
             .renderingMode(.template)
@@ -79,7 +82,7 @@ struct ControlCenterWidgetEducationView: View {
                             detail: .image(Image.controlCenterBottom,
                                            maxWidth: Size.exampleImageWidth)),
                         NumberedParagraphConfig(
-                            text: UserText.controlCenterVPNWidgetEducationParagraph,
+                            text: fourthParagraphText,
                             detail: widgetIconDetail)
                     ]
                 )

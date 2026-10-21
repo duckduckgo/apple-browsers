@@ -1,0 +1,264 @@
+//
+//  DuckDuckGoSubscription.swift
+//
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Networking
+
+public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConvertible {
+    public let productId: String
+    public let name: String
+    public let billingPeriod: BillingPeriod
+    public let startedAt: Date
+    public let expiresOrRenewsAt: Date
+    public let platform: Platform
+    public let status: Status
+    public let activeOffers: [Offer]
+    public let tier: TierName?
+    public let availableChanges: AvailableChanges?
+    public let pendingPlans: [PendingPlan]?
+
+    /// Not parsed from 
+    public var features: [SubscriptionEntitlement]?
+
+    /// Represents available subscription tier changes
+    public struct AvailableChanges: Codable, Equatable {
+        public let upgrade: [TierChange]
+        public let downgrade: [TierChange]
+        /// Current product ID from the backend; use for cancel-downgrade instead of subscription.productId when present.
+        public let currentProductId: String?
+
+        public init(upgrade: [TierChange] = [], downgrade: [TierChange] = [], currentProductId: String? = nil) {
+            self.upgrade = upgrade
+            self.downgrade = downgrade
+            self.currentProductId = currentProductId
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.upgrade = (try? container.decode([TierChange].self, forKey: .upgrade)) ?? []
+            self.downgrade = (try? container.decode([TierChange].self, forKey: .downgrade)) ?? []
+            self.currentProductId = try? container.decode(String.self, forKey: .currentProductId)
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(upgrade, forKey: .upgrade)
+            try container.encode(downgrade, forKey: .downgrade)
+            try container.encodeIfPresent(currentProductId, forKey: .currentProductId)
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case upgrade, downgrade, currentProductId
+        }
+    }
+
+    /// Represents a single tier change option
+    public struct TierChange: Codable, Equatable {
+        public let tier: String
+        public let productIds: [String]
+        public let order: Int
+
+        public init(tier: String, productIds: [String], order: Int) {
+            self.tier = tier
+            self.productIds = productIds
+            self.order = order
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.tier = try container.decode(String.self, forKey: .tier)
+            self.productIds = (try? container.decode([String].self, forKey: .productIds)) ?? []
+            self.order = (try? container.decode(Int.self, forKey: .order)) ?? 0
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case tier, productIds, order
+        }
+    }
+
+    /// Represents a pending plan change that will take effect at a future date
+    public struct PendingPlan: Codable, Equatable {
+        public let productId: String
+        public let billingPeriod: BillingPeriod
+        public let effectiveAt: Date
+        public let status: String
+        public let tier: TierName
+
+        public init(productId: String, billingPeriod: BillingPeriod, effectiveAt: Date, status: String, tier: TierName) {
+            self.productId = productId
+            self.billingPeriod = billingPeriod
+            self.effectiveAt = effectiveAt
+            self.status = status
+            self.tier = tier
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.productId = try container.decode(String.self, forKey: .productId)
+            self.billingPeriod = (try? container.decode(BillingPeriod.self, forKey: .billingPeriod)) ?? .unknown
+            self.effectiveAt = (try? container.decode(Date.self, forKey: .effectiveAt)) ?? Date.distantFuture
+            self.status = (try? container.decode(String.self, forKey: .status)) ?? "pending"
+            self.tier = (try? container.decode(TierName.self, forKey: .tier)) ?? .plus
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case productId, billingPeriod, effectiveAt, status, tier
+        }
+    }
+
+    public enum BillingPeriod: String, Codable {
+        case monthly = "Monthly"
+        case yearly = "Yearly"
+        case unknown
+
+        public init(from decoder: Decoder) throws {
+            self = try Self(rawValue: decoder.singleValueContainer().decode(RawValue.self)) ?? .unknown
+        }
+
+        public var remoteMessagingFrameworkValue: String {
+            switch self {
+            case .monthly: return "monthly"
+            case .yearly: return "yearly"
+            case .unknown: return "unknown"
+            }
+        }
+    }
+
+    public enum Platform: String, Codable {
+        case apple, google, stripe
+        case unknown
+
+        public init(from decoder: Decoder) throws {
+            self = try Self(rawValue: decoder.singleValueContainer().decode(RawValue.self)) ?? .unknown
+        }
+    }
+
+    public enum Status: String, Codable {
+        case autoRenewable = "Auto-Renewable"
+        case notAutoRenewable = "Not Auto-Renewable"
+        case gracePeriod = "Grace Period"
+        case inactive = "Inactive"
+        case expired = "Expired"
+        case unknown
+
+        public init(from decoder: Decoder) throws {
+            self = try Self(rawValue: decoder.singleValueContainer().decode(RawValue.self)) ?? .unknown
+        }
+
+        public var remoteMessagingFrameworkValue: String {
+            switch self {
+            case .autoRenewable: return "auto_renewable"
+            case .notAutoRenewable: return "not_auto_renewable"
+            case .gracePeriod: return "grace_period"
+            case .inactive: return "inactive"
+            case .expired: return "expired"
+            case .unknown: return "unknown"
+            }
+        }
+    }
+
+    /// Represents a subscription offer.
+    ///
+    /// The `Offer` struct encapsulates information about a specific subscription offer,
+    /// including its type.
+    public struct Offer: Codable, Equatable, Hashable {
+        /// The type of the offer.
+        public let type: OfferType
+    }
+
+    /// Represents different types of subscription offers.
+    ///
+    /// - `trial`: A trial offer.
+    /// - `unknown`: A fallback case for any unrecognized offer types, ensuring forward compatibility.
+    public enum OfferType: String, Codable {
+        case trial = "Trial"
+        case unknown
+
+        /// Decodes an `OfferType` from a JSON value.
+        ///
+        /// If the decoded value does not match any known case, it defaults to `.unknown`.
+        public init(from decoder: Decoder) throws {
+            self = try Self(rawValue: decoder.singleValueContainer().decode(RawValue.self)) ?? .unknown
+        }
+    }
+
+    public var isActive: Bool {
+        status != .expired && status != .inactive
+    }
+
+    /// Returns `true` is the Subscription has an active `Offer` with a type of `trial`. False otherwise.
+    public var hasActiveTrialOffer: Bool {
+        activeOffers.contains(where: { $0.type == .trial })
+    }
+
+    /// Days in the active trial, derived from `startedAt`...`expiresOrRenewsAt` since `Offer` carries no duration itself; `nil` if there's no trial.
+    public func trialLengthInDays(calendar: Calendar = .current) -> Int? {
+        guard hasActiveTrialOffer else { return nil }
+        let days = calendar.dateComponents([.day],
+                                           from: calendar.startOfDay(for: startedAt),
+                                           to: calendar.startOfDay(for: expiresOrRenewsAt)).day ?? 0
+        return days > 0 ? days : nil
+    }
+
+    /// Returns the pending plan with the earliest effective date if one exists, nil otherwise.
+    public var firstPendingPlan: PendingPlan? {
+        pendingPlans?.min(by: { $0.effectiveAt < $1.effectiveAt })
+    }
+
+    public var debugDescription: String {
+        return """
+        Subscription:
+        - Product ID: \(productId)
+        - Name: \(name)
+        - Billing Period: \(billingPeriod.rawValue)
+        - Started At: \(formatDate(startedAt))
+        - Expires/Renews At: \(formatDate(expiresOrRenewsAt))
+        - Platform: \(platform.rawValue)
+        - Status: \(status.rawValue)
+        - Tier: \(tier?.rawValue ?? "unknown")
+        - Features: \(features?.map { $0.debugDescription } ?? [])
+        - Pending Plans: \(pendingPlans?.count ?? 0)
+        - Free Trial Length (days): \(trialLengthInDays().map(String.init) ?? "0")
+        """
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        dateFormatter.timeStyle = .short
+        dateFormatter.timeZone = TimeZone.current
+        return dateFormatter.string(from: date)
+    }
+
+    // MARK: - Equatable
+
+    public static func == (lhs: DuckDuckGoSubscription, rhs: DuckDuckGoSubscription) -> Bool {
+        return lhs.productId == rhs.productId &&
+        lhs.name == rhs.name &&
+        lhs.billingPeriod == rhs.billingPeriod &&
+        lhs.startedAt == rhs.startedAt &&
+        lhs.expiresOrRenewsAt == rhs.expiresOrRenewsAt &&
+        lhs.platform == rhs.platform &&
+        lhs.status == rhs.status &&
+        lhs.tier == rhs.tier &&
+        lhs.availableChanges == rhs.availableChanges &&
+        lhs.pendingPlans == rhs.pendingPlans &&
+        Set(lhs.activeOffers) == Set(rhs.activeOffers) &&
+        Set(lhs.features ?? []) == Set(rhs.features ?? [])
+    }
+}

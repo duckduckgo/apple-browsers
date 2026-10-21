@@ -20,20 +20,31 @@ import Foundation
 import NetworkProtectionProxy
 import Combine
 import DataBrokerProtectionCore
+import VPNAppState
 
 public final class VPNBypassService: VPNBypassServiceProvider {
     private let dbpSettings: DataBrokerProtectionSettings
     private let backgroundAgentBundleId: String
     private let proxySettings: TransparentProxySettingsProviding
+    private let vpnAppState: VPNAppState
 
-    public init(dbpSettings: DataBrokerProtectionSettings, backgroundAgentBundleId: String, proxySettings: TransparentProxySettingsProviding) {
+    public init(dbpSettings: DataBrokerProtectionSettings,
+                backgroundAgentBundleId: String,
+                proxySettings: TransparentProxySettingsProviding,
+                vpnAppState: VPNAppState) {
+
         self.dbpSettings = dbpSettings
         self.backgroundAgentBundleId = backgroundAgentBundleId
         self.proxySettings = proxySettings
+        self.vpnAppState = vpnAppState
     }
 
     public var isEnabled: Bool {
         proxySettings.isExcluding(appIdentifier: backgroundAgentBundleId)
+    }
+
+    public var isSupported: Bool {
+        vpnAppState.isUsingSystemExtension
     }
 
     public var isOnboardingShown: Bool {

@@ -28,6 +28,28 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         cancellables = []
     }
 
+    func testImpressionTrackerReportsOncePerContinuousShowing() {
+        var reportedMessageIDs: [String] = []
+        let tracker = TabBarRemoteMessageImpressionTracker { reportedMessageIDs.append($0) }
+
+        tracker.update(isEligible: true, messageID: "message-a")
+        tracker.update(isEligible: true, messageID: "message-a")
+
+        XCTAssertEqual(reportedMessageIDs, ["message-a"])
+    }
+
+    func testImpressionTrackerResetsWhenIneligibleAndReportsReplacement() {
+        var reportedMessageIDs: [String] = []
+        let tracker = TabBarRemoteMessageImpressionTracker { reportedMessageIDs.append($0) }
+
+        tracker.update(isEligible: true, messageID: "message-a")
+        tracker.update(isEligible: false, messageID: nil)
+        tracker.update(isEligible: true, messageID: "message-a")
+        tracker.update(isEligible: true, messageID: "message-b")
+
+        XCTAssertEqual(reportedMessageIDs, ["message-a", "message-a", "message-b"])
+    }
+
     func testWhenModelIsNotForTabBar_thenIsNotSetAsRemoteMessage() {
         let mock = MockTabBarRemoteMessageProvider()
         let viewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: mock, isFireWindow: false)
@@ -96,15 +118,54 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
+    func testWhenValidTabBarMessageFollowedByMalformed_thenRemoteMessageIsCleared() {
+        let mock = MockTabBarRemoteMessageProvider()
+        let viewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: mock, isFireWindow: false)
+
+        var receivedMessages: [TabBarRemoteMessage?] = []
+        viewModel.$remoteMessage
+            .dropFirst() // Drop value when subscribing
+            .prefix(2) // Get only the two emitted values
+            .collect() // Collect the messages in an array
+            .sink { remoteMessages in
+                receivedMessages = remoteMessages
+            }.store(in: &cancellables)
+
+        mock.emitRemoteMessage(createTabBarRemoteMessage())
+        mock.emitRemoteMessage(createMalformedTabBarRemoteMessage())
+
+        XCTAssertEqual(receivedMessages.count, 2)
+        XCTAssertNotNil(receivedMessages[0]) // First Item is a valid message
+        XCTAssertNil(receivedMessages[1]) // Last Item is a nil message
+    }
+
+    func testWhenSurveyURLIsRefreshed_thenLatestUsageStatesAreReturned() throws {
+        let originalURLString = "https://survey.example.com?last_duck_ai_usage=none&last_search_state=none&other=preserved"
+        let refreshedURLString = "https://survey.example.com?last_duck_ai_usage=day&last_search_state=day&other=preserved"
+        let mock = MockTabBarRemoteMessageProvider()
+        mock.surveyURLRefresher = { _ in refreshedURLString }
+        let viewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: mock, isFireWindow: false)
+
+        mock.emitRemoteMessage(createTabBarRemoteMessage(surveyURL: originalURLString))
+
+        XCTAssertNil(mock.capturedSurveyURLToRefresh)
+        let surveyURL = try XCTUnwrap(viewModel.remoteMessage?.surveyURL)
+        let refreshedSurveyURL = viewModel.refreshSurveyURL(surveyURL)
+        XCTAssertEqual(mock.capturedSurveyURLToRefresh, originalURLString)
+        XCTAssertEqual(refreshedSurveyURL.absoluteString, refreshedURLString)
+    }
+
     // MARK: - Utilities
 
-    private func createTabBarRemoteMessage() -> RemoteMessageModel {
+    private func createTabBarRemoteMessage(surveyURL: String = "www.survey.com") -> RemoteMessageModel {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Help Us Improve",
                                                                                   descriptionText: "We really want to know which features would make our browser better.",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Tell Us What You Think",
-                                                                                  primaryAction: .survey(value: "www.survey.com"))
-        return RemoteMessageModel(id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
+                                                                                  primaryAction: .survey(value: surveyURL))
+        return RemoteMessageModel(id: "tab_bar_message",
+                                  surfaces: .tabBar,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -115,9 +176,11 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Help Us Improve",
                                                                                   descriptionText: "We really want to know which features would make our browser better.",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .appStore)
-        return RemoteMessageModel(id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
+        return RemoteMessageModel(id: "tab_bar_message",
+                                  surfaces: .tabBar,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -128,9 +191,11 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
         let tabBarRemoteMessageContent: RemoteMessageModelType = .bigSingleAction(titleText: "Some title!",
                                                                                   descriptionText: "Some description",
                                                                                   placeholder: .announce,
+                                                                                  imageUrl: nil,
                                                                                   primaryActionText: "Primary!",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
         return RemoteMessageModel(id: "other_id",
+                                  surfaces: .newTabPage,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -141,6 +206,9 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
 class MockTabBarRemoteMessageProvider: TabBarRemoteMessageProviding {
     private let remoteMessageSubject = PassthroughSubject<RemoteMessageModel?, Never>()
 
+    var surveyURLRefresher: (String) -> String = { $0 }
+    private(set) var capturedSurveyURLToRefresh: String?
+
     var remoteMessagePublisher: AnyPublisher<RemoteMessageModel?, Never> {
         return remoteMessageSubject.eraseToAnyPublisher()
     }
@@ -149,7 +217,16 @@ class MockTabBarRemoteMessageProvider: TabBarRemoteMessageProviding {
         remoteMessageSubject.send(message)
     }
 
-    func markRemoteMessageAsShown() async {
+    func refreshSurveyURL(_ urlString: String) -> String {
+        capturedSurveyURLToRefresh = urlString
+        return surveyURLRefresher(urlString)
+    }
+
+    func refreshRemoteMessageForPresentation() {
+        // No-op
+    }
+
+    func markRemoteMessageAsShown(withID id: String) async {
         // No-op
     }
 

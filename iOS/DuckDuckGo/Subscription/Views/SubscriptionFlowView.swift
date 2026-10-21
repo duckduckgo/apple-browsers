@@ -18,13 +18,17 @@
 //
 
 import SwiftUI
+import UIKit
 import Foundation
 import DesignResourcesKit
 import Core
 import DataBrokerProtection_iOS
+import PrivacyConfig
+import VPN
+import PixelKit
 
 struct SubscriptionFlowView: View {
-        
+
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: SubscriptionFlowViewModel
     
@@ -35,40 +39,39 @@ struct SubscriptionFlowView: View {
     @Binding var currentView: SubscriptionContainerView.CurrentViewType
     
     // Local View State
-    @State private var errorMessage: SubscriptionErrorMessage = .general
+    @State private var errorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
     @State private var isPresentingError: Bool = false
+
+    // MARK: - Onboarding state
+
+    @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
+    @State private var onboardingViewCoordinator = SubscriptionOnboardingViewCoordinator()
 
     enum Constants {
         static let empty = ""
         static let navButtonPadding: CGFloat = 20.0
         static let backButtonImage = "chevron.left"
     }
-    
-    enum SubscriptionErrorMessage {
-        case activeSubscription
-        case appStore
-        case backend
-        case general
-    }
-    
+
+    let featureFlagger: FeatureFlagger
+
     var body: some View {
         
         // Hidden Navigation Links for Onboarding sections
-        NavigationLink(destination: LazyView(NetworkProtectionRootView().navigationViewStyle(.stack)),
+        NavigationLink(destination: LazyView(
+            NetworkProtectionRootView(source: .subscriptionFlow)
+                .navigationViewStyle(.stack)),
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
-        NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
+        
+        NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                                                                     userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser, featureFlagger: featureFlagger)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
-            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!).navigationViewStyle(.stack)),
-                           isActive: $isShowingDBP,
-                           label: { EmptyView() })
-        } else {
-            NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
-                           isActive: $isShowingDBP,
-                           label: { EmptyView() })
-        }
+        NavigationLink(destination: LazyView(pirDestination.navigationViewStyle(.stack)),
+                       isActive: $isShowingDBP,
+                       label: { EmptyView() })
 
         baseView
             .toolbar {
@@ -76,7 +79,7 @@ struct SubscriptionFlowView: View {
                     backButton
                 }
                 ToolbarItem(placement: .principal) {
-                    if viewModel.state.viewTitle == UserText.subscriptionTitle {
+                    if viewModel.flowType.showsDaxLogo && viewModel.state.viewTitle == viewModel.flowType.navigationTitle {
                         DaxLogoNavbarTitle()
                     } else {
                         Text(viewModel.state.viewTitle).bold()
@@ -113,6 +116,10 @@ struct SubscriptionFlowView: View {
             return UserText.subscriptionPurchasingTitle
         case .restoring:
             return UserText.subscriptionRestoringTitle
+        case .changingPlan:
+            return UserText.subscriptionPlanChangeInProgressTitle
+        case .planChangePolling:
+            return UserText.subscriptionCompletePlanChangeTitle
         case .idle:
             return ""
         }
@@ -146,32 +153,23 @@ struct SubscriptionFlowView: View {
         }
         
         .onChange(of: viewModel.state.transactionError) { value in
-            
-            if !isPresentingError {
-                let displayError: Bool = {
-                    switch value {
-                    case .hasActiveSubscription:
-                        errorMessage = .activeSubscription
-                        return true
-                    case .failedToRestorePastPurchase, .purchaseFailed:
-                        errorMessage = .appStore
-                        return true
-                    case .failedToGetSubscriptionOptions, .generalError:
-                        errorMessage = .backend
-                        return true
-                    default:
-                        return false
-                    }
-                }()
-                
-                if displayError {
-                    isPresentingError = true
-                }
+            if !isPresentingError, let messageType = SubscriptionTransactionErrorAlert.displayContent(for: value) {
+                errorMessageType = messageType
+                isPresentingError = true
             }
         }
         
         .onChange(of: viewModel.state.shouldGoBackToSettings) { _ in
             dismiss()
+        }
+
+        .task(id: viewModel.state.shouldPresentOnboarding) {
+            await startOnboarding()
+        }
+
+        .subscriptionOnboardingCover(item: $onboardingFlow, viewCoordinator: onboardingViewCoordinator) { flow in
+            SubscriptionOnboardingLauncher.launch(flow: flow)
+                .onFirstAppear { viewModel.didPresentOnboarding() }
         }
         
         .onFirstAppear {
@@ -184,42 +182,13 @@ struct SubscriptionFlowView: View {
         }
                 
         .alert(isPresented: $isPresentingError) {
-            getAlert(error: self.errorMessage)
-        }
-    }
-        
-    private func getAlert(error: SubscriptionErrorMessage) -> Alert {
-        
-        switch error {
-        case .activeSubscription:
-            return Alert(
-                title: Text(UserText.subscriptionFoundTitle),
-                message: Text(UserText.subscriptionFoundText),
-                primaryButton: .cancel(Text(UserText.subscriptionFoundCancel)) {
-                     viewModel.clearTransactionError()
-                      dismiss()
+            SubscriptionTransactionErrorAlert.alert(
+                for: errorMessageType,
+                onDismiss: {
+                    viewModel.clearTransactionError()
+                    dismiss()
                 },
-                secondaryButton: .default(Text(UserText.subscriptionFoundRestore)) {
-                    viewModel.restoreAppstoreTransaction()
-                }
-            )
-        case .appStore:
-            return Alert(
-                title: Text(UserText.subscriptionAppStoreErrorTitle),
-                message: Text(UserText.subscriptionAppStoreErrorMessage),
-                dismissButton: .cancel(Text(UserText.actionOK)) {
-                    viewModel.clearTransactionError()
-                    dismiss()
-                }
-            )
-        case .backend, .general:
-            return Alert(
-                title: Text(UserText.subscriptionBackendErrorTitle),
-                message: Text(UserText.subscriptionBackendErrorMessage),
-                dismissButton: .cancel(Text(UserText.subscriptionBackendErrorButton)) {
-                    viewModel.clearTransactionError()
-                    dismiss()
-                }
+                onRestore: { viewModel.restoreAppstoreTransaction() }
             )
         }
     }
@@ -236,10 +205,50 @@ struct SubscriptionFlowView: View {
         }
     }
 
+    // MARK: - Onboarding
+
+    @MainActor
+    private func startOnboarding() async {
+        guard viewModel.state.shouldPresentOnboarding, onboardingFlow == nil else { return }
+        guard let persistor = viewModel.onboardingPersistor else {
+            PixelKit.fire(SubscriptionPixel.subscriptionOnboardingLaunchFailure(.missingPersistor), frequency: .dailyAndCount)
+            return
+        }
+        guard let flow = await SubscriptionOnboardingFlowViewModel.postCheckout(
+            persistor: persistor,
+            isPIRAvailable: viewModel.isPIRAvailable,
+            subscriptionManager: viewModel.subscriptionManager,
+            onFinish: {
+                onboardingFlow = nil
+                onboardingViewCoordinator.finish {
+                    guard viewModel.onboardingFinished() else { return }
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        dismiss()
+                    }
+                }
+            },
+            onRequestDuckAIChat: viewModel.onRequestDuckAIChat,
+            pirScreen: { pirDestination }) else { return }
+        onboardingFlow = flow
+    }
+
+    /// Shared by the hidden PIR `NavigationLink` above and the onboarding flow's `pirScreen`.
+    @ViewBuilder
+    private var pirDestination: some View {
+        if viewModel.isPIREnabled, let provider = viewModel.dataBrokerProtectionViewControllerProvider {
+            DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: provider)
+                .edgesIgnoringSafeArea(.bottom)
+        } else {
+            SubscriptionPIRMoveToDesktopView()
+        }
+    }
+
     private func setUpAppearances() {
         let navAppearance = UINavigationBar.appearance()
         navAppearance.backgroundColor = UIColor(designSystemColor: .background)
-        navAppearance.barTintColor = UIColor(designSystemColor: .container)
+        navAppearance.barTintColor = UIColor(designSystemColor: .controlsFillPrimary)
         navAppearance.shadowImage = UIImage()
         navAppearance.tintColor = UIColor(designSystemColor: .textPrimary)
     }

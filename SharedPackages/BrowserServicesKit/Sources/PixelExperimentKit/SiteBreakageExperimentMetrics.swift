@@ -19,7 +19,7 @@
 import Foundation
 import PixelKit
 import Configuration
-import BrowserServicesKit
+import PrivacyConfig
 
 public enum BreakageExperimentMetricType: String {
     /// Metric triggered when the privacy toggle is used.

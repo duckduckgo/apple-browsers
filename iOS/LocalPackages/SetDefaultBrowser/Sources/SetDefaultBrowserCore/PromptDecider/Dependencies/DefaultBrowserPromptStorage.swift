@@ -21,12 +21,12 @@ import Foundation
 
 /// A type that provides read-only access to the Set Default Browser (SAD) prompt storage state.
 public protocol DefaultBrowserPromptStorage: AnyObject {
-    /// The Unix timestamp of when the most recent modal was shown to the user. It returns `nil` if no modal has been shown yet.
-    var lastModalShownDate: TimeInterval? { get set }
     /// The total number of SAD modals that have been shown to the user.
     var modalShownOccurrences: Int { get set }
     /// A boolean value indicating whether the user has chosen to permanently dismiss the SAD prompts.
     var isPromptPermanentlyDismissed: Bool { get set }
+    /// A boolean value indicating whether the user has seen the inactive modal SAD prompt.
+    var hasInactiveModalShown: Bool { get set }
 }
 
 public extension DefaultBrowserPromptStorage {

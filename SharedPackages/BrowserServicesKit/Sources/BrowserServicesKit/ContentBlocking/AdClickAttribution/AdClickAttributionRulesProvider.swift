@@ -16,10 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import TrackerRadarKit
 import Common
+import FoundationExtensions
+import ContentBlocking
+import Foundation
 import os.log
+import PrivacyConfig
+import TrackerRadarKit
 
 public protocol AdClickAttributionRulesProviding {
 

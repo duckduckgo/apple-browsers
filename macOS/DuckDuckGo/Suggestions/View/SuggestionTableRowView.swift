@@ -20,15 +20,19 @@ import Cocoa
 
 final class SuggestionTableRowView: NSTableRowView {
 
-    static let identifier = "SuggestionTableRowView"
+    static let identifier = NSUserInterfaceItemIdentifier(rawValue: "SuggestionTableRowView")
 
-    var visualStyle: VisualStyleProviding?
+    var theme: ThemeStyleProviding?
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        self.identifier = Self.identifier
 
         setupView()
-        updateBackgroundColor()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(Self.self): Bad initializer")
     }
 
     override var isEmphasized: Bool {
@@ -39,9 +43,7 @@ final class SuggestionTableRowView: NSTableRowView {
     override var isSelected: Bool {
         didSet {
             updateCellView()
-            updateBackgroundColor()
-
-            layer?.cornerRadius = visualStyle?.addressBarStyleProvider.suggestionHighlightCornerRadius ?? 3
+            needsDisplay = true
         }
     }
 
@@ -52,9 +54,23 @@ final class SuggestionTableRowView: NSTableRowView {
         wantsLayer = true
     }
 
-    private func updateBackgroundColor() {
-        let accentColor: NSColor = isBurner ? .burnerAccent : .controlAccentColor
-        backgroundColor = isSelected ? accentColor : .clear
+    override func drawBackground(in dirtyRect: NSRect) {
+        guard isSelected, let theme else {
+            return
+        }
+
+        let styleProvider = theme.addressBarStyleProvider
+        let colorsProvider = theme.colorsProvider
+
+        let fillColor: NSColor = colorsProvider.suggestionsHighlightBackgroundColor
+        let cornerRadius = styleProvider.suggestionHighlightCornerRadius
+        let horizontalPadding = styleProvider.suggestionHighlightHorizontalPadding
+
+        let selectionRect = bounds.insetBy(dx: horizontalPadding, dy: 0)
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: cornerRadius, yRadius: cornerRadius)
+
+        fillColor.setFill()
+        path.fill()
     }
 
     private func updateCellView() {
@@ -70,7 +86,7 @@ final class SuggestionTableRowView: NSTableRowView {
         super.layout()
 
         updateCellView()
-        updateBackgroundColor()
+        needsDisplay = true
     }
 
 }

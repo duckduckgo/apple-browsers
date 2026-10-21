@@ -48,6 +48,27 @@ public struct TextMenuItemHeader: View {
     }
 }
 
+public struct TextAndImageMenuItemHeader: View {
+    public let text: String
+    public let image: Image
+    public let bottomPadding: CGFloat
+
+    public init(_ text: String, image: Image, bottomPadding: CGFloat = 4) {
+        self.text = text
+        self.image = image
+        self.bottomPadding = bottomPadding
+    }
+
+    public var body: some View {
+        HStack(alignment: .center, spacing: 8) {
+            image
+            Text(text)
+                .font(Const.Fonts.preferencePaneSectionHeader)
+        }
+        .padding(.bottom, bottomPadding)
+    }
+}
+
 public struct TextMenuItemCaption: View {
     public let text: String
 
@@ -56,7 +77,7 @@ public struct TextMenuItemCaption: View {
     }
 
     public var body: some View {
-        Text(text)
+        Text(.init(text))
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixMultilineScrollableText()
             .foregroundColor(Color(.greyText))
@@ -76,6 +97,7 @@ public struct ToggleMenuItem: View {
         Toggle(title, isOn: isOn)
             .fixMultilineScrollableText()
             .toggleStyle(.checkbox)
+            .rebrandedControlTint()
     }
 }
 
@@ -100,7 +122,9 @@ public struct ToggleMenuItemWithDescription: View {
 
                 TextMenuItemCaption(description)
             }
-        }.toggleStyle(.checkbox)
+        }
+        .toggleStyle(.checkbox)
+        .rebrandedControlTint()
     }
 }
 

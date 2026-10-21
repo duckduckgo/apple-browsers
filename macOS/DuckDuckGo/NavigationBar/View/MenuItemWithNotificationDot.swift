@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUI
 
 /// View that represents a menu item that has a blue notification dot at the right.
@@ -28,25 +29,25 @@ struct MenuItemWithNotificationDot: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isHovered ? .menuItemHover : Color.clear)
+            RoundedRectangle(cornerRadius: AppVersion.isLiquidGlassSupported ? 7 : 4)
+                .fill(isHovered ? MenuItemWithBadgeConstants.hoverColor : Color.clear)
                 .padding([.leading, .trailing], 5)
                 .frame(maxWidth: .infinity)
 
             HStack(spacing: 0) {
                 Image(nsImage: leftImage)
                     .resizable()
-                    .foregroundColor(isHovered ? .white : .blackWhite100)
-                    .frame(width: 16, height: 16)
+                    .foregroundColor(isHovered ? .white : Color(.blackWhite100))
+                    .frame(width: 12, height: 12)
                     .padding(.trailing, 6)
-                    .padding(.leading, 14)
+                    .padding(.leading, 16)
 
                 Text(title)
-                    .foregroundColor(isHovered ? .white : .blackWhite100.opacity(0.9))
+                    .foregroundColor(isHovered ? .white : Color(.blackWhite100).opacity(0.9))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Circle()
-                    .fill(isHovered ? .white : .updateIndicator)
+                    .fill(isHovered ? .white : Color(.updateIndicator))
                     .frame(width: 7, height: 7)
                     .padding(.trailing, 14)
             }

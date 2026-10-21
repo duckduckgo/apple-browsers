@@ -21,6 +21,8 @@ import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
 class CapturingDockCustomizer: DockCustomization {
+    var supportsAddingToDock: Bool = true
+
     private var featureShownSubject = CurrentValueSubject<Bool, Never>(false)
 
     var shouldShowNotificationPublisher: AnyPublisher<Bool, Never> {
@@ -35,11 +37,16 @@ class CapturingDockCustomizer: DockCustomization {
     var isAddedToDock = false
 
     func addToDock() -> Bool {
+        guard supportsAddingToDock else { return false }
         isAddedToDock = true
         return true
     }
 
     func didCloseMoreOptionsMenu() {
+        // No-op
+    }
+
+    func synchronizeNotificationVisibilityWithFirstLaunchDate() {
         // No-op
     }
 

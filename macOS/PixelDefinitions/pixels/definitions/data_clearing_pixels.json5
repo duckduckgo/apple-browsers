@@ -1,0 +1,10 @@
+// Data Clearing (Fire) pixels for tracking fire button performance and quality metrics
+{
+    "m_mac_fire_retrigger_in_20s": {
+        "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    }
+}

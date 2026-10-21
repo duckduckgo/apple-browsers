@@ -17,10 +17,10 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import VPN
 import NetworkProtectionUI
-import NetworkExtension
 import SystemExtensions
 import LoginItems
 import NetworkProtectionIPC
@@ -48,6 +48,7 @@ final class NetworkProtectionDebugUtilities {
     // MARK: - Initializers
 
     init(loginItemsManager: LoginItemsManager = .init(),
+         pinningManager: PinningManager,
          settings: VPNSettings = .init(defaults: .netP),
          vpnAppState: VPNAppState = .init(defaults: .netP)) {
 
@@ -57,14 +58,22 @@ final class NetworkProtectionDebugUtilities {
         let ipcClient = VPNControllerXPCClient.shared
 
         self.ipcClient = ipcClient
-        self.vpnUninstaller = VPNUninstaller(ipcClient: ipcClient)
+        self.vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: ipcClient)
         self.vpnAppState = vpnAppState
     }
 
     // MARK: - Debug commands for the extension
 
+    func simulateSubscriptionExpirationInTunnel() async throws {
+        try await ipcClient.command(.simulateSubscriptionExpirationInTunnel)
+    }
+
     func restartAdapter() async throws {
         try await ipcClient.command(.restartAdapter)
+    }
+
+    func triggerLeakCheck() async throws {
+        try await ipcClient.command(.triggerLeakCheck)
     }
 
     func resetAllState(keepAuthToken: Bool) async throws {
@@ -86,13 +95,13 @@ final class NetworkProtectionDebugUtilities {
         vpnAppState.resetDontAskAgainExclusionSuggestion()
     }
 
-    func disableLoginItems() {
-        vpnUninstaller.removeAgents()
+    func disableLoginItems() async {
+        await vpnUninstaller.removeAgents()
     }
 
     func removeVPNNetworkExtensionAndAgents() async throws {
         try await vpnUninstaller.removeSystemExtension()
-        vpnUninstaller.removeAgents()
+        await vpnUninstaller.removeAgents()
     }
 
     func removeVPNConfiguration() async throws {

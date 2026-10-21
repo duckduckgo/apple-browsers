@@ -21,6 +21,7 @@
 import Combine
 import NetworkExtension
 import Common
+import FoundationExtensions
 import VPN
 
 /// This is the default status reporter.
@@ -29,6 +30,7 @@ public final class MockNetworkProtectionStatusReporter: NetworkProtectionStatusR
 
     // MARK: - Publishers
 
+    public let vpnEnabledObserver: VPNEnabledObserver
     public let statusObserver: ConnectionStatusObserver
     public let serverInfoObserver: ConnectionServerInfoObserver
     public let connectionErrorObserver: ConnectionErrorObserver
@@ -39,7 +41,8 @@ public final class MockNetworkProtectionStatusReporter: NetworkProtectionStatusR
 
     // MARK: - Init & deinit
 
-    public init(statusObserver: ConnectionStatusObserver = MockConnectionStatusObserver(),
+    public init(vpnEnabledObserver: VPNEnabledObserver = MockVPNEnabledObserver(),
+                statusObserver: ConnectionStatusObserver = MockConnectionStatusObserver(),
                 serverInfoObserver: ConnectionServerInfoObserver = MockConnectionServerInfoObserver(),
                 connectionErrorObserver: ConnectionErrorObserver = MockConnectionErrorObserver(),
                 connectivityIssuesObserver: ConnectivityIssueObserver = MockConnectivityIssueObserver(),
@@ -48,6 +51,7 @@ public final class MockNetworkProtectionStatusReporter: NetworkProtectionStatusR
                 knownFailureObserver: KnownFailureObserver = MockKnownFailureObserver(),
                 distributedNotificationCenter: DistributedNotificationCenter = .default()) {
 
+        self.vpnEnabledObserver = vpnEnabledObserver
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
         self.connectionErrorObserver = connectionErrorObserver

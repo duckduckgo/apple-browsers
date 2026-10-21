@@ -1,0 +1,143 @@
+//
+//  PromoRegistryTests.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Combine
+@_spi(Testing) import Persistence
+import PrivacyConfig
+import RemoteMessaging
+import RemoteMessagingTestsUtils
+import XCTest
+@testable import DuckDuckGo_Privacy_Browser
+
+@MainActor
+final class PromoRegistryTests: XCTestCase {
+
+    func testWhenPromoServiceCreated_ThenAllStringsAreUnique() async {
+        let store = MockRemoteMessagingStore()
+        let activeRemoteMessageModel = ActiveRemoteMessageModel(
+            remoteMessagingStore: store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { },
+            navigateToPIRHandler: { },
+            navigateToSoftwareUpdateHandler: { }
+        )
+        let defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(
+            privacyConfigManager: MockPrivacyConfigurationManaging(),
+            keyValueStore: InMemoryThrowingKeyValueStore(),
+            notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
+            uiHosting: { nil },
+            isOnboardingCompletedProvider: { true },
+            dockCustomization: DockCustomizerMock()
+        )
+        let windowControllersManager = WindowControllersManagerMock()
+        let dependencies = PromoDependencies(
+            keyValueStore: InMemoryThrowingKeyValueStore(),
+            isExternallyActivated: false,
+            isNewUserProvider: { false },
+            isOnboardingCompletedProvider: { true },
+            activeRemoteMessageModel: activeRemoteMessageModel,
+            defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
+            sessionRestoreCoordinator: SessionRestorePromptCoordinatorMock(),
+            subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate(),
+            featureFlagger: MockFeatureFlagger(),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            windowControllersManager: WindowControllersManagerMock(),
+            syncService: nil,
+            syncBookmarksAdapter: nil,
+            pinningManager: MockPinningManager(),
+            cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                keyValueStore: InMemoryThrowingKeyValueStore(),
+                windowControllersManager: windowControllersManager,
+                cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                    featureFlagger: MockFeatureFlagger(),
+                    aiChatMenuConfig: MockAIChatConfig()
+                ),
+                onboardingStateUpdater: MockOnboardingStateUpdater(),
+                autoconsentStats: MockAutoconsentStats()
+            ),
+            duckPlayerOverlayObserver: {
+                let featureFlagger = MockFeatureFlagger()
+                return DuckPlayerOverlayObserver(
+                    duckPlayer: DuckPlayer(
+                        preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
+                        privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+                        internalUserDecider: featureFlagger.internalUserDecider
+                    ),
+                    windowControllersManager: windowControllersManager,
+                    featureFlagger: featureFlagger
+                )
+            }(),
+            updateController: nil,
+            updateNotificationBridge: nil,
+            brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
+            quitSurveyPromoObserver: QuitSurveyPromoObserver(),
+            vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState()),
+            syncSetupBookmarksPromoManager: .makeForTesting(content: .bookmarks),
+            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill),
+            bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                isBookmarksBarSettingOn: { true },
+                notificationCenter: NotificationCenter(),
+                legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            ),
+            bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                storage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            ),
+            bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                hasTopLevelEntitiesProvider: { false },
+                bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
+                dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
+                syncService: nil,
+                recordResult: { _, _ in }
+            ),
+            autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                isAnyCategoryEmptyProvider: { true },
+                dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
+                syncService: nil,
+                recordResult: { _, _ in }
+            )
+        )
+        let promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
+
+        let ids = promoService.promos.map(\.id)
+        let uniqueIds = Set(ids)
+        XCTAssertEqual(ids.count, uniqueIds.count, "Promo IDs must be unique. Duplicates: \(ids.filter { id in ids.filter { $0 == id }.count > 1 })")
+    }
+}

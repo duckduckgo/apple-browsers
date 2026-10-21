@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
 import CryptoKit
+import Utilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DataEncryptionTests: XCTestCase {

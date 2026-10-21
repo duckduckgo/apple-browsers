@@ -19,10 +19,10 @@
 
 import Foundation
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 import SetDefaultBrowserCore
 
-final class DefaultBrowserPromptFeatureFlagAdapter: DefaultBrowserPromptFeatureFlagProvider, DefaultBrowserPromptFeatureFlagSettingsProvider {
+final class DefaultBrowserPromptFeatureFlagAdapter: DefaultBrowserPromptFeatureFlagSettingsProvider {
 
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -30,10 +30,6 @@ final class DefaultBrowserPromptFeatureFlagAdapter: DefaultBrowserPromptFeatureF
     init(featureFlagger: FeatureFlagger, privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
-    }
-
-    public var isDefaultBrowserPromptsFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(FeatureFlag.scheduledSetDefaultBrowserPrompts)
     }
 
     public var defaultBrowserPromptFeatureSettings: [String: Any] {

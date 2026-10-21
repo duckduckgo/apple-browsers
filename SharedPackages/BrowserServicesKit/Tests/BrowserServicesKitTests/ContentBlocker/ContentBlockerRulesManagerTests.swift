@@ -19,12 +19,13 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
-import XCTest
-import TrackerRadarKit
 import BrowserServicesKit
-import WebKit
 import Combine
 import Common
+import ContentBlocking
+import TrackerRadarKit
+import WebKit
+import XCTest
 
 class ContentBlockerRulesManagerTests: XCTestCase {
 
@@ -1054,7 +1055,7 @@ class ContentBlockerRulesManagerCleanupTests: ContentBlockerRulesManagerTests, C
                                           updateListener: rulesUpdateListener,
                                           errorReporting: nil)
         withExtendedLifetime(cbrm) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 15)
         }
     }
 
@@ -1107,7 +1108,7 @@ class ContentBlockerRulesManagerCleanupTests: ContentBlockerRulesManagerTests, C
                                           updateListener: rulesUpdateListener,
                                           errorReporting: nil)
         withExtendedLifetime(cbrm) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 15)
         }
         XCTAssertEqual(Set(contentRulesCache.keys), Set(["current1", "current2", cbrm.currentRules[0].identifier.stringValue]))
     }

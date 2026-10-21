@@ -22,10 +22,15 @@ import Foundation
 import Core
 import Combine
 import DataBrokerProtection_iOS
+import PrivacyConfig
+import VPN
 
 struct SubscriptionEmailView: View {
         
     @StateObject var viewModel: SubscriptionEmailViewModel
+
+    let featureFlagger: FeatureFlagger
+
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     @Environment(\.dismiss) var dismiss
         
@@ -43,16 +48,26 @@ struct SubscriptionEmailView: View {
         
     var body: some View {
         // Hidden Navigation Links for Onboarding sections
-        NavigationLink(destination: LazyView(NetworkProtectionRootView().navigationViewStyle(.stack)),
+        NavigationLink(destination: LazyView(
+            NetworkProtectionRootView(source: .subscriptionEmail)
+                .navigationViewStyle(.stack)),
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
-        NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
+        NavigationLink(destination: LazyView(SubscriptionITPView(viewModel:
+                                                                    SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                                                             userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                                                             isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser, featureFlagger: featureFlagger)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
-            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!).navigationViewStyle(.stack)),
-                           isActive: $isShowingDBP,
-                           label: { EmptyView() })
+        if viewModel.isPIREnabled,
+           let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
+            NavigationLink(
+                destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                    .edgesIgnoringSafeArea(.bottom)
+                    .navigationViewStyle(.stack)),
+                isActive: $isShowingDBP,
+                label: { EmptyView() }
+            )
         } else {
             NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
                            isActive: $isShowingDBP,

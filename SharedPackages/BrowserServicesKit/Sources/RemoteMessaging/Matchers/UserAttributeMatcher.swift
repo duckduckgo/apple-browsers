@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
 import BrowserServicesKit
+import Common
+import FoundationExtensions
+import Foundation
 
 #if os(iOS)
 public typealias UserAttributeMatcher = MobileUserAttributeMatcher
@@ -28,17 +29,25 @@ public typealias UserAttributeMatcher = DesktopUserAttributeMatcher
 
 public struct MobileUserAttributeMatcher: AttributeMatching {
 
-    private enum PrivacyProSubscriptionStatus: String {
+    private enum SubscriptionStatus: String {
         case active
         case expiring
         case expired
     }
 
     private let isWidgetInstalled: Bool
+    private let isSyncEnabled: Bool
+    private let shouldShowWinBackOfferUrgencyMessage: Bool
+    private let isFreemiumPIREligible: Bool
+    private let isFreemiumPIRActivated: Bool
+    private let freemiumPIRFirstScanResult: String?
+    private let isCurrentPIRUser: Bool?
+    private let ntpAfterIdleState: String
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
@@ -46,43 +55,70 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
                 appTheme: String,
                 isWidgetInstalled: Bool,
                 daysSinceNetPEnabled: Int,
-                isPrivacyProEligibleUser: Bool,
-                isPrivacyProSubscriber: Bool,
-                privacyProDaysSinceSubscribed: Int,
-                privacyProDaysUntilExpiry: Int,
-                privacyProPurchasePlatform: String?,
-                isPrivacyProSubscriptionActive: Bool,
-                isPrivacyProSubscriptionExpiring: Bool,
-                isPrivacyProSubscriptionExpired: Bool,
+                isSubscriptionEligibleUser: Bool,
+                isDuckDuckGoSubscriber: Bool,
+                subscriptionDaysSinceSubscribed: Int,
+                subscriptionDaysUntilExpiry: Int,
+                subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
+                isSubscriptionActive: Bool,
+                isSubscriptionExpiring: Bool,
+                isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 isDuckPlayerOnboarded: Bool,
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
-                enabledFeatureFlags: [String]
+                enabledFeatureFlags: [String],
+                isSyncEnabled: Bool,
+                shouldShowWinBackOfferUrgencyMessage: Bool,
+                isFreemiumPIREligible: Bool = false,
+                isFreemiumPIRActivated: Bool = false,
+                freemiumPIRFirstScanResult: String? = nil,
+                isCurrentPIRUser: Bool? = false,
+                ntpAfterIdleState: String = "",
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.isWidgetInstalled = isWidgetInstalled
+        self.isSyncEnabled = isSyncEnabled
+        self.shouldShowWinBackOfferUrgencyMessage = shouldShowWinBackOfferUrgencyMessage
+        self.isFreemiumPIREligible = isFreemiumPIREligible
+        self.isFreemiumPIRActivated = isFreemiumPIRActivated
+        self.freemiumPIRFirstScanResult = freemiumPIRFirstScanResult
+        self.isCurrentPIRUser = isCurrentPIRUser
+        self.ntpAfterIdleState = ntpAfterIdleState
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
+            featureDiscovery: featureDiscovery,
             variantManager: variantManager,
             emailManager: emailManager,
             bookmarksCount: bookmarksCount,
             favoritesCount: favoritesCount,
             appTheme: appTheme,
             daysSinceNetPEnabled: daysSinceNetPEnabled,
-            isPrivacyProEligibleUser: isPrivacyProEligibleUser,
-            isPrivacyProSubscriber: isPrivacyProSubscriber,
-            privacyProDaysSinceSubscribed: privacyProDaysSinceSubscribed,
-            privacyProDaysUntilExpiry: privacyProDaysUntilExpiry,
-            privacyProPurchasePlatform: privacyProPurchasePlatform,
-            isPrivacyProSubscriptionActive: isPrivacyProSubscriptionActive,
-            isPrivacyProSubscriptionExpiring: isPrivacyProSubscriptionExpiring,
-            isPrivacyProSubscriptionExpired: isPrivacyProSubscriptionExpired,
+            isSubscriptionEligibleUser: isSubscriptionEligibleUser,
+            isDuckDuckGoSubscriber: isDuckDuckGoSubscriber,
+            subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
+            subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
+            subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+            subscriptionTier: subscriptionTier,
+            isSubscriptionActive: isSubscriptionActive,
+            isSubscriptionExpiring: isSubscriptionExpiring,
+            isSubscriptionExpired: isSubscriptionExpired,
+            subscriptionFreeTrialActive: subscriptionFreeTrialActive,
             isDuckPlayerOnboarded: isDuckPlayerOnboarded,
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags
+            enabledFeatureFlags: enabledFeatureFlags,
+            isReturningUser: isReturningUser,
+            isAIChatEnabled: isAIChatEnabled,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
@@ -90,6 +126,20 @@ public struct MobileUserAttributeMatcher: AttributeMatching {
         switch matchingAttribute {
         case let matchingAttribute as WidgetAddedMatchingAttribute:
             return matchingAttribute.evaluate(for: isWidgetInstalled)
+        case let matchingAttribute as SyncEnabledMatchingAttribute:
+            return matchingAttribute.evaluate(for: isSyncEnabled)
+        case let matchingAttribute as NTPAfterIdleStateMatchingAttribute:
+            return matchingAttribute.evaluate(for: ntpAfterIdleState)
+        case let matchingAttribute as WinBackOfferUrgencyMatchingAttribute:
+            return matchingAttribute.evaluate(for: shouldShowWinBackOfferUrgencyMessage)
+        case let matchingAttribute as FreemiumPIREligibleMatchingAttribute:
+            return matchingAttribute.evaluate(for: isFreemiumPIREligible)
+        case let matchingAttribute as FreemiumPIRDidActivateMatchingAttribute:
+            return matchingAttribute.evaluate(for: isFreemiumPIRActivated)
+        case let matchingAttribute as FreemiumPIRFirstScanResultMatchingAttribute:
+            return matchingAttribute.evaluate(for: freemiumPIRFirstScanResult)
+        case let matchingAttribute as PIRCurrentUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isCurrentPIRUser)
         default:
             return commonUserAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
         }
@@ -101,25 +151,29 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
     private let pinnedTabsCount: Int
     private let hasCustomHomePage: Bool
     private let isCurrentFreemiumPIRUser: Bool
+    private let isCurrentPIRUser: Bool
     private let dismissedDeprecatedMacRemoteMessageIds: [String]
 
     private let commonUserAttributeMatcher: CommonUserAttributeMatcher
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
                 favoritesCount: Int,
                 appTheme: String,
                 daysSinceNetPEnabled: Int,
-                isPrivacyProEligibleUser: Bool,
-                isPrivacyProSubscriber: Bool,
-                privacyProDaysSinceSubscribed: Int,
-                privacyProDaysUntilExpiry: Int,
-                privacyProPurchasePlatform: String?,
-                isPrivacyProSubscriptionActive: Bool,
-                isPrivacyProSubscriptionExpiring: Bool,
-                isPrivacyProSubscriptionExpired: Bool,
+                isSubscriptionEligibleUser: Bool,
+                isDuckDuckGoSubscriber: Bool,
+                subscriptionDaysSinceSubscribed: Int,
+                subscriptionDaysUntilExpiry: Int,
+                subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
+                isSubscriptionActive: Bool,
+                isSubscriptionExpiring: Bool,
+                isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
                 pinnedTabsCount: Int,
@@ -127,35 +181,48 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
                 isDuckPlayerOnboarded: Bool,
                 isDuckPlayerEnabled: Bool,
                 isCurrentFreemiumPIRUser: Bool,
+                isCurrentPIRUser: Bool = false,
                 dismissedDeprecatedMacRemoteMessageIds: [String],
-                enabledFeatureFlags: [String]
+                enabledFeatureFlags: [String],
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.pinnedTabsCount = pinnedTabsCount
         self.hasCustomHomePage = hasCustomHomePage
         self.isCurrentFreemiumPIRUser = isCurrentFreemiumPIRUser
+        self.isCurrentPIRUser = isCurrentPIRUser
         self.dismissedDeprecatedMacRemoteMessageIds = dismissedDeprecatedMacRemoteMessageIds
 
         commonUserAttributeMatcher = .init(
             statisticsStore: statisticsStore,
+            featureDiscovery: featureDiscovery,
             variantManager: variantManager,
             emailManager: emailManager,
             bookmarksCount: bookmarksCount,
             favoritesCount: favoritesCount,
             appTheme: appTheme,
             daysSinceNetPEnabled: daysSinceNetPEnabled,
-            isPrivacyProEligibleUser: isPrivacyProEligibleUser,
-            isPrivacyProSubscriber: isPrivacyProSubscriber,
-            privacyProDaysSinceSubscribed: privacyProDaysSinceSubscribed,
-            privacyProDaysUntilExpiry: privacyProDaysUntilExpiry,
-            privacyProPurchasePlatform: privacyProPurchasePlatform,
-            isPrivacyProSubscriptionActive: isPrivacyProSubscriptionActive,
-            isPrivacyProSubscriptionExpiring: isPrivacyProSubscriptionExpiring,
-            isPrivacyProSubscriptionExpired: isPrivacyProSubscriptionExpired,
+            isSubscriptionEligibleUser: isSubscriptionEligibleUser,
+            isDuckDuckGoSubscriber: isDuckDuckGoSubscriber,
+            subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
+            subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
+            subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+            subscriptionTier: subscriptionTier,
+            isSubscriptionActive: isSubscriptionActive,
+            isSubscriptionExpiring: isSubscriptionExpiring,
+            isSubscriptionExpired: isSubscriptionExpired,
+            subscriptionFreeTrialActive: subscriptionFreeTrialActive,
             isDuckPlayerOnboarded: isDuckPlayerOnboarded,
             isDuckPlayerEnabled: isDuckPlayerEnabled,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: shownMessageIds,
-            enabledFeatureFlags: enabledFeatureFlags
+            enabledFeatureFlags: enabledFeatureFlags,
+            isReturningUser: isReturningUser,
+            isAIChatEnabled: isAIChatEnabled,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
@@ -167,6 +234,8 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: hasCustomHomePage)
         case let matchingAttribute as FreemiumPIRCurrentUserMatchingAttribute:
             return matchingAttribute.evaluate(for: isCurrentFreemiumPIRUser)
+        case let matchingAttribute as PIRCurrentUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isCurrentPIRUser)
         case let matchingAttribute as InteractedWithDeprecatedMacRemoteMessageMatchingAttribute:
             if dismissedDeprecatedMacRemoteMessageIds.contains(where: { messageId in
                 StringArrayMatchingAttribute(matchingAttribute.value).matches(value: messageId) == .match
@@ -183,74 +252,95 @@ public struct DesktopUserAttributeMatcher: AttributeMatching {
 
 public struct CommonUserAttributeMatcher: AttributeMatching {
 
-    private enum PrivacyProSubscriptionStatus: String {
+    private enum SubscriptionStatus: String {
         case active
         case expiring
         case expired
     }
 
     private let statisticsStore: StatisticsStore
+    private let featureDiscovery: FeatureDiscovery
     private let variantManager: VariantManager
     private let emailManager: EmailManager
     private let appTheme: String
     private let bookmarksCount: Int
     private let favoritesCount: Int
     private let daysSinceNetPEnabled: Int
-    private let isPrivacyProEligibleUser: Bool
-    private let isPrivacyProSubscriber: Bool
-    private let privacyProDaysSinceSubscribed: Int
-    private let privacyProDaysUntilExpiry: Int
-    private let privacyProPurchasePlatform: String?
-    private let isPrivacyProSubscriptionActive: Bool
-    private let isPrivacyProSubscriptionExpiring: Bool
-    private let isPrivacyProSubscriptionExpired: Bool
+    private let isSubscriptionEligibleUser: Bool
+    private let isDuckDuckGoSubscriber: Bool
+    private let subscriptionDaysSinceSubscribed: Int
+    private let subscriptionDaysUntilExpiry: Int
+    private let subscriptionPurchasePlatform: String?
+    private let subscriptionTier: String?
+    private let isSubscriptionActive: Bool
+    private let isSubscriptionExpiring: Bool
+    private let isSubscriptionExpired: Bool
+    private let subscriptionFreeTrialActive: Bool
     private let isDuckPlayerOnboarded: Bool
     private let isDuckPlayerEnabled: Bool
     private let dismissedMessageIds: [String]
     private let shownMessageIds: [String]
     private let enabledFeatureFlags: [String]
+    private let isReturningUser: Bool? // `nil` when it can't be determined (macOS App Store)
+    private let isAIChatEnabled: Bool
+    private let triedAIChatDuringOnboarding: Bool
+    private let isAIChatBoostActive: Bool? // `nil` when the bonus record can't be read, so a rule using it fails whatever the expected value.
 
     public init(statisticsStore: StatisticsStore,
+                featureDiscovery: FeatureDiscovery,
                 variantManager: VariantManager,
                 emailManager: EmailManager = EmailManager(),
                 bookmarksCount: Int,
                 favoritesCount: Int,
                 appTheme: String,
                 daysSinceNetPEnabled: Int,
-                isPrivacyProEligibleUser: Bool,
-                isPrivacyProSubscriber: Bool,
-                privacyProDaysSinceSubscribed: Int,
-                privacyProDaysUntilExpiry: Int,
-                privacyProPurchasePlatform: String?,
-                isPrivacyProSubscriptionActive: Bool,
-                isPrivacyProSubscriptionExpiring: Bool,
-                isPrivacyProSubscriptionExpired: Bool,
+                isSubscriptionEligibleUser: Bool,
+                isDuckDuckGoSubscriber: Bool,
+                subscriptionDaysSinceSubscribed: Int,
+                subscriptionDaysUntilExpiry: Int,
+                subscriptionPurchasePlatform: String?,
+                subscriptionTier: String?,
+                isSubscriptionActive: Bool,
+                isSubscriptionExpiring: Bool,
+                isSubscriptionExpired: Bool,
+                subscriptionFreeTrialActive: Bool,
                 isDuckPlayerOnboarded: Bool,
                 isDuckPlayerEnabled: Bool,
                 dismissedMessageIds: [String],
                 shownMessageIds: [String],
-                enabledFeatureFlags: [String]
+                enabledFeatureFlags: [String],
+                isReturningUser: Bool?,
+                isAIChatEnabled: Bool,
+                triedAIChatDuringOnboarding: Bool,
+                isAIChatBoostActive: Bool?
     ) {
         self.statisticsStore = statisticsStore
+        self.featureDiscovery = featureDiscovery
         self.variantManager = variantManager
         self.emailManager = emailManager
         self.appTheme = appTheme
         self.bookmarksCount = bookmarksCount
         self.favoritesCount = favoritesCount
         self.daysSinceNetPEnabled = daysSinceNetPEnabled
-        self.isPrivacyProEligibleUser = isPrivacyProEligibleUser
-        self.isPrivacyProSubscriber = isPrivacyProSubscriber
-        self.privacyProDaysSinceSubscribed = privacyProDaysSinceSubscribed
-        self.privacyProDaysUntilExpiry = privacyProDaysUntilExpiry
-        self.privacyProPurchasePlatform = privacyProPurchasePlatform
-        self.isPrivacyProSubscriptionActive = isPrivacyProSubscriptionActive
-        self.isPrivacyProSubscriptionExpiring = isPrivacyProSubscriptionExpiring
-        self.isPrivacyProSubscriptionExpired = isPrivacyProSubscriptionExpired
+        self.isSubscriptionEligibleUser = isSubscriptionEligibleUser
+        self.isDuckDuckGoSubscriber = isDuckDuckGoSubscriber
+        self.subscriptionDaysSinceSubscribed = subscriptionDaysSinceSubscribed
+        self.subscriptionDaysUntilExpiry = subscriptionDaysUntilExpiry
+        self.subscriptionPurchasePlatform = subscriptionPurchasePlatform
+        self.subscriptionTier = subscriptionTier
+        self.isSubscriptionActive = isSubscriptionActive
+        self.isSubscriptionExpiring = isSubscriptionExpiring
+        self.isSubscriptionExpired = isSubscriptionExpired
+        self.subscriptionFreeTrialActive = subscriptionFreeTrialActive
         self.isDuckPlayerOnboarded = isDuckPlayerOnboarded
         self.isDuckPlayerEnabled = isDuckPlayerEnabled
         self.dismissedMessageIds = dismissedMessageIds
         self.shownMessageIds = shownMessageIds
         self.enabledFeatureFlags = enabledFeatureFlags
+        self.isReturningUser = isReturningUser
+        self.isAIChatEnabled = isAIChatEnabled
+        self.triedAIChatDuringOnboarding = triedAIChatDuringOnboarding
+        self.isAIChatBoostActive = isAIChatBoostActive
     }
 
     public func evaluate(matchingAttribute: MatchingAttribute) -> EvaluationResult? {
@@ -271,30 +361,34 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: favoritesCount)
         case let matchingAttribute as DaysSinceNetPEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: daysSinceNetPEnabled)
-        case let matchingAttribute as IsPrivacyProEligibleUserMatchingAttribute:
-            return matchingAttribute.evaluate(for: isPrivacyProEligibleUser)
-        case let matchingAttribute as IsPrivacyProSubscriberUserMatchingAttribute:
-            return matchingAttribute.evaluate(for: isPrivacyProSubscriber)
-        case let matchingAttribute as PrivacyProDaysSinceSubscribedMatchingAttribute:
-            return matchingAttribute.evaluate(for: privacyProDaysSinceSubscribed)
-        case let matchingAttribute as PrivacyProDaysUntilExpiryMatchingAttribute:
-            return matchingAttribute.evaluate(for: privacyProDaysUntilExpiry)
-        case let matchingAttribute as PrivacyProPurchasePlatformMatchingAttribute:
-            return matchingAttribute.evaluate(for: privacyProPurchasePlatform ?? "")
-        case let matchingAttribute as PrivacyProSubscriptionStatusMatchingAttribute:
+        case let matchingAttribute as IsSubscriptionEligibleUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isSubscriptionEligibleUser)
+        case let matchingAttribute as IsDuckDuckGoSubscriberUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isDuckDuckGoSubscriber)
+        case let matchingAttribute as SubscriptionDaysSinceSubscribedMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionDaysSinceSubscribed)
+        case let matchingAttribute as SubscriptionDaysUntilExpiryMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionDaysUntilExpiry)
+        case let matchingAttribute as SubscriptionPurchasePlatformMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionPurchasePlatform ?? "")
+        case let matchingAttribute as SubscriptionTierMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionTier ?? "")
+        case let matchingAttribute as SubscriptionStatusMatchingAttribute:
             let mappedStatuses = (matchingAttribute.value ?? []).compactMap { status in
-                return PrivacyProSubscriptionStatus(rawValue: status)
+                return SubscriptionStatus(rawValue: status)
             }
 
             for status in mappedStatuses {
                 switch status {
-                case .active: if isPrivacyProSubscriptionActive { return .match }
-                case .expiring: if isPrivacyProSubscriptionExpiring { return .match }
-                case .expired: if isPrivacyProSubscriptionExpired { return .match }
+                case .active: if isSubscriptionActive { return .match }
+                case .expiring: if isSubscriptionExpiring { return .match }
+                case .expired: if isSubscriptionExpired { return .match }
                 }
             }
 
             return .fail
+        case let matchingAttribute as SubscriptionFreeTrialActiveMatchingAttribute:
+            return matchingAttribute.evaluate(for: subscriptionFreeTrialActive)
         case let matchingAttribute as DuckPlayerOnboardedMatchingAttribute:
             return matchingAttribute.evaluate(for: isDuckPlayerOnboarded)
         case let matchingAttribute as DuckPlayerEnabledMatchingAttribute:
@@ -317,6 +411,20 @@ public struct CommonUserAttributeMatcher: AttributeMatching {
             }
         case let matchingAttribute as AllFeatureFlagsEnabledMatchingAttribute:
             return matchingAttribute.evaluate(for: enabledFeatureFlags)
+        case let matchingAttribute as DaysSinceDuckAIUsedMatchingAttribute:
+            if let daysSinceDuckAiEnabled = featureDiscovery.daysSinceLastUsed(.aiChat) {
+                return matchingAttribute.evaluate(for: daysSinceDuckAiEnabled)
+            } else {
+                return .fail
+            }
+        case let matchingAttribute as IsReturningUserMatchingAttribute:
+            return matchingAttribute.evaluate(for: isReturningUser)
+        case let matchingAttribute as IsDuckAIEnabledMatchingAttribute:
+            return matchingAttribute.evaluate(for: isAIChatEnabled)
+        case let matchingAttribute as TriedDuckAIDuringOnboardingMatchingAttribute:
+            return matchingAttribute.evaluate(for: triedAIChatDuringOnboarding)
+        case let matchingAttribute as IsDuckAIBoostActiveMatchingAttribute:
+            return matchingAttribute.evaluate(for: isAIChatBoostActive)
         default:
             assertionFailure("Could not find matching attribute")
             return nil

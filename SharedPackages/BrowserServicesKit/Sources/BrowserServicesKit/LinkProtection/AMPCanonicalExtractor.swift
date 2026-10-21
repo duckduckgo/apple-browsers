@@ -19,6 +19,12 @@
 import Foundation
 import WebKit
 import Common
+import FoundationExtensions
+import PrivacyConfig
+
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public final class AMPCanonicalExtractor: NSObject {
 
@@ -45,6 +51,7 @@ public final class AMPCanonicalExtractor: NSObject {
         static let sendCanonical = "sendCanonical"
         static let canonicalKey = "canonical"
         static let ruleListIdentifier = "blockImageRules"
+        static let maxURLLength = 80_000
     }
 
     private let completionHandler = CompletionHandler()
@@ -123,8 +130,32 @@ public final class AMPCanonicalExtractor: NSObject {
         guard settings.deepExtractionEnabled else { return false }
         guard let url = url, !linkCleaner.isURLExcluded(url: url) else { return false }
         let urlStr = url.absoluteString
+        // `count` walks every grapheme cluster, which stalls the main thread on very long URLs.
+        guard urlStr.utf16.count < Constants.maxURLLength else { return false }
 
         let ampKeywords = settings.ampKeywords
+
+        return performAMPDetectionWithBackgroundTask(urlStr: urlStr, ampKeywords: ampKeywords)
+    }
+
+    private func performAMPDetectionWithBackgroundTask(urlStr: String, ampKeywords: [String]) -> Bool {
+#if canImport(UIKit)
+        var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+
+        // Start background task to prevent suspension during detection
+        backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "AMP Keyword Detection") {
+            if backgroundTask != .invalid {
+                UIApplication.shared.endBackgroundTask(backgroundTask)
+                backgroundTask = .invalid
+            }
+        }
+
+        defer {
+            if backgroundTask != .invalid {
+                UIApplication.shared.endBackgroundTask(backgroundTask)
+            }
+        }
+#endif
 
         return ampKeywords.contains { keyword in
             return urlStr.contains(keyword)

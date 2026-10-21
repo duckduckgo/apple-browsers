@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "CC5D1132-F1B3-455F-BFE0-222A32CAA44F",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DataBrokerProtection-iOSTests",
+        "name" : "DataBrokerProtection-iOSTests"
+      }
+    }
+  ],
+  "version" : 1
+}

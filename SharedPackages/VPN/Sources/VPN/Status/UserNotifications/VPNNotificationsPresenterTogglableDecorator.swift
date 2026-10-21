@@ -19,6 +19,7 @@
 import Foundation
 
 final public class VPNNotificationsPresenterTogglableDecorator: VPNNotificationsPresenting {
+
     private let settings: VPNSettings
     private let defaults: UserDefaults
     private let wrappeePresenter: VPNNotificationsPresenting
@@ -33,6 +34,13 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         if settings.notifyStatusChanges {
             wrappeePresenter.showConnectedNotification(serverLocation: serverLocation, snoozeEnded: snoozeEnded)
         }
+        wrappeePresenter.clearAuthorizationSuppression()
+    }
+
+    public func showStrictRoutingReminderNotification() {
+        if settings.notifyStatusChanges {
+            wrappeePresenter.showStrictRoutingReminderNotification()
+        }
     }
 
     public func showReconnectingNotification() {
@@ -45,6 +53,7 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         if settings.notifyStatusChanges {
             wrappeePresenter.showConnectionFailureNotification()
         }
+        wrappeePresenter.clearAuthorizationSuppression()
     }
 
     public func showSnoozingNotification(duration: TimeInterval) {
@@ -69,6 +78,12 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         if defaults.showEntitlementNotification {
             defaults.showEntitlementNotification = false
             wrappeePresenter.showEntitlementNotification()
+        }
+    }
+
+    public func showDebugEventNotification(message: String) {
+        if settings.showDebugVPNEventNotifications {
+            wrappeePresenter.showDebugEventNotification(message: message)
         }
     }
 

@@ -24,6 +24,7 @@ import os.log
 import Combine
 import UserScript
 import BrowserServicesKit
+import PrivacyConfig
 
 struct DuckPlayerWebView: UIViewRepresentable {
     let viewModel: DuckPlayerViewModel
@@ -63,7 +64,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
 
    init(viewModel: DuckPlayerViewModel,
         contentController: WKUserContentController = WKUserContentController(),
-        scriptSourceProvider: ScriptSourceProviding = DefaultScriptSourceProvider(fireproofing: UserDefaultsFireproofing.xshared),
+        scriptSourceProviderDependencies: DefaultScriptSourceProvider.Dependencies,
         duckPlayerUserScript: DuckPlayerUserScriptPlayer? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator? = nil,
@@ -71,21 +72,28 @@ struct DuckPlayerWebView: UIViewRepresentable {
        
        self.viewModel = viewModel
        self.contentController = contentController
-       self.scriptSourceProvider = scriptSourceProvider
+       self.scriptSourceProvider = DefaultScriptSourceProvider(dependencies: scriptSourceProviderDependencies)
               
        self.duckPlayerUserScript = duckPlayerUserScript ?? DuckPlayerUserScriptPlayer(viewModel: viewModel)
 
        let jsonGenerator = privacyConfigurationJSONGenerator ??
             ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: featureFlagger,
                                                           privacyConfigurationManager: scriptSourceProvider.privacyConfigurationManager)
-              
-       self.contentScopeUserScripts = contentScopeUserScripts ??
-            ContentScopeUserScript(scriptSourceProvider.privacyConfigurationManager,
-                    properties: scriptSourceProvider.contentScopeProperties,
-           isIsolated: true,
-           privacyConfigurationJSONGenerator: jsonGenerator
-       )
-              
+
+       do {
+           self.contentScopeUserScripts = try contentScopeUserScripts ??
+           ContentScopeUserScript(scriptSourceProvider.privacyConfigurationManager,
+                                  properties: scriptSourceProvider.contentScopeProperties,
+                                  scriptContext: .contentScopeIsolated,
+                                  privacyConfigurationJSONGenerator: jsonGenerator
+           )
+       } catch {
+           if let error = error as? UserScriptError {
+               error.fireLoadJSFailedPixelIfNeeded()
+           }
+           fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
+       }
+
        self.coordinator = Coordinator(viewModel: viewModel)
    }
 
@@ -181,7 +189,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
               return
           }
 
-          Logger.duckplayer.log("[DuckPlayer] Navigation request to: \(url.absoluteString), type: \(navigationAction.navigationType.rawValue)")
+          Logger.duckplayer.log("[DuckPlayer] Navigation request to: \(url.shortDescription), type: \(navigationAction.navigationType.rawValue)")
 
           // Always allow youtube-nocookie.com iframe content
           if url.isDuckPlayer {
@@ -204,7 +212,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
                if !url.isDuckPlayer {
                    viewModel?.handleYouTubeNavigation(url)
                } else {
-                   Logger.duckplayer.log("[DuckPlayer] Blocked window creation for: \(url.absoluteString)")
+                   Logger.duckplayer.log("[DuckPlayer] Blocked window creation for: \(url.shortDescription)")
                }
            }
            return nil

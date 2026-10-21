@@ -45,7 +45,7 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
                 // In this case, `NSApp.currentEvent` will be `.systemDefined` with no button number.
                 LinkOpenBehavior(
                     event: NSApp.currentEvent,
-                    switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                    switchToNewTabWhenOpenedPreference: Application.appDelegate.tabsPreferences.switchToNewTabWhenOpened,
                     // The frontend always sends `.newWindow` when activating a link with the Shift key pressed,
                     // which is a behavior specific to Windows. In this case we ignore the `.newWindow` target
                     // and let LinkOpenBehavior determine the necessary behavior.
@@ -54,8 +54,8 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
             case .contextMenuItem:
                 switch target {
                 case .current: .currentTab
-                case .newTab: .newTab(selected: TabsPreferences.shared.switchToNewTabWhenOpened)
-                case .newWindow: .newWindow(selected: TabsPreferences.shared.switchToNewTabWhenOpened)
+                case .newTab: .newTab(selected: Application.appDelegate.tabsPreferences.switchToNewTabWhenOpened)
+                case .newWindow: .newWindow(selected: Application.appDelegate.tabsPreferences.switchToNewTabWhenOpened)
                 }
             }
         }()
@@ -68,6 +68,8 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
         switch target {
         case .settings:
             openAppearanceSettings()
+        case .duckAISettings:
+            openDuckAISettings()
         }
     }
 
@@ -76,4 +78,11 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
             Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .appearance)
         }
     }
+
+    private func openDuckAISettings() {
+        Task.detached { @MainActor in
+            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .aiChat)
+        }
+    }
+
 }

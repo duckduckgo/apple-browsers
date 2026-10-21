@@ -16,7 +16,15 @@
 //  limitations under the License.
 //
 
+import Combine
+import Common
+import FoundationExtensions
+import History
+import HistoryView
+import PrivacyConfig
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FullscreenControllerTests: XCTestCase {
@@ -63,5 +71,94 @@ final class FullscreenControllerTests: XCTestCase {
         controller.manuallyExitFullscreen(window: window)
 
         XCTAssertFalse(window.styleMask.contains(.fullScreen))
+    }
+}
+
+final class MainViewControllerDefaultBrowserPromptUIHostingTests: XCTestCase, MainViewControllerFactory {
+
+    @MainActor
+    func testWhenInPopUpWindowThenUIHostingReportsIsInPopUpWindow() {
+        let sut: DefaultBrowserAndDockPromptUIHosting = makeMainViewController(isPopup: true, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
+
+        XCTAssertTrue(sut.isInPopUpWindow)
+    }
+
+    @MainActor
+    func testWhenInRegularWindowThenUIHostingDoesNotReportIsInPopUpWindow() {
+        let sut: DefaultBrowserAndDockPromptUIHosting = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
+
+        XCTAssertFalse(sut.isInPopUpWindow)
+    }
+
+    @MainActor
+    func testWhenViewIsNotInKeyWindowThenNoAnchorIsProvided() {
+        let viewController = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
+        _ = viewController.view
+        let sut: DefaultBrowserAndDockPromptUIHosting = viewController
+
+        XCTAssertNil(sut.providePopoverAnchor())
+        XCTAssertNil(sut.provideModalAnchor())
+    }
+
+}
+
+private final class WinBackOfferPromptPresentingMock: WinBackOfferPromptPresenting {
+    private(set) var tryToShowPromptCallCount = 0
+
+    func tryToShowPrompt(in window: NSWindow?) {
+        tryToShowPromptCallCount += 1
+    }
+}
+
+private protocol MainViewControllerFactory {}
+
+extension MainViewControllerFactory {
+
+    @MainActor
+    func makeMainViewController(isPopup: Bool,
+                                defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresenting,
+                                winBackOfferPromptPresenter: WinBackOfferPromptPresenting = WinBackOfferPromptPresentingMock()) -> MainViewController {
+        let windowControllersManager = WindowControllersManagerMock()
+        let tabCollectionViewModel = TabCollectionViewModel(isPopup: isPopup, windowControllersManager: windowControllersManager)
+        let featureFlagger = MockFeatureFlagger()
+        let fireCoordinator = makeFireCoordinator(windowControllersManager: windowControllersManager, featureFlagger: featureFlagger)
+        let aiChatSessionStore = AIChatSessionStore(featureFlagger: featureFlagger)
+
+        return MainViewController(
+            tabCollectionViewModel: tabCollectionViewModel,
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+            aiChatSessionStore: aiChatSessionStore,
+            defaultBrowserAndDockPromptPresenting: defaultBrowserPromptPresenter,
+            fireCoordinator: fireCoordinator,
+            winBackOfferPromptPresenting: winBackOfferPromptPresenter
+        )
+    }
+
+    @MainActor
+    func makeFireCoordinator(windowControllersManager: WindowControllersManagerMock,
+                             featureFlagger: MockFeatureFlagger) -> FireCoordinator {
+
+        let fireproofDomains = MockFireproofDomains()
+        let faviconManager = FaviconManagerMock()
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor(),
+                                                              fireproofDomains: fireproofDomains,
+                                                              faviconManager: faviconManager,
+                                                              windowControllersManager: windowControllersManager,
+                                                              featureFlagger: featureFlagger,
+                                                              aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+
+        return FireCoordinator(
+            tld: TLD(),
+            featureFlagger: featureFlagger,
+            historyCoordinating: HistoryCoordinatingMock(),
+            visualizeFireAnimationDecider: nil,
+            onboardingContextualDialogsManager: nil,
+            fireproofDomains: fireproofDomains,
+            faviconManagement: faviconManager,
+            windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences,
+            pixelFiring: nil,
+            historyProvider: MockHistoryViewDataProvider()
+        )
     }
 }

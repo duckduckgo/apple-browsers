@@ -19,6 +19,7 @@
 import Foundation
 import UserNotifications
 import Common
+import FoundationExtensions
 import AppKit
 import os.log
 import PixelKit
@@ -88,10 +89,7 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
         let notificationContent = UNMutableNotificationContent()
         notificationContent.title = notification.title
         notificationContent.body = notification.message
-
-        if #available(macOS 12, *) {
-            notificationContent.interruptionLevel = .active
-        }
+        notificationContent.interruptionLevel = .active
 
         let request: UNNotificationRequest
 
@@ -130,13 +128,15 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
     public func sendFirstScanCompletedNotification() {
         guard areNotificationsEnabled else { return }
 
-        // If the user is not authenticated, this is a Freemium scan
-        if !authenticationManager.isUserAuthenticated {
-            sendNotification(.firstFreemiumScanComplete)
-            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.firstScanCompleteNotificationSent)
-        } else {
-            sendNotification(.firstScanComplete)
-            pixelHandler.fire(.dataBrokerProtectionNotificationSentFirstScanComplete)
+        Task {
+            // If the user is not authenticated, this is a Freemium scan
+            if !(await authenticationManager.isUserAuthenticated) {
+                sendNotification(.firstFreemiumScanComplete)
+                dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.firstScanCompleteNotificationSent)
+            } else {
+                sendNotification(.firstScanComplete)
+                pixelHandler.fire(.dataBrokerProtectionNotificationSentFirstScanComplete)
+            }
         }
     }
 

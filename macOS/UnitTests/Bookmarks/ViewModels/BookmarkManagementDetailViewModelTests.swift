@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_macOS
+import PrivacyConfig
 import XCTest
-import PixelKitTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
-@testable import PixelKit
+@_spi(Testing) @testable import PixelKit
 
 final class BookmarkManagementDetailViewModelTests: XCTestCase {
     private var testUserDefault: UserDefaults! = UserDefaults(suiteName: #function)!
@@ -415,7 +416,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         bookmarkManager.bookmarksReturnedForSearch = [bookmarkOne, bookmarkTwo, bookmarkThree]
         sut.update(selection: .empty, searchQuery: "some")
@@ -432,7 +433,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         sut.update(selection: .empty, searchQuery: "")
 
@@ -452,7 +453,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let folder = createFolder(with: children)
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree, folder])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         bookmarkManager.bookmarksReturnedForSearch = [folder]
         sut.update(selection: .empty, searchQuery: "some")
@@ -474,7 +475,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let folder = createFolder(with: children)
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree, folder])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         sut.update(selection: .empty, searchQuery: "")
         let pasteboard = NSPasteboard.test()
@@ -491,7 +492,7 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
         let bookmarkManager = createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree])
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
-        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: MockPinningManager())
         let sut = viewController.managementDetailViewModel
         sut.update(selection: .empty, searchQuery: "")
         let pasteboard = NSPasteboard.test()
@@ -505,6 +506,22 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
     }
 
     // MARK: - Sort tests
+
+    func testWhenBookmarksReorderByNameIsDisabled_thenLegacySortButtonTitlesAreUsed() {
+        let sut = createSUT(isBookmarksReorderByNameEnabled: false)
+
+        XCTAssertFalse(sut.isBookmarksReorderByNameEnabled)
+        XCTAssertEqual(sut.sortButtonTitle, UserText.bookmarksSort.capitalized)
+        XCTAssertEqual(sut.sortButtonByNameTitle, UserText.bookmarksSortByNameTitle)
+    }
+
+    func testWhenBookmarksReorderByNameIsEnabled_thenSortViewButtonTitlesAreUsed() {
+        let sut = createSUT(isBookmarksReorderByNameEnabled: true)
+
+        XCTAssertTrue(sut.isBookmarksReorderByNameEnabled)
+        XCTAssertEqual(sut.sortButtonTitle, UserText.bookmarksSortViewTitle)
+        XCTAssertEqual(sut.sortButtonByNameTitle, UserText.bookmarksSortViewByNameTitle)
+    }
 
     func testWhenSortModeIsManualAndInSearch_thenBookmarksAreInTheSameOrderAsReturnedFromManager() {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
@@ -626,6 +643,81 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
 
     // MARK: - Helper functions
 
+    private func createSUT(isBookmarksReorderByNameEnabled: Bool) -> BookmarkManagementDetailViewModel {
+        let featureFlagger = MockFeatureFlagger(featuresStub: [
+            FeatureFlag.bookmarksReorderByName.rawValue: isBookmarksReorderByNameEnabled
+        ])
+        return BookmarkManagementDetailViewModel(
+            bookmarkManager: MockBookmarkManager(),
+            metrics: metrics,
+            navigationEngagementMetrics: .init(),
+            featureFlagger: featureFlagger
+        )
+    }
+
+    // MARK: - Sync promo trigger
+
+    func testWhenViewAppearsBeforeBookmarksLoadThenTriggerIsPostedOnceTheyLoad() {
+        let bookmarkManager = MockBookmarkManager()
+        let viewController = makeViewController(bookmarkManager: bookmarkManager)
+        let triggerCounter = SyncPromoTriggerCounter()
+
+        viewController.viewDidAppear()
+        XCTAssertEqual(triggerCounter.count, 0)
+
+        bookmarkManager.list = BookmarkList(entities: [], topLevelEntities: [], favorites: [])
+        bookmarkManager.list = BookmarkList(entities: [], topLevelEntities: [], favorites: [])
+        XCTAssertEqual(triggerCounter.count, 1)
+    }
+
+    func testWhenViewAppearsInAFolderThenTriggerIsPostedOnReturningToTheTopLevel() {
+        let folder = BookmarkFolder(id: "1", title: "Folder")
+        let bookmarkManager = createBookmarkManager(with: [folder])
+        let viewController = makeViewController(bookmarkManager: bookmarkManager)
+        viewController.update(selectionState: .folder(folder))
+        let triggerCounter = SyncPromoTriggerCounter()
+
+        viewController.viewDidAppear()
+        XCTAssertEqual(triggerCounter.count, 0)
+
+        viewController.update(selectionState: .empty)
+        viewController.update(selectionState: .folder(folder))
+        viewController.update(selectionState: .empty)
+        XCTAssertEqual(triggerCounter.count, 1)
+    }
+
+    func testWhenViewDisappearsBeforeBookmarksLoadThenTriggerIsNotPosted() {
+        let bookmarkManager = MockBookmarkManager()
+        let viewController = makeViewController(bookmarkManager: bookmarkManager)
+        let triggerCounter = SyncPromoTriggerCounter()
+
+        viewController.viewDidAppear()
+        viewController.viewWillDisappear()
+        bookmarkManager.list = BookmarkList(entities: [], topLevelEntities: [], favorites: [])
+
+        XCTAssertEqual(triggerCounter.count, 0)
+    }
+
+    func testWhenViewAppearsAgainThenTriggerIsPostedAgain() {
+        let viewController = makeViewController(bookmarkManager: createBookmarkManager(with: []))
+        let triggerCounter = SyncPromoTriggerCounter()
+
+        viewController.viewDidAppear()
+        viewController.viewWillDisappear()
+        viewController.viewDidAppear()
+
+        XCTAssertEqual(triggerCounter.count, 2)
+    }
+
+    private func makeViewController(bookmarkManager: MockBookmarkManager) -> BookmarkManagementDetailViewController {
+        let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager,
+                                                                    dragDropManager: BookmarkDragDropManager(bookmarkManager: bookmarkManager),
+                                                                    pinningManager: MockPinningManager(),
+                                                                    syncPromoManager: SyncPromoManager.makeForTesting(content: .bookmarks))
+        _ = viewController.view
+        return viewController
+    }
+
     private func createBookmarkManager(with bookmarks: [BaseBookmarkEntity], favorites: [BaseBookmarkEntity] = []) -> MockBookmarkManager {
         let bookmarkManager = MockBookmarkManager()
         bookmarkManager.list = BookmarkList(entities: bookmarks, topLevelEntities: bookmarks, favorites: favorites)
@@ -693,5 +785,37 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
     private func cleanUp(pixelKit: PixelKit) {
         PixelKit.tearDown()
         pixelKit.clearFrequencyHistoryForAllPixels()
+    }
+}
+
+private extension BookmarkManagementDetailViewModel {
+    convenience init(
+        bookmarkManager: BookmarkManager,
+        metrics: BookmarksSearchAndSortMetrics,
+        navigationEngagementMetrics: BookmarksNavigationEngagementMetrics,
+        mode: BookmarksSortMode = .manual
+    ) {
+        self.init(
+            bookmarkManager: bookmarkManager,
+            metrics: metrics,
+            navigationEngagementMetrics: navigationEngagementMetrics,
+            featureFlagger: MockFeatureFlagger(),
+            mode: mode
+        )
+    }
+}
+
+private final class SyncPromoTriggerCounter {
+    private(set) var count = 0
+    private var observer: NSObjectProtocol?
+
+    init() {
+        observer = NotificationCenter.default.addObserver(forName: .bookmarksManagerOpened, object: nil, queue: nil) { [weak self] _ in
+            self?.count += 1
+        }
+    }
+
+    deinit {
+        observer.map(NotificationCenter.default.removeObserver)
     }
 }

@@ -1,0 +1,23 @@
+{
+    "m_webview_external-scheme-navigation_safari-redirect_load-url-requested": {
+        "description": "Fires when a converted Safari redirect URL load is requested in the web view",
+        "owners": ["dus7", "brindy"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_webview_external-scheme-navigation_safari-redirect-loop_error-page-shown": {
+        "description": "Fires when the Safari redirect loop error page is first shown in a navigation episode; repeated redirects while it is shown do not fire again",
+        "owners": ["dus7", "brindy"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_webview_external-scheme-navigation_safari-redirect-loop_error-page_report-broken-site": {
+        "description": "Fires when the Report Broken Site button is tapped on the Safari redirect loop error page",
+        "owners": ["dus7", "brindy"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

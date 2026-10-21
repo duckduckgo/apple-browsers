@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 
@@ -130,12 +131,15 @@ public struct NavigationAction {
         }
         var navigationType = navigationType
 
-        if case .other = navigationAction.navigationType,
+        let targetFrameURL = navigationAction.targetFrame?.safeRequest?.url
+        let isTargetFrameBlankOrEmpty = targetFrameURL?.isEmpty == true || targetFrameURL == .blankPage
+
+        if [.other, .backForward].contains(navigationAction.navigationType),
            case .returnCacheDataElseLoad = navigationAction.request.cachePolicy,
            navigationType == nil,
            redirectHistory == nil,
            navigationAction.targetFrame?.isMainFrame == true,
-           navigationAction.targetFrame?.safeRequest?.url?.isEmpty == true,
+           isTargetFrameBlankOrEmpty,
            webView.backForwardList.currentItem != nil {
 
             // go back after failing session restoration has `other` Navigation Type
@@ -204,6 +208,11 @@ public struct NavigationPreferences: Equatable {
     public var userAgent: String?
     public var contentMode: WKWebpagePreferences.ContentMode
 
+#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
+    public var autoplayPolicy: _WKWebsiteAutoplayPolicy?
+    public var mustApplyAutoplayPolicy: Bool = false
+#endif
+
     fileprivate var javaScriptEnabledValue: Bool
     public var javaScriptEnabled: Bool {
         get {
@@ -235,6 +244,11 @@ public struct NavigationPreferences: Equatable {
     internal init(userAgent: String?, preferences: WKWebpagePreferences) {
         self.contentMode = preferences.preferredContentMode
         self.javaScriptEnabledValue = preferences.allowsContentJavaScript
+
+#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
+        self.autoplayPolicy = .init(rawValue: preferences.autoplayPolicy)
+#endif
+
 #if _WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED
         if Self.customHeadersSupported {
             self.customHeaders = preferences.customHeaderFields
@@ -245,6 +259,13 @@ public struct NavigationPreferences: Equatable {
     internal func applying(to preferences: WKWebpagePreferences) -> WKWebpagePreferences {
         preferences.preferredContentMode = contentMode
         preferences.allowsContentJavaScript = javaScriptEnabled
+
+#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
+        if mustApplyAutoplayPolicy, let autoplayPolicy {
+            preferences.autoplayPolicy = autoplayPolicy.rawValue
+        }
+#endif
+
 #if _WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED
         if Self.customHeadersSupported, let customHeaders = customHeaders {
             preferences.customHeaderFields = customHeaders
@@ -293,7 +314,7 @@ extension NavigationAction: CustomDebugStringConvertible {
 #else
         let fromHistoryItem = ""
 #endif
-        return "<NavigationAction #\(identifier)\(isUserInitiatedStr): url: \"\(url.absoluteString)\" type: \(navigationType.debugDescription)\(shouldDownload ? " Download" : "") frame: \(sourceFrame)\(targetFrame.debugDescription)\(fromHistoryItem)>"
+        return "<NavigationAction #\(identifier)\(isUserInitiatedStr): url: \"\(url.shortDescription)\" type: \(navigationType.debugDescription)\(shouldDownload ? " Download" : "") frame: \(sourceFrame)\(targetFrame.debugDescription)\(fromHistoryItem)>"
     }
 }
 
@@ -316,6 +337,6 @@ extension NavigationPreferences: CustomDebugStringConvertible {
 
 extension HistoryItemIdentity: CustomDebugStringConvertible {
     public var debugDescription: String {
-        "<\(identifier) url: \(url?.absoluteString ?? "") title: \(title ?? "<nil>")>"
+        "<\(identifier) url: \(url?.shortDescription ?? "") title: \(title ?? "<nil>")>"
     }
 }

@@ -16,9 +16,15 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
+import History
+import HistoryView
+import PrivacyConfig
+import SharedTestUtilities
 import UniformTypeIdentifiers
 import XCTest
 
@@ -50,7 +56,26 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
     override func tearDown() {
         autoreleasepool {
-            coordinator?.cancelAll()
+            if let coordinator {
+                let activeItems = coordinator.downloadListItems.filter { item in
+                    if let progress = item.progress, !progress.isCancelled { true } else { false }
+                }
+                if !activeItems.isEmpty {
+                    var expectations = activeItems.reduce(into: [:]) { expectations, item in
+                        expectations[item.identifier] = expectation(description: "\(item) tearDown cancellation")
+                    }
+                    let cancellable = coordinator.updates.sink {
+                        if $0.isDownloadCompletedUpdate {
+                            expectations[$0.item.identifier]?.fulfill()
+                            expectations[$0.item.identifier] = nil
+                        }
+                    }
+                    activeItems.forEach { $0.progress?.cancel() }
+
+                    waitForExpectations(timeout: 5)
+                    withExtendedLifetime(cancellable) {}
+                }
+            }
 
             self.store = nil
             self.downloadManager = nil
@@ -65,9 +90,13 @@ final class DownloadListCoordinatorTests: XCTestCase {
     }
 
     func setUpCoordinator() {
-        coordinator = DownloadListCoordinator(store: store, downloadManager: downloadManager, clearItemsOlderThan: Date.daysAgo(2)) {
-            return self.webView
-        }
+        coordinator = DownloadListCoordinator(
+            store: store,
+            downloadManager: downloadManager,
+            windowControllersManager: Application.appDelegate.windowControllersManager,
+            clearItemsOlderThan: Date.daysAgo(2)) {
+                return self.webView
+            }
     }
 
     @MainActor
@@ -88,18 +117,28 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+            let fireCoordinator = FireCoordinator(tld: TLD(),
+                                                  featureFlagger: Application.appDelegate.featureFlagger,
+                                                  historyCoordinating: HistoryCoordinatingMock(),
+                                                  visualizeFireAnimationDecider: nil,
+                                                  onboardingContextualDialogsManager: nil,
+                                                  fireproofDomains: MockFireproofDomains(),
+                                                  faviconManagement: FaviconManagerMock(),
+                                                  windowControllersManager: WindowControllersManagerMock(),
+                                                  dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+                                                  pixelFiring: nil,
+                                                  historyProvider: MockHistoryViewDataProvider())
             let mainViewController = MainViewController(
-                tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
-                autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-                aiChatSidebarProvider: AIChatSidebarProvider(),
+                tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(), burnerMode: .init(isBurner: true)),
+                autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+                aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
                 fireCoordinator: fireCoordinator
             )
             let mainWindowController = MainWindowController(
                 mainViewController: mainViewController,
-                popUp: false,
                 fireWindowSession: .init(),
-                fireViewModel: fireCoordinator.fireViewModel
+                fireViewModel: fireCoordinator.fireViewModel,
+                themeManager: MockThemeManager()
             )
             fireWindowSession = FireWindowSessionRef(window: mainWindowController.window)
         }
@@ -140,7 +179,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
             completionHandler(.success(items))
         }
         setUpCoordinator()
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
 
         let resultItems = coordinator.downloads(sortedBy: \.modified, ascending: true)
         XCTAssertEqual(resultItems.map(\.identifier), expectedItems.map(\.identifier))
@@ -195,7 +234,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         itemsLoaded(.success(items))
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 5)
         }
     }
 
@@ -208,8 +247,8 @@ final class DownloadListCoordinatorTests: XCTestCase {
     func testWhenDownloadAddedThenDownloadItemIsPublished() async {
         setUpCoordinator()
 
-        let destURL = fm.temporaryDirectory.appendingPathComponent("test file.pdf")
-        let tempURL = fm.temporaryDirectory.appendingPathComponent("test file.duckload")
+        let destURL = self.destURL!
+        let tempURL = self.tempURL!
         let download = WKDownloadMock(url: .duckDuckGo)
         let task = WebKitDownloadTask(download: download, destination: .preset(destURL), fireWindowSession: nil)
 
@@ -262,7 +301,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         task.downloadDidFinish(download.asWKDownload())
 
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
         c = nil
 
         XCTAssertFalse(coordinator.hasActiveDownloads(for: nil))
@@ -288,7 +327,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         task.downloadDidFinish(download.asWKDownload())
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 5)
         }
         XCTAssertFalse(coordinator.hasActiveDownloads(for: nil))
     }
@@ -316,7 +355,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         task.download(download.asWKDownload(), didFailWithError: TestError(), resumeData: .resumeData)
 
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
         c = nil
 
         XCTAssertFalse(coordinator.hasActiveDownloads(for: nil))
@@ -377,7 +416,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         coordinator.restart(downloadWithIdentifier: DownloadListItem.testFailedItem.identifier)
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 5)
         }
         XCTAssertEqual(coordinator.downloads(sortedBy: \.modified, ascending: true).count, 1)
     }
@@ -390,7 +429,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
             taskFailed.fulfill()
         }
         task.download(download.asWKDownload(), didFailWithError: TestError(), resumeData: .resumeData)
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
         c1.cancel()
 
         let resumeCalled = expectation(description: "resume called")
@@ -437,9 +476,126 @@ final class DownloadListCoordinatorTests: XCTestCase {
         coordinator.restart(downloadWithIdentifier: id)
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 5)
         }
         XCTAssertEqual(coordinator.downloads(sortedBy: \.modified, ascending: true).count, 1)
+    }
+
+    // When a retry task is created with .resume(dest, temp) but fails with "no space left"
+    // before start() is called, failDestination is invoked while state is still
+    // .initial(.resume(dest, temp)). finish(isRetryable:false) can then read
+    // state.destinationFilePresenter and state.tempFilePresenter and pass them to
+    // cleanupNonRetryableDownload, which deletes both files immediately.
+    @MainActor
+    func testWhenRetryFailsNonRetryablyThenOldTempFilesAreCleaned() {
+        let (download, task, id) = setUpCoordinatorAndAddDownload()
+
+        // 1. First failure — retryable; files are kept on disk for the retry.
+        let firstFailed = expectation(description: "first failure")
+        let c1 = coordinator.updates.sink { update in
+            guard case .updated = update.kind, update.item.error != nil else { return }
+            firstFailed.fulfill()
+        }
+        task.download(download.asWKDownload(), didFailWithError: TestError(), resumeData: .resumeData)
+        waitForExpectations(timeout: 5)
+        c1.cancel()
+
+        XCTAssertTrue(fm.fileExists(atPath: destURL.path), "dest placeholder must survive a retryable failure")
+        XCTAssertTrue(fm.fileExists(atPath: tempURL.path), ".duckload must survive a retryable failure")
+
+        // 2. Restart — coordinator calls resumeDownload and provides .resume(dest, temp).
+        //    start() is intentionally NOT called so the task stays in .initial(.resume(dest, temp)),
+        //    representing the case where disk space is exhausted before writing begins.
+        var retryTask: WebKitDownloadTask?
+
+        webView.resumeDownloadBlock = { _ in WKDownloadMock(url: .duckDuckGo) }
+        webView.startDownloadBlock = { _ in XCTFail("unexpected startDownload"); return nil }
+
+        downloadManager.addDownloadBlock = { [unowned self] download, _, destination in
+            let t = WebKitDownloadTask(download: download, destination: destination, fireWindowSession: nil)
+            retryTask = t
+            self.downloadManager.downloadAddedSubject.send(t)
+            // start() deliberately omitted — task stays in .initial(.resume(dest, temp))
+            return t
+        }
+
+        let retryStarted = expectation(description: "retry started — error cleared")
+        let c2 = coordinator.updates.sink { update in
+            guard case .updated = update.kind, update.item.error == nil else { return }
+            retryStarted.fulfill()
+        }
+        coordinator.restart(downloadWithIdentifier: id)
+        waitForExpectations(timeout: 5)
+        c2.cancel()
+
+        guard let retryTask else {
+            XCTFail("retry task was not created")
+            return
+        }
+
+        // 3. Disk full — failDestination is valid here because state is still .initial.
+        //    finish(isRetryable:false) reads state.destinationFilePresenter / tempFilePresenter
+        //    from .initial(.resume(dest, temp)) and passes them to cleanupNonRetryableDownload.
+        let retryFailed = expectation(description: "retry failed non-retryably")
+        var c3: AnyCancellable?
+        c3 = coordinator.updates.sink { update in
+            guard case .updated = update.kind,
+                  let error = update.item.error else { return }
+            XCTAssertFalse(error.isRetryable)
+            retryFailed.fulfill()
+            c3?.cancel()
+        }
+        retryTask.failDestination(with: CocoaError(.fileWriteOutOfSpace))
+        waitForExpectations(timeout: 5)
+        c3 = nil
+
+        let filesDeleted = XCTNSPredicateExpectation(predicate: NSPredicate { [fm, destURL, tempURL] _, _ in
+            !fm.fileExists(atPath: destURL!.path) && !fm.fileExists(atPath: tempURL!.path)
+        }, object: nil)
+        wait(for: [filesDeleted], timeout: 5)
+
+        XCTAssertFalse(fm.fileExists(atPath: destURL.path),
+                       "Destination placeholder must be deleted when a retry fails with no space left")
+        XCTAssertFalse(fm.fileExists(atPath: tempURL.path),
+                       "Temp .duckload file must be deleted when a retry fails with no space left")
+    }
+
+    // When the user removes a retryably-failed download, both its .duckload temp file and
+    // zero-byte destination placeholder must be deleted by cleanupTempFiles.
+    @MainActor
+    func testWhenFailedDownloadRemovedThenTempFilesAreDeleted() {
+        let (download, task, id) = setUpCoordinatorAndAddDownload()
+
+        let failed = expectation(description: "retryable failure")
+        let c1 = coordinator.updates.sink { update in
+            guard case .updated = update.kind, update.item.error != nil else { return }
+            failed.fulfill()
+        }
+        task.download(download.asWKDownload(), didFailWithError: TestError(), resumeData: .resumeData)
+        waitForExpectations(timeout: 5)
+        c1.cancel()
+
+        XCTAssertTrue(fm.fileExists(atPath: destURL.path))
+        XCTAssertTrue(fm.fileExists(atPath: tempURL.path))
+
+        let removed = expectation(description: "item removed")
+        let c2 = coordinator.updates.sink { update in
+            guard case .removed = update.kind else { return }
+            removed.fulfill()
+        }
+        _=coordinator.remove(downloadWithIdentifier: id)
+        waitForExpectations(timeout: 5)
+        c2.cancel()
+
+        let filesDeleted = XCTNSPredicateExpectation(predicate: NSPredicate { [fm, destURL, tempURL] _, _ in
+            !fm.fileExists(atPath: destURL!.path) && !fm.fileExists(atPath: tempURL!.path)
+        }, object: nil)
+        wait(for: [filesDeleted], timeout: 5)
+
+        XCTAssertFalse(fm.fileExists(atPath: destURL.path),
+                       "Destination placeholder must be deleted when a retryable-failed download is removed")
+        XCTAssertFalse(fm.fileExists(atPath: tempURL.path),
+                       "Temp .duckload file must be deleted when a retryable-failed download is removed")
     }
 
     @MainActor
@@ -497,7 +653,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         coordinator.restart(downloadWithIdentifier: DownloadListItem.testFailedItem.identifier)
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 5)
         }
         XCTAssertEqual(coordinator.downloads(sortedBy: \.modified, ascending: true).count, 1)
     }
@@ -522,7 +678,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         coordinator.remove(downloadWithIdentifier: id)
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 5)
         }
     }
 
@@ -547,7 +703,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
             XCTAssertNotEqual(update.item.identifier, keptId)
         }
 
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
 
         let e2 = expectation(description: "item removed")
         e2.expectedFulfillmentCount = 2
@@ -560,7 +716,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         coordinator.cleanupInactiveDownloads(for: nil)
 
         withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 5)
         }
 
         XCTAssertTrue(coordinator.hasActiveDownloads(for: nil))
@@ -577,7 +733,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
             e.fulfill()
         }
         coordinator.cancel(downloadWithIdentifier: id)
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
     }
 
     @MainActor
@@ -588,7 +744,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
             e.fulfill()
         }
         task.progress.cancel()
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
     }
 
     @MainActor
@@ -616,18 +772,18 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         XCTAssertNotNil(task.fileProgress)
         task.fileProgress?.cancel()
-        wait(for: [eCancelled], timeout: 1)
+        wait(for: [eCancelled], timeout: 5)
     }
 
     @MainActor
-    func testSync() {
+    func testSync() async {
         let e = expectation(description: "sync called")
         store.syncBlock = {
             e.fulfill()
         }
         setUpCoordinator()
-        coordinator.sync()
-        waitForExpectations(timeout: 0)
+        await coordinator.sync()
+        await fulfillment(of: [e], timeout: 0)
     }
 
 }

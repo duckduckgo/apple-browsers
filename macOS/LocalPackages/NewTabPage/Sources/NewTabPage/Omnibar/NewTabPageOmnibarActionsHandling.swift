@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 public protocol NewTabPageOmnibarActionsHandling: AnyObject {
 
     @MainActor
@@ -25,6 +27,46 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget)
 
     @MainActor
-    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget)
+    func submitChat(_ chat: String,
+                    target: NewTabPageDataModel.OpenTarget,
+                    modelId: String?,
+                    images: [NewTabPageDataModel.SubmitChatImage]?,
+                    mode: String?,
+                    toolChoice: [String]?,
+                    reasoningEffort: String?,
+                    pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
+                    files: [NewTabPageDataModel.OmnibarPromptFile]?,
+                    aiTermsAccepted: Bool)
+
+    @MainActor
+    func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget)
+
+    @MainActor
+    func viewAllAiChats(target: NewTabPageDataModel.OpenTarget)
+
+    /// Shows the delete-confirmation dialog and, on confirm, starts deletion (may finish in the
+    /// background). Returns the user's choice.
+    @MainActor
+    func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool
+
+    /// Removes a history-based suggestion identified by its exact URL. Fire-and-forget.
+    @MainActor
+    func removeSuggestion(_ url: String)
+
+    /// Opens the Duck.ai Customize Responses modal from the NTP omnibar Tools menu.
+    @MainActor
+    func openCustomizeResponses()
+
+    /// Persists whether the stored response customization is applied (from the row's toggle).
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool)
+
+    /// Opens Duck.ai's Privacy Policy and Terms of Service, linked from the terms disclaimer.
+    @MainActor
+    func openPrivacyTerms()
+
+    /// Opens the attachment privacy help page in a new tab, leaving the staged attachment alone.
+    @MainActor
+    func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind)
 
 }

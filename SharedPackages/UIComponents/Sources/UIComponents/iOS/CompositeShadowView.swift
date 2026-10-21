@@ -60,7 +60,28 @@ public class CompositeShadowView: UIView {
             return
         }
 
-        shadowView.layer.applyShadowProperties(shadow)
+        shadowView.layer.applyShadowProperties(shadow, in: self)
+    }
+
+    /// Batch variant of `updateShadow(_:)`.
+    public func updateShadows(_ shadows: [Shadow]) {
+        shadows.forEach(updateShadow)
+    }
+
+    /// Applies an opacity multiplier to all configured shadow layers.
+    /// Useful when gradually revealing/hiding shadows during animated transitions.
+    public func applyShadowOpacityMultiplier(_ multiplier: Float) {
+        let clampedMultiplier = min(max(multiplier, 0), 1)
+        for shadow in shadows {
+            let adjustedShadow = Shadow(
+                id: shadow.id,
+                color: shadow.color,
+                opacity: shadow.opacity * clampedMultiplier,
+                radius: shadow.radius,
+                offset: shadow.offset
+            )
+            updateShadow(adjustedShadow)
+        }
     }
 
     private func setUpShadows() {
@@ -80,7 +101,7 @@ public class CompositeShadowView: UIView {
             shadowView.layer.cornerRadius = layer.cornerRadius
             shadowView.layer.cornerCurve = layer.cornerCurve
 
-            shadowView.layer.applyShadowProperties(shadow)
+            shadowView.layer.applyShadowProperties(shadow, in: self)
 
             insertSubview(shadowView, at: 0)
             shadowViews.append(shadowView)
@@ -165,8 +186,8 @@ public class CompositeShadowView: UIView {
 }
 
 private extension CALayer {
-    func applyShadowProperties(_ shadow: CompositeShadowView.Shadow) {
-        shadowColor = shadow.color.cgColor
+    func applyShadowProperties(_ shadow: CompositeShadowView.Shadow, in view: UIView) {
+        shadowColor = shadow.color.resolvedColor(with: view.traitCollection).cgColor
         shadowOpacity = shadow.opacity
         shadowRadius = shadow.radius
         shadowOffset = shadow.offset

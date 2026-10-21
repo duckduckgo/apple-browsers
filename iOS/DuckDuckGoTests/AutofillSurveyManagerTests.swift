@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import BrowserServicesKit
+import PrivacyConfig
 @testable import DuckDuckGo
 
 final class AutofillSurveyManagerTests: XCTestCase {

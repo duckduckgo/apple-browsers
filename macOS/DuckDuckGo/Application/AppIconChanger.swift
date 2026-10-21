@@ -16,26 +16,71 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Cocoa
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 
 final class AppIconChanger {
 
-    init(internalUserDecider: InternalUserDecider) {
-        subscribeToIsInternal(internalUserDecider)
+    private enum AppIconName: String {
+        case beta = "AppIcon-Beta"
+        case black = "AppIcon-Black"
+        case blossom = "AppIcon-Blossom"
+        case debugBeta = "AppIcon-Debug-Beta"
+        case lilypad = "AppIcon-Lilypad"
+        case pink = "AppIcon-Pink"
+        case pollen = "AppIcon-Pollen"
+        case pondwater = "AppIcon-Pondwater"
+        case reviewBeta = "AppIcon-Review-Beta"
+        case white = "AppIcon-White"
+
+        var image: NSImage? {
+            NSImage(named: rawValue)
+        }
     }
 
-    func updateIcon(isInternalChannel: Bool) {
+    private var cancellables = Set<AnyCancellable>()
+    private var isInternalUser: Bool = false
+    private weak var appearancePreferences: AppearancePreferences?
+
+    init(internalUserDecider: InternalUserDecider, appearancePreferences: AppearancePreferences) {
+        self.appearancePreferences = appearancePreferences
+        subscribeToIsInternal(internalUserDecider)
+        subscribeToThemeChanges(appearancePreferences)
+        subscribeToIconSyncPreferenceChanges(appearancePreferences)
+    }
+
+    func updateIcon(isInternalChannel: Bool, themeName: ThemeName? = nil, forceSyncCheck: Bool = true) {
+        self.isInternalUser = isInternalChannel
+
+        let shouldApplyThemeIcon = if forceSyncCheck {
+            themeName != nil && appearancePreferences?.syncAppIconWithTheme == true
+        } else {
+            themeName != nil
+        }
+
+        if shouldApplyThemeIcon,
+           let themeName = themeName,
+           let themeIcon = icon(for: themeName) {
+            NSApplication.shared.applicationIconImage = themeIcon
+            return
+        }
+
+        // Fall back to internal user logic
         let icon: NSImage?
         if isInternalChannel {
-#if DEBUG
-            icon = .internalChannelIconDebug
-#elseif REVIEW
-            icon = .internalChannelIconReview
-#else
-            icon = .internalChannelIcon
-#endif
+            let buildType = StandardApplicationBuildType()
+            if buildType.isDebugBuild {
+                icon = AppIconName.debugBeta.image
+            } else if buildType.isReviewBuild {
+                icon = AppIconName.reviewBeta.image
+            } else if buildType.isAlphaBuild {
+                icon = nil // Don't override icon for alpha builds
+            } else {
+                icon = AppIconName.beta.image
+            }
         } else {
             icon = nil
         }
@@ -43,13 +88,58 @@ final class AppIconChanger {
         NSApplication.shared.applicationIconImage = icon
     }
 
-    private var isInternalCancellable: AnyCancellable?
-
     private func subscribeToIsInternal(_ internalUserDecider: InternalUserDecider) {
-        isInternalCancellable = internalUserDecider.isInternalUserPublisher
+        internalUserDecider.isInternalUserPublisher
             .sink { [weak self] isInternal in
                 self?.updateIcon(isInternalChannel: isInternal)
             }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToThemeChanges(_ appearancePreferences: AppearancePreferences) {
+        appearancePreferences.$themeName
+            .sink { [weak self] themeName in
+                guard let self = self else { return }
+                self.updateIcon(isInternalChannel: self.isInternalUser, themeName: themeName)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToIconSyncPreferenceChanges(_ appearancePreferences: AppearancePreferences) {
+        appearancePreferences.$syncAppIconWithTheme
+            .sink { [weak self] isSyncEnabled in
+                guard let self = self else { return }
+                let themeName = isSyncEnabled ? appearancePreferences.themeName : nil
+                self.updateIcon(isInternalChannel: self.isInternalUser, themeName: themeName, forceSyncCheck: false)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func icon(for themeName: ThemeName) -> NSImage? {
+        guard let iconName = iconName(for: themeName) else { return nil }
+
+        return iconName.image
+    }
+
+    private func iconName(for themeName: ThemeName) -> AppIconName? {
+        switch themeName {
+        case .default:
+            nil
+        case .coolGray:
+            .black
+        case .desert:
+            .white
+        case .green:
+            .lilypad
+        case .orange:
+            .pollen
+        case .rose:
+            .pink
+        case .slateBlue:
+            .pondwater
+        case .violet:
+            .blossom
+        }
     }
 
 }

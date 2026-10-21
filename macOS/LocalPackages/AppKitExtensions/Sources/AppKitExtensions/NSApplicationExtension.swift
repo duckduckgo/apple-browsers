@@ -44,6 +44,10 @@ public extension NSApplication {
         return event.keyCode == 36 || event.keyCode == 76
     }
 
+    var visibleWindows: [NSWindow] {
+        windows.filter { $0.isVisible }
+    }
+
     func isActivePublisher() -> AnyPublisher<Bool, Never> {
         let activated = NotificationCenter.default
             .publisher(for: NSApplication.didBecomeActiveNotification).map { _ in true }

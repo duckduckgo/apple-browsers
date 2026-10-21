@@ -16,50 +16,71 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrokenSitePrompt
-import BrowserServicesKit
 import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
+import FoundationExtensions
 import History
 import NetworkProtectionIPC
+import NetworkQualityMonitor
 import os.log
+import PerformanceTest
 import PixelKit
+import PrivacyConfig
+import SwiftUI
 import VPN
+import WebExtensions
 
 final class MainViewController: NSViewController {
     private(set) lazy var mainView = MainView(frame: NSRect(x: 0, y: 0, width: 600, height: 660))
 
-    static let watchdog = Watchdog()
-
     let tabBarViewController: TabBarViewController
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
-    let aiChatSidebarPresenter: AIChatSidebarPresenting
+    let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    let aiChatCoordinator: AIChatCoordinating
     let aiChatSummarizer: AIChatSummarizer
-    let findInPageViewController: FindInPageViewController
+    let aiChatTranslator: AIChatTranslator
+    let aiChatSelectionContextAttacher: AIChatSelectionContextAttaching
+
+    private(set) lazy var findInPageViewController: FindInPageViewController = {
+        let vc = FindInPageViewController.create()
+        vc.delegate = self
+        addAndLayoutChild(vc, into: mainView.findInPageContainerView)
+        return vc
+    }()
+
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
+    let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
+    let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
-    private let visualStyle: VisualStyleProviding
+    private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
+    private let winBackOfferPromptPresenting: WinBackOfferPromptPresenting
+    let tabsPreferences: TabsPreferences
+    private let duckPlayer: DuckPlayer
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
     let historyCoordinator: HistoryCoordinator
     let fireproofDomains: FireproofDomains
+    let downloadManager: FileDownloadManagerProtocol
     let isBurner: Bool
+    let pinningManager: PinningManager
+    let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
-    private var selectedTabViewModelForHistoryViewOnboardingCancellable: AnyCancellable?
     private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
-    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
 
@@ -67,59 +88,110 @@ final class MainViewController: NSViewController {
         return bookmarksBarViewController.parent != nil
     }
 
+    private let startupProfiler: StartupProfiler
+
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
+    private var theme: ThemeStyleProviding {
+        themeManager.theme
+    }
+
+    private(set) var allowsUserInteraction: Bool = true
+
     var shouldShowBookmarksBar: Bool {
         return !isInPopUpWindow
         && bookmarksBarVisibilityManager.isBookmarksBarVisible
         && (!(view.window?.isFullScreen ?? false) || NSApp.delegateTyped.appearancePreferences.showTabsAndBookmarksBarOnFullScreen)
     }
 
-    private var isInPopUpWindow: Bool {
-        view.window?.isPopUpWindow == true
+    var isInPopUpWindow: Bool {
+        tabCollectionViewModel.isPopup
     }
 
     required init?(coder: NSCoder) {
         fatalError("MainViewController: Bad initializer")
     }
 
-    init(tabCollectionViewModel: TabCollectionViewModel? = nil,
+    init(tabCollectionViewModel: TabCollectionViewModel,
          bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
+         recentlyClosedCoordinator: RecentlyClosedCoordinating = NSApp.delegateTyped.recentlyClosedCoordinator,
          contentBlocking: ContentBlockingProtocol = NSApp.delegateTyped.privacyFeatures.contentBlocking,
          fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
          windowControllersManager: WindowControllersManager = NSApp.delegateTyped.windowControllersManager,
          permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
-         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         aiChatSidebarProvider: AIChatSidebarProviding,
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable = NSApp.delegateTyped.aiChatMenuConfiguration,
+         aiChatSessionStore: AIChatSessionStoring,
          aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
+         aiChatConversationSourceHandler: AIChatConversationSourceHandler = NSApp.delegateTyped.aiChatConversationSourceHandler,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+         searchPreferences: SearchPreferences = NSApp.delegateTyped.searchPreferences,
+         defaultBrowserPreferences: DefaultBrowserPreferences = NSApp.delegateTyped.defaultBrowserPreferences,
+         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptService.presenter,
+         downloadManager: FileDownloadManagerProtocol = NSApp.delegateTyped.downloadManager,
+         downloadListCoordinator: DownloadListCoordinator = NSApp.delegateTyped.downloadListCoordinator,
+         downloadsPreferences: DownloadsPreferences = NSApp.delegateTyped.downloadsPreferences,
+         tabsPreferences: TabsPreferences = NSApp.delegateTyped.tabsPreferences,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences = NSApp.delegateTyped.webTrackingProtectionPreferences,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences = NSApp.delegateTyped.cookiePopupProtectionPreferences,
+         aiChatPreferences: AIChatPreferences = NSApp.delegateTyped.aiChatPreferences,
+         aboutPreferences: AboutPreferences = NSApp.delegateTyped.aboutPreferences,
+         dockPreferences: DockPreferencesModel = NSApp.delegateTyped.dockPreferences,
+         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
+         duckPlayer: DuckPlayer = NSApp.delegateTyped.duckPlayer,
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
+         tabDragAndDropManager: TabDragAndDropManager = NSApp.delegateTyped.tabDragAndDropManager,
          pixelFiring: PixelFiring? = PixelKit.shared,
-         visualizeFireAnimationDecider: VisualizeFireAnimationDecider = NSApp.delegateTyped.visualizeFireAnimationDecider
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
+         vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
+         sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
+         winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
+         pinningManager: PinningManager = NSApp.delegateTyped.pinningManager,
+         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
+         memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor,
+         startupProfiler: StartupProfiler = NSApp.delegateTyped.startupProfiler,
+         adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
-        let tabCollectionViewModel = tabCollectionViewModel ?? TabCollectionViewModel()
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
         self.fireproofDomains = fireproofDomains
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
-        self.visualStyle = visualStyle
+        self.downloadManager = downloadManager
+        self.themeManager = themeManager
         self.fireCoordinator = fireCoordinator
+        self.winBackOfferPromptPresenting = winBackOfferPromptPresenting
+        self.tabsPreferences = tabsPreferences
+        self.duckPlayer = duckPlayer
+        self.pinningManager = pinningManager
+        self.duckAIChromeButtonsVisibilityManager = duckAIChromeButtonsVisibilityManager
 
+        let duckAiNativeStorageHandler = if tabCollectionViewModel.isBurner {
+            NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: tabCollectionViewModel.burnerMode)
+        } else {
+            NSApp.delegateTyped.duckAiNativeStorageHandler
+        }
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
             fireproofDomains: fireproofDomains,
-            activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel
+            activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
+            featureFlagger: featureFlagger,
+            aiChatMenuConfig: aiChatMenuConfig,
+            nativeStorageHandler: duckAiNativeStorageHandler,
+            tabDragAndDropManager: tabDragAndDropManager,
+            cookiePopupsBlockedPromoDelegate: NSApp.delegateTyped.cookiePopupsBlockedPromoDelegate
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -134,12 +206,13 @@ final class MainViewController: NSViewController {
                 NetworkProtectionKnownFailureStore().lastKnownFailure = KnownFailure(error)
             }
 
-            let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
+            let vpnUninstaller = VPNUninstaller(pinningManager: pinningManager, ipcClient: vpnXPCClient)
 
             return NetworkProtectionNavBarPopoverManager(
                 ipcClient: vpnXPCClient,
                 vpnUninstaller: vpnUninstaller,
-                vpnUIPresenting: Application.appDelegate.windowControllersManager)
+                vpnUIPresenting: Application.appDelegate.windowControllersManager,
+                freeTrialConversionService: Application.appDelegate.freeTrialConversionService)
         }()
         let networkProtectionStatusReporter: NetworkProtectionStatusReporter = {
             var connectivityIssuesObserver: ConnectivityIssueObserver!
@@ -154,6 +227,7 @@ final class MainViewController: NSViewController {
             controllerErrorMessageObserver = controllerErrorMessageObserver ?? ControllerErrorMesssageObserverThroughDistributedNotifications()
 
             return DefaultNetworkProtectionStatusReporter(
+                vpnEnabledObserver: vpnXPCClient.ipcVPNEnabledObserver,
                 statusObserver: vpnXPCClient.ipcStatusObserver,
                 serverInfoObserver: vpnXPCClient.ipcServerInfoObserver,
                 connectionErrorObserver: vpnXPCClient.ipcConnectionErrorObserver,
@@ -164,27 +238,69 @@ final class MainViewController: NSViewController {
             )
         }()
 
-        browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
-        aiChatSidebarPresenter = AIChatSidebarPresenter(
-            sidebarHost: browserTabViewController,
-            sidebarProvider: aiChatSidebarProvider,
-            aiChatTabOpener: aiChatTabOpener,
-            featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager,
-            pixelFiring: pixelFiring
+        browserTabViewController = BrowserTabViewController(
+            tabCollectionViewModel: tabCollectionViewModel,
+            bookmarkManager: bookmarkManager,
+            defaultBrowserPreferences: defaultBrowserPreferences,
+            downloadsPreferences: downloadsPreferences,
+            searchPreferences: searchPreferences,
+            tabsPreferences: tabsPreferences,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            aiChatPreferences: aiChatPreferences,
+            aboutPreferences: aboutPreferences,
+            dockPreferences: dockPreferences,
+            accessibilityPreferences: accessibilityPreferences,
+            duckPlayer: duckPlayer,
+            permissionManager: permissionManager,
+            pinningManager: pinningManager,
+            adBlockingAvailability: adBlockingAvailability
         )
+        aiChatCoordinator = AIChatCoordinator(
+            sidebarHost: browserTabViewController,
+            sessionStore: aiChatSessionStore,
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatTabOpener: aiChatTabOpener,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            featureFlagger: featureFlagger
+        )
+        tabBarViewController.aiChatCoordinator = aiChatCoordinator
         aiChatSummarizer = AIChatSummarizer(
             aiChatMenuConfig: aiChatMenuConfig,
-            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatCoordinator: aiChatCoordinator,
             aiChatTabOpener: aiChatTabOpener,
-            featureFlagger: featureFlagger,
-            pixelFiring: pixelFiring
+            pixelFiring: pixelFiring,
+            currentPageContextProvider: { [weak tabCollectionViewModel] in
+                tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+            }
+        )
+
+        aiChatTranslator = AIChatTranslator(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatCoordinator: aiChatCoordinator,
+            aiChatTabOpener: aiChatTabOpener,
+            pixelFiring: pixelFiring,
+            currentPageContextProvider: { [weak tabCollectionViewModel] in
+                tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+            }
+        )
+
+        aiChatSelectionContextAttacher = AIChatSelectionContextAttacher(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatCoordinator: aiChatCoordinator,
+            pixelFiring: pixelFiring,
+            currentPageContextProvider: { [weak tabCollectionViewModel] in
+                tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+            }
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
+                                                                         downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
                                                                          bookmarkDragDropManager: bookmarkDragDropManager,
                                                                          historyCoordinator: historyCoordinator,
+                                                                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                                                                          contentBlocking: contentBlocking,
                                                                          fireproofDomains: fireproofDomains,
                                                                          permissionManager: permissionManager,
@@ -192,19 +308,72 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter,
-                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
+                                                                         adBlockingAvailability: adBlockingAvailability,
+                                                                         searchPreferences: searchPreferences,
+                                                                         webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                                         aiChatMenuConfig: aiChatMenuConfig,
+                                                                         aiChatCoordinator: aiChatCoordinator,
+                                                                         vpnUpsellPopoverPresenter: vpnUpsellPopoverPresenter,
+                                                                         sessionRestorePromptCoordinator: sessionRestorePromptCoordinator,
+                                                                         defaultBrowserPreferences: defaultBrowserPreferences,
+                                                                         downloadsPreferences: downloadsPreferences,
+                                                                         tabsPreferences: tabsPreferences,
+                                                                         accessibilityPreferences: accessibilityPreferences,
+                                                                         pinningManager: pinningManager,
+                                                                         memoryUsageMonitor: memoryUsageMonitor)
 
-        findInPageViewController = FindInPageViewController.create()
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider, featureFlagger: featureFlagger)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
-            dragDropManager: bookmarkDragDropManager
+            dragDropManager: bookmarkDragDropManager,
+            pinningManager: pinningManager,
+            featureFlagger: featureFlagger
         )
 
+        // Create the shared AI Chat omnibar controller
+        let suggestionsReader = AIChatSuggestionsReader(
+            suggestionsReader: SuggestionsReader(
+                featureFlagger: featureFlagger,
+                privacyConfig: contentBlocking.privacyConfigurationManager,
+                nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
+                featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+            ),
+            historySettings: AIChatHistorySettings(privacyConfig: contentBlocking.privacyConfigurationManager)
+        )
+        let aiChatOmnibarController = AIChatOmnibarController(
+            aiChatTabOpener: aiChatTabOpener,
+            surface: .addressBar,
+            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            pixelHandler: AddressBarPromptPixelHandler(),
+            suggestionsReader: suggestionsReader,
+            // Fire Windows run an isolated Duck.ai session; persisted chat-history suggestions
+            // from the regular session can't be opened here, so suppress them.
+            isBurner: tabCollectionViewModel.isBurner,
+            preferences: NSApp.delegateTyped.aiChatPreferencesPersistor,
+            usageLimitsStore: DuckAiUsageLimitsStore(storageHandler: duckAiNativeStorageHandler)
+        )
+
+        aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
+            themeManager: themeManager,
+            omnibarController: aiChatOmnibarController,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            burnerMode: tabCollectionViewModel.burnerMode,
+            launcherPromo: NSApp.delegateTyped.duckAiLauncherPromo
+        )
+        aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
+            omnibarController: aiChatOmnibarController,
+            themeManager: themeManager,
+            isBurner: tabCollectionViewModel.isBurner
+        )
+        self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
+        self.startupProfiler = startupProfiler
+
         super.init(nibName: nil, bundle: nil)
+
+        aiChatOmnibarController.delegate = self
         browserTabViewController.delegate = self
-        findInPageViewController.delegate = self
     }
 
     override func loadView() {
@@ -214,8 +383,9 @@ final class MainViewController: NSViewController {
         addAndLayoutChild(bookmarksBarViewController, into: mainView.bookmarksBarContainerView)
         addAndLayoutChild(navigationBarViewController, into: mainView.navigationBarContainerView)
         addAndLayoutChild(browserTabViewController, into: mainView.webContainerView)
-        addAndLayoutChild(findInPageViewController, into: mainView.findInPageContainerView)
         addAndLayoutChild(fireViewController, into: mainView.fireContainerView)
+        addAndLayoutChild(aiChatOmnibarContainerViewController, into: mainView.aiChatOmnibarContainerView)
+        addAndLayoutChild(aiChatOmnibarTextContainerViewController, into: mainView.aiChatOmnibarTextContainerView)
     }
 
     override func viewDidLoad() {
@@ -226,9 +396,15 @@ final class MainViewController: NSViewController {
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
+        subscribeToThemeChanges()
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
+
+        mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
+        mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
+
+        wireAIChatOmnibarUpdates()
     }
 
     override func viewWillAppear() {
@@ -237,7 +413,7 @@ final class MainViewController: NSViewController {
         if isInPopUpWindow {
             tabBarViewController.view.isHidden = true
             mainView.tabBarContainerView.isHidden = true
-            mainView.isTabBarShown = false
+            mainView.setTabBarShown(false, animated: false)
             resizeNavigationBar(isHomePage: false, animated: false)
 
             updateBookmarksBarViewVisibility(visible: false)
@@ -252,46 +428,34 @@ final class MainViewController: NSViewController {
             }
         }
 
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        refreshDividerColor()
     }
 
     override func viewDidAppear() {
+        startupProfiler.measureOnce(.timeToInteractive, startStep: .appDelegateInit)
+
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
-        registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-    }
-
-    var bookmarkBarPromptObserver: Any?
-    func registerForBookmarkBarPromptNotifications() {
-        guard !bookmarksBarViewController.bookmarksBarPromptShown else { return }
-        bookmarkBarPromptObserver = NotificationCenter.default.addObserver(
-            forName: .bookmarkPromptShouldShow,
-            object: nil,
-            queue: .main) { [weak self] _ in
-                self?.showBookmarkPromptIfNeeded()
-        }
     }
 
     override func viewDidDisappear() {
         super.viewDidDisappear()
         mainView.setMouseAboveWebViewTrackingAreaEnabled(false)
-        if let bookmarkBarPromptObserver {
-            NotificationCenter.default.removeObserver(bookmarkBarPromptObserver)
-        }
     }
 
     override func viewDidLayout() {
         mainView.findInPageContainerView.applyDropShadow()
     }
 
+    /// Called when this window becomes the key window (gains focus).
     func windowDidBecomeKey() {
         updateBackMenuItem()
         updateForwardMenuItem()
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
-        showSetAsDefaultAndAddToDockIfNeeded()
+        showWinBackOfferIfNeeded()
     }
 
     func windowDidResignKey() {
@@ -299,29 +463,48 @@ final class MainViewController: NSViewController {
         tabBarViewController.hideTabPreview()
     }
 
-    func showBookmarkPromptIfNeeded() {
-        guard !isInPopUpWindow,
-              !bookmarksBarViewController.bookmarksBarPromptShown,
-              OnboardingActionsManager.isOnboardingFinished else { return }
-        if bookmarksBarIsVisible {
-            // Don't show this to users who obviously know about the bookmarks bar already
-            bookmarksBarViewController.bookmarksBarPromptShown = true
-            return
-        }
-
-        updateBookmarksBarViewVisibility(visible: true)
-        // This won't work until the bookmarks bar is actually visible which it isn't until the next ui cycle
-        DispatchQueue.main.asyncAfter(deadline: .now() + NSAnimationContext.current.duration) {
-            self.bookmarksBarViewController.showBookmarksBarPrompt()
-        }
-    }
-
     override func encodeRestorableState(with coder: NSCoder) {
         fatalError("Default AppKit State Restoration should not be used")
     }
 
     func windowWillClose() {
+        navigationBarViewController.windowWillClose()
+        closeFloatingAIChatsForCurrentWindow()
         viewEventsCancellables.removeAll()
+        aiChatOmnibarContainerViewController.cleanup()
+    }
+
+    private func closeFloatingAIChatsForCurrentWindow() {
+        let regularTabIDs = Array(tabCollectionViewModel.tabViewModels.keys)
+        let pinnedTabIDs = tabCollectionViewModel.pinnedTabsManager.map { Array($0.tabViewModels.keys) } ?? []
+
+        for tabID in Set(regularTabIDs + pinnedTabIDs) {
+            aiChatCoordinator.closeFloatingWindow(for: tabID)
+        }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didResizeNotification, object: nil)
+
+#if DEBUG
+
+        // Check that TabCollectionViewModel deallocates
+        tabCollectionViewModel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+
+        if isViewLoaded {
+            view.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        tabBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        navigationBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        browserTabViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        if isLazyVar(named: "findInPageViewController", initializedIn: self) {
+            findInPageViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        fireViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        bookmarksBarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        aiChatOmnibarContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        aiChatOmnibarTextContainerViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     func windowWillMiniaturize() {
@@ -344,6 +527,228 @@ final class MainViewController: NSViewController {
         updateBookmarksBarViewVisibility(visible: !isInPopUpWindow && !mainView.isBookmarksBarShown)
     }
 
+    func updateAIChatOmnibarContainerVisibility(visible: Bool, shouldKeepSelection: Bool = false, shouldFetchSuggestions: Bool = true) {
+        if visible {
+            // Re-expanding from unfocused-in-duck.ai keeps the container on screen; fully reactivate suggestions.
+            aiChatOmnibarContainerViewController.setSuggestionsCollapsedByUnfocus(false)
+
+            let desiredHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+            let suggestionsHeight = aiChatOmnibarContainerViewController.suggestionsHeight
+            let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = desiredHeight + suggestionsHeight + additionalHeight
+            mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
+            // Allow clicks to pass through text container to reach suggestions and tool buttons
+            let passthroughHeight = aiChatOmnibarContainerViewController.totalPassthroughHeight
+            mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
+
+            /// Sync text into the prompt view BEFORE flipping isHidden so the panel appears already populated —
+            /// otherwise the normal async `$currentText → textView.string` subscription races the show and the
+            /// user sees the text "filling in" after the panel is visible.
+            aiChatOmnibarContainerViewController.omnibarController.onOmnibarActivated(shouldFetchSuggestions: shouldFetchSuggestions)
+            aiChatOmnibarTextContainerViewController.syncTextViewToCurrentText()
+        }
+
+        mainView.isAIChatOmnibarContainerShown = visible
+
+        navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible, shouldKeepSelection: shouldKeepSelection)
+
+        if visible {
+            aiChatOmnibarContainerViewController.startEventMonitoring()
+            aiChatOmnibarTextContainerViewController.startEventMonitoring()
+
+            aiChatOmnibarTextContainerViewController.focusTextViewRestoringCursorPosition()
+
+            // Suppress mouse hover until mouse actually moves
+            aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.suppressMouseHoverUntilMouseMoves()
+
+            let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
+            aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+        } else {
+            aiChatOmnibarContainerViewController.cleanup()
+            aiChatOmnibarTextContainerViewController.stopEventMonitoring()
+
+            if !shouldKeepSelection {
+                aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
+            }
+        }
+    }
+
+    /// Fully hides the Duck.ai panel on address-bar unfocus while leaving the tab's per-tab Duck.ai state
+    /// (mode flag, prompt text, tool selection, attachments) intact so re-entry restores the draft.
+    /// The `isCleaningUp` guards on the container VC / controller prevent the hide-driven view resets from
+    /// writing back into the tab's shared state.
+    func hideAIChatOmnibarPanelKeepingTabState() {
+        guard mainView.isAIChatOmnibarContainerShown else { return }
+
+        aiChatOmnibarContainerViewController.setShadowVisible(false)
+        aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
+        // Esc, a click outside and a switch to another Duck.ai tab close the input without `cleanup()`.
+        aiChatOmnibarContainerViewController.omnibarController.inputOutcomeMeasurement.inputClosed()
+        mainView.updateAIChatOmnibarContainerHeight(0, animated: true)
+        mainView.isAIChatOmnibarContainerShown = false
+        aiChatOmnibarTextContainerViewController.stopEventMonitoring()
+    }
+
+    /// Re-shows the Duck.ai panel when the user refocuses the address bar in `.inactiveWithAIChat`.
+    /// Delegates to the standard visibility path so the panel reappears with the preserved draft / tool / attachments.
+    func showAIChatOmnibarPanelForRefocus() {
+        updateAIChatOmnibarContainerVisibility(visible: true, shouldKeepSelection: false, shouldFetchSuggestions: false)
+    }
+
+    /// Insertion only shows the pane synchronously for a *new* tab.
+    /// Reusing an existing Settings tab swaps panes asynchronously, so the destination is applied here instead of waiting on that.
+    func openSettings(at destination: PreferencesDestination) {
+        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: destination.pane))
+        browserTabViewController.navigateSettings(to: destination)
+    }
+
+    func openNewDuckAIChatTab() {
+        openDuckAIChatTab(with: .newChat, source: .tabBarButton)
+    }
+
+    func openDuckAIChatHistory() {
+        openDuckAIChatTab(with: .chatHistory, source: .tabBarChats)
+    }
+
+    private func openDuckAIChatTab(with trigger: AIChatOpenTrigger, source: AIChatConversationSource) {
+        let behavior: LinkOpenBehavior = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
+            ? .currentTab
+            : .newTab(selected: true)
+        aiChatConversationSourceHandler.setData(source)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: trigger, behavior: behavior)
+    }
+
+    private func wireToggleReferenceToAIChatTextContainer() {
+        if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
+            aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
+        }
+
+        aiChatOmnibarTextContainerViewController.containerViewController = aiChatOmnibarContainerViewController
+
+        /// Bridge the nav bar toggle's Tab press into the AI chat tab cycle.
+        /// MainVC is the only entity that knows about both the nav bar and the AI chat area.
+        navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.onToggleTabPressedInAIChatMode = { [weak self] in
+            self?.aiChatOmnibarTextContainerViewController.handleToggleTabPressed()
+        }
+
+        /// Refocus duck.ai when the user clicks the prompt while the address bar is unfocused-in-duck.ai.
+        aiChatOmnibarTextContainerViewController.onTextViewDidBecomeFirstResponder = { [weak self] in
+            self?.navigationBarViewController.addressBarViewController?.refocusInAIChatMode()
+        }
+    }
+
+    private func wireAIChatOmnibarHeightUpdates() {
+        aiChatOmnibarTextContainerViewController.heightDidChange = { [weak self] desiredHeight in
+            guard let self = self else { return }
+
+            let suggestionsHeight = self.aiChatOmnibarContainerViewController.suggestionsHeight
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = desiredHeight + suggestionsHeight + additionalHeight
+
+            self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: true)
+
+            let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
+            self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+        }
+
+        // Wire up suggestions height changes
+        aiChatOmnibarContainerViewController.onSuggestionsHeightChanged = { [weak self] suggestionsHeight in
+            guard let self else { return }
+
+            let textHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = textHeight + suggestionsHeight + additionalHeight
+
+            self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
+
+            // Allow clicks to pass through text container to reach suggestions and tool buttons
+            let passthroughHeight = self.aiChatOmnibarContainerViewController.totalPassthroughHeight
+            self.mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
+
+            let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
+            self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+        }
+
+        // Wire up passthrough height updates when tools visibility or attachments change
+        aiChatOmnibarContainerViewController.onPassthroughHeightNeedsUpdate = { [weak self] in
+            guard let self, self.mainView.isAIChatOmnibarContainerShown else { return }
+
+            // Resize container to accommodate attachments
+            let textHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+            let suggestionsHeight = self.aiChatOmnibarContainerViewController.suggestionsHeight
+            let additionalHeight = self.aiChatOmnibarContainerViewController.additionalContentHeight
+            let totalHeight = textHeight + suggestionsHeight + additionalHeight
+            self.mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
+
+            let passthroughHeight = self.aiChatOmnibarContainerViewController.totalPassthroughHeight
+            self.mainView.updateAIChatOmnibarTextContainerPassthrough(passthroughHeight)
+            self.aiChatOmnibarTextContainerViewController.setPassthroughBottomHeight(passthroughHeight)
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidResize),
+            name: NSWindow.didResizeNotification,
+            object: view.window
+        )
+    }
+
+    private func wireAIChatOmnibarUpdates() {
+        wireToggleReferenceToAIChatTextContainer()
+        wireAIChatOmnibarHeightUpdates()
+        wireAIChatOmnibarHitTesting()
+        wireAIChatOmnibarEscapeHandling()
+    }
+
+    /// When the duck.ai omnibar's `@`-mention picker is open, Esc should dismiss only the
+    /// picker — without touching the omnibar's focus or duck.ai mode. The address bar's
+    /// `escapeKeyDown()` consults the closure we install here BEFORE running its own
+    /// focus-resign logic; returning `true` short-circuits all of that.
+    private func wireAIChatOmnibarEscapeHandling() {
+        navigationBarViewController.addressBarViewController?.aiChatOmnibarHandledEscape = { [weak self] in
+            self?.aiChatOmnibarTextContainerViewController.dismissMentionPickerIfPresented() ?? false
+        }
+    }
+
+    @objc private func windowDidResize() {
+        guard mainView.isAIChatOmnibarContainerShown else { return }
+
+        let textHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+        let suggestionsHeight = aiChatOmnibarContainerViewController.suggestionsHeight
+        let additionalHeight = aiChatOmnibarContainerViewController.additionalContentHeight
+        let totalHeight = textHeight + suggestionsHeight + additionalHeight
+
+        mainView.updateAIChatOmnibarContainerHeight(totalHeight, animated: false)
+
+        let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
+        aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+    }
+
+    private func wireAIChatOmnibarHitTesting() {
+        navigationBarViewController.addressBarViewController?.isPointInAIChatOmnibar = { [weak self] locationInWindow in
+            guard let self = self else { return false }
+            guard self.mainView.isAIChatOmnibarContainerShown else { return false }
+
+            let containerFrame = self.mainView.aiChatOmnibarContainerView.frame
+            let pointInMainView = self.mainView.convert(locationInWindow, from: nil)
+            if containerFrame.contains(pointInMainView) {
+                return true
+            }
+
+            let textContainerFrame = self.mainView.aiChatOmnibarTextContainerView.frame
+            if textContainerFrame.contains(pointInMainView) {
+                return true
+            }
+
+            return false
+        }
+    }
+
+    // `loadView()` attaches the bar before its visibility is known, so attachment alone can't tell when it first shows.
+    private var wasBookmarksBarShown = false
+
     // Can be updated via keyboard shortcut so needs to be internal visibility
     func updateBookmarksBarViewVisibility(visible showBookmarksBar: Bool) {
         if showBookmarksBar {
@@ -358,27 +763,37 @@ final class MainViewController: NSViewController {
             bookmarksBarViewController.view.removeFromSuperview()
         }
 
+        if showBookmarksBar, !wasBookmarksBarShown {
+            NotificationCenter.default.post(name: .bookmarksBarShown, object: self)
+        }
+        wasBookmarksBarShown = showBookmarksBar
+
         mainView.isBookmarksBarShown = showBookmarksBar
         mainView.layoutSubtreeIfNeeded()
         mainView.updateTrackingAreas()
 
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        refreshDividerColor()
     }
 
-    private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
+    private func refreshDividerColor() {
+        let isShowingHomepage = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
+        refreshDividerColor(isShowingHomePage: isShowingHomepage)
+    }
+
+    private func refreshDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
-            if visualStyle.addToolbarShadow {
+            if theme.addToolbarShadow {
                 if mainView.isBannerViewShown {
-                    mainView.divider.backgroundColor = .bannerViewDivider
+                    mainView.divider.backgroundColor = NSColor(resource: .bannerViewDivider)
                 } else {
-                    mainView.divider.backgroundColor = .shadowSecondary
+                    mainView.divider.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
                 }
             } else {
                 let backgroundColor: NSColor = {
                     if mainView.isBannerViewShown {
-                        return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                        return bookmarksBarIsVisible ? NSColor(resource: .bookmarkBarBackground) : NSColor(resource: .addressBarSolidSeparator)
                     } else {
-                        return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                        return (bookmarksBarIsVisible || isHomePage) ? NSColor(resource: .bookmarkBarBackground) : NSColor(resource: .addressBarSolidSeparator)
                     }
                 }()
 
@@ -405,34 +820,33 @@ final class MainViewController: NSViewController {
             subscribeToTitleChange(of: tabViewModel)
             subscribeToTabContent(of: tabViewModel)
         }
-
-        selectedTabViewModelForHistoryViewOnboardingCancellable = tabCollectionViewModel.$selectedTabViewModel.dropFirst().sink { [weak self] _ in
-            guard let self else { return }
-            navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
-        }
     }
 
     private func subscribeToTitleChange(of selectedTabViewModel: TabViewModel?) {
         guard let selectedTabViewModel else { return }
 
-        // Only subscribe once the view is added to the window.
-        let windowPublisher = view.publisher(for: \.window).filter({ $0 != nil }).prefix(1).asVoid()
-
-        windowPublisher
-            .combineLatest(selectedTabViewModel.$title) { $1 }
-            .map {
-                $0.truncated(length: MainMenu.Constants.maxTitleLength)
+        let updateWindowTitle = { [weak self] (title: String) in
+            guard let self, let window = self.view.window else { return }
+            guard !isBurner else {
+                // Fire Window: don‘t display active Tab title as the Window title
+                window.title = UserText.burnerWindowHeader
+                return
             }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] title in
-                guard let self else { return }
-                guard !isBurner else {
-                    // Fire Window: don‘t display active Tab title as the Window title
-                    view.window?.title = UserText.burnerWindowHeader
-                    return
-                }
+            let truncatedTitle = title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
 
-                view.window?.title = title
+            window.title = truncatedTitle
+        }
+
+        // Update once the view is added to a window.
+        view.observe(\.window) { [weak selectedTabViewModel] view, _ in
+            guard view.window != nil else { return }
+            updateWindowTitle(selectedTabViewModel?.title ?? "")
+        }.store(in: &tabViewModelCancellables)
+
+        selectedTabViewModel.$title
+            .receive(on: DispatchQueue.main)
+            .sink { title in
+                updateWindowTitle(title)
             }
             .store(in: &tabViewModelCancellables)
     }
@@ -447,7 +861,7 @@ final class MainViewController: NSViewController {
     }
 
     private func resizeNavigationBar(isHomePage homePage: Bool, animated: Bool) {
-        updateDividerColor(isShowingHomePage: homePage)
+        refreshDividerColor(isShowingHomePage: homePage)
         navigationBarViewController.resizeAddressBar(for: homePage ? .homePage : (isInPopUpWindow ? .popUpWindow : .default), animated: animated)
     }
 
@@ -574,14 +988,7 @@ final class MainViewController: NSViewController {
             }
     }
 
-    @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
-        defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
-            popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            bannerViewHandler: showMessageBanner
-        )
-    }
-
-    private func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
+    func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
         guard isViewLoaded && view.window?.isKeyWindow == true else {
             return nil
         }
@@ -593,14 +1000,35 @@ final class MainViewController: NSViewController {
         }
     }
 
-    private func showMessageBanner(banner: BannerMessageViewController) {
+    func getSourceWindowToShowInactiveUserModal() -> NSWindow? {
+        guard isViewLoaded && view.window?.isKeyWindow == true else {
+            return nil
+        }
+        return view.window
+    }
+
+    /// **BANNER DISPLAY HANDLER**
+    ///
+    /// Called by `DefaultBrowserAndDockPromptPresenter` when a banner prompt should be shown.
+    /// The banner is a persistent bar displayed at the top of the window with action buttons.
+    ///
+    /// **Banner Lifecycle:**
+    /// - Created in `DefaultBrowserAndDockPromptPresenter.getBanner()`
+    /// - Displayed here in the main view's banner container
+    /// - Shown in ALL windows until user takes action (confirm, dismiss, or close)
+    /// - Dismissed via `hideBanner()` when user interacts or banner is closed
+    ///
+    /// **See also:**
+    /// - `DefaultBrowserAndDockPromptPresenter.getBanner()` - creates the banner view controller
+    /// - `hideBanner()` - removes the banner from view
+    func showMessageBanner(banner: BannerMessageViewController) {
         if mainView.isBannerViewShown { return } // If view is being shown already we do not want to show it.
 
         addAndLayoutChild(banner, into: mainView.bannerContainerView)
         mainView.isBannerViewShown = true
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+            self?.refreshDividerColor()
         }
     }
 
@@ -609,8 +1037,14 @@ final class MainViewController: NSViewController {
         mainView.isBannerViewShown = false
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+            self?.refreshDividerColor()
         }
+    }
+
+    // MARK: - Win-Back Offer
+
+    private func showWinBackOfferIfNeeded() {
+        winBackOfferPromptPresenting.tryToShowPrompt(in: view.window)
     }
 
     // MARK: - First responder
@@ -620,6 +1054,21 @@ final class MainViewController: NSViewController {
             return
         }
         let tabContent = tabContent ?? selectedTabViewModel.tab.content
+
+        /// When duck.ai is the persistent mode for the incoming tab, the tab-switch flow has already restored
+        /// the panel (unfocused + prompt preserved). Skip the panel tear-down and the address-bar focus grab
+        /// below — otherwise we'd reset the tab's shared duck.ai flag and exit back to search.
+        let isIncomingTabInDuckAIMode = selectedTabViewModel.addressBarSharedTextState.isInDuckAIMode
+        if isIncomingTabInDuckAIMode {
+            return
+        }
+
+        /// Close AI Chat omnibar if visible before adjusting first responder
+        /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1212252449969913?focus=true
+        if mainView.isAIChatOmnibarContainerShown {
+            updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+            aiChatOmnibarContainerViewController.cleanup()
+        }
 
         if case .newtab = tabContent {
             navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
@@ -670,7 +1119,6 @@ extension MainViewController {
         }.store(in: &viewEventsCancellables)
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     func customKeyDown(with event: NSEvent) -> Bool {
         guard let locWindow = self.view.window,
               NSApplication.shared.keyWindow === locWindow else { return false }
@@ -679,69 +1127,110 @@ extension MainViewController {
         let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
         let isWebViewFocused = view.window?.firstResponder is WebView
 
-        // Handle Enter
-        if event.keyCode == kVK_Return,
-           navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
-            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
-                navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
-            } else {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
-            }
+        if handleReturnKey(event: event, flags: flags) {
             return true
         }
 
-        // Handle Escape
-        if event.keyCode == kVK_Escape {
-            var isHandled = false
-            if !mainView.findInPageContainerView.isHidden {
-                findInPageViewController.findInPageDone(self)
-                isHandled = true
-            }
-            if let addressBarVC = navigationBarViewController.addressBarViewController {
-                isHandled = isHandled || addressBarVC.escapeKeyDown()
-            }
-            return isHandled
-        }
-
-        // Handle tab switching (CMD+1 through CMD+9)
-        if [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) {
-            if isWebViewFocused {
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-            }
-            return false
-        }
-
-        if event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) {
-            NSApp.menu?.performKeyEquivalent(with: event)
+        if handleEscapeKey(event: event) {
             return true
         }
 
-        // Handle browser tab/window actions
-        if isWebViewFocused {
-            switch (key, flags, flags.contains(.command)) {
-            case ("n", [.command], _),
-                 ("t", [.command], _), ("t", [.command, .shift], _),
-                 ("w", _, true),
-                 ("q", [.command], _),
-                 ("r", [.command], _):
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-            default:
-                break
-            }
+        if handleTabSwitching(event: event, flags: flags, key: key, isWebViewFocused: isWebViewFocused) {
+            return true
         }
 
-        // Handle CMD+Y (history view)
-        if key == "y", flags == .command {
-            if !NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
-                (NSApp.mainMenuTyped.historyMenu.accessibilityParent() as? NSMenuItem)?.accessibilityPerformPress()
-                return true
-            }
-            return false
+        if handleControlTab(event: event, flags: flags) {
+            return true
+        }
+
+        if handleBrowserActions(key: key, flags: flags, isWebViewFocused: isWebViewFocused, event: event) {
+            return true
         }
 
         return false
+    }
+
+    private func handleReturnKey(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.keyCode == kVK_Return,
+              let addressBarTextField = navigationBarViewController.addressBarViewController?.addressBarTextField,
+              addressBarTextField.isFirstResponder else {
+            return false
+        }
+
+        if featureFlagger.isFeatureOn(.addressBarIMEConfirmFix),
+           addressBarTextField.editor?.hasMarkedText() == true {
+            return false
+        }
+
+        if flags.contains(.option) || flags.contains(.shift),
+           let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
+            let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
+            buttonsViewController.toggleSearchMode()
+            if isSwitchingToAIChatMode {
+                let currentText = addressBarTextField.stringValueWithoutSuffix
+                self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
+            }
+            return true
+        } else if flags.contains(.control) {
+            addressBarTextField.openAIChatWithPrompt()
+            return true
+        } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
+            navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
+        } else {
+            addressBarTextField.addressBarEnterPressed()
+        }
+        return true
+    }
+
+    private func handleEscapeKey(event: NSEvent) -> Bool {
+        guard event.keyCode == kVK_Escape else { return false }
+
+        var isHandled = false
+        if !mainView.findInPageContainerView.isHidden {
+            findInPageViewController.findInPageDone(self)
+            isHandled = true
+        }
+        if let addressBarVC = navigationBarViewController.addressBarViewController {
+            isHandled = isHandled || addressBarVC.escapeKeyDown()
+        }
+        return isHandled
+    }
+
+    private func handleTabSwitching(event: NSEvent, flags: NSEvent.ModifierFlags, key: String, isWebViewFocused: Bool) -> Bool {
+        guard [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) else {
+            return false
+        }
+
+        if isWebViewFocused {
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        }
+        return false
+    }
+
+    private func handleControlTab(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) else {
+            return false
+        }
+
+        NSApp.menu?.performKeyEquivalent(with: event)
+        return true
+    }
+
+    private func handleBrowserActions(key: String, flags: NSEvent.ModifierFlags, isWebViewFocused: Bool, event: NSEvent) -> Bool {
+        guard isWebViewFocused else { return false }
+
+        switch (key, flags, flags.contains(.command)) {
+        case ("n", [.command], _),
+            ("t", [.command], _), ("t", [.command, .shift], _),
+            ("w", _, true),
+            ("q", [.command], _),
+            ("r", [.command], _):
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        default:
+            return false
+        }
     }
 
     func otherMouseUp(with event: NSEvent) -> NSEvent? {
@@ -763,6 +1252,89 @@ extension MainViewController {
             return event
         }
     }
+
+    // MARK: - Network Quality Testing
+
+    @objc func testNetworkQuality() {
+        let windowController = NetworkQualitySwiftUIWindowController()
+        windowController.showWindow(nil)
+    }
+
+}
+
+// MARK: - Preventing User Interaction
+
+extension MainViewController {
+
+    func userInteraction(prevented: Bool) {
+        allowsUserInteraction = !prevented
+        tabCollectionViewModel.changesEnabled = !prevented
+        tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+
+        tabBarViewController.fireButton.isEnabled = !prevented
+        tabBarViewController.isInteractionPrevented = prevented
+
+        navigationBarViewController.userInteraction(prevented: prevented)
+        bookmarksBarViewController.userInteraction(prevented: prevented)
+    }
+}
+
+// MARK: - Performance Testing
+
+extension MainViewController {
+
+    @objc func testCurrentSitePerformance() {
+        // Get the current tab's web view
+        guard let currentTab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+            let alert = NSAlert()
+            alert.messageText = "No Active Page"
+            alert.informativeText = "Please navigate to a webpage first to test its performance."
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+            return
+        }
+
+        // Use the package to handle everything
+        let windowController = PerformanceTestWindowController(
+            webView: currentTab.webView,
+            createNewTab: { @MainActor [weak self] in
+                guard let self = self else {
+                    Logger.general.error("MainViewController deallocated during performance test - cannot create new tab")
+                    return nil
+                }
+
+                // Create a new tab with duckduckgo.com for JS warmup
+                guard let warmupURL = URL(string: "https://duckduckgo.com") else {
+                    Logger.general.error("Failed to create warmup URL")
+                    return nil
+                }
+                self.tabCollectionViewModel.appendNewTab(with: .url(warmupURL, source: .ui), selected: true)
+
+                // Return the newly selected tab's webView
+                guard let newWebView = self.tabCollectionViewModel.selectedTabViewModel?.tab.webView else {
+                    Logger.general.error("Failed to get webView from newly created tab")
+                    return nil
+                }
+
+                return newWebView
+            },
+            closeTab: { @MainActor [weak self] in
+                guard let self = self else { return }
+
+                // Close the currently selected tab (the one we just tested in)
+                guard let currentIndex = self.tabCollectionViewModel.selectionIndex else {
+                    Logger.general.debug("closeTab: No tab selected")
+                    return
+                }
+                Logger.general.debug("closeTab: Closing currently selected tab")
+                self.tabCollectionViewModel.remove(at: currentIndex)
+                Logger.general.debug("closeTab: Tab closed")
+            }
+        )
+        windowController.showWindow(nil)
+    }
+
 }
 
 // MARK: - BrowserTabViewControllerDelegate
@@ -790,7 +1362,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         let noPinnedTabs = tabCollectionViewModel.isBurner || tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.isEmpty != false
 
         var isSharedPinnedTabsMode: Bool {
-            TabsPreferences.shared.pinnedTabsMode == .shared
+            tabsPreferences.pinnedTabsMode == .shared
         }
 
         lazy var areOtherWindowsWithPinnedTabsAvailable: Bool = {
@@ -798,17 +1370,71 @@ extension MainViewController: BrowserTabViewControllerDelegate {
                 .contains { mainWindowController -> Bool in
                     mainWindowController.mainViewController !== self
                     && mainWindowController.mainViewController.isBurner == false
-                    && mainWindowController.window?.isPopUpWindow == false
+                    && !mainWindowController.mainViewController.isInPopUpWindow
                 }
         }()
 
         if noPinnedTabs || (isSharedPinnedTabsMode && areOtherWindowsWithPinnedTabsAvailable) {
-            window.performClose(self)
+            // A Fire Window vanishing because its last tab closed still owes the user the fire animation,
+            // and `NSWindow.close()` would skip it.
+            if tabCollectionViewModel.isBurner,
+               let windowController = window.windowController as? MainWindowController {
+                windowController.burnAndClose(window)
+            } else {
+                window.close()
+            }
             return true
         }
         return false
     }
 
+}
+
+// MARK: - AIChatOmnibarControllerDelegate
+extension MainViewController: AIChatOmnibarControllerDelegate {
+    func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
+        /// Explicit exit: user submitted the prompt. Clear the current tab's duck.ai flag so re-entering starts fresh.
+        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setDuckAIMode(false)
+        updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+    }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL) {
+        /// Explicit exit: prompt classified as URL and user is navigating. Clear the current tab's duck.ai flag.
+        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setDuckAIMode(false)
+        updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+        browserTabViewController.loadURLInCurrentTab(url)
+    }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didSelectSuggestion suggestion: AIChatSuggestion) {
+        /// Explicit exit: user selected a saved chat suggestion. Clear the current tab's duck.ai flag.
+        tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setDuckAIMode(false)
+        updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+        aiChatConversationSourceHandler.setData(.omnibarRecentChat)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: suggestion.chatId), behavior: .currentTab)
+    }
+}
+
+// MARK: - DefaultBrowserAndDockPromptUIHosting
+
+extension MainViewController: DefaultBrowserAndDockPromptUIHosting {
+    func providePopoverAnchor() -> NSView? {
+        getSourceViewToShowSetAsDefaultAndAddToDockPopover()
+    }
+
+    func addSetAsDefaultBanner(_ banner: BannerMessageViewController) {
+        showMessageBanner(banner: banner)
+    }
+
+    func provideModalAnchor() -> NSWindow? {
+        getSourceWindowToShowInactiveUserModal()
+    }
+}
+
+extension MainViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        refreshDividerColor()
+    }
 }
 
 #if DEBUG
@@ -828,7 +1454,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider())
+    let vc = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()), bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: Application.appDelegate.pinningManager), aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()))
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

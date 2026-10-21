@@ -19,7 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Foundation
-import Navigation
+import DDGNavigation
 import PrivacyDashboard
 import UserScript
 import WebKit
@@ -32,7 +32,9 @@ final class BrokenSiteInfoTabExtension {
     private(set) var inferredOpenerContext: BrokenSiteReport.OpenerContext?
     private(set) var refreshCountSinceLoad: Int = 0
 
-    private(set) var performanceMetrics: PerformanceMetricsSubfeature?
+    private(set) var breakageReportingSubfeature: BreakageReportingSubfeature?
+    private var siteLoadingPerformanceSubfeature: SiteLoadingPerformanceSubfeature?
+    private(set) var lastPageLoadTiming: WKPageLoadTiming?
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -41,12 +43,19 @@ final class BrokenSiteInfoTabExtension {
          contentScopeUserScriptPublisher: some Publisher<ContentScopeUserScript, Never>) {
 
         webViewPublisher.sink { [weak self] webView in
-            self?.performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
+            self?.breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
+            self?.siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         }.store(in: &cancellables)
 
         contentScopeUserScriptPublisher.sink { [weak self] contentScopeUserScript in
-            guard let self, let performanceMetrics else { return }
-            contentScopeUserScript.registerSubfeature(delegate: performanceMetrics)
+            guard let self else { return }
+
+            if let breakageReportingSubfeature {
+                contentScopeUserScript.registerSubfeature(delegate: breakageReportingSubfeature)
+            }
+            if let siteLoadingPerformanceSubfeature {
+                contentScopeUserScript.registerSubfeature(delegate: siteLoadingPerformanceSubfeature)
+            }
         }.store(in: &cancellables)
     }
 
@@ -121,6 +130,10 @@ extension BrokenSiteInfoTabExtension: NavigationResponder {
         lastWebError = error
     }
 
+    func didGeneratePageLoadTiming(_ timing: WKPageLoadTiming) {
+        lastPageLoadTiming = timing
+    }
+
 }
 
 protocol BrokenSiteInfoTabExtensionProtocol: AnyObject, NavigationResponder {
@@ -130,7 +143,8 @@ protocol BrokenSiteInfoTabExtensionProtocol: AnyObject, NavigationResponder {
     var inferredOpenerContext: BrokenSiteReport.OpenerContext? { get }
     var refreshCountSinceLoad: Int { get }
 
-    var performanceMetrics: PerformanceMetricsSubfeature? { get }
+    var breakageReportingSubfeature: BreakageReportingSubfeature? { get }
+    var lastPageLoadTiming: WKPageLoadTiming? { get }
 
     func tabReloadRequested()
 }

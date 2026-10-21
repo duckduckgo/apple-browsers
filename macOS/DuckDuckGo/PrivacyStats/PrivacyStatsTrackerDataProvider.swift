@@ -27,9 +27,16 @@ final class PrivacyStatsTrackerDataProvider: PrivacyStatsTrackerDataProviding {
     }
     let trackerDataUpdatesPublisher: AnyPublisher<Void, Never>
 
-    init(contentBlocking: ContentBlockingProtocol) {
-        trackerDataManager = contentBlocking.trackerDataManager
-        trackerDataUpdatesPublisher = contentBlocking.contentBlockingAssetsPublisher.asVoid().eraseToAnyPublisher()
+    convenience init(contentBlocking: ContentBlockingProtocol) {
+        self.init(
+            trackerDataManager: contentBlocking.trackerDataManager,
+            trackerDataUpdatesPublisher: contentBlocking.contentBlockingAssetsPublisher.asVoid().eraseToAnyPublisher()
+        )
+    }
+
+    init(trackerDataManager: TrackerDataManager, trackerDataUpdatesPublisher: AnyPublisher<Void, Never>) {
+        self.trackerDataManager = trackerDataManager
+        self.trackerDataUpdatesPublisher = trackerDataUpdatesPublisher
     }
 
     private let trackerDataManager: TrackerDataManager

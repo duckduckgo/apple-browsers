@@ -194,7 +194,7 @@ final class AppStateChangePublisherTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTabsReorderedThenStateChangePublished() {
+    func testWhenUnpinnedTabsReorderedThenStateChangePublished() {
         WindowsManager.openNewWindow(with: Tab(content: .none))
         Application.appDelegate.windowControllersManager.mainWindowControllers[0].mainViewController.tabCollectionViewModel
             .append(tab: Tab(content: .none))
@@ -211,7 +211,7 @@ final class AppStateChangePublisherTests: XCTestCase {
             }.store(in: &cancellables)
 
         Application.appDelegate.windowControllersManager.mainWindowControllers[0].mainViewController.tabCollectionViewModel
-            .moveTab(at: 2, to: 0)
+            .moveTab(at: .unpinned(2), to: .unpinned(0))
 
         waitForExpectations(timeout: 0.3, handler: nil)
     }

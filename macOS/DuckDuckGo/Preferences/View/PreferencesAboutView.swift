@@ -16,6 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
+import AppUpdaterShared
+import DesignResourcesKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -30,45 +34,100 @@ extension Preferences {
     struct AboutView: View {
         @ObservedObject var model: AboutPreferences
         @State private var areAutomaticUpdatesEnabled: Bool = true
+        @State private var isCustomFeedWarningDismissed = false
 
-#if SPARKLE
         var autoUpdatesEnabled: Bool {
-#if DEBUG
-            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
-#else
-            return true
-#endif
+            let buildType = StandardApplicationBuildType()
+            if buildType.isSparkleBuild {
+                if buildType.isDebugBuild {
+                    return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+                } else if buildType.isReviewBuild {
+                    return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInREVIEW)
+                } else {
+                    return true
+                }
+            } else {
+                return false
+            }
         }
-#endif
 
         var body: some View {
             PreferencePane {
                 VStack(alignment: .leading) {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
-                    if let warning = model.osSupportWarning {
-                        UnsupportedDeviceInfoBox(warning: warning)
+                    if model.unsupportedMinVersion != nil {
+                        UnsupportedDeviceInfoBox(canUpgradeOS: model.canUpgradeOS)
                             .padding(.top, 10)
                     }
 
                     AboutContentSection(model: model)
 
-#if SPARKLE
-                    UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
-#endif
+                    let buildType = StandardApplicationBuildType()
+                    if buildType.isSparkleBuild {
+                        if model.shouldHideManualUpdateOption {
+                            UpdateInfoMessage()
+                                .padding(.top, 4)
+                        } else {
+                            UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
+                        }
+
+                        if buildType.isDebugBuild || buildType.isReviewBuild {
+                            if !isCustomFeedWarningDismissed {
+                                Spacer(minLength: 20)
+                                customFeedURLWarning(onDismiss: { isCustomFeedWarningDismissed = true })
+                            }
+                        }
+                    } else if buildType.isAppStoreBuild {
+                        UpdateInfoMessage()
+                            .padding(.top, 4)
+                    }
                 }
             }.task {
-#if SPARKLE
-                if autoUpdatesEnabled && model.mustCheckForUpdatesBeforeUserCanTakeAction {
+                if autoUpdatesEnabled {
                     model.checkForUpdate(userInitiated: false)
                 }
-#endif
             }
             .onChange(of: model.featureFlagOverrideToggle) { _ in
                 // Intentional no-op
                 // This will cause SwiftUI to re-evaluate the view body and
                 // redraw when one of the relevant feature flag ovverides
                 // is toggled.
+            }
+        }
+
+        /// Warning banner shown when a custom Sparkle feed URL is configured.
+        ///
+        /// This reminder helps developers avoid accidentally forgetting they have a custom
+        /// feed URL set, which could lead to confusion when testing updates or when the
+        /// app doesn't behave as expected with production updates.
+        @ViewBuilder
+        private func customFeedURLWarning(onDismiss: @escaping () -> Void) -> some View {
+            if let customURL = model.customFeedURL {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(verbatim: "Updates Are Using a Custom Feed URL")
+                            .fontWeight(.semibold)
+                        Text(verbatim: customURL)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(verbatim: "To disable, go to Debug → Updates → Reset feed URL to default")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.orange.opacity(0.15))
+                .cornerRadius(8)
             }
         }
     }
@@ -95,65 +154,36 @@ extension Preferences {
                     model.openNewTab(with: .privacyPolicy)
                 }
 
-#if FEEDBACK
+                TextButton(UserText.termsOfService) {
+                    model.openNewTab(with: .termsOfService)
+                }
+
                 Button(UserText.sendFeedback) {
                     model.openFeedbackForm()
                 }
                 .padding(.top, 4)
-#endif
             }
-#if SPARKLE
             .onAppear {
                 model.subscribeToUpdateInfoIfNeeded()
             }
-#endif
         }
 
         private var rightColumnContent: some View {
             Group {
-#if APPSTORE
-                HStack(spacing: 8) {
-                    Text(UserText.duckDuckGoForMacAppStore)
-                        .font(.companyName)
-                    if model.isInternalUser {
-                        Text("BETA")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.betaLabelBackground)
-                            )
-                            .foregroundColor(Color.betaLabelForeground)
-                    }
-                }
-
-                Text(UserText.duckduckgoTagline).font(.privacySimplified)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .multilineTextAlignment(.leading)
-
-                Text(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
-                    .contextMenu(ContextMenu(menuItems: {
-                        Button(UserText.copy, action: {
-                            model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
-                        })
-                    }))
-#elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
-                    if model.isInternalUser {
-                        Text("BETA")
+                    if model.appVersionModel.shouldDisplayPrereleaseLabel {
+                        Text(model.appVersionModel.prereleaseLabel)
                             .font(.caption2)
                             .fontWeight(.bold)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
                             .background(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.betaLabelBackground)
+                                RoundedRectangle(cornerRadius: 11)
+                                    .fill(Color(designSystemColor: .statusYellowTertiary))
                             )
-                            .foregroundColor(Color.betaLabelForeground)
+                            .foregroundColor(Color(.betaLabelForeground))
                     }
                 }
 
@@ -171,13 +201,12 @@ extension Preferences {
                 .padding(.bottom, 4)
 
                 updateButton
-#endif
             }
         }
 
         private var horizontalPageLogo: some View {
             HStack(alignment: .top) {
-                Image(.aboutPageLogo)
+                logoImage
                     .padding(.top, 2)
                 VStack(alignment: .leading, spacing: 8) {
                     rightColumnContent
@@ -189,7 +218,7 @@ extension Preferences {
 
         private var verticalPageLogo: some View {
             VStack(alignment: .leading) {
-                Image(.aboutPageLogo)
+                logoImage
                 VStack(alignment: .leading, spacing: 8) {
                     rightColumnContent
                 }
@@ -198,44 +227,49 @@ extension Preferences {
             .padding(.bottom, 8)
         }
 
-#if SPARKLE
+        @ViewBuilder
+        private var logoImage: some View {
+            if StandardApplicationBuildType().isAlphaBuild {
+                Image(.aboutPageLogoAlpha)
+            } else {
+                Image(.aboutPageLogo)
+            }
+        }
+
         private var hasPendingUpdate: Bool {
             model.updateController?.hasPendingUpdate == true
         }
         private var hasCriticalUpdate: Bool {
             model.updateController?.latestUpdate?.type == .critical
         }
-#endif
 
         @ViewBuilder
         private var versionText: some View {
             HStack(spacing: 0) {
-                Text(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                Text(model.appVersionModel.versionLabel)
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                            model.copy(model.appVersionModel.versionLabel)
                         })
                     }))
-#if SPARKLE
+
                 switch model.updateState {
                 case .upToDate:
-                    Text(" — " + UserText.upToDate)
+                    Text(" — " + UserText.upToDate)
                 case .updateCycle(let progress):
                     if hasPendingUpdate {
                         if hasCriticalUpdate {
-                            Text(" — " + UserText.newerCriticalUpdateAvailable)
+                            Text(" — " + UserText.newerCriticalUpdateAvailable)
                         } else {
-                            Text(" — " + UserText.newerVersionAvailable)
+                            Text(" — " + UserText.newerVersionAvailable)
                         }
                     } else {
                         text(for: progress)
                     }
                 }
-#endif
             }
         }
 
-#if SPARKLE
         private var formatter: NumberFormatter {
             let formatter = NumberFormatter()
             formatter.numberStyle = .percent
@@ -266,19 +300,19 @@ extension Preferences {
         private var statusIcon: some View {
             switch model.updateState {
             case .upToDate:
-                Image(nsImage: .check)
+                Image(nsImage: NSImage(resource: .check))
                     .foregroundColor(.green)
             case .updateCycle(let progress):
                 if hasPendingUpdate {
                     if hasCriticalUpdate {
-                        Image(nsImage: .criticalUpdateNotificationInfo)
+                        Image(nsImage: NSImage(resource: .criticalUpdateNotificationInfo))
                             .foregroundColor(.red)
                     } else {
-                        Image(nsImage: .updateNotificationInfo)
+                        Image(nsImage: NSImage(resource: .updateNotificationInfo))
                             .foregroundColor(.blue)
                     }
                 } else if progress.isFailed {
-                    Image(nsImage: .criticalUpdateNotificationInfo)
+                    Image(nsImage: NSImage(resource: .criticalUpdateNotificationInfo))
                         .foregroundColor(.red)
                 } else {
                     if #available(macOS 13.0, *) {
@@ -291,9 +325,10 @@ extension Preferences {
             }
         }
 
+        @ViewBuilder
         private var lastCheckedText: some View {
             let lastChecked = model.updateController?.updateProgress.isIdle == true ? lastCheckedFormattedDate(model.lastUpdateCheckDate) : "-"
-            return Text("\(UserText.lastChecked): \(lastChecked)")
+            Text(verbatim: "\(UserText.lastChecked): \(lastChecked)")
                 .foregroundColor(.secondary)
         }
 
@@ -313,44 +348,59 @@ extension Preferences {
 
         @ViewBuilder
         private var updateButton: some View {
-            if model.useLegacyAutoRestartLogic {
-                switch model.updateState {
-                case .upToDate:
-                    Button(UserText.checkForUpdate) {
-                        model.checkForUpdate(userInitiated: true)
-                    }
-                    .buttonStyle(UpdateButtonStyle(enabled: true))
-                case .updateCycle(let progress):
-                    if hasPendingUpdate {
-                        Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
-                            model.runUpdate()
-                        }
-                        .buttonStyle(UpdateButtonStyle(enabled: true))
-                    } else if progress.isFailed {
-                        Button(UserText.retryUpdate) {
-                            model.checkForUpdate(userInitiated: true)
-                        }
-                        .buttonStyle(UpdateButtonStyle(enabled: true))
-                    } else {
-                        Button(UserText.checkForUpdate) {
-                            model.checkForUpdate(userInitiated: true)
-                        }
-                        .buttonStyle(UpdateButtonStyle(enabled: false))
-                        .disabled(true)
-                    }
-                }
-            } else {
-                let configuration = model.updateButtonConfiguration
+            let configuration = model.updateButtonConfiguration
 
-                Button(configuration.title, action: configuration.action)
-                    .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
-                    .disabled(!configuration.enabled)
-            }
+            Button(configuration.title, action: configuration.action)
+                .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
+                .disabled(!configuration.enabled)
         }
-#endif
     }
 
-#if SPARKLE
+    struct UpdateInfoMessage: View {
+        private let buildType: ApplicationBuildType
+
+        init(buildType: ApplicationBuildType = StandardApplicationBuildType()) {
+            self.buildType = buildType
+        }
+
+        var body: some View {
+            if buildType.isSparkleBuild {
+                TextMenuItemCaption(UserText.aboutUpdateInfoSparkle)
+            } else if buildType.isAppStoreBuild {
+                let linkText = UserText.aboutUpdateInfoAppStoreLink
+                let menuText = UserText.aboutUpdateInfoAppStoreMenu
+                let settingsText = UserText.aboutUpdateInfoAppStoreSettings
+                let fullText = String(format: UserText.aboutUpdateInfoAppStore, linkText, menuText, settingsText)
+                HStack(spacing: 0) {
+                    Text(appStoreAttributedText(fullText: fullText, linkText: linkText))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundColor(Color(.greyText))
+            }
+        }
+
+        private static let boldWords = [
+            UserText.aboutUpdateInfoAppStoreLink,
+            UserText.aboutUpdateInfoAppStoreMenu,
+            UserText.aboutUpdateInfoAppStoreSettings
+        ]
+
+        private func appStoreAttributedText(fullText: String, linkText: String) -> AttributedString {
+            var attributed = AttributedString(fullText)
+            if let range = attributed.range(of: linkText) {
+                attributed[range].link = .appStore
+            }
+            for word in Self.boldWords {
+                if let range = attributed.range(of: word) {
+                    attributed[range].inlinePresentationIntent = .stronglyEmphasized // Bold
+                }
+            }
+            return attributed
+        }
+    }
+
     struct UpdatesSection: View {
         @Binding var areAutomaticUpdatesEnabled: Bool
         @ObservedObject var model: AboutPreferences
@@ -365,6 +415,7 @@ extension Preferences {
                             .accessibilityIdentifier("PreferencesAboutView.automaticUpdatesPicker.manually")
                     }, label: {})
                     .pickerStyle(.radioGroup)
+                    .rebrandedControlTint()
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     .accessibilityIdentifier("PreferencesAboutView.automaticUpdatesPicker")
                     .onChange(of: areAutomaticUpdatesEnabled) { newValue in
@@ -377,43 +428,24 @@ extension Preferences {
             }
         }
     }
-#endif
 
     struct UnsupportedDeviceInfoBox: View {
 
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
-        var warning: OSSupportWarning
+        var canUpgradeOS: Bool = true
 
-        private var osVersion: String {
-            return "\(ProcessInfo.processInfo.operatingSystemVersion)"
+        private var titleText: String { UserText.bigSurEndOfSupportNoticeTitle }
+
+        private var bodyText: String {
+            canUpgradeOS
+                ? UserText.bigSurEndOfSupportNoticeMessage
+                : UserText.bigSurEndOfSupportNoticeMessageIncapable
         }
 
-        private var versionString: String {
-            switch warning {
-            case .unsupported(let versionString),
-                    .willDropSupportSoon(let versionString):
-                return versionString
-            }
-        }
-
-        private var versionText: String {
-            switch warning {
-            case .unsupported:
-                return UserText.aboutUnsupportedDeviceInfo1
-            case .willDropSupportSoon:
-                return UserText.aboutWillSoonBeUnsupportedDeviceInfo1
-            }
-        }
-
-        private var combinedText: String {
-            switch warning {
-            case .unsupported(let minVersion):
-                return UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
-            case .willDropSupportSoon(let upcomingMinVersion):
-                return UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
-            }
-        }
+        /// Substring of the capable body text turned into a Software Update link.
+        /// If localizers reword this token the link silently drops, but the banner stays functional.
+        private static let linkTarget = "Update macOS"
 
         var body: some View {
             let image = Image(.alertColor16)
@@ -421,14 +453,10 @@ extension Preferences {
                 .frame(width: 16, height: 16)
                 .padding(.trailing, 4)
 
-            let versionText = Text(versionText)
+            let titleView = Text(titleText)
 
             let contentView: some View = HStack(alignment: .center, spacing: 0) {
-                if #available(macOS 12.0, *) {
-                    Text(combinedTextAttributedAttributed)
-                } else {
-                    NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
-                }
+                Text(bodyTextAttributed)
 
                 // Added to prevent bouncy animation when resizing the parent view
                 // caused by the text width being a bit jumpy.
@@ -438,58 +466,27 @@ extension Preferences {
             return HStack(alignment: .top) {
                 image
                 VStack(alignment: .leading, spacing: 12) {
-                    versionText
+                    titleView
                     contentView
                 }
             }
             .padding()
-            .background(Color.unsupportedOSWarning)
+            .background(Color(.unsupportedOSWarning))
             .cornerRadius(8)
             .fixedSize(horizontal: false, vertical: true)
             .frame(minWidth: 320, maxWidth: 510)
         }
 
-        @available(macOS 12, *)
-        private var combinedTextAttributedAttributed: AttributedString {
-            var instructions = AttributedString(combinedText)
-            if let range = instructions.range(of: "macOS \(versionString)") {
+        private var bodyTextAttributed: AttributedString {
+            var instructions = AttributedString(bodyText)
+            if canUpgradeOS, let range = instructions.range(of: Self.linkTarget) {
                 instructions[range].link = Self.softwareUpdateURL
             }
             return instructions
         }
-
-        private var legacyCombinedTextAttributed: NSAttributedString {
-            let fullText = combinedText
-            let attributedString = NSMutableAttributedString(string: fullText)
-
-            // Create paragraph style for consistent formatting
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = 0
-            paragraphStyle.paragraphSpacing = 0
-
-            // Apply default text styling to match SwiftUI Text
-            let defaultAttributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: paragraphStyle
-            ]
-            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
-
-            // Find the version string to make it clickable
-            let versionText = "macOS \(versionString)"
-            if let range = fullText.range(of: versionText) {
-                let nsRange = NSRange(range, in: fullText)
-                attributedString.addAttribute(.link, value: Self.softwareUpdateURL, range: nsRange)
-                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
-                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
-            }
-
-            return attributedString
-        }
     }
 }
 
-#if SPARKLE
 struct UpdateButtonStyle: ButtonStyle {
 
     public let enabled: Bool
@@ -499,19 +496,18 @@ struct UpdateButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
+        let enabledBackgroundColor = configuration.isPressed ? Color(designSystemColor: .accentSecondary) : Color(designSystemColor: .accentPrimary)
+        let disabledBackgroundColor = Color(designSystemColor: .controlsFillTertiary)
+        let labelColor = enabled ? Color(designSystemColor: .accentContentPrimary) : Color(designSystemColor: .textTertiary)
+        let cornerRadius: CGFloat = 14
 
-        let enabledBackgroundColor = configuration.isPressed ? Color(NSColor.controlAccentColor).opacity(0.5) : Color(NSColor.controlAccentColor)
-        let disabledBackgroundColor = Color.gray.opacity(0.1)
-        let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
-
-        configuration.label
+        return configuration.label
             .lineLimit(1)
             .frame(height: 28)
             .padding(.horizontal, 24)
             .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
             .foregroundColor(labelColor)
-            .cornerRadius(8)
+            .cornerRadius(cornerRadius)
     }
 
 }
-#endif

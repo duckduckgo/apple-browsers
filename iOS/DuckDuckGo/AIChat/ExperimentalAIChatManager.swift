@@ -17,43 +17,25 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Core
-import BrowserServicesKit
+import FeatureFlags_iOS
+import PrivacyConfig
 
 struct ExperimentalAIChatManager {
     private let featureFlagger: FeatureFlagger
-    private let userDefaults: UserDefaults
-    private let experimentalAIChatSettingsKey = "experimentalAIChatSettingsEnabled"
+    private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         userDefaults: UserDefaults = .standard) {
+         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()) {
         self.featureFlagger = featureFlagger
-        self.userDefaults = userDefaults
+        self.aiChatContextualModeFeature = aiChatContextualModeFeature
     }
 
-    var isExperimentalAIChatFeatureFlagEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAIChat)
+    var isStandaloneMigrationSupported: Bool {
+        featureFlagger.isFeatureOn(.standaloneMigration)
     }
 
-    var isExperimentalTransitionEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalSwitcherBarTransition, allowOverride: true)
-    }
-
-    var isExperimentalAIChatSettingsEnabled: Bool {
-        get {
-            isExperimentalAIChatFeatureFlagEnabled && userDefaults.bool(forKey: experimentalAIChatSettingsKey)
-        }
-        set {
-            userDefaults.set(newValue, forKey: experimentalAIChatSettingsKey)
-        }
-    }
-
-    mutating func toggleExperimentalTheming() {
-        isExperimentalAIChatSettingsEnabled.toggle()
-    }
-
-    mutating func toggleExperimentalTransition() {
-        featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.experimentalSwitcherBarTransition)
+    var isContextualDuckAIModeEnabled: Bool {
+        aiChatContextualModeFeature.isAvailable
     }
 }

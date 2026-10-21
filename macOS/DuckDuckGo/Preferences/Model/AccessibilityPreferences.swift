@@ -20,6 +20,7 @@ import AppKit
 import Bookmarks
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import PixelKit
 
@@ -67,8 +68,6 @@ enum DefaultZoomValue: CGFloat, CaseIterable {
 }
 
 final class AccessibilityPreferences: ObservableObject {
-    static let shared = AccessibilityPreferences()
-
     @Published var defaultPageZoom: DefaultZoomValue {
         didSet {
             persistor.defaultPageZoom = defaultPageZoom.rawValue

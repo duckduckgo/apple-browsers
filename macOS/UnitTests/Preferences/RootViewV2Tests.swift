@@ -17,8 +17,12 @@
 //
 
 import Combine
+@_spi(Testing) import Persistence
+@_spi(Testing) import WideEvent
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
+import AIChat
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -27,21 +31,60 @@ import XCTest
 @MainActor
 final class RootViewV2Tests: XCTestCase {
     var sidebarModel: PreferencesSidebarModel!
-    var subscriptionManager: SubscriptionManagerMockV2!
+    var subscriptionManager: SubscriptionManagerMock!
     var subscriptionUIHandler: SubscriptionUIHandlerMock!
     var showTabCalled: Bool = false
     var showTabContent: Tab.TabContent?
+    var mockWinBackOfferVisibilityManager: MockWinBackOfferVisibilityManager!
 
     override func setUpWithError() throws {
         let ddsSyncing = MockDDGSyncing(authState: .active, isSyncInProgress: false)
         let vpnGatekeeper = MockVPNFeatureGatekeeper(canStartVPN: false, isInstalled: false, isVPNVisible: false, onboardStatusPublisher: Just(.completed).eraseToAnyPublisher())
+        mockWinBackOfferVisibilityManager = MockWinBackOfferVisibilityManager()
 
-        sidebarModel = PreferencesSidebarModel(privacyConfigurationManager: MockPrivacyConfigurationManaging(), featureFlagger: MockFeatureFlagger(), syncService: ddsSyncing, vpnGatekeeper: vpnGatekeeper, includeDuckPlayer: false, includeAIChat: true, subscriptionManager: SubscriptionAuthV1toV2BridgeMock())
-        subscriptionManager = SubscriptionManagerMockV2()
+        let windowControllersManager = WindowControllersManagerMock()
+        let featureFlagger = MockFeatureFlagger()
+
+        let sharedDuckPlayerPreferences = DuckPlayerPreferences(
+            persistor: DuckPlayerPreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            internalUserDecider: featureFlagger.internalUserDecider
+        )
+
+        sidebarModel = PreferencesSidebarModel(
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            featureFlagger: featureFlagger,
+            syncService: ddsSyncing,
+            vpnGatekeeper: vpnGatekeeper,
+            includeDuckPlayer: false,
+            includeAIChat: true,
+            subscriptionManager: SubscriptionManagerMock(),
+            defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
+            downloadsPreferences: DownloadsPreferences(persistor: DownloadsPreferencesPersistorMock()),
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            aiChatPreferences: AIChatPreferences(
+                storage: MockAIChatPreferencesStorage(),
+                aiChatMenuConfiguration: MockAIChatConfig(),
+                windowControllersManager: WindowControllersManagerMock(),
+                featureFlagger: MockFeatureFlagger()
+            ),
+            aboutPreferences: AboutPreferences(internalUserDecider: featureFlagger.internalUserDecider, featureFlagger: featureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
+                                                  pixelFiring: nil),
+            accessibilityPreferences: AccessibilityPreferences(),
+            duckPlayerPreferences: sharedDuckPlayerPreferences,
+            youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: sharedDuckPlayerPreferences),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            adBlockingAvailability: AdBlockingAvailability(featureFlagger: featureFlagger, isEnabledByUserProvider: { false })
+        )
+        subscriptionManager = SubscriptionManagerMock()
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
         showTabCalled = false
         showTabContent = nil
-        subscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMockV2()
+        subscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMock()
     }
 
     override func tearDownWithError() throws {
@@ -50,6 +93,7 @@ final class RootViewV2Tests: XCTestCase {
         subscriptionUIHandler = nil
         showTabCalled = false
         showTabContent = nil
+        mockWinBackOfferVisibilityManager = nil
     }
 
     func testMakePaidAIChatViewModel() throws {
@@ -58,8 +102,13 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
             aiChatURLSettings: MockRemoteAISettings(),
-            showTab: { _ in },
+            wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            showTab: { _ in }
             )
 
         // Then
@@ -68,19 +117,26 @@ final class RootViewV2Tests: XCTestCase {
     }
 
     func testPaidAIChatViewModel_OpenAIChat() throws {
-        let expectation = expectation(description: "Wait for showTab to be called")
+        let expectation = expectation(description: "Wait for Duck.ai to open")
         let mockRemoteAISettings = MockRemoteAISettings()
+        let aiChatTabOpener = MockAIChatTabOpener()
+        aiChatTabOpener.setOpenMethodCalledExpectation(expectation)
+        let sourceHandler = AIChatConversationSourceHandler()
         // Given
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
-            aiChatURLSettings: mockRemoteAISettings
-        ) { content in
-            self.showTabCalled = true
-            self.showTabContent = content
-            expectation.fulfill()
-        }
+            featureFlagger: MockFeatureFlagger(),
+            aiChatURLSettings: mockRemoteAISettings,
+            wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            showTab: { _ in self.showTabCalled = true },
+            aiChatTabOpener: aiChatTabOpener,
+            aiChatConversationSourceHandler: sourceHandler
+        )
 
         let model = rootView.paidAIChatModel!
 
@@ -89,13 +145,10 @@ final class RootViewV2Tests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(showTabCalled, "Should call showTab")
-        if case .url(let url, _, let source) = showTabContent {
-            XCTAssertEqual(url.absoluteString, mockRemoteAISettings.aiChatURL.absoluteString)
-            XCTAssertEqual(source, .ui)
-        } else {
-            XCTFail("Expected URL tab content")
-        }
+        XCTAssertFalse(showTabCalled, "Duck.ai opens through the tab opener so its entry pixel reports it")
+        XCTAssertEqual(aiChatTabOpener.lastURL, mockRemoteAISettings.aiChatURL)
+        XCTAssertEqual(aiChatTabOpener.lastBehavior, .newTab(selected: true))
+        XCTAssertEqual(sourceHandler.consumeData(), .settings)
     }
 
     func testPaidAIChatViewModel_OpenURL() throws {
@@ -107,7 +160,11 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
-            aiChatURLSettings: MockRemoteAISettings()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -127,6 +184,53 @@ final class RootViewV2Tests: XCTestCase {
             // Success
         } else {
             XCTFail("Expected subscription tab content")
+        }
+    }
+
+    @MainActor
+    func testPurchaseSubscriptionViewModel_WinBackOfferPixel() throws {
+        // Given
+        let expectation = expectation(description: "Wait for pixels to be fired")
+        expectation.expectedFulfillmentCount = 2
+        var capturedPixels: [SubscriptionPixel] = []
+
+        mockWinBackOfferVisibilityManager.isOfferAvailable = true
+        let rootView = Preferences.RootViewV2(
+            model: sidebarModel,
+            subscriptionManager: subscriptionManager,
+            subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
+            aiChatURLSettings: MockRemoteAISettings(),
+            wideEvent: WideEventMock(),
+            pinningManager: MockPinningManager(),
+            permissionManager: PermissionManagerMock(),
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            showTab: { _ in },
+            pixelHandler: { pixel, _ in
+                capturedPixels.append(pixel)
+                expectation.fulfill()
+            }
+        )
+
+        let model = rootView.purchaseSubscriptionModel!
+
+        // When
+        model.purchaseAction()
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(capturedPixels.count, 2, "purchaseAction should fire exactly two pixels when win-back offer is available")
+
+        if case .subscriptionEntrySettingsSubscriptionClick = capturedPixels[0] {
+            // Correct pixel fired first
+        } else {
+            XCTFail("Should fire subscriptionEntrySettingsSubscriptionClick first")
+        }
+
+        if case .subscriptionWinBackOfferSettingsPageCTAClicked = capturedPixels[1] {
+            // Correct pixel fired second
+        } else {
+            XCTFail("Should fire subscriptionWinBackOfferSettingsPageCTAClicked second")
         }
     }
 

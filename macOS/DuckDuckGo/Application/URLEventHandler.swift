@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import AppKit
 import PixelKit
@@ -50,19 +51,24 @@ final class URLEventHandler {
         )
     }
 
-    func applicationDidFinishLaunching() {
-        if !urlsToOpen.isEmpty {
+    struct AppDidFinishLaunchingResult {
+        let urlsToOpen: Int
 
-            for url in urlsToOpen {
-                DispatchQueue.main.async {
-                    self.handler(url)
-                }
-            }
-
-            self.urlsToOpen = []
+        var willOpenWindows: Bool {
+            urlsToOpen > 0
         }
+    }
+    func applicationDidFinishLaunching() -> AppDidFinishLaunchingResult {
+        let result = AppDidFinishLaunchingResult(urlsToOpen: urlsToOpen.count)
+        for url in urlsToOpen {
+            DispatchQueue.main.async {
+                self.handler(url)
+            }
+        }
+        urlsToOpen = []
 
         didFinishLaunching = true
+        return result
     }
 
     @objc func handleUrlEvent(event: NSAppleEventDescriptor, reply: NSAppleEventDescriptor) {
@@ -79,6 +85,8 @@ final class URLEventHandler {
             PixelKit.fire(DebugEvent(GeneralPixel.appOpenURLFailed, error: error))
             return
         }
+
+        PixelKit.fire(GeneralPixel.navigationToExternalURL, frequency: .dailyAndStandard)
 
         handleURLs([url])
     }
@@ -101,7 +109,10 @@ final class URLEventHandler {
     }
 
     private func handleURLs(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+
         if didFinishLaunching {
+            NotificationCenter.default.post(name: .externalURLHandled, object: nil)
             urls.forEach {
                 self.handler($0)
             }
@@ -150,7 +161,7 @@ final class URLEventHandler {
         case DataBrokerProtectionNotificationCommand.showDashboard.url:
             NotificationCenter.default.post(name: DataBrokerProtectionNotifications.shouldReloadUI, object: nil)
             DispatchQueue.main.async {
-                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
+                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection(.subscribed))
             }
         default:
             return
@@ -158,7 +169,11 @@ final class URLEventHandler {
     }
 }
 
-private extension String {
+extension Notification.Name {
+    static let externalURLHandled = Notification.Name("com.duckduckgo.externalURLHandled")
+}
+
+extension String {
     static let dataBrokerProtectionScheme = "databrokerprotection"
     static let networkProtectionScheme = "networkprotection"
 

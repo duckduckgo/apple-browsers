@@ -4,6 +4,18 @@
 import Network
 import Foundation
 
+public protocol DNSResolving {
+    func resolveSync(endpoints: [Endpoint?]) -> [Result<Endpoint, DNSResolutionError>?]
+}
+
+public struct DefaultDNSResolver: DNSResolving {
+    public init() {}
+
+    public func resolveSync(endpoints: [Endpoint?]) -> [Result<Endpoint, DNSResolutionError>?] {
+        DNSResolver.resolveSync(endpoints: endpoints)
+    }
+}
+
 enum DNSResolver {}
 
 extension DNSResolver {

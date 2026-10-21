@@ -28,19 +28,6 @@ struct DefaultBrowserPromptFeatureFlagAdapterTests {
     private var featureFlaggerMock = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider())
     private var privacyConfigurationManagerMock = MockPrivacyConfigurationManager()
 
-    @Test("Check Method Is Forwarded To Feature Flagger")
-    func checkIsFeatureOnIsForwardedToFeatureFlagger() {
-        // GIVEN
-        featureFlaggerMock.enabledFeatureFlags = [.scheduledSetDefaultBrowserPrompts]
-        let sut = DefaultBrowserPromptFeatureFlagAdapter(featureFlagger: featureFlaggerMock, privacyConfigurationManager: privacyConfigurationManagerMock)
-
-        // WHEN
-        let result = sut.isDefaultBrowserPromptsFeatureEnabled
-
-        // THEN
-        #expect(result)
-    }
-
     @Test("Check Method is Dispatched To Feature Flagger")
     func checkMethodIsDispatchedToPrivacyConfigurationManager() throws {
         // GIVEN

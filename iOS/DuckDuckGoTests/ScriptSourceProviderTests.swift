@@ -18,28 +18,17 @@
 //
 
 import XCTest
-import Common
 import BrowserServicesKit
-import TrackerRadarKit
+import PrivacyConfig
 @testable import DuckDuckGo
-import Combine
 
 final class ScriptSourceProviderTests: XCTestCase {
 
-    var experimentManager: MockContentScopeExperimentManager!
     let testExperimentData = ExperimentData(
         parentID: "parent",
         cohortID: "aCohort",
         enrollmentDate: Date()
     )
-
-    override func setUpWithError() throws {
-        experimentManager = MockContentScopeExperimentManager()
-    }
-
-    override func tearDownWithError() throws {
-        experimentManager = nil
-    }
 
     @MainActor
     func testCohortDataInitialisedCorrectly() throws {
@@ -47,7 +36,16 @@ final class ScriptSourceProviderTests: XCTestCase {
         let experimentManager = MockContentScopeExperimentManager()
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
 
-        let sourceProvider = DefaultScriptSourceProvider(appSettings: AppSettingsMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), fireproofing: MockFireproofing(), contentScopeExperimentsManager: experimentManager)
+        let dependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
+                                                                     sync: MockDDGSyncing(),
+                                                                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                                     contentBlockingManager: ContentBlockerRulesManagerMock(),
+                                                                     fireproofing: MockFireproofing(),
+                                                                     contentScopeExperimentsManager: experimentManager,
+                                                                     internalUserDecider: MockInternalUserDecider(),
+                                                                     syncErrorHandler: CapturingAdapterErrorHandler(),
+                                                                     webExtensionAvailability: nil)
+        let sourceProvider = DefaultScriptSourceProvider(dependencies: dependencies)
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)
@@ -55,22 +53,4 @@ final class ScriptSourceProviderTests: XCTestCase {
         XCTAssertTrue(experimentManager.resolveContentScopeScriptActiveExperimentsCalled)
     }
 
-}
-
-class MockContentBlockerRulesManagerProtocol: ContentBlockerRulesManagerProtocol {
-    func entity(forHost host: String) -> Entity? {
-        return nil
-    }
-
-    var updatesPublisher: AnyPublisher<ContentBlockerRulesManager.UpdateEvent, Never> = Empty<ContentBlockerRulesManager.UpdateEvent, Never>(completeImmediately: false).eraseToAnyPublisher()
-
-    var currentRules: [BrowserServicesKit.ContentBlockerRulesManager.Rules] = []
-
-    func scheduleCompilation() -> ContentBlockerRulesManager.CompletionToken {
-        return ContentBlockerRulesManager.CompletionToken()
-    }
-
-    var currentMainRules: ContentBlockerRulesManager.Rules?
-
-    var currentAttributionRules: ContentBlockerRulesManager.Rules?
 }

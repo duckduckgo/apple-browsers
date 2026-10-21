@@ -16,23 +16,33 @@
 //  limitations under the License.
 //
 
+import Carbon
 import Foundation
+import ObjectiveC
+import os.log
+import SharedTestUtilities
+@_exported import UITestingSupport
 import XCTest
 
 /// Helper values for the UI tests
 enum UITests {
     /// Timeout constants for different test requirements
     enum Timeouts {
-        /// Mostly, we use timeouts to wait for element existence. This is about 3x longer than needed, for CI resilience
-        static let elementExistence: Double = 5.0
-        /// The fire animation time has environmental dependencies, so we want to wait for completion so we don't try to type into it
-        static let fireAnimation: Double = 30.0
+        static let elementExistence = UITestTimeouts.elementExistence
+        static let fireAnimation = UITestTimeouts.fireAnimation
+        static let navigation = UITestTimeouts.navigation
+        static let localTestServer = UITestTimeouts.localTestServer
     }
 
     /// A page simple enough to test favorite, bookmark, and history storage
     /// - Parameter title: The title of the page to match
+    /// - Parameter body: The body of the page to match
     /// - Returns: A URL that can be served by `tests-server`
     static func simpleServedPage(titled title: String) -> URL {
+        simpleServedPage(titled: title, body: "<p>Sample text for \(title)</p>")
+    }
+
+    static func simpleServedPage(titled title: String, body: String) -> URL {
         return URL.testsServer
             .appendingTestParameters(data: """
             <html>
@@ -40,7 +50,7 @@ enum UITests {
             <title>\(title)</title>
             </head>
             <body>
-            <p>Sample text for \(title)</p>
+            \(body)
             </body>
             </html>
             """.utf8data)
@@ -56,33 +66,11 @@ enum UITests {
     /// - Parameter requestedToggleState: How the autocomplete checkbox state should be set
     static func setAutocompleteToggleBeforeTestcaseRuns(_ requestedToggleState: Bool) {
         let app = XCUIApplication.setUp()
-
-        let settings = app.menuItems["MainMenu.preferencesMenuItem"]
-        XCTAssertTrue(
-            settings.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Reset bookmarks menu item didn't become available in a reasonable timeframe."
-        )
-
-        settings.click()
-        let generalPreferencesButton = app.buttons["PreferencesSidebar.generalButton"]
-        let autocompleteToggle = app.checkBoxes["PreferencesGeneralView.showAutocompleteSuggestions"]
-        XCTAssertTrue(
-            generalPreferencesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The user settings appearance section button didn't become available in a reasonable timeframe."
-        )
-        generalPreferencesButton.click(forDuration: 0.5, thenDragTo: generalPreferencesButton)
-
-        let currentToggleState = try? XCTUnwrap(
-            autocompleteToggle.value as? Bool,
-            "It wasn't possible to get the \"Autocomplete\" value as a Bool"
-        )
-
-        switch (requestedToggleState, currentToggleState) { // Click autocomplete toggle if it is different than our request
-        case (false, true), (true, false):
-            autocompleteToggle.click()
-        default:
-            break
-        }
+        // Settings opens as a tab, so it needs a browser window to host it
+        app.enforceSingleWindow()
+        app.openGeneralPreferences()
+        let autocompleteToggle = app.preferencesWindow.checkBoxes["PreferencesGeneralView.showAutocompleteSuggestions"]
+        autocompleteToggle.toggleCheckboxIfNeeded(to: requestedToggleState, validate: true, ensureHittable: app.ensureHittable)
         app.terminate()
     }
 
@@ -95,37 +83,354 @@ enum UITests {
     }
 
     /// Avoid some first-run states that we aren't testing.
-    static func firstRun() {
-        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
-        if notificationCenter.exists { // If tests-server is asking for network permissions, deny them.
-            notificationCenter.typeKey(.escape, modifierFlags: [])
-        }
+    static func firstRun(_ callback: (XCUIApplication) -> Void = { _ in }) {
         let app = XCUIApplication.setUp()
         app.typeKey("n", modifierFlags: .command)
+        callback(app)
         app.typeKey("w", modifierFlags: [.command, .option])
         app.terminate()
     }
 }
 
 class TestFailureObserver: NSObject, XCTestObservation {
+
     func testCase(_ testCase: XCTestCase, didRecord issue: XCTIssue) {
-        print("Failed test with name: \(testCase.name)")
+        guard !issue.description.hasPrefix("Runtime Issue:") else {
+            Logger.log("🟣 \(issue)")
+            return
+        }
+        Logger.log("🔴 Issue recorded: \(issue)")
+        if XCUIApplication.notificationCenter.buttons.firstMatch.exists {
+            let descr = (try? XCUIApplication.notificationCenter.snapshot().toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar])) ??? "<nil>"
+            Logger.log("⚠️ TCC prompt shown: \(descr)")
+        }
+        Logger.log("🌐 tests-server \(Self.probeTestsServer())")
         let screenshotName = "\(testCase.name)-failure"
         testCase.takeScreenshot(screenshotName)
     }
+
+    private static func probeTestsServer() -> String {
+        let url = URL.testsServer.appendingTestParameters(data: Data("ok".utf8))
+        var result: String?
+        let session = URLSession(configuration: .ephemeral)
+        session.dataTask(with: URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)) { data, response, error in
+            let status = (response as? HTTPURLResponse)?.statusCode ??? "nil"
+            result = "status=\(status) error=\(error ??? "nil") body=\(data.flatMap { String(data: $0, encoding: .utf8) } ??? "nil")"
+        }.resume()
+        let deadline = Date().addingTimeInterval(UITests.Timeouts.elementExistence)
+        while result == nil, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        return result ?? "timeout"
+    }
 }
 
+@objc(UITestCase)
 class UITestCase: XCTestCase {
+    var app: XCUIApplication!
+
     private static let failureObserver = TestFailureObserver()
+    private var cleanupPaths: Set<String> = []
+
+    private static var didCallFirstRun = false
+    private static var systemPermissionPromptPollingTimer: Timer?
+    var isSystemPermissionPromptPollingTimerEnabled: Bool { true }
 
     override class func setUp() {
+        Logger.log("🟠 class \(self.self).setUp()")
+        // Set up method swizzling to enable precise keyboard/mouse event simulation.
+        // This allows tests to simulate "hold key" scenarios (keyDown/keyUp with proper timing)
+        // and middle-click events that aren't directly supported by XCTest's standard APIs.
+        setupXCPointerEventPathSwizzling()
+        _ = XCUIDevice.swizzlePerformWithKeyModifiersOnce
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
     }
 
+    /// System TCC alerts can appear asynchronously mid-test and steal key focus. A repeating timer
+    /// on the main run loop fires during XCTest waits and dismisses them before the next click.
+    private func startSystemPermissionPromptDismissTimerIfNeeded() {
+        guard Self.systemPermissionPromptPollingTimer == nil else { return }
+
+        let timer = Timer(timeInterval: 5, repeats: true) { _ in
+            Logger.log("⏰ Checking for TCC prompts")
+            _ = XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        Self.systemPermissionPromptPollingTimer = timer
+    }
+
     override class func tearDown() {
+        systemPermissionPromptPollingTimer?.invalidate()
+        systemPermissionPromptPollingTimer = nil
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
         super.tearDown()
+    }
+
+    // Handles both super.setUp() and super.setUpWithError() calls.
+    override func setUpWithError() throws {
+        Logger.log("🟠 \(self.className).setUpWithError()")
+        try super.setUpWithError()
+
+        continueAfterFailure = false
+
+        addUIInterruptionMonitor(withDescription: "Interruption Monitor") { element in
+            Logger.log("🟠 Received interruption event: \((try? element.snapshot().toDictionary()) ??? "<nil>")")
+            return XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        }
+
+        if isSystemPermissionPromptPollingTimerEnabled {
+            startSystemPermissionPromptDismissTimerIfNeeded()
+        }
+        if !Self.didCallFirstRun {
+            Self.didCallFirstRun = true
+            Logger.log("🥇 Resetting environment for the first run")
+            UITests.firstRun()
+        }
+    }
+
+    override func tearDown() {
+        cleanupTrackedFiles()
+        cleanupPaths.removeAll()
+        super.tearDown()
+    }
+
+    /// Swizzles XCPointerEventPath private methods to call original implementation
+    /// Uses once token pattern to ensure swizzling happens only once
+    private static func setupXCPointerEventPathSwizzling() {
+        // Using static variable for once semantics (equivalent to dispatch_once)
+        struct OnceToken {
+            static let token: Void = {
+                guard let pointerEventPathClass = NSClassFromString("XCPointerEventPath") else {
+                    print("Warning: XCPointerEventPath class not found for swizzling")
+                    return
+                }
+                guard let pointerEventClass = NSClassFromString("XCPointerEvent") else {
+                    print("Warning: XCPointerEventPath class not found for swizzling")
+                    return
+                }
+
+                swizzleMethod(
+                    class: pointerEventPathClass,
+                    originalSelector: NSSelectorFromString("pressButton:atOffset:clickCount:"),
+                    swizzledSelector: #selector(swizzled_pressButton)
+                )
+
+                swizzleMethod(
+                    class: pointerEventPathClass,
+                    originalSelector: NSSelectorFromString("releaseButton:atOffset:clickCount:"),
+                    swizzledSelector: #selector(swizzled_releaseButton)
+                )
+
+                swizzleMethod(
+                    class: pointerEventClass,
+                    originalSelector: NSSelectorFromString("setKey:"),
+                    swizzledSelector: #selector(swizzled_setKey)
+                )
+            }()
+
+            /// Helper method to perform method swizzling
+            /// - Parameters:
+            ///   - class: The class containing the method to swizzle
+            ///   - originalSelector: The original method selector
+            ///   - swizzledSelector: The replacement method selector
+            private static func swizzleMethod(class: AnyClass, originalSelector: Selector, swizzledSelector: Selector) {
+                guard let originalMethod = class_getInstanceMethod(`class`, originalSelector),
+                      var swizzledMethod = class_getInstanceMethod(UITestCase.self, swizzledSelector) else {
+                    print("Warning: Could not find methods for swizzling \(originalSelector) and \(swizzledSelector)")
+                    return
+                }
+
+                let didAddMethod = class_addMethod(
+                    `class`,
+                    swizzledSelector,
+                    method_getImplementation(swizzledMethod),
+                    method_getTypeEncoding(swizzledMethod)
+                )
+
+                if didAddMethod {
+                    swizzledMethod = class_getInstanceMethod(`class`, swizzledSelector)!
+                }
+                method_exchangeImplementations(originalMethod, swizzledMethod)
+            }
+        }
+
+        // Accessing the static property ensures the closure runs exactly once
+        _ = OnceToken.token
+    }
+
+}
+
+// MARK: - XCPointerEventPath Swizzled Methods
+
+extension UITestCase {
+
+    @TaskLocal static var shouldReplaceButtonWithMiddleMouseButton: Bool = false
+    @TaskLocal static var keyEventOverride: (keyCode: Int, phase: UInt)?
+
+    /// Swizzled implementation of [XCPointerEventPath pressButton:atOffset:clickCount:]
+    /// Calls original implementation after optionally modifying button parameter allowing to simulate middle-click.
+    @objc dynamic private func swizzled_pressButton(_ button: UInt64, at offset: Double, clickCount: UInt64) {
+        var button = button
+        if Self.shouldReplaceButtonWithMiddleMouseButton {
+            button = 3
+        }
+        // Call the original
+        self.swizzled_pressButton(button, at: offset, clickCount: clickCount)
+    }
+
+    /// Swizzled implementation of [XCPointerEventPath releaseButton:atOffset:clickCount:]
+    /// Calls original implementation after optionally modifying button parameter allowing to simulate middle-click.
+    @objc dynamic private func swizzled_releaseButton(_ button: UInt64, at offset: Double, clickCount: UInt64) {
+        var button = button
+        if Self.shouldReplaceButtonWithMiddleMouseButton {
+            button = 3
+        }
+        // Call the original
+        self.swizzled_releaseButton(button, at: offset, clickCount: clickCount)
+    }
+
+    /// Swizzled implementation of [XCPointerEvent setKey:]
+    /// When keyEventOverride is set, manually configures the event with proper key code and phase (keyDown/keyUp).
+    /// Otherwise calls original implementation.
+    @objc dynamic private func swizzled_setKey(_ key: String) {
+        if let keyEvent = Self.keyEventOverride {
+            self.setEventType(0xb)
+            self.setKeyCode(keyEvent.keyCode)
+            self.setKeyPhase(keyEvent.phase)
+            self.keyModifierFlags = (XCUIDevice.activeKeyModifiers ?? []).toNSEventModifierFlags()
+            Logger.log("[\(self) setKey: \(key) keyCode: \(keyEvent.keyCode) phase: \(keyEvent.phase) modifierFlags: \(self.keyModifierFlags)]")
+            return
+        }
+
+        // Call the original
+        self.swizzled_setKey(key)
+    }
+    // XCPointerEvent private method definitions to use from swizzled_setKey
+    @objc private dynamic func setEventType(_: UInt) {}
+    @objc private dynamic func setKeyCode(_: Int) {}
+    @objc private dynamic func setKeyPhase(_: UInt) {}
+    @objc private dynamic var keyModifierFlags: NSEvent.ModifierFlags {
+        get { [] }
+        set {}
+    }
+
+    static func log(_ message: String) {
+        Logger.log(message)
+    }
+
+    // MARK: - File Management Methods
+
+    /// Track a file path for cleanup after the test completes.
+    /// 
+    /// UI tests run in a sandboxed environment and cannot directly read or delete files
+    /// from user directories using standard FileManager calls. This method tracks files
+    /// for automatic cleanup via the local test server in tearDown().
+    /// 
+    /// - Parameter path: The absolute file path to track for cleanup
+    func trackForCleanup(_ path: String) {
+        cleanupPaths.insert(path)
+    }
+
+    /// Read a file via the local test server to bypass permission issues.
+    /// 
+    /// This is required because UI tests run in a sandboxed environment and cannot
+    /// directly read files from user directories using standard FileManager calls.
+    /// The local test server provides a proxy that can read files on behalf of the test.
+    /// 
+    /// - Parameter filePath: The absolute file path to read
+    /// - Returns: The file data
+    /// - Throws: Error if the file cannot be read or server request fails
+    func readFileViaLocalServer(filePath: String) throws -> Data {
+        let readURL = URL.testsServer.appendingParameter(name: "readFile", value: filePath)
+
+        let session = URLSession(configuration: .ephemeral)
+        let request = URLRequest(url: readURL, cachePolicy: .reloadIgnoringLocalCacheData)
+
+        var outResponse: URLResponse?
+        var resultData: Data?
+        var resultError: Error?
+        var retry = 0
+        repeat {
+            if retry > 0 {
+                Thread.sleep(forTimeInterval: 0.5)
+            }
+            let expectation = expectation(description: "File read request completed")
+
+            let task = session.dataTask(with: request) { data, response, error in
+                outResponse = response
+                resultError = error
+                resultData = data
+                if error == nil,
+                   let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                    resultError = NSError(domain: "FileReadError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP \(httpResponse.statusCode)"])
+                }
+                expectation.fulfill()
+            }
+            task.resume()
+
+            let result = XCTWaiter.wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
+            XCTAssertEqual(result, .completed, "File read request should complete")
+
+            Logger.log("Response #\(retry): \(outResponse ??? "<nil>"), error: \(resultError ??? "<nil>"), data: \(resultData ??? "<nil>")")
+            retry += 1
+        } while resultData?.count == 0 && retry < 5
+
+        if let error = resultError {
+            throw error
+        }
+
+        guard let data = resultData else {
+            throw NSError(domain: "FileReadError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No data received from server"])
+        }
+
+        return data
+    }
+
+    /// Clean up all tracked files using the local test server
+    private func cleanupTrackedFiles() {
+        guard !cleanupPaths.isEmpty else { return }
+
+        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0].standardizedFileURL.path
+        let paths = cleanupPaths.filter {
+            URL(fileURLWithPath: $0).standardizedFileURL.path != downloadsDir
+        }
+        let pathsQuery = paths.joined(separator: ",")
+        let cleanupURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: pathsQuery)
+
+        let session = URLSession(configuration: .ephemeral)
+        let request = URLRequest(url: cleanupURL, cachePolicy: .reloadIgnoringLocalCacheData)
+
+        let expectation = expectation(description: "Cleanup request completed")
+        let task = session.dataTask(with: request) { _, _, _ in
+            expectation.fulfill()
+        }
+        task.resume()
+
+        // Wait but don't fail the test if cleanup is slow
+        _ = XCTWaiter.wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
+    }
+}
+
+struct Logger {
+    private static let logger = os.Logger()
+
+    /// Log a debug message using XCTest's private debug log handler
+    /// - Parameter message: The message to log
+    static func log(_ message: String) {
+        let currentContextSelector = NSSelectorFromString("currentContext")
+        let logFormatSelector = NSSelectorFromString("_recordActivityMessageWithFormat:")
+
+        guard let context = XCTContext.perform(currentContextSelector)?.takeUnretainedValue() else {
+            fatalError("Could not retrieve current XCTContext")
+        }
+        if context.responds(to: logFormatSelector) {
+            // Escape any %-escaped values in the message before passing it as the format string
+            let escapedMessage = message.replacingOccurrences(of: "%", with: "%%")
+            _ = context.perform(logFormatSelector, with: escapedMessage)
+        }
+
+        logger.log(level: .info, "\(message)")
     }
 }
 
@@ -137,11 +442,13 @@ extension XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
+}
 
-    func assertElement(_ element: XCUIElement, hasValue value: CVarArg, file: StaticString = #file, line: UInt = #line) {
-        let predicate = NSPredicate(format: "%K == %@", #keyPath(XCUIElement.value), value)
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
-        let result = XCTWaiter().wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
-        XCTAssertEqual(result, .completed, "Unexpected status field text content after a \"Find Next\" operation.")
-    }
+infix operator ???: NilCoalescingPrecedence
+/// Provide value debug description or ??? "defaultValue" - to be used for logging like:
+/// ```
+/// Logger.general.debug("event received: \(event ??? "<nil>")")
+/// ```
+public func ??? <T>(optionalValue: T?, defaultValue: @autoclosure () -> String) -> String {
+    optionalValue.map { String(describing: $0) } ?? defaultValue()
 }

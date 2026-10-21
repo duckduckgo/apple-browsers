@@ -21,6 +21,8 @@ import Foundation
 import WebKit
 import XCTest
 import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import TrackerRadarKit
 import ContentBlocking
 @testable import Core
@@ -36,54 +38,6 @@ class MockNavigationDelegate: NSObject, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         onDidFinishNavigation?()
-    }
-}
-
-class MockSurrogatesUserScriptDelegate: NSObject, SurrogatesUserScriptDelegate {
-
-    var shouldProcessTrackers = true
-
-    var onSurrogateDetected: ((DetectedRequest, String) -> Void)?
-    var detectedSurrogates = Set<DetectedRequest>()
-
-    func reset() {
-        detectedSurrogates.removeAll()
-    }
-
-    func surrogatesUserScriptShouldProcessTrackers(_ script: SurrogatesUserScript) -> Bool {
-        return shouldProcessTrackers
-    }
-    
-    func surrogatesUserScriptShouldProcessCTLTrackers(_ script: SurrogatesUserScript) -> Bool {
-        false
-    }
-
-    func surrogatesUserScript(_ script: SurrogatesUserScript,
-                              detectedTracker tracker: DetectedRequest,
-                              withSurrogate host: String) {
-        detectedSurrogates.insert(tracker)
-        onSurrogateDetected?(tracker, host)
-    }
-}
-
-class MockDomainsProtectionStore: DomainsProtectionStore {
-    var unprotectedDomains = Set<String>()
-
-    func disableProtection(forDomain domain: String) {
-        unprotectedDomains.remove(domain)
-    }
-
-    func enableProtection(forDomain domain: String) {
-        unprotectedDomains.insert(domain)
-    }
-}
-
-class CustomSurrogatesUserScript: SurrogatesUserScript {
-
-    var onSourceInjection: (String) -> String = { $0 }
-
-    override var source: String {
-        return onSourceInjection(super.source)
     }
 }
 

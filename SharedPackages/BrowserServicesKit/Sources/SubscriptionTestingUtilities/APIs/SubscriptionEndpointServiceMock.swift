@@ -18,55 +18,65 @@
 
 import Foundation
 import Subscription
+import Networking
 
 public final class SubscriptionEndpointServiceMock: SubscriptionEndpointService {
-    public var getSubscriptionResult: Result<PrivacyProSubscription, SubscriptionServiceError>?
-    public var getProductsResult: Result<[GetProductsItem], APIServiceError>?
-    public var getSubscriptionFeaturesResult: Result<GetSubscriptionFeaturesResponse, APIServiceError>?
-    public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIServiceError>?
-    public var confirmPurchaseResult: Result<ConfirmPurchaseResponse, APIServiceError>?
-
-    public var onUpdateCache: ((PrivacyProSubscription) -> Void)?
-    public var onConfirmPurchase: ((String, String, [String: String]?) -> Void)?
-    public var onGetSubscription: ((String, APICachePolicy) -> Void)?
-    public var onSignOut: (() -> Void)?
-
-    public var updateCacheWithSubscriptionCalled: Bool = false
-    public var getSubscriptionCalled: Bool = false
-    public var signOutCalled: Bool = false
 
     public init() { }
 
-    public func updateCache(with subscription: PrivacyProSubscription) {
-        onUpdateCache?(subscription)
-        updateCacheWithSubscriptionCalled = true
-    }
+    // MARK: - Subscription
 
-    public func getSubscription(accessToken: String, cachePolicy: APICachePolicy) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
+    public var getSubscriptionCalled: Bool = false
+    public var onGetSubscription: ((String) -> Void)?
+    public var getSubscriptionResult: Result<DuckDuckGoSubscription, SubscriptionEndpointServiceError>?
+    public func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
         getSubscriptionCalled = true
-        onGetSubscription?(accessToken, cachePolicy)
-        return getSubscriptionResult!
+        onGetSubscription?(accessToken)
+        switch getSubscriptionResult! {
+        case .success(let subscription): return subscription
+        case .failure(let error): throw error
+        }
     }
 
-    public func signOut() {
-        signOutCalled = true
-        onSignOut?()
+    // MARK: - Products
+
+    public var getTierProductsResult: Result<GetTierProductsResponse, APIRequestV2Error>?
+    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+        switch getTierProductsResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
     }
 
-    public func getProducts() async -> Result<[GetProductsItem], APIServiceError> {
-        getProductsResult!
+    // MARK: - Customer Portal
+
+    public var getCustomerPortalURLResult: Result<GetCustomerPortalURLResponse, APIRequestV2Error>?
+    public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse {
+        switch getCustomerPortalURLResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
     }
 
-    public func getSubscriptionFeatures(for subscriptionID: String) async -> Result<GetSubscriptionFeaturesResponse, APIServiceError> {
-        getSubscriptionFeaturesResult!
+    // MARK: - Purchase Confirmation
+
+    public var confirmPurchaseResult: Result<ConfirmPurchaseResponse, APIRequestV2Error>?
+    public func confirmPurchase(accessToken: String,
+                                signature: String,
+                                experimentAttribution: PurchaseExperimentAttribution?) async throws -> ConfirmPurchaseResponse {
+        switch confirmPurchaseResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
     }
 
-    public func getCustomerPortalURL(accessToken: String, externalID: String) async -> Result<GetCustomerPortalURLResponse, APIServiceError> {
-        getCustomerPortalURLResult!
-    }
+    // MARK: - Tier Features
 
-    public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async -> Result<ConfirmPurchaseResponse, APIServiceError> {
-        onConfirmPurchase?(accessToken, signature, additionalParams)
-        return confirmPurchaseResult!
+    public var getSubscriptionTierFeaturesResult: Result<GetSubscriptionTierFeaturesResponse, Error>?
+    public func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> GetSubscriptionTierFeaturesResponse {
+        switch getSubscriptionTierFeaturesResult! {
+        case .success(let result): return result
+        case .failure(let error): throw error
+        }
     }
 }

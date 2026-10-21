@@ -5,19 +5,15 @@ inputs:
   access-token:
     description: "Asana access token"
     required: true
-    type: string
   github-token:
     description: "GitHub Token"
     required: false
-    type: string
   atb-asana-task-id:
     description: "Asana Task id for the ATB list."
     required: true
-    type: string
   origin-asana-section-id:
     description: "Asana Section id for the Origins list"
     required: true
-    type: string
 outputs:
   build-variants-1:
     description: "The list of build variants to create (batch 1)"
@@ -25,6 +21,9 @@ outputs:
   build-variants-2:
     description: "The list of build variants to create (batch 2)"
     value: ${{ steps.get-build-variants-task.outputs.build-variants-2 }}
+  build-variants-3:
+    description: "The list of build variants to create (batch 3)"
+    value: ${{ steps.get-build-variants-task.outputs.build-variants-3 }}
 runs:
   using: "composite"
   steps:

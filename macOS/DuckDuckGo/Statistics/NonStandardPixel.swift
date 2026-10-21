@@ -23,7 +23,10 @@ import DDGSync
 import Configuration
 
 /// These pixels deliberately omit the `m_mac_` prefix in order to format these pixel the same way as other platforms, they are sent unchanged
-enum NonStandardPixel: PixelKitEventV2 {
+enum NonStandardPixel: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
 
     case brokenSiteReport
     case brokenSiteReportShown
@@ -53,7 +56,19 @@ enum NonStandardPixel: PixelKitEventV2 {
         return nil
     }
 
-    var error: Error? {
-        return nil
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .brokenSiteReport,
+                .brokenSiteReportShown,
+                .brokenSiteReportSent,
+                .privacyDashboardReportBrokenSite,
+                .emailEnabled,
+                .emailDisabled,
+                .emailUserPressedUseAddress,
+                .emailUserPressedUseAlias,
+                .emailUserCreatedAlias:
+            return [.pixelSource]
+        }
     }
+
 }

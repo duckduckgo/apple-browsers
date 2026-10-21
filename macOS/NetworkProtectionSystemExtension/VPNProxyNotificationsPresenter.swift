@@ -35,6 +35,10 @@ final class VPNProxyNotificationsPresenter: VPNNotificationsPresenting {
         notificationCenter.post(.showConnectedNotification, object: serverLocation)
     }
 
+    func showStrictRoutingReminderNotification() {
+        notificationCenter.post(.showStrictRoutingReminderNotification)
+    }
+
     func showReconnectingNotification() {
         notificationCenter.post(.showIssuesStartedNotification)
     }
@@ -53,6 +57,10 @@ final class VPNProxyNotificationsPresenter: VPNNotificationsPresenting {
 
     func showTestNotification() {
         notificationCenter.post(.showTestNotification)
+    }
+
+    func showDebugEventNotification(message: String) {
+        // no-op
     }
 
     func showSnoozingNotification(duration: TimeInterval) {

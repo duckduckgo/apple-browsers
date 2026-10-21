@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 /// The models used by the secure vault.
 ///
@@ -123,6 +124,16 @@ public struct SecureVaultModels {
             return hash
         }
 
+        /// Compares credential content fields only, ignoring metadata like `id`, `created`, `lastUpdated`, and `lastUsed`.
+        /// The `signature` field is a hash of username, domain TLD, and password, so this covers password changes too.
+        func hasContentEqualTo(_ other: WebsiteAccount) -> Bool {
+            title == other.title
+                && username == other.username
+                && domain == other.domain
+                && notes == other.notes
+                && signature == other.signature
+        }
+
         public func name(tld: TLD, autofillDomainNameUrlMatcher: AutofillDomainNameUrlMatcher) -> String {
             if let title = self.title, !title.isEmpty {
                 return title
@@ -176,7 +187,7 @@ public struct SecureVaultModels {
 
     }
 
-    public struct CreditCard {
+    public struct CreditCard: Decodable {
 
         private enum Constants {
             static let creditCardsKey = "creditCards"
@@ -200,7 +211,11 @@ public struct SecureVaultModels {
         public var expirationYear: Int?
 
         public var cardNumber: String {
-            return String(data: cardNumberData, encoding: .utf8)!
+            guard let cardNumber = String(data: cardNumberData, encoding: .utf8) else {
+                assertionFailure("cardNumberData could not be decoded as UTF-8 - data may still be encrypted")
+                return ""
+            }
+            return cardNumber
         }
 
         public var displayName: String {
@@ -213,7 +228,7 @@ public struct SecureVaultModels {
             return type.displayCardType
         }
 
-        static func suffix(from cardNumber: String) -> String {
+        public static func suffix(from cardNumber: String) -> String {
             let trimmedCardNumber = cardNumber.trimmingCharacters(in: .whitespacesAndNewlines)
             return String(trimmedCardNumber.suffix(4))
         }
@@ -337,7 +352,7 @@ public struct SecureVaultModels {
 
     }
 
-    public struct Identity {
+    public struct Identity: Decodable {
 
         private static let mediumPersonNameComponentsFormatter: PersonNameComponentsFormatter = {
             let nameFormatter = PersonNameComponentsFormatter()
@@ -374,8 +389,8 @@ public struct SecureVaultModels {
 
         public var id: Int64?
         public var title: String
-        public let created: Date
-        public let lastUpdated: Date
+        public var created: Date
+        public var lastUpdated: Date
 
         public var firstName: String? {
             didSet {

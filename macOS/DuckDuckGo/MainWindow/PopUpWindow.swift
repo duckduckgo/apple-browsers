@@ -24,7 +24,7 @@ extension NSWindow {
     }
 }
 
-final class PopUpWindow: NSPanel {
+final class PopUpWindow: NSWindow {
 
     override var canBecomeKey: Bool {
         return true
@@ -57,6 +57,7 @@ final class PopUpWindow: NSPanel {
         hasShadow = true
         titleVisibility = .hidden
         titlebarAppearsTransparent = true
+        collectionBehavior = .fullScreenNone
         hidesOnDeactivate = false
         // the window will be draggable using custom drag areas defined by WindowDraggingView
         isMovable = false
@@ -88,6 +89,22 @@ final class PopUpWindow: NSPanel {
         // don't close Popup Window on Esc press
         guard selector != #selector(NSSavePanel.cancel(_:)) else { return }
         super.doCommand(by: selector)
+    }
+
+    // Route context menu events to passive address bar text field in pop up window
+    override func sendEvent(_ event: NSEvent) {
+        if event.isContextClick,
+           let windowController = windowController as? MainWindowController,
+           let passiveAddressBarTextField = windowController.mainViewController.navigationBarViewController.addressBarViewController?.passiveTextField,
+           passiveAddressBarTextField.isMouseLocationInsideBounds(event.locationInWindow) {
+            if event.type == .rightMouseDown {
+                passiveAddressBarTextField.rightMouseDown(with: event)
+            } else /* ctrl+click */ {
+                passiveAddressBarTextField.mouseDown(with: event)
+            }
+            return
+        }
+        super.sendEvent(event)
     }
 
 }

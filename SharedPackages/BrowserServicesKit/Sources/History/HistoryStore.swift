@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import CoreData
 import Combine
@@ -24,66 +25,42 @@ import os.log
 
 final public class HistoryStore: HistoryStoring {
 
-    public enum HistoryStoreEvents {
-
-        case removeFailed
-        case reloadFailed
-        case cleanEntriesFailed
-        case cleanVisitsFailed
-        case saveFailed
-        case insertVisitFailed
-        case removeVisitsFailed
-
-    }
-
     let context: NSManagedObjectContext
-    let eventMapper: EventMapping<HistoryStoreEvents>
+    let eventMapper: EventMapping<HistoryDatabaseError>
+    private lazy var tabHistoryStore: TabHistoryStore = {
+        TabHistoryStore(context: context, eventMapper: eventMapper)
+    }()
 
-    public init(context: NSManagedObjectContext, eventMapper: EventMapping<HistoryStoreEvents>) {
+    public init(context: NSManagedObjectContext, eventMapper: EventMapping<HistoryDatabaseError>) {
         self.context = context
         self.eventMapper = eventMapper
     }
 
-    enum HistoryStoreError: Error {
-        case storeDeallocated
-        case savingFailed
-    }
-
-    public func removeEntries(_ entries: [HistoryEntry]) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    public func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 let identifiers = entries.map { $0.identifier }
                 switch self.remove(identifiers, context: self.context) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
-                    promise(.success(()))
+                    continuation.resume(returning: ())
                 }
             }
-        }
+        } as Void
     }
 
-    public func cleanOld(until date: Date) -> Future<BrowsingHistory, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    public func cleanOld(until date: Date) async throws -> BrowsingHistory {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 switch self.clean(self.context, until: date) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
                     let reloadResult = self.reload(self.context)
-                    promise(reloadResult)
+                    continuation.resume(with: reloadResult)
                 }
             }
         }
@@ -169,14 +146,9 @@ final public class HistoryStore: HistoryStoring {
         }
     }
 
-    public func save(entry: HistoryEntry) -> Future<[(id: Visit.ID, date: Date)], Error> {
-        return Future { [weak self] promise in
-            self?.context.perform { [weak self] in
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    public func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 // Check for existence
                 let fetchRequest = BrowsingHistoryEntryManagedObject.fetchRequest()
                 fetchRequest.returnsObjectsAsFaults = false
@@ -186,8 +158,8 @@ final public class HistoryStore: HistoryStoring {
                 do {
                     fetchedObjects = try self.context.fetch(fetchRequest)
                 } catch {
-                    eventMapper.fire(.saveFailed, error: error)
-                    promise(.failure(error))
+                    self.eventMapper.fire(.saveFailed, error: error)
+                    continuation.resume(throwing: error)
                     return
                 }
 
@@ -202,7 +174,7 @@ final public class HistoryStore: HistoryStoring {
                     // Add new
                     let insertedObject = NSEntityDescription.insertNewObject(forEntityName: BrowsingHistoryEntryManagedObject.entityName, into: self.context)
                     guard let historyEntryMO = insertedObject as? BrowsingHistoryEntryManagedObject else {
-                        promise(.failure(HistoryStoreError.savingFailed))
+                        continuation.resume(throwing: HistoryDatabaseError.saveFailed)
                         return
                     }
                     historyEntryMO.update(with: entry, afterInsertion: true)
@@ -214,16 +186,16 @@ final public class HistoryStore: HistoryStoring {
                                                            context: self.context)
                 switch insertionResult {
                 case .failure(let error):
-                    eventMapper.fire(.saveFailed, error: error)
-                    context.reset()
-                    promise(.failure(error))
+                    self.eventMapper.fire(.saveFailed, error: error)
+                    self.context.reset()
+                    continuation.resume(throwing: error)
                 case .success(let visitMOs):
                     do {
                         try self.context.save()
                     } catch {
-                        eventMapper.fire(.saveFailed, error: error)
-                        context.reset()
-                        promise(.failure(HistoryStoreError.savingFailed))
+                        self.eventMapper.fire(.saveFailed, error: error)
+                        self.context.reset()
+                        continuation.resume(throwing: HistoryDatabaseError.saveFailed)
                         return
                     }
 
@@ -234,7 +206,7 @@ final public class HistoryStore: HistoryStoring {
                             return nil
                         }
                     }
-                    promise(.success(result))
+                    continuation.resume(returning: result)
                 }
             }
         }
@@ -262,7 +234,7 @@ final public class HistoryStore: HistoryStoring {
             return .success(result)
         } else {
             context.reset()
-            return .failure(HistoryStoreError.savingFailed)
+            return .failure(HistoryDatabaseError.saveFailed)
         }
     }
 
@@ -273,34 +245,35 @@ final public class HistoryStore: HistoryStoring {
         guard let visitMO = insertedObject as? PageVisitManagedObject else {
             eventMapper.fire(.insertVisitFailed)
             context.reset()
-            return .failure(HistoryStoreError.savingFailed)
+            return .failure(HistoryDatabaseError.saveFailed)
         }
-        visitMO.update(with: visit, historyEntryManagedObject: historyEntryManagedObject)
+        let tabHistoryMO = tabHistoryStore.createTabHistoryRecord(tabID: visit.tabID,
+                                                                  url: historyEntryManagedObject.url,
+                                                                  linkedVisit: visitMO,
+                                                                  in: context)
+        visitMO.update(with: visit,
+                       historyEntryManagedObject: historyEntryManagedObject,
+                       tabHistoryManagedObject: tabHistoryMO)
         return .success(visitMO)
     }
 
-    public func removeVisits(_ visits: [Visit]) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    public func removeVisits(_ visits: some Sequence<Visit>) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 switch self.remove(visits, context: self.context) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
-                    promise(.success(()))
+                    continuation.resume(returning: ())
                 }
             }
-        }
+        } as Void
     }
 
-    private func remove(_ visits: [Visit], context: NSManagedObjectContext) -> Result<Void, Error> {
+    private func remove(_ visits: some Sequence<Visit>, context: NSManagedObjectContext) -> Result<Void, Error> {
         // To avoid long predicate, execute multiple times
-        let chunkedVisits = visits.chunked(into: 100)
+        let chunkedVisits = visits.chunkedSequence(into: 100)
 
         for visits in chunkedVisits {
             let deleteRequest = PageVisitManagedObject.fetchRequest()
@@ -335,6 +308,10 @@ final public class HistoryStore: HistoryStoring {
         return .success(())
     }
 
+    /// Retrieves all visit IDs associated with a specific tab.
+    public func pageVisitIDs(in tabID: String) async throws -> [Visit.ID] {
+        return try await tabHistoryStore.pageVisitIDs(in: tabID)
+    }
 }
 
 fileprivate extension BrowsingHistory {
@@ -378,7 +355,8 @@ fileprivate extension HistoryEntry {
                   visits: visits,
                   numberOfTrackersBlocked: Int(numberOfTrackersBlocked),
                   blockedTrackingEntities: Set<String>(blockedTrackingEntities.components(separatedBy: "|")),
-                  trackersFound: historyEntryMO.trackersFound)
+                  trackersFound: historyEntryMO.trackersFound,
+                  cookiePopupBlocked: historyEntryMO.cookiePopupBlocked)
 
         visits.forEach { visit in
             visit.historyEntry = self
@@ -408,17 +386,28 @@ fileprivate extension BrowsingHistoryEntryManagedObject {
         numberOfTrackersBlocked = Int64(entry.numberOfTrackersBlocked)
         blockedTrackingEntities = entry.blockedTrackingEntities.isEmpty ? "" : entry.blockedTrackingEntities.joined(separator: "|")
         trackersFound = entry.trackersFound
+        cookiePopupBlocked = entry.cookiePopupBlocked
     }
 
 }
 
 private extension PageVisitManagedObject {
 
-    func update(with visit: Visit, historyEntryManagedObject: BrowsingHistoryEntryManagedObject) {
+    func update(with visit: Visit,
+                historyEntryManagedObject: BrowsingHistoryEntryManagedObject,
+                tabHistoryManagedObject: TabHistoryManagedObject?) {
         date = visit.date
         historyEntry = historyEntryManagedObject
+        tabHistory = tabHistoryManagedObject
     }
+}
 
+private extension TabHistoryManagedObject {
+    func update(with tabID: String, url: URL, visitManagedObject: PageVisitManagedObject) {
+        self.tabID = tabID
+        self.url = url
+        self.visit = visitManagedObject
+    }
 }
 
 private extension Visit {
@@ -431,16 +420,9 @@ private extension Visit {
         }
 
         let id = visitMO.objectID.uriRepresentation()
-        self.init(date: date, identifier: id)
+        let tabID = visitMO.tabHistory?.tabID
+        self.init(date: date, identifier: id, tabID: tabID)
         savingState = .saved
-    }
-
-}
-
-private extension NSManagedObject {
-
-    static var entityName: String {
-        String(describing: self)
     }
 
 }

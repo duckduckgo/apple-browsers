@@ -27,9 +27,7 @@ struct DuckPlayerPrimingModalView: View {
     @State private var isAnimating: Bool = true
 
     private enum Constants {
-        static let cornerRadius: CGFloat = 12
         static let spacing: CGFloat = 16
-        static let buttonHeight: CGFloat = 40
         static let closeButtonSize: CGFloat = 14
         static let maxWidth: CGFloat = 500
         static let imageWidth: CGFloat = 36
@@ -64,17 +62,10 @@ struct DuckPlayerPrimingModalView: View {
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
-                Button(
-                    action: { viewModel.tryDuckPlayer() },
-                    label: {
-                        Text(verbatim: "Watch Now Privately").daxButton()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: Constants.buttonHeight)
-                            .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
-                            .background(Color(designSystemColor: .buttonsPrimaryDefault))
-                            .cornerRadius(Constants.cornerRadius)
-
-                    })
+                Button(action: { viewModel.tryDuckPlayer() }) {
+                    Text(verbatim: "Watch Now Privately")
+                }
+                .buttonStyle(PrimaryButtonStyle(compact: true))
             }
             .padding(.horizontal, Constants.contentHorizontalPadding)
             Spacer()

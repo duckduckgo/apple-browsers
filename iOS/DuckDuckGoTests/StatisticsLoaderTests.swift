@@ -22,48 +22,116 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 @testable import Core
 @testable import BrowserServicesKit
+@_spi(Testing) import PixelKit
 
 class StatisticsLoaderTests: XCTestCase {
 
     var mockStatisticsStore: StatisticsStore!
     var mockUsageSegmentation: MockUsageSegmentation!
-    var mockPixelFiring: PixelFiringMock.Type!
+    var pixelKitMock: PixelKitMock!
     var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
+    private var fireNewAIPromptExperimentPixelsCalled = false
+    private var firedOSDistributionMetrics: [OSDistributionPixel.Metric] = []
 
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        PixelFiringMock.tearDown()
-
-        mockPixelFiring = PixelFiringMock.self
+        pixelKitMock = PixelKitMock()
         mockStatisticsStore = MockStatisticsStore()
         mockUsageSegmentation = MockUsageSegmentation()
         testee = StatisticsLoader(statisticsStore: mockStatisticsStore,
                                   usageSegmentation: mockUsageSegmentation,
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
                                   fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
-                                  pixelFiring: mockPixelFiring)
+                                  fireNewAIPromptExperimentPixels: { self.fireNewAIPromptExperimentPixelsCalled = true },
+                                  fireOSDistributionPixel: { self.firedOSDistributionMetrics.append($0) },
+                                  pixelFiring: pixelKitMock)
     }
 
-    override func tearDown() {
-        HTTPStubs.removeAllStubs()
-        PixelFiringMock.tearDown()
-        super.tearDown()
-    }
-
-    func testWhenAppRefreshHappensButNotInstalledAndReturningUser_ThenRetentionSegmentationNotified() {
-        mockStatisticsStore.variant = "ru"
-        mockStatisticsStore.atb = "v101-1"
-        
+    func testRefreshAppRetentionAtbFiresClientOSDistributionPixel() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
         testee.refreshAppRetentionAtb {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
+        XCTAssertTrue(firedOSDistributionMetrics.contains(.client))
+        XCTAssertFalse(firedOSDistributionMetrics.contains(.searches))
+    }
+
+    func testRefreshSearchRetentionAtbFiresSearchesOSDistributionPixel() {
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshSearchRetentionAtb {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+        XCTAssertTrue(firedOSDistributionMetrics.contains(.searches))
+        XCTAssertFalse(firedOSDistributionMetrics.contains(.client))
+    }
+
+    func testRefreshRetentionAtbOnDuckAIPromptSubmissionFiresExactlyOneSearchesOSDistributionPixel() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+
+        // The prompt path calls both refreshSearchRetentionAtb and refreshDuckAIRetentionAtb, but only
+        // the former fires .searches — so a single Duck.ai prompt must count as exactly one search event.
+        XCTAssertEqual(firedOSDistributionMetrics.filter { $0 == .searches }.count, 1,
+                       "A Duck.ai prompt must fire exactly one searches OS-distribution pixel. Fired: \(firedOSDistributionMetrics)")
+        XCTAssertFalse(firedOSDistributionMetrics.contains(.client))
+    }
+
+    func testRefreshRetentionAtbOnDuckAIPromptSubmissionFiresSearchExperimentPixels() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+
+        // A Duck.ai prompt counts as a search, so it must fire the search experiment pixels
+        // (via refreshSearchRetentionAtb) in addition to the AI-prompt experiment pixels.
+        XCTAssertTrue(fireSearchExperimentPixelsCalled)
+        XCTAssertTrue(fireNewAIPromptExperimentPixelsCalled)
+    }
+
+    override func tearDown() {
+        HTTPStubs.removeAllStubs()
+        super.tearDown()
+    }
+
+    func testWhenAppRefreshHappensButNotInstalledAndReturningUser_ThenRetentionSegmentationNotified() {
+        mockStatisticsStore.variant = "ru"
+        mockStatisticsStore.atb = "v101-1"
+
+        loadSuccessfulAtbStub(version: "v101-1")
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshAppRetentionAtb {
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertTrue(mockUsageSegmentation.atbs[0].installAtb.isReturningUser)
         XCTAssertTrue(fireAppRetentionExperimentPixelsCalled)
     }
@@ -84,37 +152,40 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenSearchRefreshHappensButNotInstalled_ThenRetentionSegmentationNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
         testee.refreshSearchRetentionAtb {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertFalse(mockUsageSegmentation.atbs.isEmpty)
         XCTAssertTrue(fireSearchExperimentPixelsCalled)
     }
 
     func testWhenAppRefreshHappensButNotInstalled_ThenRetentionSegmentationNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
         testee.refreshAppRetentionAtb {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertFalse(mockUsageSegmentation.atbs.isEmpty)
         XCTAssertTrue(fireAppRetentionExperimentPixelsCalled)
     }
 
     func testWhenStatisticsInstalled_ThenRetentionSegmentationNotNotified() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "install complete")
         testee.load(shouldRefreshAtb: false) {
             testExpectation.fulfill()
         }
-        wait(for: [testExpectation], timeout: 5.0)
+        wait(for: [testExpectation], timeout: 10.0)
         XCTAssertTrue(mockUsageSegmentation.atbs.isEmpty)
     }
 
@@ -192,7 +263,7 @@ class StatisticsLoaderTests: XCTestCase {
             expect.fulfill()
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        waitForExpectations(timeout: 10, handler: nil)
     }
 
     func testWhenLoadHasUnsuccessfulAtbThenStoreNotUpdated() {
@@ -207,7 +278,7 @@ class StatisticsLoaderTests: XCTestCase {
             expect.fulfill()
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        waitForExpectations(timeout: 10, handler: nil)
     }
 
     func testWhenLoadHasUnsuccessfulExtiThenStoreNotUpdated() {
@@ -222,7 +293,7 @@ class StatisticsLoaderTests: XCTestCase {
             expect.fulfill()
         }
 
-        waitForExpectations(timeout: 5, handler: nil)
+        waitForExpectations(timeout: 10, handler: nil)
     }
 
     func testWhenSearchRefreshHasSuccessfulAtbRequestThenSearchRetentionAtbUpdated() {
@@ -288,20 +359,26 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func testWhenInstallStatisticsRequestedThenInstallPixelIsFired() {
+        loadSuccessfulAtbStub()
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "refresh complete")
         testee.refreshAppRetentionAtb {
-            Thread.sleep(forTimeInterval: .seconds(0.1))
+            Thread.sleep(forTimeInterval: 0.1)
             testExpectation.fulfill()
         }
 
-        wait(for: [testExpectation], timeout: 5.0)
-        XCTAssertEqual(mockPixelFiring.lastPixelName, Pixel.Event.appInstall.name)
+        wait(for: [testExpectation], timeout: 10.0)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.appInstall.name })
     }
 
-    func loadSuccessfulAtbStub() {
+    func loadSuccessfulAtbStub(version: String? = nil) {
         stub(condition: isHost(URL.atb.host!)) { _ in
+            if let version {
+                let json = "{\"version\":\"\(version)\"}".data(using: .utf8)!
+                return HTTPStubsResponse(data: json, statusCode: 200, headers: nil)
+            }
+
             let path = OHPathForFile("MockFiles/atb.json", type(of: self))!
             return fixture(filePath: path, status: 200, headers: nil)
         }
@@ -322,17 +399,150 @@ class StatisticsLoaderTests: XCTestCase {
     }
 
     func loadSuccessfulExiStub() {
-        stub(condition: isPath(URL.makeExtiURL(atb: "").path)) { _ -> HTTPStubsResponse in
+        stub(condition: isPath(URL.makeExtiURL(atb: "", isPad: false).path)) { _ -> HTTPStubsResponse in
             let path = OHPathForFile("MockFiles/empty", type(of: self))!
             return fixture(filePath: path, status: 200, headers: nil)
         }
     }
 
     func loadUnsuccessfulExiStub() {
-        stub(condition: isPath(URL.makeExtiURL(atb: "").path)) { _ -> HTTPStubsResponse in
+        stub(condition: isPath(URL.makeExtiURL(atb: "", isPad: false).path)) { _ -> HTTPStubsResponse in
             let path = OHPathForFile("MockFiles/empty", type(of: self))!
             return fixture(filePath: path, status: 400, headers: nil)
         }
+    }
+
+    // MARK: - Duck.ai ATB Tests
+
+    func testWhenDuckAIRefreshHasSuccessfulAtbRequestThenDuckAIRetentionAtbUpdated() {
+        // Given
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+
+        // When
+        loadSuccessfulAtbStub()
+
+        let expect = expectation(description: "Successful atb updates retention store")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            XCTAssertEqual(self.mockStatisticsStore.atb, "atb")
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshHasSuccessfulUpdateAtbRequestThenDuckAIRetentionAtbUpdated() {
+        // Given
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+
+        // When
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: "Successful atb updates retention store")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshHasUnsuccessfulAtbRequestThenDuckAIRetentionAtbNotUpdated() {
+        // Given
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+
+        // When
+        loadUnsuccessfulAtbStub()
+
+        let expect = expectation(description: "Unsuccessful atb does not update store")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            XCTAssertEqual(self.mockStatisticsStore.atb, "atb")
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "searchretentionatb")
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshHappensButNotInstalledThenRetentionSegmentationNotified() {
+        // When
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 10.0)
+        XCTAssertFalse(mockUsageSegmentation.atbs.isEmpty)
+    }
+
+    func testWhenDuckAIRefreshHappens_ThenRetentionSegmentationNotified() {
+        // Given
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchretentionatb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+
+        // When
+        loadSuccessfulAtbStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 1)
+        XCTAssertFalse(mockUsageSegmentation.atbs.isEmpty)
+    }
+
+    func testWhenDuckAIRefreshHappensAndReturningUser_ThenRetentionSegmentationNotified() {
+        // Given
+        mockStatisticsStore.variant = "ru"
+        mockStatisticsStore.atb = "v101-1"
+        mockStatisticsStore.searchRetentionAtb = "v101-2"
+        mockStatisticsStore.duckAIRetentionAtb = "v101-2"
+
+        // When
+        loadSuccessfulAtbStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 1)
+        XCTAssertTrue(mockUsageSegmentation.atbs[0].installAtb.isReturningUser)
+    }
+
+    func testWhenDuckAIRefreshHappens_ThenAIChatExperimentPixelsFired() {
+        // Given
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionatb"
+
+        // When
+        loadSuccessfulAtbStub()
+
+        let testExpectation = expectation(description: "refresh complete")
+        testee.refreshRetentionAtbOnDuckAIPromptSubmission {
+            // Then
+            testExpectation.fulfill()
+        }
+        wait(for: [testExpectation], timeout: 1)
+        XCTAssertTrue(fireNewAIPromptExperimentPixelsCalled)
     }
 
 }

@@ -23,7 +23,8 @@ enum VPNServerSelectionResolverError: Error {
     case fetchingLocationsFailed(Error)
 }
 
-protocol VPNServerSelectionResolving {
+/// Resolves which server selection method to use based on user preferences and available locations.
+public protocol VPNServerSelectionResolving {
     func resolvedServerSelectionMethod() async -> NetworkProtectionServerSelectionMethod
 }
 

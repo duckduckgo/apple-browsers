@@ -17,8 +17,18 @@
 //
 
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import Common
-import PersistenceTestingUtils
+import FeatureFlags_macOS
+import FoundationExtensions
+import History
+import HistoryView
+@_spi(Testing) import Persistence
+import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import PrivacyDashboard
+import WebExtensions
 import WebKit
 import XCTest
 
@@ -27,49 +37,29 @@ import XCTest
 class AutoconsentMessageProtocolTests: XCTestCase {
 
     var userScript: AutoconsentUserScript!
+    var config: MockPrivacyConfiguration!
+    var preferences: CookiePopupProtectionPreferences!
 
     @MainActor
     override func setUp() async throws{
         try await super.setUp()
 
-        let appearancePreferences = AppearancePreferences(
-            keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
-        )
-        let startupPreferences = StartupPreferences(
-            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences,
-        )
+        config = MockPrivacyConfiguration()
+        preferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
+        preferences.isAutoconsentEnabled = true
 
         userScript = AutoconsentUserScript(
-            scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
-                                               privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                                               webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, // mock
-                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
-                                               trackerDataManager: TrackerDataManager(etag: ConfigurationStore().loadEtag(for: .trackerDataSet),
-                                                                                      data: ConfigurationStore().loadData(for: .trackerDataSet),
-                                                                                      embeddedDataProvider: AppTrackerDataSetProvider(),
-                                                                                      errorReporting: nil),
-                                               experimentManager: MockContentScopeExperimentManager(),
-                                               tld: Application.appDelegate.tld,
-                                               onboardingNavigationDelegate: CapturingOnboardingNavigation(),
-                                               appearancePreferences: appearancePreferences,
-                                               startupPreferences: startupPreferences,
-                                               windowControllersManager: WindowControllersManagerMock(),
-                                               bookmarkManager: MockBookmarkManager(),
-                                               historyCoordinator: CapturingHistoryDataSource(),
-                                               fireproofDomains: MockFireproofDomains(domains: []),
-                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
-                                              ),
-            config: MockPrivacyConfiguration()
+            config: config,
+            management: AutoconsentManagement(),
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger()
         )
-
-        CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
     }
 
     override func tearDown() {
         userScript = nil
+        config = nil
+        preferences = nil
     }
 
     func replyToJson(msg: Any) -> String {
@@ -80,7 +70,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitIgnoresNonHttp() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "file://helicopter"
         ])
@@ -99,7 +89,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testInitResponds() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "init", body: [
+        let message = WKScriptMessage.mock(name: "init", body: [
             "type": "init",
             "url": "https://example.com"
         ])
@@ -124,12 +114,31 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenNativeAutoconsentPixelFiresThenHeuristicModeMatchesInitConfiguration() {
+        let cases: [(preference: CookiePopupPreference, heuristicEnabled: Bool, expectedMode: String)] = [
+            (.default, true, "tier1"),
+            (.max, true, "tier2"),
+            (.default, false, "off"),
+        ]
+
+        for testCase in cases {
+            assertHeuristicMode(
+                preference: testCase.preference,
+                heuristicEnabled: testCase.heuristicEnabled,
+                expectedMode: testCase.expectedMode
+            )
+        }
+    }
+
+    @MainActor
     func testEval() {
-        let message = MockWKScriptMessage(name: "eval", body: [
+        let webView = WKWebView()
+        let message = WKScriptMessage.mock(name: "eval", body: [
             "type": "eval",
             "id": "some id",
             "code": "1+1==2"
-        ], webView: WKWebView())
+        ], webView: webView)
+
         let expect = expectation(description: "testEval")
         userScript.handleMessage(
             replyHandler: {(msg: Any?, _: String?) in
@@ -146,7 +155,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     @MainActor
     func testPopupFoundNoPromptIfEnabled() {
         let expect = expectation(description: "tt")
-        let message = MockWKScriptMessage(name: "popupFound", body: [
+        let message = WKScriptMessage.mock(name: "popupFound", body: [
             "type": "popupFound",
             "cmp": "some cmp",
             "url": "https://example.com"
@@ -162,30 +171,218 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         )
         waitForExpectations(timeout: 1.0)
     }
+
+    @MainActor
+    func testWhenInitAcceptedThenPublishesLegacyCPMDiagnostics() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+
+        _ = sendInit(url: "https://example.com")
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "applied")
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "init_received")
+        XCTAssertEqual(cookieConsentInfo["cpmQueueSize"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionDroppedCallbacks"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionLoaded"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmConfigVersion"] as? String, "123456789")
+    }
+
+    @MainActor
+    func testWhenAutoconsentDisabledByUserThenPublishesSettingDisabledCPMDiagnostics() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+        preferences.isAutoconsentEnabled = false
+
+        _ = sendInit(url: "https://example.com")
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "applied")
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "setting_disabled")
+        XCTAssertEqual(cookieConsentInfo["cpmQueueSize"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionDroppedCallbacks"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionLoaded"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmConfigVersion"] as? String, "123456789")
+    }
+
+    @MainActor
+    func testWhenAutoconsentDisabledForSiteThenPublishesSiteDisabledCPMDiagnostics() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+        config.isFeatureEnabledForDomainCheck = { _, _ in false }
+
+        _ = sendInit(url: "https://example.com")
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["consentManaged"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmDashboardState"] as? String, "applied")
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "site_disabled")
+        XCTAssertEqual(cookieConsentInfo["cpmQueueSize"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionDroppedCallbacks"] as? Int, 0)
+        XCTAssertEqual(cookieConsentInfo["cpmExtensionLoaded"] as? Bool, false)
+        XCTAssertEqual(cookieConsentInfo["cpmConfigVersion"] as? String, "123456789")
+    }
+
+    @MainActor
+    func testWhenLegacyLifecycleProgressesThenPublishesCPMStagesAndErrors() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+
+        _ = sendInit(url: "https://example.com")
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+        var cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "popup_found")
+
+        sendOptOutResult(cmp: "TestCMP", result: false, url: "https://example.com")
+        cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "optout_failed")
+        XCTAssertEqual(cookieConsentInfo["optoutFailed"] as? Bool, true)
+
+        sendAutoconsentError()
+        cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["cpmErrors"] as? String, "multiple_cmps")
+        XCTAssertEqual(cookieConsentInfo["optoutFailed"] as? Bool, true)
+
+        sendAutoconsentDone(cmp: "TestCMP", url: "https://example.com", isCosmetic: false)
+        cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["cpmStage"] as? String, "done")
+    }
+
+    @MainActor
+    func testWhenSamePopupFoundAfterAutoconsentDoneThenDashboardReportsReloadLoop() throws {
+        let delegate = MockAutoconsentUserScriptDelegate()
+        userScript.delegate = delegate
+
+        _ = sendInit(url: "https://example.com")
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+        sendAutoconsentDone(cmp: "TestCMP", url: "https://example.com", isCosmetic: false)
+        sendPopupFound(cmp: "TestCMP", url: "https://example.com")
+
+        let cookieConsentInfo = try cookieConsentInfoDictionary(from: delegate.receivedConsentStatuses.last)
+        XCTAssertEqual(cookieConsentInfo["consentReloadLoop"] as? Bool, true)
+    }
+
+    @MainActor
+    @discardableResult
+    private func sendInit(url: String) -> [String: Any]? {
+        sendMessage(name: "init", body: [
+            "type": "init",
+            "url": url
+        ])
+    }
+
+    @MainActor
+    private func sendPopupFound(cmp: String, url: String) {
+        _ = sendMessage(name: "popupFound", body: [
+            "type": "popupFound",
+            "cmp": cmp,
+            "url": url
+        ])
+    }
+
+    @MainActor
+    private func sendOptOutResult(cmp: String, result: Bool, url: String) {
+        _ = sendMessage(name: "optOutResult", body: [
+            "type": "optOutResult",
+            "cmp": cmp,
+            "result": result,
+            "scheduleSelfTest": false,
+            "url": url
+        ])
+    }
+
+    @MainActor
+    private func sendAutoconsentDone(cmp: String, url: String, isCosmetic: Bool) {
+        _ = sendMessage(name: "autoconsentDone", body: [
+            "type": "autoconsentDone",
+            "cmp": cmp,
+            "url": url,
+            "isCosmetic": isCosmetic,
+            "duration": 42,
+            "totalClicks": 1
+        ])
+    }
+
+    @MainActor
+    private func sendAutoconsentError() {
+        _ = sendMessage(name: "autoconsentError", body: [
+            "type": "autoconsentError"
+        ])
+    }
+
+    @MainActor
+    private func sendMessage(name: String, body: [String: Any]) -> [String: Any]? {
+        let expect = expectation(description: "reply for \(name)")
+        var receivedReply: [String: Any]?
+        let message = WKScriptMessage.mock(name: name, body: body)
+        userScript.handleMessage(
+            replyHandler: { (msg: Any?, _: String?) in
+                if let msg,
+                   let data = try? JSONSerialization.data(withJSONObject: msg, options: .sortedKeys),
+                   let json = try? JSONSerialization.jsonObject(with: data, options: []),
+                   let dict = json as? [String: Any] {
+                    receivedReply = dict
+                }
+                expect.fulfill()
+            },
+            message: message
+        )
+        waitForExpectations(timeout: 1.0)
+        return receivedReply
+    }
+
+    @MainActor
+    private func assertHeuristicMode(preference: CookiePopupPreference,
+                                     heuristicEnabled: Bool,
+                                     expectedMode: String) {
+        config = MockPrivacyConfiguration()
+        preferences = CookiePopupProtectionPreferences(
+            persistor: MockCookiePopupProtectionPreferencesPersistor(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+        preferences.cookiePopupPreference = preference
+
+        let cohort: FeatureFlag.HeuristicActionCohort = heuristicEnabled ? .treatment : .control
+        userScript = AutoconsentUserScript(
+            config: config,
+            management: AutoconsentManagement(),
+            preferences: preferences,
+            featureFlagger: MockFeatureFlagger(resolveCohortStub: cohort)
+        )
+
+        var firedParameters: [String: String]?
+        PixelKit.setUp(
+            dryRun: false,
+            appVersion: "1.0.0",
+            session: "test",
+            defaultHeaders: [:],
+            defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!
+        ) { _, _, parameters, _, _, completion in
+            firedParameters = parameters
+            completion(true, nil)
+        }
+        defer { PixelKit.tearDown() }
+
+        let response = sendInit(url: "https://example.com")
+        let initConfig = response?["config"] as? [String: Any]
+
+        XCTAssertEqual(initConfig?["heuristicMode"] as? String, expectedMode)
+        XCTAssertEqual(firedParameters?["consentHeuristicEnabled"], expectedMode)
+    }
+
+    private func cookieConsentInfoDictionary(from cookieConsentInfo: CookieConsentInfo?) throws -> [String: Any] {
+        let cookieConsentInfo = try XCTUnwrap(cookieConsentInfo)
+        let data = try JSONEncoder().encode(cookieConsentInfo)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
 }
 
-class MockWKScriptMessage: WKScriptMessage {
+final class MockAutoconsentUserScriptDelegate: AutoconsentUserScriptDelegate {
+    private(set) var receivedConsentStatuses: [CookieConsentInfo] = []
 
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    init(name: String, body: Any, webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        super.init()
+    func autoconsentUserScript(consentStatus: CookieConsentInfo) {
+        receivedConsentStatuses.append(consentStatus)
     }
 }

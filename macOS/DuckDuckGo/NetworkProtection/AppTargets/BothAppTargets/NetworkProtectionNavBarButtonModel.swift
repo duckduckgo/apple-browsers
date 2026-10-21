@@ -18,10 +18,11 @@
 
 import AppKit
 import Combine
+import ConcurrencyExtensions
 import Foundation
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
+import VPN
 
 /// Model for managing the NetP button in the Nav Bar.
 ///
@@ -30,6 +31,10 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     private let networkProtectionStatusReporter: NetworkProtectionStatusReporter
     private var status: VPN.ConnectionStatus = .default
     private let popoverManager: NetPPopoverManager
+    // swiftlint:disable weak_delegate
+    private let vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate
+    private let vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate
+    // swiftlint:enable weak_delegate
 
     // MARK: - Subscriptions
 
@@ -66,20 +71,34 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     private var isHavingConnectivityIssues = false
 
+    // MARK: - Upsell
+
+    @Published
+    private(set) var shouldShowUpsell = false
+
+    @Published
+    private(set) var shouldShowNotificationDot = false
+
     // MARK: - Initialization
 
     init(popoverManager: NetPPopoverManager,
-         pinningManager: PinningManager = LocalPinningManager.shared,
-         vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
+         pinningManager: PinningManager,
+         vpnGatekeeper: VPNFeatureGatekeeper,
          statusReporter: NetworkProtectionStatusReporter,
-         iconProvider: IconProvider) {
+         themeManager: ThemeManaging,
+         vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate,
+         vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate) {
+
+        let iconsProvider = themeManager.theme.iconsProvider
 
         self.popoverManager = popoverManager
         self.vpnGatekeeper = vpnGatekeeper
         self.networkProtectionStatusReporter = statusReporter
-        self.iconPublisher = NetworkProtectionIconPublisher(statusReporter: networkProtectionStatusReporter, iconProvider: iconProvider)
+        self.iconPublisher = NetworkProtectionIconPublisher(statusReporter: networkProtectionStatusReporter, iconProvider: iconsProvider.vpnNavigationIconsProvider)
         self.pinningManager = pinningManager
         self.shortcutTitle = pinningManager.shortcutTitle(for: .networkProtection)
+        self.vpnUpsellToolbarButtonPromoDelegate = vpnUpsellToolbarButtonPromoDelegate
+        self.vpnUpsellDotBadgePromoDelegate = vpnUpsellDotBadgePromoDelegate
 
         isHavingConnectivityIssues = networkProtectionStatusReporter.connectivityIssuesObserver.recentValue
         buttonImage = .image(for: iconPublisher.icon)
@@ -95,6 +114,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
         setupIconSubscription()
         setupStatusSubscription()
         setupInterruptionSubscription()
+        setupUpsellSubscription()
     }
 
     private func setupIconSubscription() {
@@ -106,36 +126,78 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     }
 
     private func setupStatusSubscription() {
-        networkProtectionStatusReporter.statusObserver.publisher.sink { [weak self] status in
-            guard let self = self else {
-                return
-            }
+        networkProtectionStatusReporter.statusObserver.publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                guard let self else { return }
 
-            Task { @MainActor in
-                self.status = status
-                self.updateVisibility()
-            }
-        }.store(in: &cancellables)
+                MainActor.assumeMainThread {
+                    self.status = status
+                    self.updateVisibility()
+                }
+            }.store(in: &cancellables)
     }
 
     private func setupInterruptionSubscription() {
-        networkProtectionStatusReporter.connectivityIssuesObserver.publisher.sink { [weak self] isHavingConnectivityIssues in
-            guard let self = self else {
-                return
-            }
+        networkProtectionStatusReporter.connectivityIssuesObserver.publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isHavingConnectivityIssues in
+                guard let self else { return }
 
-            Task { @MainActor in
-                self.isHavingConnectivityIssues = isHavingConnectivityIssues
-                self.updateVisibility()
+                MainActor.assumeMainThread {
+                    self.isHavingConnectivityIssues = isHavingConnectivityIssues
+                    self.updateVisibility()
+                }
             }
-        }.store(in: &cancellables)
+            .store(in: &cancellables)
+    }
+
+    private func setupUpsellSubscription() {
+        vpnUpsellToolbarButtonPromoDelegate.isShowingPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isShowing in
+                guard let self else { return }
+
+                MainActor.assumeMainThread {
+                    self.shouldShowUpsell = isShowing
+                    self.updateVisibility()
+                }
+            }
+            .store(in: &cancellables)
+
+        // The dot is drawn on the upsell button, so it only shows while both promos are showing.
+        Publishers.CombineLatest(vpnUpsellToolbarButtonPromoDelegate.isShowingPublisher,
+                                 vpnUpsellDotBadgePromoDelegate.isShowingPublisher)
+            .map { $0 && $1 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] shouldShowNotificationDot in
+                guard let self else { return }
+
+                MainActor.assumeMainThread {
+                    self.shouldShowNotificationDot = shouldShowNotificationDot
+                }
+            }
+            .store(in: &cancellables)
     }
 
     @MainActor
     func updateVisibility() {
         Task { @MainActor in
+            guard !shouldShowUpsell else {
+                pinNetworkProtectionToNavBarIfNeverPinnedBefore()
+                showVPNButton = true
+                return
+            }
+
             guard let canStartVPN = try? await vpnGatekeeper.canStartVPN() else {
                 // If there's an error, don't make any changes
+                return
+            }
+
+            // The promo can be restored while awaiting; unpinning then would silently dismiss the upsell.
+            if shouldShowUpsell {
+                pinNetworkProtectionToNavBarIfNeverPinnedBefore()
+                showVPNButton = true
                 return
             }
 

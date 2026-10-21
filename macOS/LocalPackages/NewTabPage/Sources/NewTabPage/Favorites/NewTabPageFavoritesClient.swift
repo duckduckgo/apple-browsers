@@ -18,6 +18,7 @@
 
 import Bookmarks
 import Common
+import FoundationExtensions
 import Combine
 import UserScriptActionsManager
 import WebKit
@@ -91,6 +92,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
         return nil
     }
 
+    @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion = favoritesModel.isViewExpanded ? .expanded : .collapsed
         return NewTabPageUserScript.WidgetConfig(animation: .viewTransitions, expansion: expansion)

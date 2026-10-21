@@ -21,6 +21,8 @@ import WebKit
 
 public protocol NavigationResponder {
 
+    // A tab extension will receive these calls only if registered in Tab+Navigation.swift file
+
     // MARK: Decision making
 
     /// Decides whether to allow or cancel a navigation
@@ -116,6 +118,12 @@ public protocol NavigationResponder {
     func renderingProgressDidChange(progressEvents: UInt)
 #endif
 
+    // MARK: - Navigation Performance (macOS only)
+#if PRIVATE_NAVIGATION_PERFORMANCE_ENABLED
+    @MainActor
+    func didGeneratePageLoadTiming(_ timing: WKPageLoadTiming)
+#endif
+
     /// Return true to disable stop on decidePolicyForNavigationAction taking longer than 4 secoinds
     @MainActor
     var shouldDisableLongDecisionMakingChecks: Bool { get }
@@ -171,6 +179,11 @@ public extension NavigationResponder {
 
     @MainActor
     func renderingProgressDidChange(progressEvents: UInt) {}
+#endif
+
+#if PRIVATE_NAVIGATION_PERFORMANCE_ENABLED
+    @MainActor
+    func didGeneratePageLoadTiming(_ timing: WKPageLoadTiming) {}
 #endif
 
     var shouldDisableLongDecisionMakingChecks: Bool { false }

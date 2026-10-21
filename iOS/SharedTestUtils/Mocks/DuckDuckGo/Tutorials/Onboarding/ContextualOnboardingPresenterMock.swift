@@ -1,0 +1,269 @@
+//
+//  ContextualOnboardingPresenterMock.swift
+//  DuckDuckGo
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+import Foundation
+import PrivacyDashboard
+import Combine
+@testable import DuckDuckGo
+
+final class ContextualOnboardingPresenterMock: ContextualOnboardingPresenting {
+    private(set) var didCallPresentContextualOnboarding = false
+    private(set) var capturedBrowsingSpec: DaxDialogs.BrowsingSpec?
+    private(set) var didCallDismissContextualOnboardingIfNeeded = false
+
+    func presentContextualOnboarding(for spec: DaxDialogs.BrowsingSpec, in vc: TabViewOnboardingDelegate) {
+        didCallPresentContextualOnboarding = true
+        capturedBrowsingSpec = spec
+    }
+    
+    func dismissContextualOnboardingIfNeeded(from vc: TabViewOnboardingDelegate) {
+        didCallDismissContextualOnboardingIfNeeded = true
+    }
+}
+
+final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, SubscriptionPromotionCoordinating, ContextualDaxDialogDisabling {
+    
+    var expectation: XCTestExpectation?
+    private(set) var didCallSetTryAnonymousSearchMessageSeen = false
+    private(set) var didCallSetTryVisitSiteMessageSeen = false
+    private(set) var didCallSetFireEducationMessageSeen = false
+    private(set) var didCallSetDialogsPriorFinalSeen = false
+    private(set) var didCallSetFinalOnboardingDialogSeen = false
+    private(set) var didCallSetSearchMessageSeen = false
+    private(set) var didCallEnableAddFavoriteFlow = false
+    private(set) var didCallSetDaxDialogDismiss = false
+    private(set) var didCallClearedBrowserData = false
+    private(set) var didCallDisableDaxDialogs = false
+    private(set) var didCallSetLastShownDialog = false
+    private(set) var lastShownDialogType: DaxDialogs.BrowsingSpec.SpecType?
+
+    var canStartFavoriteFlow = false
+
+    var isShowingFireDialog: Bool = false
+    var shouldShowPrivacyButtonPulse: Bool = false
+    var isShowingSearchSuggestions: Bool = false
+    var isShowingSitesSuggestions: Bool = false
+    var isShowingSubscriptionPromotion: Bool = false
+
+    var shouldShowFireButtonPulse: Bool = false
+    var fireEducationMessageSeen: Bool = false
+    var isAddFavoriteFlow: Bool = false
+    var isDismissedPublisher = PassthroughSubject<Bool, Never>()
+
+    func setTryAnonymousSearchMessageSeen() {
+        didCallSetTryAnonymousSearchMessageSeen = true
+    }
+
+    func setTryVisitSiteMessageSeen() {
+        didCallSetTryVisitSiteMessageSeen = true
+    }
+
+    func setFireEducationMessageSeen() {
+        didCallSetFireEducationMessageSeen = true
+        fireEducationMessageSeen = true
+    }
+
+    func setDialogsPriorFinalSeen() {
+        didCallSetDialogsPriorFinalSeen = true
+    }
+
+    func setFinalOnboardingDialogSeen() {
+        didCallSetFinalOnboardingDialogSeen = true
+        expectation?.fulfill()
+    }
+
+    private(set) var didCallSetChatPathVisitSiteSeen = false
+
+    func setChatPathVisitSiteSeen() {
+        didCallSetChatPathVisitSiteSeen = true
+    }
+
+    var tryAnonymousSearchMessageSeen: Bool = false
+    var chatPathPhase: DaxDialogs.ChatPathPhase = .none
+    var isChatFirstPath: Bool = false
+    var isAIChatEnabled: Bool = true
+
+    func setSearchMessageSeen() {
+        didCallSetSearchMessageSeen = true
+    }
+
+    func setPrivacyButtonPulseSeen() {
+
+    }
+
+    func enableAddFavoriteFlow() {
+        didCallEnableAddFavoriteFlow = true
+    }
+
+    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType) {
+        didCallSetLastShownDialog = true
+        lastShownDialogType = type
+    }
+
+    func setDaxDialogDismiss() {
+        didCallSetDaxDialogDismiss = true
+    }
+
+    func clearedBrowserData() {
+        didCallClearedBrowserData = true
+    }
+
+    var subscriptionPromotionDialogSeen: Bool = false
+    var subscriptionPromotionPending: Bool = false
+
+    func disableContextualDaxDialogs() {
+        didCallDisableDaxDialogs = true
+    }
+
+    func isStillOnboarding() -> Bool {
+        false
+    }
+
+    func fireButtonPulseCancelled() {
+
+    }
+
+    func resumeRegularFlow() {
+
+    }
+
+    func setAsChatFirstPath() {}
+
+    func clearHeldURLData() -> Result<Void, Error> {
+        return .success(())
+    }
+
+    func fireButtonPulseStarted() {
+
+    }
+
+    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyDashboard.PrivacyInfo) -> DuckDuckGo.DaxDialogs.BrowsingSpec? {
+        nil
+    }
+
+    func overrideShownFlagFor(_ spec: DuckDuckGo.DaxDialogs.BrowsingSpec, flag: Bool) {
+
+    }
+}
+
+class MockDaxDialogsManager: DaxDialogsManaging {
+    var hasSeenOnboarding: Bool = false
+
+    var isShowingContextualOnboardingDialog: Bool = false
+
+    var isShowingFireDialog: Bool = false
+
+    var shouldShowPrivacyButtonPulse: Bool = false
+
+    var isShowingSearchSuggestions: Bool = false
+
+    var isShowingSitesSuggestions: Bool = false
+
+    var shouldShowFireButtonPulse: Bool = false
+
+    var isAddFavoriteFlow: Bool = false
+
+    var nextHomeScreenMessageCalled = false
+    var nextHomeScreenMessageNewCalled = false
+    var dismissCalled = false
+    var setFinalOnboardingDialogSeenCalled = false
+    var specToReturn: DaxDialogs.HomeScreenSpec?
+
+    var isShowingSubscriptionPromotion: Bool = false
+    var subscriptionPromotionDialogSeen: Bool = false
+    var subscriptionPromotionPending: Bool = false
+
+    var isDismissedPublisher = PassthroughSubject<Bool, Never>()
+
+    private(set) var clearHeldURLDataCallCount = 0
+
+    func setTryAnonymousSearchMessageSeen() { }
+
+    func setTryVisitSiteMessageSeen() {}
+
+    func setSearchMessageSeen() {}
+
+    var fireEducationMessageSeen: Bool = false
+
+    func setFireEducationMessageSeen() {
+        fireEducationMessageSeen = true
+    }
+
+    func clearedBrowserData() {}
+
+    func setDialogsPriorFinalSeen() {}
+
+    func setChatPathVisitSiteSeen() {}
+    func setAsChatFirstPath() {}
+
+    var tryAnonymousSearchMessageSeen: Bool { false }
+    var chatPathPhase: DaxDialogs.ChatPathPhase { .none }
+    var isChatFirstPath: Bool { false }
+    var isAIChatEnabled: Bool { true }
+
+    func setPrivacyButtonPulseSeen() { }
+
+    func setLastShownDialog(type: DaxDialogs.BrowsingSpec.SpecType) {}
+
+    func setDaxDialogDismiss() {}
+
+    func enableAddFavoriteFlow() {}
+
+    func isStillOnboarding() -> Bool {
+        false
+    }
+
+    func fireButtonPulseCancelled() {}
+
+    func resumeRegularFlow() {}
+
+    func clearHeldURLData() -> Result<Void, Error> {
+        clearHeldURLDataCallCount += 1
+        return .success(())
+    }
+
+    func fireButtonPulseStarted() {}
+
+    func nextBrowsingMessageIfShouldShow(for privacyInfo: PrivacyDashboard.PrivacyInfo) -> DuckDuckGo.DaxDialogs.BrowsingSpec? {
+        nil
+    }
+
+    func overrideShownFlagFor(_ spec: DuckDuckGo.DaxDialogs.BrowsingSpec, flag: Bool) {}
+
+    func disableContextualDaxDialogs() {}
+
+    func nextHomeScreenMessage() -> DaxDialogs.HomeScreenSpec? {
+        nextHomeScreenMessageCalled = true
+        return specToReturn
+    }
+
+    func nextHomeScreenMessageNew() -> DaxDialogs.HomeScreenSpec? {
+        nextHomeScreenMessageNewCalled = true
+        return specToReturn
+    }
+
+    func setFinalOnboardingDialogSeen() {
+        setFinalOnboardingDialogSeenCalled = true
+    }
+
+    func dismiss() {
+        dismissCalled = true
+    }
+}

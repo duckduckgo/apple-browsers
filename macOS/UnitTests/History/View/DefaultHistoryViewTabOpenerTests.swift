@@ -21,7 +21,7 @@ import XCTest
 
 final class CapturingURLOpener: URLOpening {
 
-    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
+    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, with: NSEvent?) {
         openCalls.append(url)
     }
 

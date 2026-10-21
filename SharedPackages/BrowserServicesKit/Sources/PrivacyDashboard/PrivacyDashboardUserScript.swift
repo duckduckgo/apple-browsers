@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import MaliciousSiteProtection
 import TrackerRadarKit
@@ -47,10 +47,18 @@ protocol PrivacyDashboardUserScriptDelegate: AnyObject {
 }
 
 public enum PrivacyDashboardTheme: String, Encodable {
-
     case light
     case dark
+}
 
+public struct PrivacyDashboardStyle: Equatable, Encodable {
+    let theme: String
+    let themeVariant: String
+
+    public init(theme: String, themeVariant: String) {
+        self.theme = theme
+        self.themeVariant = themeVariant
+    }
 }
 
 public enum Screen: String, Decodable, CaseIterable {
@@ -58,6 +66,7 @@ public enum Screen: String, Decodable, CaseIterable {
     case primaryScreen
 
     case breakageForm
+    case breakageFormFinalStep
     case categorySelection
     case categoryTypeSelection
     case choiceBreakageForm
@@ -296,7 +305,7 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
                                      "url": "\(site)"
                                  }
                              },
-                             {"id": "device"},
+                             {"id": "deviceWithMemory"},
                              {"id": "os"},
                              {"id": "appVersion"},
                              \(atbEntry)
@@ -312,6 +321,10 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
                              {"id": "openerContext"},
                              {"id": "userRefreshCount"},
                              {"id": "locale"},
+                             {"id": "detectorData"},
+                             {"id": "networkState"},
+                             {"id": "dnsResolution"},
+                             {"id": "failedResources"},
                          ]
                      });
                      """
@@ -364,6 +377,15 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
             return
         }
         evaluate(js: "window.onChangeTheme(\(themeJson))", in: webView)
+    }
+
+    func setThemeStyle(_ style: PrivacyDashboardStyle, webView: WKWebView) {
+        guard let styleJson = try? JSONEncoder().encode(style).utf8String() else {
+            assertionFailure("Can't encode themeStyle into JSON")
+            return
+        }
+
+        evaluate(js: "window.onChangeTheme(\(styleJson))", in: webView)
     }
 
     func setServerTrust(_ serverTrustViewModel: ServerTrustViewModel, webView: WKWebView) {

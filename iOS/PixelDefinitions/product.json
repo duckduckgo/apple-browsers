@@ -1,0 +1,9 @@
+{
+    "agents": ["ddg_ios"],
+    "target": {
+        "key": "appVersion",
+        "versionUrl": "https://staticcdn.duckduckgo.com/macos-desktop-browser/ios_release_metadata.json",
+        "versionRef": "latest_ios_appstore_version.latest_version"
+    },
+    "forceLowerCase": false
+}

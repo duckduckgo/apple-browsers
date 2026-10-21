@@ -16,14 +16,22 @@
 //  limitations under the License.
 //
 
+import AppKit
+import AppUpdaterShared
+import AutoconsentStats
 import BrowserServicesKit
 import Combine
+import Common
+import FoundationExtensions
 import ContentBlocking
+import EventHub
 import Foundation
 import History
 import MaliciousSiteProtection
+import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
+import WebExtensions
 import WebKit
 
 /**
@@ -71,32 +79,54 @@ protocol TabExtensionDependencies {
     var workspace: Workspace { get }
     var historyCoordinating: HistoryCoordinating { get }
     var downloadManager: FileDownloadManagerProtocol { get }
+    var downloadsPreferences: DownloadsPreferences { get }
     var cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? { get }
     var duckPlayer: DuckPlayer { get }
     var certificateTrustEvaluator: CertificateTrustEvaluating { get }
     var tunnelController: NetworkProtectionIPCTunnelController? { get }
     var maliciousSiteDetector: MaliciousSiteDetecting { get }
-    var faviconManagement: FaviconManagement? { get }
+    var faviconManagement: FaviconManagement { get }
     var featureFlagger: FeatureFlagger { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
+    var aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable { get }
+    var aiChatSessionStore: AIChatSessionStoring { get }
+    var tabCrashAggregator: TabCrashAggregator { get }
+    var tabsPreferences: TabsPreferences { get }
+    var autoplayPreferences: AutoplayPreferences { get }
+    var permissionManager: PermissionManagerProtocol { get }
+    var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
+    var eventHub: EventHubManaging { get }
+    var webExtensionManagerProvider: @MainActor () -> WebExtensionManaging? { get }
+    var webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter? { get }
 }
 
 // swiftlint:disable:next large_tuple
 typealias TabExtensionsBuilderArguments = (
     tabIdentifier: UInt64,
+    tabID: String,
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
     isTabLoadedInSidebar: Bool,
+    isInPopUpWindow: () -> Bool,
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
+    reportBrokenSite: (NSWindow?) -> Void,
     titlePublisher: AnyPublisher<String?, Never>,
     errorPublisher: AnyPublisher<WKError?, Never>,
     userScriptsPublisher: AnyPublisher<UserScripts?, Never>,
+    updateController: (any UpdateController)?,
     inheritedAttribution: AdClickAttributionLogic.State?,
     userContentControllerFuture: Future<UserContentController, Never>,
     permissionModel: PermissionModel,
-    webViewFuture: Future<WKWebView, Never>
+    webViewFuture: Future<WKWebView, Never>,
+    interactionEventsPublisher: AnyPublisher<WebViewInteractionEvent, Never>,
+    tabsPreferences: TabsPreferences,
+    burnerMode: BurnerMode,
+    urlProvider: () -> URL?,
+    createChildTab: (WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?,
+    presentTab: (Tab, NewWindowPolicy) -> Void,
+    newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
 )
 
 extension TabExtensionsBuilder {
@@ -111,35 +141,34 @@ extension TabExtensionsBuilder {
     @MainActor
     mutating func registerExtensions(with args: TabExtensionsBuilderArguments, dependencies: TabExtensionDependencies) {
         let userScripts = args.userScriptsPublisher
+        let tabCrashSubject = PassthroughSubject<Void, Never>()
 
         let httpsUpgrade = add {
             HTTPSUpgradeTabExtension(httpsUpgrade: dependencies.privacyFeatures.httpsUpgrade)
         }
 
-        let fbProtection = add {
-            FBProtectionTabExtension(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                                     userContentControllerFuture: args.userContentControllerFuture,
-                                     clickToLoadUserScriptPublisher: userScripts.map(\.?.clickToLoadScript))
-        }
-
         let contentBlocking = add {
-            ContentBlockingTabExtension(fbBlockingEnabledProvider: fbProtection.value,
-                                        userContentControllerFuture: args.userContentControllerFuture,
+            ContentBlockingTabExtension(userContentControllerFuture: args.userContentControllerFuture,
                                         cbaTimeReporter: dependencies.cbaTimeReporter,
                                         privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                                        contentBlockerRulesUserScriptPublisher: userScripts.map(\.?.contentBlockerRulesScript),
-                                        surrogatesUserScriptPublisher: userScripts.map(\.?.surrogatesScript))
+                                        trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature),
+                                        tld: dependencies.privacyFeatures.contentBlocking.tld,
+                                        contentBlockingManager: dependencies.privacyFeatures.contentBlocking.contentBlockingManager)
         }
 
         let specialErrorPageTabExtension = add {
             SpecialErrorPageTabExtension(webViewPublisher: args.webViewFuture,
                                          scriptsPublisher: userScripts.compactMap { $0 },
                                          closeTab: args.closeTab,
-                                         maliciousSiteDetector: dependencies.maliciousSiteDetector)
+                                         maliciousSiteDetector: dependencies.maliciousSiteDetector,
+                                         acceptsInsecureCertificates: LaunchOptionsHandler().acceptsInsecureCertificates)
         }
 
         add {
-            PrivacyDashboardTabExtension(contentBlocking: dependencies.privacyFeatures.contentBlocking,
+            PrivacyDashboardTabExtension(tabIdentifier: args.tabID,
+                                         webExtensionManagerProvider: dependencies.webExtensionManagerProvider,
+                                         webExtensionInitialLoadWaiterProvider: dependencies.webExtensionInitialLoadWaiterProvider,
+                                         contentBlocking: dependencies.privacyFeatures.contentBlocking,
                                          certificateTrustEvaluator: dependencies.certificateTrustEvaluator,
                                          contentScopeExperimentsManager: dependencies.contentScopeExperimentsManager,
                                          autoconsentUserScriptPublisher: userScripts.map(\.?.autoconsentUserScript),
@@ -147,6 +176,7 @@ extension TabExtensionsBuilder {
                                          didUpgradeToHttpsPublisher: httpsUpgrade.didUpgradeToHttpsPublisher,
                                          trackersPublisher: contentBlocking.trackersPublisher,
                                          webViewPublisher: args.webViewFuture,
+                                         tabCrashPublisher: tabCrashSubject,
                                          maliciousSiteProtectionStateProvider: { specialErrorPageTabExtension.state })
         }
 
@@ -157,26 +187,76 @@ extension TabExtensionsBuilder {
         }
 
         add {
+            PageSignalsTabExtension(webViewPublisher: args.webViewFuture,
+                                    featureFlagger: dependencies.featureFlagger,
+                                    tld: dependencies.privacyFeatures.contentBlocking.tld)
+        }
+
+        if dependencies.featureFlagger.isFeatureOn(.webNotifications) {
+            add {
+                WebNotificationsTabExtension(
+                    tabUUID: args.tabID,
+                    contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScript),
+                    webViewPublisher: args.webViewFuture,
+                    permissionModel: args.permissionModel
+                )
+            }
+        }
+
+        add {
             AdClickAttributionTabExtension(inheritedAttribution: args.inheritedAttribution,
                                            userContentControllerFuture: args.userContentControllerFuture,
-                                           contentBlockerRulesScriptPublisher: userScripts.map { $0?.contentBlockerRulesScript },
                                            trackerInfoPublisher: contentBlocking.trackersPublisher.map { $0.request },
+                                           trackerProtectionSubfeaturePublisher: userScripts.map(\.?.trackerProtectionSubfeature).eraseToAnyPublisher(),
                                            dependencies: dependencies.privacyFeatures.contentBlocking)
         }
 
         add {
-            NavigationProtectionTabExtension(contentBlocking: dependencies.privacyFeatures.contentBlocking)
+            NavigationProtectionTabExtension(
+                contentBlocking: dependencies.privacyFeatures.contentBlocking,
+                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences
+            )
+
+        }
+
+        add {
+            AutoplayPolicyTabExtension(
+                autoplayPreferences: dependencies.autoplayPreferences,
+                permissionManager: dependencies.permissionManager,
+                privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                telemetryScriptPublisher: userScripts.compactMap { $0 }
+            )
         }
 
         add {
             AutofillTabExtension(autofillUserScriptPublisher: userScripts.map(\.?.autofillScript),
                                  privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                 webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences,
                                  isBurner: args.isTabBurner)
         }
         add {
-            ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
+            ContextMenuManager(contextMenuSubfeaturePublisher: userScripts.map(\.?.contextMenuSubfeature),
+                               contentPublisher: args.contentPublisher,
+                               tabsPreferences: dependencies.tabsPreferences,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
-                               featureFlagger: dependencies.featureFlagger)
+                               internalUserDecider: dependencies.featureFlagger.internalUserDecider,
+                               aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
+                               tld: dependencies.privacyFeatures.contentBlocking.tld)
+        }
+        add {
+            PopupHandlingTabExtension(tabsPreferences: args.tabsPreferences,
+                                      burnerMode: args.burnerMode,
+                                      permissionModel: args.permissionModel,
+                                      createChildTab: args.createChildTab,
+                                      presentTab: args.presentTab,
+                                      newWindowPolicyDecisionMakers: args.newWindowPolicyDecisionMakers,
+                                      featureFlagger: dependencies.featureFlagger,
+                                      popupBlockingConfig: DefaultPopupBlockingConfiguration(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager),
+                                      tld: dependencies.privacyFeatures.contentBlocking.tld,
+                                      interactionEventsPublisher: args.interactionEventsPublisher,
+                                      isTabPinned: args.isTabPinned,
+                                      isBurner: args.isTabBurner,
+                                      isInPopUpWindow: args.isInPopUpWindow)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
@@ -184,18 +264,28 @@ extension TabExtensionsBuilder {
         add {
             FindInPageTabExtension()
         }
+        if args.isTabBurner {
+            add {
+                SubscriptionPromoTabExtension()
+            }
+        }
         add {
-            DownloadsTabExtension(downloadManager:
-                                    dependencies.downloadManager,
+            DownloadsTabExtension(downloadManager: dependencies.downloadManager,
+                                  downloadsPreferences: dependencies.downloadsPreferences,
                                   isBurner: args.isTabBurner)
         }
         add {
             TabSnapshotExtension(webViewPublisher: args.webViewFuture,
                                  contentPublisher: args.contentPublisher,
+                                 interactionEventsPublisher: args.interactionEventsPublisher,
                                  isBurner: args.isTabBurner)
         }
         add {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
+        }
+
+        add {
+            AutoconsentTabExtension(scriptsPublisher: userScripts.compactMap { $0 })
         }
 
         let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar
@@ -203,8 +293,10 @@ extension TabExtensionsBuilder {
             HistoryTabExtension(isCapturingHistory: isCapturingHistory,
                                 historyCoordinating: dependencies.historyCoordinating,
                                 trackersPublisher: contentBlocking.trackersPublisher,
-                                urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },
-                                titlePublisher: args.titlePublisher)
+                                urlPublisher: args.contentPublisher.map { content in content.displaysContentInWebView ? content.urlForWebView : nil },
+                                titlePublisher: args.titlePublisher,
+                                scriptsPublisher: userScripts.compactMap { $0 },
+                                webViewPublisher: args.webViewFuture)
         }
         add {
             PrivacyStatsTabExtension(
@@ -215,23 +307,38 @@ extension TabExtensionsBuilder {
         add {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)
         }
-        add {
-            NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner)
-        }
 
-        let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
+        let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider(preferences: dependencies.duckPlayer.preferences)
         add {
             DuckPlayerTabExtension(duckPlayer: dependencies.duckPlayer,
                                    isBurner: args.isTabBurner,
                                    scriptsPublisher: userScripts.compactMap { $0 },
                                    webViewPublisher: args.webViewFuture,
+                                   tabsPreferences: dependencies.tabsPreferences,
                                    onboardingDecider: duckPlayerOnboardingDecider)
         }
 
         add {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                webViewPublisher: args.webViewFuture,
-                               isLoadedInSidebar: args.isTabLoadedInSidebar)
+                               contentPublisher: args.contentPublisher,
+                               isLoadedInSidebar: args.isTabLoadedInSidebar,
+                               isTabBurner: args.isTabBurner,
+                               burnerMode: args.burnerMode)
+        }
+
+        add {
+            PageContextTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                    webViewPublisher: args.webViewFuture,
+                                    contentPublisher: args.contentPublisher,
+                                    tabID: args.tabID,
+                                    featureFlagger: dependencies.featureFlagger,
+                                    privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                    extractionPixelHandler: PageContextExtractionPixelHandler(),
+                                    aiChatSessionStore: dependencies.aiChatSessionStore,
+                                    aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
+                                    isLoadedInSidebar: args.isTabLoadedInSidebar,
+                                    faviconManagement: dependencies.faviconManagement)
         }
 
         add {
@@ -245,19 +352,16 @@ extension TabExtensionsBuilder {
                 featureFlagger: dependencies.featureFlagger,
                 contentPublisher: args.contentPublisher,
                 webViewPublisher: args.webViewFuture,
-                webViewErrorPublisher: args.errorPublisher
+                webViewErrorPublisher: args.errorPublisher,
+                onTabCrash: { tabCrashSubject.send() },
+                reportBrokenSite: args.reportBrokenSite,
+                tabCrashAggregator: dependencies.tabCrashAggregator
             )
         }
 
-#if SPARKLE
         add {
-            ReleaseNotesTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
+            SubscriptionTabExtension(scriptsPublisher: userScripts.compactMap { $0 }, webViewPublisher: args.webViewFuture)
         }
-#else
-        add {
-            ReleaseNotesTabExtension()
-        }
-#endif
 
         if let tunnelController = dependencies.tunnelController {
             add {
@@ -266,9 +370,24 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            InternalFeedbackFormTabExtension(
-                webViewPublisher: args.webViewFuture,
-                internalUserDecider: dependencies.featureFlagger.internalUserDecider
+            TabSuspensionExtension(
+                tabID: args.tabID,
+                webViewPublisher: args.webViewFuture.map { $0 as TabSuspensionWebViewChecking },
+                contentPublisher: args.contentPublisher,
+                scriptsPublisher: userScripts.compactMap { $0 },
+                featureFlagger: dependencies.featureFlagger,
+                aiChatSessionStore: dependencies.aiChatSessionStore,
+                privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                tld: dependencies.privacyFeatures.contentBlocking.tld,
+                isTabPinned: args.isTabPinned
+            )
+        }
+
+        add {
+            EventHubTabExtension(
+                tabID: args.tabID,
+                eventHub: dependencies.eventHub,
+                contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScriptIsolated)
             )
         }
     }
@@ -288,10 +407,8 @@ extension TestTabExtensionsBuilder {
     // override Tab Extensions initialisation registered in TabExtensionsBuilder.registerExtensions for Unit Tests
     func overrideExtensions(with args: TabExtensionsBuilderArguments, dependencies: TabExtensionDependencies) {
         /** ```
-         let fbProtection = get(FBProtectionTabExtension.self)
-
          let contentBlocking = override {
-         ContentBlockingTabExtension(fbBlockingEnabledProvider: fbProtection.value)
+         ContentBlockingTabExtension(cbaTimeReporter: nil)
          }
          override {
          HistoryTabExtension(trackersPublisher: contentBlocking.trackersPublisher)

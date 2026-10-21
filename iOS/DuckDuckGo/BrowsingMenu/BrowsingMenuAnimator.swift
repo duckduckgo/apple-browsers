@@ -106,8 +106,6 @@ final class BrowsingMenuAnimator: NSObject, UIViewControllerAnimatedTransitionin
 
         fromViewController.view.isHidden = true
 
-        toViewController.presentedMenuButton.setState(.menuImage, animated: true)
-
         UIView.animate(withDuration: Constants.dismissAnimationDuration, animations: {
             snapshot?.alpha = 0
             snapshot?.frame = Self.menuOriginFrameForAnimation(for: fromViewController)
@@ -119,7 +117,7 @@ final class BrowsingMenuAnimator: NSObject, UIViewControllerAnimatedTransitionin
     }
 
     private class func menuOriginFrameForAnimation(for controller: BrowsingMenuViewController) -> CGRect {
-        if AppWidthObserver.shared.isLargeWidth {
+        if controller.isUsingSingleBar {
             let frame = controller.menuView.frame
             var rect = frame.offsetBy(dx: frame.width - 100, dy: 0)
             rect.size.width = 100

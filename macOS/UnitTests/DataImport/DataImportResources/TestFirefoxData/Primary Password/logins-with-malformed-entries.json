@@ -1,0 +1,44 @@
+{
+  "nextId": 10,
+  "logins": [
+    {
+      "id": 1,
+      "guid": "{a92b5f8d-125f-fc46-ba57-e90bbc4fa47e}",
+      "timePasswordChanged": 1740745502197,
+      "syncCounter": 0,
+      "everSynced": true
+    },
+    {
+      "id": 2,
+      "hostname": "https://example.com",
+      "encryptedUsername": "MDoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECAiEdyNqsLTWBBDdYwpiVMU7gcL/HFoQBplh",
+      "guid": "{b3c4d8e9-234f-5a67-ba89-f01c23d4e567}"
+    },
+    {
+      "id": 3,
+      "hostname": "https://example.com",
+      "httpRealm": null,
+      "formSubmitURL": "",
+      "usernameField": "",
+      "passwordField": "",
+      "encryptedUsername": "MDoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECAiEdyNqsLTWBBDdYwpiVMU7gcL/HFoQBplh",
+      "encryptedPassword": "MDoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECPNfACq4KeojBBCffD6qgSAbS3DwaCBwrWtF",
+      "guid": "{c4d5e9f0-345g-6b78-cb90-g12d34e5f678}",
+      "encType": 1,
+      "timeCreated": 1752511876305,
+      "timeLastUsed": 1752511876305,
+      "timePasswordChanged": 1752511987728,
+      "timesUsed": 1,
+      "syncCounter": 0,
+      "everSynced": true,
+      "encryptedUnknownFields": null
+    }
+  ],
+  "potentiallyVulnerablePasswords": [],
+  "dismissedBreachAlertsByLoginGUID": {},
+  "version": 3,
+  "sync": {
+    "syncID": "MDoEEPgAAAAAAAAAAAAAAAAAAAEwFAYIKoZIhvcNAwcECLOmtnS0A6fGBBB3ROXhw32H6r9ipiBEbGJL",
+    "lastSync": 1627668886.4
+  }
+} 

@@ -7,14 +7,14 @@
 #
 
 start_marker="release notes"
-pp_marker="^for privacy pro subscribers:?$"
+subscription_marker="^for duckduckgo subscribers:?$"
 end_marker="this release includes:"
 placeholder="add release notes here"
 is_capturing=0
 is_capturing_pp=0
 has_content=0
 notes=
-pp_notes=
+subscription_notes=
 
 output="html"
 
@@ -31,7 +31,7 @@ case "$1" in
 		# Capture raw included tasks' URLs instead of release notes
 		output="tasks"
 		start_marker="this release includes:"
-		pp_marker=
+		subscription_marker=
 		end_marker=
 		;;
 	*)
@@ -65,10 +65,10 @@ add_to_notes() {
 	fi
 }
 
-add_to_pp_notes() {
-	pp_notes+="$1"
+add_to_subscription_notes() {
+	subscription_notes+="$1"
 	if [[ "$output" != "asana" ]]; then
-		pp_notes+="\\n"
+		subscription_notes+="\\n"
 	fi
 }
 
@@ -81,7 +81,7 @@ add_release_note() {
 		processed_release_note="<li>$(make_links "$(html_escape "$release_note")")</li>"
 	fi
 	if [[ $is_capturing_pp -eq 1 ]]; then
-		add_to_pp_notes "$processed_release_note"
+		add_to_subscription_notes "$processed_release_note"
 	else
 		add_to_notes "$processed_release_note"
 	fi
@@ -102,23 +102,23 @@ do
 			add_to_notes "<h3 style=\"font-size:14px\">What's new</h3>"
 			add_to_notes "<ul>"
 		fi
-	elif [[ -n "$pp_marker" && "$lowercase_line" =~ $pp_marker ]]; then
+	elif [[ -n "$subscription_marker" && "$lowercase_line" =~ $subscription_marker ]]; then
 		is_capturing_pp=1
 		if [[ "$output" == "asana" ]]; then
-			add_to_pp_notes "</ul><h2>For Privacy Pro subscribers</h2><ul>"
+			add_to_subscription_notes "</ul><h2>For DuckDuckGo subscribers</h2><ul>"
 		elif [[ "$output" == "html" ]]; then
 			# If we've reached the PP marker, end the list and start the PP list
-			add_to_pp_notes "</ul>"
-			add_to_pp_notes "<h3 style=\"font-size:14px\">For Privacy Pro subscribers</h3>"
-			add_to_pp_notes "<ul>"
+			add_to_subscription_notes "</ul>"
+			add_to_subscription_notes "<h3 style=\"font-size:14px\">For DuckDuckGo subscribers</h3>"
+			add_to_subscription_notes "<ul>"
 		else
-			add_to_pp_notes "$line"
+			add_to_subscription_notes "$line"
 		fi
 	elif [[ -n "$end_marker" && "$lowercase_line" == "$end_marker" ]]; then
 		# If we've reached the end marker, check if PP notes are present and not a placeholder, and add them verbatim to notes
 		# shellcheck disable=SC2076
-		if [[ -n "$pp_notes" && ! "$(lowercase "$pp_notes")" =~ "$placeholder" ]]; then
-			notes+="$pp_notes" # never add extra newline here (that's why we don't use `add_to_notes`)
+		if [[ -n "$subscription_notes" && ! "$(lowercase "$subscription_notes")" =~ "$placeholder" ]]; then
+			notes+="$subscription_notes" # never add extra newline here (that's why we don't use `add_to_notes`)
 		fi
 		if [[ "$output" != "raw" ]]; then
 			# End the list on end marker

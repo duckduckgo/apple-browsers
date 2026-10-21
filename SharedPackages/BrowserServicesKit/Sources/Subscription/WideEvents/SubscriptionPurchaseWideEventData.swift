@@ -1,0 +1,191 @@
+//
+//  SubscriptionPurchaseWideEventData.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import WideEvent
+
+public class SubscriptionPurchaseWideEventData: WideEventData {
+    public static let metadata = WideEventMetadata(
+        pixelName: "subscription_purchase",
+        featureName: "subscription-purchase",
+        mobileMetaType: "ios-subscription-purchase",
+        desktopMetaType: "macos-subscription-purchase",
+        version: "1.2.0"
+    )
+
+    public static let activationTimeout: TimeInterval = .hours(4)
+
+    public var globalData: WideEventGlobalData
+    public var contextData: WideEventContextData
+    public var appData: WideEventAppData
+
+    public let purchasePlatform: PurchasePlatform
+    public var subscriptionIdentifier: String?
+    public var freeTrialEligible: Bool
+
+    public var createAccountDuration: WideEvent.MeasuredInterval?
+    public var completePurchaseDuration: WideEvent.MeasuredInterval?
+    public var activateAccountDuration: WideEvent.MeasuredInterval?
+
+    public let entryPoint: EntryPoint
+
+    public var failingStep: FailingStep?
+    public var errorData: WideEventErrorData?
+
+    public var entitlementsChecker: (() async -> Bool)?
+
+    private enum CodingKeys: String, CodingKey {
+        case globalData, contextData, appData
+        case purchasePlatform, subscriptionIdentifier, freeTrialEligible, entryPoint
+        case createAccountDuration, completePurchaseDuration, activateAccountDuration
+        case failingStep, errorData
+    }
+
+    public init(purchasePlatform: PurchasePlatform,
+                failingStep: FailingStep? = nil,
+                subscriptionIdentifier: String?,
+                freeTrialEligible: Bool,
+                entryPoint: EntryPoint,
+                createAccountDuration: WideEvent.MeasuredInterval? = nil,
+                completePurchaseDuration: WideEvent.MeasuredInterval? = nil,
+                activateAccountDuration: WideEvent.MeasuredInterval? = nil,
+                errorData: WideEventErrorData? = nil,
+                contextData: WideEventContextData = WideEventContextData(),
+                appData: WideEventAppData = WideEventAppData(),
+                globalData: WideEventGlobalData = WideEventGlobalData()) {
+        self.purchasePlatform = purchasePlatform
+        self.failingStep = failingStep
+        self.subscriptionIdentifier = subscriptionIdentifier
+        self.freeTrialEligible = freeTrialEligible
+        self.entryPoint = entryPoint
+        self.createAccountDuration = createAccountDuration
+        self.completePurchaseDuration = completePurchaseDuration
+        self.activateAccountDuration = activateAccountDuration
+        self.errorData = errorData
+        self.contextData = contextData
+        self.appData = appData
+        self.globalData = globalData
+    }
+
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        switch trigger {
+        case .appLaunch:
+            guard var interval = activateAccountDuration, let start = interval.start else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            guard interval.end == nil else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if let checker = entitlementsChecker, await checker() {
+                interval.complete()
+                activateAccountDuration = interval
+                return .complete(.success(reason: StatusReason.missingEntitlementsDelayedActivation.rawValue))
+            }
+
+            if Date() >= start.addingTimeInterval(Self.activationTimeout) {
+                return .complete(.unknown(reason: StatusReason.missingEntitlements.rawValue))
+            }
+
+            return .keepPending
+        }
+    }
+}
+
+extension SubscriptionPurchaseWideEventData {
+
+    public enum PurchasePlatform: String, Codable, CaseIterable {
+        case appStore = "app_store"
+        case stripe
+    }
+
+    public enum EntryPoint: String, Codable, CaseIterable {
+        case appMenu = "app_menu"
+        case appPromotion = "app_promotion"
+        case settings
+        case onboarding
+        case newTabPage = "new_tab_page"
+        case duckAI = "duck_ai"
+        case vpn
+        case personalInformationRemoval = "personal_information_removal"
+        case web
+        case unknown
+    }
+
+    public enum FailingStep: String, Codable, CaseIterable {
+        case flowStart = "FLOW_START"
+        case accountCreate = "ACCOUNT_CREATE"
+        case accountPayment = "ACCOUNT_PAYMENT"
+        case accountActivation = "ACCOUNT_ACTIVATION"
+    }
+
+    public enum StatusReason: String {
+        case partialData = "partial_data"
+        case missingEntitlements = "missing_entitlements"
+        case missingEntitlementsDelayedActivation = "missing_entitlements_delayed_activation"
+    }
+
+    public func jsonParameters() -> [String: Encodable] {
+        let bucket: DurationBucket = .bucketed(Self.bucket)
+
+        return Dictionary(compacting: [
+            (WideEventParameter.SubscriptionFeature.purchasePlatform, purchasePlatform.rawValue),
+            (WideEventParameter.SubscriptionFeature.failingStep, failingStep?.rawValue),
+            (WideEventParameter.SubscriptionFeature.subscriptionIdentifier, subscriptionIdentifier),
+            (WideEventParameter.SubscriptionFeature.freeTrialEligible, freeTrialEligible),
+            (WideEventParameter.SubscriptionFeature.entryPoint, entryPoint.rawValue),
+            (WideEventParameter.SubscriptionFeature.accountCreationLatency, createAccountDuration?.intValue(bucket)),
+            (WideEventParameter.SubscriptionFeature.accountPaymentLatency, completePurchaseDuration?.intValue(bucket)),
+            (WideEventParameter.SubscriptionFeature.accountActivationLatency, activateAccountDuration?.intValue(bucket)),
+        ])
+    }
+
+    public func markAsFailed(at step: FailingStep, error: Error) {
+        self.failingStep = step
+        self.errorData = WideEventErrorData(error: error)
+    }
+
+    private static func bucket(_ ms: Int) -> Int {
+        switch ms {
+        case 0..<1000: return 1000
+        case 1000..<5000: return 5000
+        case 5000..<10000: return 10000
+        case 10000..<30000: return 30000
+        case 30000..<60000: return 60000
+        case 60000..<300000: return 300000
+        default: return 600000
+        }
+    }
+
+}
+
+extension WideEventParameter {
+
+    public enum SubscriptionFeature {
+        static let purchasePlatform = "feature.data.ext.purchase_platform"
+        static let failingStep = "feature.data.ext.failing_step"
+        static let subscriptionIdentifier = "feature.data.ext.subscription_identifier"
+        static let freeTrialEligible = "feature.data.ext.free_trial_eligible"
+        static let entryPoint = "feature.data.ext.entry_point"
+        static let accountCreationLatency = "feature.data.ext.account_creation_latency_ms_bucketed"
+        static let accountPaymentLatency = "feature.data.ext.account_payment_latency_ms_bucketed"
+        static let accountActivationLatency = "feature.data.ext.account_activation_latency_ms_bucketed"
+    }
+
+}

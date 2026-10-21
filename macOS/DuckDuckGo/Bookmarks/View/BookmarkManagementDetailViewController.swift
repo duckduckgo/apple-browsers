@@ -20,7 +20,10 @@ import AppKit
 import Carbon
 import Combine
 import Common
+import FoundationExtensions
+import PrivacyConfig
 import SwiftUI
+import PixelKit
 
 protocol BookmarkManagementDetailViewControllerDelegate: AnyObject {
 
@@ -48,24 +51,32 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.newFolderButton")
     private lazy var deleteItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksBarContextMenuDelete, target: self, action: #selector(delete))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.deleteItemsButton")
-    private lazy var sortItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksSort.capitalized, target: self, action: #selector(sortBookmarks))
-        .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
+    private lazy var sortItemsButton: MouseOverButton = {
+        let button = MouseOverButton(title: Self.thinSpace + managementDetailViewModel.sortButtonTitle, target: self, action: #selector(sortBookmarks))
+            .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
+        button.toolTip = managementDetailViewModel.isBookmarksReorderByNameEnabled ? UserText.bookmarksSortViewTooltip : nil
+        return button
+    }()
 
-    lazy var searchBar = NSSearchField()
+    lazy var searchBar = SearchField()
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.searchBar")
     private lazy var separator = NSBox()
     private lazy var scrollView = NSScrollView()
     private lazy var tableView = NSTableView()
 
     private lazy var loadingProgressIndicator = NSProgressIndicator()
-    private lazy var emptyState = NSView()
-    private lazy var emptyStateImageView = NSImageView(image: .bookmarksEmpty)
-        .withAccessibilityIdentifier(BookmarksEmptyStateContent.imageAccessibilityIdentifier)
-    private lazy var emptyStateTitle = NSTextField()
-        .withAccessibilityIdentifier(BookmarksEmptyStateContent.titleAccessibilityIdentifier)
-    private lazy var emptyStateMessage = NSTextField()
-        .withAccessibilityIdentifier(BookmarksEmptyStateContent.descriptionAccessibilityIdentifier)
-    private lazy var importButton = NSButton(title: UserText.importBookmarksButtonTitle, target: self, action: #selector(onImportClicked))
+    private lazy var emptyStateHostingView: NSHostingView<BookmarksEmptyStateView> = {
+        let view = NSHostingView(rootView: BookmarksEmptyStateView(content: .noBookmarks,
+                                                                   isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher,
+                                                                   onImportClicked: { [weak self] in
+            self?.onEmptyStateImportClicked()
+        }, onSyncClicked: { [weak self] in
+            self?.onEmptyStateSyncClicked()
+        }))
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
 
     weak var delegate: BookmarkManagementDetailViewControllerDelegate?
 
@@ -73,8 +84,12 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let sortBookmarksViewModel: SortBookmarksViewModel
-    private let visualStyle: VisualStyleProviding
-    private var selectionState: BookmarkManagementSidebarViewController.SelectionState = .empty {
+    private let pinningManager: PinningManager
+
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
+    @Published private var selectionState: BookmarkManagementSidebarViewController.SelectionState = .empty {
         didSet {
             reloadData()
         }
@@ -83,13 +98,15 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private var documentView = FlippedView()
 
-    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
+    private let syncPromoManager: SyncPromoManaging
+    private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting
+    private let pixelFiring: (any PixelKitFiring)?
 
     private lazy var syncPromoViewHostingView: NSView = {
         let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
             self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
         }, dismissButtonAction: { [weak self] in
-            self?.syncPromoManager.dismissPromoFor(.bookmarks)
+            self?.syncPromoManager.promoDismissed()
         })
 
         let headerView = SyncPromoView(viewModel: model,
@@ -117,20 +134,34 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.selectionState = selectionState
     }
 
-    init(bookmarkManager: BookmarkManager,
-         dragDropManager: BookmarkDragDropManager,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+    init(
+        bookmarkManager: BookmarkManager,
+        dragDropManager: BookmarkDragDropManager,
+        pinningManager: PinningManager,
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        syncPromoManager: SyncPromoManaging = NSApp.delegateTyped.syncSetupBookmarksPromoManager,
+        emptyStatePromo: ImportSyncEmptyStatePromoPresenting = NSApp.delegateTyped.bookmarksEmptyStatePromoDelegate,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
+    ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
+        self.pinningManager = pinningManager
         let metrics = BookmarksSearchAndSortMetrics()
         let navigationEngagementMetrics = BookmarksNavigationEngagementMetrics()
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
         self.sortBookmarksViewModel = sortViewModel
-        self.visualStyle = visualStyle
-        self.managementDetailViewModel = BookmarkManagementDetailViewModel(bookmarkManager: bookmarkManager,
-                                                                           metrics: metrics,
-                                                                           navigationEngagementMetrics: navigationEngagementMetrics,
-                                                                           mode: bookmarkManager.sortMode)
+        self.themeManager = themeManager
+        self.syncPromoManager = syncPromoManager
+        self.emptyStatePromo = emptyStatePromo
+        self.pixelFiring = pixelFiring
+        self.managementDetailViewModel = BookmarkManagementDetailViewModel(
+            bookmarkManager: bookmarkManager,
+            metrics: metrics,
+            navigationEngagementMetrics: navigationEngagementMetrics,
+            featureFlagger: featureFlagger,
+            mode: bookmarkManager.sortMode
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -139,8 +170,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     override func loadView() {
-        let showSyncPromo = syncPromoManager.shouldPresentPromoFor(.bookmarks)
-        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksManagerBackgroundColor)
+        let colorsProvider = theme.colorsProvider
+
+        view = ColorView(frame: .zero, backgroundColor: colorsProvider.bookmarksManagerBackgroundColor)
         view.translatesAutoresizingMaskIntoConstraints = false
 
         // set menu before `newFolderButton` initialization as it uses the menu as its target
@@ -149,7 +181,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         view.addSubview(separator)
         view.addSubview(scrollView)
         view.addSubview(loadingProgressIndicator)
-        view.addSubview(emptyState)
+        view.addSubview(emptyStateHostingView)
         view.addSubview(toolbarButtonsStackView)
         view.addSubview(searchBar)
 
@@ -161,48 +193,17 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         toolbarButtonsStackView.distribution = .fill
         toolbarButtonsStackView.setClippingResistancePriority(.defaultHigh, for: .horizontal)
 
-        configureToolbarButton(newBookmarkButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.addBookmarkIcon, isHidden: false)
-        configureToolbarButton(newFolderButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.addBookmarkFolderIcon, isHidden: false)
-        configureToolbarButton(deleteItemsButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.deleteBookmarkIcon, isHidden: false)
-        configureToolbarButton(sortItemsButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkManuallyIcon, isHidden: false)
+        let bookmarksIconsProvider = theme.iconsProvider.bookmarksIconsProvider
+        configureToolbarButton(newBookmarkButton, image: bookmarksIconsProvider.addBookmarkIcon, isHidden: false)
+        configureToolbarButton(newFolderButton, image: bookmarksIconsProvider.addBookmarkFolderIcon, isHidden: false)
+        configureToolbarButton(deleteItemsButton, image: bookmarksIconsProvider.deleteBookmarkIcon, isHidden: false)
+        configureToolbarButton(sortItemsButton, image: bookmarksIconsProvider.sortBookmarkManuallyIcon, isHidden: false)
 
         loadingProgressIndicator.translatesAutoresizingMaskIntoConstraints = false
         loadingProgressIndicator.style = .spinning
         loadingProgressIndicator.isHidden = true
 
-        emptyState.addSubview(emptyStateImageView)
-        emptyState.addSubview(emptyStateTitle)
-        emptyState.addSubview(emptyStateMessage)
-        emptyState.addSubview(importButton)
-
-        emptyState.isHidden = true
-        emptyState.translatesAutoresizingMaskIntoConstraints = false
-        importButton.translatesAutoresizingMaskIntoConstraints = false
-
-        configureEmptyState(
-            label: emptyStateTitle,
-            font: .systemFont(ofSize: 15, weight: .semibold),
-            attributedTitle: .make(
-                UserText.bookmarksEmptyStateTitle,
-                lineHeight: 1.14,
-                kern: -0.23
-            )
-        )
-
-        configureEmptyState(
-            label: emptyStateMessage,
-            font: .systemFont(ofSize: 13),
-            attributedTitle: .make(
-                UserText.bookmarksEmptyStateMessage,
-                lineHeight: 1.05,
-                kern: -0.08
-            )
-        )
-
-        emptyStateImageView.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
-        emptyStateImageView.setContentHuggingPriority(.init(rawValue: 251), for: .vertical)
-        emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false
-        emptyStateImageView.imageScaling = .scaleProportionallyDown
+        // Empty state is provided by SwiftUI via emptyStateHostingView
 
         scrollView.autohidesScrollers = true
         scrollView.hasVerticalScroller = true
@@ -213,18 +214,6 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         scrollView.automaticallyAdjustsContentInsets = false
         scrollView.scrollerInsets = NSEdgeInsets(top: -22, left: 0, bottom: -22, right: 0)
         scrollView.contentInsets = NSEdgeInsets(top: 22, left: 0, bottom: 22, right: 0)
-
-        let clipView = NSClipView()
-
-        if !showSyncPromo {
-            clipView.documentView = tableView
-
-            clipView.autoresizingMask = [.width, .height]
-            clipView.backgroundColor = .clear
-            clipView.drawsBackground = false
-            clipView.frame = CGRect(x: 0, y: 0, width: 640, height: 601)
-            scrollView.contentView = clipView
-        }
 
         tableView.addTableColumn(NSTableColumn())
         tableView.headerView = nil
@@ -253,9 +242,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
                 return self?.handleCmdF($0) ?? false
             }
         ]))
-        if showSyncPromo {
-            setupSyncPromoView()
-        }
+        setupSyncPromoView()
 
         setupLayout()
     }
@@ -285,13 +272,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             view.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             view.trailingAnchor.constraint(greaterThanOrEqualTo: searchBar.trailingAnchor, constant: 16),
             view.trailingAnchor.constraint(equalTo: separator.trailingAnchor, constant: 16),
-            emptyState.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            emptyState.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 20),
+            emptyStateHostingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateHostingView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 20),
             loadingProgressIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingProgressIndicator.centerYAnchor.constraint(equalTo: emptyState.centerYAnchor),
+            loadingProgressIndicator.centerYAnchor.constraint(equalTo: emptyStateHostingView.centerYAnchor),
             separator.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             toolbarButtonsStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 32),
-            emptyState.topAnchor.constraint(greaterThanOrEqualTo: separator.bottomAnchor, constant: 8),
+            emptyStateHostingView.topAnchor.constraint(greaterThanOrEqualTo: separator.bottomAnchor, constant: 8),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
 
             newBookmarkButton.heightAnchor.constraint(equalToConstant: 24),
@@ -304,24 +291,8 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             newFolderButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
             deleteItemsButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
 
-            emptyStateMessage.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
-
-            importButton.topAnchor.constraint(equalTo: emptyStateMessage.bottomAnchor, constant: 8),
-            emptyState.heightAnchor.constraint(equalToConstant: 218).priority(150),
-            emptyStateMessage.topAnchor.constraint(equalTo: emptyStateTitle.bottomAnchor, constant: 8),
-            importButton.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
-            emptyStateImageView.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
-            emptyState.widthAnchor.constraint(equalToConstant: 224),
-            emptyStateImageView.topAnchor.constraint(equalTo: emptyState.topAnchor),
-            emptyStateTitle.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
-            emptyStateTitle.topAnchor.constraint(equalTo: emptyStateImageView.bottomAnchor, constant: 8),
-
-            emptyStateMessage.widthAnchor.constraint(equalToConstant: 192),
-
-            emptyStateTitle.widthAnchor.constraint(equalToConstant: 192),
-
-            emptyStateImageView.widthAnchor.constraint(equalToConstant: 128),
-            emptyStateImageView.heightAnchor.constraint(equalToConstant: 96)
+            emptyStateHostingView.widthAnchor.constraint(equalToConstant: 300),
+            emptyStateHostingView.heightAnchor.constraint(equalToConstant: 383)
         ])
 
     }
@@ -333,11 +304,16 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         tableView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
 
         reloadData()
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     override func viewDidAppear() {
         subscribeToSelectedSortMode()
         subscribeToFirstResponder()
+        subscribeToFaviconCacheUpdates()
+        subscribeToSyncPromoState()
+        postSyncPromoTriggerWhenTopLevelLoads()
         // reloadData() will be called from BookmarkManagementSidebarViewController → dataSource.$selectedFolders observer → update(selectionState:)
         // updatesyncPromoViewHostingVisibility() will be called from reloadData()
     }
@@ -350,16 +326,17 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         sortBookmarksViewModel.$selectedSortMode.sink { [weak self] newSortMode in
             guard let self else { return }
 
+            let bookmarksIconsProvider = theme.iconsProvider.bookmarksIconsProvider
             switch newSortMode {
             case .nameDescending:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
-                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkDescendingIcon
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonByNameTitle
+                self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkDescendingIcon
             case .nameAscending:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
-                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkAscendingIcon
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonByNameTitle
+                self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkAscendingIcon
             case .manual:
-                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSort
-                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkManuallyIcon
+                self.sortItemsButton.title = Self.thinSpace + managementDetailViewModel.sortButtonTitle
+                self.sortItemsButton.image = bookmarksIconsProvider.sortBookmarkManuallyIcon
             }
 
             delegate?.bookmarkManagementDetailViewControllerSortChanged(newSortMode)
@@ -379,6 +356,39 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
                 self?.firstResponderDidChange($0)
             }
             .store(in: &cancellables)
+    }
+
+    /// Bookmark favicons are lazy-loaded: `Bookmark.favicon(.small)` may return `nil` on a cache miss and the
+    /// cell falls back to a default icon. When the image is decoded later, `.faviconCacheUpdated` is posted; refresh
+    /// the table when the update relates to a host currently displayed in the list (or defensively if no payload).
+    private func subscribeToFaviconCacheUpdates() {
+        NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate, update.hosts.isDisjoint(with: self.displayedBookmarkHosts) {
+                    return
+                }
+                self.refreshFavicons()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Hosts of the bookmarks currently visible in the list, used to filter favicon-cache updates.
+    private var displayedBookmarkHosts: Set<String> {
+        Set(managementDetailViewModel.visibleBookmarks.compactMap { ($0 as? Bookmark)?.urlObject?.host })
+    }
+
+    /// Refreshes favicons in place on the currently-visible rows instead of `reloadData()`. Rebuilding every
+    /// cell on each favicon-cache update would flicker the icons (blank/placeholder during the decode window).
+    private func refreshFavicons() {
+        dispatchPrecondition(condition: .onQueue(.main))
+        let visibleRows = tableView.rows(in: tableView.visibleRect)
+        guard visibleRows.length > 0 else { return }
+        for row in visibleRows.location..<(visibleRows.location + visibleRows.length) {
+            guard let cell = tableView.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkTableCellView else { continue }
+            cell.refreshDisplayedFavicon()
+        }
     }
 
     override func keyDown(with event: NSEvent) {
@@ -414,14 +424,14 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         case .empty(let emptyState):
             showEmptyStateView(for: emptyState)
         case .nonEmpty:
-            emptyState.isHidden = true
+            emptyStateHostingView.isHidden = true
             loadingProgressIndicator.stopAnimation(nil)
             loadingProgressIndicator.isHidden = true
             tableView.isHidden = false
             searchBar.isEnabled = true
             sortItemsButton.isEnabled = true
         case .loading:
-            emptyState.isHidden = true
+            emptyStateHostingView.isHidden = true
             tableView.isHidden = true
             loadingProgressIndicator.isHidden = false
             loadingProgressIndicator.startAnimation(nil)
@@ -433,19 +443,43 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private func showEmptyStateView(for mode: BookmarksEmptyStateContent) {
         tableView.isHidden = true
-        emptyState.isHidden = false
         loadingProgressIndicator.isHidden = true
         loadingProgressIndicator.stopAnimation(nil)
-        emptyStateTitle.stringValue = mode.title
-        emptyStateMessage.stringValue = mode.description
-        emptyStateImageView.image = mode.image
-        importButton.isHidden = mode.shouldHideImportButton
+        emptyStateHostingView.rootView = BookmarksEmptyStateView(content: mode,
+                                                                 isPromoActivePublisher: self.emptyStatePromo.isPromoActivePublisher,
+                                                                 onImportClicked: { [weak self] in
+            self?.onEmptyStateImportClicked()
+        }, onSyncClicked: { [weak self] in
+            self?.onEmptyStateSyncClicked()
+        })
+        emptyStateHostingView.isHidden = false
         searchBar.isEnabled = mode != .noBookmarks
         sortItemsButton.isEnabled = mode != .noBookmarks
     }
 
     @objc func onImportClicked(_ sender: NSButton) {
-        DataImportView(isDataTypePickerExpanded: true).show()
+        onImport()
+    }
+
+    private func onImport() {
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
+    }
+
+    private func onEmptyStateImportClicked() {
+        emptyStatePromo.importStarted()
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: { [emptyStatePromo] in
+            emptyStatePromo.importFinished()
+        })
+    }
+
+    private func onEmptyStateSyncClicked() {
+        let source = SyncDeviceButtonTouchpoint.bookmarksManagementEmpty
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.rawValue]))
+        guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
+        emptyStatePromo.syncSetupStarted()
+        deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in
+            emptyStatePromo.syncSetupFinished()
+        })
     }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {
@@ -514,6 +548,10 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         menu.popUpAtMouseLocation(in: sortItemsButton)
     }
 
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.alignItemTextWithIconsRecursively()
+    }
+
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(BookmarkManagementDetailViewController.delete(_:)):
@@ -527,8 +565,8 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         clearSearch()
         managementDetailViewModel.update(selection: selectionState, mode: mode)
         tableView.reloadData()
-        sortItemsButton.backgroundColor = mode.shouldHighlightButton ? .buttonMouseDown : .clear
-        sortItemsButton.mouseOverColor = mode.shouldHighlightButton ? .buttonMouseDown : .buttonMouseOver
+        sortItemsButton.backgroundColor = mode.shouldHighlightButton ? NSColor(resource: .buttonMouseDown) : .clear
+        sortItemsButton.mouseOverColor = mode.shouldHighlightButton ? NSColor(resource: .buttonMouseDown) : NSColor(resource: .buttonMouseOver)
     }
 
     private func clearSearch() {
@@ -549,13 +587,24 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         bookmarkManager.remove(objectsWithUUIDs: entityUUIDs, undoManager: undoManager)
     }
 
-    private(set) lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
+}
+
+// MARK: - ThemeUpdateListening
+
+extension BookmarkManagementDetailViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
         }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
+
+        let palette = theme.palette
+        contentView.backgroundColor = palette.surfaceCanvas
+        searchBar.borderColor = palette.controlsBorderPrimary
+        searchBar.borderHighlightColor = palette.accentPrimary
+        searchBar.innerBackgroundColor = palette.surfaceTertiary
+    }
 }
 
 // MARK: - NSTableView
@@ -572,7 +621,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
 
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
         let rowView = BookmarkTableRowView()
-        rowView.onSelectionChanged = onSelectionChanged
+        rowView.onSelectionChanged = { [weak self] in self?.onSelectionChanged() }
 
         return rowView
     }
@@ -581,7 +630,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
         guard let entity = fetchEntity(at: row) else { return nil }
 
         let cell = tableView.makeView(withIdentifier: .init(BookmarkTableCellView.className()), owner: nil) as? BookmarkTableCellView
-        ?? BookmarkTableCellView(identifier: .init(BookmarkTableCellView.className()), visualStyle: visualStyle)
+        ?? BookmarkTableCellView(identifier: .init(BookmarkTableCellView.className()), theme: theme)
 
         cell.delegate = self
 
@@ -589,7 +638,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
             cell.update(from: bookmark)
 
             if bookmark.favicon(.small) == nil {
-                faviconsFetcherOnboarding?.presentOnboardingIfNeeded()
+                NotificationCenter.default.post(name: .missingBookmarkFaviconEncountered, object: nil)
             }
         } else if let folder = entity as? BookmarkFolder {
             cell.update(from: folder)
@@ -725,9 +774,9 @@ private extension BookmarkManagementDetailViewController {
     func configureToolbarButton(_ button: MouseOverButton, image: NSImage, isHidden: Bool) {
         button.bezelStyle = .shadowlessSquare
         button.cornerRadius = 4
-        button.normalTintColor = .button
-        button.mouseDownColor = .buttonMouseDown
-        button.mouseOverColor = .buttonMouseOver
+        button.normalTintColor = NSColor(resource: .button)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
         button.imageHugsTitle = true
         button.setContentHuggingPriority(.defaultHigh, for: .vertical)
         button.alignment = .center
@@ -891,26 +940,40 @@ extension BookmarkManagementDetailViewController {
             tableView.bottomAnchor.constraint(greaterThanOrEqualTo: documentView.bottomAnchor),
         ])
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(syncPromoDismissed),
-            name: SyncPromoManager.SyncPromoManagerNotifications.didDismissPromo,
-            object: nil)
+        syncPromoViewHostingView.isHidden = true
     }
 
-    private var shouldShowSyncPromo: Bool {
-        return emptyState.isHidden
+    /// Posts the trigger once per appearance, when bookmarks have loaded and the top level is showing.
+    private func postSyncPromoTriggerWhenTopLevelLoads() {
+        bookmarkManager.listPublisher
+            .combineLatest($selectionState)
+            .first { list, selectionState in list != nil && selectionState.folder == nil }
+            .sink { _ in
+                NotificationCenter.default.post(name: .bookmarksManagerOpened, object: nil)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToSyncPromoState() {
+        syncPromoManager.isPromoActivePublisher
+            .sink { [weak self] _ in
+                self?.updatesyncPromoViewHostingVisibility()
+            }
+            .store(in: &cancellables)
+    }
+
+    private var canShowSyncPromo: Bool {
+        return emptyStateHostingView.isHidden
         && loadingProgressIndicator.isHidden
         && !managementDetailViewModel.isSearching
         && !tableView.isHidden
         && parentFolder == nil
         && (bookmarkManager.list?.totalBookmarks ?? 0) > 0
         && totalRows() > 0
-        && syncPromoManager.shouldPresentPromoFor(.bookmarks)
     }
 
-    @objc private func syncPromoDismissed(notification: Notification) {
-        updatesyncPromoViewHostingVisibility()
+    private var shouldShowSyncPromo: Bool {
+        return canShowSyncPromo && syncPromoManager.isPromoActive
     }
 
     private func updatesyncPromoViewHostingVisibility() {
@@ -951,7 +1014,7 @@ extension BookmarkManagementDetailViewController {
         return manager
     }()
 
-    return BookmarkManagementDetailViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    BookmarkManagementDetailViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
 
 }
 #endif

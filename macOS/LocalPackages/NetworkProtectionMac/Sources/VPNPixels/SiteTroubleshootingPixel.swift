@@ -46,7 +46,10 @@ public enum SiteTroubleshootingPixel: VPNPixel {
         }
     }
 
-    public var error: Error? {
-        return nil
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .reportIssues:
+            return [.pixelSource]
+        }
     }
 }

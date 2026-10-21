@@ -19,59 +19,26 @@
 import PixelKit
 import Subscription
 
-public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustomPrefix {
+public enum VPNSubscriptionStatusPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
     case vpnFeatureEnabled(isSubscriptionActive: Bool?,
-                    isAuthV2Enabled: Bool,
-                    trigger: Trigger)
+                    sourceObject: Any?)
     case vpnFeatureDisabled(isSubscriptionActive: Bool?,
-                     isAuthV2Enabled: Bool,
-                     trigger: Trigger)
+                     sourceObject: Any?)
     case signedIn(isSubscriptionActive: Bool?,
-                  isAuthV2Enabled: Bool,
-                  trigger: Trigger)
+                  sourceObject: Any?)
     case signedOut(isSubscriptionActive: Bool?,
-                   isAuthV2Enabled: Bool,
-                   trigger: Trigger)
+                   sourceObject: Any?)
 
-    public enum Trigger {
-        case clientCheck
+    public var namePrefix: PixelKitNamePrefix { .custom(namePrefixLiteral) }
+
+    private var namePrefixLiteral: String {
 #if os(macOS)
-        case clientCheckOnWake
+        return "m_mac_vpn_subs_notification_"
 #elseif os(iOS)
-        case clientForegrounded
-#endif
-        case notification(sourceObject: Any?)
-    }
-
-    public var namePrefix: String {
-        let trigger: Trigger = {
-            switch self {
-            case .vpnFeatureEnabled(_, _, let trigger),
-                    .vpnFeatureDisabled(_, _, let trigger),
-                    .signedIn(_, _, let trigger),
-                    .signedOut(_, _, let trigger):
-                return trigger
-            }
-        }()
-
-#if os(macOS)
-        switch trigger {
-        case .clientCheck:
-            return "m_mac_vpn_subs_client_check_"
-        case .clientCheckOnWake:
-            return "m_mac_vpn_subs_client_check_on_wake_"
-        case .notification:
-            return "m_mac_vpn_subs_notification_"
-        }
-#elseif os(iOS)
-        switch trigger {
-        case .clientCheck:
-            return "m_vpn_subs_client_check_"
-        case .clientForegrounded:
-            return "m_vpn_subs_client_check_on_foreground_"
-        case .notification:
-            return "m_vpn_subs_notification_"
-        }
+        return "m_vpn_subs_notification_"
 #endif
     }
 
@@ -90,10 +57,10 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
 
     public var parameters: [String: String]? {
         switch self {
-        case .signedIn(let isSubscriptionActive, let isAuthV2, let trigger),
-                .signedOut(let isSubscriptionActive, let isAuthV2, let trigger),
-                .vpnFeatureEnabled(let isSubscriptionActive, let isAuthV2, let trigger),
-                .vpnFeatureDisabled(let isSubscriptionActive, let isAuthV2, let trigger):
+        case .signedIn(let isSubscriptionActive, let sourceObject),
+                .signedOut(let isSubscriptionActive, let sourceObject),
+                .vpnFeatureEnabled(let isSubscriptionActive, let sourceObject),
+                .vpnFeatureDisabled(let isSubscriptionActive, let sourceObject):
 
             let isSubscriptionActiveString = {
                 guard let isSubscriptionActive else {
@@ -104,41 +71,34 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
             }()
 
             return [
-                "isSubscriptionActive": isSubscriptionActiveString,
-                "authVersion": isAuthV2 ? "v2" : "v1",
-                "notificationObjectClass": Self.sourceClass(from: trigger)
+                "vpnSubscriptionActive": isSubscriptionActiveString,
+                "notificationObjectClass": Self.sourceClass(from: sourceObject)
             ]
         }
     }
 
-    public var error: (any Error)? {
-        nil
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .vpnFeatureEnabled,
+                .vpnFeatureDisabled,
+                .signedIn,
+                .signedOut:
+            return [.pixelSource]
+        }
     }
 
-    static func sourceClass(from trigger: Trigger) -> String {
-        switch trigger {
-        case .clientCheck:
-            return "none"
-#if os(macOS)
-        case .clientCheckOnWake:
-            return "none"
-#elseif os(iOS)
-        case .clientForegrounded:
-            return "none"
-#endif
-        case .notification(let sourceObject):
-            guard let sourceObject else {
-                return "nil"
-            }
+    static func sourceClass(from sourceObject: Any?) -> String {
+        guard let sourceObject else {
+            return "nil"
+        }
 
-            // This is odd, but for `DefaultSubscriptionEndpointServiceV2` we can't get the class name
-            // and it's not very clear why, so we're setting it manually.
-            switch sourceObject {
-            case is DefaultSubscriptionEndpointServiceV2:
-                return "DefaultSubscriptionEndpointServiceV2"
-            default:
-                return String(describing: type(of: sourceObject))
-            }
+        // This is odd, but for `DefaultSubscriptionEndpointServiceV2` we can't get the class name
+        // and it's not very clear why, so we're setting it manually.
+        switch sourceObject {
+        case is DefaultSubscriptionEndpointService:
+            return "DefaultSubscriptionEndpointServiceV2"
+        default:
+            return String(describing: type(of: sourceObject))
         }
     }
 }

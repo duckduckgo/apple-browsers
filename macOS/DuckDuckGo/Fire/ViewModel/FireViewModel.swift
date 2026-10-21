@@ -18,35 +18,71 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import BrowserServicesKit
-import FeatureFlags
+import FeatureFlags_macOS
+import PrivacyConfig
 import WebKit
+import History
 
 extension Fire.BurningData {
     /**
      * We want to delay showing modal dialog by 1s while burn animation is being played
      * on the New Tab Page (i.e. when "specific domains" are burned without all-window fire animation).
      */
-    func shouldDelayShowingDialog(decider: VisualizeFireAnimationDecider) -> Bool {
+    func shouldDelayShowingDialog(decider: VisualizeFireSettingsDecider) -> Bool {
         switch self {
-        case .specificDomains(_, false):
+        case .specificDomains(_, false, _):
             return decider.shouldShowFireAnimation
         default:
             return false
+        }
+    }
+
+    /// Text of the modal dialog shown while data is being deleted.
+    ///
+    /// With the simplified Fire Dialog it describes the scope of the burn for a single tab burn
+    /// and for an all-data burn, and stays generic for all other burns. Without the simplified
+    /// Fire Dialog it always stays generic.
+    func deletingDataMessage(featureFlagger: FeatureFlagger) -> String {
+        guard featureFlagger.isFeatureOn(.fireDialogSimplified) else {
+            return UserText.fireDialogDeletingData
+        }
+
+        switch self {
+        case .all, .specificDomains(_, _, .allWindows):
+            return UserText.fireDialogDeletingAllData
+        case .specificDomains(_, _, .tab):
+            return UserText.fireDialogDeletingDataFromThisTab
+        case .specificDomains:
+            return UserText.fireDialogDeletingData
         }
     }
 }
 
 final class FireViewModel {
 
-    let fire: Fire
+    let fire: FireProtocol
 
-    @Published var isAnimationPlaying = false
+    @Published private(set) var isAnimationPlaying = false
+
+    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
+        guard self.isAnimationPlaying != isAnimationPlaying else { return }
+        self.isAnimationPlaying = isAnimationPlaying
+
+        if !isFireWindow {
+            if isAnimationPlaying {
+                fire.fireAnimationDidStart()
+            } else {
+                fire.fireAnimationDidFinish()
+            }
+        }
+    }
 
     /// Publisher that emits true if burning animation or burning process is in progress
     var isFirePresentationInProgress: AnyPublisher<Bool, Never> {
         Publishers
-            .CombineLatest($isAnimationPlaying.removeDuplicates(), fire.$burningData.removeDuplicates())
+            .CombineLatest($isAnimationPlaying.removeDuplicates(), fire.burningDataPublisher.removeDuplicates())
             .map { (isAnimationPlaying, burningData) in
                 let shouldDisplayDialog = isAnimationPlaying || burningData != nil
                 if burningData?.shouldDelayShowingDialog(decider: self.fire.visualizeFireAnimationDecider) == true {
@@ -59,13 +95,17 @@ final class FireViewModel {
     }
 
     @MainActor
-    init(fire: Fire) {
+    init(fire: FireProtocol) {
         self.fire = fire
     }
 
     @MainActor
-    init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireAnimationDecider) {
+    init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
         fire = Fire(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+    }
+
+    var isBurning: Bool {
+        return fire.burningData != nil
     }
 
 }

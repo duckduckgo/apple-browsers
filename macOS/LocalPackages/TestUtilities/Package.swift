@@ -1,0 +1,74 @@
+// swift-tools-version: 5.10
+// The swift-tools-version declares the minimum version of Swift required to build this package.
+//
+//  Package.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import PackageDescription
+
+let package = Package(
+    name: "TestUtilities",
+    platforms: [
+        .macOS("12.3")
+    ],
+    products: [
+        .library(name: "NoARCObjCTestUtilities", targets: ["NoARCObjCTestUtilities"]),
+        .library(name: "SharedTestUtilities", targets: ["SharedTestUtilities"]),
+    ],
+    dependencies: [
+        .package(path: "../Utilities"),
+        .package(path: "../AppKitExtensions"),
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/Persistence"),
+        .package(path: "../../../SharedPackages/PixelKit"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
+        .package(path: "../CommonObjCExtensions"),
+    ],
+    targets: [
+        .target(
+            name: "NoARCObjCTestUtilities",
+            dependencies: [],
+            sources: [
+                "NSObject+AutoreleaseTracking.m",
+            ],
+            publicHeadersPath: "include",
+            cSettings: [
+                .headerSearchPath("include"),
+                .unsafeFlags(["-fno-objc-arc"], .when(platforms: [.macOS]))
+            ]
+        ),
+        .target(
+            name: "SharedTestUtilities",
+            dependencies: [
+                .product(name: "AppKitExtensions", package: "AppKitExtensions"),
+                .product(name: "CommonObjCExtensions", package: "CommonObjCExtensions"),
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "DDGNavigation", package: "BrowserServicesKit"),
+                .product(name: "Suggestions", package: "BrowserServicesKit"),
+                .product(name: "SharedObjCTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "Utilities", package: "Utilities"),
+            ]
+        ),
+    ],
+    swiftLanguageVersions: [.v5]
+)

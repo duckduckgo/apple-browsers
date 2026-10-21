@@ -19,12 +19,14 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
-import XCTest
-@testable import TrackerRadarKit
-@testable import BrowserServicesKit
-import WebKit
 import Common
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
+import WebKit
+@testable import TrackerRadarKit
+@testable import BrowserServicesKit
 
 final class FingerprintingReferenceTests: XCTestCase {
     private var referenceTests = [Test]()
@@ -36,9 +38,9 @@ final class FingerprintingReferenceTests: XCTestCase {
     private var mockWebsite: MockWebsite!
 
     private enum Resource {
-        static let script = "Resources/privacy-reference-tests/fingerprinting-protections/init.js"
-        static let config = "Resources/privacy-reference-tests/fingerprinting-protections/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/fingerprinting-protections/tests.json"
+        static let script = "Res/privacy-reference-tests/fingerprinting-protections/init.js"
+        static let config = "Res/privacy-reference-tests/fingerprinting-protections/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/fingerprinting-protections/tests.json"
     }
 
     private lazy var testData: TestData = {
@@ -230,9 +232,9 @@ final class FingerprintingReferenceTests: XCTestCase {
                                                             messageSecret: UUID().uuidString,
                                                             featureToggles: configFeatureToggle)
 
-        let contentScopeScript = ContentScopeUserScript(self.privacyManager,
-                                                        properties: contentScopeProperties,
-                                                        privacyConfigurationJSONGenerator: nil)
+        let contentScopeScript = try! ContentScopeUserScript(self.privacyManager,
+                                                             properties: contentScopeProperties,
+                                                             privacyConfigurationJSONGenerator: nil)
 
         configuration.userContentController.addUserScript(WKUserScript(source: "\(scriptToInject) init(window)",
                                                                        injectionTime: .atDocumentStart,

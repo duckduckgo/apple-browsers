@@ -17,14 +17,21 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import BrowserServicesKit
 import Networking
 import PixelKit
 import PixelExperimentKit
+import PrivacyConfig
 import os.log
 
-final class StatisticsLoader {
+/// Refreshes the search and Duck.ai retention ATBs when the user submits a Duck.ai prompt.
+protocol DuckAIPromptAtbRefreshing {
+    func refreshRetentionAtbOnDuckAiPromptSubmition(completion: @escaping () -> Void)
+}
+
+final class StatisticsLoader: DuckAIPromptAtbRefreshing {
 
     typealias Completion =  (() -> Void)
 
@@ -34,49 +41,176 @@ final class StatisticsLoader {
     private let emailManager: EmailManager
     private let attributionPixelHandler: InstallationAttributionsPixelHandler
     private let usageSegmentation: UsageSegmenting
+    private let dockCustomization: DockCustomization
     private let parser = AtbParser()
     private var isAppRetentionRequestInProgress = false
+    var isSearchRetentionRequestInProgress = false
+    var isDuckAIRetentionRequestInProgress = false
     private let fireSearchExperimentPixels: () -> Void
+    private let fireDuckAISearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
+    private let fireNewAIPromptExperimentPixels: () -> Void
+
+    /// Experiments that were already running when Duck.ai prompts began counting toward the search metric.
+    /// They keep the previous definition (search navigation only, no Duck.ai) so their in-flight pre/post
+    /// analysis stays comparable. Experiments enrolled *after* this change are intentionally absent, so they
+    /// do count Duck.ai prompts as search. Remove each entry as its experiment is cleaned up; delete this
+    /// once none remain.
+    static let experimentsExcludedFromDuckAISearchMetric: Set<SubfeatureID> = [
+        MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue,
+        AutoconsentSubfeature.heuristicAction.rawValue,
+        PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment.rawValue
+    ]
 
     init(
         statisticsStore: StatisticsStore = LocalStatisticsStore(),
         emailManager: EmailManager = EmailManager(),
         attributionPixelHandler: InstallationAttributionsPixelHandler = AppInstallationAttributionPixelHandler(),
         usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
+        dockCustomization: DockCustomization = Application.appDelegate.dockCustomization,
         fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
-        fireSearchExperimentPixels: @escaping () -> Void = PixelKit.fireSearchExperimentPixels
+        fireSearchExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireSearchExperimentPixels()
+            StatisticsLoader.fireLegacySearchRetentionExperimentPixels()
+            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
+        },
+        fireDuckAISearchExperimentPixels: @escaping () -> Void = {
+            StatisticsLoader.fireSearchExperimentPixelsForDuckAIEligibleExperiments()
+            StatisticsLoader.fireOnboardingNonBlockingSearchRetentionExperimentPixel()
+        },
+        fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels
     ) {
         self.statisticsStore = statisticsStore
         self.emailManager = emailManager
         self.attributionPixelHandler = attributionPixelHandler
         self.usageSegmentation = usageSegmentation
+        self.dockCustomization = dockCustomization
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
+        self.fireDuckAISearchExperimentPixels = fireDuckAISearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
+        self.fireNewAIPromptExperimentPixels = fireNewAIPromptExperimentPixels
     }
 
-    func refreshRetentionAtb(isSearch: Bool, completion: @escaping Completion = {}) {
+    /// Transitional: preserves the previous 8-15 search window for experiments already running when
+    /// the canonical window was shortened to 8-14, so their in-flight analysis keeps the window it
+    /// started with. Drop each experiment as it is cleaned up, and delete this once none remain.
+    static func fireLegacySearchRetentionExperimentPixels() {
+        let inProgressExperiments = [
+            MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue,
+            AutoconsentSubfeature.heuristicAction.rawValue
+        ]
+        for subfeatureID in inProgressExperiments {
+            for threshold in [4, 6, 11, 21, 30] {
+                PixelKit.fireExperimentPixelIfThresholdReached(
+                    for: subfeatureID,
+                    metric: "search",
+                    conversionWindowDays: 8...15,
+                    threshold: threshold
+                )
+            }
+        }
+    }
+
+    /// Uses the same search events (including Duck.ai) as the automatic 5...7 guardrail.
+    static func fireOnboardingNonBlockingSearchRetentionExperimentPixel(
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        persistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()
+    ) {
+        OnboardingNonBlockingExperiment(featureFlagger: featureFlagger).fireSearchRetention(persistor: persistor)
+    }
+
+    /// Fires the search experiment metric for a Duck.ai prompt, but only for experiments that should count
+    /// Duck.ai prompts as search — i.e. every active experiment except those enrolled before this change
+    /// (see `experimentsExcludedFromDuckAISearchMetric`). Filtering happens here rather than in
+    /// PixelExperimentKit so the grandfathered list stays a macOS concern; experiments enrolled later are
+    /// included automatically.
+    ///
+    /// The value/window mapping mirrors `PixelKit.fireSearchExperimentPixels` so a Duck.ai prompt produces
+    /// the same search pixels a real search navigation would. Keep the two in sync.
+    static func fireSearchExperimentPixelsForDuckAIEligibleExperiments(
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
+    ) {
+        let valueConversionDictionary: [NumberOfCalls: [ConversionWindow]] = [
+            1: [0...0, 1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7, 8...14],
+            4: [5...7, 8...14],
+            6: [5...7, 8...14],
+            11: [5...7, 8...14],
+            21: [5...7, 8...14],
+            30: [5...7, 8...14]
+        ]
+        featureFlagger.allActiveExperiments.keys
+            .filter { !experimentsExcludedFromDuckAISearchMetric.contains($0) }
+            .forEach { subfeatureID in
+                valueConversionDictionary.forEach { value, windows in
+                    windows.forEach { window in
+                        PixelKit.fireExperimentPixelIfThresholdReached(
+                            for: subfeatureID,
+                            metric: "search",
+                            conversionWindowDays: window,
+                            threshold: value
+                        )
+                    }
+                }
+            }
+    }
+
+    func refreshRetentionAtbOnNavigation(isSearch: Bool,
+                                         isDuckAI: Bool,
+                                         completion: @escaping Completion = {})
+    {
         load {
             dispatchPrecondition(condition: .onQueue(.main))
 
-            if isSearch {
+            if isSearch && !isDuckAI {
                 self.refreshSearchRetentionAtb {
-                    self.refreshRetentionAtb(isSearch: false) {
+                    self.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
                         completion()
                     }
                 }
-                PixelKit.fire(GeneralPixel.serp, frequency: .standard)
+                PixelKit.fire(GeneralPixel.serp, frequency: .dailyAndStandard)
                 PixelKit.fire(GeneralPixel.serpInitial, frequency: .uniqueByName)
                 self.fireSearchExperimentPixels()
                 if AppVersion.runType == .normal {
                     self.fireDailyOsVersionCounterPixel()
                 }
                 self.fireDockPixel()
-            } else if !self.statisticsStore.isAppRetentionFiredToday {
+            }
+
+            PixelKit.fireOSDistributionPixel(metric: .client)
+
+            if !self.statisticsStore.isAppRetentionFiredToday {
                 self.refreshAppRetentionAtb(completion: completion)
                 self.fireAppRetentionExperimentPixels()
             } else {
                 self.fireAppRetentionExperimentPixels()
+                completion()
+            }
+        }
+    }
+
+    func refreshRetentionAtbOnDuckAiPromptSubmition(completion: @escaping Completion = {}) {
+        load {
+            dispatchPrecondition(condition: .onQueue(.main))
+
+            let group = DispatchGroup()
+            group.enter()
+            group.enter()
+
+            // The refreshSearchRetentionAtb call below fires the `.searches` OS-distribution pixel
+            // for a Duck.ai prompt, so Duck.ai usage is included in our search + AI-query traffic count.
+            self.refreshSearchRetentionAtb {
+                group.leave()
+            }
+            // Count Duck.ai prompts toward the search experiment metric, but only for experiments enrolled
+            // after this change. Experiments already running are excluded (see
+            // experimentsExcludedFromDuckAISearchMetric) so their search definition doesn't shift mid-flight.
+            self.fireDuckAISearchExperimentPixels()
+
+            self.refreshDuckAIRetentionAtb {
+                group.leave()
+            }
+
+            group.notify(queue: .main) {
                 completion()
             }
         }
@@ -154,6 +288,13 @@ final class StatisticsLoader {
     func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
         dispatchPrecondition(condition: .onQueue(.main))
 
+        PixelKit.fireOSDistributionPixel(metric: .searches)
+
+        guard !isSearchRetentionRequestInProgress else {
+            completion()
+            return
+        }
+
         guard let atbWithVariant = statisticsStore.atbWithVariant,
               let searchRetentionAtb = statisticsStore.searchRetentionAtb ?? statisticsStore.atb
         else {
@@ -166,10 +307,13 @@ final class StatisticsLoader {
 
         Logger.atb.debug("Requesting search retention ATB")
 
+        isSearchRetentionRequestInProgress = true
+
         let url = URL.searchAtb(atbWithVariant: atbWithVariant, setAtb: searchRetentionAtb, isSignedIntoEmailProtection: emailManager.isSignedIn)
         let configuration = APIRequest.Configuration(url: url)
         let request = APIRequest(configuration: configuration, urlSession: URLSession.session(useMainThreadCallbackQueue: true))
         request.fetch { (response, error) in
+            self.isSearchRetentionRequestInProgress = false
             if let error = error {
                 Logger.atb.error("Search atb request failed with error \(error.localizedDescription)")
                 completion()
@@ -232,6 +376,51 @@ final class StatisticsLoader {
         }
     }
 
+    func refreshDuckAIRetentionAtb(completion: @escaping Completion = {}) {
+        dispatchPrecondition(condition: .onQueue(.main))
+        fireNewAIPromptExperimentPixels()
+
+        guard !isDuckAIRetentionRequestInProgress else {
+            completion()
+            return
+        }
+
+        guard let atbWithVariant = statisticsStore.atbWithVariant else {
+            requestInstallStatistics {
+                self.updateUsageSegmentationAfterInstall(activityType: .duckAI)
+                completion()
+            }
+            return
+        }
+
+        Logger.atb.debug("Requesting Duck.ai retention ATB")
+
+        let duckAIRetentionAtb = statisticsStore.duckAIRetentionAtb
+
+        let url = URL.duckAIAtb(atbWithVariant: atbWithVariant, setAtb: duckAIRetentionAtb)
+        let configuration = APIRequest.Configuration(url: url)
+        let request = APIRequest(configuration: configuration, urlSession: URLSession.session(useMainThreadCallbackQueue: true))
+        isDuckAIRetentionRequestInProgress = true
+        request.fetch { (response, error) in
+            self.isDuckAIRetentionRequestInProgress = false
+            if let error = error {
+                Logger.atb.error("Duck.ai atb request failed with error \(error.localizedDescription)")
+                completion()
+                return
+            }
+
+            Logger.atb.debug("Duck.ai retention ATB request succeeded")
+
+            if let data = response?.data, let atb  = try? self.parser.convert(fromJsonData: data) {
+                self.statisticsStore.duckAIRetentionAtb = atb.version
+                self.storeUpdateVersionIfPresent(atb)
+                self.updateUsageSegmentationWithAtb(atb, activityType: .duckAI)
+            }
+
+            completion()
+        }
+    }
+
     func storeUpdateVersionIfPresent(_ atb: Atb) {
         dispatchPrecondition(condition: .onQueue(.main))
 
@@ -246,14 +435,20 @@ final class StatisticsLoader {
         let randomDelay = Double.random(in: 0.5...5)
 
         DispatchQueue.global().asyncAfter(deadline: .now() + randomDelay) {
+            let checker = SupportedOSChecker()
             PixelKit.fire(GeneralPixel.dailyOsVersionCounter,
-                          frequency: .legacyDailyNoSuffix)
+                          frequency: .legacyDailyNoSuffix,
+                          withAdditionalParameters: [
+                            PixelKit.Parameters.osUpgradeCapability: checker.osUpgradeCapability.pixelValue,
+                            PixelKit.Parameters.maxSupportedOSVersion: checker.maxSupportedOSVersion,
+                          ])
         }
     }
 
     private func fireDockPixel() {
-        DispatchQueue.global().asyncAfter(deadline: .now() + Double.random(in: 0.5...5)) {
-            if DockCustomizer().isAddedToDock {
+        let delay = Double.random(in: 0.5...5)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            if self.dockCustomization.isAddedToDock {
                 PixelKit.fire(GeneralPixel.serpAddedToDock,
                               includeAppVersionParameter: false)
             }

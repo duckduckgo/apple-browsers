@@ -20,98 +20,130 @@ import XCTest
 
 final class OnboardingUITests: UITestCase {
 
+    private var welcomeWindow: XCUIElement!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        try resetApplicationData()
+
+        launchOnboarding()
+    }
+
+    /// Launches the app into the onboarding flow.
+    private func launchOnboarding() {
+        app = XCUIApplication.setUp(
+            environment: [
+                "UITEST_MODE_ONBOARDING": "1"
+            ]
+        )
+        app.enforceSingleWindow()
+        welcomeWindow = app.windows["Welcome"]
+    }
+
     override func tearDownWithError() throws {
         try resetApplicationData()
+        try super.tearDownWithError()
     }
 
     func testOnboardingToBrowsing() throws {
-        try resetApplicationData()
-        continueAfterFailure = false
-        let app = XCUIApplication.setUp(environment: [
-            "UITEST_MODE_ONBOARDING": "1"
-        ])
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
-        let welcomeWindow = app.windows["Welcome"]
-
+        // Options button initially disabled on welcome
         let optionsButton = welcomeWindow.buttons["NavigationBarViewController.optionsButton"]
         XCTAssertTrue(optionsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertFalse(optionsButton.isEnabled)
 
         // Get Started
-        XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Ready for a faster browser that keeps you protected?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Hi there."].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        let getStartedButton = welcomeWindow.webViews["Welcome"].buttons["Let’s Do It!"]
+        // The onboarding buttons have no aria-label/identifier, so WebKit exposes their text via `title` rather than `label`.
+        let getStartedButton = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "title ==[c] %@", "Let’s get started!"))
+            .firstMatch
         XCTAssertTrue(getStartedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        getStartedButton.click()
-        // When it clicks on the button the y it's not alligned
-        let centerCoordinate = getStartedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
-        centerCoordinate.tap()
+        // Use coordinate tap to avoid overlay/hittability quirks
+        let centerCoordinate = getStartedButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+        centerCoordinate.click()
 
         // Protections activated
         XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Protections activated!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        let skipButton = welcomeWindow.webViews["Welcome"].buttons["Skip"]
+        // Skip making DuckDuckGo the default browser
+        let skipButton = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "title ==[c] %@", "Skip"))
+            .firstMatch
         XCTAssertTrue(skipButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         skipButton.click()
 
         // Let’s get you set up
         XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Let’s get you set up!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
+        // Skip the dock and import rows
         XCTAssertTrue(skipButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         skipButton.click()
 
-        let importNowButton = welcomeWindow.webViews["Welcome"].buttons["Import Now"]
-        XCTAssertTrue(importNowButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        importNowButton.click()
+        XCTAssertTrue(skipButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        skipButton.click()
 
-        let cancelButton = welcomeWindow.sheets.buttons["Cancel"]
-        XCTAssertTrue(cancelButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        cancelButton.click()
-
-        let nextButtonSetUp = welcomeWindow.webViews["Welcome"].buttons["Next"]
+        let nextButtonSetUp = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "title ==[c] %@", "Next"))
+            .firstMatch
         XCTAssertTrue(nextButtonSetUp.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         nextButtonSetUp.click()
-
-        // Duck Player
-        XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Drowning in ads on YouTube? Not with Duck Player!"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
-        let nextButtonDuckPlayer = welcomeWindow.webViews["Welcome"].buttons["Next"]
-        XCTAssertTrue(nextButtonDuckPlayer.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        nextButtonDuckPlayer.click()
 
         // Customize Experience
         XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Let’s customize a few things…"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
-        // Session Restore
+        // Skip the bookmarks, session restore, and home shortcut rows
         XCTAssertTrue(skipButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         skipButton.click()
 
-        let enableSessionRestoreButton = welcomeWindow.webViews["Welcome"].buttons["Enable Session Restore"]
-        XCTAssertTrue(enableSessionRestoreButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        enableSessionRestoreButton.click()
+        XCTAssertTrue(skipButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        skipButton.click()
 
-        let showHomeButton = welcomeWindow.webViews["Welcome"].buttons["Show Home Button"]
-        XCTAssertTrue(showHomeButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        showHomeButton.click()
+        XCTAssertTrue(skipButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        skipButton.click()
+
+        let nextButtonCustomize = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "title ==[c] %@", "Next"))
+            .firstMatch
+        XCTAssertTrue(nextButtonCustomize.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        nextButtonCustomize.click()
+
+        // AI Chat
+        XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Want easy access to private AI Chat?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         // Start Browsing
-        let startBrowsingButton = welcomeWindow.webViews["Welcome"].buttons["Start Browsing"]
+        let startBrowsingButton = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "title ==[c] %@", "Start Browsing"))
+            .firstMatch
         XCTAssertTrue(startBrowsingButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         startBrowsingButton.click()
 
         // AfterOnboarding
         let ddgLogo = app.windows.webViews.groups.containing(.image, identifier: "DuckDuckGo Logo").element
-        XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        let homePageSubTitle = app.windows.webViews.groups.containing(.staticText, identifier: "Protection. Privacy. Peace of mind.").element
-        XCTAssertTrue(homePageSubTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        let tooltip = app.windows.webViews.groups.containing(.staticText, identifier: "Toggle between search and AI chat").element
+        XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    func testDuckAIIsUnavailableDuringOnboarding() throws {
+        let button = app.windows.buttons[XCUIApplication.AccessibilityIdentifiers.aiChatButton]
+
+        XCTAssertFalse(button.exists, "AIChat Button should NOT be visible during onboarding")
+    }
+
+    func testPassiveAddressBarShowsWelcomeMessage() throws {
+        let passiveTextField = app.staticTexts[XCUIApplication.AccessibilityIdentifiers.addressBarPassiveTextField]
+
+        XCTAssertTrue(passiveTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "(Passive) AddressBar TextField should be visible")
+        XCTAssertEqual(passiveTextField.value as? String, "Welcome")
     }
 
     func resetApplicationData() throws {
+        let bundleID = try XCTUnwrap(XCUIApplication().bundleID)
         let commands = [
-            "/usr/bin/defaults delete com.duckduckgo.macos.browser.review",
-            "/bin/rm -rf ~/Library/Containers/com.duckduckgo.macos.browser.review/Data",
-            "/usr/bin/defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1"
+            "/usr/bin/defaults delete \(bundleID)",
+            "/bin/rm -rf ~/Library/Containers/\(bundleID)/Data/* || true",
+            "/usr/bin/defaults write \(bundleID) moveToApplicationsFolderAlertSuppress 1"
         ]
 
         for command in commands {

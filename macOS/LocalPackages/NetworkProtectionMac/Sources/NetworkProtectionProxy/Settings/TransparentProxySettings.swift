@@ -173,7 +173,8 @@ public final class TransparentProxySettings: TransparentProxySettingsProviding {
     // MARK: - Snapshot support
 
     public func snapshot() -> TransparentProxySettingsSnapshot {
-        .init(appRoutingRules: appRoutingRules, excludedDomains: excludedDomains)
+        .init(appRoutingRules: appRoutingRules,
+              excludedDomains: excludedDomains)
     }
 
     public func apply(_ snapshot: TransparentProxySettingsSnapshot) {
@@ -198,4 +199,10 @@ public struct TransparentProxySettingsSnapshot: Codable {
 
     public let appRoutingRules: VPNAppRoutingRules
     public let excludedDomains: [String]
+
+    public init(appRoutingRules: VPNAppRoutingRules,
+                excludedDomains: [String]) {
+        self.appRoutingRules = appRoutingRules
+        self.excludedDomains = excludedDomains
+    }
 }

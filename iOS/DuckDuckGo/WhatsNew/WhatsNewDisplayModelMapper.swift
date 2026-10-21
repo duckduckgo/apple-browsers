@@ -1,0 +1,233 @@
+//
+//  WhatsNewDisplayModelMapper.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import DesignResourcesKitIcons
+import RemoteMessaging
+
+protocol WhatsNewDisplayModelMapping {
+    func makeDisplayModel(
+        from message: RemoteMessageModel,
+        onMessageAppear: @escaping () -> Void,
+        onItemAppear: @escaping (_ itemId: String) -> Void,
+        onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
+        onPrimaryAction: @escaping (RemoteAction) async -> Void,
+        onDismiss: @escaping () -> Void
+    ) -> RemoteMessagingUI.CardsListDisplayModel?
+}
+
+struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
+
+    let imageLoader: RemoteMessagingImageLoading?
+    let pixelReporter: RemoteMessagingPixelReporting?
+
+    init(imageLoader: RemoteMessagingImageLoading? = nil, pixelReporter: RemoteMessagingPixelReporting? = nil) {
+        self.imageLoader = imageLoader
+        self.pixelReporter = pixelReporter
+    }
+
+    /// Maps a RemoteMessageModel to CardsListDisplayModel
+    /// Returns nil if message is not a cardsList type
+    /// - Parameters:
+    ///   - message: The remote message to map
+    ///   - onItemAction: Closure called when an item action is tapped
+    ///   - onPrimaryAction: Closure called when the primary action is tapped
+    ///   - onDismiss: Closure called after primary action completes
+    /// - Returns: CardsListDisplayModel if message is cardsList, nil otherwise
+    func makeDisplayModel(
+        from message: RemoteMessageModel,
+        onMessageAppear: @escaping () -> Void,
+        onItemAppear: @escaping (_ itemId: String) -> Void,
+        onItemAction: @escaping (_ action: RemoteAction, _ itemId: String) async -> Void,
+        onPrimaryAction: @escaping (RemoteAction) async -> Void,
+        onDismiss: @escaping () -> Void
+    ) -> RemoteMessagingUI.CardsListDisplayModel? {
+
+        func mapRemoteListItems(_ remoteListItems: [RemoteMessageModelType.ListItem]) -> [RemoteMessagingUI.CardsListDisplayModel.Item] {
+            // Map items to display model items
+            remoteListItems.map { remoteListItem in
+                switch remoteListItem.type {
+                    // Map Title Section Item
+                case let .titledSection(titleText, _):
+                    return RemoteMessagingUI.CardsListDisplayModel.Item.section(title: titleText)
+                    // Map Featured Two Lines Card Item
+                case let .featuredTwoLinesSingleActionItem(titleText, descriptionText, placeholderImage, imageUrl, primaryActionText, primaryAction):
+                    let imageLoading = makeCardImageLoading(itemId: remoteListItem.id, imageUrl: imageUrl, message: message)
+                    let featuredTwoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.FeaturedTwoLinesCard(
+                        icon: placeholderImage.rawValue,
+                        title: titleText,
+                        description: descriptionText,
+                        actionButtonTitle: primaryActionText,
+                        cachedImage: imageLoading.cachedImage,
+                        imageUrl: imageUrl,
+                        loadImage: imageLoading.loadImage,
+                        onImageLoadSuccess: imageLoading.onLoadSuccess,
+                        onImageLoadFailed: imageLoading.onLoadFailed,
+                        onAppear: {
+                            onItemAppear(remoteListItem.id)
+                        },
+                        onTapAction: primaryAction.map { action in
+                            makeAction(for: action, itemId: remoteListItem.id, handler: onItemAction)
+                        }
+                    )
+                    return RemoteMessagingUI.CardsListDisplayModel.Item.featuredTwoLinesCard(featuredTwoLinesCard)
+                    // Map Two Lines Card Item
+                case let .twoLinesItem(titleText, descriptionText, placeholderImage, imageUrl, action):
+                    let disclosureIcon = action != nil ? Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall) : nil
+                    let imageLoading = makeCardImageLoading(itemId: remoteListItem.id, imageUrl: imageUrl, message: message)
+                    let twoLinesCard = RemoteMessagingUI.CardsListDisplayModel.Item.TwoLinesCard(
+                        icon: placeholderImage.rawValue,
+                        title: titleText,
+                        description: descriptionText,
+                        disclosureIcon: disclosureIcon,
+                        cachedImage: imageLoading.cachedImage,
+                        imageUrl: imageUrl,
+                        loadImage: imageLoading.loadImage,
+                        onImageLoadSuccess: imageLoading.onLoadSuccess,
+                        onImageLoadFailed: imageLoading.onLoadFailed,
+                        onAppear: {
+                            onItemAppear(remoteListItem.id)
+                        },
+                        onTapAction: action.map { action in
+                            makeAction(for: action, itemId: remoteListItem.id, handler: onItemAction)
+                        }
+                    )
+                    return RemoteMessagingUI.CardsListDisplayModel.Item.twoLinesCard(twoLinesCard)
+                }
+            }
+        }
+
+        guard
+            let contentType = message.content,
+            case let .cardsList(mainTitleText, placeholder, imageUrl, items, primaryActionText, primaryAction) = contentType
+        else {
+            return nil
+        }
+
+        let listItems = mapRemoteListItems(items)
+
+        let preloadedHeaderImage: UIImage? = imageUrl.flatMap { imageLoader?.cachedImage(for: $0) }
+
+        if preloadedHeaderImage != nil {
+            pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
+        }
+
+        let loadHeaderImage: ((URL) async throws -> UIImage)? = if preloadedHeaderImage == nil {
+            imageLoader.map { loader in
+                { url in try await loader.loadImage(from: url) }
+            }
+        } else {
+            nil
+        }
+
+        return RemoteMessagingUI.CardsListDisplayModel(
+            screenTitle: mainTitleText,
+            icon: placeholder?.rawValue,
+            preloadedHeaderImage: preloadedHeaderImage,
+            headerImageUrl: imageUrl,
+            loadHeaderImage: loadHeaderImage,
+            onHeaderImageLoadSuccess: preloadedHeaderImage == nil ? { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageImageLoadSuccess(message)
+            } : nil,
+            onHeaderImageLoadFailed: preloadedHeaderImage == nil ? { [pixelReporter, message] in
+                pixelReporter?.measureRemoteMessageImageLoadFailed(message)
+            } : nil,
+            items: listItems,
+            onAppear: onMessageAppear,
+            primaryAction: (
+                title: primaryActionText,
+                action: makeAction(for: primaryAction, handler: onPrimaryAction, andDismiss: onDismiss)
+            )
+        )
+    }
+
+    // MARK: - Private
+
+    private struct CardImageLoading {
+        let cachedImage: (() -> UIImage?)?
+        let loadImage: ((URL) async throws -> UIImage)?
+        let onLoadSuccess: (() -> Void)?
+        let onLoadFailed: (() -> Void)?
+    }
+
+    private final class ImageLoadReportGuard {
+        private var hasReported = false
+
+        func markReportedIfNeeded() -> Bool {
+            guard !hasReported else { return false }
+            hasReported = true
+            return true
+        }
+    }
+
+    private func makeCardImageLoading(itemId: String, imageUrl: URL?, message: RemoteMessageModel) -> CardImageLoading {
+        guard let imageUrl, let imageLoader else {
+            return CardImageLoading(cachedImage: nil, loadImage: nil, onLoadSuccess: nil, onLoadFailed: nil)
+        }
+
+        // Always pass a closure so the View can re-check the cache after LazyVStack
+        // recycling, instead of receiving a single value snapshotted here.
+        let cachedImage: () -> UIImage? = { [imageLoader] in imageLoader.cachedImage(for: imageUrl) }
+        let loadImage: (URL) async throws -> UIImage = { [imageLoader] url in
+            try await imageLoader.loadImage(from: url)
+        }
+
+        let reportGuard = ImageLoadReportGuard()
+        return CardImageLoading(
+            cachedImage: cachedImage,
+            loadImage: loadImage,
+            onLoadSuccess: { [pixelReporter, message] in
+                guard reportGuard.markReportedIfNeeded() else { return }
+                pixelReporter?.measureRemoteMessageCardImageLoadSuccess(message, cardId: itemId)
+            },
+            onLoadFailed: { [pixelReporter, message] in
+                guard reportGuard.markReportedIfNeeded() else { return }
+                pixelReporter?.measureRemoteMessageCardImageLoadFailed(message, cardId: itemId)
+            }
+        )
+    }
+
+    // For actions without ID (primary action)
+    private func makeAction(
+        for remoteAction: RemoteAction,
+        handler: @escaping (RemoteAction) async -> Void,
+        andDismiss dismissAction: (() -> Void)? = nil
+    ) -> () -> Void {
+        return {
+            Task { @MainActor in
+                await handler(remoteAction)
+                dismissAction?()
+            }
+        }
+    }
+
+    // For actions with ID (item actions)
+    private func makeAction(
+        for remoteAction: RemoteAction,
+        itemId: String,
+        handler: @escaping (RemoteAction, String) async -> Void
+    ) -> () -> Void {
+        return {
+            Task { @MainActor in
+                await handler(remoteAction, itemId)
+            }
+        }
+    }
+
+}

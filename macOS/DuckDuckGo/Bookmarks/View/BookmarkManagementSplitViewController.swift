@@ -22,14 +22,27 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
 
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
+    private let pinningManager: PinningManager
     weak var delegate: BrowserTabSelectionDelegate?
 
-    lazy var sidebarViewController: BookmarkManagementSidebarViewController = BookmarkManagementSidebarViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
-    lazy var detailViewController: BookmarkManagementDetailViewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+    private static let minimumSidebarWidth: CGFloat = 150
+    private static let maximumSidebarWidth: CGFloat = 400
+    private static let defaultSidebarWidth: CGFloat = 320
+    private static let minimumDetailWidth: CGFloat = 415
 
-    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
+    /// We own the sidebar width; NSSplitViewController's Auto Layout otherwise overrides the dragged divider position.
+    private var sidebarWidthConstraint: NSLayoutConstraint?
+
+    /// User's chosen width; the constraint may be clamped smaller on a narrow window and restored when space allows.
+    private lazy var preferredSidebarWidth: CGFloat = Self.defaultSidebarWidth
+
+    lazy var sidebarViewController: BookmarkManagementSidebarViewController = BookmarkManagementSidebarViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+    lazy var detailViewController: BookmarkManagementDetailViewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
+
+    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
+        self.pinningManager = pinningManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -37,23 +50,32 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
         fatalError("\(type(of: self)): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        if isViewLoaded {
+            sidebarViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            detailViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
+    }
+
     override func loadView() {
         title = UserText.bookmarks
 
         splitView.dividerStyle = .thin
         splitView.isVertical = true
-        splitView.setValue(NSColor.divider, forKey: #keyPath(NSSplitView.dividerColor))
+        splitView.setValue(NSColor(resource: .divider), forKey: #keyPath(NSSplitView.dividerColor))
 
         let sidebarViewItem = NSSplitViewItem(contentListWithViewController: sidebarViewController)
-        sidebarViewItem.minimumThickness = 128
-        sidebarViewItem.maximumThickness = 256
-        sidebarViewItem.holdingPriority = .defaultLow
+        sidebarViewItem.minimumThickness = Self.minimumSidebarWidth
+        sidebarViewItem.maximumThickness = Self.maximumSidebarWidth
+        sidebarViewItem.holdingPriority = .defaultHigh
 
         addSplitViewItem(sidebarViewItem)
 
         let detailViewItem = NSSplitViewItem(viewController: detailViewController)
-        detailViewItem.minimumThickness = 415
-        detailViewItem.holdingPriority = .dragThatCannotResizeWindow
+        detailViewItem.minimumThickness = Self.minimumDetailWidth
+        detailViewItem.holdingPriority = .defaultLow
         addSplitViewItem(detailViewItem)
 
         view = splitView
@@ -64,6 +86,26 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
 
         sidebarViewController.delegate = self
         detailViewController.delegate = self
+
+        // Just below `.required`: wins over holding-priority constraints but still yields to the min/max thickness.
+        let widthConstraint = sidebarViewController.view.widthAnchor.constraint(equalToConstant: Self.defaultSidebarWidth)
+        widthConstraint.priority = .init(999)
+        widthConstraint.isActive = true
+        sidebarWidthConstraint = widthConstraint
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        guard splitView.bounds.width > 0 else { return }
+        // Re-clamp on resize so the detail pane keeps its minimum; the preferred width returns when space allows.
+        let clamped = max(Self.minimumSidebarWidth, min(preferredSidebarWidth, maxSidebarWidth(in: splitView)))
+        if sidebarWidthConstraint?.constant != clamped {
+            sidebarWidthConstraint?.constant = clamped
+        }
+    }
+
+    private func maxSidebarWidth(in splitView: NSSplitView) -> CGFloat {
+        min(Self.maximumSidebarWidth, splitView.bounds.width - splitView.dividerThickness - Self.minimumDetailWidth)
     }
 
     /// If search bar is focused, make it so that clicking outside of it
@@ -85,13 +127,12 @@ extension BookmarkManagementSplitViewController: BookmarkManagementSidebarViewCo
         delegate?.selectedTabContent(content)
     }
 
-    override func splitView(_ splitView: NSSplitView,
-                            effectiveRect proposedEffectiveRect: NSRect,
-                            forDrawnRect drawnRect: NSRect,
-                            ofDividerAt dividerIndex: Int) -> NSRect {
-        // Prevent drag cursor from appearing on split view divider
-        // From: https://stackoverflow.com/a/9571348
-        return NSRect.zero
+    override func splitView(_ splitView: NSSplitView, constrainSplitPosition proposedPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
+        // Cap so the detail pane keeps its minimum width even on a narrow bookmarks area.
+        let clamped = max(Self.minimumSidebarWidth, min(proposedPosition, maxSidebarWidth(in: splitView)))
+        preferredSidebarWidth = clamped
+        sidebarWidthConstraint?.constant = clamped
+        return clamped
     }
 
 }
@@ -150,7 +191,7 @@ private let previewSize = NSSize(width: 700, height: 660)
         return manager
     }()
 
-    let vc = BookmarkManagementSplitViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
+    let vc = BookmarkManagementSplitViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman), pinningManager: Application.appDelegate.pinningManager)
     vc.preferredContentSize = previewSize
     return vc
 

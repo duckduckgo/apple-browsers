@@ -22,6 +22,11 @@ import BrowserServicesKit
 
 final class SafariDataImporter: DataImporter {
 
+    enum Constants {
+        static let bookmarksFileName = "Bookmarks.plist"
+        static let maxFavoritesCount = 12
+    }
+
     @MainActor
     static func requestDataDirectoryPermission(for fileUrl: URL) -> URL? {
         let openPanel = NSOpenPanel()
@@ -42,13 +47,11 @@ final class SafariDataImporter: DataImporter {
     private var source: DataImport.Source {
         profile.browser.importSource
     }
-    private let featureFlagger: FeatureFlagger
 
-    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager, featureFlagger: FeatureFlagger) {
+    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager) {
         self.profile = profile
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
-        self.featureFlagger = featureFlagger
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -62,16 +65,14 @@ final class SafariDataImporter: DataImporter {
         }
     }
 
-    static let bookmarksFileName = "Bookmarks.plist"
-
     private var fileUrl: URL {
-        profile.profileURL.appendingPathComponent(Self.bookmarksFileName)
+        profile.profileURL.appendingPathComponent(Self.Constants.bookmarksFileName)
     }
 
     func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
         guard types.contains(.bookmarks) else { return nil }
 
-        if case .failure(let error) = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger).validateFileReadAccess() {
+        if case .failure(let error) = SafariBookmarksReader(safariBookmarksFileURL: fileUrl).validateFileReadAccess() {
             return [.bookmarks: error]
         }
         return nil
@@ -82,19 +83,27 @@ final class SafariDataImporter: DataImporter {
         // logins will be imported from CSV
         guard types.contains(.bookmarks) else { return [:] }
 
-        let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger)
+        let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl)
         let bookmarkResult = bookmarkReader.readBookmarks()
 
-        let summary = bookmarkResult.map { bookmarks in
-            let maxFavoritesCount = featureFlagger.isFeatureOn(.updateSafariBookmarksImport) ? 12 : nil
-            return bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
-        }
+        var summary = DataImportSummary()
 
-        if case .success = summary {
+        switch bookmarkResult {
+        case .success(let bookmarks):
+            let bookmarksSummary = bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: Constants.maxFavoritesCount)
+
             await importFavicons(from: profile.profileURL)
+
+            let numberOfFavorites = min(bookmarks.topLevelFolders.bookmarkBar?.children?.count ?? 0, Constants.maxFavoritesCount)
+            PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: profile.installedAppsMajorVersionDescription(), favoritesBucket: .init(count: numberOfFavorites)), frequency: .dailyAndStandard)
+
+            summary[.bookmarks] = .success(.init(bookmarksSummary))
+        case .failure(let error):
+            // We don't fire GeneralPixel.favoritesImportFailed here because any failures are due to bookmarks parsing, not fetching/importing favorites.
+            summary[.bookmarks] = .failure(error)
         }
 
-        return [.bookmarks: summary.map { .init($0) }]
+        return summary
     }
 
     private func importFavicons(from dataDirectoryURL: URL) async {

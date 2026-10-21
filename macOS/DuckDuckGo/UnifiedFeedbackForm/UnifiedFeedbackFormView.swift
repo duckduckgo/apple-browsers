@@ -99,7 +99,7 @@ private struct FeedbackFormBodyView: View {
             case .selectFeature, nil:
                 EmptyView()
             case .subscription:
-                CategoryPicker(options: PrivacyProFeedbackSubcategory.allCases, selection: $viewModel.selectedSubcategory) {
+                CategoryPicker(options: viewModel.availableSubscriptionSubcategories, selection: $viewModel.selectedSubcategory) {
                     issueDescriptionView()
                 }
             case .vpn:
@@ -123,6 +123,16 @@ private struct FeedbackFormBodyView: View {
     }
 
     @ViewBuilder
+    func supportLink() -> some View {
+        Text(.init(UserText.pproFeedbackFormSupportText))
+            .onURLTap { _ in
+                Task {
+                    await viewModel.process(action: .contactSupportClick)
+                }
+            }
+    }
+
+    @ViewBuilder
     func issueDescriptionView() -> some View {
         FeedbackFormIssueDescriptionView {
             Text(LocalizedStringKey(UserText.pproFeedbackFormText1))
@@ -133,12 +143,7 @@ private struct FeedbackFormBodyView: View {
                     }
                 }
         } content: {
-            Text(UserText.pproFeedbackFormEmailLabel)
-                .multilineTextAlignment(.leading)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
-            TextField(UserText.pproFeedbackFormEmailPlaceholder, text: $viewModel.userEmail)
-                .textFieldStyle(.roundedBorder)
+            supportLink()
         } footer: {
             Text(UserText.pproFeedbackFormText2)
             VStack(alignment: .leading) {
@@ -237,31 +242,7 @@ private struct FeedbackFormIssueDescriptionView<Label: View, Content: View, Foot
 
     @ViewBuilder
     func textEditor() -> some View {
-#if APPSTORE
         FocusableTextEditor(text: $viewModel.feedbackFormText, characterLimit: 1000)
-#else
-        if #available(macOS 12, *) {
-            FocusableTextEditor(text: $viewModel.feedbackFormText, characterLimit: 1000)
-        } else {
-            TextEditor(text: $viewModel.feedbackFormText)
-                .frame(height: 197.0)
-                .font(.body)
-                .foregroundColor(.primary)
-                .onChange(of: viewModel.feedbackFormText) {
-                    viewModel.feedbackFormText = String($0.prefix(1000))
-                }
-                .padding(EdgeInsets(top: 3.0, leading: 6.0, bottom: 5.0, trailing: 0.0))
-                .clipShape(RoundedRectangle(cornerRadius: 8.0, style: .continuous))
-                .background(
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8.0)
-                            .stroke(Color(.textEditorBorder), lineWidth: 0.4)
-                        RoundedRectangle(cornerRadius: 8.0)
-                            .fill(Color(.textEditorBackground))
-                    }
-                )
-        }
-#endif
     }
 }
 

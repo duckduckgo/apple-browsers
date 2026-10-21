@@ -1,0 +1,101 @@
+//
+//  NewAddressBarPickerViewController.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit
+import SwiftUI
+import AIChat
+import Core
+import PixelKit
+
+final class NewAddressBarPickerViewController: UIViewController {
+    
+    private let aiChatSettings: AIChatSettingsProvider
+    private let omniBarFocuser: OmniBarFocuserProvider?
+
+    init(aiChatSettings: AIChatSettingsProvider,
+         omniBarFocuser: OmniBarFocuserProvider? = nil) {
+        self.aiChatSettings = aiChatSettings
+        self.omniBarFocuser = omniBarFocuser
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private var hostingController: UIHostingController<NewAddressBarPickerRefreshContentView>!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        setupContentView()
+        PixelKit.fire(Pixel.Event.aiChatNewAddressBarPickerV2Displayed, frequency: .dailyAndCount)
+    }
+    
+    private func setupContentView() {
+        let rootView = buildContentView()
+
+        hostingController = UIHostingController(rootView: rootView)
+        hostingController.view.backgroundColor = .clear
+        
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        
+        hostingController.didMove(toParent: self)
+    }
+
+    private func buildContentView() -> NewAddressBarPickerRefreshContentView {
+        let viewModel = NewAddressBarPickerViewModel(aiChatSettings: aiChatSettings) { [weak self] isToggleEnabled in
+            self?.dismissAndFocusOmnibarIfNeeded(isToggleEnabled: isToggleEnabled)
+        }
+
+        return NewAddressBarPickerRefreshContentView(viewModel: viewModel)
+    }
+
+    private func dismissAndFocusOmnibarIfNeeded(animated: Bool = true, isToggleEnabled: Bool) {
+        let omniBarFocuser = self.omniBarFocuser
+
+        dismiss(animated: animated) {
+            guard isToggleEnabled, let omniBarFocuser else {
+                return
+            }
+
+            omniBarFocuser.focusOmniBar()
+        }
+    }
+
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            return .portrait
+        case .pad:
+            return .all
+        default:
+            return .all
+        }
+    }
+}

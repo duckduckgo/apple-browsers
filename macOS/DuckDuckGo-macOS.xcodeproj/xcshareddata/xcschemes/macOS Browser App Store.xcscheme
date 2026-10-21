@@ -75,7 +75,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "killall tests-server&#10;killall sandbox-test-tool&#10;pushd &quot;${METAL_LIBRARY_OUTPUT_DIR}&quot;&#10;&quot;${BUILT_PRODUCTS_DIR}/tests-server&quot; &amp;&#10;popd&#10;">
+               scriptText = "killall tests-server&#10;pushd &quot;${METAL_LIBRARY_OUTPUT_DIR}&quot;&#10;&quot;${BUILT_PRODUCTS_DIR}/tests-server&quot; &amp;&#10;popd&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"
@@ -93,7 +93,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "killall tests-server&#10;killall sandbox-test-tool&#10;">
+               scriptText = "killall tests-server&#10;">
             </ActionContent>
          </ExecutionAction>
       </PostActions>
@@ -174,6 +174,9 @@
                <Test
                   Identifier = "EncryptionKeyStoreTests">
                </Test>
+               <Test
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager()">
+               </Test>
             </SkippedTests>
          </TestableReference>
          <TestableReference
@@ -220,9 +223,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SyncUITests"
-               BuildableName = "SyncUITests"
-               BlueprintName = "SyncUITests"
+               BlueprintIdentifier = "SyncUI-macOSTests"
+               BuildableName = "SyncUI-macOSTests"
+               BlueprintName = "SyncUI-macOSTests"
                ReferencedContainer = "container:LocalPackages/SyncUI-macOS">
             </BuildableReference>
          </TestableReference>
@@ -244,6 +247,76 @@
                BuildableName = "VPNTests"
                BlueprintName = "VPNTests"
                ReferencedContainer = "container:../SharedPackages/VPN">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "URLPredictorTests"
+               BuildableName = "URLPredictorTests"
+               BlueprintName = "URLPredictorTests"
+               ReferencedContainer = "container:../SharedPackages/URLPredictor">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "EventHubTests"
+               BuildableName = "EventHubTests"
+               BlueprintName = "EventHubTests"
+               ReferencedContainer = "container:../SharedPackages/EventHub">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppStoreAppUpdaterTests"
+               BuildableName = "AppStoreAppUpdaterTests"
+               BlueprintName = "AppStoreAppUpdaterTests"
+               ReferencedContainer = "container:LocalPackages/AppUpdater">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppUpdaterSharedTests"
+               BuildableName = "AppUpdaterSharedTests"
+               BlueprintName = "AppUpdaterSharedTests"
+               ReferencedContainer = "container:LocalPackages/AppUpdater">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BWManagementSharedTests"
+               BuildableName = "BWManagementSharedTests"
+               BlueprintName = "BWManagementSharedTests"
+               ReferencedContainer = "container:LocalPackages/BWIntegration">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BWManagementTests"
+               BuildableName = "BWManagementTests"
+               BlueprintName = "BWManagementTests"
+               ReferencedContainer = "container:LocalPackages/BWIntegration">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppStoreCrashCollectionTests"
+               BuildableName = "AppStoreCrashCollectionTests"
+               BlueprintName = "AppStoreCrashCollectionTests"
+               ReferencedContainer = "container:LocalPackages/CrashReporting">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -278,6 +351,18 @@
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "CI"
+            value = "$(CI)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SKIP_SNAPSHOT_TESTS"
+            value = "1"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

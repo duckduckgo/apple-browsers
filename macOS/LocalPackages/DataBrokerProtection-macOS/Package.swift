@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -22,40 +22,52 @@ import PackageDescription
 
 let package = Package(
     name: "DataBrokerProtection-macOS",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("12.3") ],
     products: [
         .library(
             name: "DataBrokerProtection-macOS",
             targets: ["DataBrokerProtection-macOS"])
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/WideEvent"),
+        .package(path: "../../../SharedPackages/Persistence"),
+        .package(path: "../../../SharedPackages/PixelKit"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),
         .package(path: "../XPCHelper"),
         .package(path: "../Freemium"),
         .package(path: "../NetworkProtectionMac"),
-        .package(path: "../FeatureFlags"),
-        .package(path: "../VPN"),
+        .package(path: "../FeatureFlags-macOS"),
+        .package(path: "../../../SharedPackages/VPN"),
+        .package(path: "../LoginItems"),
     ],
     targets: [
         .target(
             name: "DataBrokerProtection-macOS",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
+                .product(name: "DataBrokerProtectionDebugServer", package: "DataBrokerProtectionCore"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "AppKitExtensions", package: "AppKitExtensions"),
                 .byName(name: "XPCHelper"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "Configuration", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
                 .product(name: "Freemium", package: "Freemium"),
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
                 .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
+                .product(name: "LoginItems", package: "LoginItems"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -68,10 +80,12 @@ let package = Package(
                 "DataBrokerProtectionCore",
                 .product(name: "DataBrokerProtectionCoreTestsUtils", package: "DataBrokerProtectionCore"),
                 "BrowserServicesKit",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 "Freemium",
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
-                .product(name: "FeatureFlags", package: "FeatureFlags"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
             ]
         )
     ]

@@ -19,12 +19,23 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import BrowserServicesKit
+import History
+import NewTabPage
+import Persistence
+import PrivacyConfig
 import UserScript
 import Configuration
+import DDGSync
+import WebExtensions
 
 extension ContentBlockerRulesIdentifier.Difference {
     static let notification = ContentBlockerRulesIdentifier.Difference(rawValue: 1 << 8)
+}
+
+protocol UserScriptDependenciesProviding: AnyObject {
+    var syncService: DDGSyncing? { get }
 }
 
 final class UserContentUpdating {
@@ -33,10 +44,11 @@ final class UserContentUpdating {
     struct NewContent: UserContentControllerNewContent {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
+        let contentScopePreferences: ContentScopePreferences
 
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { sourceProvider in
-                UserScripts(with: sourceProvider)
+            { [contentScopePreferences] sourceProvider in
+                UserScripts(with: sourceProvider, contentScopePreferences: contentScopePreferences)
             }
         }
     }
@@ -46,43 +58,62 @@ final class UserContentUpdating {
 
     private(set) var userContentBlockingAssets: AnyPublisher<UserContentUpdating.NewContent, Never>!
 
+    weak var userScriptDependenciesProvider: UserScriptDependenciesProviding? {
+        didSet {
+            isDependenciesProviderInitialized = true
+        }
+    }
+
+    /// This property is used to avoid race condition upon app initialization.
+    ///
+    /// `makeValue` closure in the initializer requires `userScriptDependenciesProvider`
+    /// but the dependencies provider is only set after the initializer returns.
+    /// In the rare case when `AppDelegate.init` takes too long, and content blocking
+    /// rules get updated before dependencies provider is assigned, `makeValue` might use
+    /// nil dependencies. By halting `updatesStream` until this property
+    /// is `true` we ensure that `ScriptSourceProvider` is initialized with a correct
+    /// values of user script dependencies.
+    ///
+    /// - Note: This was introduced for "New Tab Page per Tab" feature that has
+    ///         ultimately been reverted. This logic stays in place to support
+    ///         future user script dependencies that may need similar handling.
+    ///
+    @Published private var isDependenciesProviderInitialized: Bool = false
+
+    @MainActor
+    private lazy var syncServiceProvider: () -> DDGSyncing? = { [weak userScriptDependenciesProvider] in
+        return userScriptDependenciesProvider?.syncService
+    }
+
     @MainActor
     init(contentBlockerRulesManager: ContentBlockerRulesManagerProtocol,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          trackerDataManager: TrackerDataManager,
          configStorage: ConfigurationStoring,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+         duckPlayer: DuckPlayer,
          experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
          tld: TLD,
+         featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
+         themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,
          windowControllersManager: WindowControllersManagerProtocol,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         pinningManager: PinningManager,
          historyCoordinator: HistoryDataSource,
          fireproofDomains: DomainFireproofStatusProviding,
-         fireCoordinator: FireCoordinator
+         fireCoordinator: FireCoordinator,
+         autoconsentManagement: AutoconsentManagement,
+         contentScopePreferences: ContentScopePreferences,
+         syncErrorHandler: SyncErrorHandling,
+         webExtensionAvailability: WebExtensionAvailabilityProviding?,
+         dockCustomization: DockCustomization,
+         reinstallUserDetection: ReinstallingUserDetecting,
+         installDateProvider: @escaping () -> Date
     ) {
-
-        let makeValue: (Update) -> NewContent = { rulesUpdate in
-            let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
-                                                      privacyConfigurationManager: privacyConfigurationManager,
-                                                      webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                      contentBlockingManager: contentBlockerRulesManager,
-                                                      trackerDataManager: trackerDataManager,
-                                                      experimentManager: experimentManager(),
-                                                      tld: tld,
-                                                      onboardingNavigationDelegate: onboardingNavigationDelegate,
-                                                      appearancePreferences: appearancePreferences,
-                                                      startupPreferences: startupPreferences,
-                                                      windowControllersManager: windowControllersManager,
-                                                      bookmarkManager: bookmarkManager,
-                                                      historyCoordinator: historyCoordinator,
-                                                      fireproofDomains: fireproofDomains,
-                                                      fireCoordinator: fireCoordinator)
-            return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
-        }
-
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
             return NotificationCenter.default.publisher(for: name)
                 .prepend([Notification(name: .init(rawValue: "initial"))])
@@ -95,21 +126,78 @@ final class UserContentUpdating {
             return Update(rules: update.rules, changes: changes, completionTokens: update.completionTokens)
         }
 
-        // 1. Collect updates from ContentBlockerRulesManager and generate UserScripts based on its output
-        cancellable = contentBlockerRulesManager.updatesPublisher
-            // regenerate UserScripts on gpcEnabled preference updated
-            .combineLatest(webTrackingProtectionPreferences.$isGPCEnabled)
-            .map { $0.0 } // drop gpcEnabled value: $0.1
-            .combineLatest(onNotificationWithInitial(.autofillUserSettingsDidChange), combine)
-            .combineLatest(onNotificationWithInitial(.autofillScriptDebugSettingsDidChange), combine)
-            // DefaultScriptSourceProvider instance should be created once per rules/config change and fed into UserScripts initialization
-            .map(makeValue)
-            .assign(to: \.bufferedValue, onWeaklyHeld: self) // buffer latest update value
-
         // 2. Publish ContentBlockingAssets(Rules+Scripts) for WKUserContentController per subscription
         self.userContentBlockingAssets = $bufferedValue
             .compactMap { $0 } // drop initial nil
             .eraseToAnyPublisher()
+
+        let makeValue: (Update) async -> NewContent = { [weak self] rulesUpdate in
+            let syncServiceProvider = self?.syncServiceProvider ?? { nil }
+            let newContentTask = Task.detached(priority: .utility) {
+                let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
+                                                          privacyConfigurationManager: privacyConfigurationManager,
+                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                          cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                                                          duckPlayer: duckPlayer,
+                                                          contentBlockingManager: contentBlockerRulesManager,
+                                                          trackerDataManager: trackerDataManager,
+                                                          experimentManager: experimentManager(),
+                                                          tld: tld,
+                                                          featureFlagger: featureFlagger,
+                                                          onboardingNavigationDelegate: onboardingNavigationDelegate,
+                                                          appearancePreferences: appearancePreferences,
+                                                          themeManager: themeManager,
+                                                          startupPreferences: startupPreferences,
+                                                          windowControllersManager: windowControllersManager,
+                                                          bookmarkManager: bookmarkManager,
+                                                          pinningManager: pinningManager,
+                                                          historyCoordinator: historyCoordinator,
+                                                          fireproofDomains: fireproofDomains,
+                                                          fireCoordinator: fireCoordinator,
+                                                          autoconsentManagement: autoconsentManagement,
+                                                          syncServiceProvider: syncServiceProvider,
+                                                          syncErrorHandler: syncErrorHandler,
+                                                          webExtensionAvailability: webExtensionAvailability,
+                                                          dockCustomization: dockCustomization,
+                                                          reinstallUserDetection: reinstallUserDetection,
+                                                          installDateProvider: installDateProvider)
+                return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
+            }
+            return await newContentTask.value
+        }
+
+        let updatesStream = AsyncStream { continuation in
+            // 1. Collect updates from ContentBlockerRulesManager and generate UserScripts based on its output
+            let cancellable = contentBlockerRulesManager.updatesPublisher
+            // regenerate UserScripts on gpcEnabled preference updated
+                .combineLatest(webTrackingProtectionPreferences.$isGPCEnabled)
+                .map { $0.0 } // drop gpcEnabled value: $0.1
+                .combineLatest(onNotificationWithInitial(.autofillUserSettingsDidChange), combine)
+                .combineLatest(onNotificationWithInitial(.autofillScriptDebugSettingsDidChange), combine)
+                .combineLatest(onNotificationWithInitial(.contentScopeDebugStateDidChange), combine)
+                .combineLatest($isDependenciesProviderInitialized.removeDuplicates())
+                .filter { (_, isInitialized) in isInitialized } // only proceed if provider was initialized
+                .sink { (value, _) in
+                    continuation.yield(value)
+                }
+
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+            .map { await makeValue($0) }
+
+        updatesTask = Task {
+            // DefaultScriptSourceProvider instance should be created once per rules/config change and fed into UserScripts initialization
+            for await value in updatesStream {
+                bufferedValue = value
+            }
+        }
     }
 
+    private var updatesTask: Task<Void, Never>?
+
+    deinit {
+        updatesTask?.cancel()
+    }
 }

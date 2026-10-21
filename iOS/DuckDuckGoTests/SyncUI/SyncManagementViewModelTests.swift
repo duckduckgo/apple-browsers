@@ -27,21 +27,26 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     fileprivate var monitor = Monitor<SyncManagementViewModelDelegate>()
     var syncBookmarksPausedTitle: String? = "syncBookmarksPausedTitle"
     var syncCredentialsPausedTitle: String? = "syncCredentialsPausedTitle"
+    var syncCreditCardsPausedTitle: String? = "syncCreditCardsPausedTitle"
     var syncPausedTitle: String? = "syncPausedTitle"
     var syncBookmarksPausedDescription: String? = "syncBookmarksPausedDescription"
     var syncCredentialsPausedDescription: String? = "syncCredentialsPausedDescription"
+    var syncCreditCardsPausedDescription: String? = "syncCreditCardsPausedDescription"
     var syncPausedDescription: String? = "syncPausedDescription"
     var syncBookmarksPausedButtonTitle: String? = "syncBookmarksPausedButtonTitle"
     var syncCredentialsPausedButtonTitle: String? = "syncCredentialsPausedButtonTitle"
+    var syncCreditCardsPausedButtonTitle: String? = "syncCreditCardsPausedButtonTitle"
 
     lazy var model: SyncSettingsViewModel = {
-        let model = SyncSettingsViewModel(isOnDevEnvironment: { false }, switchToProdEnvironment: {})
+        let model = SyncSettingsViewModel(
+            isOnDevEnvironment: { false },
+            switchToProdEnvironment: {},
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+        )
         model.delegate = self
         return model
     }()
 
-    var createAccountAndStartSyncingCalled = false
-    var capturedOptionModel: SyncSettingsViewModel?
 
     func waitForInvocation() {
         let expectation = expectation(description: "Inv")
@@ -55,34 +60,19 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     func testViewModelReturnsExpectedStrings() {
         XCTAssertEqual(model.syncBookmarksPausedTitle, syncBookmarksPausedTitle)
         XCTAssertEqual(model.syncCredentialsPausedTitle, syncCredentialsPausedTitle)
+        XCTAssertEqual(model.syncCreditCardsPausedTitle, syncCreditCardsPausedTitle)
         XCTAssertEqual(model.syncPausedTitle, syncPausedTitle)
         XCTAssertEqual(model.syncBookmarksPausedDescription, syncBookmarksPausedDescription)
         XCTAssertEqual(model.syncCredentialsPausedDescription, syncCredentialsPausedDescription)
+        XCTAssertEqual(model.syncCreditCardsPausedDescription, syncCreditCardsPausedDescription)
         XCTAssertEqual(model.syncPausedDescription, syncPausedDescription)
         XCTAssertEqual(model.syncBookmarksPausedButtonTitle, syncBookmarksPausedButtonTitle)
         XCTAssertEqual(model.syncCredentialsPausedButtonTitle, syncCredentialsPausedButtonTitle)
-    }
-
-    func testWhenSingleDeviceSetUpPressed_ThenManagerBecomesBusy_AndAccounCreationRequested() {
-        model.startSyncPressed()
-        XCTAssertTrue(model.isBusy)
-
-        XCTAssertTrue(createAccountAndStartSyncingCalled)
-        XCTAssertNotNil(capturedOptionModel)
-    }
-
-    func testWhenShowRecoveryPDFPressed_ShowRecoveryPDFIsShown() {
-        model.delegate?.showRecoveryPDF()
-
-        // You can either test one individual call was made x number of times or check for a whole number of calls
-        monitor.assert(#selector(showRecoveryPDF).description, calls: 1)
-        monitor.assertCalls([
-            #selector(showRecoveryPDF).description: 1
-        ])
+        XCTAssertEqual(model.syncCreditCardsPausedButtonTitle, syncCreditCardsPausedButtonTitle)
     }
 
     func testWhenScanQRCodePressed_ThenSyncWithAnotherDeviceViewIsShown() {
-        model.scanQRCode()
+        model.beginPairingFlow()
         waitForInvocation()
 
         // You can either test one individual call was made x number of times or check for a whole number of calls
@@ -148,8 +138,8 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
 
 
-    func testWhenRecoverSyncDataPressed_RecoverDataViewShown() {
-        model.recoverSyncDataPressed()
+    func testWhenStartRecoveryCodeEntry_RecoverDataViewShown() {
+        model.startRecoveryCodeEntry()
         waitForInvocation()
 
         // You can either test one individual call was made x number of times or check for a whole number of calls
@@ -157,10 +147,12 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.assert(#selector(authenticateUser).description.dropping(suffix: "WithCompletionHandler:"), calls: 1)
         monitor.assertCalls([
             #selector(authenticateUser).description.dropping(suffix: "WithCompletionHandler:"): 1,
-            #selector(showRecoverData).description: 1
+            #selector(showRecoveryCodeEntry).description: 1
         ])
     }
     // MARK: Delegate functions
+
+    var isUserAuthenticationPromptNeeded: Bool { false }
 
     func authenticateUser() async throws {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
@@ -170,12 +162,37 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-   func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
-        createAccountAndStartSyncingCalled = true
-        capturedOptionModel = optionsViewModel
+    func simplifiedCreateAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-    func showRecoverData() {
+    func simplifiedConfirmAndDisableSync() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
+    }
+
+    func disableSync() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
+    }
+
+    func showRecoveryCodeEntry() {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func showAutoRestoreReady(for continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func isPreservedAccountPromptNeeded() -> Bool {
+        false
+    }
+
+    func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func showRecoveringDataAutoRestore() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
@@ -183,20 +200,12 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
-    func showDeviceConnected() {
-        monitor.incrementCalls(function: #function.cleaningFunctionName())
-    }
-
-    func showRecoveryPDF() {
-        monitor.incrementCalls(function: #function.cleaningFunctionName())
-    }
-
-    func confirmAndDisableSync() async -> Bool {
+    func confirmAndDeleteAllData() async -> Bool {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
         return true
     }
 
-    func confirmAndDeleteAllData() async -> Bool {
+    func deleteAllData() async -> Bool {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
         return true
     }
@@ -238,6 +247,10 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 
+    func launchAutofillCreditCardsViewController() {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
     func showOtherPlatformLinks() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
@@ -249,8 +262,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     func shareLink(for url: URL, with message: String, from rect: CGRect) {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
-
-
 }
 
 // MARK: An idea... can be made more public if works out

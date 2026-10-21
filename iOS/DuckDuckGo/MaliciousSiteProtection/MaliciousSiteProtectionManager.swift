@@ -20,6 +20,7 @@
 import Foundation
 import MaliciousSiteProtection
 import Common
+import FoundationExtensions
 import Core
 
 typealias MaliciousSiteProtectionManaging = MaliciousSiteDetecting & MaliciousSiteProtectionDatasetsFetching
@@ -37,8 +38,7 @@ final class MaliciousSiteProtectionManager {
         detector: MaliciousSiteProtection.MaliciousSiteDetecting? = nil,
         preferencesManager: MaliciousSiteProtectionPreferencesReading,
         maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger,
-        supportedThreatsProvider: @escaping SupportedThreatsProvider,
-        shouldRemoveWWWInCanonicalization: @escaping () -> Bool
+        supportedThreatsProvider: @escaping SupportedThreatsProvider
     ) {
         self.dataFetcher = dataFetcher
         self.preferencesManager = preferencesManager
@@ -48,8 +48,7 @@ final class MaliciousSiteProtectionManager {
             service: api.service,
             dataManager: dataManager,
             eventMapping: MaliciousSiteProtectionEventMapper.debugEvents,
-            supportedThreatsProvider: supportedThreatsProvider,
-            shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization
+            supportedThreatsProvider: supportedThreatsProvider
         )
     }
 }

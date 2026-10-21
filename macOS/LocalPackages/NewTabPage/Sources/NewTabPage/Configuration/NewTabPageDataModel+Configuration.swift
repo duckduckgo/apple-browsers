@@ -24,6 +24,7 @@ public extension NewTabPageDataModel {
 
         public enum Target: String, Codable {
             case settings
+            case duckAISettings
         }
     }
 }
@@ -31,7 +32,7 @@ public extension NewTabPageDataModel {
 extension NewTabPageDataModel {
 
     enum WidgetId: String, Codable {
-        case rmf, freemiumPIRBanner, nextSteps, omnibar, favorites, protections
+        case rmf, freemiumPIRBanner, subscriptionWinBackBanner, nextStepsList, omnibar, favorites, protections
     }
 
     struct ContextMenuParams: Codable {
@@ -55,6 +56,7 @@ extension NewTabPageDataModel {
         var platform: Platform
         var settings: Settings?
         var customizer: NewTabPageDataModel.CustomizerData?
+        var tabs: Tabs?
 
         struct Widget: Encodable, Equatable {
             public var id: WidgetId
@@ -85,6 +87,7 @@ extension NewTabPageDataModel {
 
         struct Settings: Encodable, Equatable {
             let customizerDrawer: Setting
+            let newTabPageRebranding: Setting
         }
 
         struct Setting: Encodable, Equatable {

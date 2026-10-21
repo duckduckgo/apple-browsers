@@ -23,28 +23,46 @@ import OSLog
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import Common
+import FoundationExtensions
 
 /// Default implementation of `FreemiumDBPPromotionViewCoordinating`, responsible for managing
 /// the visibility of the promotion and responding to user interactions with the promotion view.
 final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
 
-    /// Published property that determines whether the promotion is visible on the home page.
-    @Published var isHomePagePromotionVisible: Bool = false
+    /// Whether the freemium DBP feature is currently available (includes async checks like product availability).
+    @Published private(set) var isFeatureAvailable: Bool = false
 
     /// The view model representing the promotion, which updates based on the user's state. Returns `nil` if the feature is not enabled
     @Published
     private(set) var viewModel: PromotionViewModel?
 
-    /// Stores whether the user has dismissed the home page promotion.
-    private var didDismissHomePagePromotion: Bool {
-        get {
-            return freemiumDBPUserStateManager.didDismissHomePagePromotion
-        }
-        set {
-            Logger.freemiumDBP.debug("[Freemium DBP] Promotion dismiss state set to \(newValue)")
-            freemiumDBPUserStateManager.didDismissHomePagePromotion = newValue
-            isHomePagePromotionVisible = !newValue
-        }
+    /// Callback invoked when the user interacts with the banner (proceed or close).
+    /// Set by the promo delegate to route results back through show().
+    var onUserAction: ((PromoResult) -> Void)?
+
+    /// Callback invoked when scan results arrive, allowing the delegate
+    /// to trigger a re-evaluation of eligibility via refreshEligibility().
+    var onScanResultsUpdated: (() -> Void)?
+
+    /// Whether the user dismissed the promotion before queue integration (legacy).
+    /// Read-only — current dismissals are handled by PromoService.
+    var hasLegacyDismissal: Bool {
+        freemiumDBPUserStateManager.didDismissHomePagePromotion
+    }
+
+    /// The user's first scan results, if any.
+    var firstScanResults: FreemiumDBPMatchResults? {
+        freemiumDBPUserStateManager.firstScanResults
+    }
+
+    /// Whether the feature flag is enabled (synchronous — no async dependencies).
+    var isFeatureFlagEnabled: Bool {
+        freemiumDBPFeature.isFeatureFlagEnabled
+    }
+
+    /// Whether the feature is available ignoring purchase capability. Used by the fast path while product availability settles.
+    var isFeatureAvailableIgnoringPurchaseCapability: Bool {
+        freemiumDBPFeature.isAvailableIgnoringPurchaseCapability
     }
 
     /// The user state manager, which tracks the user's activation status and scan results.
@@ -57,7 +75,12 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     private let freemiumDBPPresenter: FreemiumDBPPresenter
 
     /// A set of cancellables for managing Combine subscriptions.
-    private var cancellables = Set<AnyCancellable>()
+    var cancellables = Set<AnyCancellable>()
+
+    /// Per-window cancellables for banner-impression observers. Keyed by `ObjectIdentifier(windowController)`
+    /// so the subscription — which retains the `@Published` subject and therefore the last emitted
+    /// `TabViewModel` → `Tab` → `WebView` — is dropped when the window closes.
+    private var perWindowBannerImpressionCancellables: [ObjectIdentifier: AnyCancellable] = [:]
 
     /// The `NotificationCenter` instance used when subscribing to notifications
     private let notificationCenter: NotificationCenter
@@ -65,29 +88,42 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
-    /// Initializes the coordinator with the necessary dependencies.
-    ///
-    /// - Parameters:
-    ///   - freemiumDBPUserStateManager: Manages the user's state in the Freemium DBP system.
-    ///   - freemiumDBPFeature: The feature that determines the availability of DBP.
-    ///   - freemiumDBPPresenter: The presenter used to show the Freemium DBP UI. Defaults to `DefaultFreemiumDBPPresenter`.
-    ///   - notificationCenter: The `NotificationCenter` instance used when subscribing to notifications
+    /// Publisher that emits when contextual onboarding is completed
+    private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
+
     init(freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          notificationCenter: NotificationCenter = .default,
-         dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler()) {
+         dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
+         contextualOnboardingPublisher: AnyPublisher<Bool, Never> = Empty<Bool, Never>().eraseToAnyPublisher()) {
 
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.freemiumDBPFeature = freemiumDBPFeature
         self.freemiumDBPPresenter = freemiumDBPPresenter
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
+        self.contextualOnboardingPublisher = contextualOnboardingPublisher
 
-        setInitialPromotionVisibilityState()
+        isFeatureAvailable = freemiumDBPFeature.isAvailable
+
         subscribeToFeatureAvailabilityUpdates()
         observeFreemiumDBPNotifications()
-        setUpViewModelRefreshing()
+        observeContextualOnboardingCompletion()
+
+        Task { @MainActor [weak self] in
+            self?.observeFreemiumDBPBannerImpressions()
+        }
+    }
+
+    @MainActor
+    func refreshViewModel() {
+        viewModel = createViewModel()
+    }
+
+    @MainActor
+    func clearViewModel() {
+        viewModel = nil
     }
 }
 
@@ -99,15 +135,18 @@ private extension FreemiumDBPPromotionViewCoordinator {
             guard let self else { return }
 
             execute(resultsAction: {
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsClickCount)
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsClick)
             }, orNoResultsAction: {
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsClickCount)
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsClick)
             }, orPromotionAction: {
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanClickCount)
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanClick)
             })
 
             showFreemiumDBP()
-            dismissHomePagePromotion()
+            onUserAction?(.actioned())
         }
     }
 
@@ -124,32 +163,26 @@ private extension FreemiumDBPPromotionViewCoordinator {
                 self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanDismiss)
             })
 
-            dismissHomePagePromotion()
+            onUserAction?(.ignored())
         }
     }
 
     /// Shows the Freemium DBP user interface via the presenter.
     @MainActor
     func showFreemiumDBP() {
-        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllerManager: Application.appDelegate.windowControllersManager)
-    }
-
-    /// Dismisses the home page promotion and updates the user state to reflect this.
-    func dismissHomePagePromotion() {
-        didDismissHomePagePromotion = true
-    }
-
-    /// Sets the initial visibility state of the promotion based on whether the promotion was
-    /// previously dismissed and whether the Freemium DBP feature is available.
-    func setInitialPromotionVisibilityState() {
-        isHomePagePromotionVisible = (!didDismissHomePagePromotion && freemiumDBPFeature.isAvailable)
+        let entryPoint: FreemiumDBPEntryPoint = freemiumDBPUserStateManager.firstScanResults == nil ? .freeScanBanner : .viewResultsBanner
+        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(entryPoint: entryPoint,
+                                                            windowControllersManager: Application.appDelegate.windowControllersManager)
     }
 
     /// Creates the view model for the promotion, updating based on the user's scan results.
     ///
     /// - Returns: The `PromotionViewModel` that represents the current state of the promotion.
+    /// Only called from the delegate-controlled `refreshViewModel()` path, where full eligibility
+    /// is already enforced by the PromoDelegate. This guard is a defensive check for the feature flag only —
+    /// async checks (product availability) are intentionally skipped to avoid startup timing issues.
     func createViewModel() -> PromotionViewModel? {
-        guard freemiumDBPFeature.isAvailable, isHomePagePromotionVisible else {
+        guard freemiumDBPFeature.isFeatureFlagEnabled else {
             return nil
         }
 
@@ -175,12 +208,13 @@ private extension FreemiumDBPPromotionViewCoordinator {
         }
     }
 
-    /// This method defines the entry point to updating `viewModel` which is every change to `isHomePagePromotionVisible`.
-    func setUpViewModelRefreshing() {
-        $isHomePagePromotionVisible.dropFirst().asVoid()
+    func observeContextualOnboardingCompletion() {
+        contextualOnboardingPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.viewModel = self?.createViewModel()
+            .sink { [weak self] isCompleted in
+                guard let self, isCompleted else { return }
+                Logger.freemiumDBP.debug("[Freemium DBP] Contextual Onboarding Completed")
+                onScanResultsUpdated?()
             }
             .store(in: &cancellables)
     }
@@ -194,29 +228,19 @@ private extension FreemiumDBPPromotionViewCoordinator {
             .prepend(freemiumDBPFeature.isAvailable)
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isAvailable in
+            .sink { [weak self] available in
                 guard let self else { return }
-                isHomePagePromotionVisible = (!didDismissHomePagePromotion && isAvailable)
+                self.isFeatureAvailable = available
             }
             .store(in: &cancellables)
     }
 
-    /// Observes notifications related to Freemium DBP (e.g., result polling complete or entry point activated),
-    /// and updates the promotion visibility state accordingly.
     func observeFreemiumDBPNotifications() {
         notificationCenter.publisher(for: .freemiumDBPResultPollingComplete)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.freemiumDBP.debug("[Freemium DBP] Received Scan Results Notification")
-                self?.didDismissHomePagePromotion = false
-            }
-            .store(in: &cancellables)
-
-        notificationCenter.publisher(for: .freemiumDBPEntryPointActivated)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                Logger.freemiumDBP.debug("[Freemium DBP] Received Entry Point Activation Notification")
-                self?.didDismissHomePagePromotion = true
+                self?.onScanResultsUpdated?()
             }
             .store(in: &cancellables)
     }
@@ -243,5 +267,81 @@ private extension FreemiumDBPPromotionViewCoordinator {
         } else {
             promotionAction()
         }
+    }
+
+}
+
+// MARK: - Freemium DBP Promo Banner Impression Observation
+
+/// Observes per-window tab-selection changes to detect when the New Tab Page becomes the active tab,
+/// which is the moment the Freemium DBP promo banner (when visible) is presented to the user.
+/// Drives per-impression banner-view counting — `.newTabPageWebViewDidAppear` only fires on
+/// webview-to-window attach, not on tab activation back to an existing NTP, so it cannot.
+private extension FreemiumDBPPromotionViewCoordinator {
+
+    @MainActor
+    func observeFreemiumDBPBannerImpressions() {
+        let manager = Application.appDelegate.windowControllersManager
+
+        // Windows that already existed when this observer started: their @Published replay is
+        // ambient launch-time state, not a fresh impression event.
+        for windowController in manager.mainWindowControllers {
+            observeFreemiumDBPBannerImpressions(in: windowController, opened: false)
+        }
+
+        // Windows opened later (Cmd-N, deeplinks): the first emission is the user's fresh new tab.
+        manager.didRegisterWindowController
+            .sink { [weak self] windowController in
+                self?.observeFreemiumDBPBannerImpressions(in: windowController, opened: true)
+            }
+            .store(in: &cancellables)
+
+        manager.didUnregisterWindowController
+            .sink { [weak self] windowController in
+                self?.perWindowBannerImpressionCancellables.removeValue(forKey: ObjectIdentifier(windowController))
+            }
+            .store(in: &cancellables)
+    }
+
+    @MainActor
+    func observeFreemiumDBPBannerImpressions(in windowController: MainWindowController, opened: Bool) {
+        let selectedTabPublisher = windowController.mainViewController.tabCollectionViewModel.$selectedTabViewModel
+            .compactMap { $0 }
+
+        // The first value @Published replays when we subscribe means very different things depending
+        // on when the window was registered:
+        //  - For windows that were already open at observer-setup time, the replay is the *current
+        //    ambient state* — the user has been looking at this tab; counting it as an impression
+        //    would conflate launch noise (e.g. placeholder→restored tab swaps) with real events.
+        //    Drop it, and rely on subsequent user-driven changes to fire.
+        //  - For just-opened windows, the first emission IS the impression — the user just opened
+        //    a new window and is seeing whatever tab landed in it (typically NTP). Keep it.
+        let pipeline: AnyPublisher<TabViewModel, Never> = opened
+            ? selectedTabPublisher.eraseToAnyPublisher()
+            : selectedTabPublisher.dropFirst().eraseToAnyPublisher()
+
+        perWindowBannerImpressionCancellables[ObjectIdentifier(windowController)] = pipeline
+            .sink { [weak self] selectedTabViewModel in
+                self?.handleSelectedTabChanged(selectedTabViewModel)
+            }
+    }
+
+    @MainActor
+    func handleSelectedTabChanged(_ selectedTabViewModel: TabViewModel) {
+        // Burner (Fire) Window NTPs don't render the freemium banner — skip to avoid over-counting.
+        guard case .newtab = selectedTabViewModel.tab.content,
+              !selectedTabViewModel.tab.burnerMode.isBurner else { return }
+
+        // Banner must actually be presentable. `viewModel == nil` means PromoService / feature
+        // gating has not produced a renderable promotion for this user/state.
+        guard viewModel != nil else { return }
+
+        execute(resultsAction: {
+            self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsImpressionCount)
+        }, orNoResultsAction: {
+            self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsImpressionCount)
+        }, orPromotionAction: {
+            self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanImpressionCount)
+        })
     }
 }

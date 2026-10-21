@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import Foundation
 
 /// A protocol that defines an interface for generating a JSON representation of a the privacy configuration file.
@@ -28,20 +29,28 @@ public protocol CustomisedPrivacyConfigurationJSONGenerating {
 public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating {
     let featureFlagger: FeatureFlagger
     let privacyConfigurationManager: PrivacyConfigurationManaging
+    let excludedFeatures: [String]
 
-    public init(featureFlagger: FeatureFlagger, privacyConfigurationManager: PrivacyConfigurationManaging) {
+    /// Features every caller keeps out of the injected configuration. Exposed so a caller that
+    /// needs to exclude more can extend this rather than restate it and drift.
+    public static let defaultExcludedFeatures = [
+        PrivacyConfigurationData.CodingKeys.trackerAllowlist.rawValue,
+        PrivacyFeature.autoconsent.rawValue
+    ]
+
+    public init(featureFlagger: FeatureFlagger,
+                privacyConfigurationManager: PrivacyConfigurationManaging,
+                excludedFeatures: [String] = Self.defaultExcludedFeatures) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.excludedFeatures = excludedFeatures
     }
 
-    /// Generates and returns the privacy configuration as JSON data.
-    ///
-    /// Note: this was used for an experiment but left so that in the future we can pass ContentScope only the needed configuration
     public var privacyConfiguration: Data? {
         guard let config = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else { return nil }
 
         let newConfig = PrivacyConfigurationData(features: config.features, unprotectedTemporary: config.unprotectedTemporary, trackerAllowlist: config.trackerAllowlist, version: config.version)
-        return try? newConfig.toJSONData()
+        return try? newConfig.toJSONData(excludeFeatures: excludedFeatures)
     }
 
 }

@@ -14,7 +14,7 @@ main() {
 # Functions below define inputs and expected outputs for the tests
 #
 
-# Placeholder release notes with placeholder Privacy Pro section
+# Placeholder release notes with placeholder subscription section
 placeholder() {
 	local mode="${1:-input}"
 	case "$mode" in
@@ -28,7 +28,7 @@ placeholder() {
 
 				<-- Add release notes here -->
 
-			For Privacy Pro subscribers
+			For DuckDuckGo subscribers
 
 				<-- Add release notes here -->
 
@@ -56,7 +56,7 @@ placeholder() {
 	esac
 }
 
-# Non-empty release notes with non-empty Privacy Pro section
+# Non-empty release notes with non-empty subscription section
 full() {
 	local mode="${1:-input}"
 	case "$mode" in
@@ -73,7 +73,7 @@ full() {
 				When watching videos in Duck Player, clicking endscreen recommendations will now open those videos in the same tab.
 				The bug that duplicated sites in your browsing history has been fixed, and the visual glitching that sometimes occurred during session restore and app launch has been addressed.
 
-			For Privacy Pro subscribers
+			For DuckDuckGo subscribers
 
 				VPN updates! More detailed connection info in the VPN dashboard, plus animations and usability improvements.
 				Visit https://duckduckgo.com/pro for more information. Privacy Pro is currently available to U.S. residents only.
@@ -91,7 +91,7 @@ full() {
 			We also added "Duplicate Tab" to the app menu so you can use it as an action in Apple Shortcuts.
 			When watching videos in Duck Player, clicking endscreen recommendations will now open those videos in the same tab.
 			The bug that duplicated sites in your browsing history has been fixed, and the visual glitching that sometimes occurred during session restore and app launch has been addressed.
-			For Privacy Pro subscribers
+			For DuckDuckGo subscribers
 			VPN updates! More detailed connection info in the VPN dashboard, plus animations and usability improvements.
 			Visit https://duckduckgo.com/pro for more information. Privacy Pro is currently available to U.S. residents only.
 			EOF
@@ -105,7 +105,7 @@ full() {
 			<li>When watching videos in Duck Player, clicking endscreen recommendations will now open those videos in the same tab.</li>
 			<li>The bug that duplicated sites in your browsing history has been fixed, and the visual glitching that sometimes occurred during session restore and app launch has been addressed.</li>
 			</ul>
-			<h3 style="font-size:14px">For Privacy Pro subscribers</h3>
+			<h3 style="font-size:14px">For DuckDuckGo subscribers</h3>
 			<ul>
 			<li>VPN updates! More detailed connection info in the VPN dashboard, plus animations and usability improvements.</li>
 			<li>Visit <a href="https://duckduckgo.com/pro">https://duckduckgo.com/pro</a> for more information. Privacy Pro is currently available to U.S. residents only.</li>
@@ -114,14 +114,14 @@ full() {
 			;;
 		asana)
 			cat <<-EOF
-			<ul><li>You can now find browser windows listed in the "Window" app menu and in the Dock menu.</li><li>We also added "Duplicate Tab" to the app menu so you can use it as an action in Apple Shortcuts.</li><li>When watching videos in Duck Player, clicking endscreen recommendations will now open those videos in the same tab.</li><li>The bug that duplicated sites in your browsing history has been fixed, and the visual glitching that sometimes occurred during session restore and app launch has been addressed.</li></ul><h2>For Privacy Pro subscribers</h2><ul><li>VPN updates! More detailed connection info in the VPN dashboard, plus animations and usability improvements.</li><li>Visit <a href="https://duckduckgo.com/pro">https://duckduckgo.com/pro</a> for more information. Privacy Pro is currently available to U.S. residents only.</li></ul>
+			<ul><li>You can now find browser windows listed in the "Window" app menu and in the Dock menu.</li><li>We also added "Duplicate Tab" to the app menu so you can use it as an action in Apple Shortcuts.</li><li>When watching videos in Duck Player, clicking endscreen recommendations will now open those videos in the same tab.</li><li>The bug that duplicated sites in your browsing history has been fixed, and the visual glitching that sometimes occurred during session restore and app launch has been addressed.</li></ul><h2>For DuckDuckGo subscribers</h2><ul><li>VPN updates! More detailed connection info in the VPN dashboard, plus animations and usability improvements.</li><li>Visit <a href="https://duckduckgo.com/pro">https://duckduckgo.com/pro</a> for more information. Privacy Pro is currently available to U.S. residents only.</li></ul>
 			EOF
 			;;
 	esac
 }
 
 # Non-empty release notes and missing Privacy Pro section
-without_privacy_pro_section() {
+without_subscription_section() {
 	local mode="${1:-input}"
 	case "$mode" in
 		input)
@@ -172,7 +172,7 @@ without_privacy_pro_section() {
 }
 
 # Non-empty release notes and a placeholder Privacy Pro section
-placeholder_privacy_pro_section() {
+placeholder_subscription_section() {
 	local mode="${1:-input}"
 	case "$mode" in
 		input)
@@ -188,7 +188,7 @@ placeholder_privacy_pro_section() {
 				When watching videos in Duck Player, clicking endscreen recommendations will now open those videos in the same tab.
 				The bug that duplicated sites in your browsing history has been fixed, and the visual glitching that sometimes occurred during session restore and app launch has been addressed.
 
-			For Privacy Pro subscribers
+			For DuckDuckGo subscribers
 
 				<-- Add release notes here -->
 
@@ -200,14 +200,14 @@ placeholder_privacy_pro_section() {
 			EOF
 			;;
 		*)
-			without_privacy_pro_section "$mode"
+			without_subscription_section "$mode"
 			;;
 	esac
 }
 
 # Non-empty release notes and Privacy Pro release header as a bullet point inside regular release notes
 # Privacy Pro section header should be recognized and interpreted as a separate section (like in the full example)
-privacy_pro_in_regular_release_notes() {
+subscription_in_regular_release_notes() {
 	local mode="${1:-input}"
 	case "$mode" in
 		input)
@@ -222,7 +222,7 @@ privacy_pro_in_regular_release_notes() {
 				We also added "Duplicate Tab" to the app menu so you can use it as an action in Apple Shortcuts.
 				When watching videos in Duck Player, clicking endscreen recommendations will now open those videos in the same tab.
 				The bug that duplicated sites in your browsing history has been fixed, and the visual glitching that sometimes occurred during session restore and app launch has been addressed.
-				For Privacy Pro subscribers
+				For DuckDuckGo subscribers
 				VPN updates! More detailed connection info in the VPN dashboard, plus animations and usability improvements.
 				Visit https://duckduckgo.com/pro for more information. Privacy Pro is currently available to U.S. residents only.
 
@@ -286,64 +286,64 @@ privacy_pro_in_regular_release_notes() {
 }
 
 # bats test_tags=no-pp, raw
-@test "input: without_privacy_pro_section | output: raw" {
-	run main -r <<< "$(without_privacy_pro_section)"
+@test "input: without_subscription_section | output: raw" {
+	run main -r <<< "$(without_subscription_section)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(without_privacy_pro_section raw)" ]
+	[ "$output" == "$(without_subscription_section raw)" ]
 }
 
 # bats test_tags=no-pp, html
-@test "input: without_privacy_pro_section | output: html" {
-	run main -h <<< "$(without_privacy_pro_section)"
+@test "input: without_subscription_section | output: html" {
+	run main -h <<< "$(without_subscription_section)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(without_privacy_pro_section html)" ]
+	[ "$output" == "$(without_subscription_section html)" ]
 }
 
 # bats test_tags=no-pp, asana
-@test "input: without_privacy_pro_section | output: asana" {
-	run main -a <<< "$(without_privacy_pro_section)"
+@test "input: without_subscription_section | output: asana" {
+	run main -a <<< "$(without_subscription_section)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(without_privacy_pro_section asana)" ]
+	[ "$output" == "$(without_subscription_section asana)" ]
 }
 
 # bats test_tags=placeholder-pp, raw
-@test "input: placeholder_privacy_pro_section | output: raw" {
-	run main -r <<< "$(placeholder_privacy_pro_section)"
+@test "input: placeholder_subscription_section | output: raw" {
+	run main -r <<< "$(placeholder_subscription_section)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(placeholder_privacy_pro_section raw)" ]
+	[ "$output" == "$(placeholder_subscription_section raw)" ]
 }
 
 # bats test_tags=placeholder-pp, html
-@test "input: placeholder_privacy_pro_section | output: html" {
-	run main -h <<< "$(placeholder_privacy_pro_section)"
+@test "input: placeholder_subscription_section | output: html" {
+	run main -h <<< "$(placeholder_subscription_section)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(placeholder_privacy_pro_section html)" ]
+	[ "$output" == "$(placeholder_subscription_section html)" ]
 }
 
 # bats test_tags=placeholder-pp, asana
-@test "input: placeholder_privacy_pro_section | output: asana" {
-	run main -a <<< "$(placeholder_privacy_pro_section)"
+@test "input: placeholder_subscription_section | output: asana" {
+	run main -a <<< "$(placeholder_subscription_section)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(placeholder_privacy_pro_section asana)" ]
+	[ "$output" == "$(placeholder_subscription_section asana)" ]
 }
 
 # bats test_tags=inline-pp, raw
-@test "input: privacy_pro_in_regular_release_notes | output: raw" {
-	run main -r <<< "$(privacy_pro_in_regular_release_notes)"
+@test "input: subscription_in_regular_release_notes | output: raw" {
+	run main -r <<< "$(subscription_in_regular_release_notes)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(privacy_pro_in_regular_release_notes raw)" ]
+	[ "$output" == "$(subscription_in_regular_release_notes raw)" ]
 }
 
 # bats test_tags=inline-pp, html
-@test "input: privacy_pro_in_regular_release_notes | output: html" {
-	run main -h <<< "$(privacy_pro_in_regular_release_notes)"
+@test "input: subscription_in_regular_release_notes | output: html" {
+	run main -h <<< "$(subscription_in_regular_release_notes)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(privacy_pro_in_regular_release_notes html)" ]
+	[ "$output" == "$(subscription_in_regular_release_notes html)" ]
 }
 
 # bats test_tags=inline-pp, asana
-@test "input: privacy_pro_in_regular_release_notes | output: asana" {
-	run main -a <<< "$(privacy_pro_in_regular_release_notes)"
+@test "input: subscription_in_regular_release_notes | output: asana" {
+	run main -a <<< "$(subscription_in_regular_release_notes)"
 	[ "$status" -eq 0 ]
-	[ "$output" == "$(privacy_pro_in_regular_release_notes asana)" ]
+	[ "$output" == "$(subscription_in_regular_release_notes asana)" ]
 }

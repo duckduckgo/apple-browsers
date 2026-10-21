@@ -17,13 +17,21 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
-import Core
+import SwiftUI
+import UIComponents
 
 struct DataImportView: View {
+
+    static var isiOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        }
+        return false
+    }
 
     @ObservedObject var viewModel: DataImportViewModel
 
@@ -35,7 +43,7 @@ struct DataImportView: View {
                 switch viewModel.state.importScreen {
                 case .bookmarks:
                     BookmarksInstructions(viewModel: viewModel)
-                case .passwords, .settings:
+                default:
                     PasswordFooterView()
                     PasswordsInstructions(viewModel: viewModel)
                 }
@@ -93,14 +101,14 @@ struct DataImportView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(UIColor.secondarySystemGroupedBackground))
+                RoundedRectangle(cornerRadius: isiOS26 ? 26 : 10, style: .continuous)
+                    .fill(Color(designSystemColor: .surface))
             )
             .padding(.horizontal, 8)
         }
     }
 
-    private struct PasswordFooterView: View {
+    fileprivate struct PasswordFooterView: View {
         var body: some View {
             (Text(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)).baselineOffset(-1.0) + Text(verbatim: " ") + Text(UserText.autofillLoginListSettingsFooter))
                 .daxFootnoteRegular()
@@ -149,8 +157,8 @@ struct DataImportView: View {
 
                 ExportFromCell(viewModel: viewModel)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color(UIColor.secondarySystemGroupedBackground))
+                        RoundedRectangle(cornerRadius: isiOS26 ? 26 : 10, style: .continuous)
+                            .fill(Color(designSystemColor: .surface))
                     )
                     .padding(.top, 5)
                     .padding(.horizontal, 8)
@@ -166,7 +174,7 @@ struct DataImportView: View {
         @ObservedObject var viewModel: DataImportViewModel
 
         var body: some View {
-            HStack {
+            HStack(alignment: .center) {
                 viewModel.state.icon
                     .resizable()
                     .frame(width: 24, height: 24)
@@ -187,7 +195,11 @@ struct DataImportView: View {
                 }
                 .pickerStyle(.automatic)
                 .accentColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
             }
+            .if(isiOS26, transform: { view in
+                view.frame(height: 52)
+            })
             .padding(.horizontal, 16)
             .padding(.vertical, 6)
         }
@@ -209,7 +221,7 @@ struct DataImportView: View {
         }
     }
 
-    private struct Instruction: View {
+    fileprivate struct Instruction: View {
         var step: Int
         var instructionText: Text
 
@@ -226,4 +238,15 @@ struct DataImportView: View {
         }
     }
 
+}
+
+#Preview("Password Footer") {
+    DataImportView.PasswordFooterView()
+}
+
+#Preview("Instruction") {
+    DataImportView.Instruction(
+        step: 1,
+        instructionText: Text("Open Settings, then tap Passwords and export your data.")
+    )
 }

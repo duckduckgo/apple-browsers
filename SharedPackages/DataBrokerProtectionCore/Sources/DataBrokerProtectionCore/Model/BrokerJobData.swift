@@ -89,6 +89,11 @@ public struct OptOutJobData: BrokerJobData, Sendable {
     public let sevenDaysConfirmationPixelFired: Bool
     public let fourteenDaysConfirmationPixelFired: Bool
     public let twentyOneDaysConfirmationPixelFired: Bool
+    public let fortyTwoDaysConfirmationPixelFired: Bool
+
+    public var historyEventsSortedEarliestFirst: [HistoryEvent] {
+        historyEvents.sorted { $0.date < $1.date }
+    }
 
     init(brokerId: Int64,
          profileQueryId: Int64,
@@ -101,7 +106,8 @@ public struct OptOutJobData: BrokerJobData, Sendable {
          extractedProfile: ExtractedProfile,
          sevenDaysConfirmationPixelFired: Bool = false,
          fourteenDaysConfirmationPixelFired: Bool = false,
-         twentyOneDaysConfirmationPixelFired: Bool = false) {
+         twentyOneDaysConfirmationPixelFired: Bool = false,
+         fortyTwoDaysConfirmationPixelFired: Bool = false) {
         self.brokerId = brokerId
         self.profileQueryId = profileQueryId
         self.createdDate = createdDate
@@ -114,5 +120,6 @@ public struct OptOutJobData: BrokerJobData, Sendable {
         self.sevenDaysConfirmationPixelFired = sevenDaysConfirmationPixelFired
         self.fourteenDaysConfirmationPixelFired = fourteenDaysConfirmationPixelFired
         self.twentyOneDaysConfirmationPixelFired = twentyOneDaysConfirmationPixelFired
+        self.fortyTwoDaysConfirmationPixelFired = fortyTwoDaysConfirmationPixelFired
     }
 }

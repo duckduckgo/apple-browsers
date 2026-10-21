@@ -4,11 +4,6 @@
 <dict>
 	<key>com.apple.developer.web-browser.public-key-credential</key>
 	<true/>
-	<key>com.apple.developer.networking.networkextension</key>
-	<array>
-		<string>packet-tunnel-provider-systemextension</string>
-		<string>app-proxy-provider-systemextension</string>
-	</array>
 	<key>com.apple.developer.system-extension.install</key>
 	<true/>
 	<key>com.apple.developer.usernotifications.time-sensitive</key>
@@ -31,7 +26,7 @@
 	<true/>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)com.duckduckgo.macos.browser</string>
+		<string>$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 		<string>$(NETP_APP_GROUP)</string>
 		<string>$(DBP_APP_GROUP)</string>
 		<string>$(SUBSCRIPTION_APP_GROUP)</string>

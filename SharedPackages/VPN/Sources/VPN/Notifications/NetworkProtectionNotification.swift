@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 #if os(macOS)
@@ -105,6 +106,7 @@ public enum NetworkProtectionNotification: String {
     case showVPNSupersededNotification
     case showExpiredEntitlementNotification
     case showTestNotification
+    case showStrictRoutingReminderNotification
 
     // Server Selection
     case serverSelected

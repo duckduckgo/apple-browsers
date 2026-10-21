@@ -68,6 +68,36 @@ struct PictureInPictureControllerTests {
             #expect(!sut.isAVPictureInPictureControllerInitialised)
         }
 
+        @Test("Check PictureInPictureSupported Returns True When Controller Is Initialised")
+        func whenAVPictureInPictureControllerIsInitialisedThenPictureInPictureSupportedIsTrue() throws {
+            // GIVEN
+            let factoryMock = MockPictureInPictureControllerFactory()
+            let sut = PictureInPictureController(configuration: PictureInPictureConfiguration(), factory: factoryMock)
+            let avPictureInPictureController = try #require(factoryMock.avPictureInPictureControllerToReturn)
+            #expect(avPictureInPictureController.delegate == nil)
+
+            // WHEN
+            sut.setupPictureInPicture(playerLayer: AVPlayerLayer())
+
+            // THEN
+            #expect(sut.isPictureInPictureSupported())
+        }
+
+        @Test("Check PictureInPictureSupported Returns False When Controller Is Nil")
+        func whenAVPictureInPictureControllerIsNilThenPictureInPictureSupportedIsFalse() {
+            // GIVEN
+            let factoryMock = MockPictureInPictureControllerFactory()
+            factoryMock.avPictureInPictureControllerToReturn = nil
+            let sut = PictureInPictureController(configuration: PictureInPictureConfiguration(canStartPictureInPictureAutomaticallyFromInline: true, requiresLinearPlayback: true), factory: factoryMock)
+            #expect(!sut.isAVPictureInPictureControllerInitialised)
+
+            // WHEN
+            sut.setupPictureInPicture(playerLayer: AVPlayerLayer())
+
+            // THEN
+            #expect(!sut.isPictureInPictureSupported())
+        }
+
     }
 
     @MainActor

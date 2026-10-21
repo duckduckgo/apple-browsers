@@ -16,8 +16,7 @@
 //  limitations under the License.
 //
 import Foundation
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 import XCTest
 
 @testable import MaliciousSiteProtection
@@ -156,9 +155,9 @@ final class MaliciousSiteProtectionAPIClientTests: XCTestCase {
         do {
             let response = try await client.matches(forHashPrefix: "")
             XCTFail("Unexpected \(response) expected throw")
-        } catch let error as Networking.APIRequestV2.Error {
+        } catch let error as Networking.APIRequestV2Error {
             switch error {
-            case Networking.APIRequestV2.Error.urlSession(URLError.timedOut):
+            case Networking.APIRequestV2Error.urlSession(URLError.timedOut):
                 XCTAssertTrue(error.isTimedOut) // should match testWhenMatchesApiFailsThenEventIsFired!
             default:
                 XCTFail("Unexpected \(error)")

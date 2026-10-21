@@ -17,13 +17,14 @@
 //
 
 import Foundation
+import AppKit
 
 struct SyncPromoViewModel {
 
     var touchpointType: SyncPromoManager.Touchpoint = .bookmarks
 
-    var primaryButtonAction: (() -> Void)?
-    var dismissButtonAction: (() -> Void)?
+    var primaryButtonAction: (@MainActor () -> Void)?
+    var dismissButtonAction: (@MainActor () -> Void)?
 
     var title: String {
         switch touchpointType {
@@ -31,35 +32,33 @@ struct SyncPromoViewModel {
             UserText.syncPromoBookmarksTitle
         case .passwords:
             UserText.syncPromoPasswordsTitle
+        case .autofill:
+            UserText.syncPromoAutofillTitle
+        case .creditCards:
+            UserText.syncPromoCreditCardsTitle
+        case .identities:
+            UserText.syncPromoIdentitiesTitle
         }
     }
 
     var subtitle: String {
-        switch touchpointType {
-        case .bookmarks:
-            UserText.syncPromoBookmarksMessage
-        case .passwords:
-            UserText.syncPromoPasswordsMessage
-        }
+        UserText.syncPromoMessage
     }
 
-    var image: String {
-        switch touchpointType {
-        default:
-            return "Sync-OK-96x96"
-        }
+    var image: NSImage {
+        NSImage(resource: .syncStart96)
     }
 
     var primaryButtonTitle: String {
         switch touchpointType {
-        case .bookmarks, .passwords:
+        default:
             UserText.syncPromoConfirmAction
         }
     }
 
     var secondaryButtonTitle: String {
         switch touchpointType {
-        case .bookmarks, .passwords:
+        default:
             UserText.syncPromoDismissAction
         }
     }

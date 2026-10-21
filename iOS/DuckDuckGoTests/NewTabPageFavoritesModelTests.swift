@@ -20,47 +20,32 @@
 import XCTest
 import Combine
 import Bookmarks
+import CoreData
+import Common
+import Persistence
 @testable import Core
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
+import Testing
 
 final class NewTabPageFavoritesModelTests: XCTestCase {
     private let favoriteDataSource = MockNewTabPageFavoriteDataSource()
+    private var pixelKitMock: PixelKitMock!
 
-    override func setUpWithError() throws {
-        throw XCTSkip("Potentially flaky")
-
-        try super.setUpWithError()
+    override func setUp() {
+        super.setUp()
+        pixelKitMock = PixelKitMock()
     }
 
     override func tearDown() {
-        PixelFiringMock.tearDown()
-    }
-
-    func testFiresPixelWhenExpandingList() {
-        let sut = createSUT()
-
-        XCTAssertTrue(sut.isCollapsed)
-        sut.toggleCollapse()
-
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.newTabPageFavoritesSeeMore.name)
-    }
-
-    func testFiresPixelWhenCollapsingList() {
-        let sut = createSUT()
-
-        sut.toggleCollapse()
-
-        XCTAssertFalse(sut.isCollapsed)
-        sut.toggleCollapse()
-
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.newTabPageFavoritesSeeLess.name)
+        pixelKitMock = nil
     }
 
     func testReturnsAllFavoritesWhenCustomizationDisabled() {
         favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-        let sut = createSUT(isNewTabPageCustomizationEnabled: false)
-        
-        XCTAssertEqual(sut.prefixedFavorites(for: 1).items.count, 10)
+        let sut = createSUT()
+
+        XCTAssertEqual(sut.allFavorites.count, 10)
     }
 
     func testFiresPixelsOnFavoriteSelected() {
@@ -68,8 +53,17 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
 
         sut.favoriteSelected(Favorite(id: "", title: "", domain: "", urlObject: URL(string: "https://foo.bar")))
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.favoriteLaunchedNTP.name)
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.favoriteLaunchedNTPDaily.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.favoriteLaunchedNTP.name })
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.favoriteLaunchedNTPDaily.name })
+    }
+
+    func testFiresPixelsOnFavoriteSelectedInFocussedState() {
+        let sut = createSUT(isFocussedState: true)
+
+        sut.favoriteSelected(Favorite(id: "", title: "", domain: "", urlObject: URL(string: "https://foo.bar")))
+
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.favoriteLaunchedWebsite.name })
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.favoriteLaunchedNTPDaily.name })
     }
 
     func testFiresPixelOnFavoriteDeleted() {
@@ -80,7 +74,7 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
 
         sut.deleteFavorite(favorite)
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.homeScreenDeleteFavorite.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.homeScreenDeleteFavorite.name })
     }
 
     func testFiresPixelOnFavoriteEdited() {
@@ -91,92 +85,156 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
 
         sut.editFavorite(favorite)
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.homeScreenEditFavorite.name)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == Pixel.Event.homeScreenEditFavorite.name })
     }
 
-    func testFiresPixelOnTappingPlaceholder() {
+    func testFiresPixelOnceWhenFavoritesReordered() {
         let sut = createSUT()
 
-        sut.placeholderTapped()
+        sut.favoritesReordered()
 
-        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.newTabPageFavoritesPlaceholderTapped.name)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["new-tab-page_favorites_reorder"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
     }
 
-    func testPrefixFavoritesCreatesRemainingPlaceholders() {
-        let sut = createSUT()
-
-        let slice = sut.prefixedFavorites(for: 3)
-
-        XCTAssertEqual(slice.items.filter(\.isPlaceholder).count, 2)
-        XCTAssertEqual(slice.items.count, 3)
-        XCTAssertFalse(slice.isCollapsible)
-    }
-
-    func testPrefixFavoritesDoesNotCreatePlaceholdersWhenCustomizationDisabled() {
-        let sut = createSUT(isNewTabPageCustomizationEnabled: false)
-
-        let slice = sut.prefixedFavorites(for: 3)
-
-        XCTAssertTrue(slice.items.filter(\.isPlaceholder).isEmpty)
-        XCTAssertTrue(slice.items.isEmpty)
-        XCTAssertFalse(slice.isCollapsible)
-    }
-
-    func testPrefixFavoritesLimitsToTwoRows() {
-        favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-        let sut = createSUT()
-
-        let slice = sut.prefixedFavorites(for: 4)
-
-        XCTAssertEqual(slice.items.count, 8)
-        XCTAssertTrue(slice.isCollapsible)
-    }
-
-    func testListNotCollapsibleWhenCustomizationDisabled() {
-        favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-
-        let sut = createSUT(isNewTabPageCustomizationEnabled: false)
-
-        let favorites = sut.prefixedFavorites(for: 1)
-        XCTAssertFalse(favorites.isCollapsible)
-        XCTAssertFalse(sut.isCollapsed)
-    }
-
-    func testAddItemIsLastWhenFavoritesPresent() throws {
-        favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-        let sut = createSUT()
-        
-        let lastItem = try XCTUnwrap(sut.allFavorites.last)
-
-        XCTAssertTrue(lastItem == .addFavorite)
-    }
-
-    func testAddItemIsFirstWhenFavoritesEmpty() throws {
-        let sut = createSUT()
-        
-        let firstItem = try XCTUnwrap(sut.allFavorites.first)
-        
-        XCTAssertTrue(firstItem == .addFavorite)
-    }
-
-    func testDoesNotAppendAddItemWhenCustomizationDisabled() {
-        let sut = createSUT(isNewTabPageCustomizationEnabled: false)
-
-        XCTAssertNil(sut.allFavorites.first)
-
-        favoriteDataSource.favorites.append(contentsOf: Array(repeating: Favorite.stub(), count: 10))
-
-        XCTAssertNil(sut.allFavorites.first(where: { $0 == .addFavorite }))
-    }
-
-    private func createSUT(isNewTabPageCustomizationEnabled: Bool = true) -> FavoritesViewModel {
-        FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
+    private func createSUT(isFocussedState: Bool = false) -> FavoritesViewModel {
+        FavoritesViewModel(isFocussedState: isFocussedState,
                            favoriteDataSource: favoriteDataSource,
                            faviconLoader: MockFavoritesFaviconLoading(),
                            faviconsCache: MockFavoritesFaviconCaching(),
-                           pixelFiring: PixelFiringMock.self,
-                           dailyPixelFiring: PixelFiringMock.self)
+                           pixelFiring: pixelKitMock)
     }
+
+    // MARK: - Reordering (regression for m_d_favorites_list_index_not_matching_bookmark)
+
+    // These exercise the real model -> adapter -> view model stack, because the bug only appears
+    // when the adapter forwards the model's in-process `localUpdates` back into the originating
+    // view model (added in 7.225), making `updateData()` re-enter during `moveFavorites`.
+
+    func testReorderingFavoriteKeepsInMemoryListInSyncWithModel() throws {
+        let env = try makeReorderEnvironment()
+        defer { try? env.db.tearDown(deleteStores: true) }
+
+        XCTAssertEqual(env.sut.allFavorites.map(\.title), BasicBookmarksStructure.favoriteTitles)
+
+        env.sut.moveFavorites(from: IndexSet(integer: 0), to: 2)
+
+        // The in-memory list must match the persisted order. Before the fix the move was applied
+        // twice — once by the re-entrant model update and again by the manual `allFavorites.move(...)`
+        // — leaving the in-memory list permanently out of step with Core Data.
+        XCTAssertEqual(env.sut.allFavorites.map(\.id), env.adapter.favorites.map(\.id))
+        XCTAssertFalse(env.recorder.events.contains(.favoritesListIndexNotMatchingBookmark))
+    }
+
+    func testRepeatedReorderingDoesNotFireIndexMismatch() throws {
+        let env = try makeReorderEnvironment()
+        defer { try? env.db.tearDown(deleteStores: true) }
+
+        env.sut.moveFavorites(from: IndexSet(integer: 0), to: 2)
+        env.sut.moveFavorites(from: IndexSet(integer: 0), to: 2)
+
+        XCTAssertFalse(env.recorder.events.contains(.favoritesListIndexNotMatchingBookmark),
+                       "Reordering favorites desynced the in-memory list from the model, firing favoritesListIndexNotMatchingBookmark")
+    }
+
+    private typealias ReorderEnvironment = (
+        sut: FavoritesViewModel,
+        adapter: FavoritesListInteractingAdapter,
+        db: CoreDataDatabase,
+        recorder: BookmarksModelErrorRecorder
+    )
+
+    private func makeReorderEnvironment() throws -> ReorderEnvironment {
+        let managedObjectModel = try XCTUnwrap(CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel"))
+        let db = CoreDataDatabase(name: "Test", containerLocation: tempDBDir(), model: managedObjectModel)
+        db.loadStore()
+        let context = db.makeContext(concurrencyType: .mainQueueConcurrencyType, name: "TestContext")
+        BasicBookmarksStructure.populateDB(context: context)
+
+        let recorder = BookmarksModelErrorRecorder()
+        let model = FavoritesListViewModel(
+            bookmarksDatabase: db,
+            errorEvents: .init(mapping: { event, _, _, _ in
+                recorder.events.append(event)
+            }),
+            favoritesDisplayMode: .displayNative(.mobile))
+        let adapter = FavoritesListInteractingAdapter(favoritesListInteracting: model, appSettings: AppSettingsMock())
+        let sut = FavoritesViewModel(isFocussedState: false,
+                                     favoriteDataSource: adapter,
+                                     faviconLoader: MockFavoritesFaviconLoading(),
+                                     faviconsCache: MockFavoritesFaviconCaching(),
+                                     pixelFiring: pixelKitMock)
+        // `adapter` retains `model`, keeping the Core Data stack alive for the test's lifetime.
+        return (sut, adapter, db, recorder)
+    }
+}
+
+@Suite("Favorites expansion pixel")
+struct NewTabPageFavoritesExpansionPixelTests {
+
+    private let pixelKitMock = PixelKitMock()
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Expanding on the page reports it is not autocomplete", .timeLimit(.minutes(1)))
+    func expandingOnPageReportsNotAutocomplete() {
+        let sut = makeSUT(isFocussedState: false)
+
+        sut.changeExpansion(to: true)
+
+        #expect(sut.expansionState.isExpanded)
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.name) == ["new-tab-page_favorites_expansion_changed"])
+        #expect(pixelKitMock.actualFireCalls.first?.frequency == .dailyAndCount)
+        #expect(pixelKitMock.actualFireCalls.first?.pixel.parameters == ["expanded": "true", "is_autocomplete": "false"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Collapsing in autocomplete reports autocomplete", .timeLimit(.minutes(1)))
+    func collapsingInAutocompleteReportsAutocomplete() {
+        let sut = makeSUT(isFocussedState: true)
+        sut.expansionState.isExpanded = true
+
+        sut.changeExpansion(to: false)
+
+        #expect(!sut.expansionState.isExpanded)
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.name) == ["new-tab-page_favorites_expansion_changed"])
+        #expect(pixelKitMock.actualFireCalls.first?.pixel.parameters == ["expanded": "false", "is_autocomplete": "true"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Requesting the current state fires nothing", .timeLimit(.minutes(1)), arguments: [false, true])
+    func requestingCurrentStateFiresNothing(isExpanded: Bool) {
+        let sut = makeSUT(isFocussedState: false)
+        sut.expansionState.isExpanded = isExpanded
+
+        sut.changeExpansion(to: isExpanded)
+
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Restoring the tab's expansion state fires nothing", .timeLimit(.minutes(1)))
+    func restoringExpansionStateFiresNothing() {
+        let sut = makeSUT(isFocussedState: false)
+        let restoredState = FavoritesExpansionState()
+        restoredState.isExpanded = true
+
+        sut.expansionState = restoredState
+
+        #expect(sut.expansionState.isExpanded)
+        #expect(pixelKitMock.actualFireCalls.isEmpty)
+    }
+
+    private func makeSUT(isFocussedState: Bool) -> FavoritesViewModel {
+        FavoritesViewModel(isFocussedState: isFocussedState,
+                           favoriteDataSource: MockNewTabPageFavoriteDataSource(),
+                           faviconLoader: MockFavoritesFaviconLoading(),
+                           faviconsCache: MockFavoritesFaviconCaching(),
+                           pixelFiring: pixelKitMock)
+    }
+}
+
+private final class BookmarksModelErrorRecorder {
+    var events: [BookmarksModelError] = []
 }
 
 private final class MockNewTabPageFavoriteDataSource: NewTabPageFavoriteDataSource {
@@ -201,15 +259,6 @@ private final class MockNewTabPageFavoriteDataSource: NewTabPageFavoriteDataSour
 private extension Favorite {
     static func stub() -> Favorite {
         Favorite(id: UUID().uuidString, title: "foo", domain: "bar")
-    }
-}
-
-private extension FavoriteItem {
-    var isPlaceholder: Bool {
-        switch self {
-        case .placeholder: return true
-        case .favorite, .addFavorite: return false
-        }
     }
 }
 

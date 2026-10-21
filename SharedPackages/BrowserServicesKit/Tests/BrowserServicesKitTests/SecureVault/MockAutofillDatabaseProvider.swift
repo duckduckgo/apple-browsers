@@ -176,7 +176,11 @@ internal class MockAutofillDatabaseProvider: AutofillDatabaseProvider {
             _creditCards[cardID] = creditCard
             return cardID
         } else {
-            return -1
+            var creditCardToStore = creditCard
+            let id = Int64(_creditCards.count + 1)
+            creditCardToStore.id = id
+            _creditCards[id] = creditCardToStore
+            return id
         }
     }
 
@@ -229,6 +233,42 @@ internal class MockAutofillDatabaseProvider: AutofillDatabaseProvider {
 
     func modifiedSyncableCredentials() throws -> [SecureVaultModels.SyncableCredentials] {
         []
+    }
+
+    func modifiedSyncableCreditCards() throws -> [SecureVaultModels.SyncableCreditCard] {
+        []
+    }
+
+    func modifiedSyncableCreditCards(before date: Date) throws -> [SecureVaultModels.SyncableCreditCard] {
+        []
+    }
+
+    func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard] {
+        []
+    }
+
+    func storeSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
+    }
+
+    func deleteSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
+    }
+
+    func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func modifiedSyncableIdentities(before date: Date) throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func syncableIdentitiesForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableIdentity] {
+        []
+    }
+
+    func storeSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
+    }
+
+    func deleteSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
     }
 
     func neverPromptWebsites() throws -> [SecureVaultModels.NeverPromptWebsites] {

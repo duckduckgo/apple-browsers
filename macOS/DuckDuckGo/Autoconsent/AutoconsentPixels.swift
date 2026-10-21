@@ -18,15 +18,15 @@
 
 import PixelKit
 
-enum AutoconsentPixel: PixelKitEventV2 {
+enum AutoconsentPixel: PixelKit.Event {
 
     case acInit
-    case missedPopup
     case errorMultiplePopups
     case errorOptoutFailed
     case popupFound
     case done
     case doneCosmetic
+    case doneHeuristic
     case animationShown
     case animationShownCosmetic
     case disabledForSite
@@ -35,17 +35,24 @@ enum AutoconsentPixel: PixelKitEventV2 {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
+    case errorReloadLoop
+    case popoverShown
+    case popoverClosed
+    case popoverClicked
+    case popoverNewTabOpened
+    case popoverAutoDismissed
 
     case summary(events: [String: Int])
+    case usageStats(stats: [String: String])
 
     static var summaryPixels: [AutoconsentPixel] =  [
         .acInit,
-        .missedPopup,
         .errorMultiplePopups,
         .errorOptoutFailed,
         .popupFound,
         .done,
         .doneCosmetic,
+        .doneHeuristic,
         .animationShown,
         .animationShownCosmetic,
         .disabledForSite,
@@ -53,18 +60,20 @@ enum AutoconsentPixel: PixelKitEventV2 {
         .detectedByBoth,
         .detectedOnlyRules,
         .selfTestOk,
-        .selfTestFail
+        .selfTestFail,
+        .errorReloadLoop
     ]
 
     var name: String {
         switch self {
         case .acInit: "autoconsent_init"
-        case .missedPopup: "autoconsent_missed-popup"
         case .errorMultiplePopups: "autoconsent_error_multiple-popups"
         case .errorOptoutFailed: "autoconsent_error_optout"
+        case .errorReloadLoop: "autoconsent_error_reload-loop"
         case .popupFound: "autoconsent_popup-found"
         case .done: "autoconsent_done"
         case .doneCosmetic: "autoconsent_done_cosmetic"
+        case .doneHeuristic: "autoconsent_done_heuristic"
         case .animationShown: "autoconsent_animation-shown"
         case .animationShownCosmetic: "autoconsent_animation-shown_cosmetic"
         case .disabledForSite: "autoconsent_disabled-for-site"
@@ -73,7 +82,13 @@ enum AutoconsentPixel: PixelKitEventV2 {
         case .detectedOnlyRules: "autoconsent_detected-only-rules"
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
+        case .popoverShown: "autoconsent_popover-shown"
+        case .popoverClosed: "autoconsent_popover-closed"
+        case .popoverClicked: "autoconsent_popover-clicked"
+        case .popoverNewTabOpened: "autoconsent_popover-new-tab-opened"
+        case .popoverAutoDismissed: "autoconsent_popover-autodismissed"
         case .summary: "autoconsent_summary"
+        case .usageStats: "autoconsent_usage-stats"
         }
     }
 
@@ -87,11 +102,44 @@ enum AutoconsentPixel: PixelKitEventV2 {
             Dictionary(uniqueKeysWithValues: AutoconsentPixel.summaryPixels.map { pixel in
             (pixel.key, "\(events[pixel.key] ?? 0)")
             })
+        case let .usageStats(stats): {
+            var params = stats
+            // Added as a requirement from the privacy triage
+            // see: https://app.asana.com/1/137249556945/project/1209220182846570/task/1211062294407696?focus=true
+            params["petal"] = "true"
+            return params
+        }()
         default: [:]
         }
     }
 
-    var error: (any Error)? {
-        nil
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .acInit,
+                .errorMultiplePopups,
+                .errorOptoutFailed,
+                .errorReloadLoop,
+                .popupFound,
+                .done,
+                .doneCosmetic,
+                .doneHeuristic,
+                .animationShown,
+                .animationShownCosmetic,
+                .disabledForSite,
+                .detectedByPatterns,
+                .detectedByBoth,
+                .detectedOnlyRules,
+                .selfTestOk,
+                .selfTestFail,
+                .popoverShown,
+                .popoverClosed,
+                .popoverClicked,
+                .popoverNewTabOpened,
+                .popoverAutoDismissed,
+                .summary,
+                .usageStats:
+            return [.pixelSource]
+        }
     }
+
 }

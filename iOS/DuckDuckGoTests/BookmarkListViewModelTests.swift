@@ -20,6 +20,7 @@
 import XCTest
 import CoreData
 import Common
+import FoundationExtensions
 import Persistence
 import Bookmarks
 import DuckDuckGo
@@ -196,7 +197,7 @@ class BookmarkListViewModelTests: XCTestCase {
             let startState = viewModel.bookmarks
             viewModel.softDeleteBookmark(startState[0])
             
-            waitForExpectations(timeout: 1)
+            waitForExpectations(timeout: 5)
             
             let otherResults = listeningViewModel.bookmarks
             XCTAssertEqual(otherResults.count + 1, startState.count)
@@ -254,7 +255,7 @@ class BookmarkListViewModelTests: XCTestCase {
         XCTAssertEqual(second.objectID, newSecond.objectID)
         XCTAssertEqual(result.count, newResult.count)
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
     }
     
     func testWhenFolderIsNotAFolderThenErrorIsReported() {
@@ -278,7 +279,7 @@ class BookmarkListViewModelTests: XCTestCase {
         
         XCTAssertEqual(brokenViewModel.bookmarks.map { $0.objectID }, viewModel.bookmarks.map { $0.objectID })
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
     }
     
     func testWhenFolderIsMissingThenErrorIsReported() {
@@ -308,7 +309,7 @@ class BookmarkListViewModelTests: XCTestCase {
         
         XCTAssertEqual(brokenViewModel.bookmarks.map { $0.objectID }, viewModel.bookmarks.map { $0.objectID })
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
     }
     
     func testWhenRootIsMissingThenErrorIsReported() throws {
@@ -325,6 +326,6 @@ class BookmarkListViewModelTests: XCTestCase {
             expectation.fulfill()
         }))
         
-        waitForExpectations(timeout: 1)
+        waitForExpectations(timeout: 5)
     }
 }

@@ -32,7 +32,12 @@ protocol AutofillPopoverPresenter {
 
 final class DefaultAutofillPopoverPresenter: AutofillPopoverPresenter, PopoverPresenter {
 
+    private let pinningManager: PinningManager
     private var popover: PasswordManagementPopover?
+
+    init(pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
+    }
 
     var passwordDomain: String? {
         get {
@@ -80,7 +85,7 @@ private extension DefaultAutofillPopoverPresenter {
     func show(under view: NSView, withDomain domain: String?) -> PasswordManagementPopover {
         dismiss()
 
-        let popover = PasswordManagementPopover()
+        let popover = PasswordManagementPopover(pinningManager: pinningManager)
         self.popover = popover
         popover.viewController.domain = domain
         show(popover, positionedBelow: view)

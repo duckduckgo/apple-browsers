@@ -1,0 +1,140 @@
+//
+//  TestResult.swift
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+public struct TestResult: Codable, Equatable {
+    public let url: URL
+
+    public let metrics: PerformanceMetrics?
+
+    public let success: Bool
+
+    public let error: TestError?
+
+    public let timestamp: Date
+
+    public let endTime: Date?
+
+    public init(
+        url: URL,
+        metrics: PerformanceMetrics?,
+        success: Bool,
+        error: TestError? = nil,
+        timestamp: Date,
+        endTime: Date? = nil
+    ) {
+        self.url = url
+        self.metrics = metrics
+        self.success = success
+        self.error = error
+        self.timestamp = timestamp
+        self.endTime = endTime
+    }
+
+    public init(
+        url: URL,
+        metrics: PerformanceMetrics?,
+        success: Bool,
+        error: Error?,
+        timestamp: Date,
+        endTime: Date? = nil
+    ) {
+        self.url = url
+        self.metrics = metrics
+        self.success = success
+        self.error = error.map { TestError.otherError(message: $0.localizedDescription) }
+        self.timestamp = timestamp
+        self.endTime = endTime
+    }
+}
+
+/// Error types for test results
+public enum TestError: LocalizedError, Codable, Equatable {
+    case timeout(duration: TimeInterval)
+    case networkError(message: String)
+    case invalidURL
+    case cancelled
+    case otherError(message: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .timeout(let duration):
+            return "Test timed out after \(duration) seconds"
+        case .networkError(let message):
+            return "Network error: \(message)"
+        case .invalidURL:
+            return "Invalid URL"
+        case .cancelled:
+            return "Test was cancelled"
+        case .otherError(let message):
+            return message
+        }
+    }
+
+    // MARK: - Codable
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case duration
+        case message
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+
+        switch type {
+        case "timeout":
+            let duration = try container.decode(TimeInterval.self, forKey: .duration)
+            self = .timeout(duration: duration)
+        case "networkError":
+            let message = try container.decode(String.self, forKey: .message)
+            self = .networkError(message: message)
+        case "invalidURL":
+            self = .invalidURL
+        case "cancelled":
+            self = .cancelled
+        case "otherError":
+            let message = try container.decode(String.self, forKey: .message)
+            self = .otherError(message: message)
+        default:
+            throw DecodingError.dataCorruptedError(forKey: .type, in: container, debugDescription: "Unknown error type")
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case .timeout(let duration):
+            try container.encode("timeout", forKey: .type)
+            try container.encode(duration, forKey: .duration)
+        case .networkError(let message):
+            try container.encode("networkError", forKey: .type)
+            try container.encode(message, forKey: .message)
+        case .invalidURL:
+            try container.encode("invalidURL", forKey: .type)
+        case .cancelled:
+            try container.encode("cancelled", forKey: .type)
+        case .otherError(let message):
+            try container.encode("otherError", forKey: .type)
+            try container.encode(message, forKey: .message)
+        }
+    }
+}

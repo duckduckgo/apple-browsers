@@ -16,16 +16,18 @@
 //  limitations under the License.
 //
 
+import AppKit
 import AppLauncher
 import BrowserServicesKit
 import Common
+import ConcurrencyExtensions
+import FoundationExtensions
 import LoginItems
-import NetworkExtension
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import PixelKit
 import SystemExtensions
+import VPN
 
 protocol VPNUninstalling {
     func uninstall(
@@ -75,7 +77,7 @@ final class VPNUninstaller: VPNUninstalling {
         }
     }
 
-    enum IPCUninstallAttempt: PixelKitEventV2 {
+    enum IPCUninstallAttempt: PixelKit.Event {
         case prevented
         case begin
         case cancelled(_ reason: UninstallCancellationReason)
@@ -113,22 +115,22 @@ final class VPNUninstaller: VPNUninstalling {
             }
         }
 
-        var error: Error? {
+        var standardParameters: [PixelKitStandardParameter]? {
             switch self {
             case .prevented,
                     .begin,
                     .cancelled,
-                    .success:
-                return nil
-            case .failure(let error):
-                return error
+                    .success,
+                    .failure:
+                return [.pixelSource]
             }
         }
+
     }
 
     private let ipcServiceLauncher: IPCServiceLauncher
     private let loginItemsManager: LoginItemsManaging
-    private let pinningManager: LocalPinningManager
+    private let pinningManager: PinningManager
     private let settings: VPNSettings
     private let userDefaults: UserDefaults
     private let vpnMenuLoginItem: LoginItem
@@ -140,7 +142,7 @@ final class VPNUninstaller: VPNUninstalling {
 
     init(ipcServiceLauncher: IPCServiceLauncher? = nil,
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
-         pinningManager: LocalPinningManager = .shared,
+         pinningManager: PinningManager,
          userDefaults: UserDefaults = .netP,
          settings: VPNSettings = .init(defaults: .netP),
          ipcClient: VPNControllerIPCClient = VPNControllerUDSClient(),
@@ -210,7 +212,7 @@ final class VPNUninstaller: VPNUninstalling {
             throw UninstallError.cancelled(reason: .alreadyUninstalling)
         }
 
-        guard vpnMenuLoginItem.status.isInstalled else {
+        guard await vpnMenuLoginItem.status().isInstalled else {
             throw UninstallError.cancelled(reason: .alreadyUninstalled)
         }
 
@@ -261,7 +263,7 @@ final class VPNUninstaller: VPNUninstalling {
 
         // When the agent is registered as a login item, we want to unregister it
         // and stop it from running, which is achieved by the next call.
-        removeAgents()
+        await removeAgents()
 
         // When the agent was started directly (not as a login item) we want to stop it,
         // as the above call won't do anything for it.
@@ -280,8 +282,8 @@ final class VPNUninstaller: VPNUninstalling {
         try await ipcServiceLauncher.disable()
     }
 
-    func removeAgents() {
-        loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
+    func removeAgents() async {
+        await loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
     func removeSystemExtension() async throws {

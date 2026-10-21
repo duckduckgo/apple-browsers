@@ -18,46 +18,77 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import os.log
 import DataBrokerProtectionCore
 
+public protocol SchedulerDeferralFeatureFlagging {
+    var isSchedulerDeferralHandlingEnabled: Bool { get }
+}
+
+public typealias DBPMacOSFeatureFlagging = DBPFeatureFlagging & SchedulerDeferralFeatureFlagging
+
 public protocol DataBrokerProtectionBackgroundActivityScheduler {
-    func startScheduler()
+    func startScheduler() async
+
     var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate? { get set }
+    var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource? { get set }
 
     var lastTriggerTimestamp: Date? { get }
 }
 
 public protocol DataBrokerProtectionBackgroundActivitySchedulerDelegate: AnyObject {
-    func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler, completion: (() -> Void)?)
+    func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler) async
 }
 
-public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProtectionBackgroundActivityScheduler {
+public protocol DataBrokerProtectionBackgroundActivitySchedulerDataSource: AnyObject {
+    func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler) -> EmailConfirmationDataServiceProvider?
+}
+
+public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProtectionBackgroundActivityScheduler, @unchecked Sendable {
 
     private let activity: NSBackgroundActivityScheduler
     private let schedulerIdentifier = "com.duckduckgo.macos.browser.databroker-protection-scheduler"
+    private let isDeferralHandlingEnabled: Bool
 
     public weak var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
+    public weak var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource?
     public private(set) var lastTriggerTimestamp: Date?
+    private var shouldDefer: Bool {
+        isDeferralHandlingEnabled && activity.shouldDefer
+    }
 
-    public init(config: DataBrokerMacOSSchedulingConfig) {
+    public init(config: DataBrokerMacOSSchedulingConfig,
+                isDeferralHandlingEnabled: Bool) {
         activity = NSBackgroundActivityScheduler(identifier: schedulerIdentifier)
+        self.isDeferralHandlingEnabled = isDeferralHandlingEnabled
         activity.repeats = true
         activity.interval = config.activitySchedulerTriggerInterval
         activity.tolerance = config.activitySchedulerIntervalTolerance
         activity.qualityOfService = config.activitySchedulerQOS
     }
 
-    public func startScheduler() {
-        activity.schedule { completion in
+    public func startScheduler() async {
+        await withCheckedContinuation { continuation in
+            activity.schedule { completion in
+                Task {
+                    self.lastTriggerTimestamp = Date()
+                    Logger.dataBrokerProtection.log("Scheduler running...")
 
-            self.lastTriggerTimestamp = Date()
-            Logger.dataBrokerProtection.log("Scheduler running...")
-            self.delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self) {
-                Logger.dataBrokerProtection.log("Scheduler finished...")
-                completion(.finished)
+                    guard !self.shouldDefer else {
+                        Logger.dataBrokerProtection.log("Scheduler deferred before work started")
+                        completion(.deferred)
+                        return
+                    }
+
+                    await self.delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self)
+
+                    Logger.dataBrokerProtection.log("Scheduler finished...")
+                    completion(.finished)
+                }
             }
+            continuation.resume()
         }
     }
 }

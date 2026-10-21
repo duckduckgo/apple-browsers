@@ -23,8 +23,9 @@ public extension DBPUIInitialScanState {
 
     init(from brokerProfileQueryData: [BrokerProfileQueryData]) {
         let withoutDeprecated = brokerProfileQueryData.filter { !$0.profileQuery.deprecated }
+        let withoutRemoved = withoutDeprecated.filter { !$0.dataBroker.isRemoved }
 
-        let groupedByBroker = Dictionary(grouping: withoutDeprecated, by: { $0.dataBroker.name }).values
+        let groupedByBroker = Dictionary(grouping: withoutRemoved, by: { $0.dataBroker.name }).values
 
         // totalScans is the overall number of brokers (including only currently extant mirrorSites)
         let totalScans = groupedByBroker.reduce(0) { accumulator, brokerQueryDataArray in
@@ -43,11 +44,15 @@ public extension DBPUIInitialScanState {
         }
 
         // currentScans is the number that have been fully or partially scanned
+        // scanProgress must have removed brokers filtered out
+        // https://app.asana.com/1/137249556945/task/1211375571700466/comment/1211467916936711
         self.scanProgress = DBPUIScanProgress(currentScans: partiallyScannedBrokers.completeBrokerScansCount,
                                               totalScans: totalScans,
                                               scannedBrokers: partiallyScannedBrokers)
 
-        self.resultsFound = DBPUIDataBrokerProfileMatch.profileMatches(from: withoutDeprecated)
+        // resultsFound must have removed brokers filtered out
+        // https://app.asana.com/1/137249556945/project/1203581873609357/task/1211564057688647
+        self.resultsFound = DBPUIDataBrokerProfileMatch.profileMatches(from: withoutRemoved)
     }
 }
 
@@ -76,12 +81,13 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                 }
 
                 let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOutJob,
-                                                               dataBroker: dataBroker,
-                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                               optOutUrl: dataBroker.optOutUrl)
+                                                               dataBroker: DBPUIDataBroker(from: dataBroker),
+                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData)
 
                 if extractedProfile.removedDate == nil {
-                    inProgressOptOuts.append(profileMatch)
+                    if !$0.profileQuery.deprecated {
+                        inProgressOptOuts.append(profileMatch)
+                    }
                 } else {
                     removedProfiles.append(profileMatch)
                 }
@@ -89,16 +95,13 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                 if let closestMatchesFoundEvent = scanJob.closestMatchesFoundEvent() {
                     for mirrorSite in dataBroker.mirrorSites where mirrorSite.wasExtant(on: closestMatchesFoundEvent.date) {
                         let mirrorSiteMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOutJob,
-                                                                          dataBrokerName: mirrorSite.name,
-                                                                          dataBrokerURL: mirrorSite.url,
-                                                                          dataBrokerParentURL: dataBroker.parent,
-                                                                          parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                                          optOutUrl: dataBroker.optOutUrl)
+                                                                          dataBroker: DBPUIDataBroker(from: mirrorSite, parentBroker: dataBroker),
+                                                                          parentBrokerOptOutJobData: parentBrokerOptOutJobData)
 
                         if let extractedProfileRemovedDate = extractedProfile.removedDate,
                            mirrorSite.wasExtant(on: extractedProfileRemovedDate) {
                             removedProfiles.append(mirrorSiteMatch)
-                        } else {
+                        } else if !$0.profileQuery.deprecated {
                             inProgressOptOuts.append(mirrorSiteMatch)
                         }
                     }
@@ -136,12 +139,18 @@ public extension DBPUIScanAndOptOutMaintenanceState {
     private static func getNextScansInformation(brokerProfileQueryData: [BrokerProfileQueryData],
                                                 currentDate: Date = Date()) -> DBPUIScanDate {
         let eightDaysAfterToday = currentDate.addingTimeInterval(8 * 24 * 60 * 60)
-        let brokers = brokerProfileQueryData.uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: currentDate,
-                                                                                                     laterDate: eightDaysAfterToday)
 
-        let earliestScanPreferredRunDate = brokerProfileQueryData.earliestScanPreferredRunDate() ?? currentDate
+        // Next scans must have removed brokers filtered out when sent to the Web UI
+        // https://app.asana.com/1/137249556945/task/1211375571700466/comment/1211467916936711
+        let nonRemovedBrokerProfileQueryData = brokerProfileQueryData.filter { !$0.dataBroker.isRemoved }
+        let brokers = nonRemovedBrokerProfileQueryData
+            .uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: currentDate,
+                                                                     laterDate: eightDaysAfterToday)
 
-        return DBPUIScanDate(date: earliestScanPreferredRunDate.timeIntervalSince1970, dataBrokers: brokers)
+        let earliestScanPreferredRunDate = nonRemovedBrokerProfileQueryData.earliestScanPreferredRunDate() ?? currentDate
+        let displayDate = max(earliestScanPreferredRunDate, currentDate)
+
+        return DBPUIScanDate(date: displayDate.timeIntervalSince1970, dataBrokers: brokers)
     }
 }
 
@@ -217,7 +226,7 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        let uniqued = brokers.uniqued()
+        let uniqued = brokers.uniqued(on: \.name)
         return uniqued.map { $0 }
     }
 
@@ -243,7 +252,7 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        let uniqued = brokers.uniqued()
+        let uniqued = brokers.uniqued(on: \.name)
         return uniqued.map { $0 }
     }
 

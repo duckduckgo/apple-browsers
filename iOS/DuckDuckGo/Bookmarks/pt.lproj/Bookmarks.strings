@@ -1,0 +1,45 @@
+/* Class = "UILabel"; text = "Label"; ObjectID = "7VM-DV-W3e"; */
+"7VM-DV-W3e.text" = "Rótulo";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "061-pX-T9z"; */
+"061-pX-T9z.text" = "Rótulo";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "cV4-pj-JNb"; */
+"cV4-pj-JNb.text" = "Rótulo";
+
+/* Class = "UILabel"; text = "Delete"; ObjectID = "hEJ-T8-Tdl"; */
+"hEJ-T8-Tdl.text" = "Eliminar";
+
+/* Class = "UILabel"; text = "No matches found"; ObjectID = "hqG-b3-Fq3"; */
+"hqG-b3-Fq3.text" = "Nenhuma correspondência encontrada";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "K2O-E5-pyF"; */
+"K2O-E5-pyF.text" = "Rótulo";
+
+/* Class = "UILabel"; text = "Add Folder"; ObjectID = "K8e-rz-6qx"; */
+"K8e-rz-6qx.text" = "Adicionar pasta";
+
+/* Class = "UITextField"; placeholder = "Title"; ObjectID = "KiU-Wb-7jj"; */
+"KiU-Wb-7jj.placeholder" = "Título";
+
+/* Class = "UIBarButtonItem"; title = "Edit"; ObjectID = "Ksa-Pd-Mv5"; */
+"Ksa-Pd-Mv5.title" = "Editar";
+
+/* Class = "UILabel"; text = "Favorite"; ObjectID = "mRK-XI-Rr8"; */
+"mRK-XI-Rr8.text" = "Favorito";
+
+/* Class = "UINavigationItem"; title = "Bookmarks"; ObjectID = "oMv-60-GGW"; */
+"oMv-60-GGW.title" = "Marcadores";
+
+/* Class = "UINavigationItem"; title = "Add Folder"; ObjectID = "qaZ-4Z-o70"; */
+"qaZ-4Z-o70.title" = "Adicionar pasta";
+
+/* Class = "UITextField"; placeholder = "Title"; ObjectID = "rT4-Yr-P8D"; */
+"rT4-Yr-P8D.placeholder" = "Título";
+
+/* Class = "UIBarButtonItem"; title = "Done"; ObjectID = "RuZ-zV-tu8"; */
+"RuZ-zV-tu8.title" = "Feito";
+
+/* Class = "UITextField"; placeholder = "URL"; ObjectID = "YqY-sP-hhb"; */
+"YqY-sP-hhb.placeholder" = "URL";
+

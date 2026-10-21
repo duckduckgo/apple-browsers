@@ -29,6 +29,10 @@ public struct MapperToDB {
         jsonEncoder.dateEncodingStrategy = .millisecondsSince1970
     }
 
+    func mapToDB(_ text: String?) throws -> Data? {
+        try text.encoded(mechanism)
+    }
+
     func mapToDB(id: Int64? = nil, profile: DataBrokerProtectionProfile) throws -> ProfileDB {
         .init(id: id, birthYear: try withUnsafeBytes(of: profile.birthYear) { try mechanism(Data($0)) })
     }
@@ -57,9 +61,17 @@ public struct MapperToDB {
         .init(phoneNumber: try mechanism(phone.encoded), profileId: profileId)
     }
 
-    func mapToDB(_ broker: DataBroker, id: Int64? = nil) throws -> BrokerDB {
-        let encodedBroker = try jsonEncoder.encode(broker)
-        return .init(id: id, name: broker.name, json: encodedBroker, version: broker.version, url: broker.url, eTag: broker.eTag)
+    func mapToDB(_ brokerResource: BrokerResource, id: Int64? = nil) throws -> BrokerDB {
+        let broker = brokerResource.broker
+        return .init(
+            id: id,
+            name: broker.name,
+            json: brokerResource.rawJSON,
+            version: broker.version,
+            url: broker.url,
+            eTag: broker.eTag,
+            removedAt: broker.removedAt
+        )
     }
 
     func mapToDB(_ profileQuery: ProfileQuery, relatedTo profileId: Int64) throws -> ProfileQueryDB {
@@ -81,15 +93,17 @@ public struct MapperToDB {
     }
 
     func mapToDB(_ extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> ExtractedProfileDB {
-        let encodedProfile = try jsonEncoder.encode(extractedProfile)
-
-        return .init(
+        .init(
             id: nil,
             brokerId: brokerId,
             profileQueryId: profileQueryId,
-            profile: try mechanism(encodedProfile),
+            profile: try mapToDB(extractedProfile),
             removedDate: nil // Removed data is initialized as empty when created.
         )
+    }
+
+    func mapToDB(_ extractedProfile: ExtractedProfile) throws -> Data {
+        try mechanism(jsonEncoder.encode(extractedProfile))
     }
 
     func mapToDB(_ historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64) throws -> ScanHistoryEventDB {
@@ -120,6 +134,34 @@ public struct MapperToDB {
               attemptId: attemptUUID.uuidString,
               lastStageDate: lastStageDate,
               startDate: startTime)
+    }
+
+    func mapToDB(_ event: BackgroundTaskEvent) throws -> BackgroundTaskEventDB {
+        var metadata: Data?
+        if let eventMetadata = event.metadata {
+            metadata = try jsonEncoder.encode(eventMetadata)
+        }
+
+        return .init(
+            id: event.id,
+            sessionId: event.sessionId,
+            eventType: event.eventType.rawValue,
+            timestamp: event.timestamp,
+            metadata: metadata
+        )
+    }
+
+    func mapToDB(_ optOutEmailConfirmation: OptOutEmailConfirmationJobData) throws -> OptOutEmailConfirmationDB {
+        .init(
+            brokerId: optOutEmailConfirmation.brokerId,
+            profileQueryId: optOutEmailConfirmation.profileQueryId,
+            extractedProfileId: optOutEmailConfirmation.extractedProfileId,
+            generatedEmail: try mechanism(optOutEmailConfirmation.generatedEmail.encoded),
+            attemptID: optOutEmailConfirmation.attemptID,
+            emailConfirmationLink: try optOutEmailConfirmation.emailConfirmationLink.encoded(mechanism),
+            emailConfirmationLinkObtainedOnBEDate: optOutEmailConfirmation.emailConfirmationLinkObtainedOnBEDate,
+            emailConfirmationAttemptCount: optOutEmailConfirmation.emailConfirmationAttemptCount
+        )
     }
 }
 
@@ -166,21 +208,28 @@ struct MapperToModel {
         try mechanism(phoneDB.phoneNumber).utf8String()!
     }
 
-    func mapToModel(_ brokerDB: BrokerDB) throws -> DataBroker {
+    func mapToResource(_ brokerDB: BrokerDB) throws -> BrokerResource {
         let decodedBroker = try jsonDecoder.decode(DataBroker.self, from: brokerDB.json)
 
-        return DataBroker(
+        let broker = DataBroker(
             id: brokerDB.id,
-            name: decodedBroker.name,
-            url: decodedBroker.url,
+            name: brokerDB.name,
+            url: brokerDB.url,
             steps: decodedBroker.steps,
-            version: decodedBroker.version,
+            version: brokerDB.version,
             schedulingConfig: decodedBroker.schedulingConfig,
             parent: decodedBroker.parent,
             mirrorSites: decodedBroker.mirrorSites,
             optOutUrl: decodedBroker.optOutUrl,
-            eTag: decodedBroker.eTag
+            eTag: brokerDB.eTag,
+            removedAt: brokerDB.removedAt
         )
+
+        return BrokerResource(broker: broker, rawJSON: brokerDB.json)
+    }
+
+    func mapToModel(_ brokerDB: BrokerDB) throws -> DataBroker {
+        try mapToResource(brokerDB).broker
     }
 
     func mapToModel(_ profileQueryDB: ProfileQueryDB) throws -> ProfileQuery {
@@ -225,7 +274,8 @@ struct MapperToModel {
             extractedProfile: try mapToModel(extractedProfileDB),
             sevenDaysConfirmationPixelFired: optOutDB.sevenDaysConfirmationPixelFired,
             fourteenDaysConfirmationPixelFired: optOutDB.fourteenDaysConfirmationPixelFired,
-            twentyOneDaysConfirmationPixelFired: optOutDB.twentyOneDaysConfirmationPixelFired
+            twentyOneDaysConfirmationPixelFired: optOutDB.twentyOneDaysConfirmationPixelFired,
+            fortyTwoDaysConfirmationPixelFired: optOutDB.fortyTwoDaysConfirmationPixelFired
         )
     }
 
@@ -243,7 +293,8 @@ struct MapperToModel {
                      age: extractedProfile.age,
                      email: extractedProfile.email,
                      removedDate: extractedProfileDB.removedDate,
-                     identifier: extractedProfile.identifier)
+                     identifier: extractedProfile.identifier,
+                     extras: extractedProfile.extras)
     }
 
     func mapToModel(_ scanEvent: ScanHistoryEventDB) throws -> HistoryEvent {
@@ -268,6 +319,38 @@ struct MapperToModel {
               attemptId: optOutAttempt.attemptId,
               lastStageDate: optOutAttempt.lastStageDate,
               startDate: optOutAttempt.startDate)
+    }
+
+    func mapToModel(_ eventDB: BackgroundTaskEventDB) throws -> BackgroundTaskEvent {
+        guard let eventType = BackgroundTaskEvent.EventType(rawValue: eventDB.eventType) else {
+            throw BackgroundTaskEvent.Error.invalidEventType
+        }
+
+        var metadata: BackgroundTaskEvent.Metadata?
+        if let eventMetadata = eventDB.metadata {
+            metadata = try jsonDecoder.decode(BackgroundTaskEvent.Metadata.self, from: eventMetadata)
+        }
+
+        return .init(
+            id: eventDB.id,
+            sessionId: eventDB.sessionId,
+            eventType: eventType,
+            timestamp: eventDB.timestamp,
+            metadata: metadata
+        )
+    }
+
+    func mapToModel(_ optOutEmailConfirmationDB: OptOutEmailConfirmationDB) throws -> OptOutEmailConfirmationJobData {
+        .init(
+            brokerId: optOutEmailConfirmationDB.brokerId,
+            profileQueryId: optOutEmailConfirmationDB.profileQueryId,
+            extractedProfileId: optOutEmailConfirmationDB.extractedProfileId,
+            generatedEmail: try optOutEmailConfirmationDB.generatedEmail.decode(mechanism),
+            attemptID: optOutEmailConfirmationDB.attemptID,
+            emailConfirmationLink: try optOutEmailConfirmationDB.emailConfirmationLink.decode(mechanism),
+            emailConfirmationLinkObtainedOnBEDate: optOutEmailConfirmationDB.emailConfirmationLinkObtainedOnBEDate,
+            emailConfirmationAttemptCount: optOutEmailConfirmationDB.emailConfirmationAttemptCount
+        )
     }
 }
 
@@ -302,4 +385,12 @@ extension Optional where Wrapped == Data {
 
         return try mechanism(value).utf8String()
     }
+}
+
+extension Data {
+
+    func decode(_ mechanism: (Data) throws -> Data) throws -> String {
+        try mechanism(self).utf8String()!
+    }
+
 }

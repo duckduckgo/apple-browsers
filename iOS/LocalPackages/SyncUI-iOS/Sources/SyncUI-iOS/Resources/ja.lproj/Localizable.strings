@@ -1,0 +1,426 @@
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Sync & Backupセッションを再開してブックマークやパスワードなどを復元するか、新しいセットアップを続行します。";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "同期とバックアップを再開";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "セットアップを続行";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "前回のSync & Backupセッションが準備完了です。";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "DuckDuckGoアプリを再インストールすると、このデバイスでデータを復元するかどうかを尋ねられます。";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "アプリの再インストール時に復元";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "アプリの再インストール時に復元";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "無効";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "有効";
+
+/* Standard Buttons - Back Button */
+"back.button" = "戻る";
+
+/* Do not translate - stringsdict entry */
+"bookmarks.invalid.objects.present.description" = "bookmarks.invalid.objects.present.description";
+
+/* Alert title for invalid bookmarks being filtered out of synced data */
+"bookmarks.invalid.objects.present.title" = "特定のフィールドのコンテンツが長すぎるため、一部のブックマークが同期されません。";
+
+/* Camera View - Go to Settings Button */
+"camera.go.to.settings.button" = "設定に移動";
+
+/* Camera View - Unavailable Title */
+"camera.is.unavailable.title" = "カメラは利用できません";
+
+/* Camera View - Permission Instructions */
+"camera.permission.instructions" = "デバイスの設定に移動し、このアプリがカメラにアクセスする許可を付与してください。";
+
+/* Camera View - Permission Required */
+"camera.permission.required" = "カメラの許可が必要です";
+
+/* No comment provided by engineer. */
+"Cancel" = "キャンセル";
+
+/* Standard Buttons - Cancel Button */
+"cancel.button" = "キャンセル";
+
+/* Standard Buttons - Copy Button */
+"copy.button" = "コピー";
+
+/* Do not translate - stringsdict entry */
+"credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
+
+/* Alert title for invalid logins being filtered out of synced data */
+"credentials.invalid.objects.present.title" = "特定のフィールドの内容が長すぎるため、一部のパスワードが同期されません。";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "一部のクレジットカードは、特定のフィールドの内容が長すぎるために同期されていません。";
+
+/* No comment provided by engineer. */
+"Dev environment" = "開発環境";
+
+/* Standard Buttons - Done Button */
+"done.button" = "完了";
+
+/* Fetch Favicons Onboarding - Button Title */
+"fetch.favicons.onboarding.button.title" = "ブックマークアイコンを最新の状態に保つ";
+
+/* Fetch Favicons Onboarding - Message */
+"fetch.favicons.onboarding.message" = "このデバイスで、他のデバイスから同期された新しいブックマークのアイコンを自動的にダウンロードしますか？これにより、ブックマークが同期されるたびにダウンロードがネットワークに公開されます。";
+
+/* Fetch Favicons Onboarding - Title */
+"fetch.favicons.onboarding.title" = "不足しているアイコンをダウンロードしますか？";
+
+/* No comment provided by engineer. */
+"Keep Development" = "開発環境で継続";
+
+/* Standard Buttons - Not Now Button */
+"not.now.button" = "後で";
+
+/* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
+"prefrences.sync.bookmarks-limit-exceeded-action" = "ブックマークを管理する";
+
+/* Button title for sync credentials limits exceeded warning to go to manage passwords */
+"prefrences.sync.credentials-limit-exceeded-action" = "パスワードを管理...";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "クレジットカードを管理...";
+
+/* Recover Synced Data Sheet - Button */
+"recover.synced.data.sheet.button" = "同期データを復元";
+
+/* Recover Synced Data Sheet - Description */
+"recover.synced.data.sheet.description" = "Sync & Backupをセットアップする際に入手したリカバリーコードが必要です。使用したデバイスにPDFとして保存している可能性があります。";
+
+/* Recover Synced Data Sheet - Title */
+"recover.synced.data.sheet.title" = "同期したデータを復元";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "ブックマーク、保存したログイン、その他のデバイスを同期するために再接続しています。";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "接続中...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "データの復元";
+
+/* Remove Device View - Button */
+"remove.device.button" = "デバイスを削除";
+
+/* Remove Device View - Message */
+"remove.device.message" = "「%@」は同期されたデータにアクセスできなくなります。";
+
+/* Remove Device View - Title */
+"remove.device.title" = "デバイスを削除しますか？";
+
+/* No comment provided by engineer. */
+"Switch to Production" = "本番環境に切り替え";
+
+/* Button title to share link for downloading DuckDuckGo on other devices */
+"sync.get.other.devices.card.button.title" = "ダウンロードリンクを共有";
+
+/* Message before share link for downloading DuckDuckGo on other devices */
+"sync.get.other.devices.card.message" = "DuckDuckGoをデスクトップまたは他のモバイルデバイスにダウンロードするには、次のサイトにアクセスしてください。";
+
+/* Title of card with share links for users to download DuckDuckGo on other devices */
+"sync.get.other.devices.card.title" = "他のデバイスでもDuckDuckGoを入手してこのデバイスと同期";
+
+/* Title of screen with share links for users to download DuckDuckGo on other devices */
+"sync.get.other.devices.screen.title" = "DuckDuckGoを入手";
+
+/* Message included when sharing a url via the system share sheet */
+"sync.get.other.devices.share.link.message" = "お使いのデバイスにDuckDuckGoブラウザをインストールし、ブックマークと自動入力データの安全な同期を開始します。";
+
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "設定に移動";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Sync & Backupを使用するには、デバイスのパスワードが必要です。";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "デバイスを保護してSync & Backupを使用";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "回復";
+
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "デバイスの同期をお手伝いします。";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "このデバイスを近くのコンピューターと同期します。";
+
+/* Body on the sync-setup prompt explaining that the user can sync this device only and pair another device later */
+"sync.simplified.another.device.v3.body" = "今、手元に別のデバイスがありませんか？このデバイスのみを同期して、後で別のデバイスと同期できます。";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v3.title" = "近くに別のデバイスはありますか？ デバイスを同期。";
+
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "ブックマークしたウェブサイトからアイコンを取得します。アイコンのダウンロードはネットワークに公開されます。";
+
+/* Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks */
+"sync.simplified.bookmarks.section.fetch-favicons.title" = "ブックマークアイコンを読み込む";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "ブックマーク";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "モバイルとデスクトップで同じお気に入りのブックマークを使用できます。";
+
+/* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
+"sync.simplified.bookmarks.section.unified-favorites.title" = "デバイス間でお気に入りを共有する";
+
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "他のデバイスをチェックしてください。";
+
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backupは、すべてのデバイスでエンドツーエンドで暗号化されます。";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "リカバリーコードをコピー";
+
+/* Alert button that confirms turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.action" = "完全に削除";
+
+/* Title of the alert confirming turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.title" = "この操作は元に戻せません。";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "同期をオフにしてサーバーデータを削除";
+
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "デバイスへのアクセスを失った場合、このコードを使用してデータを復元します。大切に保管してください。";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedTitle. */
+"sync.simplified.device.added.v2.fallback.device.name" = "このデバイス";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "Sync & Backupに%@が追加されました。";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "リカバリーコードをダウンロード";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "ダウンロード";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "リカバリーコードをダウンロード";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "ブックマーク、自動入力データ、Duck.aiのチャットは、エンドツーエンドの暗号化で同期およびバックアップされています。";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "ブックマークと自動入力データは、エンドツーエンドの暗号化で同期されています。";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGoは同期されています";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "コード例：";
+
+/* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.enter.code.open.app" = "他の%@を開く";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "同期コードを貼り付け";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "**「Sync & Backup」** › **「別のデバイスと同期」** › **「テキストコードをコピー」** に移動します。";
+
+/* Title on the enter-code tab of the scan screen */
+"sync.simplified.enter.code.title" = "同期コードを入力してください。";
+
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "デスクトップブラウザを入手";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "リカバリーコードを持っています";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "自動入力データとブックマークを同期します。DuckDuckGoアプリ間でエンドツーエンドで暗号化されます。";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "自動入力データ、ブックマーク、Duck.aiのチャットを同期およびバックアップします。DuckDuckGoアプリ間でエンドツーエンドで暗号化されます。";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "DuckDuckGoの同期を維持";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "このデバイスを削除すると、同期されたデータにアクセスできなくなります。";
+
+/* Footer caption shown under the Remove Device button on the manage device screen. Parameter is the device name */
+"sync.simplified.manage.device.remove.footer.named" = "「%@」は、他のデバイスの同期データにアクセスできなくなります。";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "同期済み";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "これをオフにすると、このデバイスは同期されたデータにアクセスできなくなります。";
+
+/* Footer caption shown under the Sync This Device toggle on the manage this device screen. Parameter is the device name */
+"sync.simplified.manage.device.turn.off.footer.named" = "これをオフにすると、「%@」は他のデバイスの同期データにアクセスできなくなります。";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "マイデバイス";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "同期データの復元";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "データを復元しています…";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "リカバリーコード";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "すべてのデバイスでエンドツーエンドで暗号化されます。";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backupが有効になりました";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "このデバイスへのアクセスを失った場合は、このコードを使用してデータを復元してください。Sync & Backupのデータは18か月間アクティビティがないと復元できません。[詳細はこちら](%@)";
+
+/* Confirmation alert button to remove a device from Sync & Backup */
+"sync.simplified.remove.device.confirm.action" = "削除";
+
+/* Confirmation alert message when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.message" = "「%@」は同期されたデータにアクセスできなくなります。 ブックマーク、自動入力データ、Duck.aiのチャットはデバイスに残ります。";
+
+/* Confirmation alert title when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.title" = "Sync & Backupから%@を削除してもよろしいですか？";
+
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
+"sync.simplified.scan-or-view-code.app.name" = "DuckDuckGoアプリ";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "接続中...";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "コードを貼り付けたら、このデバイスに戻ります。";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "コードを別のデバイスに貼り付ける";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "コードを検証中";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "共有コード";
+
+/* Button on the scan-QR tab that opens the app's iOS Settings so the user can allow camera access */
+"sync.simplified.scan.v2.camera.denied.button" = "権限を変更";
+
+/* Message on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.message" = "QRコードをスキャンして同期するには、カメラへのアクセス許可が必要です。";
+
+/* Title on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.title" = "DuckDuckGoがカメラにアクセスする必要があります。";
+
+/* Close button in the scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "閉じる";
+
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
+"sync.simplified.scan.v2.qr.app.name" = "デスクトップ版DuckDuckGo";
+
+/* Button on the scan-QR intro animation card that dismisses the card and reveals the camera scanner */
+"sync.simplified.scan.v2.qr.got.it.button" = "了解";
+
+/* Heading overlaid on the camera on the scan-QR tab */
+"sync.simplified.scan.v2.qr.heading" = "同期するためにQRコードをスキャンします。";
+
+/* Scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. **...** marks the parts shown in the primary text color. \\n is a line break. */
+"sync.simplified.scan.v2.qr.instruction" = "%@で、\n**Sync & Backup** › **別のデバイスと同期**の順に移動します";
+
+/* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.scan.v2.qr.open.app" = "%@を開く";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "スキャンの準備完了";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "そして **「Sync & Backup」** › **「別のデバイスと同期」** に移動";
+
+/* Segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "コードを入力";
+
+/* Segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "QRをスキャン";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "オフ";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "オン";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "テキストコードをコピー";
+
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "別のデバイスで、%@を開く";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "**「Sync & Backup」** › **「別のデバイスと同期」** に移動して、このコードをスキャン：";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "コードをスキャンまたはコピー";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "このデバイスのみを同期";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "このデバイスを同期";
+
+/* Button on the turn off Sync & Backup sheet that turns off sync and deletes the server data */
+"sync.simplified.turn.off.sheet.delete.button" = "オフにしてサーバーデータを削除";
+
+/* Message of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.delete.message" = "Sync & Backupを使用しているすべてのデバイスの接続が切断され、同期されたデータはサーバーから削除されます。";
+
+/* Toggle label on the turn off Sync & Backup sheet to also delete the synced data from the server */
+"sync.simplified.turn.off.sheet.delete.toggle" = "サーバーデータも削除しますか？";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is off */
+"sync.simplified.turn.off.sheet.delete.toggle.off.footer" = "Sync & Backupをオフにすると、同期されたデータがサーバーからすべて削除され、リカバリーコードが無効化されます。";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is on */
+"sync.simplified.turn.off.sheet.delete.toggle.on.footer" = "Sync & Backupをオフにすると、同期されたデータがサーバーから削除されます。";
+
+/* Title of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.title" = "Sync & Backupをオフにしますか？";
+
+/* Sync settings action button title that opens the options to turn off Sync & Backup */
+"sync.simplified.turn.off.sync.button" = "Sync & Backupをオフにする";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "別のデバイスと同期";
+
+/* Sync & Backup Title */
+"sync.title" = "Sync & Backup";
+
+/* Data syncing unavailable warning message */
+"sync.warning.data.syncing.disabled" = "申し訳ありませんが、Sync & Backupは現在利用できません。時間を置いてもう一度お試しください。";
+
+/* Data syncing unavailable warning message */
+"sync.warning.data.syncing.disabled.upgrade.required" = "申し訳ありませんが、Sync & Backupはこのアプリバージョンでは利用できなくなりました。続行するには、DuckDuckGoを最新バージョンに更新してください。";
+
+/* Title of the warning message */
+"sync.warning.sync.unavailable" = "Sync & Backupが利用できません";
+
+/* Synced Devices - This Device Label */
+"synced.devices.this.device.label" = "このデバイス";
+
+/* No comment provided by engineer. */
+"You're using Sync Development environment" = "Sync Development環境を使用しています";
+

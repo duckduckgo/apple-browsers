@@ -22,6 +22,34 @@ import XCTest
 import BrowserServicesKit
 
 final class OmniBarEqualityCheckTests: XCTestCase {
+    func testOmniBarCellDoesNotReparentSameOmniBar() {
+        let cell = OmniBarCell()
+        let omniBar = MockOmniBar()
+        cell.isFloatingUIEnabledProvider = { false }
+        cell.omniBar = omniBar
+        let initialConstraints = cell.constraints
+
+        cell.omniBar = omniBar
+
+        XCTAssertTrue(omniBar.barView.superview === cell)
+        XCTAssertEqual(cell.constraints.count, initialConstraints.count)
+        XCTAssertTrue(zip(cell.constraints, initialConstraints).allSatisfy { $0.0 === $0.1 })
+    }
+
+    func testOmniBarCellReattachesSameOmniBarAfterItMovesToAnotherCell() {
+        let firstCell = OmniBarCell()
+        let secondCell = OmniBarCell()
+        let omniBar = MockOmniBar()
+        firstCell.isFloatingUIEnabledProvider = { false }
+        secondCell.isFloatingUIEnabledProvider = { false }
+        firstCell.omniBar = omniBar
+        secondCell.omniBar = omniBar
+
+        firstCell.omniBar = omniBar
+
+        XCTAssertTrue(omniBar.barView.superview === firstCell)
+    }
+
     func testRequiresUpdateChecksForIsLoading() {
         let loadingOmniBarState = DummyOmniBarState(isLoading: true)
         let notLoadingOmniBarState = DummyOmniBarState(isLoading: false)
@@ -51,7 +79,7 @@ final class OmniBarEqualityCheckTests: XCTestCase {
         barOmniBarState.showBackButton = !fooOmniBarState.showBackButton
         barOmniBarState.showForwardButton = !fooOmniBarState.showForwardButton
         barOmniBarState.showBookmarksButton = !fooOmniBarState.showBookmarksButton
-        barOmniBarState.showAccessoryButton = !fooOmniBarState.showAccessoryButton
+        barOmniBarState.showAIChatButton = !fooOmniBarState.showAIChatButton
         barOmniBarState.clearTextOnStart = !fooOmniBarState.clearTextOnStart
         barOmniBarState.allowsTrackersAnimation = !fooOmniBarState.allowsTrackersAnimation
         barOmniBarState.showSearchLoupe = !fooOmniBarState.showSearchLoupe
@@ -79,7 +107,7 @@ private struct DummyOmniBarState: OmniBarState, OmniBarLoadingBearerStateCreatin
     var showBackButton = false
     var showForwardButton = false
     var showBookmarksButton = false
-    var showAccessoryButton = false
+    var showAIChatButton = false
     var clearTextOnStart = false
     var allowsTrackersAnimation = false
     var showSearchLoupe = false
@@ -93,7 +121,8 @@ private struct DummyOmniBarState: OmniBarState, OmniBarLoadingBearerStateCreatin
     var showVoiceSearch = false
     var showAbort = false
     var showDismiss = false
-    var showShare = false
+    var showCustomizableButton = false
+    var isBrowsing: Bool = false
 
     var onEditingStoppedState: OmniBarState { DummyOmniBarState() }
     var onEditingStartedState: OmniBarState { DummyOmniBarState() }
@@ -104,6 +133,7 @@ private struct DummyOmniBarState: OmniBarState, OmniBarLoadingBearerStateCreatin
     var onEnterPhoneState: OmniBarState { DummyOmniBarState() }
     var onEnterPadState: OmniBarState { DummyOmniBarState() }
     var onReloadState: OmniBarState { DummyOmniBarState() }
+    var onEnterAIChatState: OmniBarState { DummyOmniBarState() }
 
     init(dependencies: OmnibarDependencyProvider, isLoading: Bool) {
         self.init(isLoading: isLoading, dependencies: dependencies)

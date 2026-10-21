@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import TrackerRadarKit
 import Foundation
+import PrivacyConfig
+import TrackerRadarKit
 
 public class AdClickAttributionRulesMutator {
 

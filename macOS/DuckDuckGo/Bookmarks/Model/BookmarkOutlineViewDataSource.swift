@@ -18,8 +18,10 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
+import DesignResourcesKitIcons
 
 final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSource, NSOutlineViewDelegate {
 
@@ -81,8 +83,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
     private let treeController: BookmarkTreeController
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
-    private let presentFaviconsFetcherOnboarding: (() -> Void)?
-    private let visualStyle: VisualStyleProviding
+    private let themeManager: ThemeManaging
 
     init(
         contentMode: ContentMode,
@@ -90,16 +91,14 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         treeController: BookmarkTreeController,
         dragDropManager: BookmarkDragDropManager,
         sortMode: BookmarksSortMode,
-        presentFaviconsFetcherOnboarding: (() -> Void)? = nil,
-        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
     ) {
         self.contentMode = contentMode
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeController = treeController
-        self.presentFaviconsFetcherOnboarding = presentFaviconsFetcherOnboarding
         self.sortMode = sortMode
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
 
         super.init()
     }
@@ -222,12 +221,12 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         }
 
         let cell = outlineView.makeView(withIdentifier: BookmarkOutlineCellView.identifier(for: contentMode), owner: self) as? BookmarkOutlineCellView
-        ?? BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: contentMode), style: visualStyle)
+        ?? BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: contentMode), theme: themeManager.theme)
         cell.delegate = self
         cell.update(from: node, isSearch: isSearching)
 
         if let bookmark = node.representedObject as? Bookmark, bookmark.favicon(.small) == nil {
-            presentFaviconsFetcherOnboarding?()
+            NotificationCenter.default.post(name: .missingBookmarkFaviconEncountered, object: nil)
         }
 
         return cell
@@ -236,7 +235,20 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
     func outlineView(_ outlineView: NSOutlineView, rowViewForItem item: Any) -> NSTableRowView? {
         let row = outlineView.row(forItem: item)
         let rowView = RoundedSelectionRowView()
-        rowView.insets = NSEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+
+        rowView.requiresAccentColors = contentMode != .foldersOnly
+        let horizontalInset: CGFloat
+        if AppVersion.isLiquidGlassSupported {
+            switch contentMode {
+            case .bookmarksMenu: horizontalInset = 10
+            case .bookmarksAndFolders: horizontalInset = 0
+            default: horizontalInset = 8
+            }
+        } else {
+            horizontalInset = 8
+        }
+        rowView.insets = NSEdgeInsets(top: 0, left: horizontalInset, bottom: 0, right: horizontalInset)
+
         // observe row drag&drop target highlight state and update `targetRowForDropOperation`
         let cancellable = rowView.publisher(for: \.isTargetForDropOperation).sink { [weak self] isTargetForDropOperation in
             guard let self else { return }
@@ -277,10 +289,10 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         let favicon: NSImage?
         if let bookmark = entity as? Bookmark {
             title = bookmark.title.isEmpty ? bookmark.url : bookmark.title
-            favicon = bookmark.favicon(.small) ?? .bookmarkDefaultFavicon
+            favicon = bookmark.favicon(.small) ?? DesignSystemImages.Color.Size16.bookmark
         } else if let folder = entity as? BookmarkFolder {
             title = folder.title
-            favicon = .bookmarksFolder
+            favicon = DesignSystemImages.Color.Size16.bookmarksNew
         } else {
             assertionFailure("Unsupported entity type: \(entity)")
             return
@@ -321,11 +333,12 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         }
 
         let index = {
-            // for folders-only calculate new real index based on the nearest folder index
+            // for folders-only and clipped-items menus the outline doesn‘t show every sibling,
+            // so translate the visible outline index into a real index in the parent folder.
             if contentMode == .foldersOnly || representedObject is PseudoFolder,
                index > -1,
-               // get folder before the insertion point (or the first one)
-               let nearestObject = (outlineView.child(max(0, index - 1), ofItem: item) as? BookmarkNode)?.representedObject as? BookmarkFolder,
+               // get the entity before the insertion point (or the first one)
+               let nearestObject = (outlineView.child(max(0, index - 1), ofItem: item) as? BookmarkNode)?.representedObject as? BaseBookmarkEntity,
                // get all the children of a new parent folder (take actual bookmark list for the root)
                let siblings = ((representedObject is PseudoFolder ? nil : representedObject) as? BookmarkFolder)?.children ?? bookmarkManager.list?.topLevelEntities {
 

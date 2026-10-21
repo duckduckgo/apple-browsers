@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "messages": [
+    {
+      "id": "cards_list_with_sections",
+      "surfaces": [
+        "modal"
+      ],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "What's New",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "hide_search_images",
+            "type": "two_line_list_item",
+            "titleText": "Hide AI Images in Search",
+            "descriptionText": "Easily hide AI images from your search results",
+            "placeholder": "Announce",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "enhanced_scam_blocker",
+            "type": "two_line_list_item",
+            "titleText": "Enhanced Scam Blocker",
+            "descriptionText": "Browse confidently with protection against scam sites",
+            "placeholder": "PrivacyShield",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "duck_ai_chat",
+            "type": "two_line_list_item",
+            "titleText": "Duck AI Chat",
+            "descriptionText": "Private AI chat built into your browser",
+            "placeholder": "Duck.ai",
+            "primaryAction": {
+              "type": "navigation",
+              "value": "import.passwords"
+            }
+          },
+          {
+            "id": "privacy_pro_section",
+            "type": "section_title",
+            "titleText": "Become a DuckDuckPro!",
+            "itemIDs": ["privacy_pro_item"]
+          },
+          {
+            "id": "privacy_pro_item",
+            "type": "two_line_list_item",
+            "titleText": "Search Faster With Bangs",
+            "descriptionText": "Did you know? Bangs are shortcuts that take you to search results on your fave sites like Wikipedia, YouTube, and more.",
+            "placeholder": "Duck.ai",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "cards_list_with_sections_and_empty_ids",
+      "surfaces": [
+        "modal"
+      ],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "What's New",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "hide_search_images",
+            "type": "two_line_list_item",
+            "titleText": "Hide AI Images in Search",
+            "descriptionText": "Easily hide AI images from your search results",
+            "placeholder": "Announce",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "enhanced_scam_blocker",
+            "type": "two_line_list_item",
+            "titleText": "Enhanced Scam Blocker",
+            "descriptionText": "Browse confidently with protection against scam sites",
+            "placeholder": "PrivacyShield",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          },
+          {
+            "id": "duck_ai_chat",
+            "type": "two_line_list_item",
+            "titleText": "Duck AI Chat",
+            "descriptionText": "Private AI chat built into your browser",
+            "placeholder": "Duck.ai",
+            "primaryAction": {
+              "type": "navigation",
+              "value": "import.passwords"
+            }
+          },
+          {
+            "id": "privacy_pro_section",
+            "type": "section_title",
+            "titleText": "Become a DuckDuckPro!",
+            "itemIDs": []
+          },
+          {
+            "id": "privacy_pro_item",
+            "type": "two_line_list_item",
+            "titleText": "Search Faster With Bangs",
+            "descriptionText": "Did you know? Bangs are shortcuts that take you to search results on your fave sites like Wikipedia, YouTube, and more.",
+            "placeholder": "Duck.ai",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com"
+            }
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    }
+  ],
+  "rules": []
+}

@@ -22,18 +22,29 @@ import SecureStorage
 import struct GRDB.DatabaseError
 import os.log
 
-public protocol DataBrokerProtectionRepository {
+public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
     func save(_ profile: DataBrokerProtectionProfile) async throws
     func fetchProfile() throws -> DataBrokerProtectionProfile?
     func deleteProfileData() throws
 
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
+    func fetchBroker(with brokerId: Int64) throws -> DataBroker?
 
+    func saveBroker(brokerResource: BrokerResource) throws -> Int64
+    func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
+    func fetchProfileQuery(with profileQueryId: Int64) throws -> ProfileQuery?
+    func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws
     func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws
 
     func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData?
-    func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
+    func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData]
+    /// Includes removed brokers. Prefer `fetchActiveBrokerProfileQueryData()` unless your caller genuinely needs them.
+    /// The `reason` parameter is intentionally required so callers document why removed brokers are needed at the call site.
+    func fetchAllBrokerProfileQueryData(reason: BrokerProfileQueryDataFetchReason) throws -> [BrokerProfileQueryData]
+    func fetchActiveBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
+    func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
+    func fetchAllExtractedProfiles() throws -> [ExtractedProfile]
 
     func fetchAllDataBrokers() throws -> [DataBroker]
 
@@ -59,20 +70,34 @@ public protocol DataBrokerProtectionRepository {
                                                    forBrokerId brokerId: Int64,
                                                    profileQueryId: Int64,
                                                    extractedProfileId: Int64) throws
+    func updateFortyTwoDaysConfirmationPixelFired(_ pixelFired: Bool,
+                                                  forBrokerId brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) throws
     func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws
+    func updateExtractedProfile(_ extractedProfile: ExtractedProfile, on extractedProfileId: Int64) throws
 
     func add(_ historyEvent: HistoryEvent) throws
     func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent?
     func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
     func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent]
     func hasMatches() throws -> Bool
+    func hasScanHistoryEvents() throws -> Bool
     func matchRemovedByUser(_ matchID: Int64) throws
 
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 
-    func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
+    func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData?
+
+    func fetchFirstEligibleJobDate(isAuthenticatedUser: Bool) throws -> Date?
+
+    func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws
+    func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent]
+    func deleteBackgroundTaskEvents(olderThan date: Date) throws
+
+    func haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: Bool) throws -> Bool
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -134,6 +159,24 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
+    public func fetchBroker(with brokerId: Int64) throws -> DataBroker? {
+        do {
+            return try vault.fetchBroker(with: brokerId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchBroker with brokerId")
+            throw error
+        }
+    }
+
+    public func fetchProfileQuery(with profileQueryId: Int64) throws -> ProfileQuery? {
+        do {
+            return try vault.fetchProfileQuery(with: profileQueryId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchProfileQuery with profileQueryId")
+            throw error
+        }
+    }
+
     public func save(_ extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> Int64 {
         do {
             return try vault.save(extractedProfile: extractedProfile, brokerId: brokerId, profileQueryId: profileQueryId)
@@ -172,6 +215,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.fetchExtractedProfiles(for: brokerId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchExtractedProfiles for brokerId")
+            throw error
+        }
+    }
+
+    public func fetchAllExtractedProfiles() throws -> [ExtractedProfile] {
+        do {
+            return try vault.fetchAllBrokers().compactMap(\.id).flatMap { try vault.fetchExtractedProfiles(for: $0) }
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllExtractedProfiles")
             throw error
         }
     }
@@ -316,11 +368,37 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
+    public func updateFortyTwoDaysConfirmationPixelFired(_ pixelFired: Bool,
+                                                         forBrokerId brokerId: Int64,
+                                                         profileQueryId: Int64,
+                                                         extractedProfileId: Int64) throws {
+        do {
+            try vault.updateFortyTwoDaysConfirmationPixelFired(
+                pixelFired,
+                forBrokerId: brokerId,
+                profileQueryId: profileQueryId,
+                extractedProfileId: extractedProfileId
+            )
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.updateFortyTwoDaysConfirmationPixelFired pixelFired forBrokerId profileQueryId extractedProfileId")
+            throw error
+        }
+    }
+
     public func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws {
         do {
             try vault.updateRemovedDate(for: extractedProfileId, with: date)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.updateRemovedDate date on extractedProfileId")
+            throw error
+        }
+    }
+
+    public func updateExtractedProfile(_ extractedProfile: ExtractedProfile, on extractedProfileId: Int64) throws {
+        do {
+            try vault.updateExtractedProfile(extractedProfile, for: extractedProfileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.updateExtractedProfile on extractedProfileId")
             throw error
         }
     }
@@ -339,9 +417,37 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
-    public func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+    public func hasScanHistoryEvents() throws -> Bool {
         do {
-            let brokers = try vault.fetchAllBrokers()
+            return try vault.hasScanHistoryEvents()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.hasScanHistoryEvents")
+            throw error
+        }
+    }
+
+    public func fetchAllBrokerProfileQueryData(reason: BrokerProfileQueryDataFetchReason) throws -> [BrokerProfileQueryData] {
+        try fetchBrokerProfileQueryData { try vault.fetchAllBrokers() }
+    }
+
+    public func fetchActiveBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+        try fetchBrokerProfileQueryData { try vault.fetchAllNonRemovedBrokers() }
+    }
+
+    public func fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: Bool) throws -> [BrokerProfileQueryData] {
+        try fetchActiveBrokerProfileQueryData().excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
+    }
+
+    public func fetchBrokerProfileQueryData(forBrokerId brokerId: Int64) throws -> [BrokerProfileQueryData] {
+        try fetchBrokerProfileQueryData {
+            guard let broker = try vault.fetchBroker(with: brokerId) else { return [] }
+            return [broker]
+        }
+    }
+
+    private func fetchBrokerProfileQueryData(brokers: () throws -> [DataBroker]) throws -> [BrokerProfileQueryData] {
+        do {
+            let brokers = try brokers()
             let profileQueries = try vault.fetchAllProfileQueries(for: Self.profileId)
             var brokerProfileQueryDataList = [BrokerProfileQueryData]()
 
@@ -365,7 +471,7 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
 
             return brokerProfileQueryDataList
         } catch {
-            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllBrokerProfileQueryData")
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchBrokerProfileQueryData")
             throw error
         }
     }
@@ -375,6 +481,33 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.fetchAllBrokers()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+            throw error
+        }
+    }
+
+    public func saveBroker(brokerResource: BrokerResource) throws -> Int64 {
+        do {
+            return try vault.save(brokerResource: brokerResource)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveBroker brokerResource")
+            throw error
+        }
+    }
+
+    public func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64 {
+        do {
+            return try vault.save(profileQuery: profileQuery, profileId: profileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveProfileQuery profileQuery profileId")
+            throw error
+        }
+    }
+
+    public func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
+        do {
+            try vault.save(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: lastRunDate, preferredRunDate: preferredRunDate)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveScanJob profileQuery profileQueryId lastRunDate preferredRunDate")
             throw error
         }
     }
@@ -391,7 +524,8 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
                            submittedSuccessfullyDate: optOut.submittedSuccessfullyDate,
                            sevenDaysConfirmationPixelFired: optOut.sevenDaysConfirmationPixelFired,
                            fourteenDaysConfirmationPixelFired: optOut.fourteenDaysConfirmationPixelFired,
-                           twentyOneDaysConfirmationPixelFired: optOut.twentyOneDaysConfirmationPixelFired)
+                           twentyOneDaysConfirmationPixelFired: optOut.twentyOneDaysConfirmationPixelFired,
+                           fortyTwoDaysConfirmationPixelFired: optOut.fortyTwoDaysConfirmationPixelFired)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.saveOptOutOperation optOut extractedProfile")
             throw error
@@ -450,6 +584,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return optOut.historyEvents
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOutHistoryEvents brokerId profileQueryId extractedProfileId")
+            throw error
+        }
+    }
+
+    public func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData? {
+        do {
+            return try vault.fetchOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOut")
             throw error
         }
     }
@@ -538,9 +681,9 @@ extension DataBrokerProtectionDatabase {
         var brokerIDs = storedBrokers.compactMap(\.id)
 
         /// If none exists in the vault, populate them with bundled JSONs
-        if storedBrokers.isEmpty, let brokers = try localBrokerService.bundledBrokers() {
-            for broker in brokers {
-                let brokerId = try vault.save(broker: broker)
+        if storedBrokers.isEmpty, let brokerResources = try localBrokerService.bundledBrokers() {
+            for brokerResource in brokerResources {
+                let brokerId = try vault.save(brokerResource: brokerResource)
                 brokerIDs.append(brokerId)
             }
         }
@@ -558,11 +701,15 @@ extension DataBrokerProtectionDatabase {
 
         let newProfileQueries = profile.profileQueries
 
-        let databaseBrokerProfileQueryData = try fetchAllBrokerProfileQueryData()
+        let databaseBrokerProfileQueryData = try fetchActiveBrokerProfileQueryData()
         let databaseProfileQueries = databaseBrokerProfileQueryData.map { $0.profileQuery }
 
         // The queries we need to create are the one that exist on the new ones but not in the database
         let profileQueriesToCreate = Set(newProfileQueries).subtracting(Set(databaseProfileQueries))
+
+        let profileQueriesToReactivate = Set(databaseProfileQueries.filter(\.deprecated))
+            .intersection(Set(newProfileQueries))
+            .map { $0.with(deprecated: false) }
 
         // Updated profile queries. This is only for use for deprecated matches.
         // We do not use it for updating a particular profile query. The reason is that
@@ -609,6 +756,14 @@ extension DataBrokerProtectionDatabase {
                                      vault: vault)
         }
 
+        // Reactivate
+        if !profileQueriesToReactivate.isEmpty {
+            try updateProfileQueries(profileQueriesToReactivate,
+                                     profileID: profileID,
+                                     brokerIDs: brokerIDs,
+                                     vault: vault)
+        }
+
         // Create
         if !profileQueriesToCreate.isEmpty {
             try initializeDatabaseForProfile(
@@ -644,6 +799,146 @@ extension DataBrokerProtectionDatabase {
                     try updatePreferredRunDate(Date(), brokerId: brokerID, profileQueryId: profileQueryID)
                 }
             }
+        }
+    }
+
+    public func fetchFirstEligibleJobDate(isAuthenticatedUser: Bool) throws -> Date? {
+        if isAuthenticatedUser {
+            return try vault.fetchFirstEligibleJobDate(excludingScanBrokerIDs: [], includesOptOuts: true)
+        }
+
+        let brokerIDsRequiringSubscription = try vault.fetchAllNonRemovedBrokers().compactMap { broker -> Int64? in
+            guard broker.scanRequiresSubscription else { return nil }
+            return broker.id
+        }
+        return try vault.fetchFirstEligibleJobDate(excludingScanBrokerIDs: brokerIDsRequiringSubscription, includesOptOuts: false)
+    }
+
+    public func recordBackgroundTaskEvent(_ event: BackgroundTaskEvent) throws {
+        try vault.save(backgroundTaskEvent: event)
+    }
+
+    public func fetchBackgroundTaskEvents(since date: Date) throws -> [BackgroundTaskEvent] {
+        try vault.fetchBackgroundTaskEvents(since: date)
+    }
+
+    public func deleteBackgroundTaskEvents(olderThan date: Date) throws {
+        try vault.deleteBackgroundTaskEvents(olderThan: date)
+    }
+
+    public func saveOptOutEmailConfirmation(profileQueryId: Int64,
+                                            brokerId: Int64,
+                                            extractedProfileId: Int64,
+                                            generatedEmail: String,
+                                            attemptID: String) throws {
+        do {
+            try vault.saveOptOutEmailConfirmation(
+                profileQueryId: profileQueryId,
+                brokerId: brokerId,
+                extractedProfileId: extractedProfileId,
+                generatedEmail: generatedEmail,
+                attemptID: attemptID
+            )
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveOptOutEmailConfirmation")
+            throw error
+        }
+    }
+
+    public func deleteOptOutEmailConfirmation(profileQueryId: Int64,
+                                              brokerId: Int64,
+                                              extractedProfileId: Int64) throws {
+        do {
+            try vault.deleteOptOutEmailConfirmation(
+                profileQueryId: profileQueryId,
+                brokerId: brokerId,
+                extractedProfileId: extractedProfileId
+            )
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.deleteOptOutEmailConfirmation")
+            throw error
+        }
+    }
+
+    public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
+        do {
+            return try vault.fetchAllOptOutEmailConfirmations()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllOptOutEmailConfirmations")
+            throw error
+        }
+    }
+
+    public func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData] {
+        do {
+            return try vault.fetchOptOutEmailConfirmationsAwaitingLink()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOutEmailConfirmationsAwaitingLink")
+            throw error
+        }
+    }
+
+    public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
+        do {
+            return try vault.fetchOptOutEmailConfirmationsWithLink()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchOptOutEmailConfirmationsWithLink")
+            throw error
+        }
+    }
+
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        do {
+            return try vault.fetchIdentifiersForActiveEmailConfirmations()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchIdentifiersForActiveEmailConfirmations")
+            throw error
+        }
+    }
+
+    public func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,
+                                                  emailConfirmationLinkObtainedOnBEDate: Date?,
+                                                  profileQueryId: Int64,
+                                                  brokerId: Int64,
+                                                  extractedProfileId: Int64) throws {
+        do {
+            try vault.updateOptOutEmailConfirmationLink(
+                emailConfirmationLink,
+                emailConfirmationLinkObtainedOnBEDate: emailConfirmationLinkObtainedOnBEDate,
+                profileQueryId: profileQueryId,
+                brokerId: brokerId,
+                extractedProfileId: extractedProfileId
+            )
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.updateOptOutEmailConfirmationLink")
+            throw error
+        }
+    }
+
+    public func incrementOptOutEmailConfirmationAttemptCount(profileQueryId: Int64,
+                                                             brokerId: Int64,
+                                                             extractedProfileId: Int64) throws {
+        do {
+            try vault.incrementOptOutEmailConfirmationAttemptCount(
+                profileQueryId: profileQueryId,
+                brokerId: brokerId,
+                extractedProfileId: extractedProfileId
+            )
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.incrementOptOutEmailConfirmationAttemptCount")
+            throw error
+        }
+    }
+
+    public func haveAllEligibleScansRunAtLeastOnce(isAuthenticatedUser: Bool) throws -> Bool {
+        do {
+            let data = try fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: isAuthenticatedUser)
+            let scans = data.compactMap { $0.scanJobData }
+            let scansNotRun = scans.filter { $0.lastRunDate == nil }
+            return scansNotRun.count == 0
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.haveAllEligibleScansRunAtLeastOnce")
+            throw error
         }
     }
 }

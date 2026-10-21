@@ -1,0 +1,183 @@
+//
+//  UTIFooterMessage.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import Foundation
+
+struct CreateImageModelSwitchNotice: Equatable {
+    let previousModelShortName: String
+    let newModelShortName: String
+    let previousModelHasExtraPrivacyProtections: Bool
+
+    init(previousModel: AIChatModel, newModel: AIChatModel) {
+        previousModelShortName = previousModel.shortName
+        newModelShortName = newModel.shortName
+        previousModelHasExtraPrivacyProtections = previousModel.provider == .oss
+    }
+}
+
+struct UTIFooterItem: Equatable, Identifiable {
+    enum ID: Int, CaseIterable {
+        case termsConsent
+        case outOfUsage
+        case attachmentPrivacy
+        case promptTooLong
+        case modelSwitch
+        case usageWarning
+        case highUsage
+        case multiTabPromotion
+
+        var type: MessageType {
+            switch self {
+            case .termsConsent, .attachmentPrivacy: return .required(blocksSend: false)
+            case .outOfUsage: return .required(blocksSend: true)
+            case .promptTooLong: return .error(.persistent)
+            case .modelSwitch: return .action
+            case .usageWarning, .highUsage, .multiTabPromotion: return .informational
+            }
+        }
+    }
+
+    enum ErrorDuration: Equatable {
+        case persistent
+        case temporary
+    }
+
+    enum MessageType: Equatable {
+        case required(blocksSend: Bool)
+        case error(ErrorDuration)
+        case action
+        case informational
+
+        var rank: Int {
+            switch self {
+            case .required: return 0
+            case .error: return 1
+            case .action: return 2
+            case .informational: return 3
+            }
+        }
+    }
+
+    var type: MessageType { id.type }
+
+    let id: ID
+    let message: UTIFooterMessage
+
+    static func visible(from items: [Self], isEditing: Bool) -> [Self] {
+        visible(from: items, isEditing: isEditing, type: \.type)
+    }
+
+    static func visible(from items: [Self], isEditing: Bool, type: (Self) -> MessageType) -> [Self] {
+        let ordered = items.sorted { (type($0).rank, $0.id.rawValue) < (type($1).rank, $1.id.rawValue) }
+        let blocksSend = ordered.contains { type($0) == .required(blocksSend: true) }
+        let persistentError = blocksSend ? nil : ordered.first { type($0) == .error(.persistent) }
+        if let persistentError { return [persistentError] }
+        guard !isEditing else { return [] }
+        let required = ordered.filter { if case .required = type($0) { true } else { false } }
+        return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
+    }
+}
+
+struct UTIFooterMessage: Equatable {
+
+    enum Icon: Equatable {
+        case none
+        case usageRing(progress: Double, severity: DuckAiUsageSeverity)
+        case alert
+        case info
+        case modelSwitch
+        case shield
+        case gift
+    }
+
+    struct TitleFormatting: Equatable {
+        let emphasizedText: String
+        let attachmentPlaceholder: String
+        let attachmentAccessibilityLabel: String
+    }
+
+    struct PrimaryAction: Equatable {
+        let title: String
+    }
+
+    /// A tappable run within `title`. The card styles this substring and reports taps on it.
+    struct Link: Equatable {
+        let text: String
+        let url: URL
+    }
+
+    let icon: Icon
+    let title: String
+    let subtitle: String?
+    let primaryAction: PrimaryAction?
+    let isDismissible: Bool
+    let link: Link?
+    let titleFormatting: TitleFormatting?
+
+    init(icon: Icon,
+         title: String,
+         subtitle: String?,
+         primaryAction: PrimaryAction?,
+         isDismissible: Bool,
+         link: Link? = nil,
+         titleFormatting: TitleFormatting? = nil) {
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.primaryAction = primaryAction
+        self.isDismissible = isDismissible
+        self.link = link
+        self.titleFormatting = titleFormatting
+    }
+}
+
+/// Localizes the interval the shared resolver already bucketed, so "Resets in" reads as
+/// "2 days" rather than the module's unlocalized "2d".
+struct UTIFooterResetDescriber {
+
+    private let formatter: DateComponentsFormatter
+
+    init(locale: Locale = .current) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        let formatter = DateComponentsFormatter()
+        formatter.calendar = calendar
+        formatter.unitsStyle = .full
+        formatter.allowedUnits = [.day, .hour]
+        formatter.maximumUnitCount = 1
+        self.formatter = formatter
+    }
+
+    /// Whole days or whole hours only: the interval arrives already rounded up, and web never
+    /// counts a reset down in minutes.
+    func describe(_ interval: DuckAiUsageResetInterval) -> String {
+        switch interval {
+        case .days(let days):
+            return formatter.string(from: TimeInterval(max(1, days)) * Constants.secondsPerDay) ?? ""
+        case .hours(let hours):
+            return formatter.string(from: TimeInterval(max(1, hours)) * Constants.secondsPerHour) ?? ""
+        }
+    }
+
+    private enum Constants {
+        static let secondsPerHour: TimeInterval = 60 * 60
+        static let secondsPerDay: TimeInterval = 24 * 60 * 60
+    }
+}

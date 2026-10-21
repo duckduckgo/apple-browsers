@@ -1,0 +1,45 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - duckplayer_native
+
+---
+
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Open Settings
+- runFlow: 
+    file: shared/open_settings.yaml
+
+# Turn SERP off
+- tapOn:
+    text: ${output.serpToggleOn}
+    index: 0
+
+# Close Settings
+- runFlow: 
+    file: shared/close_settings.yaml
+
+# Navigate to a video
+# Load Site
+- runFlow: 
+    file: shared/load_serp_url.yaml
+
+- assertVisible: ${output.videosTabLabel}
+- tapOn: ${output.videosTabLabel}
+
+- runFlow:
+    file: shared/tap_serp_title.yaml
+
+# Validate YouTube opens
+- assertVisible: ${output.youtubeMobileDomain}
+
+# Assert Duck Player Welcome Pill is present
+- runFlow: 
+    file: shared/pill_is_visible.yaml

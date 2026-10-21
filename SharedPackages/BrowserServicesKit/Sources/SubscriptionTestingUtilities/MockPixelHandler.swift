@@ -19,11 +19,15 @@
 import Subscription
 import os.log
 
-public struct MockPixelHandler: SubscriptionPixelHandler {
+public struct MockPixelHandler: SubscriptionPixelHandling {
 
     public init() {}
 
-    public func handle(pixelType: Subscription.SubscriptionPixelType) {
-        Logger.subscription.debug("Pixel fired: \(String(describing: pixelType))")
+    public func handle(pixel: Subscription.SubscriptionPixelType) {
+        Logger.subscription.debug("Pixel fired: \(String(describing: pixel))")
+    }
+
+    public func handle(pixel: Subscription.KeychainManager.Pixel) {
+        Logger.subscription.debug("Pixel fired: \(String(describing: pixel))")
     }
 }

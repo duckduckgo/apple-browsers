@@ -18,8 +18,12 @@
 
 import AppKit
 import BrowserServicesKit
+import Combine
 import Common
+import FoundationExtensions
 import Foundation
+import FeatureFlags_macOS
+import PrivacyConfig
 
 enum SecureVaultItem: Equatable, Identifiable, Comparable {
 
@@ -104,7 +108,7 @@ enum SecureVaultItem: Equatable, Identifiable, Comparable {
                 account.username?.lowercased().contains(filter) == true ||
                 account.title?.lowercased().contains(filter) == true
         case .card(let card):
-            return card.title.localizedCaseInsensitiveContains(filter)
+            return card.displayTitle.localizedCaseInsensitiveContains(filter)
         case .identity(let identity):
             return identity.title.localizedCaseInsensitiveContains(filter)
         case .note(let note):
@@ -119,7 +123,7 @@ enum SecureVaultItem: Equatable, Identifiable, Comparable {
         case .account(let account):
             return ((account.title ?? "").isEmpty == true ? account.domain : account.title) ?? ""
         case .card(let card):
-            return card.title
+            return card.displayTitle
         case .identity(let identity):
             return identity.title
         case .note(let note):
@@ -133,7 +137,7 @@ enum SecureVaultItem: Equatable, Identifiable, Comparable {
         case .account(let account):
             return account.username ?? ""
         case .card(let creditCard):
-            return creditCard.displayName
+            return creditCard.cardSummary
         case .identity(let identity):
             var nameComponents = PersonNameComponents()
             nameComponents.givenName = identity.firstName
@@ -243,11 +247,37 @@ final class PasswordManagementItemListModel: ObservableObject {
         }
     }
 
-    private var shouldDisplaySyncPromoRow: Bool {
-        syncPromoManager.shouldPresentPromoFor(.passwords) &&
-        (sortDescriptor.category == .allItems || sortDescriptor.category == .logins) &&
-        emptyState == .none &&
-        filter.isEmpty
+    var canShowSyncPromoRow: Bool {
+        guard emptyState == .none && filter.isEmpty && !passwordManagerCoordinator.isEnabled else {
+            return false
+        }
+
+        let privacyConfig = privacyConfigurationManager.privacyConfig
+        switch sortDescriptor.category {
+        case .allItems, .logins:
+            return true
+        case .cards:
+            return privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards)
+        case .identities:
+            return privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities)
+        }
+    }
+
+    var shouldDisplaySyncPromoRow: Bool {
+        canShowSyncPromoRow && syncPromoManager.isPromoActive
+    }
+
+    private var shouldDisplayExternalPasswordManagerRow: Bool {
+        passwordManagerCoordinator.isEnabled && (sortDescriptor.category == .allItems || sortDescriptor.category == .logins)
+    }
+
+    private var shouldSelectFirstDomainMatch: Bool {
+        guard featureFlagger?.isFeatureOn(.autofillPasswordSearchPrioritizeDomain) == true,
+              !filter.isEmpty else {
+            return false
+        }
+
+        return sortDescriptor.category == .allItems || sortDescriptor.category == .logins
     }
 
     @Published var sortDescriptor = SecureVaultSorting.default {
@@ -301,15 +331,49 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     var emptyStateMessageDescription: String {
-        autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
+        switch sortDescriptor.category {
+        case .logins:
+            return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStatePasswordsDefaultDescription : UserText.pmEmptyStatePasswordsDefaultDescriptionAutolockOff
+        case .cards:
+            return UserText.pmEmptyStateCardsDefaultDescription
+        case .identities:
+            return UserText.pmEmptyStateIdentitiesDefaultDescription
+        default:
+            return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
+        }
     }
 
     var emptyStateMessageLinkText: String {
         UserText.learnMore
     }
 
+    var emptyStateImportButtonText: String {
+        sortDescriptor.category == .logins ? UserText.pmEmptyStateDefaultButtonTitle : UserText.pmEmptyStateDefaultButtonTitleAllItems
+    }
+
+    var emptyStateSyncButtonText: String {
+        switch sortDescriptor.category {
+        case .logins:
+            return UserText.pmEmptyStateSecondaryButtonTitlePasswords
+        case .cards:
+            return UserText.pmEmptyStateSecondaryButtonTitleCreditCards
+        case .identities:
+            return UserText.pmEmptyStateSecondaryButtonTitleIdentities
+        case .allItems:
+            return UserText.pmEmptyStateSecondaryButtonTitleAllItems
+        }
+    }
+
     var emptyStateMessageLinkURL: URL {
         URL.passwordManagerLearnMore
+    }
+
+    var emptyStateHideLearnMoreLink: Bool {
+        sortDescriptor.category == .cards || sortDescriptor.category == .identities
+    }
+
+    var emptyStateHideLockIcon: Bool {
+        sortDescriptor.category == .cards || sortDescriptor.category == .identities
     }
 
     @Published private(set) var emptyState: EmptyState = .none
@@ -320,6 +384,9 @@ final class PasswordManagementItemListModel: ObservableObject {
     private let tld: TLD
     private let autofillPreferences: AutofillPreferencesPersistor
     private let urlMatcher: AutofillDomainNameUrlMatcher
+    private let featureFlagger: FeatureFlagger?
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private var syncPromoCancellable: AnyCancellable?
     private static let randomColorsCount = 15
 
     init(passwordManagerCoordinator: PasswordManagerCoordinating,
@@ -327,6 +394,8 @@ final class PasswordManagementItemListModel: ObservableObject {
          urlMatcher: AutofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher(),
          tld: TLD = NSApp.delegateTyped.tld,
          autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences(),
+         featureFlagger: FeatureFlagger? = nil,
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          onItemSelected: @escaping (_ old: SecureVaultItem?, _ new: SecureVaultItem?) -> Void,
          onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void) {
         self.onItemSelected = onItemSelected
@@ -336,6 +405,24 @@ final class PasswordManagementItemListModel: ObservableObject {
         self.urlMatcher = urlMatcher
         self.tld = tld
         self.autofillPreferences = autofillPreferences
+        self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+
+        syncPromoCancellable = syncPromoManager.isPromoActivePublisher
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.syncPromoActivityDidChange()
+            }
+    }
+
+    /// Shows or removes the sync promo row in place, keeping the user's selection unless it was the promo.
+    private func syncPromoActivityDidChange() {
+        objectWillChange.send()
+        let selectedPromoRowWasRemoved = syncPromoSelected && !shouldDisplaySyncPromoRow
+        let nothingIsSelected = selected == nil && !externalPasswordManagerSelected && !syncPromoSelected
+        if selectedPromoRowWasRemoved || nothingIsSelected {
+            selectFirst()
+        }
     }
 
     func update(items: [SecureVaultItem]) {
@@ -447,21 +534,55 @@ final class PasswordManagementItemListModel: ObservableObject {
         case .dateModified:
             displayedSections = PasswordManagementListSection.sections(with: itemsByCategory, by: \.lastUpdated, order: sortDescriptor.order)
         }
+
+        // Clear selection if no longer present
+        if let currentSelected = selected, !displayedSections.contains(where: { section in
+            section.items.contains(currentSelected)
+        }) {
+            selected(item: nil, notify: true)
+        }
     }
 
     func selectFirst() {
         selected = nil
         syncPromoSelected = false
 
-        if passwordManagerCoordinator.isEnabled && (sortDescriptor.category == .allItems || sortDescriptor.category == .logins) {
+        if shouldDisplayExternalPasswordManagerRow {
             externalPasswordManagerSelected = true
-        } else if shouldDisplaySyncPromoRow {
+            return
+        }
+
+        if shouldDisplaySyncPromoRow {
             syncPromoSelected = true
-        } else if let firstSection = displayedSections.first, let selectedItem = firstSection.items.first {
+            return
+        }
+
+        if shouldSelectFirstDomainMatch {
+            let query = filter.lowercased()
+
+            for section in displayedSections {
+                if let domainMatch = section.items.first(where: { item in
+                    guard case .account(let account) = item else { return false }
+                    return domainMatchesQuery(account.domain, query: query)
+                }) {
+                    selected(item: domainMatch)
+                    return
+                }
+            }
+            // Fall through if no domain match found
+        }
+
+        if let firstSection = displayedSections.first, let selectedItem = firstSection.items.first {
             selected(item: selectedItem)
         } else {
             selected(item: nil)
         }
+    }
+
+    /// - returns: True if the query is present within the domain
+    private func domainMatchesQuery(_ domain: String?, query: String) -> Bool {
+        guard let domain = domain, !domain.isEmpty, !query.isEmpty else { return false }
+        return domain.lowercased().contains(query.lowercased())
     }
 
     func clear() {

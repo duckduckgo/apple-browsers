@@ -18,14 +18,17 @@
 
 import History
 
-protocol HistoryBurning: AnyObject {
-    func burn(_ visits: [Visit], animated: Bool) async
+protocol HistoryBurning {
+    func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async
     func burnAll() async
+    func burnChats() async
 }
 
-final class FireHistoryBurner: HistoryBurning {
+struct FireHistoryBurner: HistoryBurning {
     let fireproofDomains: DomainFireproofStatusProviding
-    let fire: () async -> Fire
+    let fire: () async -> FireProtocol
+    /// Records that AI chat history was cleared specifically for Sync (server-side delete timestamping).
+    let recordAIChatHistoryClearForSync: (() -> Void)?
 
     /**
      * The arguments here are async closures because FireHistoryBurner is initialized
@@ -33,20 +36,33 @@ final class FireHistoryBurner: HistoryBurning {
      */
     init(
         fireproofDomains: DomainFireproofStatusProviding,
-        fire: @escaping () async -> Fire
+        fire: @escaping () async -> FireProtocol,
+        recordAIChatHistoryClearForSync: (() -> Void)? = nil
     ) {
         self.fireproofDomains = fireproofDomains
         self.fire = fire
+        self.recordAIChatHistoryClearForSync = recordAIChatHistoryClearForSync
     }
 
-    func burn(_ visits: [Visit], animated: Bool) async {
+    func burn(_ visits: [Visit], and burnChats: Bool, animated: Bool) async {
         guard !visits.isEmpty else {
             return
         }
 
+        if burnChats {
+            recordAIChatHistoryClearForSync?()
+        }
+
         await withCheckedContinuation { continuation in
             Task { @MainActor in
-                await fire().burnVisits(visits, except: fireproofDomains, isToday: animated, urlToOpenIfWindowsAreClosed: .history) {
+                await fire().burnVisits(visits,
+                                        except: fireproofDomains,
+                                        isToday: animated,
+                                        closeWindows: false,
+                                        clearSiteData: true,
+                                        clearChatHistory: burnChats,
+                                        urlToOpenIfWindowsAreClosed: .history,
+                                        dataClearingWideEventService: nil) {
                     continuation.resume()
                 }
             }
@@ -54,12 +70,12 @@ final class FireHistoryBurner: HistoryBurning {
     }
 
     func burnAll() async {
-        await withCheckedContinuation { continuation in
-            Task { @MainActor in
-                await fire().burnAll(opening: .history) {
-                    continuation.resume()
-                }
-            }
-        }
+        recordAIChatHistoryClearForSync?()
+        await fire().burnAll(opening: .history)
+    }
+
+    func burnChats() async {
+        recordAIChatHistoryClearForSync?()
+        _ = await fire().burnChatHistory()
     }
 }

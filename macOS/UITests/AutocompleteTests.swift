@@ -19,7 +19,7 @@
 import XCTest
 
 class AutocompleteTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var addBookmarkButton: XCUIElement!
     private var resetBookMarksMenuItem: XCUIElement!
     private var historyMenuBarItem: XCUIElement!
@@ -33,26 +33,24 @@ class AutocompleteTests: UITestCase {
 
     override class func setUp() {
         super.setUp()
-        UITests.firstRun()
         UITests.setAutocompleteToggleBeforeTestcaseRuns(true) // These tests require autocomplete to be on
     }
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         addBookmarkButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         historyMenuBarItem = app.menuBarItems["History"]
         clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         suggestionsTableView = app.tables["SuggestionViewController.tableView"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
         fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
         let siteTitleLength = 12
         siteTitleForBookmarkedSite = UITests.randomPageTitle(length: siteTitleLength)
         siteTitleForHistorySite = UITests.randomPageTitle(length: siteTitleLength)
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
         try resetAndArrangeBookmarksAndHistory() // Manually reset to a clean state
     }
 
@@ -68,7 +66,7 @@ class AutocompleteTests: UITestCase {
             suggestionCellWithBookmarkedSite.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The expected table view cell with the suggestion for the bookmarked site didn't become available in a reasonable timeframe."
         )
-        let containerCellForBookmarkedSuggestion = app.tables.cells.containing(.any, identifier: suggestionCellWithBookmarkedSite.identifier)
+        let containerCellForBookmarkedSuggestion = suggestionsTableView.cells.containing(.staticText, identifier: siteTitleForBookmarkedSite)
             .firstMatch
 
         XCTAssertTrue(
@@ -95,7 +93,7 @@ class AutocompleteTests: UITestCase {
             suggestionCellWithHistorySite.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The expected table view cell with the suggestion for the history site didn't become available in a reasonable timeframe."
         )
-        let containerCellForHistorySuggestion = app.tables.cells.containing(.any, identifier: suggestionCellWithHistorySite.identifier)
+        let containerCellForHistorySuggestion = suggestionsTableView.cells.containing(.staticText, identifier: siteTitleForHistorySite)
             .firstMatch
 
         XCTAssertTrue(
@@ -129,7 +127,7 @@ class AutocompleteTests: UITestCase {
             suggestionCellWithWebsite.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The expected table view cell with the suggestion for the website didn't become available in a reasonable timeframe."
         )
-        let containerCellForWebsiteSuggestion = app.tables.cells.containing(.any, identifier: suggestionCellWithWebsite.identifier)
+        let containerCellForWebsiteSuggestion = suggestionsTableView.cells.containing(.staticText, identifier: websiteURL.absoluteString)
             .firstMatch
         XCTAssertTrue(
             containerCellForWebsiteSuggestion.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -162,7 +160,7 @@ private extension AutocompleteTests {
 
         addressBarTextField.typeURL(urlForBookmarks)
         XCTAssertTrue(
-            app.windows.webViews[siteTitleForBookmarkedSite].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[siteTitleForBookmarkedSite].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -185,12 +183,36 @@ private extension AutocompleteTests {
         )
         clearAllHistoryMenuItem.click()
 
+        // Fire Dialog should appear instead of old alert
+        let fireDialogTitle = app.fireDialogTitle
         XCTAssertTrue(
-            clearAllHistoryAlertClearButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Clear all history item didn't appear in a reasonable timeframe."
+            fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Fire dialog didn't appear in a reasonable timeframe."
         )
-        clearAllHistoryAlertClearButton.click() // Manually remove the history
-        XCTAssertTrue( // Let any ongoing fire animation or data processes complete
+
+        // Select "All data" scope to clear all history
+        app.fireDialogSegmentedControl.buttons["All data"].click()
+
+        // Expand Fire Dialog details
+        let detailsDisclosureButton = app.fireDialogDetailsDisclosureButton
+        if (detailsDisclosureButton.value as? String) != "expanded" {
+            detailsDisclosureButton.click()
+        }
+
+        // Ensure history, cookies, and tabs toggles are enabled
+        let fireDialogHistoryToggle = app.fireDialogHistoryToggle
+        let fireDialogCookiesToggle = app.fireDialogCookiesToggle
+        let fireDialogTabsToggle = app.fireDialogTabsToggle
+        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+
+        // Click burn button to clear history
+        let fireDialogBurnButton = app.fireDialogBurnButton
+        fireDialogBurnButton.click()
+
+        // Wait for fire animation to complete
+        XCTAssertTrue(
             fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
@@ -204,10 +226,9 @@ private extension AutocompleteTests {
 
         addressBarTextField.typeURL(urlForHistory)
         XCTAssertTrue(
-            app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[siteTitleForHistorySite].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command, .option, .shift])
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
     }
 }

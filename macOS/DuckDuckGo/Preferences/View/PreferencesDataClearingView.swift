@@ -24,6 +24,7 @@ extension Preferences {
 
     struct DataClearingView: View {
         @ObservedObject var model: DataClearingPreferences
+        @ObservedObject var startupModel: StartupPreferences
 
         var body: some View {
             PreferencePane(UserText.dataClearing) {
@@ -33,7 +34,13 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.automaticallyClearData, isOn: $model.isAutoClearEnabled)
-                        ToggleMenuItem(UserText.warnBeforeQuit,
+                        if model.shouldShowAutoClearAIChatHistorySetting {
+                            ToggleMenuItem(UserText.autoClearAIChatHistory,
+                                           isOn: $model.isAutoClearAIChatHistoryEnabled)
+                            .disabled(!model.isAutoClearEnabled)
+                            .padding(.leading, 16)
+                        }
+                        ToggleMenuItem(UserText.warnBeforeQuit(model.isAutoClearAIChatHistoryEnabled),
                                        isOn: $model.isWarnBeforeClearingEnabled)
                         .disabled(!model.isAutoClearEnabled)
                         .padding(.leading, 16)
@@ -41,16 +48,36 @@ extension Preferences {
 
                 }
 
-                // SECTION 2: Enable/Disable Fire Animation
-                if model.shouldShowDisableFireAnimationSection {
-                    PreferencePaneSection(UserText.fireAnimationSectionHeader) {
-                        PreferencePaneSubSection {
-                            ToggleMenuItem(UserText.showFireAnimationToggleText, isOn: $model.isFireAnimationEnabled)
+                // SECTION 2: Fire Window Default
+                PreferencePaneSection(UserText.fireWindow) {
+                    PreferencePaneSubSection {
+                        ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.shouldOpenFireWindowByDefault)
+                            .accessibilityIdentifier("PreferencesDataClearingView.openFireWindowByDefault")
+
+                        if model.shouldOpenFireWindowByDefault && startupModel.restorePreviousSession {
+                            VStack(alignment: .leading, spacing: 1) {
+                                TextMenuItemCaption(UserText.fireWindowSessionRestoreWarning)
+                                TextButton(UserText.showStartupSettings) {
+                                    model.show(url: .settingsPane(.general))
+                                }
+                            }
+                            .padding(.leading, 19)
+                        }
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            TextMenuItemCaption(UserText.openFireWindowByDefaultExplanation(newFireWindowShortcut: "⌘N", newRegularWindowShortcut: "⇧⌘N"))
                         }
                     }
                 }
 
-                // SECTION 3: Fireproof Site
+                // SECTION 3: Enable/Disable Fire Animation
+                PreferencePaneSection(UserText.fireAnimationSectionHeader) {
+                    PreferencePaneSubSection {
+                        ToggleMenuItem(UserText.showFireAnimationToggleText, isOn: $model.isFireAnimationEnabled)
+                    }
+                }
+
+                // SECTION 4: Fireproof Site
                 PreferencePaneSection(UserText.fireproofSites) {
 
                     PreferencePaneSubSection {

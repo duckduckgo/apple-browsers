@@ -17,14 +17,18 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
+import CombineExtensions
+import Common
+import ConcurrencyExtensions
 import Foundation
-import VPN
+import FoundationExtensions
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import PixelKit
+import PrivacyConfig
+import VPN
 import VPNAppState
 
 final class VPNPreferencesModel: ObservableObject {
@@ -53,6 +57,27 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
+    @Published var enforceRoutes: Bool {
+        didSet {
+            guard settings.enforceRoutes != enforceRoutes else {
+                return
+            }
+            settings.enforceRoutes = enforceRoutes
+        }
+    }
+
+    @Published private(set) var isStrictRoutingAvailable: Bool
+
+    @Published var excludeCGNAT: Bool {
+        didSet {
+            guard settings.excludeCGNAT != excludeCGNAT else {
+                return
+            }
+            settings.excludeCGNAT = excludeCGNAT
+            reloadVPN()
+        }
+    }
+
     @Published var showInMenuBar: Bool {
         didSet {
             settings.showInMenuBar = showInMenuBar
@@ -69,18 +94,10 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
-    var isRiskySitesProtectionFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
-    }
-
     /// Whether new app exclusions should be shown
     ///
     var showExclusionsFeature: Bool {
-#if APPSTORE
-        vpnAppState.isUsingSystemExtension
-#else
-        true
-#endif
+        AppVersion.isAppStoreBuild ? vpnAppState.isUsingSystemExtension : true
     }
 
     @Published
@@ -97,9 +114,20 @@ final class VPNPreferencesModel: ObservableObject {
 
     @Published var showUninstallVPN: Bool
 
+    enum CopySupportInfoState: Equatable {
+        case idle
+        case copying
+        case copied
+        case failed
+    }
+
+    @Published private(set) var copySupportInfoState: CopySupportInfoState = .idle
+
     private var onboardingStatus: OnboardingStatus {
         didSet {
-            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isInstalled
+            Task { @MainActor in
+                showUninstallVPN = await DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
+            }
         }
     }
 
@@ -126,10 +154,6 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
-    var didRiskySitesProtectionDefaultToTrue: Bool {
-        settings.didBlockRiskyDomainsDefaultToTrue
-    }
-
     private let vpnXPCClient: VPNControllerXPCClient
     private let vpnAppState: VPNAppState
     private let defaults: UserDefaults
@@ -142,7 +166,7 @@ final class VPNPreferencesModel: ObservableObject {
     init(vpnXPCClient: VPNControllerXPCClient = .shared,
          settings: VPNSettings = NSApp.delegateTyped.vpnSettings,
          proxySettings: TransparentProxySettings = .init(defaults: .netP),
-         pinningManager: PinningManager = LocalPinningManager.shared,
+         pinningManager: PinningManager,
          defaults: UserDefaults = .netP,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
 
@@ -158,6 +182,9 @@ final class VPNPreferencesModel: ObservableObject {
         excludedAppsCount = proxySettings.excludedAppsMinusDBPAgent.count
         excludedDomainsCount = proxySettings.excludedDomains.count
         excludeLocalNetworks = settings.excludeLocalNetworks
+        enforceRoutes = settings.enforceRoutes
+        isStrictRoutingAvailable = featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+        excludeCGNAT = settings.excludeCGNAT
         notifyStatusChanges = settings.notifyStatusChanges
         showInMenuBar = settings.showInMenuBar
         showInBrowserToolbar = pinningManager.isPinned(.networkProtection)
@@ -174,10 +201,17 @@ final class VPNPreferencesModel: ObservableObject {
         subscribeToConnectOnLoginSettingChanges()
         subscribeToExcludedDomainsCountChanges()
         subscribeToExcludeLocalNetworksSettingChanges()
+        subscribeToEnforceRoutesSettingChanges()
+        subscribeToStrictRoutingAvailabilityChanges()
+        subscribeToExcludeCGNATSettingChanges()
         subscribeToShowInMenuBarSettingChanges()
         subscribeToShowInBrowserToolbarSettingsChanges()
         subscribeToLocationSettingChanges()
         subscribeToDNSSettingsChanges()
+    }
+
+    deinit {
+        cancellables.removeAll()
     }
 
     private func subscribeToAppRoutingRulesChanges() {
@@ -213,6 +247,30 @@ final class VPNPreferencesModel: ObservableObject {
     private func subscribeToExcludeLocalNetworksSettingChanges() {
         settings.excludeLocalNetworksPublisher
             .assign(to: \.excludeLocalNetworks, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToEnforceRoutesSettingChanges() {
+        settings.enforceRoutesPublisher
+            .assign(to: \.enforceRoutes, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToStrictRoutingAvailabilityChanges() {
+        // Keep the toggle's availability in sync as the feature flag changes at runtime
+        // (remote config update or a local override), so the row appears/disappears live.
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.isStrictRoutingAvailable = self.featureFlagger.isFeatureOn(.vpnStrictRoutingToggle)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToExcludeCGNATSettingChanges() {
+        settings.excludeCGNATPublisher
+            .assign(to: \.excludeCGNAT, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 
@@ -287,7 +345,7 @@ final class VPNPreferencesModel: ObservableObject {
 
         switch response {
         case .OK:
-            try? await VPNUninstaller().uninstall(
+            try? await VPNUninstaller(pinningManager: pinningManager).uninstall(
                 removeSystemExtension: true,
                 showNotification: true)
         default:
@@ -316,8 +374,31 @@ final class VPNPreferencesModel: ObservableObject {
 
     @MainActor
     func openVPNViewInMainWindow() {
-        PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
+        PixelKit.fire(SubscriptionPixel.subscriptionVPNSettings)
         NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: nil)
+    }
+
+    @MainActor
+    func copySupportInfo() async {
+        guard copySupportInfoState == .idle else { return }
+        copySupportInfoState = .copying
+        let succeeded = await VPNURLEventHandler().copySupportInfo()
+        showCopySupportInfoConfirmation(succeeded ? .copied : .failed)
+    }
+
+    @MainActor
+    private func showCopySupportInfoConfirmation(_ state: CopySupportInfoState) {
+        copySupportInfoState = state
+
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+            guard copySupportInfoState == state else {
+                return
+            }
+
+            copySupportInfoState = .idle
+        }
     }
 
     @MainActor

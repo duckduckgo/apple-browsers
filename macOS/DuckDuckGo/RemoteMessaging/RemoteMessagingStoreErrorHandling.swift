@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import Persistence
 import PixelKit
@@ -38,15 +39,15 @@ public class RemoteMessagingStoreErrorHandling: EventMapping<RemoteMessagingStor
             let pixel: GeneralPixel = {
                 switch event {
                 case .saveConfigFailed:
-                    return .remoteMessagingSaveConfigError
+                    return .remoteMessagingSaveConfigError(error: error)
                 case .updateMessageShownFailed:
-                    return .remoteMessagingUpdateMessageShownError
+                    return .remoteMessagingUpdateMessageShownError(error: error)
                 case .updateMessageStatusFailed:
-                    return .remoteMessagingUpdateMessageStatusError
+                    return .remoteMessagingUpdateMessageStatusError(error: error)
                 }
             }()
 
-            PixelKit.fire(pixel, withAdditionalParameters: params, withError: error)
+            PixelKit.fire(pixel, withAdditionalParameters: params)
         }
     }
 

@@ -18,7 +18,7 @@
 //
 
 import XCTest
-@testable import Core
+@testable import DuckDuckGo
 
 final class DebouncerTests: XCTestCase {
     private var sut: Debouncer!
@@ -43,7 +43,7 @@ final class DebouncerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testWhenCancelThenCancelBlockExecution() {

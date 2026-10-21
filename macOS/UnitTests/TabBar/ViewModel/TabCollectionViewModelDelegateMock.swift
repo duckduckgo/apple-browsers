@@ -29,7 +29,7 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
 
     var didInsertCalled = false
 
-    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: Int, selected: Bool) {
+    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool) {
         didInsertCalled = true
     }
 
@@ -41,10 +41,26 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
         didRemoveCalled = true
     }
 
+    var didReplaceCalled = false
+    private(set) var tabCountsOnReplacement: [Int] = []
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {
+        didReplaceCalled = true
+        tabCountsOnReplacement.append(tabCollectionViewModel.tabs.count)
+    }
+
     var didMoveCalled = false
 
-    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: Int, to newIndex: Int) {
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex) {
         didMoveCalled = true
+    }
+
+    private(set) var webExtensionTabMoves: [(tab: Tab, oldIndex: Int)] = []
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
+                                didMoveTab tab: Tab,
+                                fromWebExtensionIndex oldIndex: Int) {
+        webExtensionTabMoves.append((tab, oldIndex))
     }
 
     var didSelectCalled = false
@@ -54,9 +70,10 @@ final class TabCollectionViewModelDelegateMock: TabCollectionViewModelDelegate {
     }
 
     var didMultipleChangesCalled = false
+    private(set) var tabCountsOnMultipleChanges: [Int] = []
 
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel) {
         didMultipleChangesCalled = true
+        tabCountsOnMultipleChanges.append(tabCollectionViewModel.tabs.count)
     }
-
 }

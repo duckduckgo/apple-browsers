@@ -1,7 +1,7 @@
 //
 //  SyncEnabledView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,8 +16,17 @@
 //  limitations under the License.
 //
 
+import AppKit
 import SwiftUI
+import SwiftUIExtensions
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import PreferencesUI_macOS
+
+#if DEBUG
+import PreviewSnapshots
+import UIComponents
+#endif
 
 struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
     @EnvironmentObject var model: ViewModel
@@ -35,64 +44,105 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
             if model.isSyncCredentialsPaused {
                 syncPaused(for: .credentials)
             }
+            if model.isSyncCreditCardsPaused {
+                syncPaused(for: .creditCards)
+            }
+            if model.isSyncIdentitiesPaused {
+                syncPaused(for: .identities)
+            }
             if !model.invalidBookmarksTitles.isEmpty {
                 syncHasInvalidItems(for: .bookmarks)
             }
             if !model.invalidCredentialsTitles.isEmpty {
                 syncHasInvalidItems(for: .credentials)
             }
+            if !model.invalidCreditCardsTitles.isEmpty {
+                syncHasInvalidItems(for: .creditCards)
+            }
+            if !model.invalidIdentitiesTitles.isEmpty {
+                syncHasInvalidItems(for: .identities)
+            }
         }
 
-        // Sync Enabled
-        PreferencePaneSection {
-            SyncStatusView<ViewModel>()
-                .environmentObject(model)
-        }
+        // Intro text
+        SyncUIViews.LeadingSecondaryBody(text: model.isAIChatSyncEnabled ? UserText.syncEnabledFooter : UserText.syncEnabledFooterWithoutAIChat)
 
-        // Synced Devices
-        PreferencePaneSection(UserText.syncedDevices) {
+        // My Devices
+        PreferencePaneSection(UserText.myDevices) {
             SyncedDevicesView<ViewModel>()
                 .environmentObject(model)
+
+            SyncUIViews.LeadingSecondaryBody(text: UserText.myDevicesFooter)
         }
 
-        // Options
-        PreferencePaneSection(UserText.optionsSectionTitle) {
-            PreferencePaneSubSection {
-                ToggleMenuItem(UserText.fetchFaviconsOptionTitle, isOn: $model.isFaviconsFetchingEnabled)
-                TextMenuItemCaption(UserText.fetchFaviconsOptionCaption)
-            }
+        // Bookmarks
+        PreferencePaneSection(UserText.bookmarksSectionTitle) {
+            bookmarkOption(title: UserText.shareFavoritesOptionTitle,
+                           caption: UserText.shareFavoritesOptionCaption,
+                           isOn: $model.isUnifiedFavoritesEnabled)
 
-            PreferencePaneSubSection {
-                ToggleMenuItem(UserText.shareFavoritesOptionTitle, isOn: $model.isUnifiedFavoritesEnabled)
-                TextMenuItemCaption(UserText.shareFavoritesOptionCaption)
-            }
+            bookmarkOption(title: UserText.fetchFaviconsOptionTitle,
+                           caption: UserText.fetchFaviconsOptionCaption,
+                           isOn: $model.isFaviconsFetchingEnabled)
         }
 
-        // Recovery
-        PreferencePaneSection(UserText.recovery) {
-            HStack(alignment: .top, spacing: 12) {
-                Text(UserText.recoveryInstructions)
-                    .fixMultilineScrollableText()
-                Spacer()
-                Button(UserText.saveRecoveryPDF) {
-                    model.saveRecoveryPDF()
-                }
-            }
+        // Recovery Code
+        PreferencePaneSection(UserText.recoveryCodeSectionTitle) {
+            recoverySection()
         }
 
         // Turn Off and Delete Data
         PreferencePaneSection {
-            Button(UserText.turnOffAndDeleteServerData) {
-                model.presentDeleteAccount()
+            Button {
+                Task {
+                    await model.presentDeleteAccount()
+                }
+            } label: {
+                Text(model.isImprovedPairingFlowEnabled ? UserText.turnOffSyncButtonImproved : UserText.turnOffAndDeleteServerData)
+                    .foregroundColor(Color(designSystemColor: .destructivePrimary))
             }
         }
+    }
+
+    private func bookmarkOption(title: String, caption: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                SyncUIViews.Caption(text: caption)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .toggleStyle(.checkbox)
+        .rebrandedControlTint()
+        .accessibilityLabel(Text(title))
+    }
+
+    private func recoverySection() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            recoveryInstructionsRow()
+            recoveryInstructionsFooter()
+        }
+    }
+
+    private func recoveryInstructionsRow() -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(UserText.recoveryInstructions)
+                .fixMultilineScrollableText()
+            Spacer()
+            Button(UserText.downloadRecoveryCodeButton, action: model.saveRecoveryPDF)
+        }
+    }
+
+    private func recoveryInstructionsFooter() -> some View {
+        SyncUIViews.LeadingSecondaryBody(text: UserText.recoveryInstructionsFooter)
     }
 
     @ViewBuilder
     func syncPaused() -> some View {
         if let title = model.syncPausedTitle,
            let message = model.syncPausedMessage,
-           let buttonTitle = model.syncPausedButtonTitle  {
+           let buttonTitle = model.syncPausedButtonTitle {
             if let action = model.syncPausedButtonAction {
                 SyncWarningMessage(title: title, message: message, buttonTitle: buttonTitle) {
                     action()
@@ -101,7 +151,6 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 SyncWarningMessage(title: title, message: message, buttonTitle: buttonTitle)
             }
         }
-
     }
 
     @ViewBuilder
@@ -112,6 +161,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedTitle
             case .credentials:
                 return model.syncCredentialsPausedTitle
+            case .creditCards:
+                return model.syncCreditCardsPausedTitle
+            case .identities:
+                return model.syncIdentitiesPausedTitle
             }
         }
         var message: String? {
@@ -120,6 +173,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedMessage
             case .credentials:
                 return model.syncCredentialsPausedMessage
+            case .creditCards:
+                return model.syncCreditCardsPausedMessage
+            case .identities:
+                return model.syncIdentitiesPausedMessage
             }
         }
         var buttonTitle: String? {
@@ -128,6 +185,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedButtonTitle
             case .credentials:
                 return model.syncCredentialsPausedButtonTitle
+            case .creditCards:
+                return model.syncCreditCardsPausedButtonTitle
+            case .identities:
+                return model.syncIdentitiesPausedButtonTitle
             }
         }
 
@@ -152,6 +213,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return UserText.invalidBookmarksPresentTitle
             case .credentials:
                 return UserText.invalidCredentialsPresentTitle
+            case .creditCards:
+                return UserText.invalidCreditCardsPresentTitle
+            case .identities:
+                return UserText.invalidIdentitiesPresentTitle
             }
         }
         var description: String {
@@ -165,6 +230,16 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 assert(!model.invalidCredentialsTitles.isEmpty)
                 let firstInvalidCredentialTitle = model.invalidCredentialsTitles.first ?? ""
                 return UserText.invalidCredentialsPresentDescription(firstInvalidCredentialTitle, numberOfInvalidItems: model.invalidCredentialsTitles.count)
+
+            case .creditCards:
+                assert(!model.invalidCreditCardsTitles.isEmpty)
+                let firstInvalidCreditCardTitle = model.invalidCreditCardsTitles.first ?? ""
+                return UserText.invalidCreditCardsPresentDescription(firstInvalidCreditCardTitle, numberOfInvalidItems: model.invalidCreditCardsTitles.count)
+
+            case .identities:
+                assert(!model.invalidIdentitiesTitles.isEmpty)
+                let firstInvalidIdentityTitle = model.invalidIdentitiesTitles.first ?? ""
+                return UserText.invalidIdentitiesPresentDescription(firstInvalidIdentityTitle, numberOfInvalidItems: model.invalidIdentitiesTitles.count)
             }
         }
         var actionTitle: String {
@@ -173,6 +248,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return UserText.bookmarksLimitExceededAction
             case .credentials:
                 return UserText.credentialsLimitExceededAction
+            case .creditCards:
+                return UserText.creditCardsLimitExceededAction
+            case .identities:
+                return UserText.identitiesLimitExceededAction
             }
         }
         SyncWarningMessage(title: title, message: description, buttonTitle: actionTitle) {
@@ -181,6 +260,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 model.manageBookmarks()
             case .credentials:
                 model.manageLogins()
+            case .creditCards:
+                model.manageCreditCards()
+            case .identities:
+                model.manageIdentities()
             }
         }
     }
@@ -201,5 +284,38 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
     enum LimitedItemType {
         case bookmarks
         case credentials
+        case creditCards
+        case identities
     }
 }
+
+#if DEBUG
+struct SyncEnabledView_Previews: PreviewProvider {
+    typealias State = PreviewManagementViewModel
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Enabled", state: .enabled),
+            .init(name: "Loading devices", state: .enabledLoadingDevices),
+            .init(name: "Sync paused", state: .syncPaused)
+        ],
+        configure: { model in
+            ScrollView {
+                PreferencePane {
+                    StatusIndicatorView(status: .on, isLarge: true)
+                    SyncEnabledView<PreviewManagementViewModel>()
+                        .environmentObject(model)
+                }
+                .padding()
+            }
+            .frame(width: 600, height: 900)
+            .background(Color(nsColor: .windowBackgroundColor))
+            .applyRebranding()
+        }
+    )
+}
+#endif

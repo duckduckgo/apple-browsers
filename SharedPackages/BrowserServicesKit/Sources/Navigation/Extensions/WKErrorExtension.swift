@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import WebKit
 
 extension WKError {
@@ -41,19 +42,18 @@ extension WKError {
         code == .webContentProcessTerminated && _nsError is WKError
     }
 }
+
 extension NSError {
     public var isServerCertificateUntrusted: Bool {
         code == NSURLErrorServerCertificateUntrusted && domain == NSURLErrorDomain
     }
 }
 
-extension WKError {
-
+public extension WKError {
     static let WebKitErrorDomain = "WebKitErrorDomain"
-
 }
 
-extension WKError.Code {
+public extension WKError.Code {
 #if os(macOS)
     static let frameLoadInterruptedByPolicyChange: WKError.Code = {
         assert(WebKitErrorFrameLoadInterruptedByPolicyChange == 102)

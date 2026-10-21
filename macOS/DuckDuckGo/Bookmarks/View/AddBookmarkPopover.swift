@@ -17,11 +17,15 @@
 //
 
 import AppKit
+import Combine
 import SwiftUI
 
 final class AddBookmarkPopover: NSPopover {
 
     private let bookmarkManager: BookmarkManager
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     var isNew: Bool = false
     var bookmark: Bookmark? {
@@ -31,6 +35,7 @@ final class AddBookmarkPopover: NSPopover {
     }
 
     private weak var addressBar: NSView?
+    private var syncButtonModel: DismissableSyncDeviceButtonModel?
 
     /// prefferred bounding box for the popover positioning
     override var boundingFrame: NSRect {
@@ -49,16 +54,34 @@ final class AddBookmarkPopover: NSPopover {
 
         animates = false
         behavior = .transient
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
         fatalError("BookmarksPopover: Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     private func setupBookmarkAddController() {
         guard let bookmark else { return }
         let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
-        contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel))
+        let syncButtonModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded)
+        self.syncButtonModel = syncButtonModel
+        syncButtonModel.bookmarkPanelDidAppear()
+        let contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonModel))
+        // It's important to set the frame at least once here. If we don't, the popover
+        // can miscalculate position, especially in macOS 26 (Sequoia)
+        contentViewController.view.frame = CGRect(origin: .zero, size: contentViewController.view.intrinsicContentSize)
+        self.contentViewController = contentViewController
+
         viewModel.buttonClicked = { [weak self] in
             self?.performClose(nil)
         }
@@ -74,7 +97,16 @@ final class AddBookmarkPopover: NSPopover {
     }
 
     func popoverWillClose() {
+        syncButtonModel?.viewDidDisappear()
+        syncButtonModel = nil
+        contentViewController = nil
         bookmark = nil
     }
+}
 
+extension AddBookmarkPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }

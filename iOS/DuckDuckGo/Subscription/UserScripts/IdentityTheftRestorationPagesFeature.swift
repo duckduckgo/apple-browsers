@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 import UserScript
@@ -43,12 +44,10 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
         static let getFeatureConfig = "getFeatureConfig"
     }
         
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    private let isAuthV2Enabled: Bool
+    private let subscriptionManager: any SubscriptionManager
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, isAuthV2Enabled: Bool) {
+    init(subscriptionManager: any SubscriptionManager) {
         self.subscriptionManager = subscriptionManager
-        self.isAuthV2Enabled = isAuthV2Enabled
     }
 
     weak var broker: UserScriptMessageBroker?
@@ -88,7 +87,8 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: isAuthV2Enabled, usePaidDuckAi: false)
+        /// Note that the `useAlternateStripePaymentFlow` value is not used on the IDTR page, and so we can set the value to false here.
+        return GetFeatureConfigurationResponse(usePaidDuckAi: false, useAlternateStripePaymentFlow: false)
     }
 
     deinit {

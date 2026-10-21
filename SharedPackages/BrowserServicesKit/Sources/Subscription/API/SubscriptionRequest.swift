@@ -19,6 +19,7 @@
 import Foundation
 import Networking
 import Common
+import FoundationExtensions
 
 struct SubscriptionRequest {
     let apiRequest: APIRequestV2
@@ -36,9 +37,22 @@ struct SubscriptionRequest {
         return SubscriptionRequest(apiRequest: request)
     }
 
-    static func getProducts(baseURL: URL) -> SubscriptionRequest? {
-        let path = "/products"
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
+    static func getTierProducts(baseURL: URL, region: String?, platform: String?) -> SubscriptionRequest? {
+        let path = "/v2/products"
+        var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)
+
+        var queryItems: [URLQueryItem] = []
+        if let region = region {
+            queryItems.append(URLQueryItem(name: "region", value: region))
+        }
+        if let platform = platform {
+            queryItems.append(URLQueryItem(name: "platform", value: platform))
+        }
+        if !queryItems.isEmpty {
+            urlComponents?.queryItems = queryItems
+        }
+        guard let url = urlComponents?.url,
+              let request = APIRequestV2(url: url,
                                          method: .get) else {
             return nil
         }
@@ -59,15 +73,14 @@ struct SubscriptionRequest {
         return SubscriptionRequest(apiRequest: request)
     }
 
-    static func confirmPurchase(baseURL: URL, accessToken: String, signature: String, additionalParams: [String: String]?) -> SubscriptionRequest? {
+    static func confirmPurchase(baseURL: URL,
+                                accessToken: String,
+                                signature: String,
+                                experimentAttribution: PurchaseExperimentAttribution?) -> SubscriptionRequest? {
         let path = "/purchase/confirm/apple"
-        var bodyDict = ["signedTransactionInfo": signature]
+        let body = ConfirmPurchaseBody(signature: signature, experimentAttribution: experimentAttribution)
 
-        if let additionalParams {
-            bodyDict.merge(additionalParams) { (_, new) in new }
-        }
-
-        guard let bodyData = CodableHelper.encode(bodyDict) else { return nil }
+        guard let bodyData = CodableHelper.encode(body) else { return nil }
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .post,
                                          headers: APIRequestV2.HeadersV2(authToken: accessToken),
@@ -78,12 +91,44 @@ struct SubscriptionRequest {
         return SubscriptionRequest(apiRequest: request)
     }
 
-    static func subscriptionFeatures(baseURL: URL, subscriptionID: String) -> SubscriptionRequest? {
-        let path = "/products/\(subscriptionID)/features"
-        guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
+    static func subscriptionTierFeatures(baseURL: URL, subscriptionIDs: [String]) -> SubscriptionRequest? {
+        let path = "/v2/features"
+        var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: true)
+
+        // Add multiple sku query parameters
+        urlComponents?.queryItems = subscriptionIDs.map { URLQueryItem(name: "sku", value: $0) }
+
+        guard let url = urlComponents?.url,
+              let request = APIRequestV2(url: url,
                                          cachePolicy: .returnCacheDataElseLoad) else { // Cached on purpose, the response never changes
             return nil
         }
         return SubscriptionRequest(apiRequest: request)
+    }
+}
+
+private struct ConfirmPurchaseBody: Codable {
+    let signedTransactionInfo: String
+    let experiments: [SubscriptionExperiment]?
+    let experimentName: String?
+    let experimentCohort: String?
+
+    init(signature: String, experimentAttribution: PurchaseExperimentAttribution?) {
+        signedTransactionInfo = signature
+
+        switch experimentAttribution {
+        case .legacy(let experiment):
+            experiments = nil
+            experimentName = experiment.experimentName
+            experimentCohort = experiment.experimentCohort
+        case .multiple(let experiments) where !experiments.isEmpty:
+            self.experiments = experiments
+            experimentName = nil
+            experimentCohort = nil
+        case .multiple, nil:
+            experiments = nil
+            experimentName = nil
+            experimentCohort = nil
+        }
     }
 }

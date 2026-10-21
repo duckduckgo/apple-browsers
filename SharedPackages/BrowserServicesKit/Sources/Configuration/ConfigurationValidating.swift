@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import BrowserServicesKit
-import TrackerRadarKit
 import Common
+import FoundationExtensions
+import Foundation
+import PrivacyConfig
+import TrackerRadarKit
 
 protocol ConfigurationValidating {
 

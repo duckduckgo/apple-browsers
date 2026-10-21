@@ -25,12 +25,16 @@ final class GrammarFeaturesManager {
         case continuousSpellChecking
         case grammarChecking
         case autocorrection
+        case dashSubstitution
+        case quoteSubstitution
 
         var webKitPreferenceKey: WebKitPreferenceKey {
             switch self {
             case .continuousSpellChecking: return .WebContinuousSpellCheckingEnabled
             case .grammarChecking: return .WebGrammarCheckingEnabled
             case .autocorrection: return .WebAutomaticSpellingCorrectionEnabled
+            case .dashSubstitution: return .WebAutomaticDashSubstitutionEnabled
+            case .quoteSubstitution: return .WebAutomaticQuoteSubstitutionEnabled
             }
         }
     }
@@ -46,6 +50,10 @@ final class GrammarFeaturesManager {
 
         // Autocorrection
         case WebAutomaticSpellingCorrectionEnabled
+
+        // Text substitutions
+        case WebAutomaticDashSubstitutionEnabled
+        case WebAutomaticQuoteSubstitutionEnabled
     }
     // swiftlint:enable identifier_name
 
@@ -71,9 +79,21 @@ final class GrammarFeaturesManager {
             UserDefaults.standard.setValue(false, forKey: feature.webKitPreferenceKey.rawValue)
         }
 
+        func disableFeatureUnlessChosenByUser(_ feature: Feature) {
+            let key = feature.webKitPreferenceKey.rawValue
+            guard UserDefaults.standard.object(forKey: key) == nil else { return }
+
+            UserDefaults.standard.setValue(false, forKey: key)
+        }
+
         enableFeatureOnce(.continuousSpellChecking, alreadyEnabledOnce: &spellingCheckEnabledOnce)
         enableFeatureOnce(.grammarChecking, alreadyEnabledOnce: &grammarCheckEnabledOnce)
         disableFeature(.autocorrection)
+
+        // Dash and quote substitution can cause formatting issues which break features on sites like Github.
+        // If the user hasn't set an explicit value for these, we'll disable them.
+        disableFeatureUnlessChosenByUser(.dashSubstitution)
+        disableFeatureUnlessChosenByUser(.quoteSubstitution)
     }
 
 }

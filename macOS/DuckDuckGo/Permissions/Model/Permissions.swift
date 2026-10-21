@@ -58,6 +58,15 @@ extension Dictionary where Key == PermissionType, Value == PermissionState {
         }
     }
 
+    var notification: PermissionState? {
+        get {
+            self[.notification]
+        }
+        set {
+            self[.notification] = newValue
+        }
+    }
+
     var externalScheme: PermissionState? {
         return self.first(where: { $0.key.isExternalScheme })?.value
     }

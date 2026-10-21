@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
+import Foundation
+import SharedTestUtilities
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 class BrowserProfileTests: XCTestCase {
 
@@ -250,4 +252,64 @@ class BrowserProfileTests: XCTestCase {
         XCTAssertEqual(profile.installedAppsMajorVersionDescription()?.sorted(), DataImport.Source.chrome.installedAppsMajorVersionDescription(selectedProfile: profile)?.sorted())
     }
 
+    // MARK: - Safari Tests
+
+    func testWhenSafariProfileValidationFails_hasValidProfileDataReturnsTrue() {
+        let profileURL = URL(string: "/Users/Dax/Library/Safari/")!
+        let fileStore = makeThrowingFileStoreMock()
+        let profile = DataImport.BrowserProfile(browser: .safari, profileURL: profileURL, fileStore: fileStore)
+
+        // Validation should return nil (directory access failed)
+        XCTAssertNil(profile.validateProfileData())
+
+        // But hasValidProfileData should return true for Safari (bypass for passwords and bookmarks)
+        XCTAssertTrue(profile.hasValidProfileData(for: .passwords))
+        XCTAssertTrue(profile.hasValidProfileData(for: .bookmarks))
+        XCTAssertFalse(profile.hasValidProfileData(for: .creditCards))
+    }
+
+    func testWhenSafariTechnologyPreviewProfileValidationFails_hasValidProfileDataReturnsTrue() {
+        let profileURL = URL(string: "/Users/Dax/Library/SafariTechnologyPreview/")!
+        let fileStore = makeThrowingFileStoreMock()
+        let profile = DataImport.BrowserProfile(browser: .safariTechnologyPreview, profileURL: profileURL, fileStore: fileStore)
+
+        // Validation should return nil (directory access failed)
+        XCTAssertNil(profile.validateProfileData())
+
+        // But hasValidProfileData should return true for Safari Technology Preview (bypass for passwords and bookmarks)
+        XCTAssertTrue(profile.hasValidProfileData(for: .passwords))
+        XCTAssertTrue(profile.hasValidProfileData(for: .bookmarks))
+        XCTAssertFalse(profile.hasValidProfileData(for: .creditCards))
+    }
+
+    func testWhenSafariProfileValidationFails_defaultProfileStillReturnsProfile() {
+        let profileURL = URL(string: "/Users/Dax/Library/Safari/")!
+        let fileStore = makeThrowingFileStoreMock()
+        let profile = DataImport.BrowserProfile(browser: .safari, profileURL: profileURL, fileStore: fileStore)
+
+        let list = DataImport.BrowserProfileList(browser: .safari, profiles: [profile])
+
+        // Should return profile even though validation failed
+        XCTAssertNotNil(list.defaultProfile)
+        XCTAssertEqual(list.defaultProfile?.profileURL, profileURL)
+    }
+
+    func testWhenNonSafariProfileValidationFails_hasValidProfileDataReturnsFalse() {
+        let profileURL = profile(named: "Profile")
+        let fileStore = makeThrowingFileStoreMock()
+        let profile = DataImport.BrowserProfile(browser: .chrome, profileURL: profileURL, fileStore: fileStore)
+
+        // Validation should return nil (directory access failed)
+        XCTAssertNil(profile.validateProfileData())
+
+        // Non-Safari browsers should return false when validation fails
+        XCTAssertFalse(profile.hasValidProfileData(for: .passwords))
+        XCTAssertFalse(profile.hasValidProfileData(for: .bookmarks))
+    }
+
+    private func makeThrowingFileStoreMock() -> FileStoreMock {
+        let fileStore = FileStoreMock()
+        fileStore.failWithError = NSError(domain: "FileStoreMock", code: 1, userInfo: [NSLocalizedDescriptionKey: "Directory access denied"])
+        return fileStore
+    }
 }

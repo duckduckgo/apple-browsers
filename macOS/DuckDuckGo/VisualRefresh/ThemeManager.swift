@@ -1,0 +1,127 @@
+//
+//  ThemeManager.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Combine
+import AppKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import PrivacyConfig
+import FeatureFlags_macOS
+
+protocol ThemeManaging {
+    var appearance: ThemeAppearance { get }
+    var appearancePublisher: Published<ThemeAppearance>.Publisher { get }
+
+    var theme: ThemeStyleProviding { get }
+    var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
+
+    var isAppRebranded: Bool { get }
+}
+
+final class ThemeManager: ObservableObject, ThemeManaging {
+    private var cancellables = Set<AnyCancellable>()
+    private var appearancePreferences: AppearancePreferences
+    private let featureFlagger: FeatureFlagger
+
+    @Published private(set) var appearance: ThemeAppearance
+
+    var appearancePublisher: Published<ThemeAppearance>.Publisher {
+        $appearance
+    }
+
+    @Published private(set) var theme: ThemeStyleProviding {
+        didSet {
+            switchDesignSystemPalette(to: theme.name.designColorPalette)
+        }
+    }
+
+    var themePublisher: Published<any ThemeStyleProviding>.Publisher {
+        $theme
+    }
+
+    @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
+
+    let isAppRebranded: Bool
+
+    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) {
+        let isAppRebranded = true
+        AppRebrand.setupDuckRebrandedUX(isAppRebranded: isAppRebranded)
+
+        self.appearancePreferences = appearancePreferences
+        self.featureFlagger = featureFlagger
+        self.isAppRebranded = isAppRebranded
+        self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
+        self.appearance = appearancePreferences.themeAppearance
+        self.designColorPalette = appearancePreferences.themeName.designColorPalette
+
+        switchDesignSystemPalette(to: theme.name.designColorPalette)
+        subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
+        subscribeToSystemAppearance()
+    }
+
+    private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
+        appearancePreferences.$themeName
+            .dropFirst()
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] themeName in
+                self?.switchToTheme(named: themeName)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToSystemAppearance() {
+        appearancePreferences.$themeAppearance
+            .dropFirst()
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] appearance in
+                self?.appearance = appearance
+            }
+            .store(in: &cancellables)
+    }
+}
+
+private extension ThemeManager {
+
+    /// Relay the change to all of our observers
+    func switchToTheme(named themeName: ThemeName) {
+        theme = ThemeStyle.buildThemeStyle(themeName: themeName)
+    }
+
+    /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
+    /// We're also keeping a reference to the active `designColorPalette`, so that it's Observable in SwiftUI
+    func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
+        DesignSystemPalette.current = palette
+        designColorPalette = palette
+    }
+}
+
+private extension AppRebrand {
+
+    static func setupDuckRebrandedUX(isAppRebranded: Bool) {
+        AppRebrand.isAppRebranded = { [isAppRebranded] in
+            isAppRebranded
+        }
+
+        DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in
+            isAppRebranded
+        }
+    }
+}

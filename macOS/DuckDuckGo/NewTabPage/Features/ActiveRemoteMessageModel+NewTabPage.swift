@@ -47,7 +47,7 @@ extension ActiveRemoteMessageModel: NewTabPageActiveRemoteMessageProviding {
                 await openURLHandler(url)
             }
         case .survey(let value):
-            let refreshedURL = refreshLastSearchState(in: value)
+            let refreshedURL = surveyURLRefresher(value)
             if let url = URL.makeURL(from: refreshedURL) {
                 await openURLHandler(url)
             }
@@ -57,6 +57,10 @@ extension ActiveRemoteMessageModel: NewTabPageActiveRemoteMessageProviding {
             switch value {
             case .feedback:
                 await navigateToFeedbackHandler()
+            case .personalInformationRemoval:
+                await navigateToPIRHandler()
+            case .softwareUpdate:
+                await navigateToSoftwareUpdateHandler()
             default: break
             }
         default:
@@ -64,10 +68,22 @@ extension ActiveRemoteMessageModel: NewTabPageActiveRemoteMessageProviding {
         }
     }
 
-    /// If `last_search_state` is present, refresh before opening URL
-    private func refreshLastSearchState(in urlString: String) -> String {
-        let lastSearchDate = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil).searchDauDate
-        return DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: urlString, lastSearchDate: lastSearchDate)
+    /// Refresh usage states that are present in the survey URL before opening it.
+    static func defaultSurveyURLRefresher(_ urlString: String) -> String {
+        refreshSurveyURL(urlString,
+                         lastSearchDateProvider: { AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil).searchDauDate },
+                         daysSinceDuckAIUsedProvider: { DefaultFeatureDiscovery().daysSinceLastUsed(.aiChat) })
+    }
+
+    static func refreshSurveyURL(_ urlString: String, lastSearchDateProvider: () -> Date?, daysSinceDuckAIUsedProvider: () -> Int?) -> String {
+        let queryItemNames = Set(URLComponents(string: urlString)?.queryItems?.map(\.name) ?? [])
+        let lastSearchDate = queryItemNames.contains(RemoteMessagingSurveyActionParameter.lastSearchState.rawValue) ? lastSearchDateProvider() : nil
+        let daysSinceDuckAIUsed = queryItemNames.contains(RemoteMessagingSurveyActionParameter.lastDuckAIUsage.rawValue) ? daysSinceDuckAIUsedProvider() : nil
+        return DefaultRemoteMessagingSurveyURLBuilder.refreshSurveyUsageStates(
+            in: urlString,
+            lastSearchDate: lastSearchDate,
+            daysSinceDuckAIUsed: daysSinceDuckAIUsed
+        )
     }
 }
 

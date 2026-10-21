@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import BrowserServicesKit
 
 public protocol ToggleReporting {
 

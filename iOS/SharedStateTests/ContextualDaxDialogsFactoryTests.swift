@@ -24,7 +24,7 @@ import Onboarding
 @testable import DuckDuckGo
 
 final class ContextualDaxDialogsFactoryTests: XCTestCase {
-    private var sut: ExperimentContextualDaxDialogsFactory!
+    private var sut: ContextualDaxDialogsFactory!
     private var delegate: ContextualOnboardingDelegateMock!
     private var settingsMock: ContextualOnboardingSettingsMock!
     private var pixelReporterMock: OnboardingPixelReporterMock!
@@ -39,7 +39,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         pixelReporterMock = OnboardingPixelReporterMock()
         onboardingManagerMock = OnboardingManagerMock()
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        sut = ExperimentContextualDaxDialogsFactory(
+        sut = ContextualDaxDialogFactory(
             contextualOnboardingLogic: contextualOnboardingLogicMock,
             contextualOnboardingSettings: settingsMock,
             contextualOnboardingPixelReporter: pixelReporterMock,
@@ -71,7 +71,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
 
         // THEN
-        let view = try XCTUnwrap(find(OnboardingFirstSearchDoneDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingSearchDoneDialog.self, in: result))
         XCTAssertTrue(view.viewModel.delegate === delegate)
     }
 
@@ -80,7 +80,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         settingsMock.userHasSeenTrackersDialog = true
         let spec = DaxDialogs.BrowsingSpec.afterSearch
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFirstSearchDoneDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingSearchDoneDialog.self, in: result))
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
@@ -96,7 +96,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         settingsMock.userHasSeenTrackersDialog = false
         let spec = DaxDialogs.BrowsingSpec.afterSearch
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFirstSearchDoneDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingSearchDoneDialog.self, in: result))
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
@@ -114,7 +114,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         settingsMock.userHasSeenTrackersDialog = true
         let spec = DaxDialogs.BrowsingSpec(type: .visitWebsite, pixelName: .onboardingIntroShownUnique)
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingTryVisitingSiteDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrySiteDialog.self, in: result))
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
@@ -135,7 +135,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
 
             // THEN
-            let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: result))
+            let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: result))
             XCTAssertNotNil(view)
         }
     }
@@ -146,7 +146,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             delegate = ContextualOnboardingDelegateMock()
             settingsMock.userHasSeenFireDialog = false
             let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-            let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: result))
+            let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: result))
             XCTAssertFalse(delegate.didCallDidAcknowledgeContextualOnboardingTrackersDialog)
 
             // WHEN
@@ -163,7 +163,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             delegate = ContextualOnboardingDelegateMock()
             settingsMock.userHasSeenFireDialog = true
             let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-            let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: result))
+            let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: result))
             XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
             // WHEN
@@ -177,13 +177,13 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     // MARK: - Fire
     func test_WhenMakeViewFire_ThenReturnViewOnboardingFireDialog() throws {
         // GIVEN
-        let spec = DaxDialogs.BrowsingSpec(type: .fire, pixelName: .onboardingIntroShownUnique)
+        let spec = DaxDialogs.BrowsingSpec(type: .fire(.standard), pixelName: .onboardingIntroShownUnique)
 
         // WHEN
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
 
         // THEN
-        let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingFireDialog.self, in: result))
         XCTAssertNotNil(view)
     }
 
@@ -197,7 +197,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
 
         // THEN
-        let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: result))
         XCTAssertNotNil(view)
     }
 
@@ -205,11 +205,11 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.BrowsingSpec.final
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: result))
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
-        view.dismissAction()
+        view.onAction(.completeAndActivateSearch)
 
         // THEN
         XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
@@ -294,22 +294,27 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             // GIVEN
             settingsMock.userHasSeenFireDialog = false
             pixelReporterMock = OnboardingPixelReporterMock()
-            sut = ExperimentContextualDaxDialogsFactory(
+            sut = ContextualDaxDialogFactory(
                 contextualOnboardingLogic: ContextualOnboardingLogicMock(),
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock
             )
             let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-            let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: result))
+            let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: result))
             XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
             XCTAssertNil(pixelReporterMock.capturedScreenImpression)
+            XCTAssertFalse(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+            XCTAssertNil(pixelReporterMock.capturedSharedOnboardingScreenImpression)
 
             // WHEN
             view.blockedTrackersCTAAction()
 
             // THEN
+            XCTAssertTrue(pixelReporterMock.didCallMeasureTrackersDialogGotItAction)
             XCTAssertTrue(pixelReporterMock.didCallMeasureScreenImpressionCalled)
             XCTAssertEqual(pixelReporterMock.capturedScreenImpression, .daxDialogsFireEducationShownUnique)
+            XCTAssertTrue(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+            XCTAssertEqual(pixelReporterMock.capturedSharedOnboardingScreenImpression, .fireButton(.shown))
         }
     }
 
@@ -317,27 +322,32 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.BrowsingSpec.afterSearch
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFirstSearchDoneDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingSearchDoneDialog.self, in: result))
         XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
         XCTAssertNil(pixelReporterMock.capturedScreenImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertNil(pixelReporterMock.capturedSharedOnboardingScreenImpression)
 
         // WHEN
         view.gotItAction()
 
         // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSearchResultsDialogGotItAction)
         XCTAssertTrue(pixelReporterMock.didCallMeasureScreenImpressionCalled)
         XCTAssertEqual(pixelReporterMock.capturedScreenImpression, .onboardingContextualTryVisitSiteUnique)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertEqual(pixelReporterMock.capturedSharedOnboardingScreenImpression, .visitSite(.shown))
     }
 
     func testWhenEndOfJourneyDialogCTAIsTappedThenExpectedPixelFires() throws {
         // GIVEN
         let spec = DaxDialogs.BrowsingSpec.final
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: result))
         XCTAssertFalse(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
 
         // WHEN
-        view.dismissAction()
+        view.onAction(.completeAndActivateSearch)
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
@@ -350,7 +360,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let spec = DaxDialogs.BrowsingSpec.afterSearch
         let isShowingTryVisitSiteDialog = false
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFirstSearchDoneDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingSearchDoneDialog.self, in: result))
         XCTAssertFalse(pixelReporterMock.didCallMeasureSearchResultDialogDismissButtonTapped)
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
@@ -368,7 +378,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let spec = DaxDialogs.BrowsingSpec.afterSearch
         let isShowingTryVisitSiteDialog = true
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFirstSearchDoneDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingSearchDoneDialog.self, in: result))
         XCTAssertFalse(pixelReporterMock.didCallMeasureTryVisitSiteDismissButtonTapped)
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
@@ -385,12 +395,12 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.BrowsingSpec.visitWebsite
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingTryVisitingSiteDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrySiteDialog.self, in: result))
         XCTAssertFalse(pixelReporterMock.didCallMeasureTryVisitSiteDismissButtonTapped)
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
-        view.onManualDismiss()
+        view.onManualDismiss?()
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureTryVisitSiteDismissButtonTapped)
@@ -401,12 +411,12 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.BrowsingSpec.fire
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingFireDialog.self, in: result))
         XCTAssertFalse(pixelReporterMock.didCallMeasureFireDialogDismissButtonTapped)
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
-        view.onManualDismiss()
+        view.onManualDismiss!()
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureFireDialogDismissButtonTapped)
@@ -420,19 +430,19 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             pixelReporterMock = OnboardingPixelReporterMock()
             delegate = ContextualOnboardingDelegateMock()
             contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-            sut = ExperimentContextualDaxDialogsFactory(
+            sut = ContextualDaxDialogFactory(
                 contextualOnboardingLogic: contextualOnboardingLogicMock,
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock
             )
             let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-            let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: result))
+            let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: result))
             XCTAssertFalse(pixelReporterMock.didCallMeasureTrackersDialogDismissButtonTapped)
             XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
             XCTAssertFalse(contextualOnboardingLogicMock.didCallSetFireEducationMessageSeen)
 
             // WHEN
-            view.onManualDismiss(isShowingFireDialog)
+            view.onManualDismiss?(isShowingFireDialog)
 
             // THEN
             XCTAssertTrue(pixelReporterMock.didCallMeasureTrackersDialogDismissButtonTapped)
@@ -448,19 +458,19 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             pixelReporterMock = OnboardingPixelReporterMock()
             delegate = ContextualOnboardingDelegateMock()
             contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-            sut = ExperimentContextualDaxDialogsFactory(
+            sut = ContextualDaxDialogFactory(
                 contextualOnboardingLogic: contextualOnboardingLogicMock,
                 contextualOnboardingSettings: settingsMock,
                 contextualOnboardingPixelReporter: pixelReporterMock
             )
             let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-            let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: result))
+            let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialogScreen.self, in: result))
             XCTAssertFalse(pixelReporterMock.didCallMeasureFireDialogDismissButtonTapped)
             XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
             XCTAssertFalse(contextualOnboardingLogicMock.didCallSetFireEducationMessageSeen)
 
             // WHEN
-            view.onManualDismiss(isShowingFireDialog)
+            view.onManualDismiss?(isShowingFireDialog)
 
             // THEN
             XCTAssertTrue(pixelReporterMock.didCallMeasureFireDialogDismissButtonTapped)
@@ -473,12 +483,12 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.BrowsingSpec.final
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
-        let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: result))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingEndOfJourneyDialog.self, in: result))
         XCTAssertFalse(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismissButtonTapped)
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
 
         // WHEN
-        view.onManualDismiss()
+        view.onAction(.manualDismiss)
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismissButtonTapped)
@@ -494,6 +504,26 @@ extension ContextualDaxDialogsFactoryTests {
             // THEN
             XCTAssertTrue(self.pixelReporterMock.didCallMeasureScreenImpressionCalled)
             XCTAssertEqual(self.pixelReporterMock.capturedScreenImpression, event)
+            XCTAssertTrue(self.pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+            XCTAssertEqual(self.pixelReporterMock.capturedSharedOnboardingScreenImpression, Self.expectedSharedScreenImpression(forLegacyPixel: event))
+        }
+    }
+
+    private static func expectedSharedScreenImpression(forLegacyPixel event: Pixel.Event) -> OnboardingSharedPixelEvent {
+        switch event {
+        case .daxDialogsSerpUnique:
+            return .searchResults(.shown)
+        case .onboardingContextualTryVisitSiteUnique:
+            return .visitSite(.shown)
+        case .daxDialogsWithoutTrackersUnique, .daxDialogsWithTrackersUnique, .daxDialogsSiteIsMajorUnique, .daxDialogsSiteOwnedByMajorUnique:
+            return .trackersBlocked(.shown)
+        case .daxDialogsFireEducationShownUnique:
+            return .fireButton(.shown)
+        case .daxDialogsEndOfJourneyTabUnique:
+            return .end(.shown)
+        default:
+            XCTFail("Update expectedSharedScreenImpression mapping for \(event)")
+            return .searchResults(.shown)
         }
     }
 
@@ -502,6 +532,8 @@ extension ContextualDaxDialogsFactoryTests {
         let expectation = self.expectation(description: #function)
         XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
         XCTAssertNil(pixelReporterMock.capturedScreenImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSharedOnboardingScreenImpression)
+        XCTAssertNil(pixelReporterMock.capturedSharedOnboardingScreenImpression)
 
         // WHEN
         let view = sut.makeView(for: spec, delegate: ContextualOnboardingDelegateMock(), onSizeUpdate: {}).rootView
@@ -521,41 +553,5 @@ final class ContextualOnboardingSettingsMock: ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool = false
     var userHasSeenFireDialog: Bool = false
     var userHasSeenTryVisitSiteDialog: Bool = false
-}
-
-
-final class ContextualOnboardingDelegateMock: ContextualOnboardingDelegate {
-    private(set) var didCallDidShowContextualOnboardingTrackersDialog = false
-    private(set) var didCallDidAcknowledgeContextualOnboardingTrackersDialog = false
-    private(set) var didCallDidTapDismissContextualOnboardingAction = false
-    private(set) var didCallSearchForQuery = false
-    private(set) var didCallNavigateToURL = false
-    private(set) var didCallDidAcknowledgeContextualOnboardingSearch = false
-    private(set) var urlToNavigateTo: URL?
-
-    func didShowContextualOnboardingTrackersDialog() {
-        didCallDidShowContextualOnboardingTrackersDialog = true
-    }
-    
-    func didAcknowledgeContextualOnboardingTrackersDialog() {
-        didCallDidAcknowledgeContextualOnboardingTrackersDialog = true
-    }
-    
-    func didTapDismissContextualOnboardingAction() {
-        didCallDidTapDismissContextualOnboardingAction = true
-    }
-
-    func searchFromOnboarding(for query: String) {
-        didCallSearchForQuery = true
-    }
-    
-    func navigateFromOnboarding(to url: URL) {
-        didCallNavigateToURL = true
-        urlToNavigateTo = url
-    }
-
-    func didAcknowledgeContextualOnboardingSearch() {
-        didCallDidAcknowledgeContextualOnboardingSearch = true
-    }
-
+    var chatPathPhase: DaxDialogs.ChatPathPhase = .none
 }

@@ -18,7 +18,10 @@
 
 import Carbon.HIToolbox
 import Cocoa
+import Combine
 import CommonObjCExtensions
+import FeatureFlags_macOS
+import PrivacyConfig
 import WebKit
 
 @MainActor
@@ -27,10 +30,11 @@ protocol WebViewContextMenuDelegate: AnyObject {
     func webView(_ webView: WebView, didCloseContextMenu menu: NSMenu, with event: NSEvent?)
 }
 
-protocol WebViewInteractionEventsDelegate: AnyObject {
-    func webView(_ webView: WebView, mouseDown event: NSEvent)
-    func webView(_ webView: WebView, keyDown event: NSEvent)
-    func webView(_ webView: WebView, scrollWheel event: NSEvent)
+enum WebViewInteractionEvent {
+    case mouseDown(NSEvent)
+    case middleMouseDown(NSEvent)
+    case keyDown(NSEvent)
+    case scrollWheel(NSEvent)
 }
 
 protocol WebViewZoomLevelDelegate: AnyObject {
@@ -45,15 +49,49 @@ protocol WebViewZoomLevelDelegate: AnyObject {
 final class WebView: WKWebView {
 
     weak var contextMenuDelegate: WebViewContextMenuDelegate?
-    weak var interactionEventsDelegate: WebViewInteractionEventsDelegate?
     weak var zoomLevelDelegate: WebViewZoomLevelDelegate?
 
-    var isLoadingObserver: Any?
+    let interactionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
+    private let featureFlagger: FeatureFlagger
+    private let privacyConfig: PrivacyConfiguration
+    /// Whether the web view shares its user content controller, and so its user scripts, with other web
+    /// views, such as the web extension controller's, which every extension page uses.
+    private let sharesUserScripts: Bool
+
+    private var isLoadingObserver: Any?
+    /// used in tests
+    @objc func resetLoadingObserver() {
+        isLoadingObserver = nil
+    }
 
     private var shouldShowWebInspector: Bool {
         // When a new tab is open, we don't want the web inspector to be active on screen and gain focus.
         // When a new tab is open the other tab views are removed from the window, hence, we should not show the web inspector.
         isInspectorShown && window != nil
+    }
+
+    init(frame: CGRect = .zero,
+         configuration: WKWebViewConfiguration = .init(),
+         featureFlagger: FeatureFlagger,
+         privacyConfig: PrivacyConfiguration = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig,
+         sharesUserScripts: Bool = false) {
+        self.featureFlagger = featureFlagger
+        self.privacyConfig = privacyConfig
+        self.sharesUserScripts = sharesUserScripts
+
+        _=Self.swizzleImmediateActionAnimationControllerOnce
+
+        super.init(frame: frame, configuration: configuration)
+    }
+
+    required init?(coder: NSCoder) {
+        self.featureFlagger = Application.appDelegate.featureFlagger
+        self.privacyConfig = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig
+        self.sharesUserScripts = false
+
+        _=Self.swizzleImmediateActionAnimationControllerOnce
+
+        super.init(coder: coder)
     }
 
     override func addTrackingArea(_ trackingArea: NSTrackingArea) {
@@ -101,6 +139,11 @@ final class WebView: WKWebView {
     }
 
     deinit {
+        // Removing the user scripts here should not be necessary: a tab already cleans up the user
+        // content controller it owns when it closes. It's unclear what this originally worked
+        // around, so it's kept for web views that own their controller, to avoid regressions, and
+        // only skipped for a shared controller, which other web views still use.
+        guard !sharesUserScripts else { return }
         self.configuration.userContentController.removeAllUserScripts()
     }
 
@@ -161,6 +204,45 @@ final class WebView: WKWebView {
         zoomLevelDelegate?.zoomWasSet(to: zoomLevel)
     }
 
+    // MARK: - Immediate Actions (Look Up)
+
+    /// Suppress link preview (which creates a WebView without tracker protection)
+    /// while allowing Look Up, Data Detectors, and other immediate action types.
+    /// See WKWebViewPrivate.h: return nil for default behavior, NSNull to disable entirely.
+    @objc dynamic func swizzled_immediateActionAnimationController(forHitTestResult hitTestResult: AnyObject,
+                                                                   withType type: UInt /* _WKImmediateActionType */,
+                                                                   userData: AnyObject?) -> AnyObject? {
+        guard featureFlagger.isFeatureOn(.webViewLookUpAction) else {
+            return NSNull()
+        }
+        if type == _WKImmediateActionType.linkPreview.rawValue {
+            return NSNull()
+        }
+        return nil
+    }
+
+    static private let swizzleImmediateActionAnimationControllerOnce: () = {
+        guard let originalMethod = class_getInstanceMethod(WebView.self, Selector.immediateActionAnimationController),
+              let swizzledMethod = class_getInstanceMethod(WebView.self, #selector(swizzled_immediateActionAnimationController(forHitTestResult:withType:userData:)))
+        else {
+            assertionFailure("Methods not available")
+            return
+        }
+
+        // Ensure the original selector exists on WebView itself before swizzling so we don't mutate WKWebView globally.
+        let didAddOriginalMethod = class_addMethod(WebView.self,
+                                                   Selector.immediateActionAnimationController,
+                                                   method_getImplementation(originalMethod),
+                                                   method_getTypeEncoding(originalMethod))
+        guard didAddOriginalMethod,
+              let webViewOriginalMethod = class_getInstanceMethod(WebView.self, Selector.immediateActionAnimationController) else {
+            assertionFailure("Failed to add original method to WebView")
+            return
+        }
+
+        method_exchangeImplementations(webViewOriginalMethod, swizzledMethod)
+    }()
+
     // MARK: - Menu
 
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
@@ -176,8 +258,36 @@ final class WebView: WKWebView {
     // MARK: - Events
 
     override func mouseDown(with event: NSEvent) {
+        if shouldApplyControlClickFix(for: event),
+            let modifierReleased  = NSEvent.keyEvent(with: .flagsChanged,
+                                                location: event.locationInWindow,
+                                                modifierFlags: event.modifierFlags.subtracting(.control),
+                                                timestamp: event.timestamp,
+                                                windowNumber: event.windowNumber,
+                                                context: nil,
+                                                characters: "",
+                                                charactersIgnoringModifiers: "",
+                                                isARepeat: false,
+                                                keyCode: UInt16(kVK_Control)) {
+            // Google Drive sometimes handles ctrl+click incorrectly: it extends selection instead of opening the context menu.
+            // Simulate Control key release first, then forward the original ctrl+click so the page treats it as a right click.
+            NSApp.sendEvent(modifierReleased)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                super.mouseDown(with: event)
+            }
+            return
+        }
+
         super.mouseDown(with: event)
-        interactionEventsDelegate?.webView(self, mouseDown: event)
+        interactionEventsPublisher.send(.mouseDown(event))
+    }
+
+    override func otherMouseDown(with event: NSEvent) {
+        super.otherMouseDown(with: event)
+        if case .middle = event.button {
+            interactionEventsPublisher.send(.middleMouseDown(event))
+        }
     }
 
     override func keyDown(with event: NSEvent) {
@@ -189,12 +299,12 @@ final class WebView: WKWebView {
         }
 
         super.keyDown(with: event)
-        interactionEventsDelegate?.webView(self, keyDown: event)
+        interactionEventsPublisher.send(.keyDown(event))
     }
 
     override func scrollWheel(with event: NSEvent) {
         super.scrollWheel(with: event)
-        interactionEventsDelegate?.webView(self, scrollWheel: event)
+        interactionEventsPublisher.send(.scrollWheel(event))
     }
 
     // MARK: - Developer Tools
@@ -351,7 +461,7 @@ final class WebView: WKWebView {
 
         return await withCheckedContinuation { continuation in
             self.findInPageCompletionHandler = continuation.resume
-            self.find(string, with: options, maxCount: maxCount)
+            self.find(string, with: options.rawValue, maxCount: maxCount)
         }
     }
 
@@ -365,7 +475,7 @@ final class WebView: WKWebView {
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }()
     // swizzled method to call `_findString:withOptions:maxCount:` without performSelector: usage (as there‘s 3 args)
-    @objc dynamic private func find(_ string: String, with options: _WKFindOptions, maxCount: UInt) {}
+    @objc dynamic private func find(_ string: String, with options: UInt, maxCount: UInt) {}
 
     func clearFindInPageState() {
         guard self.responds(to: Selector.hideFindUI) else {
@@ -378,10 +488,11 @@ final class WebView: WKWebView {
     private enum Selector {
         static let findString = NSSelectorFromString("_findString:options:maxCount:")
         static let hideFindUI = NSSelectorFromString("_hideFindUI")
+        static let immediateActionAnimationController = NSSelectorFromString("_immediateActionAnimationControllerForHitTestResult:withType:userData:")
     }
 
 }
-
+// MARK: - Find In Page
 extension WebView /* _WKFindDelegate */ {
 
     @objc(_webView:didFindMatches:forString:withMatchIndex:)
@@ -400,4 +511,51 @@ extension WebView /* _WKFindDelegate */ {
         }
     }
 
+}
+
+// MARK: - Control Click Fix
+private extension WebView {
+
+    struct ControlClickFixSettings: Decodable {
+        let domains: [String]
+    }
+
+    enum ControlClickFixCache {
+        static var domains: Set<String>?
+        static var configIdentifier: String?
+    }
+
+    func shouldApplyControlClickFix(for event: NSEvent) -> Bool {
+        guard case .left = event.button,
+              event.modifierFlags.contains(.control),
+              privacyConfig.isSubfeatureEnabled(MacOSBrowserConfigSubfeature.controlClickFix),
+              let host = url?.host?.lowercased() else {
+            return false
+        }
+
+        return configuredControlClickFixDomains.contains(host)
+    }
+
+    var configuredControlClickFixDomains: Set<String> {
+        let currentIdentifier = privacyConfig.identifier
+
+        if let cachedDomains = ControlClickFixCache.domains,
+           let cachedIdentifier = ControlClickFixCache.configIdentifier,
+           cachedIdentifier == currentIdentifier {
+            return cachedDomains
+        }
+
+        guard let settingsString = privacyConfig.settings(for: MacOSBrowserConfigSubfeature.controlClickFix),
+              let settingsData = settingsString.data(using: .utf8),
+              let settings = try? JSONDecoder().decode(ControlClickFixSettings.self, from: settingsData) else {
+            ControlClickFixCache.domains = []
+            ControlClickFixCache.configIdentifier = currentIdentifier
+            return []
+        }
+
+        let domains = Set(settings.domains.map { $0.lowercased() })
+        ControlClickFixCache.domains = domains
+        ControlClickFixCache.configIdentifier = currentIdentifier
+        return domains
+    }
 }

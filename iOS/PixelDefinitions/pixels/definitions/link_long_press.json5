@@ -1,0 +1,9 @@
+{
+    "m_link-long-press_menu-shown": {
+        "description": "Fired when a link long-press preview menu is displayed",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "browsingMode"]
+    }
+}

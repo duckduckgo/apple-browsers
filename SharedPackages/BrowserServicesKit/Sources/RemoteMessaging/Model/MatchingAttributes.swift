@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 struct LocaleMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
@@ -30,10 +31,10 @@ struct LocaleMatchingAttribute: SingleValueMatching {
 }
 
 struct OSMatchingAttribute: StringRangeMatching {
-    static let defaultMaxValue: String = AppVersion.shared.osVersion
+    static let defaultMaxValue: String = AppVersion.shared.osVersionMajorMinorPatch
 
     var min: String = MatchingAttributeDefaults.stringDefaultValue
-    var max: String = AppVersion.shared.osVersion
+    var max: String = AppVersion.shared.osVersionMajorMinorPatch
     var value: String = MatchingAttributeDefaults.stringDefaultValue
     var fallback: Bool?
 }
@@ -140,37 +141,47 @@ struct DaysSinceNetPEnabledMatchingAttribute: NumericRangeMatching {
     var fallback: Bool?
 }
 
-struct IsPrivacyProEligibleUserMatchingAttribute: SingleValueMatching {
+struct IsSubscriptionEligibleUserMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
 }
 
-struct IsPrivacyProSubscriberUserMatchingAttribute: SingleValueMatching {
+struct IsDuckDuckGoSubscriberUserMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
 }
 
-struct PrivacyProDaysSinceSubscribedMatchingAttribute: NumericRangeMatching {
+struct SubscriptionDaysSinceSubscribedMatchingAttribute: NumericRangeMatching {
     var min: Int = MatchingAttributeDefaults.intDefaultValue
     var max: Int = MatchingAttributeDefaults.intDefaultMaxValue
     var value: Int = MatchingAttributeDefaults.intDefaultValue
     var fallback: Bool?
 }
 
-struct PrivacyProDaysUntilExpiryMatchingAttribute: NumericRangeMatching {
+struct SubscriptionDaysUntilExpiryMatchingAttribute: NumericRangeMatching {
     var min: Int = MatchingAttributeDefaults.intDefaultValue
     var max: Int = MatchingAttributeDefaults.intDefaultMaxValue
     var value: Int = MatchingAttributeDefaults.intDefaultValue
     var fallback: Bool?
 }
 
-struct PrivacyProPurchasePlatformMatchingAttribute: SingleValueMatching {
+struct SubscriptionPurchasePlatformMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
     var fallback: Bool?
 }
 
-struct PrivacyProSubscriptionStatusMatchingAttribute: SingleValueMatching {
+struct SubscriptionStatusMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
+    var fallback: Bool?
+}
+
+struct SubscriptionTierMatchingAttribute: SingleValueMatching {
+    var value: [String]? = []
+    var fallback: Bool?
+}
+
+struct SubscriptionFreeTrialActiveMatchingAttribute: SingleValueMatching {
+    var value: Bool?
     var fallback: Bool?
 }
 
@@ -185,6 +196,11 @@ struct InteractedWithDeprecatedMacRemoteMessageMatchingAttribute: SingleValueMat
 }
 
 struct IsInstalledMacAppStoreMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct OSUpgradeCapabilityMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?
 }
@@ -216,6 +232,26 @@ struct FreemiumPIRCurrentUserMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct FreemiumPIREligibleMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIRDidActivateMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct FreemiumPIRFirstScanResultMatchingAttribute: SingleValueMatching {
+    var value: String?
+    var fallback: Bool?
+}
+
+struct PIRCurrentUserMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct MessageShownMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
     var fallback: Bool?
@@ -223,6 +259,52 @@ struct MessageShownMatchingAttribute: SingleValueMatching {
 
 struct AllFeatureFlagsEnabledMatchingAttribute: ArrayContainsAllMatching {
     var value: [String]? = []
+    var fallback: Bool?
+}
+
+struct SyncEnabledMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct NTPAfterIdleStateMatchingAttribute: SingleValueMatching {
+    var value: [String]? = []
+    var fallback: Bool?
+}
+
+struct WinBackOfferUrgencyMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+/// Matches the `isReturningUser` RMF attribute: the app was installed on this device before.
+struct IsReturningUserMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+/// Matches the `isDuckAiEnabled` RMF attribute: the user has Duck.ai turned on.
+struct IsDuckAIEnabledMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+/// Matches the `triedDuckAiDuringOnboarding` RMF attribute: the user tried a Duck.ai chat during onboarding.
+struct TriedDuckAIDuringOnboardingMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+/// Matches the `isDuckAiBoostActive` RMF attribute: the device has a Duck.ai boost that hasn't expired.
+struct IsDuckAIBoostActiveMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
+struct DaysSinceDuckAIUsedMatchingAttribute: NumericRangeMatching {
+    var min: Int = MatchingAttributeDefaults.intDefaultValue
+    var max: Int = MatchingAttributeDefaults.intDefaultMaxValue
+    var value: Int = MatchingAttributeDefaults.intDefaultValue
     var fallback: Bool?
 }
 

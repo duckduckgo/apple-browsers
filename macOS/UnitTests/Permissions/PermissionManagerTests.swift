@@ -16,12 +16,16 @@
 //  limitations under the License.
 //
 
+import CoreData
 import Foundation
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class PermissionManagerTests: XCTestCase {
+    private static let referenceDate = Date(timeIntervalSince1970: 1_700_000_000)
     var store: PermissionStoreMock!
+
     lazy var manager: PermissionManager! = {
         PermissionManager(store: store)
     }()
@@ -132,7 +136,7 @@ final class PermissionManagerTests: XCTestCase {
         let c = manager.permissionPublisher.sink { value in
             XCTAssertEqual(value.domain, PermissionEntity.entity1.domain)
             XCTAssertEqual(value.permissionType, PermissionEntity.entity1.type)
-            XCTAssertEqual(value.decision, .allow)
+            XCTAssertEqual(value.change, .decisionChanged(.allow))
             e.fulfill()
         }
 
@@ -149,7 +153,7 @@ final class PermissionManagerTests: XCTestCase {
         let c = manager.permissionPublisher.sink { value in
             XCTAssertEqual(value.domain, PermissionEntity.entity1.domain)
             XCTAssertEqual(value.permissionType, PermissionEntity.entity1.type)
-            XCTAssertEqual(value.decision, .deny)
+            XCTAssertEqual(value.change, .decisionChanged(.deny))
             e.fulfill()
         }
 
@@ -170,7 +174,7 @@ final class PermissionManagerTests: XCTestCase {
         let c = manager.permissionPublisher.sink { value in
             XCTAssertEqual(value.domain, PermissionEntity.entity1.domain)
             XCTAssertEqual(value.permissionType, PermissionEntity.entity1.type)
-            XCTAssertEqual(value.decision, .deny)
+            XCTAssertEqual(value.change, .decisionChanged(.deny))
             e.fulfill()
         }
 
@@ -182,14 +186,14 @@ final class PermissionManagerTests: XCTestCase {
         }
     }
 
-    func testWhenPermissionIsRemovedThenSubjectIsPublished() {
+    func testWhenPermissionIsChangedToAskThenSubjectIsPublished() {
         store.permissions = [.entity2]
 
         let e = expectation(description: "permission published")
         let c = manager.permissionPublisher.sink { value in
             XCTAssertEqual(value.domain, PermissionEntity.entity2.domain.droppingWwwPrefix())
             XCTAssertEqual(value.permissionType, PermissionEntity.entity2.type)
-            XCTAssertEqual(value.decision, .ask)
+            XCTAssertEqual(value.change, .decisionChanged(.ask))
             e.fulfill()
         }
 
@@ -201,13 +205,167 @@ final class PermissionManagerTests: XCTestCase {
         }
     }
 
+    func testWhenPermissionIsFirstStoredThenSuppliedLastModifiedIsPersisted() {
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .camera, lastModified: Self.referenceDate)
+
+        XCTAssertEqual(store.addedLastModified, [Self.referenceDate])
+    }
+
+    func testWhenExistingPermissionIsUpdatedThenSuppliedLastModifiedIsPersisted() {
+        store.permissions = [.entity1]
+        XCTAssertNil(PermissionEntity.entity1.permission.lastModified, "Fixture starts without a timestamp")
+
+        manager.setPermission(.deny,
+                              forDomain: PermissionEntity.entity1.domain,
+                              permissionType: PermissionEntity.entity1.type,
+                              lastModified: Self.referenceDate)
+
+        // The store must be handed the instant the caller supplied, not one read from a clock inside.
+        XCTAssertEqual(store.lastModifiedByObjectId[PermissionEntity.entity1.permission.id] ?? nil, Self.referenceDate)
+    }
+
+    func testWhenLastModifiedIsNotSuppliedThenTheCurrentTimeIsStamped() {
+        let before = Date()
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .camera)
+
+        guard let stamped = store.addedLastModified.first else {
+            return XCTFail("Expected add to receive a lastModified")
+        }
+        XCTAssertGreaterThanOrEqual(stamped, before)
+        XCTAssertLessThanOrEqual(stamped, Date())
+    }
+
+    func testWhenPermissionIsRemovedThenLastModifiedIsNotWritten() {
+        store.permissions = [.entity1]
+
+        manager.removePermission(forDomain: PermissionEntity.entity1.domain, permissionType: PermissionEntity.entity1.type)
+
+        // Removal deletes the row rather than stamping it, so no lastModified is ever written.
+        XCTAssertEqual(store.history, [.load, .remove(PermissionEntity.entity1.permission.id)])
+        XCTAssertFalse(store.lastModifiedByObjectId.keys.contains(PermissionEntity.entity1.permission.id))
+        XCTAssertTrue(store.addedLastModified.isEmpty)
+    }
+
+    func testWhenPermissionIsUnchangedThenNothingIsWrittenToTheStore() {
+        store.permissions = [.entity1]
+
+        manager.setPermission(PermissionEntity.entity1.permission.decision,
+                              forDomain: PermissionEntity.entity1.domain,
+                              permissionType: PermissionEntity.entity1.type)
+
+        XCTAssertEqual(store.history, [.load])
+        XCTAssertTrue(store.addedLastModified.isEmpty)
+    }
+
+    func testPersistedPermissionsPublisherContainsInitiallyLoadedPermissions() {
+        store.permissions = [.entity1, .entity2]
+        var receivedEntries = [WebsitePermissionEntry]()
+        let cancellable = manager.persistedPermissionsPublisher.sink { entries in
+            receivedEntries = entries
+        }
+
+        XCTAssertEqual(receivedEntries, [
+            WebsitePermissionEntry(
+                domain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                permissionType: PermissionEntity.entity2.type,
+                decision: PermissionEntity.entity2.permission.decision,
+                lastModified: PermissionEntity.entity2.permission.lastModified
+            ),
+            WebsitePermissionEntry(
+                domain: PermissionEntity.entity1.domain,
+                permissionType: PermissionEntity.entity1.type,
+                decision: PermissionEntity.entity1.permission.decision,
+                lastModified: PermissionEntity.entity1.permission.lastModified
+            ),
+        ])
+        withExtendedLifetime(cancellable) {}
+    }
+
+    func testWhenPermissionIsSetThenLastModifiedIsStampedAndPublished() {
+        let before = Date()
+        var receivedEntries = [WebsitePermissionEntry]()
+        let cancellable = manager.persistedPermissionsPublisher.sink { entries in
+            receivedEntries = entries
+        }
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .camera)
+
+        guard let lastModified = receivedEntries.first?.lastModified else {
+            return XCTFail("Expected a stamped lastModified, got \(receivedEntries)")
+        }
+        XCTAssertGreaterThanOrEqual(lastModified, before)
+        XCTAssertLessThanOrEqual(lastModified, Date())
+        withExtendedLifetime(cancellable) {}
+    }
+
+    func testWhenPermissionIsUpdatedThenLastModifiedIsAdvancedInStoreAndMemory() {
+        store.permissions = [.entity1]
+        var receivedEntries = [WebsitePermissionEntry]()
+        let cancellable = manager.persistedPermissionsPublisher.sink { entries in
+            receivedEntries = entries
+        }
+        XCTAssertNil(receivedEntries.first?.lastModified, "Fixture starts without a timestamp")
+
+        let before = Date()
+        manager.setPermission(.deny, forDomain: PermissionEntity.entity1.domain, permissionType: PermissionEntity.entity1.type)
+
+        guard let published = receivedEntries.first?.lastModified else {
+            return XCTFail("Expected a stamped lastModified, got \(receivedEntries)")
+        }
+        XCTAssertGreaterThanOrEqual(published, before)
+        // The store must receive the same instant the in-memory copy reports, not a second `Date()`.
+        XCTAssertEqual(store.lastModifiedByObjectId[PermissionEntity.entity1.permission.id], published)
+        withExtendedLifetime(cancellable) {}
+    }
+
+    func testPersistedPermissionsPublisherUpdatesAfterPermissionRemoval() {
+        store.permissions = [.entity1]
+        var receivedEntries = [WebsitePermissionEntry]()
+        let cancellable = manager.persistedPermissionsPublisher.sink { entries in
+            receivedEntries = entries
+        }
+        var receivedChanges = [PermissionManagerProtocol.PublishedPermission]()
+        let changesCancellable = manager.permissionPublisher.sink { receivedChanges.append($0) }
+
+        manager.removePermission(forDomain: PermissionEntity.entity1.domain, permissionType: PermissionEntity.entity1.type)
+
+        XCTAssertTrue(receivedEntries.isEmpty)
+        XCTAssertTrue(manager.persistedPermissionTypes.isEmpty)
+        XCTAssertEqual(receivedChanges.count, 1)
+        XCTAssertEqual(receivedChanges.first?.domain, PermissionEntity.entity1.domain)
+        XCTAssertEqual(receivedChanges.first?.permissionType, PermissionEntity.entity1.type)
+        XCTAssertEqual(receivedChanges.first?.change, .removed)
+        withExtendedLifetime((cancellable, changesCancellable)) {}
+    }
+
+    func testWhenAllPermissionsAreRemovedThenSnapshotsAndRemovalEventsArePublished() {
+        store.permissions = [.entity1, .entity2]
+        var snapshots = [[WebsitePermissionEntry]]()
+        let snapshotsCancellable = manager.persistedPermissionsPublisher.sink { snapshots.append($0) }
+        var changes = [PermissionManagerProtocol.PublishedPermission]()
+        let changesCancellable = manager.permissionPublisher.sink { changes.append($0) }
+
+        _ = manager.removeAllPermissions()
+
+        XCTAssertEqual(snapshots.first?.count, 2)
+        XCTAssertEqual(snapshots.last, [])
+        XCTAssertTrue(manager.persistedPermissionTypes.isEmpty)
+        XCTAssertEqual(changes.count, 2)
+        XCTAssertTrue(changes.allSatisfy { $0.change == .removed })
+        var replayedEntries: [WebsitePermissionEntry]?
+        let replayCancellable = manager.persistedPermissionsPublisher.sink { replayedEntries = $0 }
+        XCTAssertEqual(replayedEntries, [])
+        withExtendedLifetime((snapshotsCancellable, changesCancellable, replayCancellable)) {}
+    }
+
     func testWhenPermissionsBurnedThenTheyAreCleared() {
         store.permissions = [.entity1, .entity2]
 
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
         fireproofDomains.add(domain: PermissionEntity.entity1.domain)
 
-        manager.burnPermissions(except: fireproofDomains) {}
+        manager.burnPermissions(except: fireproofDomains) { _ in }
 
         XCTAssertEqual(store.history, [.load, .clear(exceptions: [PermissionEntity.entity1.permission])])
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity1.domain,
@@ -217,13 +375,36 @@ final class PermissionManagerTests: XCTestCase {
                      .ask)
     }
 
+    func testWhenPermissionsBurnedThenPersistedPermissionsPublisherIsUpdated() {
+        store.permissions = [.entity1, .entity2]
+        var receivedEntries = [WebsitePermissionEntry]()
+        let cancellable = manager.persistedPermissionsPublisher.sink { entries in
+            receivedEntries = entries
+        }
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
+        fireproofDomains.add(domain: PermissionEntity.entity1.domain)
+
+        manager.burnPermissions(except: fireproofDomains) { _ in }
+
+        XCTAssertEqual(receivedEntries, [
+            WebsitePermissionEntry(
+                domain: PermissionEntity.entity1.domain,
+                permissionType: PermissionEntity.entity1.type,
+                decision: PermissionEntity.entity1.permission.decision,
+                lastModified: PermissionEntity.entity1.permission.lastModified
+            ),
+        ])
+        XCTAssertEqual(manager.persistedPermissionTypes, Set([PermissionEntity.entity1.type]))
+        withExtendedLifetime(cancellable) {}
+    }
+
     func testWhenPermissionsForDomainsBurnedThenTheyAreCleared() {
         store.permissions = [.entity1, .entity2]
 
         let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
         fireproofDomains.add(domain: PermissionEntity.entity1.domain)
 
-        manager.burnPermissions(of: [PermissionEntity.entity2.domain.droppingWwwPrefix()], tld: Application.appDelegate.tld) {}
+        manager.burnPermissions(of: [PermissionEntity.entity2.domain.droppingWwwPrefix()], tld: Application.appDelegate.tld) { _ in }
 
         XCTAssertEqual(store.history, [.load, .clear(exceptions: [PermissionEntity.entity1.permission])])
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity1.domain,
@@ -231,6 +412,280 @@ final class PermissionManagerTests: XCTestCase {
                        .allow)
         XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity2.domain, permissionType: PermissionEntity.entity2.type),
                      .ask)
+    }
+
+    func testDebugEntriesPreserveStoredDomain() throws {
+        let objectID = NSManagedObjectID()
+        store.permissions = [
+            PermissionEntity(permission: StoredPermission(id: objectID, decision: .allow),
+                             domain: "www.example.com",
+                             type: .camera)
+        ]
+        store.rawPermissions = [
+            RawPermissionRow(storageIdentifier: "stored-row",
+                             objectID: objectID,
+                             domain: "www.example.com",
+                             permissionType: PermissionType.camera.rawValue,
+                             allow: true,
+                             isRemoved: false,
+                             lastModified: Self.referenceDate)
+        ]
+
+        let entry = try XCTUnwrap(manager.allPermissionsDebugEntries().first)
+
+        XCTAssertEqual(entry.domain, "www.example.com")
+        XCTAssertEqual(entry.storageIdentifier, "stored-row")
+        XCTAssertEqual(entry.effectiveDecision, .allow)
+        XCTAssertFalse(entry.isOverridden)
+        XCTAssertEqual(entry.lastModified, Self.referenceDate)
+    }
+
+    func testDebugEntriesReportNoTimestampForRowsSavedBeforeTheColumnExisted() throws {
+        let objectID = NSManagedObjectID()
+        store.rawPermissions = [
+            RawPermissionRow(storageIdentifier: "legacy-row",
+                             objectID: objectID,
+                             domain: "example.com",
+                             permissionType: PermissionType.camera.rawValue,
+                             allow: true,
+                             isRemoved: false,
+                             lastModified: nil)
+        ]
+
+        let entry = try XCTUnwrap(manager.allPermissionsDebugEntries().first)
+
+        // The inspector renders this as an em dash rather than dating the row to now.
+        XCTAssertNil(entry.lastModified)
+    }
+
+    func testDebugRemovalDeletesRawRowWithUnknownPermissionType() {
+        let objectID = NSManagedObjectID()
+        store.rawPermissions = [
+            RawPermissionRow(storageIdentifier: "unknown-row",
+                             objectID: objectID,
+                             domain: "example.com",
+                             permissionType: "future-permission-type",
+                             allow: false,
+                             isRemoved: true,
+                             lastModified: nil)
+        ]
+
+        let removedCount = manager.removePermissionsDebugEntries(withIdentifiers: ["unknown-row"])
+
+        XCTAssertEqual(removedCount, 1)
+        XCTAssertEqual(store.history, [.load, .loadRaw, .remove(objectID)])
+    }
+
+    func testDebugRemoveAllClearsStoreContainingUnknownPermissionType() {
+        store.rawPermissions = [
+            RawPermissionRow(storageIdentifier: "unknown-row",
+                             objectID: NSManagedObjectID(),
+                             domain: "example.com",
+                             permissionType: "future-permission-type",
+                             allow: false,
+                             isRemoved: true,
+                             lastModified: nil)
+        ]
+
+        let removedCount = manager.removeAllPermissions()
+
+        XCTAssertEqual(removedCount, 1)
+        XCTAssertEqual(store.history, [.load, .loadRaw, .clear(exceptions: [])])
+    }
+
+}
+
+// MARK: - Notification Permission Tests
+
+extension PermissionManagerTests {
+
+    /// Tests that notification permissions can be stored and retrieved.
+    func testNotificationPermissionCanBeStoredAndRetrieved() {
+        store.permissions = []
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .notification)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .notification)
+        XCTAssertEqual(result, .allow)
+    }
+
+    /// Tests that notification permissions are cleared on burn.
+    func testNotificationPermissionsClearedOnBurn() {
+        let notificationEntity = PermissionEntity(
+            permission: .init(id: .init(), decision: .allow),
+            domain: "notifications.example.com",
+            type: .notification
+        )
+        store.permissions = [notificationEntity]
+
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
+        manager.burnPermissions(except: fireproofDomains) { _ in }
+
+        let result = manager.permission(forDomain: "notifications.example.com", permissionType: .notification)
+        XCTAssertEqual(result, .ask, "Notification permission should be cleared after burn")
+    }
+}
+
+// MARK: - PermissionDecisionOverriding Tests
+
+extension PermissionManagerTests {
+
+    func testWhenDecisionOverrideReturnsValueThenPermissionUsesItInsteadOfStorage() {
+        store.permissions = [.entity2] // (.microphone, .deny)
+        let override = StubOverride(stub: [.microphone: .allow])
+        let overriddenManager = PermissionManager(store: store, decisionOverride: override)
+
+        let result = overriddenManager.permission(forDomain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                                                  permissionType: .microphone)
+
+        XCTAssertEqual(result, .allow, "Override should win over the persisted .deny")
+    }
+
+    func testWhenDecisionOverrideReturnsNilThenPermissionFallsThroughToStorage() {
+        store.permissions = [.entity2] // (.microphone, .deny)
+        // Override targets a different permission type so it returns nil for microphone.
+        let override = StubOverride(stub: [.camera: .allow])
+        let overriddenManager = PermissionManager(store: store, decisionOverride: override)
+
+        let result = overriddenManager.permission(forDomain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                                                  permissionType: .microphone)
+
+        XCTAssertEqual(result, .deny, "Override returned nil so storage should win")
+    }
+
+    func testWhenDecisionOverrideAbsentThenPermissionUsesStorage() {
+        store.permissions = [.entity2]
+        // No override passed → behaviour identical to before.
+        let result = manager.permission(forDomain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                                        permissionType: .microphone)
+
+        XCTAssertEqual(result, .deny)
+    }
+
+    func testWhenDecisionOverrideAppliesItReceivesNormalizedDomain() {
+        store.permissions = []
+        let override = CapturingOverride(stub: .allow)
+        let overriddenManager = PermissionManager(store: store, decisionOverride: override)
+
+        _ = overriddenManager.permission(forDomain: "www.duckduckgo.com", permissionType: .microphone)
+
+        XCTAssertEqual(override.capturedDomain, "duckduckgo.com",
+                       "Override should be consulted with the www-stripped domain so callers don't need to normalize twice")
+    }
+
+    func testPersistedDecisionReturnsRawValueIgnoringOverride() {
+        store.permissions = [.entity2] // (.microphone, .deny)
+        let override = StubOverride(stub: [.microphone: .allow])
+        let overriddenManager = PermissionManager(store: store, decisionOverride: override)
+
+        let raw = overriddenManager.persistedDecision(forDomain: PermissionEntity.entity2.domain.droppingWwwPrefix(),
+                                                     permissionType: .microphone)
+
+        XCTAssertEqual(raw, .deny, "persistedDecision must bypass the override so cleanup paths see what's actually stored")
+    }
+
+    func testPersistedDecisionReturnsNilWhenNothingPersisted() {
+        store.permissions = []
+        XCTAssertNil(manager.persistedDecision(forDomain: "example.com", permissionType: .microphone))
+    }
+}
+
+// MARK: - PermissionType Round-Trip Tests
+
+extension PermissionManagerTests {
+
+    func testAutoplayPolicyRawValueRoundTrip() {
+        XCTAssertEqual(PermissionType.autoplayPolicy.rawValue, "autoplay_policy")
+        XCTAssertEqual(PermissionType(rawValue: "autoplay_policy"), .autoplayPolicy)
+    }
+
+    func testAutoplayPolicyPermissionCanBeStoredAndRetrieved() {
+        store.permissions = []
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .allow)
+    }
+
+    func testAutoplayPolicyPermissionCanBeSetToDeny() {
+        store.permissions = []
+
+        manager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .deny)
+    }
+
+    func testAutoplayPolicyPermissionCanBeSetToAsk() {
+        store.permissions = []
+
+        manager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy)
+        XCTAssertEqual(result, .ask)
+    }
+
+    // MARK: - Category defaults
+
+    func testWhenNothingIsPersistedThenTheCategoryDefaultIsReturned() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .camera), .deny)
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .microphone), .ask,
+                       "A category with no stored default should stay on Ask each time")
+    }
+
+    func testWhenDecisionIsPersistedThenItWinsOverTheCategoryDefault() {
+        store.permissions = [.entity1]
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        XCTAssertEqual(manager.permission(forDomain: PermissionEntity.entity1.domain, permissionType: .camera), .allow)
+    }
+
+    func testWhenOverrideIsActiveThenItWinsOverTheCategoryDefault() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.microphone: .deny])
+        let manager = PermissionManager(store: store,
+                                        decisionOverride: StubOverride(stub: [.microphone: .allow]),
+                                        defaults: defaults)
+
+        XCTAssertEqual(manager.permission(forDomain: "duck.ai", permissionType: .microphone), .allow)
+    }
+
+    func testWhenPermissionTypeHasNoCategoryThenDefaultIsAskEachTime() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        // Autoplay is not part of the Website Permissions pane yet, so it has no category default.
+        XCTAssertEqual(manager.defaultDecision(for: .autoplayPolicy), .ask)
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .autoplayPolicy), .ask)
+    }
+
+    func testWhenNoDefaultsProviderIsSuppliedThenDefaultIsAskEachTime() {
+        XCTAssertEqual(manager.defaultDecision(for: .camera), .ask)
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .camera), .ask)
+    }
+
+    func testWhenCategoryDefaultAppliesThenNothingIsPersistedForTheDomain() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        XCTAssertEqual(manager.permission(forDomain: "example.com", permissionType: .camera), .deny)
+        XCTAssertNil(manager.persistedDecision(forDomain: "example.com", permissionType: .camera))
+        XCTAssertFalse(manager.hasPermissionPersisted(forDomain: "example.com", permissionType: .camera))
+        XCTAssertEqual(store.history, [.load])
+    }
+
+    func testWhenSettingADecisionEqualToTheDefaultThenItIsStillPersisted() {
+        let defaults = WebsitePermissionDefaultsMock(decisions: [.camera: .deny])
+        let manager = PermissionManager(store: store, defaults: defaults)
+
+        manager.setPermission(.deny, forDomain: "example.com", permissionType: .camera)
+
+        XCTAssertEqual(manager.persistedDecision(forDomain: "example.com", permissionType: .camera), .deny)
+        XCTAssertTrue(manager.hasPermissionPersisted(forDomain: "example.com", permissionType: .camera))
     }
 
 }
@@ -242,4 +697,24 @@ fileprivate extension PermissionEntity {
     static let entity2 = PermissionEntity(permission: .init(id: .init(), decision: .deny),
                                           domain: "www.domain2.com",
                                           type: .microphone)
+}
+
+/// Returns a stubbed decision keyed by `PermissionType`; ignores domain.
+private final class StubOverride: PermissionDecisionOverriding {
+    private let stub: [PermissionType: PersistedPermissionDecision]
+    init(stub: [PermissionType: PersistedPermissionDecision]) { self.stub = stub }
+    func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        stub[permissionType]
+    }
+}
+
+/// Records the last domain it was called with so we can assert the manager normalises before dispatch.
+private final class CapturingOverride: PermissionDecisionOverriding {
+    private let stub: PersistedPermissionDecision?
+    private(set) var capturedDomain: String?
+    init(stub: PersistedPermissionDecision?) { self.stub = stub }
+    func decision(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision? {
+        capturedDomain = domain
+        return stub
+    }
 }

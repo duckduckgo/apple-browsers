@@ -39,6 +39,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     emailManager: emailManager,
                     bookmarksCount: 10,
@@ -46,19 +47,27 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -123,7 +132,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [], exclusionRules: [2]),
             mediumMessage(matchingRules: [], exclusionRules: [3])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [
                 LocaleMatchingAttribute(value: [LocaleMatchingAttribute.localeIdentifierAsJsonFormat(Locale.current.identifier)], fallback: nil)
             ]),
@@ -136,28 +145,37 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMatchingMessageShouldBeExcludedThenReturnNull() {
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -166,7 +184,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         let remoteConfig = RemoteConfigModel(messages: [
             mediumMessage(matchingRules: [1], exclusionRules: [2])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [LocaleMatchingAttribute(value: ["en-US"], fallback: nil)])
         ])
 
@@ -181,14 +199,14 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [1], exclusionRules: [2, 4]),
             mediumMessage(matchingRules: [1], exclusionRules: [4])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [
                 EmailEnabledMatchingAttribute(value: true, fallback: nil), BookmarksMatchingAttribute(max: 10, fallback: nil)
             ]),
             RemoteConfigRule(id: 3, targetPercentile: nil, attributes: [
                 EmailEnabledMatchingAttribute(value: true, fallback: nil), BookmarksMatchingAttribute(max: 10, fallback: nil)
             ]),
-            RemoteConfigRule(id: 4, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 4, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 5, targetPercentile: nil, attributes: [EmailEnabledMatchingAttribute(value: true, fallback: nil)])
         ])
 
@@ -201,7 +219,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [1], exclusionRules: [2]),
             mediumMessage(matchingRules: [1], exclusionRules: [])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [
                 LocaleMatchingAttribute(value: [LocaleMatchingAttribute.localeIdentifierAsJsonFormat(Locale.current.identifier)], fallback: nil)
             ])
@@ -214,7 +232,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         let remoteConfig = RemoteConfigModel(messages: [
             mediumMessage(matchingRules: [1], exclusionRules: [2])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [EmailEnabledMatchingAttribute(value: false, fallback: nil)])
         ])
 
@@ -225,7 +243,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         let remoteConfig = RemoteConfigModel(messages: [
             mediumMessage(matchingRules: [1], exclusionRules: [])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         ])
 
         XCTAssertEqual(matcher.evaluate(remoteConfig: remoteConfig), mediumMessage(matchingRules: [1], exclusionRules: []))
@@ -236,7 +254,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [2], exclusionRules: []),
             mediumMessage(matchingRules: [1, 2], exclusionRules: [])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]),
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]),
             RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [EmailEnabledMatchingAttribute(value: false, fallback: nil)])
         ])
 
@@ -248,25 +266,34 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 10,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -276,7 +303,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             mediumMessage(matchingRules: [1], exclusionRules: []),
             mediumMessage(id: "2", matchingRules: [1], exclusionRules: [])
         ], rules: [
-            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)])
+            RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         ])
 
         XCTAssertEqual(matcher.evaluate(remoteConfig: remoteConfig), mediumMessage(id: "2", matchingRules: [1], exclusionRules: []))
@@ -293,32 +320,75 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.evaluate(remoteConfig: remoteConfig), mediumMessage(matchingRules: [1, 2], exclusionRules: []))
     }
 
+    func testWhenPercentileRuleFailsThenTryNextMatchingRule() {
+        setupSUT(percentileStore: MockRemoteMessagePercentileStore(percentileStorage: ["1": 0.8]))
+
+        let matchingAttribute = OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)
+        let rules = [
+            RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.2), attributes: [matchingAttribute]),
+            RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [matchingAttribute])
+        ]
+
+        for matchingRules in [[2, 1], [1, 2]] {
+            let expectedMessage = mediumMessage(matchingRules: matchingRules, exclusionRules: [])
+            let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: rules)
+            let evaluatedMessage = matcher.evaluate(remoteConfig: remoteConfig)
+            XCTAssertEqual(evaluatedMessage, expectedMessage, "Rule 2 matches, so percentile failure must not depend on rule order: \(matchingRules)")
+        }
+    }
+
+    func testWhenPercentileRuleFailsThenTryNextExclusionRule() {
+        setupSUT(percentileStore: MockRemoteMessagePercentileStore(percentileStorage: ["1": 0.8]))
+
+        let matchingAttribute = OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)
+        let rules = [
+            RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.2), attributes: [matchingAttribute]),
+            RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [matchingAttribute])
+        ]
+
+        for exclusionRules in [[2, 1], [1, 2]] {
+            let excludedMessage = mediumMessage(matchingRules: [], exclusionRules: exclusionRules)
+            let remoteConfig = RemoteConfigModel(messages: [excludedMessage], rules: rules)
+            let evaluatedMessage = matcher.evaluate(remoteConfig: remoteConfig)
+            XCTAssertNil(evaluatedMessage, "Rule 2 excludes the message, regardless of rule order: \(exclusionRules)")
+        }
+    }
+
     func testWhenDeviceDoesNotMatchAnyRuleThenReturnNull() {
         let os = ProcessInfo().operatingSystemVersion
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -345,28 +415,37 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -378,7 +457,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             RemoteConfigRule(
                 id: 1,
                 targetPercentile: RemoteConfigTargetPercentile(before: 0.3),
-                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]
+                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]
             )
         ])
 
@@ -391,28 +470,37 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -424,7 +512,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             RemoteConfigRule(
                 id: 1,
                 targetPercentile: RemoteConfigTargetPercentile(before: 0.3),
-                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]
+                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]
             )
         ])
 
@@ -437,28 +525,37 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -470,7 +567,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             RemoteConfigRule(
                 id: 1,
                 targetPercentile: RemoteConfigTargetPercentile(before: 0.5),
-                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]
+                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]
             )
         ])
 
@@ -483,28 +580,37 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersionMajorMinorPatch, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
+                    featureDiscovery: MockFeatureDiscovery(),
                     variantManager: MockVariantManager(),
                     bookmarksCount: 0,
                     favoritesCount: 0,
                     appTheme: "light",
                     isWidgetInstalled: false,
                     daysSinceNetPEnabled: -1,
-                    isPrivacyProEligibleUser: false,
-                    isPrivacyProSubscriber: false,
-                    privacyProDaysSinceSubscribed: -1,
-                    privacyProDaysUntilExpiry: -1,
-                    privacyProPurchasePlatform: nil,
-                    isPrivacyProSubscriptionActive: false,
-                    isPrivacyProSubscriptionExpiring: false,
-                    isPrivacyProSubscriptionExpired: false,
+                    isSubscriptionEligibleUser: false,
+                    isDuckDuckGoSubscriber: false,
+                    subscriptionDaysSinceSubscribed: -1,
+                    subscriptionDaysUntilExpiry: -1,
+                    subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
+                    isSubscriptionActive: false,
+                    isSubscriptionExpiring: false,
+                    isSubscriptionExpired: false,
+                    subscriptionFreeTrialActive: false,
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
                     shownMessageIds: [],
-                    enabledFeatureFlags: []
+                    enabledFeatureFlags: [],
+                    isSyncEnabled: false,
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -516,7 +622,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
             RemoteConfigRule(
                 id: 1,
                 targetPercentile: RemoteConfigTargetPercentile(before: 0.5),
-                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersion, fallback: nil)]
+                attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)]
             )
         ])
 
@@ -545,12 +651,528 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         XCTAssertEqual(matcher.evaluate(remoteConfig: remoteConfig), mediumMessage(matchingRules: [1], exclusionRules: []))
     }
 
+    // MARK: - List Items Filtering Tests
+
+    func testWhenMessageWithItemsPassesAndAllItemsPassRules_ThenReturnMessage() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]), // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [1])  // Will pass
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    func testWhenMessageWithItemsPassesButAllItemsFailRules_ThenReturnNull() {
+        // GIVEN
+        // Valid rule applied at message level
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Invalid rule applied at item level
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]), // Will fail
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [2])  // Will fail
+        ]
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertNil(result)
+    }
+
+    func testWhenMessageWithItemsPassesAndSomeItemsPassRules_ThenReturnMessage() throws {
+        // GIVEN
+        // Valid rule
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Invalid rule
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]), // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [2])  // Will fail
+        ]
+        let expectedItem = try XCTUnwrap(items.first)
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: [expectedItem])
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    func testWhenMessageWithItemsHasNoItemRules_ThenAllItemsPassAndReturnMessage() {
+        // GIVEN
+        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: []), // No rules -> Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [])  // No rules -> Will pass
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [validRule])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    func testWhenMessageWithItemsHasExclusionRules_ThenFilterItemsCorrectly() throws {
+        // GIVEN
+        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]), // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", exclusionRules: [1]) // Will be excluded (rule matches)
+        ]
+        let expectedItem = try XCTUnwrap(items.first)
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: [expectedItem])
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [validRule])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    func testWhenMessageFailsRules_ThenItemRulesNotEvaluated() {
+        // GIVEN
+        // Valid rule
+        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Invalid rule
+        let invalidRule = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]),  // Would pass, but shouldn't be evaluated
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [1])   // Would pass, but shouldn't be evaluated
+        ]
+
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [2], exclusionRules: [], items: items)], rules: [validRule, invalidRule])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertNil(result)
+    }
+
+    func testWhenMessageWithoutItems_ThenEvaluateNormally() {
+        // GIVEN
+        let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let expectedMessage = mediumMessage(matchingRules: [1], exclusionRules: [])
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [validRule])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    // MARK: - Item-Level Percentile Tests
+
+    func testWhenMessagePassesButAllItemsFailPercentile_ThenReturnNull() {
+        // GIVEN
+        // Rule 1 50% of users
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Rule 2 40% of users
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Rule 3 40% of users
+        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+
+        let percentileStore = MockRemoteMessagePercentileStore()
+        percentileStore.percentileStorage = [
+            "cards_message": 0.3,  // Message passes (≤ 0.5)
+            "item1": 0.8,          // Item fails (> 0.4)
+            "item2": 0.9           // Item fails (> 0.4)
+        ]
+
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [3])
+        ]
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2, rule3])
+        setupSUT(percentileStore: percentileStore)
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertNil(result, "Message should be nil when all items fail percentile checks")
+    }
+
+    func testWhenMessagePassesAndSomeItemsPassPercentile_ThenReturnMessageWithFilteredItems() throws {
+        // GIVEN
+        // Rule 1 50% of users
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Rule 2 40% of users
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Rule 3 40% of users
+        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+
+        let percentileStore = MockRemoteMessagePercentileStore()
+        percentileStore.percentileStorage = [
+            "cards_message": 0.3,  // Message passes (≤ 0.5)
+            "item1": 0.2,          // Item passes (≤ 0.4)
+            "item2": 0.9           // Item fails (> 0.4)
+        ]
+
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [3])
+        ]
+        let expectedItem = try XCTUnwrap(items.first)
+        let expectedMessage = cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: [expectedItem])
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2, rule3])
+        setupSUT(percentileStore: percentileStore)
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Should return message with only items that pass percentile")
+    }
+
+    func testWhenMessageFailsPercentile_ThenItemPercentileNotEvaluated() {
+        // GIVEN
+        // Rule 1 50% of users
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Rule 2 40% of users
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        // Rule 3 40% of users
+        let rule3 = RemoteConfigRule(id: 3, targetPercentile: RemoteConfigTargetPercentile(before: 0.4), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+
+        let percentileStore = MockRemoteMessagePercentileStore()
+        percentileStore.percentileStorage = [
+            "cards_message": 0.8,  // Message fails (> 0.5)
+            "item1": 0.1,          // Item would pass, but shouldn't be evaluated
+            "item2": 0.2           // Item would pass, but shouldn't be evaluated
+        ]
+
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [3])
+        ]
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2, rule3])
+        setupSUT(percentileStore: percentileStore)
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertNil(result, "Should be nil because message fails percentile check (items never evaluated)")
+    }
+
+    func testWhenItemsHaveNoPercentileRules_ThenAllItemsPass() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: RemoteConfigTargetPercentile(before: 0.5), attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+
+        let percentileStore = MockRemoteMessagePercentileStore()
+        percentileStore.percentileStorage = [
+            "cards_message": 0.3   // Only message has percentile rule
+        ]
+
+        let items = [
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: []),    // No rules = auto-pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [])     // No rules = auto-pass
+        ]
+        let expectedMessage = cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: items)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
+        setupSUT(percentileStore: percentileStore)
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Should return message with all items when items have no percentile rules")
+    }
+
+    // MARK: - Section itemIDs Filtering Tests
+
+    func testWhenSectionReferencesValidItems_ThenSectionIsKept() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", itemIDs: ["item1", "item2"]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]),  // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [1])   // Will pass
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be kept when all its itemIDs reference valid items")
+    }
+
+    func testWhenSectionReferencesSomeFilteredItems_ThenSectionIsKeptIfAtLeastOneItemExists() throws {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", itemIDs: ["item1", "item2"]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]),  // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [2])   // Will fail
+        ]
+        let expectedItems = [
+            items[0],  // Section kept because item1 still exists
+            items[1]   // item1 passes
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be kept when at least one of its itemIDs still exists after filtering")
+    }
+
+    func testWhenSectionReferencesAllFilteredItems_ThenSectionIsRemoved() throws {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", itemIDs: ["item1", "item2"]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),  // Will fail
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [2]),  // Will fail
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item3", matchingRules: [1])   // Will pass
+        ]
+        let expectedItems = [items[3]]  // Only item3 remains
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be removed when all its itemIDs have been filtered out")
+    }
+
+    func testWhenSectionReferencesNonExistentItems_ThenSectionIsRemoved() throws {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", itemIDs: ["nonexistent1", "nonexistent2"]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1])   // Will pass
+        ]
+        let expectedItems = [items[1]]  // Only item1 remains
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be removed when its itemIDs reference items that don't exist")
+    }
+
+    func testWhenMultipleSectionsWithMixedValidInvalidItemIDs_ThenFilterCorrectly() throws {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Good Features", itemIDs: ["item1"]),  // Will be kept
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]),  // Will pass
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section2", titleText: "Bad Features", itemIDs: ["item2"]),   // Will be removed because item 2 will be removed
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [2]),  // Will fail
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section3", titleText: "More Features", itemIDs: ["item3"]), // Will be kept
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item3", matchingRules: [1])   // Will pass
+        ]
+        let expectedItems = [
+            items[0],  // section1 kept
+            items[1],  // item1 passes
+            items[4],  // section3 kept
+            items[5]   // item3 passes
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Should keep sections whose itemIDs exist and remove sections whose itemIDs don't exist")
+    }
+
+    func testWhenMessageContainsOnlySections_ThenReturnNil() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", itemIDs: ["item1"]),
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section2", titleText: "Improvements", itemIDs: ["item2"])
+        ]
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertNil(result, "Message with only sections (no actual items) should return nil")
+    }
+
+    // MARK: - Featured Item Section Reference Tests
+
+    func testWhenSectionReferencesOnlyFeaturedItems_AndFeaturedItemIsFiltered_ThenSectionIsRemoved() throws {
+        // GIVEN - Section references featured item that gets filtered out
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Featured Section", itemIDs: ["featured1"]),
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured1", titleText: "Featured Feature", matchingRules: [2]),  // Will be filtered
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1])   // Will pass
+        ]
+        let expectedItems = [items[2]]  // Only item1 remains
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be removed when the featured item it references is filtered out")
+    }
+
+    func testWhenSectionReferencesOnlyFeaturedItem_ThenSectionIsRemoved() throws {
+        // GIVEN - Section that only references a featured item should be removed
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Featured Section", itemIDs: ["featured1"]),
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured1", titleText: "Featured Feature", matchingRules: []),  // Featured item
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [])   // Regular item
+        ]
+        let expectedItems = [
+            items[1],  // featured1 (kept, not filtered)
+            items[2]   // item1 (kept)
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [], exclusionRules: [], items: items)], rules: [])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be removed when it only references featured items")
+    }
+
+    func testWhenSectionReferencesBothFeaturedAndRegularItems_ThenSectionIsKeptWithOnlyRegularItemReference() throws {
+        // GIVEN - Section references both featured and regular items, only regular item should count
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Mixed Section", itemIDs: ["featured1", "item1"]),
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured1", titleText: "Featured Feature", matchingRules: [1]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1])
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be kept when at least one regular (non-featured) item exists")
+    }
+
+    func testWhenSectionReferencesMixOfFeaturedAndRegularItems_AndRegularItemsFiltered_ThenSectionIsRemoved() throws {
+        // GIVEN - Section references both featured and regular items, but regular items are filtered
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Mixed Section", itemIDs: ["featured1", "item1"]),
+            RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured1", titleText: "Featured Feature", matchingRules: [1]),  // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),   // Will be filtered
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [1])    // Will pass (not in section)
+        ]
+        let expectedItems = [
+            items[1],  // featured1
+            items[3]   // item2
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage, "Section should be removed when only featured items remain in its itemIDs after filtering")
+    }
+
+}
+
+private extension RemoteMessagingConfigMatcherTests {
+
+    func setupSUT(percentileStore: MockRemoteMessagePercentileStore = MockRemoteMessagePercentileStore()) {
+        matcher = RemoteMessagingConfigMatcher(
+            appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
+            userAttributeMatcher: MobileUserAttributeMatcher(
+                statisticsStore: MockStatisticsStore(),
+                featureDiscovery: MockFeatureDiscovery(),
+                variantManager: MockVariantManager(),
+                bookmarksCount: 0,
+                favoritesCount: 0,
+                appTheme: "light",
+                isWidgetInstalled: false,
+                daysSinceNetPEnabled: -1,
+                isSubscriptionEligibleUser: false,
+                isDuckDuckGoSubscriber: false,
+                subscriptionDaysSinceSubscribed: -1,
+                subscriptionDaysUntilExpiry: -1,
+                subscriptionPurchasePlatform: nil,
+                subscriptionTier: nil,
+                isSubscriptionActive: false,
+                isSubscriptionExpiring: false,
+                isSubscriptionExpired: false,
+                subscriptionFreeTrialActive: false,
+                isDuckPlayerOnboarded: false,
+                isDuckPlayerEnabled: false,
+                dismissedMessageIds: [],
+                shownMessageIds: [],
+                enabledFeatureFlags: [],
+                isSyncEnabled: false,
+                shouldShowWinBackOfferUrgencyMessage: false,
+                isCurrentPIRUser: false,
+                isReturningUser: nil,
+                isAIChatEnabled: false,
+                triedAIChatDuringOnboarding: false,
+                isAIChatBoostActive: nil
+            ),
+            percentileStore: percentileStore,
+            surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
+            dismissedMessageIds: []
+        )
+    }
+
     func mediumMessage(id: String = "1", matchingRules: [Int], exclusionRules: [Int]) -> RemoteMessageModel {
         return RemoteMessageModel(id: id,
-                                  content: .medium(titleText: "title", descriptionText: "description", placeholder: .announce),
+                                  surfaces: .newTabPage,
+                                  content: .medium(titleText: "title",
+                                                   descriptionText: "description",
+                                                   placeholder: .announce,
+                                                   imageUrl: nil),
                                   matchingRules: matchingRules,
                                   exclusionRules: exclusionRules,
                                   isMetricsEnabled: true
         )
     }
+
+    func cardsListMessage(id: String = "1", matchingRules: [Int], exclusionRules: [Int], items: [RemoteMessageModelType.ListItem]) -> RemoteMessageModel {
+        return RemoteMessageModel(id: id,
+                                  surfaces: [.modal, .dedicatedTab],
+                                  content: .cardsList(titleText: "Feature List", placeholder: nil, imageUrl: nil, items: items, primaryActionText: "Got It", primaryAction: .dismiss),
+                                  matchingRules: matchingRules,
+                                  exclusionRules: exclusionRules,
+                                  isMetricsEnabled: true
+        )
+    }
+
 }

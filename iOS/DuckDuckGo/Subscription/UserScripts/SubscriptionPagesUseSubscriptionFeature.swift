@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 import UserScript
@@ -27,6 +28,12 @@ import Subscription
 import Core
 import os.log
 import Networking
+import PixelKit
+import WideEvent
+import PrivacyConfig
+import DataBrokerProtectionCore
+import DataBrokerProtection_iOS
+import UserNotifications
 
 struct SubscriptionPagesUseSubscriptionFeatureConstants {
     static let featureName = "useSubscription"
@@ -50,10 +57,14 @@ private struct Handlers {
     static let getFeatureConfig = "getFeatureConfig"
     // ---
     static let backToSettings = "backToSettings"
-    static let getSubscriptionOptions = "getSubscriptionOptions"
+    static let getSubscriptionTierOptions = "getSubscriptionTierOptions"
     static let subscriptionSelected = "subscriptionSelected"
+    static let subscriptionChangeSelected = "subscriptionChangeSelected"
     static let activateSubscription = "activateSubscription"
     static let featureSelected = "featureSelected"
+    // Notification permission & scheduling (expiration reminder experiment)
+    static let getUserSettings = "getUserSettings"
+    static let requestNotificationsPermission = "requestNotificationsPermission"
     // Pixels related events
     static let subscriptionsMonthlyPriceClicked = "subscriptionsMonthlyPriceClicked"
     static let subscriptionsYearlyPriceClicked = "subscriptionsYearlyPriceClicked"
@@ -62,10 +73,12 @@ private struct Handlers {
     static let subscriptionsWelcomeAddEmailClicked = "subscriptionsWelcomeAddEmailClicked"
     static let subscriptionsWelcomeFaqClicked = "subscriptionsWelcomeFaqClicked"
     static let getAccessToken = "getAccessToken"
+    static let completeStripePayment = "completeStripePayment"
 }
 
 enum UseSubscriptionError: Error {
     case purchaseFailed,
+         purchasePendingTransaction,
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
@@ -78,15 +91,17 @@ enum UseSubscriptionError: Error {
          generalError
 }
 
-enum SubscriptionTransactionStatus: String {
-    case idle, purchasing, restoring, polling
+public enum SubscriptionTransactionStatus: String {
+    case idle, purchasing, restoring, polling, changingPlan, planChangePolling
 }
 
 // https://app.asana.com/0/1205842942115003/1209254337758531/f
 public struct GetFeatureConfigurationResponse: Encodable {
     let useUnifiedFeedback: Bool = true
-    let useSubscriptionsAuthV2: Bool
+    let useSubscriptionsAuthV2: Bool = true
     let usePaidDuckAi: Bool
+    let useAlternateStripePaymentFlow: Bool
+    let useGetSubscriptionTierOptions: Bool = true
 }
 
 public struct AccessTokenValue: Codable {
@@ -101,18 +116,17 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 
     var onSetSubscription: (() -> Void)? { get set }
     var onBackToSettings: (() -> Void)? { get set }
-    var onFeatureSelected: ((Entitlement.ProductName) -> Void)? { get set }
+    var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
+    var onPurchaseCompleted: (() -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler?
 
-    func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable?
-    // Auth V1
+    // Subscription + Auth
     func getSubscription(params: Any, original: WKScriptMessage) async -> Encodable?
     func setSubscription(params: Any, original: WKScriptMessage) async -> Encodable?
-    // Auth V2
     func setAuthTokens(params: Any, original: WKScriptMessage) async throws -> Encodable?
     func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable?
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable?
@@ -129,6 +143,9 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable?
 
+    func getUserSettings(params: Any, original: WKScriptMessage) async -> Encodable?
+    func requestNotificationsPermission(params: Any, original: WKScriptMessage) async -> Encodable?
+
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async
     func restoreAccountFromAppStorePurchase() async throws
     func cleanup()
@@ -138,30 +155,64 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     private let subscriptionAttributionOrigin: String?
     private let subscriptionManager: SubscriptionManager
-    private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private var accountManager: AccountManager { subscriptionManager.accountManager }
     private let appStorePurchaseFlow: AppStorePurchaseFlow
     private let appStoreRestoreFlow: AppStoreRestoreFlow
-    private let appStoreAccountManagementFlow: AppStoreAccountManagementFlow
-    private let privacyProDataReporter: PrivacyProDataReporting?
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
+    private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
+    private let subscriptionDataReporter: SubscriptionDataReporting?
+    private let internalUserDecider: InternalUserDecider
+    private let wideEvent: WideEventManaging
+    private let tierEventReporter: SubscriptionTierEventReporting
+    private let pendingTransactionHandler: PendingTransactionHandling
+    private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
+    private var purchaseWideEventData: SubscriptionPurchaseWideEventData?
+    private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
+    private var planChangeWideEventData: SubscriptionPlanChangeWideEventData?
+    private var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
+    private let requestValidator: any ScriptRequestValidator
+    private let userNotificationCenter: UNUserNotificationCenterRepresentable
+    private let expirationReminderScheduler: SubscriptionExpirationReminderScheduling?
+    private let isExpirationReminderFeatureEnabled: () -> Bool
+    private let subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding
 
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionAttributionOrigin: String?,
          appStorePurchaseFlow: AppStorePurchaseFlow,
          appStoreRestoreFlow: AppStoreRestoreFlow,
-         appStoreAccountManagementFlow: AppStoreAccountManagementFlow,
-         privacyProDataReporter: PrivacyProDataReporting? = nil,
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()) {
+         subscriptionDataReporter: SubscriptionDataReporting? = nil,
+         internalUserDecider: InternalUserDecider,
+         wideEvent: WideEventManaging,
+         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
+         pendingTransactionHandler: PendingTransactionHandling,
+         subscriptionFlowsExecuter: SubscriptionFlowsExecuting,
+         requestValidator: any ScriptRequestValidator,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(
+            userDefaults: .dbp,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { true }
+         ),
+         userNotificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
+         expirationReminderScheduler: SubscriptionExpirationReminderScheduling? = nil,
+         isExpirationReminderFeatureEnabled: @escaping () -> Bool = { false },
+         subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
         self.appStoreRestoreFlow = appStoreRestoreFlow
-        self.appStoreAccountManagementFlow = appStoreAccountManagementFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
-        self.privacyProDataReporter = subscriptionAttributionOrigin != nil ? privacyProDataReporter : nil
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
+        self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
+        self.internalUserDecider = internalUserDecider
+        self.wideEvent = wideEvent
+        self.tierEventReporter = tierEventReporter
+        self.pendingTransactionHandler = pendingTransactionHandler
+        self.subscriptionFlowsExecuter = subscriptionFlowsExecuter
+        self.requestValidator = requestValidator
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.userNotificationCenter = userNotificationCenter
+        self.expirationReminderScheduler = expirationReminderScheduler
+        self.isExpirationReminderFeatureEnabled = isExpirationReminderFeatureEnabled
+        self.subscriptionExperimentAttributionProvider = subscriptionExperimentAttributionProvider
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -173,453 +224,30 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     // Subscription Activation Actions
     var onSetSubscription: (() -> Void)?
     var onBackToSettings: (() -> Void)?
-    var onFeatureSelected: ((Entitlement.ProductName) -> Void)?
+    var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
-
-    struct FeatureSelection: Codable {
-        let productFeature: Entitlement.ProductName
-    }
-
-    weak var broker: UserScriptMessageBroker?
-
-    var featureName = SubscriptionPagesUseSubscriptionFeatureConstants.featureName
-    lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
-    ])
-
-    var originalMessage: WKScriptMessage?
-
-    func with(broker: UserScriptMessageBroker) {
-        self.broker = broker
-    }
-
-    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-
-        Logger.subscription.debug("WebView handler: \(methodName)")
-        switch methodName {
-        case Handlers.getSubscription: return getSubscription
-        case Handlers.setSubscription: return setSubscription
-        case Handlers.getSubscriptionOptions: return getSubscriptionOptions
-        case Handlers.subscriptionSelected: return subscriptionSelected
-        case Handlers.activateSubscription: return activateSubscription
-        case Handlers.featureSelected: return featureSelected
-        case Handlers.backToSettings: return backToSettings
-            // Pixel related events
-        case Handlers.subscriptionsMonthlyPriceClicked: return subscriptionsMonthlyPriceClicked
-        case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
-        case Handlers.subscriptionsUnknownPriceClicked: return subscriptionsUnknownPriceClicked
-        case Handlers.subscriptionsAddEmailSuccess: return subscriptionsAddEmailSuccess
-        case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
-        case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
-        case Handlers.getAccessToken: return getAccessToken
-        default:
-            Logger.subscription.error("Unhandled web message: \(methodName)")
-            return nil
-        }
-    }
-
-    /// Values that the Frontend can use to determine the current state.
-    // swiftlint:disable nesting
-    struct SubscriptionValues: Codable {
-        enum CodingKeys: String, CodingKey {
-            case token
-        }
-        let token: String
-    }
-    // swiftlint:enable nesting
-
-    private func resetSubscriptionFlow() {
-        setTransactionError(nil)
-    }
-
-    private func setTransactionError(_ error: UseSubscriptionError?) {
-        transactionError = error
-    }
-
-    private func setTransactionStatus(_ status: SubscriptionTransactionStatus) {
-        if status != transactionStatus {
-            Logger.subscription.debug("Transaction state updated: \(status.rawValue)")
-            transactionStatus = status
-        }
-    }
-
-    // MARK: Broker Methods (Called from WebView via UserScripts)
-
-    func getSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
-        guard accountManager.isUserAuthenticated else { return [SubscriptionPagesUseSubscriptionFeatureConstants.token: SubscriptionPagesUseSubscriptionFeatureConstants.empty] }
-
-        switch await appStoreAccountManagementFlow.refreshAuthTokenIfNeeded() {
-        case .success(let currentAuthToken):
-            return [SubscriptionPagesUseSubscriptionFeatureConstants.token: currentAuthToken]
-        case .failure:
-            return [SubscriptionPagesUseSubscriptionFeatureConstants.token: SubscriptionPagesUseSubscriptionFeatureConstants.empty]
-        }
-    }
-
-    func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable? {
-        resetSubscriptionFlow()
-
-        var subscriptionOptions: SubscriptionOptions?
-
-        if subscriptionFreeTrialsHelper.areFreeTrialsEnabled {
-            subscriptionOptions = await freeTrialSubscriptionOptions()
-        } else {
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-
-        if let subscriptionOptions {
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
-                return subscriptionOptions
-            } else {
-                return subscriptionOptions.withoutPurchaseOptions()
-            }
-        } else {
-            Logger.subscription.error("Failed to obtain subscription options")
-            setTransactionError(.failedToGetSubscriptionOptions)
-            return SubscriptionOptions.empty
-        }
-    }
-
-    func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
-
-        DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseAttempt,
-                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-        setTransactionError(nil)
-        setTransactionStatus(.purchasing)
-        resetSubscriptionFlow()
-
-        struct SubscriptionSelection: Decodable {
-            struct Experiment: Codable {
-                let name: String
-                let cohort: String
-
-                func asParameters() -> [String: String] {
-                    [
-                        "experimentName": name,
-                        "experimentCohort": cohort,
-                    ]
-                }
-            }
-
-            let id: String
-            let experiment: Experiment?
-        }
-
-        let message = original
-        guard let subscriptionSelection: SubscriptionSelection = DecodableHelper.decode(from: params) else {
-            assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
-            Logger.subscription.error("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
-            setTransactionStatus(.idle)
-            return nil
-        }
-
-        // Check for active subscriptions
-        if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
-            Logger.subscription.debug("Subscription already active")
-            setTransactionError(.activeSubscriptionAlreadyPresent)
-            Pixel.fire(pixel: .privacyProRestoreAfterPurchaseAttempt)
-            setTransactionStatus(.idle)
-            return nil
-        }
-
-        let emailAccessToken = try? EmailManager().getToken()
-        let purchaseTransactionJWS: String
-
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id,
-                                                               emailAccessToken: emailAccessToken) {
-        case .success(let transactionJWS):
-            Logger.subscription.debug("Subscription purchased successfully")
-            purchaseTransactionJWS = transactionJWS
-
-        case .failure(let error):
-            Logger.subscription.error("App store purchase error: \(error.localizedDescription)")
-            setTransactionStatus(.idle)
-            switch error {
-            case .cancelledByUser:
-                setTransactionError(.cancelledByUser)
-                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
-                return nil
-            case .accountCreationFailed:
-                setTransactionError(.accountCreationFailed)
-            case .activeSubscriptionAlreadyPresent:
-                setTransactionError(.activeSubscriptionAlreadyPresent)
-            default:
-                setTransactionError(.purchaseFailed)
-            }
-            originalMessage = original
-            return nil
-        }
-
-        setTransactionStatus(.polling)
-
-        var subscriptionParameters: [String: String]?
-        if let frontEndExperiment = subscriptionSelection.experiment {
-            subscriptionParameters = frontEndExperiment.asParameters()
-        }
-
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: subscriptionParameters) {
-        case .success(let purchaseUpdate):
-            Logger.subscription.debug("Subscription purchase completed successfully")
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseSuccess,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .privacyProSubscriptionActivated)
-            Pixel.fireAttribution(pixel: .privacyProSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, privacyProDataReporter: privacyProDataReporter)
-            setTransactionStatus(.idle)
-            await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)
-        case .failure(let error):
-            Logger.subscription.error("App store complete subscription purchase error: \(error.localizedDescription)")
-            setTransactionStatus(.idle)
-            setTransactionError(.missingEntitlements)
-            await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "completed"))
-        }
-        return nil
-    }
-
-    func setSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
-        guard let subscriptionValues: SubscriptionValues = DecodableHelper.decode(from: params) else {
-            assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
-            Logger.subscription.error("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
-            setTransactionError(.generalError)
-            return nil
-        }
-
-        // Clear subscription Cache
-        subscriptionManager.subscriptionEndpointService.signOut()
-
-        let authToken = subscriptionValues.token
-        if case let .success(accessToken) = await accountManager.exchangeAuthTokenToAccessToken(authToken),
-           case let .success(accountDetails) = await accountManager.fetchAccountDetails(with: accessToken) {
-            accountManager.storeAuthToken(token: authToken)
-            accountManager.storeAccount(token: accessToken, email: accountDetails.email, externalID: accountDetails.externalID)
-            onSetSubscription?()
-        } else {
-            Logger.subscription.error("Failed to set subscription")
-            setTransactionError(.failedToSetSubscription)
-        }
-
-        return nil
-    }
-
-    // Auth V2 unused methods
-    func setAuthTokens(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        assertionFailure("SubscriptionPagesUserScript: setAuthTokens not implemented")
-        return nil
-    }
-
-    func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        assertionFailure("SubscriptionPagesUserScript: getAuthAccessToken not implemented")
-        return nil
-    }
-
-    func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        assertionFailure("SubscriptionPagesUserScript: getFeatureConfig not implemented")
-        return nil
-    }
-
-    func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
-        Pixel.fire(pixel: .privacyProRestorePurchaseOfferPageEntry, debounce: 2)
-        onActivateSubscription?()
-        return nil
-    }
-
-    func featureSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
-        guard let featureSelection: FeatureSelection = DecodableHelper.decode(from: params) else {
-            assertionFailure("SubscriptionPagesUserScript: expected JSON representation of FeatureSelection")
-            Logger.subscription.error("SubscriptionPagesUserScript: expected JSON representation of FeatureSelection")
-            return nil
-        }
-
-        onFeatureSelected?(featureSelection.productFeature)
-
-        return nil
-    }
-
-    func backToSettings(params: Any, original: WKScriptMessage) async -> Encodable? {
-        guard let accessToken = accountManager.accessToken else {
-            Logger.subscription.error("Missing access token")
-            return nil
-        }
-
-        switch await accountManager.fetchAccountDetails(with: accessToken) {
-        case .success(let accountDetails):
-            switch await subscriptionManager.subscriptionEndpointService.getSubscription(accessToken: accessToken) {
-            case .success:
-                accountManager.storeAccount(token: accessToken,
-                                            email: accountDetails.email,
-                                            externalID: accountDetails.externalID)
-                onBackToSettings?()
-            case .failure(let error):
-                Logger.subscription.error("Error retrieving subscription details: \(error.localizedDescription)")
-            }
-        case .failure(let error):
-            Logger.subscription.error("Could not get account Details: \(error.localizedDescription)")
-            setTransactionError(.generalError)
-        }
-        return nil
-    }
-
-    func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        if let accessToken = subscriptionManager.accountManager.accessToken {
-            return [SubscriptionPagesUseSubscriptionFeatureConstants.token: accessToken]
-        } else {
-            return [String: String]()
-        }
-    }
-
-    // MARK: Pixel related actions
-
-    func subscriptionsMonthlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
-        Logger.subscription.debug("Web function called: \(#function)")
-        Pixel.fire(pixel: .privacyProOfferMonthlyPriceClick)
-        return nil
-    }
-
-    func subscriptionsYearlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
-        Logger.subscription.debug("Web function called: \(#function)")
-        Pixel.fire(pixel: .privacyProOfferYearlyPriceClick)
-        return nil
-    }
-
-    func subscriptionsUnknownPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
-        // Not used
-        Logger.subscription.debug("Web function called: \(#function)")
-        return nil
-    }
-
-    func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable? {
-        Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProAddEmailSuccess)
-        return nil
-    }
-
-    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
-        Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProWelcomeAddDevice)
-        return nil
-    }
-
-    func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
-        Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProWelcomeFAQClick)
-        return nil
-    }
-
-    // MARK: Push actions (Push Data back to WebViews)
-
-    enum SubscribeActionName: String {
-        case onPurchaseUpdate
-    }
-
-    @MainActor
-    func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async {
-        guard let webView = originalMessage.webView else { return }
-
-        pushAction(method: .onPurchaseUpdate, webView: webView, params: purchaseUpdate)
-    }
-
-    func pushAction(method: SubscribeActionName, webView: WKWebView, params: Encodable) {
-        let broker = UserScriptMessageBroker(context: SubscriptionPagesUserScript.context, requiresRunInPageContentWorld: true )
-        broker.push(method: method.rawValue, params: params, for: self, into: webView)
-    }
-
-    // MARK: Native methods - Called from ViewModels
-
-    func restoreAccountFromAppStorePurchase() async throws {
-        setTransactionStatus(.restoring)
-        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
-        switch result {
-        case .success:
-            setTransactionStatus(.idle)
-        case .failure(let error):
-            let mappedError = mapAppStoreRestoreErrorToTransactionError(error)
-            setTransactionStatus(.idle)
-            throw mappedError
-        }
-    }
-
-    // MARK: Utility Methods
-
-    func mapAppStoreRestoreErrorToTransactionError(_ error: AppStoreRestoreFlowError) -> UseSubscriptionError {
-        Logger.subscription.error("\(#function): \(error.localizedDescription)")
-        switch error {
-        case .subscriptionExpired:
-            return .restoreFailedDueToExpiredSubscription
-        case .missingAccountOrTransactions:
-            return .restoreFailedDueToNoSubscription
-        default:
-            return .otherRestoreError
-        }
-    }
-
-    func cleanup() {
-        setTransactionStatus(.idle)
-        setTransactionError(nil)
-        broker = nil
-        onFeatureSelected = nil
-        onSetSubscription = nil
-        onActivateSubscription = nil
-        onBackToSettings = nil
-    }
-}
-
-private extension DefaultSubscriptionPagesUseSubscriptionFeature {
-    /// Retrieves free trial subscription options.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        guard let subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            /*
-             Fallback to standard subscription options if nil.
-             This could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-             */
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return subscriptionOptions
-    }
-}
-
-final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
-
-    private let subscriptionAttributionOrigin: String?
-    private let subscriptionManager: SubscriptionManagerV2
-    private let appStorePurchaseFlow: AppStorePurchaseFlowV2
-    private let appStoreRestoreFlow: AppStoreRestoreFlowV2
-    private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let privacyProDataReporter: PrivacyProDataReporting?
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
-
-    init(subscriptionManager: SubscriptionManagerV2,
-         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         subscriptionAttributionOrigin: String?,
-         appStorePurchaseFlow: AppStorePurchaseFlowV2,
-         appStoreRestoreFlow: AppStoreRestoreFlowV2,
-         privacyProDataReporter: PrivacyProDataReporting? = nil,
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()) {
-        self.subscriptionManager = subscriptionManager
-        self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
-        self.appStorePurchaseFlow = appStorePurchaseFlow
-        self.appStoreRestoreFlow = appStoreRestoreFlow
-        self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
-        self.privacyProDataReporter = subscriptionAttributionOrigin != nil ? privacyProDataReporter : nil
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
-    }
-
-    // Transaction Status and errors are observed from ViewModels to handle errors in the UI
-    @Published private(set) var transactionStatus: SubscriptionTransactionStatus = .idle
-    var transactionStatusPublisher: Published<SubscriptionTransactionStatus>.Publisher { $transactionStatus }
-    @Published private(set) var transactionError: UseSubscriptionError?
-    var transactionErrorPublisher: Published<UseSubscriptionError?>.Publisher { $transactionError }
-
-    // Subscription Activation Actions
-    var onSetSubscription: (() -> Void)?
-    var onBackToSettings: (() -> Void)?
-    var onFeatureSelected: ((Entitlement.ProductName) -> Void)?
-    var onActivateSubscription: (() -> Void)?
+    var onPurchaseCompleted: (() -> Void)?
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
     }
 
+    struct SubscriptionSelection: Decodable {
+        struct Experiment: Decodable {
+            let name: String
+            let cohort: String
+
+            var subscriptionExperiment: SubscriptionExperiment {
+                SubscriptionExperiment(experimentName: name, experimentCohort: cohort)
+            }
+        }
+
+        let id: String
+        let experiment: Experiment?
+        let experiments: [Experiment]?
+        let scheduleNotification: ScheduleNotificationPreference?
+    }
+
     weak var broker: UserScriptMessageBroker?
 
     var featureName = SubscriptionPagesUseSubscriptionFeatureConstants.featureName
@@ -628,6 +256,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     ])
 
     var originalMessage: WKScriptMessage?
+    
+    var subscriptionRestoreEmailAddressWideEventData: SubscriptionRestoreWideEventData?
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
@@ -640,11 +270,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case Handlers.setAuthTokens: return setAuthTokens
         case Handlers.getAuthAccessToken: return getAuthAccessToken
         case Handlers.getFeatureConfig: return getFeatureConfig
-        case Handlers.getSubscriptionOptions: return getSubscriptionOptions
+        case Handlers.getSubscriptionTierOptions: return getSubscriptionTierOptions
         case Handlers.subscriptionSelected: return subscriptionSelected
+        case Handlers.subscriptionChangeSelected: return subscriptionChangeSelected
         case Handlers.activateSubscription: return activateSubscription
         case Handlers.featureSelected: return featureSelected
         case Handlers.backToSettings: return backToSettings
+        case Handlers.completeStripePayment: return completeStripePayment
             // Pixel related events
         case Handlers.subscriptionsMonthlyPriceClicked: return subscriptionsMonthlyPriceClicked
         case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
@@ -653,6 +285,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
+        case Handlers.getUserSettings: return getUserSettings
+        case Handlers.requestNotificationsPermission: return requestNotificationsPermission
         default:
             Logger.subscription.error("Unhandled web message: \(methodName)")
             return nil
@@ -684,6 +318,29 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         }
     }
 
+    /// If the FE never redirects after we push Stripe redirect (e.g. mobile), the back button stays hidden. Reset to idle after this delay so the user can go back.
+    private static let stripeRedirectSafetyTimeoutSeconds: UInt64 = 8
+
+    private enum StripeRedirectSafetyTimeoutError: Error {
+        case couldNotRedirect
+    }
+
+    private func startStripeRedirectSafetyTimeout() {
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Self.stripeRedirectSafetyTimeoutSeconds * 1_000_000_000)
+            await MainActor.run {
+                guard let self = self else { return }
+                self.setTransactionStatus(.idle)
+                if let data = self.planChangeWideEventData {
+                    data.markAsFailed(at: SubscriptionPlanChangeWideEventData.FailingStep.confirmation,
+                                     error: StripeRedirectSafetyTimeoutError.couldNotRedirect)
+                    self.wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+                    self.planChangeWideEventData = nil
+                }
+            }
+        }
+    }
+
     // MARK: Broker Methods (Called from WebView via UserScripts)
 
     // MARK: - Auth V2
@@ -700,6 +357,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             setTransactionError(.generalError)
+            markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.generalError)
             return nil
         }
 
@@ -708,27 +366,42 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         guard !subscriptionValues.accessToken.isEmpty, !subscriptionValues.refreshToken.isEmpty else {
             Logger.subscription.fault("Empty access token or refresh token provided")
+            markEmailAddressRestoreWideEventFlowAsFailed(with: nil)
             return nil
         }
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
-            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
-            Logger.subscription.log("Subscription retrieved")
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
+                Logger.subscription.error("No subscription found after token adoption")
+                setTransactionError(.failedToSetSubscription)
+                markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.failedToSetSubscription)
+                return nil
+            }
+            Logger.subscription.log("Subscription retrieved: \(subscription.isActive ? "active" : "inactive", privacy: .public)")
+            markEmailAddressRestoreWideEventFlowAsSuccess()
         } catch {
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
             setTransactionError(.failedToSetSubscription)
+            markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.failedToSetSubscription)
         }
         return nil
     }
 
     func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard await requestValidator.canPageRequestToken(original) else {
+            Logger.subscription.error("Unauthorised access to token")
+            return nil
+        }
         let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid)
         return AccessTokenValue(accessToken: tokenContainer?.accessToken ?? "")
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: true, usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled)
+        return GetFeatureConfigurationResponse(
+            usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
+            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
+        )
     }
 
     // Auth V1 unused methods
@@ -745,55 +418,45 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     // MARK: -
 
-    func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable? {
-        resetSubscriptionFlow()
+    func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        tierEventReporter.reportTierOptionsRequested()
 
-        var subscriptionOptions: SubscriptionOptionsV2?
+        let subscriptionTierOptionsResponse = await subscriptionManager.subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
 
-        if subscriptionFreeTrialsHelper.areFreeTrialsEnabled {
-            subscriptionOptions = await freeTrialSubscriptionOptions()
-        } else {
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-
-        if let subscriptionOptions {
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
-                return subscriptionOptions
-            } else {
-                return subscriptionOptions.withoutPurchaseOptions()
+        switch subscriptionTierOptionsResponse {
+        case .success(let subscriptionTierOptions):
+            // Check if Pro tier was unexpectedly returned
+            let hasProTier = subscriptionTierOptions.products.contains { $0.tier == .pro }
+            if hasProTier && !subscriptionFeatureAvailability.isProTierPurchaseEnabled {
+                tierEventReporter.reportTierOptionsUnexpectedProTier()
             }
-        } else {
-            Logger.subscription.error("Failed to obtain subscription options")
+
+            tierEventReporter.reportTierOptionsSuccess()
+
+            guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
+            return subscriptionTierOptions
+
+        case .failure(let error):
+            Logger.subscription.error("Failed to obtain subscription tier options")
             setTransactionError(.failedToGetSubscriptionOptions)
-            return SubscriptionOptionsV2.empty
+
+            tierEventReporter.reportTierOptionsFailure(error: error)
+
+            return SubscriptionTierOptions.empty
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
 
-        DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseAttempt,
-                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        PixelKit.fire(Pixel.Event.subscriptionPurchaseAttempt,
+                      frequency: .legacyDailyAndCount,
+                      options: .parameters(subscriptionAttributionOrigin.map { [AttributionParameter.origin: $0] } ?? [:]))
         setTransactionError(nil)
         setTransactionStatus(.purchasing)
         resetSubscriptionFlow()
 
-        struct SubscriptionSelection: Decodable {
-            struct Experiment: Codable {
-                let name: String
-                let cohort: String
-
-                func asParameters() -> [String: String] {
-                    [
-                        "experimentName": name,
-                        "experimentCohort": cohort,
-                    ]
-                }
-            }
-
-            let id: String
-            let experiment: Experiment?
-        }
-
+        // 1: Parse subscription selection from message object
         let message = original
         guard let subscriptionSelection: SubscriptionSelection = CodableHelper.decode(from: params) else {
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
@@ -802,22 +465,40 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             return nil
         }
 
-        // Check for active subscriptions
+        let pendingScheduleNotification = subscriptionSelection.scheduleNotification
+
+        // 2: Check for active subscriptions
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.log("Subscription already active")
             setTransactionError(.activeSubscriptionAlreadyPresent)
-            Pixel.fire(pixel: .privacyProRestoreAfterPurchaseAttempt)
+            PixelKit.fire(Pixel.Event.subscriptionRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
         }
 
+        // 3: Configure wide event and start the flow
+        let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
+
+        let data = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: subscriptionSelection.id,
+            freeTrialEligible: freeTrialEligible,
+            entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: subscriptionAttributionOrigin))
+
+        self.purchaseWideEventData = data
+        wideEvent.startFlow(data)
+
         let purchaseTransactionJWS: String
 
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
-        case .success(let transactionJWS):
+        // 4: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled) {
+        case .success(let result):
             Logger.subscription.log("Subscription purchased successfully")
-            purchaseTransactionJWS = transactionJWS
+            purchaseTransactionJWS = result.transactionJWS
 
+            if let accountCreationDuration = result.accountCreationDuration, let purchaseWideEventData {
+                purchaseWideEventData.createAccountDuration = accountCreationDuration
+            }
         case .failure(let error):
             Logger.subscription.error("App store purchase error: \(error.localizedDescription)")
             setTransactionStatus(.idle)
@@ -825,13 +506,49 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             case .cancelledByUser:
                 setTransactionError(.cancelledByUser)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.canceled)
+
+                if let purchaseWideEventData {
+                    wideEvent.completeFlow(purchaseWideEventData, status: .cancelled, onComplete: { _, _ in })
+                }
+
                 return nil
-            case .accountCreationFailed:
+            case .accountCreationFailed(let accountCreationError):
                 setTransactionError(.accountCreationFailed)
+
+                if let purchaseWideEventData {
+                    purchaseWideEventData.markAsFailed(at: .accountCreate, error: accountCreationError)
+                    wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
+                }
             case .activeSubscriptionAlreadyPresent:
+                // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
+                if let purchaseWideEventData {
+                    wideEvent.discardFlow(purchaseWideEventData)
+                    self.purchaseWideEventData = nil
+                }
+
                 setTransactionError(.activeSubscriptionAlreadyPresent)
+            case .internalError(let internalError):
+                setTransactionError(.purchaseFailed)
+
+                if let purchaseWideEventData {
+                    purchaseWideEventData.markAsFailed(at: .accountPayment, error: internalError ?? error)
+                    wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
+                }
+            case .transactionPendingAuthentication:
+                pendingTransactionHandler.markPurchasePending()
+                setTransactionError(.purchasePendingTransaction)
+                
+                if let purchaseWideEventData {
+                    purchaseWideEventData.markAsFailed(at: .accountPayment, error: error)
+                    wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
+                }
             default:
                 setTransactionError(.purchaseFailed)
+
+                if let purchaseWideEventData {
+                    purchaseWideEventData.markAsFailed(at: .accountPayment, error: error)
+                    wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
+                }
             }
             originalMessage = original
             return nil
@@ -843,24 +560,45 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Logger.subscription.fault("Purchase transaction JWS is empty")
             assertionFailure("Purchase transaction JWS is empty")
             setTransactionStatus(.idle)
+            
+            if let purchaseWideEventData {
+                wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
+            }
+            
             return nil
         }
 
-        var subscriptionParameters: [String: String]?
-        if let frontEndExperiment = subscriptionSelection.experiment {
-            subscriptionParameters = frontEndExperiment.asParameters()
+        let experimentAttribution = subscriptionExperimentAttributionProvider.attribution(from: subscriptionSelection)
+
+        if let purchaseWideEventData {
+            purchaseWideEventData.activateAccountDuration = WideEvent.MeasuredInterval.startingNow()
+            wideEvent.updateFlow(purchaseWideEventData)
         }
 
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
-                                                                       additionalParams: subscriptionParameters) {
+                                                                       experimentAttribution: experimentAttribution) {
         case .success:
             Logger.subscription.log("Subscription purchase completed successfully")
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseSuccess,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .privacyProSubscriptionActivated)
-            Pixel.fireAttribution(pixel: .privacyProSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, privacyProDataReporter: privacyProDataReporter)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseSuccess,
+                          frequency: .legacyDailyAndCount)
+            PixelKit.fire(Pixel.Event.subscriptionActivated, frequency: .uniqueByName)
+            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, freeTrial: freeTrialEligible, subscriptionDataReporter: subscriptionDataReporter)
+            fireFreemiumUpsellPixel()
             setTransactionStatus(.idle)
+            NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
+
+            if let purchaseWideEventData {
+                purchaseWideEventData.activateAccountDuration?.complete()
+                wideEvent.updateFlow(purchaseWideEventData)
+                wideEvent.completeFlow(purchaseWideEventData, status: .success(reason: nil), onComplete: { _, _ in })
+            }
+
+            if let preference = pendingScheduleNotification, let scheduler = expirationReminderScheduler {
+                await scheduler.scheduleReminder(daysBeforeCancel: preference.daysBeforeCancel)
+            }
+            onPurchaseCompleted?()
+
         case .failure(let error):
             Logger.subscription.error("App store complete subscription purchase error: \(error, privacy: .public)")
 
@@ -869,13 +607,114 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             setTransactionStatus(.idle)
             setTransactionError(.missingEntitlements)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
+
+            // Send the wide event error as long as the account isn't missing entitlements
+            // If entitlements are missing, the app will check again later and send the pixel as a success if
+            // they were fetched, or `unknown` if not
+            if let purchaseWideEventData, error != .missingEntitlements {
+                purchaseWideEventData.markAsFailed(at: .accountActivation, error: error)
+                wideEvent.updateFlow(purchaseWideEventData)
+                wideEvent.completeFlow(purchaseWideEventData, status: .failure, onComplete: { _, _ in })
+            }
         }
         return nil
     }
 
+    // MARK: - Tier Change
+
+    func subscriptionChangeSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
+        struct SubscriptionChangeSelection: Decodable {
+            let id: String
+            let change: String?  // "upgrade" or "downgrade"
+        }
+
+        let message = original
+
+        guard let subscriptionSelection: SubscriptionChangeSelection = CodableHelper.decode(from: params) else {
+            Logger.subscription.error("SubscriptionPagesUserScript: expected JSON representation of SubscriptionChangeSelection")
+            setTransactionStatus(.idle)
+            return nil
+        }
+
+        Logger.subscription.log("[TierChange] Starting \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
+
+        let currentSubscription = try? await subscriptionManager.getSubscription()
+        let effectivePlatform: DuckDuckGoSubscription.Platform = currentSubscription?.platform ?? (subscriptionPlatform == .stripe ? .stripe : .apple)
+
+        Logger.subscription.log("[TierChange] Starting from subscription: \(currentSubscription?.productId ?? "unknown", privacy: .public)")
+
+        switch effectivePlatform {
+        case .apple:
+            await subscriptionFlowsExecuter.performTierChange(
+                to: subscriptionSelection.id,
+                changeType: subscriptionSelection.change,
+                contextName: subscriptionAttributionOrigin,
+                setTransactionStatus: { self.setTransactionStatus($0) },
+                setTransactionError: { self.setTransactionError($0.map { self.useSubscriptionError(from: $0) }) },
+                pushPurchaseUpdate: { await self.pushPurchaseUpdate(originalMessage: message, purchaseUpdate: $0) }
+            )
+            return nil
+        case .stripe:
+            setTransactionError(nil)
+            setTransactionStatus(.changingPlan)
+
+            let fromPlan = currentSubscription?.productId ?? ""
+            let changeType = SubscriptionPlanChangeWideEventData.ChangeType.parse(string: subscriptionSelection.change)
+            let wideData = SubscriptionPlanChangeWideEventData(
+                purchasePlatform: .stripe,
+                changeType: changeType,
+                fromPlan: fromPlan,
+                toPlan: subscriptionSelection.id,
+                funnelName: subscriptionAttributionOrigin
+            )
+            planChangeWideEventData = wideData
+            wideEvent.startFlow(wideData)
+
+            let accessToken: String
+            do {
+                let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                accessToken = tokenContainer.accessToken
+                Logger.subscription.log("[TierChange] Retrieved access token for Stripe tier change")
+            } catch {
+                Logger.subscription.error("[TierChange] Failed to get token for Stripe tier change: \(error, privacy: .public)")
+                setTransactionStatus(.idle)
+                setTransactionError(.otherRestoreError)
+                await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
+                wideData.markAsFailed(at: SubscriptionPlanChangeWideEventData.FailingStep.payment, error: error)
+                wideEvent.completeFlow(wideData, status: .failure, onComplete: { _, _ in })
+                planChangeWideEventData = nil
+                return nil
+            }
+
+            wideData.confirmationDuration = WideEvent.MeasuredInterval.startingNow()
+            wideEvent.updateFlow(wideData)
+            await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.redirect(withToken: accessToken))
+            // Spinner stays until FE redirects (completeStripePayment) or safety timeout clears it so back button reappears
+            startStripeRedirectSafetyTimeout()
+            return nil
+        case .google, .unknown:
+            setTransactionStatus(.idle)
+            setTransactionError(.otherRestoreError)
+            return nil
+        }
+    }
+
+    private func useSubscriptionError(from error: AppStorePurchaseFlowError) -> UseSubscriptionError {
+        switch error {
+        case .cancelledByUser:
+            return .cancelledByUser
+        case .transactionPendingAuthentication:
+            return .purchasePendingTransaction
+        case .missingEntitlements:
+            return .missingEntitlements
+        default:
+            return .purchaseFailed
+        }
+    }
+
     func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Activating Subscription")
-        Pixel.fire(pixel: .privacyProRestorePurchaseOfferPageEntry, debounce: 2)
+        PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseOfferPageEntry, frequency: .debounce(seconds: 2))
         onActivateSubscription?()
         return nil
     }
@@ -912,7 +751,39 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         return nil
     }
 
+    func completeStripePayment(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        struct StripePaymentCompletion: Decodable {
+            let change: String?
+        }
+        let completion: StripePaymentCompletion? = CodableHelper.decode(from: params)
+        if let changeType = completion?.change {
+            Logger.subscription.log("[TierChange] Stripe \(changeType, privacy: .public) completed successfully")
+        }
+
+        setTransactionError(nil)
+        let isPlanChange = (planChangeWideEventData != nil)
+        setTransactionStatus(isPlanChange ? .planChangePolling : .polling)
+
+        subscriptionManager.clearSubscriptionCache()
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
+
+        if let data = planChangeWideEventData {
+            data.confirmationDuration?.complete()
+            wideEvent.updateFlow(data)
+            wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+            planChangeWideEventData = nil
+        }
+
+        setTransactionStatus(.idle)
+        return [String: String]()
+    }
+
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard await requestValidator.canPageRequestToken(original) else {
+            Logger.subscription.error("Unauthorised access to token")
+            return nil
+        }
         do {
             let accessToken = try await subscriptionManager.getTokenContainer(policy: .localValid).accessToken
             return [SubscriptionPagesUseSubscriptionFeatureConstants.token: accessToken]
@@ -926,13 +797,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     func subscriptionsMonthlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        Pixel.fire(pixel: .privacyProOfferMonthlyPriceClick)
+        PixelKit.fire(Pixel.Event.subscriptionOfferMonthlyPriceClick)
         return nil
     }
 
     func subscriptionsYearlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        Pixel.fire(pixel: .privacyProOfferYearlyPriceClick)
+        PixelKit.fire(Pixel.Event.subscriptionOfferYearlyPriceClick)
         return nil
     }
 
@@ -944,19 +815,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProAddEmailSuccess)
+        PixelKit.fire(Pixel.Event.subscriptionAddEmailSuccess, frequency: .uniqueByName)
         return nil
     }
 
     func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProWelcomeAddDevice)
+        PixelKit.fire(Pixel.Event.subscriptionWelcomeAddDevice, frequency: .uniqueByName)
         return nil
     }
 
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .privacyProWelcomeFAQClick)
+        PixelKit.fire(Pixel.Event.subscriptionWelcomeFAQClick, frequency: .uniqueByName)
         return nil
     }
 
@@ -968,13 +839,15 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     @MainActor
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async {
-        guard let webView = originalMessage.webView else { return }
+        guard let webView = originalMessage.webView else {
+            return
+        }
 
         pushAction(method: .onPurchaseUpdate, webView: webView, params: purchaseUpdate)
     }
 
     func pushAction(method: SubscribeActionName, webView: WKWebView, params: Encodable) {
-        let broker = UserScriptMessageBroker(context: SubscriptionPagesUserScript.context, requiresRunInPageContentWorld: true )
+        let broker = UserScriptMessageBroker(context: SubscriptionPagesUserScript.context, requiresRunInPageContentWorld: true)
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
     }
 
@@ -997,7 +870,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
     // MARK: Utility Methods
 
-    func mapAppStoreRestoreErrorToTransactionError(_ error: AppStoreRestoreFlowErrorV2) -> UseSubscriptionError {
+    func mapAppStoreRestoreErrorToTransactionError(_ error: AppStoreRestoreFlowError) -> UseSubscriptionError {
         Logger.subscription.error("\(#function): \(error.localizedDescription)")
         switch error {
         case .subscriptionExpired:
@@ -1017,22 +890,92 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         onSetSubscription = nil
         onActivateSubscription = nil
         onBackToSettings = nil
+        onPurchaseCompleted = nil
+    }
+
+    private func fireFreemiumUpsellPixel() {
+        guard freemiumDBPUserStateManager.didActivate, let pixelKit = PixelKit.shared else { return }
+        DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS).fire(.freemiumUpsell)
     }
 }
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
-    /// Retrieves free trial subscription options.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptionsV2? {
-        guard let subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            /*
-             Fallback to standard subscription options if nil.
-             This could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-             */
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
+// MARK: - Notification permission (expiration reminder experiment)
+
+extension DefaultSubscriptionPagesUseSubscriptionFeature {
+
+    enum NotificationsPermissionStatus: String, Encodable {
+        case granted, denied, notDetermined
+    }
+
+    struct UserSettingsResponse: Encodable {
+        let notificationsPermission: NotificationsPermissionStatus
+    }
+
+    struct NotificationsPermissionResponse: Encodable {
+        let granted: Bool
+    }
+
+    struct ScheduleNotificationPreference: Decodable, Equatable {
+        let daysBeforeCancel: Int
+    }
+
+    func getUserSettings(params: Any, original: WKScriptMessage) async -> Encodable? {
+        let status = await userNotificationCenter.authorizationStatus()
+        return UserSettingsResponse(notificationsPermission: Self.permissionStatus(from: status))
+    }
+
+    func requestNotificationsPermission(params: Any, original: WKScriptMessage) async -> Encodable? {
+        guard isExpirationReminderFeatureEnabled() else {
+            return NotificationsPermissionResponse(granted: false)
         }
-        return subscriptionOptions
+        let status = await userNotificationCenter.authorizationStatus()
+        switch status {
+        case .authorized, .ephemeral:
+            return NotificationsPermissionResponse(granted: true)
+        case .denied, .provisional:
+            // OS won't show a prompt in either state — `.denied` is blocked, and `.provisional` has
+            // no programmatic upgrade path (only Settings can raise it to `.authorized`).
+            return NotificationsPermissionResponse(granted: false)
+        case .notDetermined:
+            let granted = (try? await userNotificationCenter.requestAuthorization(options: [.alert, .sound])) ?? false
+            return NotificationsPermissionResponse(granted: granted)
+        @unknown default:
+            return NotificationsPermissionResponse(granted: false)
+        }
+    }
+
+    /// Any status that requires a Settings change to become `.authorized` is reported as `.denied`.
+    /// `.provisional` is bucketed with `.denied` because there's no programmatic upgrade path.
+    /// iOS won't show a prompt from `requestAuthorization` when state is `.provisional`.
+    private static func permissionStatus(from status: UNAuthorizationStatus) -> NotificationsPermissionStatus {
+        switch status {
+        case .authorized, .ephemeral: return .granted
+        case .notDetermined: return .notDetermined
+        case .denied, .provisional: return .denied
+        @unknown default: return .denied
+        }
+    }
+}
+
+// MARK: - Wide Pixel
+
+private extension DefaultSubscriptionPagesUseSubscriptionFeature {
+    
+    func markEmailAddressRestoreWideEventFlowAsSuccess() {
+        guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
+        restoreWideEventData.emailAddressRestoreDuration?.complete()
+        wideEvent.completeFlow(restoreWideEventData, status: .success, onComplete: { _, _ in })
+        self.subscriptionRestoreEmailAddressWideEventData = nil
+    }
+    
+    func markEmailAddressRestoreWideEventFlowAsFailed(with error: Error?) {
+        guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
+        restoreWideEventData.emailAddressRestoreDuration?.complete()
+        if let error {
+            restoreWideEventData.errorData = .init(error: error)
+        }
+        wideEvent.completeFlow(restoreWideEventData, status: .failure, onComplete: { _, _ in })
+        self.subscriptionRestoreEmailAddressWideEventData = nil
     }
 }
 
@@ -1041,17 +984,21 @@ extension Pixel {
     enum AttributionParameters {
         static let origin = "origin"
         static let locale = "locale"
+        static let freeTrial = "free_trial"
     }
 
-    static func fireAttribution(pixel: Pixel.Event, origin: String?, locale: Locale = .current, privacyProDataReporter: PrivacyProDataReporting?) {
+    static func fireAttribution(pixel: Pixel.Event, origin: String?, freeTrial: Bool? = nil, locale: Locale = .current, subscriptionDataReporter: SubscriptionDataReporting?) {
         var parameters: [String: String] = [:]
         parameters[AttributionParameters.locale] = locale.identifier
         if let origin {
             parameters[AttributionParameters.origin] = origin
         }
-        Self.fire(
-            pixel: pixel,
-            withAdditionalParameters: privacyProDataReporter?.mergeRandomizedParameters(for: .origin(origin), with: parameters) ?? parameters
+        if let freeTrial {
+            parameters[AttributionParameters.freeTrial] = String(freeTrial)
+        }
+        PixelKit.fire(
+            pixel,
+            options: .parameters(subscriptionDataReporter?.mergeRandomizedParameters(for: .origin(origin), with: parameters) ?? parameters)
         )
     }
 

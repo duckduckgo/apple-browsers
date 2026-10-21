@@ -20,6 +20,7 @@ import XCTest
 import OHHTTPStubs
 import OHHTTPStubsSwift
 import PixelExperimentKit
+import PrivacyConfig
 @testable import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -30,6 +31,8 @@ class StatisticsLoaderTests: XCTestCase {
     private var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
+    private var fireDuckAISearchExperimentPixelsCalled = false
+    private var fireNewAIPromptExperimentPixelsCalled = false
     var pixelKit: PixelKit! = PixelKit(dryRun: true,
                                        appVersion: "1.0.0",
                                        defaultHeaders: [:],
@@ -43,8 +46,11 @@ class StatisticsLoaderTests: XCTestCase {
         mockStatisticsStore = MockStatisticsStore()
         testee = StatisticsLoader(statisticsStore: mockStatisticsStore,
                                   attributionPixelHandler: mockAttributionsPixelHandler,
+                                  dockCustomization: DockCustomizerMock(),
                                   fireAppRetentionExperimentPixels: { self.fireAppRetentionExperimentPixelsCalled = true },
-                                  fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true })
+                                  fireSearchExperimentPixels: { self.fireSearchExperimentPixelsCalled = true },
+                                  fireDuckAISearchExperimentPixels: { self.fireDuckAISearchExperimentPixelsCalled = true },
+                                  fireNewAIPromptExperimentPixels: { self.fireNewAIPromptExperimentPixelsCalled = true })
     }
 
     override func tearDown() {
@@ -55,7 +61,157 @@ class StatisticsLoaderTests: XCTestCase {
         testee = nil
         fireAppRetentionExperimentPixelsCalled = false
         fireSearchExperimentPixelsCalled = false
+        fireDuckAISearchExperimentPixelsCalled = false
+        fireNewAIPromptExperimentPixelsCalled = false
         pixelKit = nil
+    }
+
+    func testRefreshRetentionAtbOnNavigationFiresClientOSDistributionPixelRegardlessOfInputs() {
+        let configurations: [(isSearch: Bool, isDuckAI: Bool)] = [
+            (isSearch: true, isDuckAI: false),
+            (isSearch: true, isDuckAI: true),
+            (isSearch: false, isDuckAI: true)
+        ]
+
+        for configuration in configurations {
+            var firedPixelNames: [String] = []
+            // Fresh defaults per configuration so the monthly client pixel isn't deduped across iterations.
+            let capturingPixelKit = PixelKit(dryRun: false,
+                                             appVersion: "1.0.0",
+                                             defaultHeaders: [:],
+                                             defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                             fireRequest: { name, _, _, _, _, onComplete in
+                                                 firedPixelNames.append(name)
+                                                 onComplete(true, nil)
+                                             })
+            PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+            mockStatisticsStore.atb = "atb"
+            mockStatisticsStore.searchRetentionAtb = "retentionatb"
+            mockStatisticsStore.variant = "test"
+            loadSuccessfulUpdateAtbStub()
+
+            let expect = expectation(description: "\(#function) isSearch:\(configuration.isSearch) isDuckAI:\(configuration.isDuckAI)")
+            testee.refreshRetentionAtbOnNavigation(isSearch: configuration.isSearch, isDuckAI: configuration.isDuckAI) {
+                expect.fulfill()
+            }
+            waitForExpectations(timeout: 5)
+
+            XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_client_major_version_") },
+                          "Expected MAU OS-distribution pixel for isSearch:\(configuration.isSearch) isDuckAI:\(configuration.isDuckAI). Fired: \(firedPixelNames)")
+        }
+    }
+
+    func testRefreshRetentionAtbOnNavigationFiresStandardAndDailySerpPixelWithDailyRateLimited() {
+        // GIVEN
+        let firstExpectation = expectation(description: #function)
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(
+            dryRun: false,
+            appVersion: "1.0.0",
+            defaultHeaders: [:],
+            defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+            fireRequest: { name, _, _, _, _, onComplete in
+                firedPixelNames.append(name)
+                onComplete(true, nil)
+            }
+        )
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "retentionatb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        // WHEN
+        testee.refreshRetentionAtbOnNavigation(isSearch: true, isDuckAI: false) {
+            firstExpectation.fulfill()
+        }
+        wait(for: [firstExpectation], timeout: 5)
+
+        // THEN
+        XCTAssertEqual(firedPixelNames.filter { $0 == "m_mac_navigation_search" }.count, 1)
+        XCTAssertEqual(firedPixelNames.filter { $0 == "m_mac_navigation_search_daily" }.count, 1)
+    }
+
+    func testRefreshSearchRetentionAtbFiresSearchesOSDistributionPixel() {
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(dryRun: false,
+                                         appVersion: "1.0.0",
+                                         defaultHeaders: [:],
+                                         defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                         fireRequest: { name, _, _, _, _, onComplete in
+                                             firedPixelNames.append(name)
+                                             onComplete(true, nil)
+                                         })
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: #function)
+        testee.refreshSearchRetentionAtb {
+            expect.fulfill()
+        }
+        waitForExpectations(timeout: 5)
+
+        XCTAssertTrue(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") },
+                      "Expected searches OS-distribution pixel. Fired: \(firedPixelNames)")
+    }
+
+    func testRefreshDuckAIRetentionAtbDoesNotFireSearchesOSDistributionPixel() {
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(dryRun: false,
+                                         appVersion: "1.0.0",
+                                         defaultHeaders: [:],
+                                         defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                         fireRequest: { name, _, _, _, _, onComplete in
+                                             firedPixelNames.append(name)
+                                             onComplete(true, nil)
+                                         })
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: #function)
+        testee.refreshDuckAIRetentionAtb {
+            expect.fulfill()
+        }
+        waitForExpectations(timeout: 5)
+
+        // The searches pixel is emitted once via refreshSearchRetentionAtb on the prompt path,
+        // so refreshDuckAIRetentionAtb must NOT also fire it (that would double-count one prompt).
+        XCTAssertFalse(firedPixelNames.contains { $0.hasPrefix("os_distribution_searches_major_version_") },
+                       "refreshDuckAIRetentionAtb must not fire the searches pixel. Fired: \(firedPixelNames)")
+    }
+
+    func testRefreshRetentionAtbOnDuckAiPromptSubmissionFiresExactlyOneSearchesOSDistributionPixel() {
+        var firedPixelNames: [String] = []
+        let capturingPixelKit = PixelKit(dryRun: false,
+                                         appVersion: "1.0.0",
+                                         defaultHeaders: [:],
+                                         defaults: UserDefaults(suiteName: "test_\(UUID().uuidString)")!,
+                                         fireRequest: { name, _, _, _, _, onComplete in
+                                             firedPixelNames.append(name)
+                                             onComplete(true, nil)
+                                         })
+        PixelKit.setSharedForTesting(pixelKit: capturingPixelKit)
+
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.variant = "test"
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: #function)
+        testee.refreshRetentionAtbOnDuckAiPromptSubmition {
+            expect.fulfill()
+        }
+        waitForExpectations(timeout: 5)
+
+        XCTAssertEqual(firedPixelNames.filter { $0.hasPrefix("os_distribution_searches_major_version_") }.count, 1,
+                       "A Duck.ai prompt must fire exactly one searches OS-distribution pixel. Fired: \(firedPixelNames)")
     }
 
     func testWhenSearchRefreshHasSuccessfulUpdateAtbRequestThenSearchRetentionAtbUpdated() {
@@ -256,7 +412,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "Search retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: true) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: true, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
             XCTAssertTrue(self.fireSearchExperimentPixelsCalled)
@@ -274,7 +430,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "v77-5")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "searchRetentionAtb")
@@ -295,7 +451,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB not requested")
-        testee.refreshRetentionAtb(isSearch: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "atb")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "appRetentionAtb")
             XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "searchRetentionAtb")
@@ -312,7 +468,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulUpdateAtbStub()
 
         let expect = expectation(description: "App retention ATB requested")
-        testee.refreshRetentionAtb(isSearch: false) {
+        testee.refreshRetentionAtbOnNavigation(isSearch: false, isDuckAI: false) {
             XCTAssertEqual(self.mockStatisticsStore.atb, "v20-1")
             XCTAssertEqual(self.mockStatisticsStore.appRetentionAtb, "v77-5")
             XCTAssertNil(self.mockStatisticsStore.searchRetentionAtb)
@@ -409,4 +565,154 @@ class StatisticsLoaderTests: XCTestCase {
         }
     }
 
+    func testWhenDuckAIRefreshHasSuccessfulAtbRequestThenDuckAIRetentionAtbUpdated() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        let expect = expectation(description: "Successful DuckAI atb updates retention store")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshHasUnsuccessfulAtbRequestThenDuckAIRetentionAtbNotUpdated() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadUnsuccessfulAtbStub()
+
+        let expect = expectation(description: "Unsuccessful DuckAI atb does not update store")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshCalledWithoutInstallStatisticsThenInstallStatisticsRequested() {
+        mockStatisticsStore.atb = nil
+        mockStatisticsStore.duckAIRetentionAtb = nil
+        loadSuccessfulAtbStub()
+        loadSuccessfulExiStub()
+
+        let expect = expectation(description: "DuckAI refresh triggers install statistics")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertTrue(self.mockStatisticsStore.hasInstallStatistics)
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIRefreshHappens_ThenAIChatExperimentPixelsFired() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        let expect = expectation(description: "DuckAI refresh fires AI chat experiment pixels")
+        testee.refreshDuckAIRetentionAtb {
+            XCTAssertTrue(self.fireNewAIPromptExperimentPixelsCalled)
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIPromptSubmitted_ThenDuckAIScopedSearchExperimentPixelsFired() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "searchRetentionAtb"
+        mockStatisticsStore.duckAIRetentionAtb = "duckAIRetentionAtb"
+        loadSuccessfulUpdateAtbStub()
+
+        // A Duck.ai prompt fires the search experiment metric via the Duck.ai-scoped path, which excludes
+        // experiments already running so their search definition doesn't shift mid-flight. It must NOT go
+        // through the generic fireSearchExperimentPixels, which would count Duck.ai for every active experiment.
+        let expect = expectation(description: "DuckAI prompt submission fires the Duck.ai-scoped search experiment pixels")
+        testee.refreshRetentionAtbOnDuckAiPromptSubmition {
+            XCTAssertTrue(self.fireDuckAISearchExperimentPixelsCalled)
+            XCTAssertFalse(self.fireSearchExperimentPixelsCalled)
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIPromptSubmittedWithoutInstallStatisticsThenRetentionAtbsUpdated() {
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: "DuckAI prompt submission refreshes both retention ATBs after loading install statistics")
+        testee.refreshRetentionAtbOnDuckAiPromptSubmition {
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testFireSearchExperimentPixelsForDuckAIEligibleExperiments_ExcludesGrandfatheredExperiments() {
+        // GIVEN a grandfathered experiment and a newer one, both freshly enrolled (day 0 fires the 0...0 window)
+        var firedEventNames = [String]()
+        let grandfatheredID = StatisticsLoader.experimentsExcludedFromDuckAISearchMetric.first!
+        let newExperimentID = "someNewDuckAIEligibleExperiment"
+        let flagger = MockFeatureFlagger()
+        flagger.allActiveExperiments = [
+            grandfatheredID: ExperimentData(parentID: "parent", cohortID: "control", enrollmentDate: Date()),
+            newExperimentID: ExperimentData(parentID: "parent", cohortID: "control", enrollmentDate: Date())
+        ]
+        PixelKit.configureExperimentKit(
+            featureFlagger: flagger,
+            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
+            fire: { event, _, _ in firedEventNames.append(event.name) }
+        )
+
+        // WHEN
+        StatisticsLoader.fireSearchExperimentPixelsForDuckAIEligibleExperiments(featureFlagger: flagger)
+
+        // THEN the newer experiment counts the Duck.ai prompt as search; the grandfathered one does not
+        XCTAssertTrue(firedEventNames.contains { $0.contains(newExperimentID) })
+        XCTAssertFalse(firedEventNames.contains { $0.contains(grandfatheredID) })
+    }
+
+    func testWhenDuckAIRefreshCalledWhileAnotherIsInProgressThenSecondCallIsIgnored() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.duckAIRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        // Simulate an ongoing request
+        testee.isDuckAIRetentionRequestInProgress = true
+
+        let expect = expectation(description: "Second DuckAI refresh call is ignored")
+        testee.refreshDuckAIRetentionAtb {
+            // The refresh should be ignored, so no update should occur
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenSearchRefreshCalledWhileAnotherIsInProgressThenSecondCallIsIgnored() {
+        mockStatisticsStore.atb = "atb"
+        mockStatisticsStore.searchRetentionAtb = "retentionAtb"
+        loadSuccessfulAtbStub()
+
+        // Simulate an ongoing request
+        testee.isSearchRetentionRequestInProgress = true
+
+        let expect = expectation(description: "Second Search refresh call is ignored")
+        testee.refreshSearchRetentionAtb {
+            // The refresh should be ignored, so no update should occur
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "retentionAtb")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
 }

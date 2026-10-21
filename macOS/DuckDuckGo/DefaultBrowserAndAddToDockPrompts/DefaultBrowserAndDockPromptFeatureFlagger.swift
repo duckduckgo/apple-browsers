@@ -17,16 +17,9 @@
 //
 
 import Foundation
-import BrowserServicesKit
-import FeatureFlags
+import PrivacyConfig
 
-public protocol DefaultBrowserAndDockPromptFeatureFlagProvider {
-    /// A Boolean value indicating whether Set Default Browser (SAD) and Add To Dock (ATT) are enabled.
-    /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserAndDockPromptFeatureEnabled: Bool { get }
-}
-
-public protocol DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
+public protocol DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider {
     /// The number of days to wait after app installation before showing the first popover
     var firstPopoverDelayDays: Int { get }
     /// The number of days to wait after the popover has been shown before displaying the banner.
@@ -34,6 +27,15 @@ public protocol DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
     /// The number of days between subsequent displays of the banner.
     var bannerRepeatIntervalDays: Int { get }
 }
+
+public protocol DefaultBrowserAndDockPromptInactiveUserFeatureFlagsSettingsProvider {
+    /// The number of days to wait after app installation before showing the inactive user modal.
+    var inactiveModalNumberOfDaysSinceInstall: Int { get }
+    /// The number of inactive days to wait before showing the inactive user modal.
+    var inactiveModalNumberOfInactiveDays: Int { get }
+}
+
+public typealias DefaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider & DefaultBrowserAndDockPromptInactiveUserFeatureFlagsSettingsProvider
 
 /// An enum representing the different settings for Set Default Browser (SAD) and Add to Dock (ATT) feature flag.
 public enum DefaultBrowserAndDockPromptFeatureSettings: String {
@@ -43,45 +45,37 @@ public enum DefaultBrowserAndDockPromptFeatureSettings: String {
     case bannerAfterPopoverDelayDays
     /// The settings for the number of days between subsequent displays of the banner. Default to 14 days.
     case bannerRepeatIntervalDays
+    /// The setting for the number of days to wait after app installation before showing the inactive user modal.
+    case inactiveModalNumberOfDaysSinceInstall
+    /// The setting for the number of inactive days to wait before showing the inactive user modal.
+    case inactiveModalNumberOfInactiveDays
 
     public var defaultValue: Int {
         switch self {
         case .firstPopoverDelayDays: return 14
         case .bannerAfterPopoverDelayDays: return 14
         case .bannerRepeatIntervalDays: return 14
+        case .inactiveModalNumberOfDaysSinceInstall: return 28
+        case .inactiveModalNumberOfInactiveDays: return 7
         }
     }
 }
 
-typealias DefaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlagProvider & DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider
-
 final class DefaultBrowserAndDockPromptFeatureFlag {
     private let privacyConfigManager: PrivacyConfigurationManaging
-    private let featureFlagger: FeatureFlagger
 
     private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigManager.privacyConfig.settings(for: .setAsDefaultAndAddToDock)
     }
 
-    public init(privacyConfigManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+    public init(privacyConfigManager: PrivacyConfigurationManaging) {
         self.privacyConfigManager = privacyConfigManager
-        self.featureFlagger = featureFlagger
     }
-}
-
-// MARK: - DefaultBrowserAndDockPromptFeatureFlagger
-
-extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagProvider {
-
-    public var isDefaultBrowserAndDockPromptFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.scheduledSetDefaultBrowserAndAddToDockPrompts)
-    }
-
 }
 
 // MARK: - DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider
 
-extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
+extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagger {
 
     public var firstPopoverDelayDays: Int {
         getSettings(.firstPopoverDelayDays)
@@ -93,6 +87,14 @@ extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFea
 
     public var bannerRepeatIntervalDays: Int {
         getSettings(.bannerRepeatIntervalDays)
+    }
+
+    var inactiveModalNumberOfDaysSinceInstall: Int {
+        getSettings(.inactiveModalNumberOfDaysSinceInstall)
+    }
+
+    var inactiveModalNumberOfInactiveDays: Int {
+        getSettings(.inactiveModalNumberOfInactiveDays)
     }
 
     private func getSettings(_ value: DefaultBrowserAndDockPromptFeatureSettings) -> Int {

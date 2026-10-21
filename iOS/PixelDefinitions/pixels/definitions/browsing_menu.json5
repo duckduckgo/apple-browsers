@@ -1,0 +1,51 @@
+{
+    "m_menu_refresh_page": {
+        "description": "Fires when the user taps the refresh page option from the browsing menu",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_nav_menu_error": {
+        "description": "Fires when the browsing menu is opened on an error page",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_menu_dismissed": {
+        "description": "Fires when the browsing menu is dismissed by the user",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_menu_new_duck_address": {
+        "description": "Fires when the user taps the new Duck Address option from the browsing menu",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_menu_vpn": {
+        "description": "Fires when the user taps the VPN option from the browsing menu",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_menu_aichat": {
+        "description": "Fires when the user taps the AI chat option from the browsing menu",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_sharesheet_activity_addtohomescreen": {
+        "description": "Fires when the user picks the Add to Home Screen action in the share sheet opened from the browsing menu. Only available on iOS 16.4 and later; earlier versions report m_sharesheet_activity_other",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

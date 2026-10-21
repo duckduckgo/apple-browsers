@@ -17,151 +17,212 @@
 //
 
 import Common
+import DDGError
+import FoundationExtensions
 import Foundation
 import Networking
+import os.log
 
-public struct GetSubscriptionFeaturesResponse: Decodable {
-    public let features: [Entitlement.ProductName]
+public struct GetCustomerPortalURLResponse: Codable, Equatable {
+    public let customerPortalUrl: String
 }
 
-public struct ConfirmPurchaseResponse: Decodable {
+public struct ConfirmPurchaseResponse: Codable, Equatable {
     public let email: String?
-    public let entitlements: [Entitlement]
-    public let subscription: PrivacyProSubscription
+    public let subscription: DuckDuckGoSubscription
 }
 
-public enum SubscriptionServiceError: Error {
-    case noCachedData
-    case apiError(APIServiceError)
+public struct GetSubscriptionTierFeaturesResponse: Codable {
+    public let features: [String: [TierFeature]]
+}
+
+public struct GetTierProductsResponse: Codable {
+    public let products: [TierProduct]
+}
+
+public struct TierProduct: Codable, Equatable {
+    public let productName: String
+    public let tier: TierName
+    public let regions: [String]
+    public let entitlements: [TierFeature]
+    public let billingCycles: [BillingCycle]
+}
+
+public struct BillingCycle: Codable, Equatable {
+    public let productId: String
+    public let period: String  // "Monthly", "Yearly"
+    public let price: String
+    public let currency: String
+}
+
+public enum SubscriptionEndpointServiceError: DDGError {
+    case noData
+    case invalidRequest
+    case invalidResponseCode(HTTPStatusCode)
+
+    public var description: String {
+        switch self {
+        case .noData: "No data returned from the server."
+        case .invalidRequest: "Invalid request."
+        case .invalidResponseCode(let code): "Invalid response code: \(code)"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.subscription.SubscriptionEndpointServiceError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .noData: 12300
+        case .invalidRequest: 12301
+        case .invalidResponseCode: 12302
+        }
+    }
 }
 
 public protocol SubscriptionEndpointService {
-    func updateCache(with subscription: PrivacyProSubscription)
-    func getSubscription(accessToken: String, cachePolicy: APICachePolicy) async -> Result<PrivacyProSubscription, SubscriptionServiceError>
-    func signOut()
-    func getProducts() async -> Result<[GetProductsItem], APIServiceError>
-    func getSubscriptionFeatures(for subscriptionID: String) async -> Result<GetSubscriptionFeaturesResponse, APIServiceError>
-    func getCustomerPortalURL(accessToken: String, externalID: String) async -> Result<GetCustomerPortalURLResponse, APIServiceError>
+
+    /// Fetches the subscription from the remote backend.
+    /// - Parameter accessToken: The user's access token for authentication
+    /// - Returns: The subscription as returned by the server
+    func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription
+
+    /// Fetches products using the new /api/v2/products endpoint with tier information.
+    /// - Parameters:
+    ///   - region: Optional region filter ("us", "row")
+    ///   - platform: Optional platform filter ("apple", "stripe")
+    /// - Returns: A response containing products with tier and entitlement information
+    func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
+
+    /// Fetches subscription features for multiple SKUs in a single API call.
+    /// This uses the new /api/v2/features endpoint that returns features with tier information.
+    /// - Parameter subscriptionIDs: Array of subscription identifiers (SKUs)
+    /// - Returns: A response containing features keyed by SKU, with tier information included
+    func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> GetSubscriptionTierFeaturesResponse
+    func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse
 
     /// Confirms a subscription purchase by validating the provided access token and signature with the backend service.
     ///
     /// This method sends the necessary data to the server to confirm the purchase,
-    /// and optionally includes additional parameters for customization.
+    /// and optionally includes experiment attribution.
     ///
     /// - Parameters:
     ///   - accessToken: A string representing the user's access token, used for authentication.
     ///   - signature: A string representing the purchase signature.
-    ///   - additionalParams: An optional dictionary of additional parameters to include in the request.
-    /// - Returns: A `Result` containing either a `ConfirmPurchaseResponse` object on success or an `APIServiceError` on failure.
-    func confirmPurchase(
-        accessToken: String,
-        signature: String,
-        additionalParams: [String: String]?
-    ) async -> Result<ConfirmPurchaseResponse, APIServiceError>
-}
-
-extension SubscriptionEndpointService {
-
-    public func getSubscription(accessToken: String) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
-        await getSubscription(accessToken: accessToken, cachePolicy: .returnCacheDataElseLoad)
-    }
+    ///   - experimentAttribution: Experiment attribution to include in the request.
+    /// - Returns: A `ConfirmPurchaseResponse` object on success
+    func confirmPurchase(accessToken: String,
+                         signature: String,
+                         experimentAttribution: PurchaseExperimentAttribution?) async throws -> ConfirmPurchaseResponse
 }
 
 /// Communicates with our backend
 public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
-    private let currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment
-    private let apiService: SubscriptionAPIService
-    private let subscriptionCache = UserDefaultsCache<PrivacyProSubscription>(key: UserDefaultsCacheKey.subscription,
-                                                                              settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
 
-    public init(currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment, apiService: SubscriptionAPIService) {
-        self.currentServiceEnvironment = currentServiceEnvironment
+    private let apiService: APIService
+    private let baseURL: URL
+
+    public init(apiService: APIService,
+                baseURL: URL) {
         self.apiService = apiService
+        self.baseURL = baseURL
     }
 
-    public init(currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment, userAgent: String) {
-        self.currentServiceEnvironment = currentServiceEnvironment
-        let baseURL = currentServiceEnvironment == .production ? URL(string: "https://subscriptions.duckduckgo.com/api")! : URL(string: "https://subscriptions-dev.duckduckgo.com/api")!
-        let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
-        self.apiService = DefaultSubscriptionAPIService(baseURL: baseURL, userAgent: userAgent, session: session)
-    }
+    // MARK: - Subscription
 
-    // MARK: - Subscription fetching with caching
+    public func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
 
-    private func getRemoteSubscription(accessToken: String) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
-
-        let result: Result<PrivacyProSubscription, APIServiceError> = await apiService.executeAPICall(method: "GET", endpoint: "subscription", headers: apiService.makeAuthorizationHeader(for: accessToken), body: nil)
-        switch result {
-        case .success(let subscriptionResponse):
-            updateCache(with: subscriptionResponse)
-            return .success(subscriptionResponse)
-        case .failure(let error):
-            return .failure(.apiError(error))
+        Logger.subscriptionEndpointService.log("Requesting subscription details")
+        guard let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: accessToken) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
         }
-    }
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
 
-    public func updateCache(with subscription: PrivacyProSubscription) {
-
-        let cachedSubscription = subscriptionCache.get()
-        if subscription != cachedSubscription {
-            subscriptionCache.set(subscription)
-            NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
-        }
-    }
-
-    public func clearSubscription() {
-        subscriptionCache.reset()
-        NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
-    }
-
-    public func getSubscription(accessToken: String, cachePolicy: APICachePolicy = .returnCacheDataElseLoad) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
-
-        switch cachePolicy {
-        case .reloadIgnoringLocalCacheData:
-            return await getRemoteSubscription(accessToken: accessToken)
-
-        case .returnCacheDataElseLoad:
-            if let cachedSubscription = subscriptionCache.get() {
-                return .success(cachedSubscription)
+        if statusCode.isSuccess {
+            let subscription: DuckDuckGoSubscription = try response.decodeBody()
+            Logger.subscriptionEndpointService.log("Subscription details retrieved successfully: \(subscription.debugDescription, privacy: .public)")
+            return subscription
+        } else {
+            if statusCode == .badRequest || statusCode == .notFound {
+                Logger.subscriptionEndpointService.log("No subscription found")
+                throw SubscriptionEndpointServiceError.noData
             } else {
-                return await getRemoteSubscription(accessToken: accessToken)
+                let bodyString: String = try response.decodeBody()
+                Logger.subscriptionEndpointService.log("(\(statusCode.description) Failed to retrieve Subscription details: \(bodyString, privacy: .public)")
+                throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
             }
         }
     }
 
-    public func signOut() {
-        subscriptionCache.reset()
+    // MARK: - Products
+
+    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+        guard let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, region: region, platform: platform) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
+        }
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
+
+        if statusCode.isSuccess {
+            Logger.subscriptionEndpointService.log("\(#function) request completed")
+            return try response.decodeBody()
+        } else {
+            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
+        }
     }
 
-    // MARK: -
+    // MARK: - Customer Portal
 
-    public func getProducts() async -> Result<[GetProductsItem], APIServiceError> {
-        await apiService.executeAPICall(method: "GET", endpoint: "products", headers: nil, body: nil)
+    public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse {
+        guard let request = SubscriptionRequest.getCustomerPortalURL(baseURL: baseURL, accessToken: accessToken, externalID: externalID) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
+        }
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
+        if statusCode.isSuccess {
+            Logger.subscriptionEndpointService.log("\(#function) request completed")
+            return try response.decodeBody()
+        } else {
+            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
+        }
     }
 
-    // MARK: -
+    // MARK: - Purchase Confirmation
 
-    public func getSubscriptionFeatures(for subscriptionID: String) async -> Result<GetSubscriptionFeaturesResponse, APIServiceError> {
-        await apiService.executeAPICall(method: "GET", endpoint: "products/\(subscriptionID)/features", headers: nil, body: nil)
+    public func confirmPurchase(accessToken: String,
+                                signature: String,
+                                experimentAttribution: PurchaseExperimentAttribution?) async throws -> ConfirmPurchaseResponse {
+        guard let request = SubscriptionRequest.confirmPurchase(baseURL: baseURL,
+                                                                accessToken: accessToken,
+                                                                signature: signature,
+                                                                experimentAttribution: experimentAttribution) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
+        }
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
+        if statusCode.isSuccess {
+            Logger.subscriptionEndpointService.log("\(#function) request completed")
+            return try response.decodeBody()
+        } else {
+            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
+        }
     }
 
-    // MARK: -
+    public func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> GetSubscriptionTierFeaturesResponse {
+        guard !subscriptionIDs.isEmpty else {
+            return GetSubscriptionTierFeaturesResponse(features: [:])
+        }
 
-    public func getCustomerPortalURL(accessToken: String, externalID: String) async -> Result<GetCustomerPortalURLResponse, APIServiceError> {
-        var headers = apiService.makeAuthorizationHeader(for: accessToken)
-        headers["externalAccountId"] = externalID
-        return await apiService.executeAPICall(method: "GET", endpoint: "checkout/portal", headers: headers, body: nil)
-    }
-
-    // MARK: -
-
-    public func confirmPurchase(accessToken: String, signature: String, additionalParams: [String: String]?) async -> Result<ConfirmPurchaseResponse, APIServiceError> {
-        let headers = apiService.makeAuthorizationHeader(for: accessToken)
-        let bodyDict = ["signedTransactionInfo": signature]
-
-        let finalBodyDict = bodyDict.merging(additionalParams ?? [:]) { (existing, _) in existing }
-
-        guard let bodyData = try? JSONEncoder().encode(finalBodyDict) else { return .failure(.encodingError) }
-        return await apiService.executeAPICall(method: "POST", endpoint: "purchase/confirm/apple", headers: headers, body: bodyData)
+        guard let request = SubscriptionRequest.subscriptionTierFeatures(baseURL: baseURL, subscriptionIDs: subscriptionIDs) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
+        }
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
+        if statusCode.isSuccess {
+            Logger.subscriptionEndpointService.log("\(#function) request completed for \(subscriptionIDs.count) SKUs")
+            return try response.decodeBody()
+        } else {
+            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
+        }
     }
 }

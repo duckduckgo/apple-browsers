@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -22,34 +22,90 @@ import PackageDescription
 
 let package = Package(
     name: "AIChat",
+    defaultLocalization: "en",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
             name: "AIChat",
             targets: ["AIChat"]
         ),
+        .library(
+            name: "AIChatTestingUtilities",
+            targets: ["AIChatTestingUtilities"]
+        ),
+        .library(
+            name: "AIChatDebugServer",
+            targets: ["AIChatDebugServer"]
+        ),
     ],
     dependencies: [
-        .package(path: "../DesignResourcesKit"),
-        .package(path: "../DesignResourcesKitIcons")
+        .package(path: "../Infrastructure/DesignResourcesKit"),
+        .package(path: "../Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../DDGError"),
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
+        .package(path: "../BrowserServicesKit"),
+        .package(path: "../Networking"),
+        .package(path: "../Infrastructure/SystemFrameworksExtensions"),
+        .package(path: "../DebugServer"),
+        .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0")
     ],
     targets: [
         .target(
             name: "AIChat",
             dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
                 "DesignResourcesKit",
-                "DesignResourcesKitIcons"
+                "DesignResourcesKitIcons",
+                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "DDGSync", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "SecureStorage", package: "BrowserServicesKit"),
+                .product(name: "UserScript", package: "BrowserServicesKit"),
+                .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
+                .product(name: "WKAbstractions", package: "BrowserServicesKit"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
+                .product(name: "DDGSyncCrypto", package: "sync_crypto")
             ],
             resources: [
-                .process("Resources/Assets.xcassets")
+                .process("Resources")
+            ]
+        ),
+        .target(
+            name: "AIChatTestingUtilities",
+            dependencies: [
+                "AIChat"
+            ]
+        ),
+        .target(
+            name: "AIChatDebugServer",
+            dependencies: [
+                "AIChat",
+                "DebugServer",
+                .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
             ]
         ),
         .testTarget(
             name: "AIChatTests",
-            dependencies: ["AIChat"]
+            dependencies: [
+                "AIChat",
+                "AIChatTestingUtilities",
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "SecureStorage", package: "BrowserServicesKit"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
+                .product(name: "WKAbstractions", package: "BrowserServicesKit")
+            ]
         )
     ]
 )

@@ -16,10 +16,19 @@
 //  limitations under the License.
 //
 
+import Common
+import FoundationExtensions
+import History
+import HistoryView
+import PrivacyConfig
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
+    var windowControllersManager: WindowControllersManagerMock!
+    var fireCoordinator: FireCoordinator!
     var viewModel: OnboardingFireButtonDialogViewModel!
     var reporter: CapturingOnboardingPixelReporter!
     var onGotItPressedCalled = false
@@ -42,7 +51,32 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         }
 
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+
+        windowControllersManager = WindowControllersManagerMock()
+
+        let fireproofDomains = MockFireproofDomains()
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
+
+        let faviconManager = FaviconManagerMock()
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor(),
+                                                              fireproofDomains: fireproofDomains,
+                                                              faviconManager: faviconManager,
+                                                              windowControllersManager: windowControllersManager,
+                                                              featureFlagger: featureFlagger,
+                                                              aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+
+        fireCoordinator = FireCoordinator(tld: TLD(),
+                                          featureFlagger: featureFlagger,
+                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          visualizeFireAnimationDecider: nil,
+                                          onboardingContextualDialogsManager: nil,
+                                          fireproofDomains: fireproofDomains,
+                                          faviconManagement: faviconManager,
+                                          windowControllersManager: windowControllersManager,
+                                          dataClearingPreferences: dataClearingPreferences,
+                                          pixelFiring: nil,
+                                          historyProvider: MockHistoryViewDataProvider())
         viewModel = OnboardingFireButtonDialogViewModel(
             onboardingPixelReporter: reporter,
             fireCoordinator: fireCoordinator,
@@ -56,7 +90,11 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     override func tearDownWithError() throws {
         reporter = nil
         viewModel = nil
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
+        windowControllersManager = nil
+        fireCoordinator = nil
+        onGotItPressed = nil
+        onDismiss = nil
+        onFireButtonPressed = nil
     }
 
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
@@ -67,29 +105,34 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
-        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+    func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() async throws {
         let mainViewController = MainViewController(
-            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
-            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
-            aiChatSidebarProvider: AIChatSidebarProvider(),
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+            aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()),
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
+        let sheetPresented = expectation(description: "Fire dialog presentation completed")
+        window.onBeginSheet = { sheetPresented.fulfill() }
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
-            popUp: false,
-            fireViewModel: fireCoordinator.fireViewModel
+            fireViewModel: fireCoordinator.fireViewModel,
+            themeManager: MockThemeManager()
         )
         mainWindowController.window = window
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
+        windowControllersManager.mainWindowControllers = [mainWindowController]
 
         window.isVisible = true
+
         viewModel.tryFireButton()
+        await fulfillment(of: [sheetPresented], timeout: 5)
 
         XCTAssertTrue(onFireButtonPressedCalled)
         XCTAssertTrue(reporter.measureFireButtonTryItCalled)
+
+        windowControllersManager.mainWindowControllers = []
     }
 
 }

@@ -20,6 +20,8 @@ import XCTest
 import BrowserServicesKit
 import DuckPlayer
 import BrowserServicesKitTestsUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class DuckPlayerContingencyHandlerTests: XCTestCase {
 
@@ -253,18 +255,6 @@ private final class MockEmbeddedDataProvider: EmbeddedDataProvider {
     init(data: Data, etag: String) {
         embeddedData = data
         embeddedDataEtag = etag
-    }
-}
-
-private final class MockDomainsProtectionStore: DomainsProtectionStore {
-    var unprotectedDomains = Set<String>()
-
-    func disableProtection(forDomain domain: String) {
-        unprotectedDomains.insert(domain)
-    }
-
-    func enableProtection(forDomain domain: String) {
-        unprotectedDomains.remove(domain)
     }
 }
 

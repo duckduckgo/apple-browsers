@@ -17,12 +17,12 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Common
-import FeatureFlags
+import FoundationExtensions
 import Foundation
 import History
 import os.log
+import PrivacyConfig
 
 /**
  * This protocol describes a data source (history provider) for `HistoryGroupingProvider`.
@@ -41,16 +41,13 @@ extension HistoryCoordinator: HistoryGroupingDataSource {}
 /**
  * This class is responsible for grouping history visits for History Menu.
  *
- * When `historyView` feature flag is enabled, visits are deduplicated
- * to only have the latest visit per URL per day.
+ * Visits are deduplicated to only have the latest visit per URL per day.
  */
 @MainActor
 final class HistoryGroupingProvider {
-    private let featureFlagger: FeatureFlagger
     private(set) weak var dataSource: HistoryGroupingDataSource?
 
-    init(dataSource: HistoryGroupingDataSource, featureFlagger: FeatureFlagger? = nil) {
-        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
+    init(dataSource: HistoryGroupingDataSource) {
         self.dataSource = dataSource
     }
 
@@ -58,7 +55,7 @@ final class HistoryGroupingProvider {
      * Returns visits for a given day.
      */
     func getRecentVisits(maxCount: Int) -> [Visit] {
-        removeDuplicatesIfNeeded(from: getSortedArrayOfVisits())
+        removeDuplicates(from: getSortedArrayOfVisits())
             .prefix(maxCount)
             .filter { Calendar.current.isDateInToday($0.date) }
     }
@@ -66,22 +63,16 @@ final class HistoryGroupingProvider {
     /**
      * Returns history visits bucketed per day.
      */
-    func getVisitGroupings(removingDuplicates shouldRemoveDuplicates: Bool = true) -> [HistoryGrouping] {
+    func getVisitGroupings() -> [HistoryGrouping] {
         Dictionary(grouping: getSortedArrayOfVisits(), by: \.date.startOfDay)
             .map { date, sortedVisits in
-                let visits = shouldRemoveDuplicates ? removeDuplicatesIfNeeded(from: sortedVisits) : sortedVisits
+                let visits = removeDuplicates(from: sortedVisits)
                 return HistoryGrouping(date: date, visits: visits)
             }
             .sorted { $0.date > $1.date }
     }
 
-    private func removeDuplicatesIfNeeded(from sortedVisits: [Visit]) -> [Visit] {
-        // History View introduces visits deduplication to declutter history.
-        // We don't want to release it before History View, so we're
-        // only deduplicating visits if the feature flag is on.
-        guard featureFlagger.isFeatureOn(.historyView) else {
-            return sortedVisits
-        }
+    private func removeDuplicates(from sortedVisits: [Visit]) -> [Visit] {
         // It's so simple because visits array is sorted by timestamp, so removing duplicates would
         // remove items with older timestamps (as proven by unit tests).
         return sortedVisits.removingDuplicates(byKey: \.historyEntry?.url)

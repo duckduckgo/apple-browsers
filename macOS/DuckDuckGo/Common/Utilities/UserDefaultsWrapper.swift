@@ -17,31 +17,21 @@
 //
 
 import AppKit
-import Foundation
 import AppKitExtensions
 import Common
+import FoundationExtensions
+import Foundation
+import Persistence
 
 extension UserDefaults {
     /// The app group's shared UserDefaults
     static let netP = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .netP))!
-    static let dbp = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .dbp))!
     static let subs = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .subs))!
     static let appConfiguration = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))!
-}
 
-public struct UserDefaultsWrapperKey: RawRepresentable {
-    public let rawValue: String
-    public init(rawValue: String) {
-        self.rawValue = rawValue
-    }
-}
+    @available(*, deprecated, message: "Use `@Storage protocol SettingsPrototocolName: KeyValueStoring {…}` instead" )
+    enum Key: String, CaseIterable, StorageKeyDescribing {
 
-@propertyWrapper
-public struct UserDefaultsWrapper<T> {
-
-    public typealias DefaultsKey = UserDefaultsWrapperKey
-
-    public enum Key: String, CaseIterable {
         /// system setting defining window title double-click action
         case appleActionOnDoubleClick = "AppleActionOnDoubleClick"
 
@@ -50,13 +40,12 @@ public struct UserDefaultsWrapper<T> {
         case unprotectedDomains = "com.duckduckgo.contentblocker.unprotectedDomains"
         case contentBlockingRulesCache = "com.duckduckgo.contentblocker.rules.cache"
 
-        case defaultBrowserDismissed = "browser.default.dismissed"
-
         case spellingCheckEnabledOnce = "spelling.check.enabled.once"
         case grammarCheckEnabledOnce = "grammar.check.enabled.once"
 
         case loginDetectionEnabled = "fireproofing.login-detection-enabled"
         case autoClearEnabled = "preferences.auto-clear-enabled"
+        case autoClearAIChatHistoryEnabled = "preferences.auto-clear-ai-chat-history-enabled"
         case warnBeforeClearingEnabled = "preferences.warn-before-clearing-enabled"
         case fireAnimationEnabled = "preferences.fire-animation-enabled"
         case gpcEnabled = "preferences.gpc-enabled"
@@ -65,6 +54,8 @@ public struct UserDefaultsWrapper<T> {
         case alwaysRequestDownloadLocationKey = "preferences.download-location.always-request"
         case openDownloadsPopupOnCompletionKey = "preferences.downloads.open.on.completion"
         case autoconsentEnabled = "preferences.autoconsent-enabled"
+        case cookiePopupPreference = "preferences.cookie-popup.preference"
+        case didMigrateCookiePopupPreference = "preferences.cookie-popup.preference.did-migrate"
         case duckPlayerMode = "preferences.duck-player"
         case youtubeOverlayInteracted = "preferences.youtube-overlay-interacted"
         case youtubeOverlayButtonsUsed = "preferences.youtube-overlay-user-used-buttons"
@@ -78,10 +69,10 @@ public struct UserDefaultsWrapper<T> {
         case askToSavePaymentMethods = "preferences.ask-to-save.payment-methods"
         case autolockLocksFormFilling = "preferences.lock-autofill-form-fill"
         case autofillDebugScriptEnabled = "preferences.enable-autofill-debug-script"
+        case contentScopeDebugStateEnabled = "preferences.enable-content-scope-debug-state"
 
         case saveAsPreferredFileType = "saveAs.selected.filetype"
 
-        case lastCrashReportCheckDate = "last.crash.report.check.date"
         case didCrashDuringCrashHandlersSetUp = "browser.didCrashDuringCrashHandlersSetUp"
 
         case fireInfoPresentedOnce = "fire.info.presented.once"
@@ -91,8 +82,13 @@ public struct UserDefaultsWrapper<T> {
         case restorePreviousSession = "preferences.startup.restore-previous-session"
         case launchToCustomHomePage = "preferences.startup.launch-to-custom-home-page"
         case customHomePageURL = "preferences.startup.customHomePageURL"
-        case currentThemeName = "com.duckduckgo.macos.currentThemeNameKey"
+        case openFireWindowByDefault = "preferences.startup.open-fire-window-by-default"
+        case warnBeforeQuitting = "preferences.general.warn-before-quitting"
+        case warnBeforeClosingPinnedTabs = "preferences.general.warn-before-closing-pinned-tabs"
+        case themeAppearance = "com.duckduckgo.macos.currentThemeNameKey"
+        case themeName = "preferences.appearance.theme-name"
         case showFullURL = "preferences.appearance.show-full-url"
+        case syncAppIconWithTheme = "preferences.appearance.sync-app-icon-with-theme"
         case showAutocompleteSuggestions = "preferences.appearance.show-autocomplete-suggestions"
         case preferNewTabsToWindows = "preferences.tabs.prefer-new-tabs-to-windows"
         case switchToNewTabWhenOpened = "preferences.tabs.switch-to-new-tab-when-opened"
@@ -126,7 +122,6 @@ public struct UserDefaultsWrapper<T> {
         // Home Page
         case homePageShowPagesOnHover = "home.page.show.pages.on.hover"
         case homePageShowAllFavorites = "home.page.show.all.favorites"
-        case homePageShowAllFeatures = "home.page.show.all.features"
         case homePageShowMakeDefault = "home.page.show.make.default"
         case homePageShowAddToDock = "home.page.show.add.to.dock"
         case homePageShowImport = "home.page.show.import"
@@ -142,6 +137,8 @@ public struct UserDefaultsWrapper<T> {
         case continueSetUpCardsClosed = "home.page.contiune.setup.cards.closed"
         case homePageIsSearchBarVisible = "home.page.is.search.bar.visible"
         case homePageIsFirstSession = "home.page.is.first.session"
+        case homePageShowSubscription = "home.page.show.subscription"
+        case homePageUserHadSubscription = "home.page.user.had.subscription"
         case homePageDidShowSettingsOnboarding = "home.page.did.show.settings.onboarding"
         case homePageUserBackgroundImages = "home.page.user.background.images"
         case homePageCustomBackground = "home.page.custom.background"
@@ -173,7 +170,6 @@ public struct UserDefaultsWrapper<T> {
         case loggingCategories = "logging.categories"
 
         case firstLaunchDate = "first.app.launch.date"
-        case customConfigurationUrl = "custom.configuration.url"
 
         case lastRemoteMessagingRefreshDate = "last.remote.messaging.refresh.date"
 
@@ -190,14 +186,10 @@ public struct UserDefaultsWrapper<T> {
         // ---
         // Please note that shared defaults MUST have a name that matches exactly their value,
         // or else KVO will just not work as of 2023-08-07
-
+        case hadVPNEntitlements = "hadVPNEntitlements"
         case networkProtectionOnboardingStatusRawValue = "networkProtectionOnboardingStatusRawValue"
-
-        // Updates
-        case automaticUpdates = "updates.automatic"
-        case pendingUpdateShown = "pending.update.shown"
-        case pendingUpdateSince = "pending.update.since"
-        case updateValidityStartDate = "update.validity.start.date"
+        case vpnConnectionWideEventBrowserStartTime = "vpnConnectionWideEventBrowserStartTime"
+        case vpnConnectionWideEventOverallStartTime = "vpnConnectionWideEventOverallStartTime"
 
         // Experiments
         case pixelExperimentInstalled = "pixel.experiment.installed"
@@ -206,19 +198,19 @@ public struct UserDefaultsWrapper<T> {
         case pixelExperimentFiredPixels = "pixel.experiment.pixels.fired"
         case campaignVariant = "campaign.variant"
 
-        // Updates
-        case previousAppVersion = "previous.app.version"
-        case previousBuild = "previous.build"
-
         // Sync
 
         case syncEnvironment = "sync.environment"
         case favoritesDisplayMode = "sync.favorites-display-mode"
         case syncBookmarksPaused = "sync.bookmarks-paused"
         case syncCredentialsPaused = "sync.credentials-paused"
+        case syncCreditCardsPaused = "sync.credit-cards-paused"
+        case syncIdentitiesPaused = "sync.identities-paused"
         case syncIsPaused = "sync.paused"
         case syncBookmarksPausedErrorDisplayed = "sync.bookmarks-paused-error-displayed"
         case syncCredentialsPausedErrorDisplayed = "sync.credentials-paused-error-displayed"
+        case syncCreditCardsPausedErrorDisplayed = "sync.credit-cards-paused-error-displayed"
+        case syncIdentitiesPausedErrorDisplayed = "sync.identities-paused-error-displayed"
         case syncInvalidLoginPausedErrorDisplayed = "sync.invalid-login-paused-error-displayed"
         case syncIsFaviconsFetcherEnabled = "sync.is-favicons-fetcher-enabled"
         case syncIsEligibleForFaviconsFetcherOnboarding = "sync.is-eligible-for-favicons-fetcher-onboarding"
@@ -231,8 +223,8 @@ public struct UserDefaultsWrapper<T> {
         case syncCurrentAllPausedError = "sync.current-all-paused-error"
         case syncCurrentBookmarksPausedError = "sync.current-bookmarks-paused-error"
         case syncCurrentCredentialsPausedError = "sync.current-credentials-paused-error"
-        case syncPromoBookmarksDismissed = "sync.promotion-bookmarks-dismissed"
-        case syncPromoPasswordsDismissed = "sync.promotion-passwords-dismissed"
+        case syncCurrentCreditCardsPausedError = "sync.current-credit-cards-paused-error"
+        case syncCurrentIdentitiesPausedError = "sync.current-identities-paused-error"
 
         // Subscription
 
@@ -247,11 +239,14 @@ public struct UserDefaultsWrapper<T> {
         case lastBrokenSiteToastShownDate = "brokenSitePrompt.last-broken-site-toast-shown-date"
         case toastDismissStreakCounter = "brokenSitePrompt.toast-dismiss-streak-counter"
 
-        // Web Extensions
-        case webExtensionPathsCache = "com.duckduckgo.web.extension.paths.cache"
-
         // SAD/ATT Debug
-        case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
+        case debugSetDefaultAndAddToDockPromptInstallDateKey = "com.duckduckgo.debug.setDefaultAndAddToDockPromptInstallDate"
+
+        // Win-back Offer Debug
+        case debugWinBackOfferSimulatedTodayDate = "com.duckduckgo.debug.winBackOfferSimulatedTodayDate"
+
+        // First Quit Tracking
+        case hasQuitAppBefore = "com.duckduckgo.app.has.quit.before"
     }
 
     enum RemovedKeys: String, CaseIterable {
@@ -269,6 +264,15 @@ public struct UserDefaultsWrapper<T> {
         case vpnRedditWorkaroundInstalled = "com.duckduckgo.ios.vpn.workaroundInstalled"
     }
 
+}
+
+@available(*, deprecated, message: "Use KeyedStoring pattern instead - see UserDefaultsKeys for migration")
+@propertyWrapper
+struct UserDefaultsWrapper<T> {
+
+    typealias DefaultsKey = UserDefaults.Key
+    typealias Key = DefaultsKey
+
     private let key: DefaultsKey
     private let getter: (Any?) -> T
     private let setter: (UserDefaultsWrapper, T) -> Void
@@ -280,7 +284,7 @@ public struct UserDefaultsWrapper<T> {
     }
 
     static var sharedDefaults: UserDefaults {
-#if DEBUG && !(NETP_SYSTEM_EXTENSION && NETWORK_EXTENSION) // Avoid looking up special user defaults when running inside the system extension
+#if DEBUG
         if case .normal = AppVersion.runType {
             return .standard
         } else {
@@ -372,23 +376,6 @@ public struct UserDefaultsWrapper<T> {
         }
     }
 
-    @_disfavoredOverload
-    public init(key: Key, defaultValue: T, defaults: UserDefaults? = nil) {
-        self.init(key: .init(rawValue: key.rawValue), defaultValue: defaultValue, defaults: defaults)
-    }
-
-    public init<Wrapped>(key: Key, defaults: UserDefaults? = nil) where T == Wrapped? {
-        self.init(key: .init(rawValue: key.rawValue), defaults: defaults)
-    }
-
-    public init<RawValue>(key: Key, defaultValue: T, defaults: UserDefaults? = nil) where T: RawRepresentable<RawValue> {
-        self.init(key: .init(rawValue: key.rawValue), defaultValue: defaultValue, defaults: defaults)
-    }
-
-    public init<Wrapped, RawValue>(key: Key, defaults: UserDefaults? = nil) where T == Wrapped?, Wrapped: RawRepresentable<RawValue> {
-        self.init(key: .init(rawValue: key.rawValue), defaults: defaults)
-    }
-
     public var wrappedValue: T {
         get {
             let storedValue = defaults.object(forKey: key.rawValue)
@@ -401,14 +388,14 @@ public struct UserDefaultsWrapper<T> {
 
     static func clearAll() {
         let defaults = sharedDefaults
-        Key.allCases.forEach { key in
+        DefaultsKey.allCases.forEach { key in
             defaults.removeObject(forKey: key.rawValue)
         }
     }
 
     static func clearRemovedKeys() {
         let defaults = sharedDefaults
-        RemovedKeys.allCases.forEach { key in
+        UserDefaults.RemovedKeys.allCases.forEach { key in
             defaults.removeObject(forKey: key.rawValue)
         }
     }
@@ -420,9 +407,6 @@ public struct UserDefaultsWrapper<T> {
 }
 
 extension UserDefaultsWrapper where T == Any {
-    static func clear(_ key: Key) {
-        sharedDefaults.removeObject(forKey: key.rawValue)
-    }
     static func clear(_ key: DefaultsKey) {
         sharedDefaults.removeObject(forKey: key.rawValue)
     }

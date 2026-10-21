@@ -17,13 +17,21 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import Foundation
+import Persistence
 import PixelKit
+import PrivacyConfig
 
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.
 struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
+
+    // Settings for KeepSession subfeature
+    struct KeepSessionSettings: Codable {
+        let sessionTimeoutMinutes: Int
+        static let defaultSessionTimeoutInMinutes: Int = 60
+    }
+
     enum SettingsValue: String {
         case cookieName = "onboardingCookieName"
         case cookieDomain = "onboardingCookieDomain"
@@ -43,15 +51,17 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let debugURLSettings: AIChatDebugURLSettingsRepresentable
+    private let debugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
     private var settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-         debugURLSettings: AIChatDebugURLSettingsRepresentable = AIChatDebugURLSettings()) {
+    init(
+        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+        debugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil
+    ) {
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.debugURLSettings = debugURLSettings
+        self.debugURLSettings = if let debugURLSettings { debugURLSettings } else { UserDefaults.standard.keyedStoring() }
     }
 
     // MARK: - Public
@@ -79,6 +89,10 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .aiChat)
     }
 
+    var sessionTimeoutMinutes: Int {
+        keepSessionSettings?.sessionTimeoutMinutes ?? KeepSessionSettings.defaultSessionTimeoutInMinutes
+    }
+
     // MARK: - Private
 
     private func getSettingsData(_ value: SettingsValue) -> String {
@@ -88,5 +102,20 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
             PixelKit.fire(AIChatPixel.aichatNoRemoteSettingsFound(value), frequency: .dailyAndCount, includeAppVersionParameter: true)
             return value.defaultValue
         }
+    }
+
+    private var keepSessionSettings: KeepSessionSettings? {
+        let decoder = JSONDecoder()
+
+        if let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.keepSession),
+           let jsonData = settingsJSON.data(using: .utf8) {
+            do {
+                let settings = try decoder.decode(KeepSessionSettings.self, from: jsonData)
+                return settings
+            } catch {
+                return nil
+            }
+        }
+        return nil
     }
 }

@@ -19,6 +19,7 @@
 import Bookmarks
 import CoreData
 import Persistence
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

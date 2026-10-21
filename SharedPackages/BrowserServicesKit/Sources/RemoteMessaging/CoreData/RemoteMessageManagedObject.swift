@@ -30,10 +30,13 @@ public class RemoteMessageManagedObject: NSManagedObject {
         return NSEntityDescription.entity(forEntityName: "RemoteMessageManagedObject", in: context)!
     }
 
+    @NSManaged public var firstShownDate: Date?
     @NSManaged public var id: String?
+    @NSManaged public var impressionCount: Int64
     @NSManaged public var message: String?
     @NSManaged public var shown: Bool
     @NSManaged public var status: NSNumber?
+    @NSManaged public var surfaces: NSNumber?
 
     public convenience init(context moc: NSManagedObjectContext) {
         self.init(entity: RemoteMessageManagedObject.entity(in: moc), insertInto: moc)

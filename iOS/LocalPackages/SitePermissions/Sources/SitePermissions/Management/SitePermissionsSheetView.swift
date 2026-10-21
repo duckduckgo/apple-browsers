@@ -1,0 +1,324 @@
+//
+//  SitePermissionsSheetView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import MetricBuilder
+import SwiftUI
+import UIComponents
+import UIKit
+
+public struct SitePermissionsSheetView: View {
+
+    private enum Constants {
+        static let horizontalPadding: CGFloat = 16
+        // 17pt grabber area + 20pt title gap, minus the 12pt inset from centering the title beside the 44pt close button.
+        static let topPadding: CGFloat = 25
+        static let headerSpacing: CGFloat = 12
+        static let bottomPadding: CGFloat = 12
+        static let closeButtonTapTarget: CGFloat = 44
+        static let rowHorizontalInset: CGFloat = 16
+        static let rowTrailingInset: CGFloat = 22
+        static let rowVerticalInset: CGFloat = 14
+        static let iconSpacing: CGFloat = 8
+        static let copySpacing: CGFloat = 8
+    }
+
+    private struct SheetCloseButtonStyle: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            CloseButtonStyle().makeBody(configuration: configuration)
+                .frame(width: Constants.closeButtonTapTarget, height: Constants.closeButtonTapTarget)
+                .contentShape(Rectangle())
+        }
+    }
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ObservedObject private var viewModel: SitePermissionsSheetViewModel
+
+    public init(viewModel: SitePermissionsSheetViewModel) {
+        self.viewModel = viewModel
+    }
+
+    public var body: some View {
+        Group {
+            if #available(iOS 16.0, *) {
+                ViewThatFits(in: .vertical) {
+                    sheetContent
+                    ScrollView { sheetContent }
+                }
+            } else if dynamicTypeSize.isAccessibilitySize {
+                ScrollView { sheetContent }
+            } else {
+                sheetContent
+            }
+        }
+        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
+    }
+
+    private var sheetContent: some View {
+        VStack(alignment: .leading, spacing: Constants.headerSpacing) {
+            header
+
+            permissionSections
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.top, Constants.topPadding)
+        .padding(.bottom, Constants.bottomPadding)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("SitePermissions.Sheet")
+    }
+
+    private var permissionSections: some View {
+        VStack(alignment: .leading, spacing: SheetMetrics.contentSpacing) {
+            if !viewModel.rows.isEmpty {
+                permissionRows
+            }
+
+            switch viewModel.state {
+            case .permissionsOnly:
+                VStack(alignment: .leading, spacing: Constants.copySpacing) {
+                    actionCard(includesRemove: true, includesSystemSettings: false)
+                    if !viewModel.rows.isEmpty {
+                        if viewModel.hasCommittedChanges {
+                            reloadCaption
+                        } else {
+                            reloadCaption
+                                .hidden()
+                                .accessibilityHidden(true)
+                        }
+                    }
+                }
+            case .permissionsAndReminder:
+                VStack(alignment: .leading, spacing: Constants.copySpacing) {
+                    actionCard(includesRemove: true, includesSystemSettings: true)
+                    reminder
+                }
+            case .reminderOnly:
+                VStack(alignment: .leading, spacing: Constants.copySpacing) {
+                    actionCard(includesRemove: false, includesSystemSettings: true)
+                    reminder
+                }
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 0) {
+                let title = viewModel.title
+                let domain = viewModel.site.host
+                if let domainRange = title.range(of: domain) {
+                    Text(String(title[..<domainRange.lowerBound]))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(domain)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Text(String(title[domainRange.upperBound...]))
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(title)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            .daxHeadline()
+            .padding(.leading, Constants.horizontalPadding)
+            .padding(.trailing, Constants.horizontalPadding / 2)
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+            .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(viewModel.title)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("SitePermissions.Sheet.Title")
+
+            Button(action: viewModel.dismiss) {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+            }
+            .buttonStyle(SheetCloseButtonStyle())
+            // Align the 32pt circle with the card edge while preserving its 44pt tap target.
+            .padding(.trailing, -6)
+            .accessibilityLabel(UserText.PermissionManagement.close)
+            .accessibilityIdentifier("SitePermissions.Sheet.Close")
+        }
+    }
+
+    private var permissionRows: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(viewModel.rows.enumerated()), id: \.element.id) { index, row in
+                if index > 0 {
+                    Color(designSystemColor: .lines)
+                        .frame(height: 1)
+                        .padding(.leading, Constants.rowHorizontalInset + 24 + Constants.iconSpacing)
+                        .padding(.trailing, Constants.rowHorizontalInset)
+                }
+                permissionRow(row)
+            }
+        }
+        .background(Color(designSystemColor: .surfaceTertiary))
+        .clipShape(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius, style: .continuous))
+    }
+
+    private func permissionRow(_ row: SitePermissionsSheetViewModel.Row) -> some View {
+        HStack(spacing: 8) {
+            CardItem(
+                icon: CardItemIcon(position: .leadingColumn,
+                                   visual: .image(permissionIcon(for: row).renderingMode(.template)),
+                                   size: .size24,
+                                   spacing: Constants.iconSpacing),
+                title: CardItemText(row.title, font: .bodyRegular)
+            )
+            .foregroundColor(iconColor(for: row))
+            .padding(.vertical, Constants.rowVerticalInset)
+            .accessibilityHidden(true)
+
+            Menu {
+                Picker(row.title, selection: Binding(
+                    get: { row.selectedOption },
+                    set: { viewModel.select($0, for: row.permissionType) })) {
+                    ForEach(row.options, id: \.self) { option in
+                        Text(UserText.PermissionManagement.title(for: option))
+                            .tag(option)
+                            .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized).\(option.rawValue)")
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } label: {
+                HStack(spacing: 8) {
+                    ZStack(alignment: .trailing) {
+                        ForEach(row.options, id: \.self) { option in
+                            Text(UserText.PermissionManagement.title(for: option)).hidden()
+                        }
+                        Text(row.stateText)
+                    }
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(designSystemColor: .iconsTertiary))
+                        .accessibilityHidden(true)
+                }
+                .padding(.vertical, Constants.rowVerticalInset)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .simultaneousGesture(TapGesture().onEnded { _ in viewModel.beginEditing() })
+            .accessibilityLabel(row.title)
+            .accessibilityValue(row.accessibilityValue)
+            .accessibilityIdentifier("SitePermissions.Sheet.\(row.permissionType.rawValue.capitalized)")
+        }
+        .padding(.leading, Constants.rowHorizontalInset)
+        .padding(.trailing, Constants.rowTrailingInset)
+    }
+
+    private var reloadCaption: some View {
+        Text(UserText.PermissionManagement.reloadCaption)
+            .daxFootnoteRegular()
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, Constants.rowHorizontalInset)
+            .accessibilityIdentifier("SitePermissions.Sheet.ReloadCaption")
+    }
+
+    private func actionCard(includesRemove: Bool, includesSystemSettings: Bool) -> some View {
+        let items = actionItems(includesRemove: includesRemove, includesSystemSettings: includesSystemSettings)
+        return CardItemList(
+            items,
+            dividerLeadingInset: 0,
+            contentInset: .init(horizontal: Constants.rowHorizontalInset, vertical: Constants.rowVerticalInset),
+            accessibilityIdentifier: { index in
+                includesRemove && index == 0 ? "SitePermissions.Sheet.RemovePermissions" : "SitePermissions.Sheet.GoToSystemSettings"
+            },
+            onSelect: { index in
+                guard items.indices.contains(index) else { return nil }
+                if includesRemove, index == 0 {
+                    return viewModel.removePermissions
+                }
+                return viewModel.openSystemSettings
+            }
+        )
+        .background(Color(designSystemColor: .surfaceTertiary))
+        .clipShape(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("SitePermissions.Sheet.Actions")
+    }
+
+    private func actionItems(includesRemove: Bool, includesSystemSettings: Bool) -> [CardItem] {
+        var items = [CardItem]()
+        if includesRemove {
+            items.append(CardItem(
+                title: CardItemText(UserText.PermissionManagement.removePermissions,
+                                    font: .bodyRegular,
+                                    color: Color(designSystemColor: .accentPrimary))))
+        }
+        if includesSystemSettings {
+            items.append(CardItem(
+                title: CardItemText(UserText.PermissionManagement.goToSystemSettings,
+                                    font: .bodyRegular,
+                                    color: Color(designSystemColor: .accentPrimary)),
+                trailing: .custom(Image(uiImage: DesignSystemImages.Glyphs.Size24.openIn)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .accentPrimary)))))
+        }
+        return items
+    }
+
+    @ViewBuilder
+    private var reminder: some View {
+        if let reminderText = viewModel.reminderText {
+            Text(reminderText)
+                .daxFootnoteRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, Constants.rowHorizontalInset)
+                .accessibilityIdentifier("SitePermissions.Sheet.Reminder")
+        }
+    }
+
+    private func permissionIcon(for row: SitePermissionsSheetViewModel.Row) -> Image {
+        let image: UIImage
+        switch (row.permissionType, row.iconState) {
+        case (.camera, .outline):
+            image = DesignSystemImages.Glyphs.Size24.video
+        case (.camera, .blocked):
+            image = DesignSystemImages.Glyphs.Size24.videoBlocked
+        case (.camera, .solid), (.camera, .inUse):
+            image = DesignSystemImages.Glyphs.Size24.videoSolid
+        case (.microphone, .outline):
+            image = DesignSystemImages.Glyphs.Size24.microphone
+        case (.microphone, .blocked):
+            image = DesignSystemImages.Glyphs.Size24.microphoneBlocked
+        case (.microphone, .solid), (.microphone, .inUse):
+            image = DesignSystemImages.Glyphs.Size24.microphoneSolid
+        case (.location, .outline):
+            image = DesignSystemImages.Glyphs.Size24.location
+        case (.location, .blocked):
+            image = DesignSystemImages.Glyphs.Size24.locationBlocked
+        case (.location, .solid), (.location, .inUse):
+            image = DesignSystemImages.Glyphs.Size24.locationSolid
+        }
+        return Image(uiImage: image)
+    }
+
+    private func iconColor(for row: SitePermissionsSheetViewModel.Row) -> Color {
+        Color(designSystemColor: row.iconState == .inUse ? .buttonsDeleteGhostText : .icons)
+    }
+}

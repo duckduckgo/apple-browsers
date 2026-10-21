@@ -51,7 +51,7 @@ final class TunnelControllerIPCService {
         }
     }
 
-    enum UDSError: PixelKitEventV2 {
+    enum UDSError: PixelKit.Event {
         case udsServerStartFailure(_ error: Error)
 
         var name: String {
@@ -61,15 +61,15 @@ final class TunnelControllerIPCService {
             }
         }
 
-        var error: Error? {
-            switch self {
-            case .udsServerStartFailure(let error):
-                return error
-            }
-        }
-
         var parameters: [String: String]? {
             return nil
+        }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .udsServerStartFailure:
+                return [.pixelSource]
+            }
         }
     }
 
@@ -96,6 +96,7 @@ final class TunnelControllerIPCService {
         subscribeToServerChanges()
         subscribeToKnownFailureUpdates()
         subscribeToDataVolumeUpdates()
+        subscribeToVPNEnabledChanges()
 
         server.serverDelegate = self
     }
@@ -168,6 +169,15 @@ final class TunnelControllerIPCService {
             }
             .store(in: &cancellables)
     }
+
+    private func subscribeToVPNEnabledChanges() {
+        statusReporter.vpnEnabledObserver.publisher
+            .subscribe(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                self?.server.vpnEnableChanged(isEnabled)
+            }
+            .store(in: &cancellables)
+    }
 }
 
 // MARK: - Requests from the client
@@ -181,6 +191,7 @@ extension TunnelControllerIPCService: XPCServerInterface {
     func register(version: String, bundlePath: String, completion: @escaping (Error?) -> Void) {
         server.serverInfoChanged(statusReporter.serverInfoObserver.recentValue)
         server.statusChanged(statusReporter.statusObserver.recentValue)
+        server.vpnEnableChanged(statusReporter.vpnEnabledObserver.isVPNEnabled)
         if self.version != version {
             let error = TunnelControllerIPCService.IPCError.versionMismatched
             NetworkProtectionKnownFailureStore().lastKnownFailure = KnownFailure(error)
@@ -192,24 +203,16 @@ extension TunnelControllerIPCService: XPCServerInterface {
 
     func start(completion: @escaping (Error?) -> Void) {
         Task {
+            defer { completion(nil) }
             await tunnelController.start()
         }
-
-        // For IPC requests, completion means the IPC request was processed, and NOT
-        // that the requested operation was executed fully.  Failure to complete the
-        // operation will be handled entirely within the tunnel controller.
-        completion(nil)
     }
 
     func stop(completion: @escaping (Error?) -> Void) {
         Task {
+            defer { completion(nil) }
             await tunnelController.stop()
         }
-
-        // For IPC requests, completion means the IPC request was processed, and NOT
-        // that the requested operation was executed fully.  Failure to complete the
-        // operation will be handled entirely within the tunnel controller.
-        completion(nil)
     }
 
     func fetchLastError(completion: @escaping (Error?) -> Void) {
@@ -222,6 +225,13 @@ extension TunnelControllerIPCService: XPCServerInterface {
             }
 
             connection.fetchLastDisconnectError(completionHandler: completion)
+        }
+    }
+
+    func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        Task { @MainActor in
+            await tunnelController.refreshSystemState()
+            completion(nil)
         }
     }
 
@@ -248,11 +258,16 @@ extension TunnelControllerIPCService: XPCServerInterface {
             break
         case .uninstallVPN(let showNotification):
             try await uninstall(.all, showNotification: showNotification)
-        case .disableConnectOnDemandAndShutDown:
-            // Not implemented on macOS yet
+        case .simulateSubscriptionExpirationInTunnel:
+            // This is handled by the network extension
             break
         case .quitAgent:
             quitAgent()
+        case .createLogSnapshot:
+            assertionFailure("Unsupported on macOS")
+        case .triggerLeakCheck:
+            // Intentional no-op: handled by the extension
+            break
         }
     }
 

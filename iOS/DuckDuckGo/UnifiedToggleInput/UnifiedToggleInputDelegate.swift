@@ -1,0 +1,72 @@
+//
+//  UnifiedToggleInputDelegate.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import Foundation
+
+@MainActor
+protocol UnifiedToggleInputDelegate: AnyObject {
+    /// `termsAccepted` is `true` only for a prompt sent with Ask.
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?)
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void)
+    /// Nothing to deliver, only the moment — reported before the keyboard takes the surface with it.
+    func unifiedToggleInputDidSubmitPromptToBoundChat()
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?)
+    func unifiedToggleInputDidSubmitQuery(_ query: String)
+    func unifiedToggleInputDidRequestVoiceSearch()
+    func unifiedToggleInputDidRequestAIVoiceChat()
+    func unifiedToggleInputDidRequestAIChat(prefilledText: String)
+    func unifiedToggleInputDidChangeHeight()
+    func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
+    func unifiedToggleInputDidRequestFire()
+    func unifiedToggleInputDidRequestAppMenu()
+    func unifiedToggleInputDidRequestAppMenuLongPress()
+    /// Destination state the UTI should snap to at the start of an inline-dismiss animation.
+    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot
+    func unifiedToggleInputDidTapClearText()
+    func unifiedToggleInputDidTapToActivate()
+    /// Edit mode entered/exited — the host applies the surrounding chrome (transcript whiteout,
+    /// header swap). The input side is handled within the coordinator.
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool)
+    /// A link inside a footer message. Always a new tab: loading in place would discard the draft
+    /// and the attachment the message is about.
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL)
+}
+
+extension UnifiedToggleInputDelegate {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?) {
+        tabAttachmentRequest?.cancel()
+        unifiedToggleInputDidSubmitPrompt(prompt, modelId: modelId, tools: tools, reasoningEffort: reasoningEffort,
+                                         attachments: attachments, termsAccepted: termsAccepted)
+    }
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void) {
+        request.cancel()
+        completion(false)
+    }
+    func unifiedToggleInputDidSubmitPromptToBoundChat() {}
+    func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {}
+    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot { .empty }
+    func unifiedToggleInputDidTapClearText() {}
+    func unifiedToggleInputDidTapToActivate() {}
+    func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {}
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {}
+}

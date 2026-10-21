@@ -16,9 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
+import PrivacyConfig
+import SharedTestUtilities
 import Suggestions
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SuggestionContainerViewModelTests: XCTestCase {
@@ -26,6 +29,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     var suggestionLoadingMock: SuggestionLoadingMock!
     var historyProviderMock: HistoryProviderMock!
     var bookmarkProviderMock: SuggestionsBookmarkProvider!
+    var searchPreferencesPersistorMock: MockSearchPreferencesPersistor!
     var suggestionContainer: SuggestionContainer!
     var suggestionContainerViewModel: SuggestionContainerViewModel!
     var featureFlagger: MockFeatureFlagger!
@@ -34,12 +38,12 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 
     @MainActor
     override func setUp() {
-        SearchPreferences.shared.showAutocompleteSuggestions = true
+        searchPreferencesPersistorMock = MockSearchPreferencesPersistor()
+        searchPreferencesPersistorMock.showAutocompleteSuggestions = true
         suggestionLoadingMock = SuggestionLoadingMock()
         historyProviderMock = HistoryProviderMock()
         bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.autocompleteTabs]
         suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                   suggestionLoading: suggestionLoadingMock,
                                                   historyProvider: historyProviderMock,
@@ -47,7 +51,13 @@ final class SuggestionContainerViewModelTests: XCTestCase {
                                                   featureFlagger: featureFlagger,
                                                   burnerMode: .regular,
                                                   isUrlIgnored: { _ in false })
-        suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
+        suggestionContainerViewModel = SuggestionContainerViewModel(
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            )
+        )
     }
 
     override func tearDown() {
@@ -55,6 +65,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         historyProviderMock = nil
         suggestionContainer = nil
         suggestionContainerViewModel = nil
+        searchPreferencesPersistorMock = nil
         featureFlagger = nil
         cancellables.removeAll()
     }
@@ -78,12 +89,19 @@ final class SuggestionContainerViewModelTests: XCTestCase {
             burnerMode: .regular,
             isUrlIgnored: { _ in false }
         )
-        let suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
+        let suggestionContainerViewModel = SuggestionContainerViewModel(
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            )
+        )
 
         XCTAssertNil(suggestionContainerViewModel.selectionIndex)
         XCTAssertNil(suggestionContainerViewModel.selectedSuggestionViewModel)
     }
 
+    @MainActor
     func testWhenSuggestionIsSelectedThenSelectedSuggestionViewModelMatchesSuggestion() {
         suggestionContainer.getSuggestions(for: "Test")
         suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil )
@@ -113,7 +131,10 @@ final class SuggestionContainerViewModelTests: XCTestCase {
             burnerMode: .regular,
             isUrlIgnored: { _ in false }
         )
-        let suggestionListViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
+        let suggestionListViewModel = SuggestionContainerViewModel(
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
+        )
 
         suggestionListViewModel.select(at: 0)
 
@@ -130,6 +151,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
+    @MainActor
     func testWhenClearSelectionIsCalledThenNoSuggestonIsSeleted() {
         suggestionContainer.getSuggestions(for: "Test")
         suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil )
@@ -151,6 +173,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForExpectations(timeout: 1, handler: nil)
     }
 
+    @MainActor
     func testSelectNextIfPossible() {
         suggestionContainer.getSuggestions(for: "Test")
         suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil )
@@ -169,6 +192,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         XCTAssertNil(suggestionContainerViewModel.selectionIndex)
     }
 
+    @MainActor
     func testSelectPreviousIfPossible() {
         suggestionContainer.getSuggestions(for: "Test")
         suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil )
@@ -187,6 +211,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         XCTAssertNil(suggestionContainerViewModel.selectionIndex)
     }
 
+    @MainActor
     func testWhenUserAppendsText_suggestionsLoadingInitiatedAndTopHitIsSelected() {
         XCTAssertFalse(suggestionLoadingMock.getSuggestionsCalled)
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)
@@ -208,6 +233,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         wait(for: [selectedSuggestionViewModelExpectation], timeout: 0)
     }
 
+    @MainActor
     func testWhenUserAppendsSpace_suggestionsLoadingInitiatedWithoutTopSuggestionSelection() {
         suggestionContainerViewModel.setUserStringValue("duck ", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -224,6 +250,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForMainQueueToFlush(for: 1)
     }
 
+    @MainActor
     func testWhenUserInsertsTextInTheMiddle_suggestionsLoadingInitiatedWithoutTopSuggestionSelection() {
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: false)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -240,6 +267,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForMainQueueToFlush(for: 1)
     }
 
+    @MainActor
     func testWhenNoTopHitsLoaded_topSuggestionIsNotSelected() {
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -256,6 +284,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForMainQueueToFlush(for: 1)
     }
 
+    @MainActor
     func testWhenSuggestionsLoadedAfterUserModifiesText_oldSuggestionsAreNotSelected() {
         suggestionContainerViewModel.setUserStringValue("duc", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -276,6 +305,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         waitForMainQueueToFlush(for: 1)
     }
 
+    @MainActor
     func testWhenOldSuggestionsLoadedAfterUserContinuesTypingText_topHitSuggestionsIsSelectedWithCorrectUserEnteredText() {
         suggestionContainerViewModel.setUserStringValue("duc", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -301,6 +331,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         wait(for: [selectedSuggestionViewModelExpectation], timeout: 0)
     }
 
+    @MainActor
     func testWhenUserClearsText_suggestionsLoadingIsCancelled() {
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)
         XCTAssertTrue(suggestionLoadingMock.getSuggestionsCalled)
@@ -337,7 +368,10 @@ final class SuggestionContainerViewModelTests: XCTestCase {
                                                   featureFlagger: featureFlagger,
                                                   burnerMode: .regular,
                                                   isUrlIgnored: { _ in false })
-        suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
+        suggestionContainerViewModel = SuggestionContainerViewModel(
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
+        )
 
         suggestionContainer.getSuggestions(for: "Duck")
 
@@ -345,12 +379,104 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         XCTAssertEqual(openTabsResult, openTabs)
     }
 
+    // MARK: - AI Chat Footer Cell Tests
+
+    @MainActor
+    func testWhenAIFeaturesEnabled_ThenAIChatCellAppearsInFooter() {
+        // Cluster removed: the AI chat cell only ever appears in the footer, never at the top
+        let aiChatStorage = MockAIChatPreferencesStorage()
+        aiChatStorage.isAIFeaturesEnabled = true
+
+        suggestionContainerViewModel = SuggestionContainerViewModel(
+            isHomePage: false,
+            isBurner: false,
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            ),
+            themeManager: MockThemeManager(),
+            featureFlagger: featureFlagger,
+            aiChatPreferencesStorage: aiChatStorage
+        )
+
+        suggestionContainerViewModel.setUserStringValue("test query", userAppendedStringToTheEnd: false)
+        suggestionLoadingMock.completion?(SuggestionResult.noTopHitsResult, nil)
+
+        // AI chat cell should appear at the bottom (footer), not at the top
+        XCTAssertNotEqual(suggestionContainerViewModel.rowContent(at: 0), .aiChatCell, "AI chat cell should not appear at top")
+        let lastRowIndex = suggestionContainerViewModel.numberOfRows - 1
+        XCTAssertEqual(suggestionContainerViewModel.rowContent(at: lastRowIndex), .aiChatCell, "AI chat cell should appear in footer")
+    }
+
+    @MainActor
+    func testWhenAIFeaturesDisabled_ThenListShowsOnlySuggestions() {
+        // Setup with AI features disabled
+        let aiChatStorage = MockAIChatPreferencesStorage()
+        aiChatStorage.isAIFeaturesEnabled = false
+
+        suggestionContainerViewModel = SuggestionContainerViewModel(
+            isHomePage: false,
+            isBurner: false,
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            ),
+            themeManager: MockThemeManager(),
+            featureFlagger: featureFlagger,
+            aiChatPreferencesStorage: aiChatStorage
+        )
+
+        suggestionContainerViewModel.setUserStringValue("test query", userAppendedStringToTheEnd: false)
+        suggestionLoadingMock.completion?(SuggestionResult.noTopHitsResult, nil)
+
+        // No AI chat cell should appear when AI features are disabled
+        XCTAssertEqual(suggestionContainerViewModel.numberOfFooterRows, 0, "Footer should have no rows when AI features disabled")
+
+        // First row should be a suggestion
+        XCTAssertEqual(suggestionContainerViewModel.rowContent(at: 0), .suggestion(index: 0))
+    }
+
+    @MainActor
+    func testWhenAIFeaturesDisabledAfterInit_ThenAIChatCellFooterIsHidden() {
+        // AI features enabled: AI chat always appears in the footer
+        let aiChatStorage = MockAIChatPreferencesStorage()
+        aiChatStorage.isAIFeaturesEnabled = true
+
+        suggestionContainerViewModel = SuggestionContainerViewModel(
+            isHomePage: false,
+            isBurner: false,
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            ),
+            themeManager: MockThemeManager(),
+            featureFlagger: featureFlagger,
+            aiChatPreferencesStorage: aiChatStorage
+        )
+
+        suggestionContainerViewModel.setUserStringValue("test query", userAppendedStringToTheEnd: false)
+        suggestionLoadingMock.completion?(SuggestionResult.noTopHitsResult, nil)
+
+        // AI chat cell should initially appear in the footer
+        let lastRowIndex = suggestionContainerViewModel.numberOfRows - 1
+        XCTAssertEqual(suggestionContainerViewModel.rowContent(at: lastRowIndex), .aiChatCell, "AI chat cell should appear in footer")
+
+        // Disable AI features after init
+        aiChatStorage.isAIFeaturesEnabled = false
+
+        // Footer should no longer contain AI chat cell
+        XCTAssertEqual(suggestionContainerViewModel.numberOfFooterRows, 0, "Footer should have no rows when AI features disabled")
+    }
+
 }
 
 extension SuggestionContainerViewModel {
 
-    convenience init(suggestionContainer: SuggestionContainer) {
-        self.init(isHomePage: false, isBurner: false, suggestionContainer: suggestionContainer, visualStyle: VisualStyle.legacy)
+    convenience init(suggestionContainer: SuggestionContainer, searchPreferences: SearchPreferences) {
+        self.init(isHomePage: false, isBurner: false, suggestionContainer: suggestionContainer, searchPreferences: searchPreferences, themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger())
     }
 
 }

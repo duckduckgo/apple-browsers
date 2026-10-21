@@ -1,0 +1,20 @@
+appId: com.duckduckgo.mobile.ios
+---
+# Load YouTube URL for testing
+# Wait for UI to be ready
+- waitForAnimationToEnd
+
+# Try tapping search entry by ID or text
+- tapOn:
+    id: searchEntry
+    optional: true
+
+# If ID didn't work, try by placeholder text
+- tapOn:
+    text: "Search or enter address"
+    optional: true
+    
+- inputText: ${output.duckPlayerUrl}
+- pressKey: Enter
+
+- waitForAnimationToEnd

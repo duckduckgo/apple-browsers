@@ -19,9 +19,11 @@
 
 import Foundation
 import Common
-import BrowserServicesKit
+import FoundationExtensions
+import PrivacyConfig
 import SpecialErrorPages
 import Core
+import PixelKit
 
 protocol SSLSpecialErrorPageNavigationHandling {
     func handleServerTrustChallenge(_ challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
@@ -34,16 +36,13 @@ final class SSLErrorPageNavigationHandler {
 
     private let urlCredentialCreator: URLCredentialCreating
     private let storageCache: StorageCache
-    private let featureFlagger: FeatureFlagger
 
     init(
         urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
-        storageCache: StorageCache = AppDependencyProvider.shared.storageCache,
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
+        storageCache: StorageCache = AppDependencyProvider.shared.storageCache
     ) {
         self.urlCredentialCreator = urlCredentialCreator
         self.storageCache = storageCache
-        self.featureFlagger = featureFlagger
     }
 }
 
@@ -62,8 +61,7 @@ extension SSLErrorPageNavigationHandler: SSLSpecialErrorPageNavigationHandling {
     }
 
     func makeNewRequestURLAndSpecialErrorDataIfEnabled(error: NSError) -> SSLSpecialError? {
-        guard featureFlagger.isFeatureOn(.sslCertificatesBypass),
-              error.isServerCertificateUntrusted,
+        guard error.isServerCertificateUntrusted,
               let errorType = error.sslErrorType,
               let failedURL = error.failedUrl,
               let host = failedURL.host
@@ -74,14 +72,14 @@ extension SSLErrorPageNavigationHandler: SSLSpecialErrorPageNavigationHandling {
         let errorData = SpecialErrorData.ssl(
             type: errorType,
             domain: host,
-            eTldPlus1: storageCache.tld.eTLDplus1(host)
+            eTldPlus1: storageCache.tld.eTLDplus1(host) ?? host
         )
 
         return SSLSpecialError(type: errorType, error: SpecialErrorModel(url: failedURL, errorData: errorData))
     }
 
     func errorPageVisited(errorType: SSLErrorType) {
-        Pixel.fire(pixel: .certificateWarningDisplayed(errorType.pixelParameter))
+        PixelKit.fire(Pixel.Event.certificateWarningDisplayed(errorType.pixelParameter))
     }
 
 }
@@ -91,7 +89,7 @@ extension SSLErrorPageNavigationHandler: SSLSpecialErrorPageNavigationHandling {
 extension SSLErrorPageNavigationHandler: SpecialErrorPageActionHandler {
 
     func leaveSite() {
-        Pixel.fire(pixel: .certificateWarningLeaveClicked)
+        PixelKit.fire(Pixel.Event.certificateWarningLeaveClicked)
     }
 
     func visitSite() {
@@ -99,7 +97,7 @@ extension SSLErrorPageNavigationHandler: SpecialErrorPageActionHandler {
     }
 
     func advancedInfoPresented() {
-        Pixel.fire(pixel: .certificateWarningAdvancedClicked)
+        PixelKit.fire(Pixel.Event.certificateWarningAdvancedClicked)
     }
     
 }

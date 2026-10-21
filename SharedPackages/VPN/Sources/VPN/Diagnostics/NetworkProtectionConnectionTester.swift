@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
+import Common
+import ConcurrencyExtensions
 import Foundation
+import FoundationExtensions
 import Network
 import NetworkExtension
-import Common
 import os.log
 
 /// This class takes care of testing whether the Network Protection connection is working or not.  Results are handled by
@@ -30,12 +32,9 @@ import os.log
 /// whenever the regular connection works fine but the tunnel connection doesn't.
 ///
 @MainActor
-final class NetworkProtectionConnectionTester {
-    enum Result {
-        case connected
-        case reconnected(failureCount: Int)
-        case disconnected(failureCount: Int)
-    }
+final class NetworkProtectionConnectionTester: ConnectionTesting {
+
+    typealias Result = ConnectionTestingResult
 
     enum TesterError: Error {
         case couldNotFindInterface(named: String)
@@ -81,15 +80,14 @@ final class NetworkProtectionConnectionTester {
     // MARK: - Test result handling
 
     private var failureCount = 0
-    private let resultHandler: @MainActor (Result) -> Void
+    var resultHandler: (@MainActor (Result) -> Void)?
 
     private var simulateFailure = false
 
     // MARK: - Init & deinit
 
-    init(timerQueue: DispatchQueue, resultHandler: @escaping @MainActor (Result) -> Void) {
+    init(timerQueue: DispatchQueue) {
         self.timerQueue = timerQueue
-        self.resultHandler = resultHandler
 
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
@@ -133,8 +131,12 @@ final class NetworkProtectionConnectionTester {
     private func networkInterface(forInterfaceNamed interfaceName: String) async throws -> NWInterface {
         try await withCheckedThrowingContinuation { continuation in
             let monitor = NWPathMonitor()
+            var didResume = false
 
             monitor.pathUpdateHandler = { path in
+                guard !didResume else { return }
+                didResume = true
+
                 Logger.networkProtectionConnectionTester.log("All interfaces: \(String(describing: path.availableInterfaces), privacy: .public)")
 
                 guard let tunnelInterface = path.availableInterfaces.first(where: { $0.name == interfaceName }) else {
@@ -251,9 +253,9 @@ final class NetworkProtectionConnectionTester {
     @MainActor
     private func handleConnected() {
         if failureCount == 0 {
-            resultHandler(.connected)
+            resultHandler?(.connected)
         } else if failureCount > 0 {
-            resultHandler(.reconnected(failureCount: failureCount))
+            resultHandler?(.reconnected(failureCount: failureCount))
             failureCount = 0
         }
     }
@@ -261,6 +263,6 @@ final class NetworkProtectionConnectionTester {
     @MainActor
     private func handleDisconnected() {
         failureCount += 1
-        resultHandler(.disconnected(failureCount: failureCount))
+        resultHandler?(.disconnected(failureCount: failureCount))
     }
 }

@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Network
-import Common
 import Combine
+import Common
+import ConcurrencyExtensions
+import Foundation
+import FoundationExtensions
+import Network
 import os.log
 
-public actor NetworkProtectionServerStatusMonitor {
+public actor NetworkProtectionServerStatusMonitor: ServerStatusMonitoring {
 
     public enum ServerStatusResult {
         case serverMigrationRequested
@@ -44,7 +46,7 @@ public actor NetworkProtectionServerStatusMonitor {
         }
     }
 
-    var isStarted: Bool {
+    public var isStarted: Bool {
         task?.isCancelled == false
     }
 
@@ -71,7 +73,8 @@ public actor NetworkProtectionServerStatusMonitor {
     public func start(serverName: String, callback: @escaping (ServerStatusResult) -> Void) {
         Logger.networkProtectionServerStatusMonitor.log("⚫️ Starting server status monitor for \(serverName, privacy: .public)")
 
-        task = Task.periodic(delay: Self.monitoringInterval, interval: Self.monitoringInterval) {
+        task = Task.periodic(delay: Self.monitoringInterval, interval: Self.monitoringInterval) { [weak self] in
+            guard let self else { return }
             let result = await self.checkServerStatus(for: serverName)
 
             switch result {

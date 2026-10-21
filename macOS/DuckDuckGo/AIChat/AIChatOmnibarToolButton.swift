@@ -1,0 +1,607 @@
+//
+//  AIChatOmnibarToolButton.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AppKit
+import ConcurrencyExtensions
+import DesignResourcesKit
+
+/// An image view that doesn't intercept mouse events, allowing its superview to handle them.
+private final class NonInteractiveImageView: NSImageView {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil  // Pass all hits to superview
+    }
+}
+
+/// A control whose focus ring shows for keyboard focus only.
+@MainActor
+protocol FocusRingControlling: AnyObject {
+
+    /// Opts into the ring, unlike a plain `makeFirstResponder` — so a click never rings the control.
+    func takeKeyboardFocus()
+
+    var isFocusRingSuppressed: Bool { get set }
+
+    /// Drops the press fill and re-derives hover from the pointer's real position.
+    func resetTransientFillState()
+}
+
+extension FocusRingControlling {
+
+    /// Modal menu tracking swallows `mouseExited`, and `popUp` returns only after AppKit's flash
+    /// and dismissal animations — so reset on this notification, which lands at the user's click.
+    func sendMenuOpeningAction(_ sendAction: () -> Void) {
+        let observer = NotificationCenter.default.addObserver(
+            forName: NSMenu.didEndTrackingNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            // Submenus post this too, under a still-open parent; only the root menu means done.
+            guard (notification.object as? NSMenu)?.supermenu == nil else { return }
+            // `queue: nil` posts synchronously, and menu tracking runs on the main thread.
+            MainActor.assumeMainThread {
+                self?.resetTransientFillState()
+            }
+        }
+        sendAction()
+        NotificationCenter.default.removeObserver(observer)
+        // Covers an action that popped no menu, so posted no notification.
+        resetTransientFillState()
+    }
+}
+
+extension FocusRingControlling where Self: NSView {
+
+    /// Tracks the full pointer sequence so NSWindow cannot redispatch drag events to every custom view under the cursor.
+    func trackMouseInteraction() {
+        while let event = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            if event.type == .leftMouseDragged {
+                mouseDragged(with: event)
+                continue
+            }
+            mouseUp(with: event)
+            return
+        }
+        resetTransientFillState()
+    }
+}
+
+/// A reusable toolbar button for the AI Chat omnibar with circular hover background effect.
+final class AIChatOmnibarToolButton: NSView {
+
+    private enum Constants {
+        static let buttonSize: CGFloat = 28
+        static let iconSize: CGFloat = 16
+        static let labelTrailingPadding: CGFloat = 28
+        static let iconLeadingInset: CGFloat = 11
+    }
+
+    private let iconImageView: NonInteractiveImageView = {
+        let imageView = NonInteractiveImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        return imageView
+    }()
+
+    private let textLabel: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.lineBreakMode = .byTruncatingTail
+        label.isHidden = true
+        return label
+    }()
+
+    private let trailingImageView: NonInteractiveImageView = {
+        let imageView = NonInteractiveImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyDown
+        imageView.isHidden = true
+        return imageView
+    }()
+
+    private var iconCenterXConstraint: NSLayoutConstraint?
+    private var iconLeadingConstraint: NSLayoutConstraint?
+    private var trailingImageTrailingConstraint: NSLayoutConstraint?
+
+    private let backgroundLayer = CALayer()
+    private let focusRingLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.fillColor = nil
+        layer.lineWidth = 1.5
+        layer.lineCap = .round
+        layer.lineJoin = .round
+        layer.isHidden = true
+        return layer
+    }()
+
+    weak var target: AnyObject?
+    var action: Selector?
+
+    var image: NSImage? {
+        get { iconImageView.image }
+        set { iconImageView.image = newValue }
+    }
+
+    var font: NSFont {
+        get { textLabel.font ?? .systemFont(ofSize: 12, weight: .medium) }
+        set { textLabel.font = newValue }
+    }
+
+    var tintColor: NSColor? {
+        didSet {
+            updateAppearance()
+        }
+    }
+
+    /// Stroke colour for the keyboard-focus ring. Defaults to the design-system primary
+    /// accent; the container VC re-assigns this from `theme.colorsProvider.addressBarActiveBorderColor(isBurner:)`
+    /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
+    var focusRingColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
+        didSet { updateFocusRingStrokeColor() }
+    }
+
+    private func updateFocusRingStrokeColor() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            focusRingLayer.strokeColor = focusRingColor.cgColor
+        }
+        CATransaction.commit()
+    }
+
+    /// When true, the icon always uses the leading constraint instead of centering.
+    /// The leading inset matches the centered position at default button size, so the icon
+    /// stays visually centered when icon-only and doesn't shift when the label toggles.
+    var keepIconLeadingAligned: Bool = false {
+        didSet {
+            if keepIconLeadingAligned {
+                iconCenterXConstraint?.isActive = false
+                iconLeadingConstraint?.isActive = true
+            }
+        }
+    }
+
+    /// Optional text label shown next to the icon. When set, the button expands horizontally.
+    var label: String? {
+        didSet {
+            let hasLabel = label.map { !$0.isEmpty } ?? false
+            textLabel.stringValue = label ?? ""
+            textLabel.isHidden = !hasLabel
+            if !keepIconLeadingAligned {
+                iconCenterXConstraint?.isActive = !hasLabel
+                iconLeadingConstraint?.isActive = hasLabel
+            }
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    /// Optional trailing image (e.g., close icon). Shown after the label when set.
+    var trailingImage: NSImage? {
+        didSet {
+            let hasTrailing = trailingImage != nil
+            trailingImageView.image = trailingImage
+            trailingImageView.isHidden = !hasTrailing
+            trailingImageTrailingConstraint?.isActive = hasTrailing
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    var isEnabled: Bool = true {
+        didSet {
+            if !isEnabled {
+                isMouseDown = false
+                isHovered = false
+            }
+            updateAppearance()
+        }
+    }
+
+    /// Persistent background color when set (e.g., for active mode indication). Takes priority over hover.
+    var activeBackgroundColor: NSColor? {
+        didSet {
+            updateAppearance()
+            needsLayout = true
+        }
+    }
+
+    /// Background color on hover while `activeBackgroundColor` is set.
+    var activeHoverBackgroundColor: NSColor?
+
+    /// Background color when pressed while `activeBackgroundColor` is set.
+    var activePressedBackgroundColor: NSColor?
+
+    var hoverBackgroundColor: NSColor = .clear
+    var pressedBackgroundColor: NSColor = .clear
+
+    // MARK: - Toggle State Properties
+
+    /// When true, the button automatically toggles `isToggled` on each click
+    var togglesOnClick: Bool = false
+
+    /// Whether the button is in a toggled-on state (e.g., for search toggle)
+    var isToggled: Bool = false {
+        didSet {
+            updateAppearance()
+        }
+    }
+
+    /// Background color when toggled on (uses accent color)
+    var toggledBackgroundColor: NSColor = .clear
+
+    /// Tint color for the icon when toggled on (uses accent color)
+    var toggledTintColor: NSColor = .clear
+
+    private var isHovered = false {
+        didSet {
+            updateAppearance()
+        }
+    }
+
+    private var isMouseDown = false {
+        didSet {
+            updateAppearance()
+        }
+    }
+
+    private static let trailingImageSize: CGFloat = 12
+
+    override var intrinsicContentSize: NSSize {
+        if let label, !label.isEmpty {
+            let labelWidth = textLabel.intrinsicContentSize.width
+            var width = Constants.iconSize + labelWidth + Constants.labelTrailingPadding
+            if trailingImage != nil {
+                width += Self.trailingImageSize + 4
+            }
+            return NSSize(width: width, height: Constants.buttonSize)
+        }
+        return NSSize(width: Constants.buttonSize, height: Constants.buttonSize)
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupView()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupView()
+    }
+
+    var onTabPressed: (() -> Void)?
+
+    override var acceptsFirstResponder: Bool { true }
+    override var canBecomeKeyView: Bool { true }
+
+    override func becomeFirstResponder() -> Bool {
+        let didBecome = super.becomeFirstResponder()
+        if didBecome { isFocused = true }
+        return didBecome
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let didResign = super.resignFirstResponder()
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
+        return didResign
+    }
+
+    func takeKeyboardFocus() {
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus can't gate the ring.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
+    }
+
+    private func setFocusRingHidden(_ hidden: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        focusRingLayer.isHidden = hidden
+        CATransaction.commit()
+    }
+
+    private func setupView() {
+        wantsLayer = true
+        // The focus ring sublayer extends 1pt past the view's bounds. On macOS Monterey
+        // the hosting layer clips its sublayers to bounds by default, which would hide
+        // the ring; explicitly disable masking so the ring renders on every supported OS.
+        layer?.masksToBounds = false
+        setAccessibilityRole(.button)
+
+        // Setup background layer (shape updated in layout())
+        backgroundLayer.opacity = 0
+        layer?.insertSublayer(backgroundLayer, at: 0)
+
+        // Focus ring sublayer sits above the background so it stays visible while hovered/toggled.
+        // Stroke colour follows `focusRingColor` and re-resolves against the view's effective
+        // appearance — see `updateFocusRingStrokeColor()`.
+        layer?.addSublayer(focusRingLayer)
+        updateFocusRingStrokeColor()
+
+        // Setup icon image view
+        addSubview(iconImageView)
+        addSubview(textLabel)
+        addSubview(trailingImageView)
+
+        iconCenterXConstraint = iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor)
+        iconCenterXConstraint?.isActive = true
+        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.iconLeadingInset)
+        iconLeadingConstraint?.isActive = false
+
+        trailingImageTrailingConstraint = trailingImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
+        trailingImageTrailingConstraint?.isActive = false
+
+        NSLayoutConstraint.activate([
+            iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconImageView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+
+            textLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 4),
+            textLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            trailingImageView.leadingAnchor.constraint(equalTo: textLabel.trailingAnchor, constant: 4),
+            trailingImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            trailingImageView.widthAnchor.constraint(equalToConstant: Self.trailingImageSize),
+            trailingImageView.heightAnchor.constraint(equalToConstant: Self.trailingImageSize),
+        ])
+
+        updateAppearance()
+        setupHoverTracking()
+    }
+
+    override func layout() {
+        super.layout()
+        let hasLabel = label.map { !$0.isEmpty } ?? false
+        if hasLabel {
+            // Full-width rounded rect when label is shown
+            backgroundLayer.frame = bounds
+            backgroundLayer.cornerRadius = bounds.height / 2
+        } else {
+            // Centered circle when icon-only
+            let layerSize = CGSize(width: Constants.buttonSize, height: Constants.buttonSize)
+            backgroundLayer.frame = CGRect(
+                x: (bounds.width - layerSize.width) / 2,
+                y: (bounds.height - layerSize.height) / 2,
+                width: layerSize.width,
+                height: layerSize.height
+            )
+            backgroundLayer.cornerRadius = Constants.buttonSize / 2
+        }
+
+        // Focus ring tracks the background's shape, offset 1pt outward so the stroke
+        // sits just outside the visible button. Rendered as a sublayer rather than
+        // in `draw(_:)` so the 1pt overflow is not clipped by the view's backing layer
+        // (which was the cause of the broken ring on macOS Monterey).
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let ringRect = backgroundLayer.frame.insetBy(dx: -1, dy: -1)
+        focusRingLayer.frame = ringRect
+        focusRingLayer.path = CGPath(
+            roundedRect: focusRingLayer.bounds,
+            cornerWidth: ringRect.height / 2,
+            cornerHeight: ringRect.height / 2,
+            transform: nil
+        )
+        CATransaction.commit()
+    }
+
+    private func updateAppearance() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
+        NSAppearance.withAppAppearance {
+            guard isEnabled else {
+                backgroundLayer.opacity = 0
+                iconImageView.contentTintColor = NSColor.secondaryLabelColor
+                textLabel.textColor = NSColor.secondaryLabelColor
+                trailingImageView.contentTintColor = NSColor.secondaryLabelColor
+                CATransaction.commit()
+                return
+            }
+
+            // For toggle buttons, skip the pressed effect - just show toggled or normal state
+            let showPressedEffect = isMouseDown && !togglesOnClick
+
+            let effectiveTint: NSColor?
+            if showPressedEffect {
+                if activeBackgroundColor != nil, let activePressedBackgroundColor {
+                    backgroundLayer.backgroundColor = activePressedBackgroundColor.cgColor
+                } else {
+                    backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
+                }
+                backgroundLayer.opacity = 1
+                effectiveTint = isToggled ? toggledTintColor : tintColor
+            } else if isToggled {
+                backgroundLayer.backgroundColor = toggledBackgroundColor.cgColor
+                backgroundLayer.opacity = 1
+                effectiveTint = toggledTintColor
+            } else if let activeBackgroundColor {
+                if isHovered, let activeHoverBackgroundColor {
+                    backgroundLayer.backgroundColor = activeHoverBackgroundColor.cgColor
+                } else {
+                    backgroundLayer.backgroundColor = activeBackgroundColor.cgColor
+                }
+                backgroundLayer.opacity = 1
+                effectiveTint = tintColor
+            } else if isHovered {
+                backgroundLayer.backgroundColor = hoverBackgroundColor.cgColor
+                backgroundLayer.opacity = 1
+                effectiveTint = tintColor
+            } else {
+                backgroundLayer.opacity = 0
+                effectiveTint = tintColor
+            }
+            iconImageView.contentTintColor = effectiveTint
+            textLabel.textColor = effectiveTint ?? .labelColor
+            trailingImageView.contentTintColor = effectiveTint
+        }
+
+        CATransaction.commit()
+    }
+
+    private var trackingArea: NSTrackingArea?
+    private var lastHoverEventTimestamp: TimeInterval = 0
+
+    private func setupHoverTracking() {
+        updateTrackingAreas()
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+
+        if let existingArea = trackingArea {
+            removeTrackingArea(existingArea)
+        }
+
+        let newTrackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(newTrackingArea)
+        trackingArea = newTrackingArea
+
+        // A new tracking area reports nothing about a pointer already outside it.
+        refreshHoverState()
+    }
+
+    /// Re-derives hover from the pointer's real position when event ordering or modal menu tracking makes callbacks unreliable.
+    private func refreshHoverState() {
+        guard isEnabled, let window else {
+            isHovered = false
+            return
+        }
+        isHovered = bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))
+    }
+
+    func resetTransientFillState() {
+        isMouseDown = false
+        refreshHoverState()
+    }
+
+    /// AppKit can deliver an older enter event after a newer exit event. Trusting that enter
+    /// unconditionally would leave the hover fill visible until the pointer crosses the view again.
+    private func updateHoverState(_ hovering: Bool, from event: NSEvent) {
+        guard event.timestamp >= lastHoverEventTimestamp else {
+            resetTransientFillState()
+            return
+        }
+        lastHoverEventTimestamp = event.timestamp
+        let canShowHover = NSEvent.pressedMouseButtons == 0 || isMouseDown
+        isHovered = hovering && isEnabled && canShowHover
+        if !hovering {
+            isMouseDown = false
+        }
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        updateHoverState(true, from: event)
+        NSCursor.arrow.set()
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        isMouseDown = false
+        updateHoverState(true, from: event)
+        NSCursor.arrow.set()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        updateHoverState(false, from: event)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        wantsFocusRing = false
+        isMouseDown = true
+        trackMouseInteraction()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        let locationInView = convert(event.locationInWindow, from: nil)
+        isMouseDown = bounds.contains(locationInView)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let locationInView = convert(event.locationInWindow, from: nil)
+        if bounds.contains(locationInView) && isMouseDown && isEnabled {
+            if togglesOnClick {
+                isToggled.toggle()
+            }
+            if let action, let target {
+                sendMenuOpeningAction {
+                    NSApp.sendAction(action, to: target, from: self)
+                }
+                return
+            }
+        }
+        resetTransientFillState()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 48: // Tab
+            if let onTabPressed {
+                onTabPressed()
+            } else {
+                super.keyDown(with: event)
+            }
+        case 49, 36: // Space, Return - trigger action
+            if isEnabled, let action, let target {
+                NSApp.sendAction(action, to: target, from: self)
+            }
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
+        updateFocusRingStrokeColor()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // hitTest receives point in superview's coordinate system
+        // Return self for the entire button area to capture all mouse events
+        guard !isHidden, frame.contains(point) else { return nil }
+        return self
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .arrow)
+    }
+}
+
+extension AIChatOmnibarToolButton: FocusRingControlling {}

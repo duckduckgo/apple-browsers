@@ -18,6 +18,7 @@
 
 import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 import QuickLookUI
 
@@ -32,7 +33,6 @@ final class AddressBarTextEditor: NSTextView {
         return addressBar
     }
 
-    @available(macOS 12.0, *)
     override var textLayoutManager: NSTextLayoutManager? {
         // uses NSTextLayoutManager by default in macOS 13, ignored in macOS 12
         if let textLayoutManager = super.textLayoutManager,
@@ -98,17 +98,10 @@ final class AddressBarTextEditor: NSTextView {
         set {}
     }
 
-#if swift(>=5.9)
     override var inlinePredictionType: NSTextInputTraitType {
         get { .no }
         set {}
     }
-#else
-    @objc var inlinePredictionType: NSTextInputTraitType {
-        get { .no }
-        set {}
-    }
-#endif
 
     override var usesFindPanel: Bool {
         get { false }
@@ -153,10 +146,7 @@ final class AddressBarTextEditor: NSTextView {
             return
         }
 
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(selectedText, forType: .string)
-
-        if let url = URL(trimmedAddressBarString: selectedText.trimmingWhitespace()) {
+        if let url = URL(trimmedAddressBarString: selectedText.trimmingWhitespace(), useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) {
             NSPasteboard.general.copy(url, withString: selectedText)
         } else {
             NSPasteboard.general.copy(selectedText)
@@ -211,6 +201,41 @@ final class AddressBarTextEditor: NSTextView {
         addressBar.textView(self, userTypedString: string, at: replacementRange.location == NSNotFound ? self.selectedRange() : replacementRange) {
             super.insertText(string, replacementRange: replacementRange)
         }
+    }
+
+    override func selectAll(_ sender: Any?) {
+        super.selectAll(sender)
+        // Select All anchors the selection at the start with the caret at the end, like in standard text fields:
+        // Opt+Shift+Left then contracts it from the right and Opt+Shift+Right keeps it.
+        setSelectedRange(selectedRange(), affinity: .downstream, stillSelecting: false)
+    }
+
+    // Cmd+Shift+Left/Right: the caret ends up at the moved end. macOS 12 keeps the previous selection affinity here, while
+    // newer systems update it, so set it explicitly: Opt+Shift+Left/Right rely on it to tell which end is the caret.
+    override func moveToBeginningOfLineAndModifySelection(_ sender: Any?) {
+        super.moveToBeginningOfLineAndModifySelection(sender)
+        setSelectionAffinityKeepingRange(.upstream)
+    }
+
+    override func moveToLeftEndOfLineAndModifySelection(_ sender: Any?) {
+        super.moveToLeftEndOfLineAndModifySelection(sender)
+        setSelectionAffinityKeepingRange(.upstream)
+    }
+
+    override func moveToEndOfLineAndModifySelection(_ sender: Any?) {
+        super.moveToEndOfLineAndModifySelection(sender)
+        setSelectionAffinityKeepingRange(.downstream)
+    }
+
+    override func moveToRightEndOfLineAndModifySelection(_ sender: Any?) {
+        super.moveToRightEndOfLineAndModifySelection(sender)
+        setSelectionAffinityKeepingRange(.downstream)
+    }
+
+    private func setSelectionAffinityKeepingRange(_ affinity: NSSelectionAffinity) {
+        let range = selectedRange()
+        guard range.length > 0 else { return }
+        setSelectedRange(range, affinity: affinity, stillSelecting: false)
     }
 
     func selectToTheEnd(from offset: Int? = nil) {
@@ -286,13 +311,29 @@ final class AddressBarTextEditor: NSTextView {
         return NSRange(range, in: string)
     }
 
-    private func nextWordSelectionIndex(backwards: Bool) -> Int? {
+    /// Returns the character index of the next word boundary in the given direction.
+    /// - Parameters:
+    ///   - backwards: Search direction — `true` = move left, `false` = move right.
+    ///   - cursorOverride: When supplied, use this NSRange integer offset as the starting cursor
+    ///     position instead of `self.selectedRange()`. This avoids mutating the selection (and
+    ///     triggering address-bar observers) just to feed a different position into this function.
+    private func nextWordSelectionIndex(backwards: Bool, cursorOverride: Int? = nil) -> Int? {
         let string = self.string
 
-        guard let selectableRange = addressBar?.stringValueWithoutSuffixRange,
-              let selectedRange = Range(selectedRange(), in: string)?.clamped(to: selectableRange) else { return nil }
+        guard let selectableRange = addressBar?.stringValueWithoutSuffixRange else { return nil }
 
-        var index = backwards ? selectedRange.lowerBound : selectedRange.upperBound
+        let startIndex: String.Index
+        if let override = cursorOverride {
+            // Convert the NSRange integer offset to a String.Index, clamped to the selectable range.
+            let clampedOffset = min(override, string.utf16.count)
+            let rawIdx = String.Index(utf16Offset: clampedOffset, in: string)
+            startIndex = min(max(rawIdx, selectableRange.lowerBound), selectableRange.upperBound)
+        } else {
+            guard let selectedRange = Range(selectedRange(), in: string)?.clamped(to: selectableRange) else { return nil }
+            startIndex = backwards ? selectedRange.lowerBound : selectedRange.upperBound
+        }
+
+        var index = startIndex
         var searchRange: Range<String.Index> {
             backwards ? selectableRange.lowerBound..<index : index..<selectableRange.upperBound
         }
@@ -327,28 +368,63 @@ final class AddressBarTextEditor: NSTextView {
 
     override func moveWordRightAndModifySelection(_ sender: Any?) {
         let selectedRange = self.selectedRange()
-        guard selectionAffinity == .downstream || selectedRange.length == 0 else {
-            // current selection is from right to left: reset selection to the upper bound
-            self.selectedRange = NSRange(location: selectedRange.upperBound, length: 0)
+        if selectionAffinity == .upstream && selectedRange.length > 0 {
+            // Upstream selection (right-to-left): contract from the left end by one word.
+            // Use cursorOverride so we don't mutate self.selectedRange (which would fire address-bar
+            // observers and corrupt the string state before nextWordSelectionIndex can read it).
+            let newLowerBound = nextWordSelectionIndex(backwards: false, cursorOverride: selectedRange.location)
+            guard let newLowerBound else { return }
+            if newLowerBound >= selectedRange.upperBound {
+                // Contraction exhausted the selection — collapse to the right end.
+                self.setSelectedRange(NSRange(location: selectedRange.upperBound, length: 0), affinity: .downstream, stillSelecting: false)
+            } else {
+                self.setSelectedRange(
+                    NSRange(location: newLowerBound, length: selectedRange.upperBound - newLowerBound),
+                    affinity: .upstream,
+                    stillSelecting: false
+                )
+            }
+            // The moving end is the left one: keep it visible on a long text
+            self.scrollToSelectionStart()
             return
         }
         guard let index = nextWordSelectionIndex(backwards: false) else { return }
 
-        let range = NSRange(location: selectedRange.location, length: index - selectedRange.location)
+        // The length can't be negative for a clamped selection; keep it that way if the selection ever reaches the suffix
+        let range = NSRange(location: selectedRange.location, length: max(0, index - selectedRange.location))
         self.setSelectedRange(range, affinity: .downstream, stillSelecting: false)
         self.scrollToSelectionEnd()
     }
 
     override func moveWordLeftAndModifySelection(_ sender: Any?) {
         let selectedRange = self.selectedRange()
-        guard selectionAffinity == .upstream || selectedRange.length == 0 else {
-            // current selection is from left to right: reset selection to the upper bound
-            self.selectedRange = NSRange(location: selectedRange.lowerBound, length: 0)
+        // Contract from the right end when the selection has `.downstream` affinity (the caret is at the right end),
+        // as after Cmd+A: Opt+Shift+Left moves the caret one word to the left.
+        // Otherwise (`.upstream` selection or no selection) extend the left edge further left — this preserves the natural
+        // "Opt+Shift+Left, Opt+Shift+Left" extension flow and stops at the start of the text.
+        if selectedRange.length > 0 && selectionAffinity == .downstream {
+            // Use cursorOverride so we don't mutate self.selectedRange (which would fire address-bar
+            // observers and corrupt the string state before nextWordSelectionIndex can read it).
+            guard let newUpperBound = nextWordSelectionIndex(backwards: true, cursorOverride: selectedRange.upperBound) else { return }
+            if newUpperBound <= selectedRange.location {
+                // Contraction exhausted the selection — collapse to the left end.
+                self.setSelectedRange(NSRange(location: selectedRange.location, length: 0), affinity: .upstream, stillSelecting: false)
+            } else {
+                self.setSelectedRange(
+                    NSRange(location: selectedRange.location, length: newUpperBound - selectedRange.location),
+                    affinity: .downstream,
+                    stillSelecting: false
+                )
+            }
+            // The moving end is the right one: keep it visible on a long text
+            self.scrollToSelectionEnd()
             return
         }
-        guard let index = nextWordSelectionIndex(backwards: true) else { return }
 
-        let range = NSRange(location: index, length: selectedRange.upperBound - index)
+        // Extend the left edge of the selection (or move the caret left if there is no selection).
+        // For an upstream selection this grows it further left; for an empty selection it creates one.
+        guard let index = nextWordSelectionIndex(backwards: true, cursorOverride: selectedRange.location) else { return }
+        let range = NSRange(location: index, length: max(0, selectedRange.upperBound - index))
         self.setSelectedRange(range, affinity: .upstream, stillSelecting: false)
         self.scrollToSelectionStart()
     }
@@ -469,13 +545,13 @@ final class AddressBarTextEditor: NSTextView {
     /// if it‘s possible to parse the dragged text as a URL.
     /// Falls back to default system text dragging otherwise.
     override func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
-        let tabViewModel = addressBar?.tabCollectionViewModel.selectedTabViewModel
+        let tabViewModel = addressBar?.tabCollectionViewModel?.selectedTabViewModel
         let currentUrl = tabViewModel?.tab.content.userEditableUrl
 
         // allow dragging domain name without the scheme, dropping the "://" part if no scheme is selected
         guard let draggedString = session.draggingPasteboard.string(forType: .string)?
             .trimmingWhitespace().dropping(prefix: ":").dropping(prefix: "/").dropping(prefix: "/"),
-              var draggedUrl = URL(trimmedAddressBarString: draggedString),
+              var draggedUrl = URL(trimmedAddressBarString: draggedString, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)),
               let navigationalScheme = draggedUrl.navigationalScheme, // `URL(trimmedAddressBarString:)` will add missing scheme if needed
               URL.NavigationalScheme.navigationalSchemes.contains(navigationalScheme) || draggedUrl.scheme == currentUrl?.scheme else {
             // otherwise fallback to regular text dragging
@@ -484,7 +560,7 @@ final class AddressBarTextEditor: NSTextView {
         // if dragging e.g. "duckduckgo.com" part of currently active "https://duckduckgo.com",
         // replace the "http" scheme automatically added by `URL(trimmedAddressBarString:)` with current scheme ("https" in our case)
         if let currentUrl, let scheme = currentUrl.scheme, !scheme.isEmpty, // currently loaded website url scheme
-           let editedUrl = URL(trimmedAddressBarString: self.string.trimmingWhitespace()),
+           let editedUrl = URL(trimmedAddressBarString: self.string.trimmingWhitespace(), useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)),
            editedUrl.scheme == currentUrl.scheme, editedUrl.host == currentUrl.host, // actual edited url‘s scheme+host should match currently loaded url
            draggedUrl.scheme != scheme { // non-matching url would mean URL(trimmedAddressBarString:) has added the scheme
 
@@ -505,13 +581,13 @@ final class AddressBarTextEditor: NSTextView {
             favicon = tabFavicon
         } else {
             // fallback to the "globe" favicon
-            favicon = .web
+            favicon = NSImage(resource: .web)
         }
         session.setPreviewProvider(URLDragPreviewProvider(url: draggedUrl, favicon: favicon))
 
         // if the address matches currently loaded URL
-        if let title = addressBar?.tabCollectionViewModel.selectedTabViewModel?.title, !title.isEmpty,
-           addressBar?.tabCollectionViewModel.selectedTabViewModel?.tab.url == draggedUrl {
+        if let title = addressBar?.tabCollectionViewModel?.selectedTabViewModel?.title, !title.isEmpty,
+           addressBar?.tabCollectionViewModel?.selectedTabViewModel?.tab.url == draggedUrl {
             session.draggingPasteboard.setString(title, forType: .urlName)
         }
     }

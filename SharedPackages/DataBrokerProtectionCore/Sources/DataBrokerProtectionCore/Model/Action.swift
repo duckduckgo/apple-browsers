@@ -24,38 +24,24 @@ public enum ActionType: String, Codable, Sendable {
     case fillForm
     case click
     case expectation
+    case executeScript
     case emailConfirmation
+    case generateEmail
+    case getEmailData
     case getCaptchaInfo
     case solveCaptcha
     case condition
-}
-
-public enum DataSource: String, Codable, Sendable {
-    case userProfile
-    case extractedProfile
 }
 
 public protocol Action: Codable, Sendable {
     var id: String { get }
     var actionType: ActionType { get }
     var needsEmail: Bool { get }
-    var dataSource: DataSource { get }
-
-    /// Certain brokers force a page reload with a random time interval when the user lands on the search result
-    /// page. The first time the action runs the C-S-S context is lost as the page is reloading and C-S-S fails
-    /// to respond to the native message.
-    ///
-    /// This decides whether a given action can time out.
-    ///
-    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1210079565270206?focus=true
-    func canTimeOut(while stepType: StepType?) -> Bool
+    var json: Data? { get }
+    func with(json: Data?) -> Self
 }
 
 extension Action {
     public var needsEmail: Bool { false }
-    public var dataSource: DataSource { .userProfile }
-
-    public func canTimeOut(while stepType: StepType?) -> Bool {
-        true
-    }
+    public var json: Data? { nil }
 }

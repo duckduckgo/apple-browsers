@@ -60,14 +60,34 @@ public struct SolveCaptchaResponse: Decodable {
     let callback: EvalResponse
 }
 
+public class ConditionSuccessResponse: Decodable {
+    enum CodingKeys: String, CodingKey {
+        case actions
+    }
+
+    let actions: [Action]
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let actionsList = try container.decodeIfPresent([[String: Any]].self, forKey: .actions)
+        if let actionsList = actionsList {
+            self.actions = try Step.parse(actionsList)
+        } else {
+            self.actions = []
+        }
+    }
+}
+
 enum CCFSuccessData {
     case navigate(NavigateResponse)
     case extract([ExtractedProfile])
     case fillForm
     case click
     case expectation
+    case executeScript
     case getCaptchaInfo(GetCaptchaInfoResponse)
     case solveCaptcha(SolveCaptchaResponse)
+    case conditionSuccess(ConditionSuccessResponse)
 }
 
 struct CCFSuccessResponse: Decodable {
@@ -100,14 +120,20 @@ struct CCFSuccessResponse: Decodable {
             self.response = .click
         case .expectation:
             self.response = .expectation
+        case .executeScript:
+            self.response = .executeScript
         case .emailConfirmation:
             self.response = nil // Email confirmation is done on the native side. We shouldn't have a response here
+        case .generateEmail:
+            self.response = nil // Email generation is done on the native side. We shouldn't have a response here
+        case .getEmailData:
+            self.response = nil // Polling the email-data endpoint is done on the native side. No C-S-S response.
         case .getCaptchaInfo:
             self.response = .getCaptchaInfo(try container.decode(GetCaptchaInfoResponse.self, forKey: .response))
         case .solveCaptcha:
             self.response = .solveCaptcha(try container.decode(SolveCaptchaResponse.self, forKey: .response))
         case .condition:
-            self.response = nil
+            self.response = .conditionSuccess(try container.decode(ConditionSuccessResponse.self, forKey: .response))
         }
     }
 }

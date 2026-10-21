@@ -18,8 +18,7 @@
 
 import Foundation
 @testable import Subscription
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 
 public struct SubscriptionAPIMockResponseFactory {
 
@@ -39,11 +38,12 @@ public struct SubscriptionAPIMockResponseFactory {
         apiService.set(response: response, forRequest: request)
     }
 
+    @_spi(Testing)
     public static func mockConfirmPurchase(destinationMockAPIService apiService: MockAPIService, success: Bool) {
         let request = SubscriptionRequest.confirmPurchase(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url,
                                                           accessToken: "somAccessToken",
                                                           signature: "someSignature",
-                                                          additionalParams: nil)!
+                                                          experimentAttribution: nil)!
         if success {
             let jsonString = """
 {"email":"","entitlements":[{"product":"Data Broker Protection","name":"subscriber"},{"product":"Identity Theft Restoration","name":"subscriber"},{"product":"Network Protection","name":"subscriber"}],"subscription":{"productId":"ios.subscription.1month","name":"Monthly Subscription","billingPeriod":"Monthly","startedAt":1730991734000,"expiresOrRenewsAt":1730992034000,"platform":"apple","status":"Auto-Renewable", "activeOffers": [] }}
@@ -59,42 +59,33 @@ public struct SubscriptionAPIMockResponseFactory {
         }
     }
 
-    public static func mockGetProducts(destinationMockAPIService apiService: MockAPIService, success: Bool) {
-        let request = SubscriptionRequest.getProducts(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url)!
-        if success {
-            let jsonString = """
-[{"productId":"ddg-privacy-pro-sandbox-monthly-renews-us","productLabel":"Monthly Subscription","billingPeriod":"Monthly","price":"9.99","currency":"USD"},{"productId":"ddg-privacy-pro-sandbox-yearly-renews-us","productLabel":"Yearly Subscription","billingPeriod":"Yearly","price":"99.99","currency":"USD"}]
-"""
-            let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: HTTPStatusCode.ok.rawValue,
-                                               httpVersion: nil,
-                                               headerFields: [:])!
-            let response = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)
-            apiService.set(response: response, forRequest: request.apiRequest)
-        } else {
-            let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
-                                               statusCode: HTTPStatusCode.badRequest.rawValue,
-                                               httpVersion: nil,
-                                               headerFields: [:])!
-            let response = APIResponseV2(data: someAPIBodyErrorJSONData, httpResponse: httpResponse)
-            apiService.set(response: response, forRequest: request.apiRequest)
+    @_spi(Testing)
+    public static func mockGetTierFeatures(destinationMockAPIService apiService: MockAPIService, success: Bool, subscriptionIDs: [String]) {
+        guard let request = SubscriptionRequest.subscriptionTierFeatures(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url, subscriptionIDs: subscriptionIDs) else {
+            return
         }
-    }
-
-    public static func mockGetFeatures(destinationMockAPIService apiService: MockAPIService, success: Bool, subscriptionID: String) {
-        let request = SubscriptionRequest.subscriptionFeatures(baseURL: SubscriptionEnvironment.ServiceEnvironment.staging.url, subscriptionID: subscriptionID)!
         if success {
-            let jsonString = """
-{"features":["Data Broker Protection","Identity Theft Restoration","Network Protection"]}
-"""
+            var featuresJSON: [String] = []
+            for id in subscriptionIDs {
+                let featureArray = """
+                "\(id)": [
+                    {"product": "Network Protection", "name": "plus"},
+                    {"product": "Data Broker Protection", "name": "plus"},
+                    {"product": "Identity Theft Restoration", "name": "plus"}
+                ]
+                """
+                featuresJSON.append(featureArray)
+            }
+            let jsonString = "{ \"features\": { \(featuresJSON.joined(separator: ", ")) } }"
             let httpResponse = HTTPURLResponse(url: request.apiRequest.urlRequest.url!,
                                                statusCode: HTTPStatusCode.ok.rawValue,
                                                httpVersion: nil,
                                                headerFields: [:])!
-            let response = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)
-            apiService.set(response: response, forRequest: request.apiRequest)
+            let apiResponse = APIResponseV2(data: jsonString.data(using: .utf8), httpResponse: httpResponse)
+            apiService.set(response: apiResponse, forRequest: request.apiRequest)
         } else {
             setErrorResponse(forRequest: request.apiRequest, apiService: apiService)
         }
     }
+
 }

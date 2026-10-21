@@ -23,8 +23,11 @@ import Core
 import Combine
 @testable import DDGSync
 import Persistence
+import PixelKit
 import Common
+import FoundationExtensions
 import SyncUI_iOS
+import SecureStorage
 
 final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
@@ -32,6 +35,11 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     var vc: SyncSettingsViewController!
     var errorHandler: CapturingSyncPausedStateManager!
     var ddgSyncing: MockDDGSyncing!
+    var syncBookmarksAdapter: SyncBookmarksAdapter!
+    var syncCredentialsAdapter: SyncCredentialsAdapter!
+    var syncCreditCardsAdapter: SyncCreditCardsAdapter!
+    var featureFlagger: MockFeatureFlagger!
+    var syncAutoRestoreHandler: MockSyncAutoRestoreHandler!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
 
     @MainActor
@@ -50,22 +58,29 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
                                         readOnly: true,
                                         options: [:])
         ddgSyncing = MockDDGSyncing(authState: .active, isSyncInProgress: false)
-        let bookmarksAdapter = SyncBookmarksAdapter(
+        syncBookmarksAdapter = SyncBookmarksAdapter(
             database: database,
             favoritesDisplayModeStorage: MockFavoritesDisplayModeStoring(),
             syncErrorHandler: CapturingAdapterErrorHandler(),
             faviconStoring: MockFaviconStore())
-        let credentialsAdapter = SyncCredentialsAdapter(
+        syncCredentialsAdapter = SyncCredentialsAdapter(
             secureVaultErrorReporter: MockSecureVaultReporting(),
             syncErrorHandler: CapturingAdapterErrorHandler(),
             tld: TLD())
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
+        syncCreditCardsAdapter = SyncCreditCardsAdapter(
+            secureVaultErrorReporter: MockSecureVaultReporting(),
+            syncErrorHandler: CapturingAdapterErrorHandler())
+        featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.syncSeamlessAccountSwitching])
+        syncAutoRestoreHandler = MockSyncAutoRestoreHandler()
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
         vc = SyncSettingsViewController(
             syncService: ddgSyncing,
-            syncBookmarksAdapter: bookmarksAdapter,
-            syncCredentialsAdapter: credentialsAdapter,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
             syncPausedStateManager: errorHandler,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
         )
     }
 
@@ -73,14 +88,25 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         cancellables = nil
         errorHandler = nil
         vc = nil
+        syncBookmarksAdapter = nil
+        syncCredentialsAdapter = nil
+        syncCreditCardsAdapter = nil
+        featureFlagger = nil
+        syncAutoRestoreHandler = nil
         super.tearDown()
+    }
+
+    @MainActor
+    func testWhenSyncSettingsAreShownThenSyncUIVersionIsV2() {
+        XCTAssertEqual(vc.syncUIVersion, "v2")
+        XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v2"])
     }
 
     @MainActor
     func test_WhenSyncPausedIsTrue_andChangePublished_isSyncPausedIsUpdated() async {
         let expectation2 = XCTestExpectation(description: "isSyncPaused received the update")
         let expectation1 = XCTestExpectation(description: "isSyncPaused published")
-        vc.viewModel?.$isSyncPaused
+        vc.viewModel.$isSyncPaused
             .dropFirst()
             .sink { isPaused in
                 XCTAssertTrue(isPaused)
@@ -101,7 +127,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     func test_WhenSyncBookmarksPausedIsTrue_andChangePublished_isSyncBookmarksPausedIsUpdated() async {
         let expectation2 = XCTestExpectation(description: "isSyncBookmarksPaused received the update")
         let expectation1 = XCTestExpectation(description: "isSyncBookmarksPaused published")
-        vc.viewModel?.$isSyncBookmarksPaused
+        vc.viewModel.$isSyncBookmarksPaused
             .dropFirst()
             .sink { isPaused in
                 XCTAssertTrue(isPaused)
@@ -122,7 +148,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     func test_WhenSyncCredentialsPausedIsTrue_andChangePublished_isSyncCredentialsPausedIsUpdated() async {
         let expectation2 = XCTestExpectation(description: "isSyncCredentialsPaused received the update")
         let expectation1 = XCTestExpectation(description: "isSyncCredentialsPaused published")
-        vc.viewModel?.$isSyncCredentialsPaused
+        vc.viewModel.$isSyncCredentialsPaused
             .dropFirst()
             .sink { isPaused in
                 XCTAssertTrue(isPaused)
@@ -140,15 +166,24 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled() async {
-        let turnOff = Task { await vc.confirmAndDisableSync() }
-        await Task.yield()
+    func test_WhenSyncCreditCardsPausedIsTrue_andChangePublished_isSyncCreditCardsPausedIsUpdated() async {
+        let expectation2 = XCTestExpectation(description: "isSyncCreditCardsPaused received the update")
+        let expectation1 = XCTestExpectation(description: "isSyncCreditCardsPaused published")
+        vc.viewModel.$isSyncCreditCardsPaused
+            .dropFirst()
+            .sink { isPaused in
+                XCTAssertTrue(isPaused)
+                expectation2.fulfill()
+            }
+            .store(in: &cancellables)
 
-        vc.onConfirmSyncDisable?()
-        let didTurnOff = await turnOff.value
+        Task {
+            errorHandler.isSyncCreditCardsPaused = true
+            errorHandler.isSyncPausedChangedPublisher.send()
+            expectation1.fulfill()
+        }
 
-        XCTAssertTrue(didTurnOff)
-        XCTAssertTrue(errorHandler.syncDidTurnOffCalled)
+        await self.fulfillment(of: [expectation1, expectation2], timeout: 5.0)
     }
 
     @MainActor
@@ -161,6 +196,723 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         XCTAssertTrue(didDelete)
         XCTAssertTrue(errorHandler.syncDidTurnOffCalled)
+    }
+
+    @MainActor
+    func testWhenEnablingAutoRestoreByDefaultAndFeatureEnabledAndNoExistingDecisionThenPersistsDefaultEnabledDecision() {
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = nil
+
+        vc.enableAutoRestoreByDefaultIfNeeded()
+
+        XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
+    }
+
+    @MainActor
+    func testWhenEnablingAutoRestoreByDefaultAndExistingDecisionThenDoesNotPersistDefaultDecision() {
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = false
+
+        vc.enableAutoRestoreByDefaultIfNeeded()
+
+        XCTAssertTrue(syncAutoRestoreHandler.persistedDecisions.isEmpty)
+    }
+
+    @MainActor
+    func testWhenViewWillAppearThenAutoRestoreDecisionIsRefreshedFromHandler() {
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = false
+        vc.loadViewIfNeeded()
+
+        syncAutoRestoreHandler.existingAutoRestoreDecision = true
+        vc.viewWillAppear(false)
+
+        XCTAssertEqual(vc.viewModel.isAutoRestoreEnabled, true)
+    }
+
+    @MainActor
+    func testWhenAutoRestoreIsEligibleThenHasPreservedSyncAccountConflictForSetupIsTrue() {
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = true
+
+        XCTAssertTrue(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenAutoRestoreIsNotEligibleThenHasPreservedSyncAccountConflictForSetupIsFalse() {
+        syncAutoRestoreHandler.isEligibleForAutoRestoreValue = false
+
+        XCTAssertFalse(vc.isPreservedAccountPromptNeeded())
+    }
+
+    @MainActor
+    func testWhenPairingV2ExchangePresenterStartFailsThenFiresFailureContextPixel() async {
+        featureFlagger.enabledFeatureFlags.append(.exchangeKeysToSyncWithAnotherDevice)
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .active
+        )
+        await assertPairingV2PresenterStartFailurePixel(source: .exchange, myRole: "host") { connectionController, failure in
+            connectionController.startExchangeModeError = failure
+        }
+    }
+
+    @MainActor
+    func testWhenPairingV2ConnectPresenterStartFailsThenFiresFailureContextPixel() async {
+        featureFlagger.enabledFeatureFlags.append(.exchangeKeysToSyncWithAnotherDevice)
+        ddgSyncing.account = nil
+        await assertPairingV2PresenterStartFailurePixel(source: .connect, myRole: "joiner") { connectionController, failure in
+            connectionController.startConnectModeError = failure
+        }
+    }
+
+    @MainActor
+    private func assertPairingV2PresenterStartFailurePixel(source: SyncSetupSource,
+                                                           myRole: String,
+                                                           configure: (MockSyncConnectionControlling, PairingV2OperationFailure) -> Void) async {
+        let context = PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError)
+        let connectionController = MockSyncConnectionControlling()
+        let failure = PairingV2OperationFailure(
+            context: context,
+            underlyingError: SyncError.unexpectedStatusCode(500)
+        )
+        configure(connectionController, failure)
+        vc.connectionController = connectionController
+
+        // PixelKit.fire delivers through whatever PixelKit.shared was configured with, not through
+        // this class's own injected pixelFiring, so the pixel is observed by configuring a real
+        // PixelKit instance with a capturing fireRequest rather than by mocking a dependency.
+        // The failure path is reached asynchronously, so wait for the pixel rather than reading
+        // `firedPixels` straight after the call.
+        let pixelExpectation = expectation(description: "fires Pairing V2 presenter start failure pixel")
+        pixelExpectation.assertForOverFulfill = false
+        var firedPixels: [(name: String, parameters: [String: String])] = []
+        let pixelKitDefaults = UserDefaults(suiteName: "test_\(UUID().uuidString)")!
+        PixelKit.setUp(dryRun: false,
+                       appVersion: "1.0.0",
+                       session: "test",
+                       defaultHeaders: [:],
+                       defaults: pixelKitDefaults) { firedPixelName, _, firedParameters, _, _, completion in
+            firedPixels.append((firedPixelName, firedParameters))
+            if firedPixelName.contains(Pixel.Event.syncSetupEndedFailed.name) {
+                pixelExpectation.fulfill()
+            }
+            completion(true, nil)
+        }
+        defer { PixelKit.tearDown() }
+
+        vc.showSyncWithAnotherDevice()
+        await fulfillment(of: [pixelExpectation], timeout: 5)
+
+        let pixel = firedPixels.first { $0.name.contains(Pixel.Event.syncSetupEndedFailed.name) }
+        XCTAssertNotNil(pixel, "fires Pairing V2 presenter start failure pixel")
+        XCTAssertEqual(pixel?.parameters[PixelParameters.reason], SyncSetupFailureReason.relayChannelFailure)
+        XCTAssertEqual(pixel?.parameters[PixelParameters.source], source.rawValue)
+        XCTAssertEqual(pixel?.parameters["my_role"], myRole)
+        XCTAssertEqual(pixel?.parameters["pairing_failure_stage"], "presenter_open_own_channel")
+        XCTAssertEqual(pixel?.parameters["pairing_failure_kind"], "http_error")
+    }
+
+    @MainActor
+    func testWhenContinueAfterPreservedAccountRemovalForRecoverThenLocalRemovalIsDeferred() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        vc.continueAfterPreservedAccountRemoval(.recover)
+
+        await Task.yield()
+
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, [])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupIsPendingThenConnectionFlowTreatsAccountAsNotReadyForReuse() {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        XCTAssertTrue(vc.shouldUsePreservedAccountForConnectionFlow)
+
+        vc.continueAfterPreservedAccountRemoval(.recover)
+
+        XCTAssertFalse(vc.shouldUsePreservedAccountForConnectionFlow)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupIsPendingThenPreServerHookRunsCleanupOnlyOnce() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+
+        vc.needsPreservedAccountCleanupBeforeServerOperation = true
+
+        let firstAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.connect, .qrCode))
+        let secondAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.connect, .qrCode))
+
+        XCTAssertTrue(firstAttemptAllowed)
+        XCTAssertTrue(secondAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenDeferredCleanupFailsThenPreServerHookBlocksAndRetriesOnNextAttempt() async {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "device-id",
+            deviceName: "iPhone",
+            deviceType: "iPhone",
+            userId: "user-id",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: "token",
+            state: .inactive
+        )
+        ddgSyncing.removePreservedSyncAccountError = NSError(domain: "test.local-remove", code: 1)
+
+        vc.needsPreservedAccountCleanupBeforeServerOperation = true
+
+        let firstAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.recovery, .pastedCode))
+
+        XCTAssertFalse(firstAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 1)
+
+        ddgSyncing.removePreservedSyncAccountError = nil
+
+        let secondAttemptAllowed = await vc.controllerWillPerformServerSyncOperation(setupRole: .receiver(.recovery, .pastedCode))
+
+        XCTAssertTrue(secondAttemptAllowed)
+        XCTAssertEqual(ddgSyncing.disconnectedDeviceIDs, ["device-id", "device-id"])
+        XCTAssertEqual(ddgSyncing.removePreservedSyncAccountCallCount, 2)
+    }
+
+    @MainActor
+    func testWhenControllerDidFinishTransmittingRecoveryKeyWithoutWaitingThenShowsSuccess() {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+
+        spyVC.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .success(.newlySyncing))
+        XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenPeerCancelsPairingThenDismissesPresentedPairingUIAndConnectingSheet() async {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+
+        await spyVC.controllerDidError(.syncCancelledFromOtherDevice, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertEqual(spyVC.dismissPresentedViewControllerCallCount, 0)
+        XCTAssertNil(spyVC.viewModel.connectingSheetPhase)
+        XCTAssertEqual(spyVC.presentCallCount, 1)
+    }
+
+    @MainActor
+    func testWhenLocalConfirmationIsCancelledThenClearsConnectingSheetWithoutShowingError() async {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+        spyVC.onPresent = { [weak spyVC] _ in
+            let continuation = spyVC?.pairingV2ConfirmationContinuation
+            spyVC?.pairingV2ConfirmationContinuation = nil
+            spyVC?.pairingV2ConfirmationAlert = nil
+            continuation?.resume(returning: false)
+        }
+
+        let confirmed = await spyVC.controllerShouldJoinPairingV2Peer(peerName: "Mac", peerKind: .ddg)
+
+        XCTAssertFalse(confirmed)
+        XCTAssertNil(spyVC.viewModel.connectingSheetPhase)
+        XCTAssertEqual(spyVC.presentCallCount, 1)
+    }
+
+    @MainActor
+    func testCancelledPairingConfirmationDoesNotPresentAlertOrEndSetup() async {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+        let confirmationTask = Task { @MainActor in
+            await spyVC.controllerShouldJoinPairingV2Peer(peerName: "Mac", peerKind: .ddg)
+        }
+        confirmationTask.cancel()
+        let confirmed = await confirmationTask.value
+
+        XCTAssertFalse(confirmed)
+        XCTAssertEqual(spyVC.presentCallCount, 0)
+        XCTAssertNotNil(spyVC.viewModel.connectingSheetPhase)
+    }
+
+    @MainActor
+    func testWhenPairingSetupIsDismissedThenRemovesScannerAndNestedQRCodeSheet() async {
+        let navigationController = UINavigationController(rootViewController: vc)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        vc.scanCodeNavigationController = scanner
+        scanner.modalPresentationStyle = .fullScreen
+        let qrSheet = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            scanner.present(qrSheet, animated: false) { continuation.resume() }
+        }
+        XCTAssertTrue(navigationController.presentedViewController === scanner)
+        XCTAssertTrue(scanner.presentedViewController === qrSheet)
+
+        await vc.dismissPairingV2Setup()
+
+        XCTAssertNil(navigationController.presentedViewController)
+        XCTAssertNil(scanner.presentingViewController)
+        XCTAssertNil(qrSheet.presentingViewController)
+        XCTAssertNil(vc.viewModel.connectingSheetPhase)
+    }
+
+    @MainActor
+    func testWhenAccountIsCreatedDuringPairingThenKeepsSettingsOpenUntilScannerIsDismissed() async throws {
+        let settingsVC = try XCTUnwrap(vc)
+        let navigationController = UINavigationController(rootViewController: settingsVC)
+        let rootViewController = UIViewController()
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = rootViewController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        await withCheckedContinuation { continuation in
+            rootViewController.present(navigationController, animated: false) { continuation.resume() }
+        }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        settingsVC.scanCodeNavigationController = scanner
+        scanner.modalPresentationStyle = .fullScreen
+        let qrSheet = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            scanner.present(qrSheet, animated: false) { continuation.resume() }
+        }
+
+        settingsVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+
+        XCTAssertTrue(rootViewController.presentedViewController === navigationController)
+        XCTAssertTrue(navigationController.presentedViewController === scanner)
+        XCTAssertFalse(scanner.isBeingDismissed)
+
+        await settingsVC.controllerWillBeginTransmittingRecoveryKey()
+
+        XCTAssertTrue(rootViewController.presentedViewController === navigationController)
+        XCTAssertTrue(navigationController.presentingViewController === rootViewController)
+        XCTAssertNil(navigationController.presentedViewController)
+        XCTAssertNil(scanner.presentingViewController)
+        XCTAssertNil(qrSheet.presentingViewController)
+        XCTAssertTrue(settingsVC.viewIfLoaded?.window === window)
+        XCTAssertEqual(settingsVC.viewModel.connectingSheetPhase, .connecting(isRecovery: false))
+    }
+
+    @MainActor
+    func testWhenPairingScannerHasBeenDismissedThenCleanupPreservesUnrelatedModal() async {
+        let navigationController = UINavigationController(rootViewController: vc)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        vc.scanCodeNavigationController = scanner
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            navigationController.dismiss(animated: false) { continuation.resume() }
+        }
+        let unrelatedModal = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(unrelatedModal, animated: false) { continuation.resume() }
+        }
+
+        await vc.dismissPairingV2Setup()
+
+        XCTAssertTrue(navigationController.presentedViewController === unrelatedModal)
+        XCTAssertTrue(navigationController.topViewController === vc)
+        await withCheckedContinuation { continuation in
+            navigationController.dismiss(animated: false) { continuation.resume() }
+        }
+    }
+
+    @MainActor
+    func testWhenThirdPartyAccountIsAlreadyUpgradedThenDismissesPairingSetupBeforeShowingError() async {
+        let navigationController = UINavigationController(rootViewController: vc)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+
+        let scanner = UINavigationController(rootViewController: UIViewController())
+        vc.scanCodeNavigationController = scanner
+        scanner.modalPresentationStyle = .fullScreen
+        let qrSheet = UIViewController()
+        await withCheckedContinuation { continuation in
+            navigationController.present(scanner, animated: false) { continuation.resume() }
+        }
+        await withCheckedContinuation { continuation in
+            scanner.present(qrSheet, animated: false) { continuation.resume() }
+        }
+
+        await vc.controllerDidError(.thirdPartyAccountAlreadyUpgraded, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertNil(scanner.presentingViewController)
+        XCTAssertNil(qrSheet.presentingViewController)
+        let alert = navigationController.presentedViewController as? UIAlertController
+        XCTAssertNotNil(alert)
+        XCTAssertEqual(alert?.title, SyncErrorMessage.thirdPartyAccountAlreadyUpgraded.title)
+        XCTAssertEqual(alert?.message, SyncErrorMessage.thirdPartyAccountAlreadyUpgraded.description)
+        XCTAssertTrue(navigationController.topViewController === vc)
+        if let alert {
+            await withCheckedContinuation { continuation in
+                alert.dismiss(animated: false) { continuation.resume() }
+            }
+        }
+    }
+
+    @MainActor
+    func testWhenPairingV21StartsWaitingForJoinStatusThenPreservesRecoveryPhase() {
+        vc.viewModel.connectingSheetPhase = .connecting(isRecovery: true)
+
+        vc.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: true))
+    }
+
+    @MainActor
+    func testWhenPairingV21CompletesAfterDeviceListUpdateThenShowsSuccess() {
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = nil
+        let devices = [
+            SyncSettingsViewModel.Device(id: "host", name: "Host", type: "phone", isThisDevice: true),
+            SyncSettingsViewModel.Device(id: "joiner", name: "Joiner", type: "phone", isThisDevice: false)
+        ]
+        vc.viewModel.devices = devices
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.devices, devices)
+        let successDestination = SyncSettingsViewModel.SuccessDestination.newlySyncing
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: successDestination))
+        XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
+
+        vc.viewModel.connectingAnimationDidFinish()
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .success(successDestination))
+    }
+
+    @MainActor
+    func testWhenJoinerWaitsThenReceivesCodeThenReturnsToConnecting() {
+        for isRecovery in [false, true] {
+            vc.codeCollectionIntent = isRecovery ? .recoverData : .syncAnotherDevice
+            vc.viewModel.connectingSheetPhase = .connecting(isRecovery: isRecovery)
+            vc.controllerDidUpdatePairingV2JoinStatus(.unknown)
+            XCTAssertEqual(vc.viewModel.connectingSheetPhase, .waitingForOtherDevice)
+
+            vc.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+            XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: isRecovery))
+        }
+    }
+
+    @MainActor
+    func testWhenSyncAccountIsCreatedDuringFlowThenSuccessUsesFullRecoveryCodeScreen() {
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+        ddgSyncing.account = makeSyncAccount(userId: "new-account")
+        ddgSyncing.authState = .addingNewDevice
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .newlySyncing))
+    }
+
+    @MainActor
+    func testWhenFlowKeepsTheSameSyncAccountThenSuccessUsesShortScreen() {
+        ddgSyncing.account = makeSyncAccount(userId: "same-account")
+        ddgSyncing.authState = .active
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .alreadySyncing))
+    }
+
+    @MainActor
+    func testWhenFlowKeepsTheSameSyncAccountWhileAddingDeviceThenSuccessUsesShortScreen() {
+        ddgSyncing.account = makeSyncAccount(userId: "same-account")
+        ddgSyncing.authState = .addingNewDevice
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .alreadySyncing))
+    }
+
+    @MainActor
+    func testWhenFlowSwitchesSyncAccountsThenSuccessUsesFullRecoveryCodeScreen() {
+        ddgSyncing.account = makeSyncAccount(userId: "starting-account")
+        ddgSyncing.authState = .active
+        vc.showSyncWithAnotherDevice()
+        vc.viewModel.connectingSheetPhase = .waitingForOtherDevice
+        ddgSyncing.account = makeSyncAccount(userId: "resulting-account")
+
+        vc.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase, .connecting(isRecovery: false, successDestination: .newlySyncing))
+    }
+
+    private func makeSyncAccount(userId: String) -> SyncAccount {
+        SyncAccount(deviceId: "device", deviceName: "Test Device", deviceType: "phone", userId: userId,
+                    primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+    }
+
+    @MainActor
+    func testWhenControllerDidCreateSyncAccountWithoutShowingSyncEnabledThenDoesNotPresentCompletionUI() {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+
+        spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
+
+        XCTAssertNil(spyVC.viewModel.connectingSheetPhase)
+    }
+
+    @MainActor
+    func testWhenPairingCreatesSyncAccountThenWaitsForConnectionCompletion() {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+
+        spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        XCTAssertNil(spyVC.viewModel.connectingSheetPhase)
+
+        spyVC.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(spyVC.viewModel.connectingSheetPhase, .success(.newlySyncing))
+    }
+
+    @MainActor
+    func testWhenLegacyConnectCreatesAccountWithConnectingSheetThenCompletionShowsSuccess() {
+        let spyVC = SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+        spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
+        syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
+        syncAutoRestoreHandler.existingAutoRestoreDecision = nil
+
+        spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        spyVC.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .qrCode)
+
+        XCTAssertEqual(
+            spyVC.viewModel.connectingSheetPhase,
+            .connecting(isRecovery: false, successDestination: .newlySyncing)
+        )
+        XCTAssertEqual(syncAutoRestoreHandler.persistedDecisions, [true])
+    }
+
+    @MainActor
+    func testWhenLegacyConnectURLPairingInfoIsPresentThenPairingIsSilentlyDropped() throws {
+        let syncCode = SyncCode(recovery: nil,
+                                connect: SyncCode.ConnectCode(deviceId: "device-id", secretKey: Data("secret".utf8)),
+                                exchangeKey: nil)
+        let pairingURL = try legacyPairingURL(for: syncCode)
+        let spyVC = try makeSpyVC(pairingURL: pairingURL)
+
+        spyVC.viewDidAppear(false)
+
+        XCTAssertNil(spyVC.pairingInfo)
+        XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenLegacyRecoveryURLPairingInfoIsPresentThenPairingIsSilentlyDropped() throws {
+        let pairingURL = PairingInfo(base64Code: testRecoveryCode, deviceName: "Android")
+            .toURL(baseURL: try XCTUnwrap(URL(string: "https://duckduckgo.com")))
+        let spyVC = try makeSpyVC(pairingURL: pairingURL)
+
+        spyVC.viewDidAppear(false)
+
+        XCTAssertNil(spyVC.pairingInfo)
+        XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenLegacyUnparseableURLPairingInfoIsPresentThenPairingIsSilentlyDropped() throws {
+        let pairingURL = PairingInfo(base64Code: "not-a-sync-code", deviceName: "Android")
+            .toURL(baseURL: try XCTUnwrap(URL(string: "https://duckduckgo.com")))
+        let spyVC = try makeSpyVC(pairingURL: pairingURL)
+
+        spyVC.viewDidAppear(false)
+
+        XCTAssertNil(spyVC.pairingInfo)
+        XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenLegacyExchangeURLPairingInfoIsPresentThenPairingConfirmationIsShown() throws {
+        let syncCode = SyncCode(recovery: nil,
+                                connect: nil,
+                                exchangeKey: SyncCode.ExchangeKey(keyId: "key-id", publicKey: Data("public-key".utf8)))
+        let spyVC = try makeSpyVC(pairingURL: legacyPairingURL(for: syncCode))
+
+        spyVC.viewDidAppear(false)
+
+        XCTAssertNotNil(spyVC.pairingInfo)
+        XCTAssertEqual(spyVC.askForPairingConfirmationCallCount, 1)
+    }
+
+    func test_WhenSyncErrorMessageIsUpdateRequired_ThenDescriptionIsNilForTitleOnlyAlert() {
+        XCTAssertEqual(SyncErrorMessage.updateRequired.title, UserText.syncUpdateRequiredTitle)
+        XCTAssertEqual(SyncErrorMessage.updateRequired.buttonTitle, UserText.syncSetupErrorGotItButton)
+        XCTAssertNil(SyncErrorMessage.updateRequired.description)
+    }
+
+    func test_WhenSyncErrorMessageIsUnableToSyncWithDevice_ThenDescriptionIsPresent() {
+        XCTAssertEqual(SyncErrorMessage.unableToSyncWithDevice.title, UserText.syncFailedTitle)
+        XCTAssertEqual(SyncErrorMessage.unableToSyncWithDevice.description, UserText.syncFailedDescription)
+    }
+
+    private func legacyPairingURL(for syncCode: SyncCode) throws -> URL {
+        let base64Code = try syncCode.toJSON().base64EncodedString()
+        return PairingInfo(base64Code: base64Code, deviceName: "Android")
+            .toURL(baseURL: try XCTUnwrap(URL(string: "https://duckduckgo.com")))
+    }
+
+    @MainActor
+    private func makeSpyVC(pairingURL: URL) throws -> SpySyncSettingsViewController {
+        SpySyncSettingsViewController(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            pairingInfo: try XCTUnwrap(PairingInfo(url: pairingURL)),
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+    }
+
+    @MainActor
+    func testWhenAccountConflictHasMultipleDevicesThenSwitchesWithoutPrompting() async throws {
+        vc.codeCollectionIntent = .recoverData
+        vc.viewModel.devices = [
+            SyncSettingsViewModel.Device(id: "1", name: "iPhone", type: "iPhone", isThisDevice: true),
+            SyncSettingsViewModel.Device(id: "2", name: "Macbook Pro", type: "Macbook Pro", isThisDevice: false)
+        ]
+        var loginCalled = false
+        ddgSyncing.spyLogin = { [weak self] _, _, _ in
+            guard let self else { return [] }
+            XCTAssert(ddgSyncing.disconnectCalled)
+            loginCalled = true
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"),
+                    RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+        }
+
+        guard let syncCode = try? SyncCode.decodeBase64String(testRecoveryCode),
+              let recovery = syncCode.recovery,
+              let recoveryKey = try? recovery.defaultCredentialRecoveryKey() else {
+            XCTFail("Could not create RecoveryKey from code")
+            return
+        }
+
+        await vc.controllerDidFindTwoAccountsDuringRecovery(
+            recoveryKey,
+            setupRole: .sharer,
+            shouldPromptBeforeSwitchingAccounts: false,
+            shouldDeferEndingFlow: true)
+
+        XCTAssertTrue(loginCalled)
+        XCTAssertEqual(vc.viewModel.connectingSheetPhase,
+                       .success(.recovery))
     }
 
     func x_test_syncCodeEntered_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {
@@ -197,7 +949,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         _ = await vc.syncCodeEntered(code: testRecoveryCode, source: .qrCode)
 
-        let deviceIDs = await vc.viewModel?.devices.flatMap(\.id)
+        let deviceIDs = await vc.viewModel.devices.flatMap(\.id)
         XCTAssertEqual(deviceIDs, ["1", "2"])
     }
 
@@ -213,7 +965,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         }
 
         guard let syncCode = try? SyncCode.decodeBase64String(testRecoveryCode),
-            let recoveryKey = syncCode.recovery else {
+              let recovery = syncCode.recovery,
+              let recoveryKey = try? recovery.defaultCredentialRecoveryKey() else {
             XCTFail("Could not create RecoveryKey from code")
             return
         }
@@ -232,14 +985,15 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         }
 
         guard let syncCode = try? SyncCode.decodeBase64String(testRecoveryCode),
-              let recoveryKey = syncCode.recovery else {
+              let recovery = syncCode.recovery,
+              let recoveryKey = try? recovery.defaultCredentialRecoveryKey() else {
             XCTFail("Could not create RecoveryKey from code")
             return
         }
 
         await vc.switchAccounts(recoveryKey: recoveryKey)
 
-        let deviceIDs = await vc.viewModel?.devices.flatMap(\.id)
+        let deviceIDs = await vc.viewModel.devices.flatMap(\.id)
         XCTAssertEqual(deviceIDs, ["1", "2"])
     }
 
@@ -247,6 +1001,30 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     private func setUpWithSingleDevice(id: String) {
         ddgSyncing.account = SyncAccount(deviceId: id, deviceName: "iPhone", deviceType: "iPhone", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.registeredDevices = [RegisteredDevice(id: id, name: "iPhone", type: "iPhone")]
-        vc.viewModel?.devices = [SyncSettingsViewModel.Device(id: id, name: "iPhone", type: "iPhone", isThisDevice: true)]
+        vc.viewModel.devices = [SyncSettingsViewModel.Device(id: id, name: "iPhone", type: "iPhone", isThisDevice: true)]
+    }
+}
+
+@MainActor
+private final class SpySyncSettingsViewController: SyncSettingsViewController {
+
+    var dismissPresentedViewControllerCallCount = 0
+    var askForPairingConfirmationCallCount = 0
+    var presentCallCount = 0
+    var onPresent: ((UIViewController) -> Void)?
+
+    override func dismissPresentedViewController(completion: (() -> Void)? = nil) {
+        dismissPresentedViewControllerCallCount += 1
+        completion?()
+    }
+
+    override func askForPairingConfirmation(deviceName: String) {
+        askForPairingConfirmationCallCount += 1
+    }
+
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        presentCallCount += 1
+        onPresent?(viewControllerToPresent)
+        completion?()
     }
 }

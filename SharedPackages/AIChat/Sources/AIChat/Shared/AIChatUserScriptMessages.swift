@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+// swiftlint:disable inclusive_language
 public enum AIChatUserScriptMessages: String, CaseIterable {
     case openAIChatSettings
     case getAIChatNativeConfigValues
@@ -32,4 +33,150 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case restoreChat
     case removeChat
     case openSummarizationSourceLink
+    case openTranslationSourceLink
+    case openAIChatLink
+    case responseReceived
+
+    /// FE→native, once per prompt composition, before the file-upload disclosure would show.
+    /// Native spends a display if any remain and answers whether to show it.
+    case attachmentPrivacyShouldDisplay
+
+    case getAIChatPageContext
+    case submitAIChatPageContext
+    /// Pushed (native→FE) to append one user text selection to the duck.ai selection-context list.
+    /// Independent of the single page-context slot; the FE owns the resulting list of selections.
+    case submitAIChatSelectionContext
+    /// Pulled (FE→native) on chat init to fetch selections attached before the FE was ready to
+    /// receive pushes — mirrors `getAIChatPageContext`. Returns the current selection list.
+    case getAIChatSelectionContext
+    case togglePageContextTelemetry
+    case getAIChatOpenTabs
+    case getAIChatTabContent
+    case openKeyboard
+    case storeMigrationData
+    case getMigrationDataByIndex
+    case getMigrationInfo
+    case clearMigrationData
+
+    /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
+    case getAIChats
+
+    case voiceSessionStarted
+    case voiceSessionEnded
+
+    /// Posted by the FE when the voice-mode background is shown / removed. Unlike
+    /// `voiceSessionStarted`/`Ended` (mic lifecycle), these bracket the visible surface so native
+    /// chrome can sync to it. `voiceModeOpened` includes `{ backgroundColor: "#RRGGBB" }`.
+    case voiceModeOpened
+    case voiceModeClosed
+
+    /// Posted by the FE when the user creates a new chat — e.g. taps "Start new chat" in the
+    /// duck.ai sidebar, or any other FE entry point. Native uses this as the single source of
+    /// truth to reset host UI state (unified input, attachments) for the new chat.
+    case newChatStarted
+    /// Posted by the FE when `getUserMedia` rejects while attempting to start a Duck.ai
+    /// voice session. Native uses this to decide whether to surface a system-permission
+    /// remediation prompt (e.g. when the OS has denied microphone access to the app).
+    case voiceChatStartFailed
+
+    /// Posted by the FE when `getUserMedia` rejects while attempting to start Duck.ai
+    /// dictation. Mirrors `voiceChatStartFailed` but drives dictation-specific remediation
+    /// copy on the system-permission prompt.
+    case dictationStartFailed
+
+    /// Posted by the FE when a new chat is created in image-generation mode (e.g. the user
+    /// tapped the sidebar's "New Image" entry). Native uses this to mirror the FE's active
+    /// tool state in the Unified Input toolbar.
+    case newImageGenerationChatStarted
+
+    /// Posted by the FE when the user taps "Switch Model" on the subscription recovery card
+    /// shown for an unsupported model. Native surfaces its model picker for the active chat
+    /// (expands the input, reveals the model chip).
+    case showModelPicker
+
+    case showReasoningPicker
+
+    case openFilePicker
+
+    /// Posted by the FE while the subscription recovery card is showing for the active chat.
+    case disableChatInput
+
+    /// Posted by the FE when the subscription recovery card is dismissed for the active chat.
+    case enableChatInput
+
+    /// Posted by the FE to request focus on the native address bar (UTI).
+    /// Native honors this only when the Unified Toggle Input feature is enabled.
+    case focusChatInput
+
+    case editPrompt
+    case cancelEdit
+
+    // Sync
+    case getSyncStatus
+    case getScopedSyncAuthToken
+    case encryptWithSyncMasterKey
+    case decryptWithSyncMasterKey
+    case sendToSyncSettings
+    case sendToSetupSync
+    case setAIChatHistoryEnabled
+    case submitSyncStatusChanged
+
+    /// Pushed to the duck.ai page to open the Duck.ai Settings modal.
+    case submitOpenSettingsAction
+
+    /// Pushed to the duck.ai page when the user opts to spend their weekly allowance after the
+    /// daily one is gone. Web owns what that means; native only reports the choice.
+    case submitStartUsingWeeklyLimitAction
+
+    /// Posted by the Customize Responses card placement when the user dismisses it.
+    case customizeResponsesModalClosed
+
+    // MARK: - Browser tools
+
+    /// MCP `initialize` — negotiates protocol version and capabilities for browser tools.
+    /// Opens the session that `toolsList` and `toolsCall` require.
+    case initialize
+
+    /// MCP `notifications/initialized` — the FE is ready for tools traffic. Sent without an
+    /// envelope `id`, so it is answered only when the FE asks for a reply.
+    case notificationsInitialized = "notifications/initialized"
+
+    /// MCP `tools/list` — the browser tools this FE may discover, after remote-config gating.
+    case toolsList = "tools/list"
+
+    /// MCP `tools/call` — invoke a registered browser tool.
+    case toolsCall = "tools/call"
+
+    /// MCP `elicitation/create` — pushed (native→FE) to ask the user for tool permission mid-call.
+    case elicitationCreate = "elicitation/create"
+
+    /// MCP `elicitation/response` — the FE's answer to a pending `elicitationCreate`.
+    case elicitationResponse = "elicitation/response"
+
+    /// MCP `notifications/tools/list_changed` — pushed (native→FE) when the tool catalogue changes.
+    case toolsListChanged = "notifications/tools/list_changed"
+
+    /// Pushed (native→FE) when the chat's owner tab navigates, so the FE can refresh its view of the page.
+    case aiChatTabChanged
+
+    // MARK: - Bonus offer
+
+    /// Requested (FE→native) when Duck.ai loads. Native replies with the stored bonus record (if any stored) and the install facts.
+    case getAIChatBonusRecord
+
+    /// Requested (FE→native) when the user taps Claim. Native mints a Bonus ID for `campaignName`, stores it and replies with the record.
+    case getAIChatNewBonusRecord
+
+    /// Posted (FE→native) with the result of a `/redeem` call. Native applies it only if its Bonus ID matches the stored one, and ignores it otherwise.
+    case aiChatBonusRedeemOutcome
+
+    /// Posted (FE→native) when the activation modal is closed without claiming.
+    case aiChatBonusDismiss
+
+    /// Posted (FE→native) when the boost expired, was opted out of or was replaced by a subscription.
+    case aiChatBonusEnd
+
+    /// Pushed (native→FE) to every Duck.ai tab after the bonus record changes.
+    case submitAIChatBonusRecord
 }
+// swiftlint:enable inclusive_language

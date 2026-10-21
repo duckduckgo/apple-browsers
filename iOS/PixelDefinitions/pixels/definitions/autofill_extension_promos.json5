@@ -1,0 +1,58 @@
+// Autofill Extension promotion display and interaction pixels
+{
+    "autofill_extension_passwords_promo_displayed": {
+        "description": "Fired when the passwords list Autofill Extension promotion is displayed to the user",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "autofill_extension_passwords_promo_confirmed": {
+        "description": "Fired when user taps the confirm/enable button on the passwords list Autofill Extension promotion",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "autofill_extension_passwords_promo_dismissed": {
+        "description": "Fired when user dismisses the passwords list Autofill Extension promotion",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "autofill_extension_inline_promo_displayed": {
+        "description": "Fired when the inline Autofill Extension promotion is displayed to the user (i.e., in browser after password selection)",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "autofill_extension_inline_promo_confirmed": {
+        "description": "Fired when user taps the confirm/enable button on the inline Autofill Extension promotion",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "autofill_extension_inline_promo_dismissed": {
+        "description": "Fired when user soft dismisses the inline Autofill Extension promotion",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
+    "autofill_extension_inline_promo_dismissed_permanently": {
+        "description": "Fired when user clicks the permanent dismiss option on the inline Autofill Extension promotion",
+        "owners": ["amddg44"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

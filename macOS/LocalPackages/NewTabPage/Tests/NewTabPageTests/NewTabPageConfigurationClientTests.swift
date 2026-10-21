@@ -26,58 +26,106 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     private var client: NewTabPageConfigurationClient!
     private var sectionsAvailabilityProvider: MockNewTabPageSectionsAvailabilityProvider!
     private var sectionsVisibilityProvider: MockNewTabPageSectionsVisibilityProvider!
+    private var omnibarConfigProvider: MockNewTabPageOmnibarConfigProvider!
+    private var stateProvider: MockNewTabPageStateProviding!
     private var contextMenuPresenter: CapturingNewTabPageContextMenuPresenter!
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageConfigurationClient.MessageName>!
     private var eventMapper: CapturingNewTabPageConfigurationEventHandler!
+    private var isRebrandEnabled = false
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         sectionsVisibilityProvider = MockNewTabPageSectionsVisibilityProvider()
         sectionsAvailabilityProvider = MockNewTabPageSectionsAvailabilityProvider()
+        omnibarConfigProvider = MockNewTabPageOmnibarConfigProvider()
+        stateProvider = MockNewTabPageStateProviding()
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
-        client = NewTabPageConfigurationClient(
+        userScript = NewTabPageUserScript()
+        messageHelper = .init(userScript: userScript)
+        client = buildConfigurationClient(userScript: userScript, isRebrandEnabled: false)
+    }
+
+    private func buildConfigurationClient(userScript: NewTabPageUserScript, isRebrandEnabled: Bool) -> NewTabPageConfigurationClient {
+        let client = NewTabPageConfigurationClient(
+            environment: .development,
             sectionsAvailabilityProvider: sectionsAvailabilityProvider,
             sectionsVisibilityProvider: sectionsVisibilityProvider,
+            omnibarConfigProvider: omnibarConfigProvider,
             customBackgroundProvider: CapturingNewTabPageCustomBackgroundProvider(),
             contextMenuPresenter: contextMenuPresenter,
             linkOpener: CapturingNewTabPageLinkOpener(),
-            eventMapper: eventMapper
+            eventMapper: eventMapper,
+            stateProvider: stateProvider,
+            isRebrandEnabled: isRebrandEnabled
         )
-
-        userScript = NewTabPageUserScript()
-        messageHelper = .init(userScript: userScript)
         client.registerMessageHandlers(for: userScript)
+        return client
     }
 
     // MARK: - contextMenu
 
     @MainActor
-    func testThatContextMenuShowsContextMenu() async throws {
+    func testShowContextMenu_ShowsAllItems_WhenAllFeaturesAreAvailable() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+        sectionsVisibilityProvider.isOmnibarVisible = true
         sectionsVisibilityProvider.isFavoritesVisible = true
-        sectionsVisibilityProvider.isProtectionsReportVisible = false
+        sectionsVisibilityProvider.isProtectionsReportVisible = true
+        omnibarConfigProvider.isAIChatSettingVisible = true
+        omnibarConfigProvider.isAIChatShortcutEnabled = true
 
-        let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [
-            .init(id: .favorites, title: "Favorites"),
-            .init(id: .protections, title: "Protection Report")
-        ])
-        try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
-
-        XCTAssertEqual(contextMenuPresenter.showContextMenuCalls.count, 1)
-        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
-        XCTAssertEqual(menu.items.count, 2)
-        XCTAssertEqual(menu.items[0].title, "Favorites")
-        XCTAssertEqual(menu.items[0].state, .on)
-        XCTAssertEqual(menu.items[1].title, "Protection Report")
-        XCTAssertEqual(menu.items[1].state, .off)
-    }
-
-    func testWhenContextMenuParamsIsEmptyThenContextMenuDoesNotShow() async throws {
         let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [])
         try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
 
-        XCTAssertEqual(contextMenuPresenter.showContextMenuCalls.count, 0)
+        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+        let itemTitles = menu.items.map(\.title)
+
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuSearch))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuFavorites))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuProtectionsReport))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuShowDuckAI))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuOpenDuckAISettings))
+    }
+
+    @MainActor
+    func testShowContextMenu_HidesAIOptions_WhenAISettingNotVisible() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+        sectionsVisibilityProvider.isOmnibarVisible = true
+        sectionsVisibilityProvider.isFavoritesVisible = true
+        sectionsVisibilityProvider.isProtectionsReportVisible = true
+        omnibarConfigProvider.isAIChatSettingVisible = false
+        omnibarConfigProvider.isAIChatShortcutEnabled = true
+
+        let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [])
+        try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
+
+        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+        let itemTitles = menu.items.map(\.title)
+
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuShowDuckAI))
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuOpenDuckAISettings))
+    }
+
+    @MainActor
+    func testShowContextMenu_ShowsJustFavoritesAndProtections_WhenAllFlagsAreDisabledOrHidden() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = false
+        sectionsVisibilityProvider.isOmnibarVisible = false
+        sectionsVisibilityProvider.isFavoritesVisible = false
+        sectionsVisibilityProvider.isProtectionsReportVisible = false
+        omnibarConfigProvider.isAIChatSettingVisible = false
+        omnibarConfigProvider.isAIChatShortcutEnabled = false
+
+        let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [])
+        try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
+
+        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
+        let itemTitles = menu.items.map(\.title)
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuSearch))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuFavorites))
+        XCTAssertTrue(itemTitles.contains(UserText.newTabPageContextMenuProtectionsReport))
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuShowDuckAI))
+        XCTAssertFalse(itemTitles.contains(UserText.newTabPageContextMenuOpenDuckAISettings))
     }
 
     // MARK: - initialSetup
@@ -89,8 +137,9 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         XCTAssertEqual(configuration.widgets, [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
-            .init(id: .nextSteps),
+            .init(id: .subscriptionWinBackBanner),
             .init(id: .omnibar),
+            .init(id: .nextStepsList),
             .init(id: .favorites),
             .init(id: .protections)
         ])
@@ -100,6 +149,14 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
+        XCTAssertEqual(configuration.settings?.newTabPageRebranding, .init(state: .disabled))
+    }
+
+    func testThatInitialSetupReturnsEnabledNewTabPageRebrandingSetting() async throws {
+        client = buildConfigurationClient(userScript: userScript, isRebrandEnabled: true)
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.settings?.newTabPageRebranding, .init(state: .enabled))
     }
 
     func testWhenOmnibarNotAvailable_ThenInitialSetupReturnsConfigurationWithoutOmnibar() async throws {
@@ -109,7 +166,8 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         XCTAssertEqual(configuration.widgets, [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
-            .init(id: .nextSteps),
+            .init(id: .subscriptionWinBackBanner),
+            .init(id: .nextStepsList),
             .init(id: .favorites),
             .init(id: .protections),
         ])

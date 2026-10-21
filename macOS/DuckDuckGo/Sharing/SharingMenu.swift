@@ -19,16 +19,22 @@
 import Cocoa
 import PixelKit
 
+protocol SharingMenuDelegate: AnyObject {
+    @MainActor func sharingMenuRequestsSharingData() -> SharingMenu.SharingData?
+}
+
 final class SharingMenu: NSMenu {
 
     enum Location: Equatable {
-        case mainMenu, moreOptionsMenu, addressBarTextField
+        case mainMenu, moreOptionsMenu, addressBarTextField, navigationBar
     }
 
     let location: Location
+    weak var sharingDelegate: SharingMenuDelegate?
 
-    init(title: String, location: Location) {
+    init(title: String, location: Location, delegate: SharingMenuDelegate) {
         self.location = location
+        self.sharingDelegate = delegate
         super.init(title: title)
 
         self.autoenablesItems = true
@@ -41,27 +47,34 @@ final class SharingMenu: NSMenu {
 
     override func update() {
         let services = .copyLink + .urlSharingServices + .qrCode
+        let visibleOnMacOS27 = location != .mainMenu
 
         guard services != items.compactMap({ $0.representedObject as? NSSharingService }) else { return }
 
         self.items = services.map { service in
-            NSMenuItem(service: service, target: self, action: #selector(sharingItemSelected))
+            NSMenuItem(
+                service: service,
+                target: self,
+                action: #selector(sharingItemSelected),
+                visibleOnMacOS27: visibleOnMacOS27
+            )
         } + [
-            NSMenuItem(title: UserText.moreMenuItem, action: #selector(openSharingPreferences), target: self).withImage(.sharedMoreMenu)
+            NSMenuItem(title: UserText.moreMenuItem, action: #selector(openSharingPreferences), target: self)
+                .withImage(.sharedMoreMenu, visibleOnMacOS27: visibleOnMacOS27)
         ]
     }
 
     typealias SharingData = (title: String?, items: [Any])
     @MainActor
     private func sharingData() -> SharingData? {
-        guard let tabViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.selectedTabViewModel,
-              tabViewModel.canReload,
-              !tabViewModel.isShowingErrorPage,
-              let url = tabViewModel.tab.content.userEditableUrl else { return nil }
+        guard let delegateData = sharingDelegate?.sharingMenuRequestsSharingData() else { return nil }
 
-        let sharingData = DuckPlayer.shared.sharingData(for: tabViewModel.title, url: url) ?? (tabViewModel.title, url)
-
-        return (sharingData.title, [url])
+        // Apply DuckPlayer handling to delegate data if it contains a URL
+        if let url = delegateData.items.first(where: { $0 is URL }) as? URL {
+            let duckPlayerData = NSApp.delegateTyped.duckPlayer.sharingData(for: delegateData.title, url: url) ?? (delegateData.title, url)
+            return (duckPlayerData.title, [duckPlayerData.url])
+        }
+        return delegateData
     }
 
     @objc func openSharingPreferences(_ sender: NSMenuItem) {
@@ -167,7 +180,7 @@ private extension NSPasteboard {
 
 private extension NSMenuItem {
 
-    convenience init(service: NSSharingService, target: AnyObject, action: Selector) {
+    convenience init(service: NSSharingService, target: AnyObject, action: Selector, visibleOnMacOS27: Bool) {
         var isMailService = false
         if service.responds(to: NSSelectorFromString("name")),
            let name = service.value(forKey: "name") as? NSSharingService.Name,
@@ -179,7 +192,7 @@ private extension NSMenuItem {
         if isMailService {
             self.keyEquivalentModifierMask = [.command, .shift]
         }
-        self.image = service.image
+        withImage(service.image, visibleOnMacOS27: visibleOnMacOS27)
         self.representedObject = service
         self.target = target
         self.action = action

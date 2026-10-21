@@ -31,7 +31,8 @@ final class SubscriptionUITests: XCTestCase {
             userEventHandler: { event in
                 receivedEvents.append(event)
             },
-            statusUpdates: statusSubject.eraseToAnyPublisher()
+            statusUpdates: statusSubject.eraseToAnyPublisher(),
+            aiFeaturesEnabledUpdates: Just(true).eraseToAnyPublisher()
         )
 
         XCTAssertEqual(model.status, .off)
@@ -44,7 +45,8 @@ final class SubscriptionUITests: XCTestCase {
             userEventHandler: { event in
                 receivedEvents.append(event)
             },
-            statusUpdates: Just(.off).eraseToAnyPublisher()
+            statusUpdates: Just(.off).eraseToAnyPublisher(),
+            aiFeaturesEnabledUpdates: Just(true).eraseToAnyPublisher()
         )
 
         // Test didAppear
@@ -73,6 +75,16 @@ final class SubscriptionUITests: XCTestCase {
         } else {
             XCTFail("Unexpected event type")
         }
+
+        // Test open AI Features settings
+        await model.openAIFeaturesSettings()
+        XCTAssertEqual(receivedEvents.count, 4)
+        if case .openAIFeaturesSettings = receivedEvents[3] {
+            // Expected event
+        } else {
+            XCTFail("Unexpected event type")
+        }
+
     }
 
     func testPreferencesPaidAIChatModel_StatusUpdates() {
@@ -80,7 +92,8 @@ final class SubscriptionUITests: XCTestCase {
 
         let model = PreferencesPaidAIChatModel(
             userEventHandler: { _ in },
-            statusUpdates: statusSubject.eraseToAnyPublisher()
+            statusUpdates: statusSubject.eraseToAnyPublisher(),
+            aiFeaturesEnabledUpdates: Just(true).eraseToAnyPublisher()
         )
 
         XCTAssertEqual(model.status, .off)
@@ -91,4 +104,23 @@ final class SubscriptionUITests: XCTestCase {
         statusSubject.send(.off)
         XCTAssertEqual(model.status, .off)
     }
+
+    func testPreferencesPaidAIChatModel_AIFeaturesEnabledUpdates() {
+        let aiFeaturesSubject = CurrentValueSubject<Bool, Never>(false)
+
+        let model = PreferencesPaidAIChatModel(
+            userEventHandler: { _ in },
+            statusUpdates: Just(.off).eraseToAnyPublisher(),
+            aiFeaturesEnabledUpdates: aiFeaturesSubject.eraseToAnyPublisher()
+        )
+
+        XCTAssertEqual(model.isAIFeaturesEnabled, false)
+
+        aiFeaturesSubject.send(true)
+        XCTAssertEqual(model.isAIFeaturesEnabled, true)
+
+        aiFeaturesSubject.send(false)
+        XCTAssertEqual(model.isAIFeaturesEnabled, false)
+    }
+
 }

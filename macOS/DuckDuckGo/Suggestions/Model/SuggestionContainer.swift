@@ -17,16 +17,47 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import History
 import os.log
 import PixelKit
+import PrivacyConfig
 import Suggestions
 
-final class SuggestionContainer {
+private let maximumURLSessionTaskPriority: Float = 1.0
+private let remoteSuggestionsConnectionPrewarmInterval: TimeInterval = 30
+
+protocol SuggestionContainerProtocol {
+    @MainActor
+    func getSuggestions(for query: String, useCachedData: Bool, completion: ((SuggestionResult?) -> Void)?)
+}
+
+struct SuggestionLoadingDecider {
+    let featureFlagger: FeatureFlagger
+
+    func shouldLoadSuggestions(for input: String) -> Bool {
+        // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
+        // We define this as a URL with a path equal to a single slash (root URL).
+        // Skip suggestions when all of the following are true:
+        // * input can be converted to a URL
+        // * input starts with http[s]
+        // * converted URL is root (no path)
+        // * the user typed the trailing "/"
+        guard let url = URL.makeURL(fromSuggestionPhrase: input, useUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
+            return true
+        }
+
+        if URL.NavigationalScheme.hypertextSchemes.contains(where: { input.hasPrefix($0.rawValue) }), url.isRoot, input.last == "/" {
+            return false
+        }
+        return true
+    }
+}
+
+final class SuggestionContainer: SuggestionContainerProtocol {
 
     static let maximumNumberOfSuggestions = 9
 
@@ -36,6 +67,7 @@ final class SuggestionContainer {
     private let openTabsProvider: OpenTabsProvider
 
     protocol HistoryProvider {
+        @MainActor
         func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion]
     }
     private let historyProvider: HistoryProvider
@@ -55,9 +87,11 @@ final class SuggestionContainer {
     private(set) var suggestionDataCache: Data?
 
     private var latestQuery: String?
+    private var lastRemoteSuggestionsConnectionPrewarmDate: Date?
 
     private let urlSession: URLSession
 
+    @MainActor
     init(
         openTabsProvider: OpenTabsProvider? = nil,
         suggestionLoading: SuggestionLoading? = nil,
@@ -75,13 +109,19 @@ final class SuggestionContainer {
         self.bookmarkProvider = bookmarkProvider
         self.historyProvider = historyProvider
         self.startupPreferences = startupPreferences ?? NSApp.delegateTyped.startupPreferences
-        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
-        self.loading = suggestionLoading ?? SuggestionLoader(urlFactory: URL.makeURL(fromSuggestionPhrase:), isUrlIgnored: isUrlIgnored)
+        let effectiveFeatureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
+        self.featureFlagger = effectiveFeatureFlagger
+        let suggestionLoadingDecider = SuggestionLoadingDecider(featureFlagger: effectiveFeatureFlagger)
+        self.loading = suggestionLoading ?? SuggestionLoader(
+            shouldLoadSuggestionsForUserInput: suggestionLoadingDecider.shouldLoadSuggestions(for:),
+            isUrlIgnored: isUrlIgnored
+        )
         self.urlSession = urlSession ?? URLSession(configuration: .ephemeral)
         self.burnerMode = burnerMode
         self.windowControllersManager = windowControllersManager
     }
 
+    @MainActor
     func getSuggestions(for query: String, useCachedData: Bool = false, completion: ((SuggestionResult?) -> Void)? = nil) {
         latestQuery = query
 
@@ -115,6 +155,26 @@ final class SuggestionContainer {
         }
     }
 
+    @MainActor
+    func prewarmRemoteSuggestionsConnection() {
+        let now = Date()
+        if let lastRemoteSuggestionsConnectionPrewarmDate,
+           now.timeIntervalSince(lastRemoteSuggestionsConnectionPrewarmDate) < remoteSuggestionsConnectionPrewarmInterval {
+            return
+        }
+
+        lastRemoteSuggestionsConnectionPrewarmDate = now
+
+        var request = URLRequest.defaultRequest(with: SuggestionLoader.remoteSuggestionsURL)
+        request.httpMethod = "HEAD"
+        request.timeoutInterval = 1
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+
+        let task = urlSession.dataTask(with: request)
+        task.priority = maximumURLSessionTaskPriority
+        task.resume()
+    }
+
     func stopGettingSuggestions() {
         latestQuery = nil
     }
@@ -125,15 +185,15 @@ final class SuggestionContainer {
             let openTabViewModels = windowControllersManager.allTabViewModels(for: burnerMode, includingPinnedTabs: !burnerMode.isBurner)
             var usedUrls = Set<String>() // deduplicate
             return openTabViewModels.compactMap { model in
-                guard model.tab !== selectedTab,
-                      model.tab.content.isUrl
-                        || model.tab.content.urlForWebView?.isSettingsURL == true
-                        || model.tab.content.urlForWebView == .bookmarks,
-                      let url = model.tab.content.userEditableUrl,
+                guard model.uuid != selectedTab?.uuid,
+                      model.tabContent.displaysContentInWebView
+                        || model.tabContent.urlForWebView?.isSettingsURL == true
+                        || model.tabContent.urlForWebView == .bookmarks,
+                      let url = model.tabContent.userEditableUrl,
                       url != selectedTab?.content.userEditableUrl, // doesn't match currently selected
                       usedUrls.insert(url.nakedString ?? "").inserted == true /* if did not contain */ else { return nil }
 
-                return OpenTab(tabId: model.tab.id, title: model.title, url: url)
+                return OpenTab(tabId: model.uuid, title: model.title, url: url)
             }
         }
     }
@@ -149,6 +209,7 @@ struct OpenTab: BrowserTab, Hashable {
 }
 
 extension HistoryCoordinator: SuggestionContainer.HistoryProvider {
+    @MainActor
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         history ?? []
     }
@@ -167,6 +228,7 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         return .desktop
     }
 
+    @MainActor
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         return historyProvider.history(for: suggestionLoading)
     }
@@ -198,8 +260,9 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
             result.append(.init(title: UserText.mainMenuHistory, url: .history))
         }
         result += PreferencePaneIdentifier.allCases.compactMap { pane in
-            // Skip Duck AI if feature flag is off
-            if pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat) {
+            // Subscriber Offers opens a web page rather than a settings pane, so there is no pane to
+            // suggest navigating to. Skip Duck AI too when its feature flag is off.
+            if pane == .partnershipsHub || (pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat)) {
                 return nil
             }
             // preference panes URLs
@@ -219,7 +282,6 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
     }
 
     @MainActor func openTabs(for suggestionLoading: any Suggestions.SuggestionLoading) -> [any Suggestions.BrowserTab] {
-        guard featureFlagger.isFeatureOn(.autocompleteTabs) else { return [] }
         return openTabsProvider()
     }
 
@@ -236,15 +298,17 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         var request = URLRequest.defaultRequest(with: url)
         request.timeoutInterval = 1
 
-        urlSession.dataTask(with: request) { (data, _, error) in
+        let task = urlSession.dataTask(with: request) { (data, _, error) in
             self.suggestionDataCache = data
             completion(data, error)
-        }.resume()
+        }
+        task.priority = maximumURLSessionTaskPriority
+        task.resume()
     }
 
 }
 
-extension HistoryEntry: HistorySuggestion {
+extension HistoryEntry: @retroactive HistorySuggestion {
 
     public var numberOfVisits: Int {
         return numberOfTotalVisits

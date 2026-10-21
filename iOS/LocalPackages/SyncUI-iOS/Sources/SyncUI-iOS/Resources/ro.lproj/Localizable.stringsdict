@@ -42,5 +42,25 @@
 			<string>Parola ta pentru %2$@ nu se poate sincroniza deoarece unul dintre câmpurile sale depășește limita de caractere.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>Your credit card %2$@ and %1$d other cards can't sync because some of their fields exceed the character limit.</string>
+			<key>one</key>
+			<string>Cardul tău de credit %2$@ și încă un card nu se pot sincroniza deoarece unele dintre câmpurile lor depășesc limita de caractere.</string>
+			<key>other</key>
+			<string>Cardul tău de credit %2$@ și încă alte %1$d carduri nu se pot sincroniza deoarece unele dintre câmpurile lor depășesc limita de caractere.</string>
+			<key>zero</key>
+			<string>Cardul tău de credit %2$@ nu se poate sincroniza deoarece unul dintre câmpurile sale depășește limita de caractere.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

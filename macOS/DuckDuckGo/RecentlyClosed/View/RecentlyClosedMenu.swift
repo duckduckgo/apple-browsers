@@ -66,10 +66,10 @@ private extension NSMenuItem {
         self.init()
 
         // Use the TabContent extension to get the appropriate favicon
-        image = recentlyClosedTab.tabContent.displayedFavicon(
+        withImage(recentlyClosedTab.tabContent.displayedFavicon(
             actualFavicon: recentlyClosedTab.favicon,
             isBurner: false // Recently closed tabs are not burner tabs
-        )
+        ), visibleOnMacOS27: true)
         image?.size = NSSize.faviconSize
 
         // Set the title based on tab content
@@ -83,18 +83,13 @@ private extension NSMenuItem {
         case .bookmarks:
             title = UserText.tabBookmarksTitle
         case .history:
-            guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) else {
-                return nil
-            }
             title = UserText.mainMenuHistory
         case .releaseNotes:
             title = UserText.releaseNotesTitle
         case .url, .subscription, .identityTheftRestoration, .webExtensionUrl, .aiChat:
             title = recentlyClosedTab.title ?? recentlyClosedTab.tabContent.userEditableUrl?.absoluteString ?? ""
 
-            if title.count > MainMenu.Constants.maxTitleLength {
-                title = String(title.truncated(length: MainMenu.Constants.maxTitleLength))
-            }
+            title = title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
         case .onboarding, .none:
             return nil
         }

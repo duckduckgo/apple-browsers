@@ -32,11 +32,14 @@ public extension NSNotification.Name {
     static let entitlementsDidChange = Notification.Name("com.duckduckgo.subscription.EntitlementsDidChange")
     static let subscriptionDidChange = Notification.Name("com.duckduckgo.subscription.SubscriptionDidChange")
     static let availableAppStoreProductsDidChange = Notification.Name("com.duckduckgo.subscription.AvailableAppStoreProductsDidChange")
+    static let userDidPurchaseSubscription = Notification.Name("com.duckduckgo.subscription.UserDidPurchase")
 }
 
 public struct EntitlementsDidChangePayload {
 
     private let entitlementsKey = "entitlements"
+    public static let userInitiatedEntitlementChangeKey = "userInitiatedEntitlementChange"
+
     public let entitlements: [SubscriptionEntitlement]
     public var notificationUserInfo: [AnyHashable: Any] {
         return [entitlementsKey: entitlements]

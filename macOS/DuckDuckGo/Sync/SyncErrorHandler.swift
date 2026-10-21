@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import DDGSync
 import Foundation
 import PixelKit
@@ -29,9 +30,14 @@ import os.log
 protocol SyncErrorHandling {
     func handleBookmarkError(_ error: Error)
     func handleCredentialError(_ error: Error)
+    func handleCreditCardsError(_ error: Error)
+    func handleIdentitiesError(_ error: Error)
     func handleSettingsError(_ error: Error)
+    func handleAiChatsError(_ error: Error)
     func syncBookmarksSucceded()
     func syncCredentialsSucceded()
+    func syncCreditCardsSucceded()
+    func syncIdentitiesSucceded()
 }
 
 public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
@@ -50,6 +56,20 @@ public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
         }
     }
 
+    @UserDefaultsWrapper(key: .syncCreditCardsPaused, defaultValue: false)
+    private(set) var isSyncCreditCardsPaused: Bool {
+        didSet {
+            isSyncPausedChangedPublisher.send()
+        }
+    }
+
+    @UserDefaultsWrapper(key: .syncIdentitiesPaused, defaultValue: false)
+    private(set) var isSyncIdentitiesPaused: Bool {
+        didSet {
+            isSyncPausedChangedPublisher.send()
+        }
+    }
+
     @UserDefaultsWrapper(key: .syncIsPaused, defaultValue: false)
     private(set) var isSyncPaused: Bool {
         didSet {
@@ -62,6 +82,12 @@ public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
 
     @UserDefaultsWrapper(key: .syncCredentialsPausedErrorDisplayed, defaultValue: false)
     private var didShowCredentialsSyncPausedError: Bool
+
+    @UserDefaultsWrapper(key: .syncCreditCardsPausedErrorDisplayed, defaultValue: false)
+    private var didShowCreditCardsSyncPausedError: Bool
+
+    @UserDefaultsWrapper(key: .syncIdentitiesPausedErrorDisplayed, defaultValue: false)
+    private var didShowIdentitiesSyncPausedError: Bool
 
     @UserDefaultsWrapper(key: .syncInvalidLoginPausedErrorDisplayed, defaultValue: false)
     private var didShowInvalidLoginSyncPausedError: Bool
@@ -83,6 +109,12 @@ public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
 
     @UserDefaultsWrapper(key: .syncCurrentCredentialsPausedError, defaultValue: nil)
     private var currentSyncCredentialsPausedError: String?
+
+    @UserDefaultsWrapper(key: .syncCurrentCreditCardsPausedError, defaultValue: nil)
+    private var currentSyncCreditCardsPausedError: String?
+
+    @UserDefaultsWrapper(key: .syncCurrentIdentitiesPausedError, defaultValue: nil)
+    private var currentSyncIdentitiesPausedError: String?
 
     var isSyncPausedChangedPublisher = PassthroughSubject<Void, Never>()
 
@@ -136,6 +168,20 @@ public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
         isSyncCredentialsPaused = false
         didShowCredentialsSyncPausedError = false
         currentSyncCredentialsPausedError = nil
+        resetGeneralErrors()
+    }
+
+    private func resetCreditCardsErrors() {
+        isSyncCreditCardsPaused = false
+        didShowCreditCardsSyncPausedError = false
+        currentSyncCreditCardsPausedError = nil
+        resetGeneralErrors()
+    }
+
+    private func resetIdentitiesErrors() {
+        isSyncIdentitiesPaused = false
+        didShowIdentitiesSyncPausedError = false
+        currentSyncIdentitiesPausedError = nil
         resetGeneralErrors()
     }
 
@@ -215,14 +261,40 @@ public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
     }
 
     private var syncCredentialsPausedMessage: String? {
-        guard let error = getErrorType(from: currentSyncBookmarksPausedError) else { return nil }
+        guard let error = getErrorType(from: currentSyncCredentialsPausedError) else { return nil }
         switch error {
         case .credentialsCountLimitExceeded, .credentialsRequestSizeLimitExceeded:
-            return UserText.bookmarksLimitExceededDescription
-        case .badRequestBookmarks:
+            return UserText.credentialsLimitExceededDescription
+        case .badRequestCredentials:
             return UserText.syncCredentialsBadRequestErrorDescription
         default:
-            assertionFailure("Sync Bookmarks Paused error should be one of those listes")
+            assertionFailure("Sync Credentials Paused error should be one of those listed")
+            return nil
+        }
+    }
+
+    private var syncCreditCardsPausedMessage: String? {
+        guard let error = getErrorType(from: currentSyncCreditCardsPausedError) else { return nil }
+        switch error {
+        case .creditCardsCountLimitExceeded, .creditCardsRequestSizeLimitExceeded:
+            return UserText.creditCardsLimitExceededDescription
+        case .badRequestCreditCards:
+            return UserText.syncCreditCardsBadRequestErrorDescription
+        default:
+            assertionFailure("Sync Credit Cards Paused error should be one of those listed")
+            return nil
+        }
+    }
+
+    private var syncIdentitiesPausedMessage: String? {
+        guard let error = getErrorType(from: currentSyncIdentitiesPausedError) else { return nil }
+        switch error {
+        case .identitiesCountLimitExceeded, .identitiesRequestSizeLimitExceeded:
+            return UserText.identitiesLimitExceededDescription
+        case .badRequestIdentities:
+            return UserText.syncIdentitiesBadRequestErrorDescription
+        default:
+            assertionFailure("Sync Identities Paused error should be one of those listed")
             return nil
         }
     }
@@ -233,6 +305,16 @@ extension SyncErrorHandler: SyncErrorHandling {
     func syncCredentialsSucceded() {
         lastSyncSuccessTime = Date()
         resetCredentialsErrors()
+    }
+
+    func syncCreditCardsSucceded() {
+        lastSyncSuccessTime = Date()
+        resetCreditCardsErrors()
+    }
+
+    func syncIdentitiesSucceded() {
+        lastSyncSuccessTime = Date()
+        resetIdentitiesErrors()
     }
 
     func syncBookmarksSucceded() {
@@ -248,9 +330,21 @@ extension SyncErrorHandler: SyncErrorHandling {
         handleError(error, modelType: .credentials)
     }
 
+    func handleCreditCardsError(_ error: Error) {
+        handleError(error, modelType: .creditCards)
+    }
+
+    func handleIdentitiesError(_ error: Error) {
+        handleError(error, modelType: .identities)
+    }
+
     public func handleSettingsError(_ error: Error) {
          handleError(error, modelType: .settings)
      }
+
+    func handleAiChatsError(_ error: Error) {
+        handleError(error, modelType: .aiChats)
+    }
 
     private func handleError(_ error: Error, modelType: ModelType) {
         switch error {
@@ -284,6 +378,12 @@ extension SyncErrorHandler: SyncErrorHandling {
                 syncIsPaused(errorType: .bookmarksCountLimitExceeded)
             case .credentials:
                 syncIsPaused(errorType: .credentialsCountLimitExceeded)
+            case .creditCards:
+                syncIsPaused(errorType: .creditCardsCountLimitExceeded)
+            case .identities:
+                syncIsPaused(errorType: .identitiesCountLimitExceeded)
+            case .aiChats:
+                syncIsPaused(errorType: .aiChatsCountLimitExceeded)
             case .settings:
                 break
             }
@@ -293,6 +393,12 @@ extension SyncErrorHandler: SyncErrorHandling {
                 syncIsPaused(errorType: .bookmarksRequestSizeLimitExceeded)
             case .credentials:
                 syncIsPaused(errorType: .credentialsRequestSizeLimitExceeded)
+            case .creditCards:
+                syncIsPaused(errorType: .creditCardsRequestSizeLimitExceeded)
+            case .identities:
+                syncIsPaused(errorType: .identitiesRequestSizeLimitExceeded)
+            case .aiChats:
+                syncIsPaused(errorType: .aiChatsRequestSizeLimitExceeded)
             case .settings:
                 break
             }
@@ -302,12 +408,30 @@ extension SyncErrorHandler: SyncErrorHandling {
                 syncIsPaused(errorType: .badRequestBookmarks)
             case .credentials:
                 syncIsPaused(errorType: .badRequestCredentials)
+            case .creditCards:
+                syncIsPaused(errorType: .badRequestCreditCards)
+            case .identities:
+                syncIsPaused(errorType: .badRequestIdentities)
+            case .aiChats:
+                syncIsPaused(errorType: .badRequestAiChats)
             case .settings:
                 break
             }
             PixelKit.fire(modelType.badRequestPixel, frequency: .legacyDailyNoSuffix)
         case .unexpectedStatusCode(401):
-            syncIsPaused(errorType: .invalidLoginCredentials)
+            switch modelType {
+            case .aiChats:
+                break
+            default:
+                syncIsPaused(errorType: .invalidLoginCredentials)
+            }
+        case .unauthenticatedWhileLoggedIn:
+            switch modelType {
+            case .aiChats:
+                syncIsPaused(errorType: .invalidLoginCredentials)
+            default:
+                break
+            }
         case .unexpectedStatusCode(418), .unexpectedStatusCode(429):
             syncIsPaused(errorType: .tooManyRequests)
             PixelKit.fire(modelType.tooManyRequestsPixel, frequency: .legacyDailyNoSuffix)
@@ -327,6 +451,16 @@ extension SyncErrorHandler: SyncErrorHandling {
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
             PixelKit.fire(GeneralPixel.syncCredentialsObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
+        case .creditCardsCountLimitExceeded:
+            currentSyncCreditCardsPausedError = errorType.rawValue
+            self.isSyncCreditCardsPaused = true
+            PixelKit.fire(GeneralPixel.syncCreditCardsObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
+        case .identitiesCountLimitExceeded:
+            currentSyncIdentitiesPausedError = errorType.rawValue
+            self.isSyncIdentitiesPaused = true
+            PixelKit.fire(GeneralPixel.syncIdentitiesObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
+        case .aiChatsCountLimitExceeded:
+            PixelKit.fire(GeneralPixel.syncAiChatsObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .bookmarksRequestSizeLimitExceeded:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
@@ -335,12 +469,30 @@ extension SyncErrorHandler: SyncErrorHandling {
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
             PixelKit.fire(GeneralPixel.syncCredentialsRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
+        case .creditCardsRequestSizeLimitExceeded:
+            currentSyncCreditCardsPausedError = errorType.rawValue
+            self.isSyncCreditCardsPaused = true
+            PixelKit.fire(GeneralPixel.syncCreditCardsRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
+        case .identitiesRequestSizeLimitExceeded:
+            currentSyncIdentitiesPausedError = errorType.rawValue
+            self.isSyncIdentitiesPaused = true
+            PixelKit.fire(GeneralPixel.syncIdentitiesRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
+        case .aiChatsRequestSizeLimitExceeded:
+            PixelKit.fire(GeneralPixel.syncAiChatsRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .badRequestBookmarks:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
         case .badRequestCredentials:
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
+        case .badRequestCreditCards:
+            currentSyncCreditCardsPausedError = errorType.rawValue
+            self.isSyncCreditCardsPaused = true
+        case .badRequestIdentities:
+            currentSyncIdentitiesPausedError = errorType.rawValue
+            self.isSyncIdentitiesPaused = true
+        case .badRequestAiChats:
+            break
         case .invalidLoginCredentials:
             currentSyncAllPausedError = errorType.rawValue
             self.isSyncPaused = true
@@ -360,6 +512,14 @@ extension SyncErrorHandler: SyncErrorHandling {
             guard !didShowCredentialsSyncPausedError else { return }
             alertPresenter.showSyncPausedAlert(title: UserText.syncCredentialsPausedAlertTitle, informative: UserText.syncCredentialsPausedAlertDescription)
             didShowCredentialsSyncPausedError = true
+        case .creditCardsCountLimitExceeded, .creditCardsRequestSizeLimitExceeded:
+            guard !didShowCreditCardsSyncPausedError else { return }
+            alertPresenter.showSyncPausedAlert(title: UserText.syncCreditCardsPausedAlertTitle, informative: UserText.syncCreditCardsPausedAlertDescription)
+            didShowCreditCardsSyncPausedError = true
+        case .identitiesCountLimitExceeded, .identitiesRequestSizeLimitExceeded:
+            guard !didShowIdentitiesSyncPausedError else { return }
+            alertPresenter.showSyncPausedAlert(title: UserText.syncIdentitiesPausedAlertTitle, informative: UserText.syncIdentitiesPausedAlertDescription)
+            didShowIdentitiesSyncPausedError = true
         case .badRequestBookmarks:
             guard !didShowBookmarksSyncPausedError else { return }
             alertPresenter.showSyncPausedAlert(title: UserText.syncBookmarkPausedAlertTitle, informative: UserText.syncBookmarksBadRequestAlertDescription)
@@ -368,6 +528,16 @@ extension SyncErrorHandler: SyncErrorHandling {
             guard !didShowCredentialsSyncPausedError else { return }
             alertPresenter.showSyncPausedAlert(title: UserText.syncBookmarkPausedAlertTitle, informative: UserText.syncCredentialsBadRequestAlertDescription)
             didShowCredentialsSyncPausedError = true
+        case .badRequestCreditCards:
+            guard !didShowCreditCardsSyncPausedError else { return }
+            alertPresenter.showSyncPausedAlert(title: UserText.syncCreditCardsPausedAlertTitle, informative: UserText.syncCreditCardsBadRequestAlertDescription)
+            didShowCreditCardsSyncPausedError = true
+        case .badRequestIdentities:
+            guard !didShowIdentitiesSyncPausedError else { return }
+            alertPresenter.showSyncPausedAlert(title: UserText.syncIdentitiesPausedAlertTitle, informative: UserText.syncIdentitiesBadRequestAlertDescription)
+            didShowIdentitiesSyncPausedError = true
+        case .badRequestAiChats, .aiChatsCountLimitExceeded, .aiChatsRequestSizeLimitExceeded:
+            break
         case .invalidLoginCredentials:
             guard !didShowInvalidLoginSyncPausedError else { return }
             alertPresenter.showSyncPausedAlert(title: UserText.syncPausedAlertTitle, informative: UserText.syncInvalidLoginAlertDescription)
@@ -382,18 +552,30 @@ extension SyncErrorHandler: SyncErrorHandling {
     private enum AsyncErrorType: String {
         case bookmarksCountLimitExceeded
         case credentialsCountLimitExceeded
+        case creditCardsCountLimitExceeded
+        case identitiesCountLimitExceeded
+        case aiChatsCountLimitExceeded
         case bookmarksRequestSizeLimitExceeded
         case credentialsRequestSizeLimitExceeded
+        case creditCardsRequestSizeLimitExceeded
+        case identitiesRequestSizeLimitExceeded
+        case aiChatsRequestSizeLimitExceeded
         case invalidLoginCredentials
         case tooManyRequests
         case badRequestBookmarks
         case badRequestCredentials
+        case badRequestCreditCards
+        case badRequestIdentities
+        case badRequestAiChats
     }
 
     private enum ModelType: String {
         case bookmarks
         case credentials
+        case creditCards
+        case identities
         case settings
+        case aiChats
 
         var syncFailedPixel: GeneralPixel {
             switch self {
@@ -401,8 +583,14 @@ extension SyncErrorHandler: SyncErrorHandling {
                     .syncBookmarksFailed
             case .credentials:
                     .syncCredentialsFailed
+            case .creditCards:
+                    .syncCreditCardsFailed
+            case .identities:
+                    .syncIdentitiesFailed
             case .settings:
                     .syncSettingsFailed
+            case .aiChats:
+                    .syncAiChatsFailed
             }
         }
 
@@ -412,8 +600,14 @@ extension SyncErrorHandler: SyncErrorHandling {
                     .syncBookmarksPatchCompressionFailed
             case .credentials:
                     .syncCredentialsPatchCompressionFailed
+            case .creditCards:
+                    .syncCreditCardsPatchCompressionFailed
+            case .identities:
+                    .syncIdentitiesPatchCompressionFailed
             case .settings:
                     .syncSettingsPatchCompressionFailed
+            case .aiChats:
+                    .syncAiChatsPatchCompressionFailed
             }
         }
 
@@ -423,8 +617,14 @@ extension SyncErrorHandler: SyncErrorHandling {
                     .syncBookmarksTooManyRequestsDaily
             case .credentials:
                     .syncCredentialsTooManyRequestsDaily
+            case .creditCards:
+                    .syncCreditCardsTooManyRequestsDaily
+            case .identities:
+                    .syncIdentitiesTooManyRequestsDaily
             case .settings:
                     .syncSettingsTooManyRequestsDaily
+            case .aiChats:
+                    .syncAiChatsTooManyRequestsDaily
             }
         }
 
@@ -434,8 +634,14 @@ extension SyncErrorHandler: SyncErrorHandling {
                     .syncBookmarksValidationErrorDaily
             case .credentials:
                     .syncCredentialsValidationErrorDaily
+            case .creditCards:
+                    .syncCreditCardsValidationErrorDaily
+            case .identities:
+                    .syncIdentitiesValidationErrorDaily
             case .settings:
                     .syncSettingsValidationErrorDaily
+            case .aiChats:
+                    .syncAiChatsValidationErrorDaily
             }
         }
     }
@@ -451,6 +657,20 @@ extension SyncErrorHandler: SyncErrorHandling {
         guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
         navigationViewController.showPasswordManagerPopover(selectedCategory: .allItems, source: .sync)
+    }
+
+    @MainActor
+    private func manageCreditCards() {
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
+        let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
+        navigationViewController.showPasswordManagerPopover(selectedCategory: .cards, source: .sync)
+    }
+
+    @MainActor
+    private func manageIdentities() {
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
+        let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
+        navigationViewController.showPasswordManagerPopover(selectedCategory: .identities, source: .sync)
     }
 
 }
@@ -483,6 +703,24 @@ extension SyncErrorHandler: SyncPausedStateManaging {
                                      action: manageLogins)
     }
 
+    @MainActor
+    var syncCreditCardsPausedMessageData: SyncPausedMessageData? {
+        guard let syncCreditCardsPausedMessage else { return nil }
+        return SyncPausedMessageData(title: UserText.syncLimitExceededTitle,
+                                     description: syncCreditCardsPausedMessage,
+                                     buttonTitle: "",
+                                     action: manageCreditCards)
+    }
+
+    @MainActor
+    var syncIdentitiesPausedMessageData: SyncPausedMessageData? {
+        guard let syncIdentitiesPausedMessage else { return nil }
+        return SyncPausedMessageData(title: UserText.syncLimitExceededTitle,
+                                     description: syncIdentitiesPausedMessage,
+                                     buttonTitle: "",
+                                     action: manageIdentities)
+    }
+
     var syncPausedChangedPublisher: AnyPublisher<Void, Never> {
         isSyncPausedChangedPublisher.eraseToAnyPublisher()
     }
@@ -490,5 +728,7 @@ extension SyncErrorHandler: SyncPausedStateManaging {
     func syncDidTurnOff() {
         resetBookmarksErrors()
         resetCredentialsErrors()
+        resetCreditCardsErrors()
+        resetIdentitiesErrors()
     }
 }

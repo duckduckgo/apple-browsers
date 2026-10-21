@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import TrackerRadarKit
 import BrowserServicesKit
 import CryptoKit
+import Foundation
+import PrivacyConfig
+import TrackerRadarKit
 
 final class ContentBlockerRulesLists: DefaultContentBlockerRulesListsSource {
 
@@ -43,17 +44,6 @@ final class ContentBlockerRulesLists: DefaultContentBlockerRulesListsSource {
                 result.remove(at: tdsRulesIndex)
                 result.append(splitRules.0)
                 result.append(splitRules.1)
-            }
-        }
-
-        // split CTL rules so they can be managed separately from the main list when user clicks through a CTL dialog
-        if let tdsRulesIndex = result.firstIndex(where: { $0.name == DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName }) {
-            let tdsRules = result[tdsRulesIndex]
-            let ctlSplitter = ClickToLoadRulesSplitter(rulesList: tdsRules)
-            if let splitRules = ctlSplitter.split() {
-                result.remove(at: tdsRulesIndex)
-                result.append(splitRules.withoutBlockCTL)
-                result.append(splitRules.withBlockCTL)
             }
         }
 

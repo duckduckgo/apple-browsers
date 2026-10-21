@@ -1,0 +1,19 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+- tapOn: Browsing menu
+- tapOn: Settings
+- scrollUntilVisible:
+    element: Passwords & Autofill
+- tapOn: Passwords & Autofill
+- tapOn: Credit Cards
+- tapOn: Passcode field
+- inputText: "0000"
+- pressKey: Enter
+- tapOn: Maestro Test Card
+- tapOn: Delete Card
+- tapOn: Delete Card
+- tapOn: Credit Cards
+- tapOn: Passwords & Autofill
+- tapOn: Settings
+- tapOn: Done

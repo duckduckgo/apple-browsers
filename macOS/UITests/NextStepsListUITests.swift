@@ -1,0 +1,117 @@
+//
+//  NextStepsListUITests.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Utilities
+import XCTest
+
+final class NextStepsListUITests: UITestCase {
+
+    private var webView: XCUIElement!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        app = XCUIApplication.setUp()
+        app.enforceSingleWindow()
+        resetNextSteps()
+        webView = app.webViews.firstMatch
+    }
+
+    override func tearDown() {
+        webView = nil
+        app = nil
+        super.tearDown()
+    }
+
+    func testNextStepsListWidgetAppearsOnNewTabPage() throws {
+        app.openNewTab()
+
+        // Confirm Next Steps widget is visible
+        XCTAssertTrue(nextStepsSection.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Next Steps content should be visible on New Tab Page")
+
+        // Confirm Next Steps card is visible, using its "No Thanks" button
+        XCTAssertTrue(nextStepsCardDismissButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Dismiss button should be visible in the Next Steps content")
+    }
+
+    func testNextStepsCardDisappearsAfterDismissal() throws {
+        app.openNewTab()
+
+        XCTAssertTrue(nextStepsCardDismissButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "A Next Steps card should be visible on the New Tab Page")
+
+        let buttonsBeforeDismissal = visibleWebViewButtonTitles()
+        nextStepsCardDismissButton.click()
+
+        let dismissedCardCycledAway = webView.wait(for: NSPredicate { _, _ in
+            !buttonsBeforeDismissal.subtracting(self.visibleWebViewButtonTitles()).isEmpty
+        })
+
+        XCTAssertTrue(dismissedCardCycledAway,
+                      "The dismissed card should no longer be visible after tapping dismiss")
+    }
+
+    func testNextStepsListWidgetDisappearsAfterMaxDemonstrationDays() throws {
+        shiftMaxNextStepsDays()
+        app.openNewTab()
+
+        // Confirm Next Steps widget is not visible
+        XCTAssertTrue(nextStepsSection.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Next Steps content should not be visible after max demonstration days")
+    }
+}
+
+// MARK: - Test helpers
+
+private extension NextStepsListUITests {
+
+    var newTabPageSubmenu: XCUIElement {
+        app.debugMenu.menuItems[AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu]
+    }
+
+    var resetNextStepsMenuItem: XCUIElement {
+        newTabPageSubmenu.menuItems[AccessibilityIdentifiers.NewTabPage.resetNextStepsMenuItem]
+    }
+
+    var shiftMaxDaysMenuItem: XCUIElement {
+        newTabPageSubmenu.menuItems[AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem]
+    }
+
+    var nextStepsSection: XCUIElement {
+        webView.staticTexts.containing(\.value, containing: "NEXT STEPS").firstMatch
+    }
+
+    var nextStepsCardDismissButton: XCUIElement {
+        webView.buttons["No Thanks"]
+    }
+
+    func visibleWebViewButtonTitles() -> Set<String> {
+        Set(webView.buttons.allElementsBoundByIndex.compactMap { button in
+            let title = button.title.isEmpty ? button.label : button.title
+            return title.isEmpty ? nil : title
+        })
+    }
+
+    func resetNextSteps() {
+        resetNextStepsMenuItem.clickAfterExistenceTestSucceeds()
+    }
+
+    func shiftMaxNextStepsDays() {
+        shiftMaxDaysMenuItem.clickAfterExistenceTestSucceeds()
+    }
+}

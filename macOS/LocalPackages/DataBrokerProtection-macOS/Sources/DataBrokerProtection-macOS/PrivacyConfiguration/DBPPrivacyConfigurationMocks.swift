@@ -18,6 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 
 final class MockDomainsProtectionStore: DomainsProtectionStore {
     var unprotectedDomains = Set<String>()

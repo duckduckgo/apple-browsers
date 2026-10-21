@@ -21,6 +21,7 @@ import History
 
 extension HistoryCoordinator {
 
+    @MainActor
     func migrateModelV5toV6IfNeeded() {
         let defaults = MigrationDefaults()
 

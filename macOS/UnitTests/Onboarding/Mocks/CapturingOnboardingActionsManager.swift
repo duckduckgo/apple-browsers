@@ -17,12 +17,16 @@
 //
 
 import Foundation
+import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
 class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration = OnboardingConfiguration(
-        stepDefinitions: StepDefinitions(systemSettings: SystemSettings(rows: [])),
+        stepDefinitions: StepDefinitions(
+            systemSettings: SystemSettings(rows: []),
+            getStarted: GetStarted(options: [])
+        ),
         exclude: [],
         order: "",
         env: "environment",
@@ -30,6 +34,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
         platform: .init(name: "")
     )
 
+    var sourceWebView: WKWebView?
     var goToAddressBarCalled = false
     var goToSettingsCalled = false
     var addToDockCalled = false
@@ -38,23 +43,31 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var setBookmarkBarCalled = false
     var setSessionRestoreCalled = false
     var setHomeButtonPositionCalled = false
+    var setDuckAiInAddressBarCalled = false
+    var installChromeExtensionCalled = false
     var onboardingStartedCalled = false
     var reportExceptionCalled = false
     var exceptionParams: [String: String] = [:]
     var completedStep: OnboardingSteps?
+    var shownStep: OnboardingSteps?
     var bookmarkBarVisible: Bool?
     var homeButtonVisible: Bool?
     var sessionRestoreEnabled: Bool?
+    var duckAiInAddressBarEnabled: Bool?
+    var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
 
-    func onboardingStarted() {
+    func onboardingStarted(from webView: WKWebView?) {
+        sourceWebView = webView
         onboardingStartedCalled = true
     }
 
-    func goToAddressBar() {
+    func goToAddressBar(from webView: WKWebView?) {
+        sourceWebView = webView
         goToAddressBarCalled = true
     }
 
-    func goToSettings() {
+    func goToSettings(from webView: WKWebView?) {
+        sourceWebView = webView
         goToSettingsCalled = true
     }
 
@@ -86,12 +99,29 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
         homeButtonVisible = enabled
     }
 
+    func setDuckAiInAddressBar(enabled: Bool) {
+        setDuckAiInAddressBarCalled = true
+        duckAiInAddressBarEnabled = enabled
+    }
+
+    func installChromeExtension() {
+        installChromeExtensionCalled = true
+    }
+
     func stepCompleted(step: OnboardingSteps) {
         completedStep = step
+    }
+
+    func stepShown(step: OnboardingSteps) {
+        shownStep = step
     }
 
     func reportException(with param: [String: String]) {
         reportExceptionCalled = true
         exceptionParams = param
+    }
+
+    func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent) {
+        reportedTelemetryEvent = event
     }
 }

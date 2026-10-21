@@ -29,6 +29,9 @@
         <key>com.duckduckgo.mobile.ios.CredentialExtension</key>
 		<string>match AdHoc com.duckduckgo.mobile.ios.CredentialExtension</string>
     </dict>
+    
+    <key>thinning</key>
+    <string>&lt;thin-for-all-variants&gt;</string>
 
 </dict>
 </plist>

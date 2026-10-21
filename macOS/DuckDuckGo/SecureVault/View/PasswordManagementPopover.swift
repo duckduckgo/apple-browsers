@@ -23,7 +23,12 @@ import SwiftUI
 
 final class PasswordManagementPopover: NSPopover {
 
-    override init() {
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
+    private let pinningManager: PinningManager
+
+    init(pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
         super.init()
 
         self.animates = false
@@ -32,10 +37,20 @@ final class PasswordManagementPopover: NSPopover {
         self.delegate = self
 
         setupContentController()
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
+    }
+
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     // swiftlint:disable force_cast
@@ -51,10 +66,16 @@ final class PasswordManagementPopover: NSPopover {
     }
 
     private func setupContentController() {
-        let controller = PasswordManagementViewController.create()
+        let controller = PasswordManagementViewController.create(pinningManager: pinningManager)
         contentViewController = controller
     }
+}
 
+extension PasswordManagementPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }
 
 extension PasswordManagementPopover: NSPopoverDelegate {

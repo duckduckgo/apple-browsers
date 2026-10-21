@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import Common
+import FoundationExtensions
+import ContentBlocking
 import Foundation
 import TrackerRadarKit
-import Common
-import ContentBlocking
 
 public class TrackerResolver {
 
@@ -206,7 +207,7 @@ fileprivate extension KnownTracker.Rule {
     func action(type: String, host: String) -> TrackerResolver.RuleAction? {
         // If there is a rule its default action is always block
         var resultAction: KnownTracker.ActionType? = action ?? .block
-        if resultAction == .block || resultAction == .blockCTLFB {
+        if resultAction == .block {
             if let options = options, !TrackerResolver.isMatching(options, host: host, resourceType: type) {
                 resultAction = nil
             } else if let exceptions = exceptions, TrackerResolver.isMatching(exceptions, host: host, resourceType: type) {
@@ -221,7 +222,7 @@ fileprivate extension KnownTracker.Rule {
 private extension KnownTracker.ActionType {
 
     func toTrackerResolverRuleAction() -> TrackerResolver.RuleAction {
-        self == .block || self == .blockCTLFB ? .blockRequest : .allowRequest
+        self == .block ? .blockRequest : .allowRequest
     }
 
 }

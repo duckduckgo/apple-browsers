@@ -16,4 +16,4 @@
 //  limitations under the License.
 //
 
-@_exported import AppKit
+@_documentation(visibility: internal) @_exported import AppKit

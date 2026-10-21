@@ -1,0 +1,199 @@
+//
+//  ScopedFireConfirmationView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import Core
+import DuckUI
+import Lottie
+import MetricBuilder
+
+struct ScopedFireConfirmationView: View {
+    
+    @ObservedObject var viewModel: ScopedFireConfirmationViewModel
+    @State private var isAnimating = false
+    /// Presenting context's size class; the built-in one reports `.compact` inside a popover even on a wide iPad.
+    @Environment(\.presentationHorizontalSizeClass) private var presentationSizeClass
+
+    init(viewModel: ScopedFireConfirmationViewModel) {
+        self.viewModel = viewModel
+    }
+
+    private var contentPadding: EdgeInsets {
+        presentationSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
+    }
+    
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            ScrollView {
+                contentView
+                    .padding(contentPadding)
+            }
+            .modifier(ScrollBounceBehaviorModifier())
+            closeButton
+                .padding(16)
+        }
+        .background(Color(designSystemColor: .backgroundTertiary))
+    }
+    
+    private var contentView: some View {
+        VStack(spacing: Constants.mainSectionSpacing) {
+            headerSection
+            scopeButtons
+        }
+    }
+    
+    private var closeButton: some View {
+        Button(action: viewModel.cancel) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+        }
+        .buttonStyle(CloseButtonStyle())
+        .accessibilityIdentifier("Fire.Confirmation.Button.Close")
+    }
+    
+    private var headerSection: some View {
+        VStack(spacing: SheetMetrics.contentSpacing) {
+            if viewModel.showAnimation {
+                animation
+            }
+
+            VStack(spacing: SheetMetrics.headerSpacing) {
+                Text(viewModel.headerTitle)
+                    .daxTitle3()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let subtitle = viewModel.subtitle {
+                    Text(subtitle)
+                        .daxSubheadRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(viewModel.showAnimation ? Constants.headerSectionPadding : Constants.headerSectionPaddingNoAnimation)
+    }
+    
+    /// Scope selection buttons
+    private var scopeButtons: some View {
+        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+            ForEach(viewModel.buttons.indices, id: \.self) { index in
+                let button = viewModel.buttons[index]
+                Button(action: button.action) {
+                    Text(button.title)
+                }
+                .modifier(DestructiveButtonModifier(style: button.style))
+                .accessibilityIdentifier(button.accessibilityIdentifier)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var animation: some View {
+        Lottie.LottieView { try await DotLottieFile.asset(named: "fire-icon") }
+            .playbackMode(isAnimating ? .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)) : .paused(at: .progress(0)))
+            .resizable()
+            .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Constants.animationDelay) {
+                    isAnimating = true
+                }
+            }
+    }
+    
+}
+
+private struct DestructiveButtonModifier: ViewModifier {
+    let style: ScopedFireConfirmationViewModel.FireConfirmationButton.Style
+
+    func body(content: Content) -> some View {
+        switch style {
+        case .primary:
+            content.buttonStyle(PrimaryDestructiveButtonStyle())
+        case .secondary:
+            content.buttonStyle(SecondaryDestructiveButtonStyle())
+        case .secondaryNeutral:
+            content.buttonStyle(SecondaryFillButtonStyle())
+        }
+    }
+}
+
+/// Carries the presenting context's size class across the UIKit presentation boundary. Injected by `FireConfirmationPresenter`.
+private struct PresentationHorizontalSizeClassKey: EnvironmentKey {
+    static let defaultValue: UserInterfaceSizeClass? = nil
+}
+
+extension EnvironmentValues {
+    var presentationHorizontalSizeClass: UserInterfaceSizeClass? {
+        get {
+            self[PresentationHorizontalSizeClassKey.self]
+        }
+        set {
+            self[PresentationHorizontalSizeClassKey.self] = newValue
+        }
+    }
+}
+
+private extension ScopedFireConfirmationView {
+    enum Constants {
+        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let popoverViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
+        static let mainSectionSpacing: CGFloat = 16
+        static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
+        static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
+        static let headerIconSize: CGFloat = 96
+        static let closeButtonPadding: CGFloat = 8
+        static let animationDelay: Double = 0.5
+    }
+}
+
+#if DEBUG
+private struct PreviewDataClearingCapability: DataClearingCapable {
+    var isFireButtonRefinementsEnabled: Bool { false }
+}
+
+private final class PreviewDownloadManager: DownloadManaging {
+    var downloadList: Set<Download> { [] }
+    var downloadsDirectoryFiles: [URL] { [] }
+    func cancelDownload(_ download: Download) {}
+    func cancelAllDownloads() {}
+    func markAllDownloadsSeen() {}
+    func startMonitoringDownloadsDirectoryChanges() {}
+    func stopMonitoringDownloadsDirectoryChanges() {}
+}
+
+#Preview {
+    // Lightweight dependencies so the preview avoids the app-group-backed shared providers.
+    ScopedFireConfirmationView(
+        viewModel: ScopedFireConfirmationViewModel(
+            tabViewModel: nil,
+            source: .tabSwitcher,
+            fireContext: .singleTab,
+            downloadManager: PreviewDownloadManager(),
+            appSettings: AppUserDefaults(),
+            dataClearingCapability: PreviewDataClearingCapability(),
+            browsingMode: .normal,
+            onConfirm: { _ in },
+            onCancel: {}
+        )
+    )
+}
+#endif

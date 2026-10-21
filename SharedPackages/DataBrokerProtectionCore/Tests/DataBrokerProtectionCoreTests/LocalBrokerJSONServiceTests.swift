@@ -27,6 +27,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
     let repository = BrokerUpdaterRepositoryMock()
     let resources = ResourcesRepositoryMock()
     let pixelHandler = MockDataBrokerProtectionPixelsHandler()
+    let runTypeProvider = MockAppRunTypeProvider()
     let vault: DataBrokerProtectionSecureVaultMock? = try? DataBrokerProtectionSecureVaultMock(providers:
                                                         SecureStorageProviders(
                                                             crypto: EmptySecureStorageCryptoProviderMock(),
@@ -37,11 +38,26 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         repository.reset()
         resources.reset()
         vault?.reset()
+        pixelHandler.clear()
+    }
+
+    private func makeSUT(vault: DataBrokerProtectionSecureVaultMock,
+                         appVersion: AppVersionNumberProvider = AppVersionNumber(),
+                         isAuthenticatedUser: @escaping () async -> Bool = { true },
+                         featureFlagger: OptOutRetryErrorFeatureFlagging = DisabledOptOutRetryErrorFeatureFlagger()) -> LocalBrokerJSONService {
+        LocalBrokerJSONService(repository: repository,
+                               resources: resources,
+                               vault: vault,
+                               appVersion: appVersion,
+                               pixelHandler: pixelHandler,
+                               runTypeProvider: runTypeProvider,
+                               isAuthenticatedUser: isAuthenticatedUser,
+                               optOutRetryErrorFeatureFlagger: featureFlagger)
     }
 
     func testWhenNoVersionIsStored_thenWeTryToUpdateBrokers() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+            let sut = makeSUT(vault: vault)
             repository.lastCheckedVersion = nil
 
             try await sut.checkForUpdates()
@@ -55,7 +71,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenVersionIsStoredAndPatchIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.1"), pixelHandler: pixelHandler)
+            let sut = makeSUT(vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.1"))
             repository.lastCheckedVersion = "1.74.0"
 
             try await sut.checkForUpdates()
@@ -69,7 +85,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenVersionIsStoredAndMinorIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
+            let sut = makeSUT(vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"))
             repository.lastCheckedVersion = "1.73.0"
 
             try await sut.checkForUpdates()
@@ -83,7 +99,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenVersionIsStoredAndMajorIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
+            let sut = makeSUT(vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"))
             repository.lastCheckedVersion = "0.74.0"
 
             try await sut.checkForUpdates()
@@ -97,7 +113,7 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenVersionIsStoredAndIsEqualOrGreaterThanCurrentOne_thenCheckingUpdatesIsSkipped() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
+            let sut = makeSUT(vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"))
             repository.lastCheckedVersion = "1.74.0"
 
             try await sut.checkForUpdates()
@@ -111,9 +127,10 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenSavedBrokerIsOnAnOldVersion_thenWeUpdateIt() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+            let sut = makeSUT(vault: vault)
             repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+            let expectedBrokerResource = try brokerResource(fileName: "valid-broker-1.0.1")
+            resources.brokerResourcesList = [expectedBrokerResource]
             vault.shouldReturnOldVersionBroker = true
 
             try await sut.checkForUpdates()
@@ -122,6 +139,70 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
             XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
             XCTAssertTrue(vault.wasBrokerUpdateCalled)
             XCTAssertFalse(vault.wasBrokerSavedCalled)
+
+            let updatedBrokerResource = try XCTUnwrap(vault.lastUpdatedBrokerResource)
+            XCTAssertEqual(updatedBrokerResource.rawJSON, expectedBrokerResource.rawJSON)
+            let updatedPayload = try jsonObject(from: updatedBrokerResource.rawJSON)
+            XCTAssertEqual((updatedPayload["addedDatetime"] as? NSNumber)?.int64Value, 1725632531153)
+        } else {
+            XCTFail("Mock vault issue")
+        }
+    }
+
+    func testWhenSavedBrokerIsOnAnOldVersionAndRetryErrorFeatureIsOff_thenErroredOptOutIsNotRetried() async throws {
+        if let vault = self.vault {
+            let sut = makeSUT(vault: vault,
+                              featureFlagger: MockDBPFeatureFlagger(isOptOutRetryErrorFrequencyExperimentOn: false))
+            repository.lastCheckedVersion = nil
+            resources.brokerResourcesList = [try brokerResource(fileName: "valid-broker-1.0.1")]
+            vault.shouldReturnOldVersionBroker = true
+            vault.optOutJobData = [makeOptOutJobData(historyEvents: [makeErrorEvent()], preferredRunDate: .distantFuture)]
+
+            try await sut.checkForUpdates()
+
+            XCTAssertFalse(vault.wasUpdatedPreferredRunDateCalled)
+        } else {
+            XCTFail("Mock vault issue")
+        }
+    }
+
+    func testWhenSavedBrokerIsOnAnOldVersionAndRetryErrorFeatureIsOn_thenErroredOptOutIsRetried() async throws {
+        if let vault = self.vault {
+            let sut = makeSUT(vault: vault,
+                              featureFlagger: MockDBPFeatureFlagger(isOptOutRetryErrorFrequencyExperimentOn: true))
+            repository.lastCheckedVersion = nil
+            resources.brokerResourcesList = [try brokerResource(fileName: "valid-broker-1.0.1")]
+            vault.shouldReturnOldVersionBroker = true
+            vault.optOutJobData = [makeOptOutJobData(historyEvents: [makeErrorEvent()], preferredRunDate: .distantFuture)]
+
+            try await sut.checkForUpdates()
+
+            XCTAssertTrue(vault.wasUpdatedPreferredRunDateCalled)
+            XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: Date(), date2: vault.lastPreferredRunDateOnOptOut))
+        } else {
+            XCTFail("Mock vault issue")
+        }
+    }
+
+    func testWhenSavedBrokerIsOnAnOldVersionAndRetryErrorFeatureIsOn_thenNonErrorOptOutIsNotRetried() async throws {
+        if let vault = self.vault {
+            let sut = makeSUT(vault: vault,
+                              featureFlagger: MockDBPFeatureFlagger(isOptOutRetryErrorFrequencyExperimentOn: true))
+            repository.lastCheckedVersion = nil
+            resources.brokerResourcesList = [try brokerResource(fileName: "valid-broker-1.0.1")]
+            vault.shouldReturnOldVersionBroker = true
+            vault.optOutJobData = [
+                makeOptOutJobData(historyEvents: [
+                    HistoryEvent(extractedProfileId: 1,
+                                 brokerId: 1,
+                                 profileQueryId: 1,
+                                 type: .optOutRequested)
+                ], preferredRunDate: .distantFuture)
+            ]
+
+            try await sut.checkForUpdates()
+
+            XCTAssertFalse(vault.wasUpdatedPreferredRunDateCalled)
         } else {
             XCTFail("Mock vault issue")
         }
@@ -129,9 +210,9 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenSavedBrokerIsOnTheCurrentVersion_thenWeDoNotUpdateIt() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+            let sut = makeSUT(vault: vault)
             repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+            resources.brokerResourcesList = [try brokerResource(fileName: "valid-broker-1.0.1")]
             vault.shouldReturnNewVersionBroker = true
 
             try await sut.checkForUpdates()
@@ -146,9 +227,10 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
 
     func testWhenFileBrokerIsNotStored_thenWeAddTheBrokerAndScanOperations() async throws {
         if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
+            let sut = makeSUT(vault: vault)
             repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+            let expectedBrokerResource = try brokerResource(fileName: "valid-broker")
+            resources.brokerResourcesList = [expectedBrokerResource]
             vault.profileQueries = [.mock]
 
             try await sut.checkForUpdates()
@@ -157,6 +239,12 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
             XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
             XCTAssertFalse(vault.wasBrokerUpdateCalled)
             XCTAssertTrue(vault.wasBrokerSavedCalled)
+
+            let savedBrokerResource = try XCTUnwrap(vault.lastSavedBrokerResource)
+            XCTAssertEqual(savedBrokerResource.rawJSON, expectedBrokerResource.rawJSON)
+            let savedPayload = try jsonObject(from: savedBrokerResource.rawJSON)
+            XCTAssertEqual((savedPayload["addedDatetime"] as? NSNumber)?.int64Value, 1725632531153)
+
             XCTAssertTrue(areDatesEqualIgnoringSeconds(
                 date1: Date(),
                 date2: vault.lastPreferredRunDateOnScan)
@@ -164,6 +252,214 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         } else {
             XCTFail("Mock vault issue")
         }
+    }
+
+    func testWhenBrokerUpdateSucceeds_thenSuccessPixelIsFired() async throws {
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let sut = makeSUT(vault: vault)
+        repository.lastCheckedVersion = nil
+        resources.brokerResourcesList = [try brokerResource(fileName: "valid-broker")]
+        vault.profileQueries = [.mock]
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let successPixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt, _):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(successPixels.isEmpty, "updateDataBrokersSuccess pixel should be fired")
+        let (dataBroker, removedAt) = successPixels.first!
+        XCTAssertEqual(dataBroker, "fakebroker.com.json")
+        XCTAssertNil(removedAt, "removedAt should be nil for broker without removal date")
+    }
+
+    func testWhenBrokerWithRemovedAtUpdateSucceeds_thenSuccessPixelIsFiredWithTimestamp() async throws {
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let expectedTimestamp: Int64 = 1693526400000
+
+        let sut = makeSUT(vault: vault)
+        repository.lastCheckedVersion = nil
+        resources.brokerResourcesList = [try brokerResource(fileName: "valid-broker-removed-1.0.1")]
+        vault.profileQueries = [.mock]
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let successPixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersSuccess(let dataBrokerFileName, let removedAt, _):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(successPixels.isEmpty, "updateDataBrokersSuccess pixel should be fired")
+        let (dataBroker, removedAt) = successPixels.first!
+        XCTAssertEqual(dataBroker, "fakebroker.com.json")
+        XCTAssertEqual(removedAt, expectedTimestamp, "removedAt should be converted to milliseconds timestamp")
+    }
+
+    func testWhenBrokerUpdateFails_thenFailurePixelIsFired() async throws {
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let sut = makeSUT(vault: vault)
+        repository.lastCheckedVersion = nil
+        resources.brokerResourcesList = [try brokerResource(fileName: "valid-broker-1.0.1")] // Newer than mock's "1.0.0" to trigger update
+        vault.profileQueries = [.mock]
+        vault.shouldReturnOldVersionBroker = true // Ensure broker exists so update path is taken  
+        vault.shouldThrowOnUpdate = true // Force update to fail
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let failurePixels = firedPixels.compactMap { pixel in
+            switch pixel {
+            case .updateDataBrokersFailure(let dataBrokerFileName, let removedAt, _, _):
+                return (dataBrokerFileName, removedAt)
+            default:
+                return nil
+            }
+        }
+
+        XCTAssertFalse(failurePixels.isEmpty, "updateDataBrokersFailure pixel should be fired")
+        let (dataBroker, removedAt) = failurePixels.first!
+        XCTAssertEqual(dataBroker, "fakebroker.com.json")
+        XCTAssertNil(removedAt, "removedAt should be nil for broker without removal date")
+    }
+
+    func testWhenResourcesFetchFails_thenOldCocoaErrorPixelIsFired() async throws {
+        // This test verifies we didn't change the behavior for resource fetch failures
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let sut = makeSUT(vault: vault)
+        repository.lastCheckedVersion = nil
+        resources.shouldThrowOnFetch = true // Force fetch to fail
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let cocoaErrorPixels = firedPixels.filter { pixel in
+            switch pixel {
+            case .cocoaError:
+                return true
+            default:
+                return false
+            }
+        }
+
+        XCTAssertFalse(cocoaErrorPixels.isEmpty, "cocoaError pixel should still be fired for resource fetch failures")
+    }
+
+    func testWhenUserIsAuthenticated_thenBrokerUpdatePixelsIncludeFreeScanFalse() async throws {
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let sut = makeSUT(vault: vault)
+        repository.lastCheckedVersion = nil
+        let broker = DataBroker(id: 1,
+                                name: "Broker",
+                                url: "broker.com",
+                                steps: [Step](),
+                                version: "1.0.0",
+                                schedulingConfig: .mock,
+                                optOutUrl: "",
+                                eTag: "",
+                                removedAt: nil)
+        resources.brokerResourcesList = [BrokerResource(broker: broker, rawJSON: Data())]
+        vault.profileQueries = [.mock]
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        XCTAssertFalse(firedPixels.isEmpty)
+        for pixel in firedPixels where pixel.name.contains("update_databrokers") {
+            XCTAssertEqual(pixel.parameters?["free_scan"], "false", "Expected free_scan=false for authenticated user on pixel \(pixel.name)")
+        }
+    }
+
+    func testWhenUserIsNotAuthenticated_thenBrokerUpdatePixelsIncludeFreeScanTrue() async throws {
+        guard let vault = self.vault else {
+            XCTFail("Mock vault issue")
+            return
+        }
+
+        let sut = makeSUT(vault: vault,
+                          isAuthenticatedUser: { false })
+        repository.lastCheckedVersion = nil
+        let broker = DataBroker(id: 1,
+                                name: "Broker",
+                                url: "broker.com",
+                                steps: [Step](),
+                                version: "1.0.0",
+                                schedulingConfig: .mock,
+                                optOutUrl: "",
+                                eTag: "",
+                                removedAt: nil)
+        resources.brokerResourcesList = [BrokerResource(broker: broker, rawJSON: Data())]
+        vault.profileQueries = [.mock]
+
+        try await sut.checkForUpdates()
+
+        let firedPixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        XCTAssertFalse(firedPixels.isEmpty)
+        for pixel in firedPixels where pixel.name.contains("update_databrokers") {
+            XCTAssertEqual(pixel.parameters?["free_scan"], "true", "Expected free_scan=true for unauthenticated user on pixel \(pixel.name)")
+        }
+    }
+
+    private func brokerResource(fileName: String) throws -> BrokerResource {
+        let fileURL = try XCTUnwrap(
+            Bundle.module.url(
+                forResource: fileName,
+                withExtension: "json",
+                subdirectory: "BundleResources"
+            )
+        )
+        return try DataBroker.initFromResource(fileURL)
+    }
+
+    private func makeErrorEvent() -> HistoryEvent {
+        HistoryEvent(extractedProfileId: 1,
+                     brokerId: 1,
+                     profileQueryId: 1,
+                     type: .error(error: .unknown("error")))
+    }
+
+    private func makeOptOutJobData(historyEvents: [HistoryEvent], preferredRunDate: Date?) -> OptOutJobData {
+        OptOutJobData(brokerId: 1,
+                      profileQueryId: 1,
+                      createdDate: Date(),
+                      preferredRunDate: preferredRunDate,
+                      historyEvents: historyEvents,
+                      attemptCount: 0,
+                      extractedProfile: .mockWithoutRemovedDate)
+    }
+
+    private func jsonObject(from data: Data) throws -> [String: Any] {
+        try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
 }

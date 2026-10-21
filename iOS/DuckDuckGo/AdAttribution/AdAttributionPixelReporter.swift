@@ -20,17 +20,18 @@
 import Foundation
 import Core
 import BrowserServicesKit
+import PixelKit
+import PrivacyConfig
+import FeatureFlags_iOS
 
 final actor AdAttributionPixelReporter {
-    
-    static var shared = AdAttributionPixelReporter()
 
     private var fetcherStorage: AdAttributionReporterStorage
     private let attributionFetcher: AdAttributionFetcher
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let variantManager: VariantManager
-    private let pixelFiring: PixelFiringAsync.Type
+    private let pixelFiring: (any PixelKitFiring)?
     private var isSendingAttribution: Bool = false
 
     private var shouldReport: Bool {
@@ -42,9 +43,9 @@ final actor AdAttributionPixelReporter {
     init(fetcherStorage: AdAttributionReporterStorage = UserDefaultsAdAttributionReporterStorage(),
          attributionFetcher: AdAttributionFetcher = DefaultAdAttributionFetcher(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          variantManager: VariantManager = AppDependencyProvider.shared.variantManager,
-         pixelFiring: PixelFiringAsync.Type = Pixel.self) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.fetcherStorage = fetcherStorage
         self.attributionFetcher = attributionFetcher
         self.featureFlagger = featureFlagger
@@ -80,11 +81,7 @@ final actor AdAttributionPixelReporter {
                 let isReinstall = variantManager.isIndicatingReturningUser
                 let parameters = self.pixelParametersForAttribution(attributionData, isReinstall: isReinstall, attributionToken: token)
                 do {
-                    try await pixelFiring.fire(
-                        pixel: .appleAdAttribution,
-                        withAdditionalParameters: parameters,
-                        includedParameters: [.appVersion]
-                    )
+                    try await pixelFiring?.fireAsync(Pixel.Event.appleAdAttribution, options: .parameters(parameters))
                 } catch {
                     return false
                 }

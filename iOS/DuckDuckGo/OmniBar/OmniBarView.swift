@@ -1,0 +1,215 @@
+//
+//  OmniBarView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit
+import DesignResourcesKitIcons
+
+enum OmniBarMetrics {
+    static var cornerRadius: CGFloat { AppRebrand.isAppRebranded() ? 22 : 16 }
+
+    /// The size of the omnibar's controls and leading icon slot.
+    static let itemSize: CGFloat = 44
+    /// The space between the field edge and its content.
+    static let contentHorizontalInset: CGFloat = 2
+    /// The notification lozenge's equal top, leading, and bottom gaps from the field edge.
+    static let notificationLozengeInset: CGFloat = 3
+
+    static var leadingItemCenterFromFieldEdge: CGFloat {
+        contentHorizontalInset + itemSize / 2
+    }
+
+    static var notificationLozengeHeight: CGFloat {
+        itemSize - 2 * notificationLozengeInset
+    }
+
+    static func notificationIconLeadingPadding(forIconWidth width: CGFloat) -> CGFloat {
+        leadingItemCenterFromFieldEdge - notificationLozengeInset - width / 2
+    }
+}
+
+enum OmniBarLayoutMode {
+    /// No external buttons visible, full-width search bar (iPhone portrait, iPad compact, editing)
+    case compact
+    /// External buttons with wide spacing (iPad full width)
+    case expandedPad
+    /// External buttons with tight spacing (iPhone landscape)
+    case expandedPhone
+}
+
+protocol OmniBarView: UIView, OmniBarStatusUpdateable {
+
+    var text: String? { get set }
+    var expectedHeight: CGFloat { get }
+
+    // Original omnibar accessors
+    var textField: TextFieldWithInsets! { get }
+    var privacyInfoContainer: PrivacyInfoContainerView! { get }
+    var notificationContainer: OmniBarNotificationContainerView! { get }
+    var searchContainer: UIView! { get }
+
+    var searchLoupe: UIView! { get }
+    var dismissButton: UIButton! { get }
+
+    var backButton: UIButton! { get }
+    var forwardButton: UIButton! { get }
+    var settingsButton: UIButton! { get }
+    var cancelButton: UIButton! { get }
+    var bookmarksButton: UIButton! { get }
+    var aiChatButton: UIButton! { get }
+    var menuButton: UIButton! { get }
+    var fireButton: UIButton! { get }
+    var tabSwitcherContainerView: UIView { get }
+
+    func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int)
+
+    var refreshButton: UIButton! { get }
+    var customizableButton: UIButton! { get }
+
+    var leftIconContainerView: UIView! { get }
+
+    var customIconView: UIImageView { get }
+    var clearButton: UIButton! { get }
+
+    func showSeparator()
+    func hideSeparator()
+    func moveSeparatorToTop()
+    func moveSeparatorToBottom()
+    // -- end
+
+    var progressView: ProgressView? { get }
+
+    var privacyIconView: UIView? { get }
+
+    var searchContainerWidth: CGFloat { get }
+
+    var onTextEntered: (() -> Void)? { get set }
+    var onVoiceSearchButtonPressed: (() -> Void)? { get set }
+    var onAbortButtonPressed: (() -> Void)? { get set }
+    var onClearButtonPressed: (() -> Void)? { get set }
+    var onPrivacyIconPressed: (() -> Void)? { get set }
+    var onMenuButtonPressed: (() -> Void)? { get set }
+    var onMenuButtonLongPressed: (() -> Void)? { get set }
+    var onTrackersViewPressed: (() -> Void)? { get set }
+    var onSettingsButtonPressed: (() -> Void)? { get set }
+    var onSettingsButtonLongPressed: (() -> Void)? { get set }
+    var onCancelPressed: (() -> Void)? { get set }
+    var onRefreshPressed: (() -> Void)? { get set }
+    var onCustomizableButtonPressed: (() -> Void)? { get set }
+    var onBackPressed: (() -> Void)? { get set }
+    var onForwardPressed: (() -> Void)? { get set }
+    var onBookmarksPressed: (() -> Void)? { get set }
+    var onPasswordsPressed: (() -> Void)? { get set }
+    var onAIChatPressed: (() -> Void)? { get set }
+    var onDismissPressed: (() -> Void)? { get set }
+    var onFirePressed: (() -> Void)? { get set }
+
+    var longPressMenuProvider: (() -> UIMenu?)? { get set }
+    var onLongPressMenuDisplayed: (() -> Void)? { get set }
+
+    // static function is needed to allow creation of DefaultOmniBarView from xib
+    static func create() -> Self
+    static var expectedHeight: CGFloat { get }
+
+    func hideButtons()
+    func revealButtons()
+    func setBookmarksPosition(leading: Bool, hidden: Bool)
+    func refreshLongPressMenuAvailability()
+
+    // Fire mode
+    func refreshFireMode(fireMode: Bool)
+    func prepareForMoveTransition()
+    func moveTransitionCompleted()
+
+    /// Sets `alpha` on the search-area containers whose alpha cascades to every icon-bearing child.
+    func setIconContainersAlpha(_ alpha: CGFloat)
+
+    /// Hides the bar's pill background, shadow, and text field while leaving icon subviews intact.
+    func hideBarChrome()
+
+    /// Restores bar pill background, shadow, and text field. Idempotent.
+    func restoreBarChrome()
+
+    func makeGlass()
+    func makeOpaque()
+
+    /// Re-asserts the field's resting appearance for the current position. No-op unless floating UI.
+    func restoreFloatingFieldAppearance()
+
+    /// Swaps the omnibar Duck.ai button glyph to reflect a contextual session on this tab: a surface
+    /// on screen, or a chat to return to once it is gone.
+    func updateAIChatButtonForContextualChat(hasContextualSession: Bool)
+
+    /// In floating UI minimal chrome, wraps the button groups in their own glass capsules (the field
+    /// keeps its glass). Pass `false` to restore the standard per-position appearance.
+    func setFloatingMinimalChromeBar(_ enabled: Bool)
+}
+
+extension OmniBarView {
+    /// Size of the visible search field (the glass). Local bounds stay stable while the bar slides,
+    /// unlike the bar's window frame. Falls back to the full bar size before the first layout.
+    var restingSearchFieldSize: CGSize {
+        let size = searchContainer.bounds.size
+        if size.width > 0, size.height > 0 {
+            return size
+        }
+        return CGSize(width: frame.width, height: expectedHeight)
+    }
+}
+
+/// iPad-specific extension for the duck.ai mode toggle and expandable search area.
+/// Separated from `OmniBarView` so the base protocol stays lean for all omnibar implementations.
+protocol ExpandableOmniBarView: OmniBarView {
+    var externalRefreshButtonView: BrowserChromeButton { get }
+    var isExternalRefreshButtonHidden: Bool { get set }
+    var onSearchModePressed: (() -> Void)? { get set }
+    var onAIChatModePressed: (() -> Void)? { get set }
+    var isSearchAreaExpanded: Bool { get }
+    var selectedModeToggleState: TextEntryMode { get set }
+    var isModeToggleHidden: Bool { get set }
+    func setSearchAreaExpanded(_ expanded: Bool, animated: Bool)
+    var aiChatTextView: ResignSuppressingTextView { get }
+    var onAIChatSendPressed: (() -> Void)? { get set }
+    func updateTextFieldPlaceholderVisibility(hasText: Bool)
+    func updateAIChatSendButton(hasText: Bool)
+    func updateLeftIconForMode(_ mode: TextEntryMode)
+    func setLeftIconHiddenForModeToggle(_ hidden: Bool)
+}
+
+protocol OmniBarStatusUpdateable: AnyObject {
+    var isPrivacyInfoContainerHidden: Bool { get set }
+    var isClearButtonHidden: Bool { get set }
+    var isMenuButtonHidden: Bool { get set }
+    var isSettingsButtonHidden: Bool { get set }
+    var isCancelButtonHidden: Bool { get set }
+    var isRefreshButtonHidden: Bool { get set }
+    var isCustomizableButtonHidden: Bool { get set }
+    var isVoiceSearchButtonHidden: Bool { get set }
+    var isAbortButtonHidden: Bool { get set }
+    var isBackButtonHidden: Bool { get set }
+    var isForwardButtonHidden: Bool { get set }
+    var isBookmarksButtonHidden: Bool { get set }
+    var isPasswordsButtonHidden: Bool { get set }
+    var isAIChatButtonHidden: Bool { get set }
+    var isSearchLoupeHidden: Bool { get set }
+    var isDismissButtonHidden: Bool { get set }
+    var isFireButtonHidden: Bool { get set }
+    var isTabSwitcherButtonHidden: Bool { get set }
+    var layoutMode: OmniBarLayoutMode { get }
+    func setLayoutMode(_ mode: OmniBarLayoutMode, animated: Bool)
+}

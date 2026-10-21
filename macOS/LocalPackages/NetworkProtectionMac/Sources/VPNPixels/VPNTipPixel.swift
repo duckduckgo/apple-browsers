@@ -42,11 +42,14 @@ public enum VPNTipPixel: VPNPixel {
         }
     }
 
-    public var error: (any Error)? {
-        nil
-    }
+    public var parameters: [String: String]? { nil }
 
-    public var parameters: [String: String]? {
-        nil
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .autoconnectTip,
+                .domainExclusionsTip,
+                .geoswitchingTip:
+            return [.pixelSource]
+        }
     }
 }

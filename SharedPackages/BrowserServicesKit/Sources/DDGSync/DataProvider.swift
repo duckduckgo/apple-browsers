@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 
 /**
@@ -190,6 +191,13 @@ public protocol DataProviding: AnyObject {
      * - Parameter error: Sync operation error.
      */
     func handleSyncError(_ error: Error)
+}
+
+/// Optional protocol that lets data providers opt out of participating in a given sync run.
+///
+/// Providers that do not adopt this protocol are always considered enabled.
+public protocol FeatureToggleableProvider: AnyObject {
+    var isSyncFeatureEnabled: Bool { get }
 }
 
 /**

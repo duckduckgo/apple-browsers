@@ -35,6 +35,13 @@ final class TabInteractionStateDiskSourceTests: XCTestCase {
         sut = nil
     }
 
+    func testInteractionStateRestorationPixelNamesRemainBackwardCompatible() {
+        XCTAssertEqual(TabInteractionStatePixel.interactionStateFailedToRestore.name,
+                       "m_d_tab-interaction-state_failed-to-restore")
+        XCTAssertEqual(TabInteractionStatePixel.interactionStateFailedToRestoreDaily.name,
+                       "m_d_tab-interaction-state_failed-to-restore_daily")
+    }
+
     func testSaveStateWritesInCacheLocation() {
         let state = Data.random()
         let tab = Tab.mock()
@@ -84,7 +91,7 @@ final class TabInteractionStateDiskSourceTests: XCTestCase {
             sut.saveState(state, for: tab)
         }
 
-        sut.removeAll(excluding: [])
+        _ = sut.removeAll(excluding: [])
 
         XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: testDirectory()).isEmpty)
     }
@@ -103,7 +110,7 @@ final class TabInteractionStateDiskSourceTests: XCTestCase {
             }
         }
 
-        sut.removeAll(excluding: excludedTabs)
+        _ = sut.removeAll(excluding: excludedTabs)
 
         let directoryContents = try FileManager.default.contentsOfDirectory(atPath: testDirectory())
 

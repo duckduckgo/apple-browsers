@@ -5,12 +5,19 @@ import Foundation
 import Network
 import NetworkExtension
 import Common
+import FoundationExtensions
 import os.log
+
+protocol PacketTunnelSettingsGenerating: AnyObject {
+    func uapiConfiguration() -> (String, [EndpointResolutionResult?])
+    func endpointUapiConfiguration() -> (String, [EndpointResolutionResult?])
+    func generateNetworkSettings() -> NEPacketTunnelNetworkSettings
+}
 
 /// A type alias for `Result` type that holds a tuple with source and resolved endpoint.
 typealias EndpointResolutionResult = Result<(Endpoint, Endpoint), DNSResolutionError>
 
-final class PacketTunnelSettingsGenerator {
+final class PacketTunnelSettingsGenerator: PacketTunnelSettingsGenerating {
     let tunnelConfiguration: TunnelConfiguration
     let resolvedEndpoints: [Endpoint?]
 
@@ -113,7 +120,7 @@ final class PacketTunnelSettingsGenerator {
             networkSettings.mtu = NSNumber(value: mtu)
         }
 
-        let addresses = Self.routes(from: tunnelConfiguration.interface.addresses)
+        let addresses = Self.addresses(from: tunnelConfiguration.interface.addresses)
         let includedRoutes = Self.routes(from: tunnelConfiguration.interface.includedRoutes)
         let excludedRoutes = Self.routes(from: tunnelConfiguration.interface.excludedRoutes)
 
@@ -123,16 +130,16 @@ final class PacketTunnelSettingsGenerator {
         ipv4Settings.excludedRoutes = excludedRoutes.ipv4
         networkSettings.ipv4Settings = ipv4Settings
 
-        let includedRoutesDesc = includedRoutes.ipv4.reduce("") { result, route in
+        let includedRoutesDescIPv4 = includedRoutes.ipv4.reduce("") { result, route in
             "\(result), \(route.destinationAddress)/\(route.destinationSubnetMask)"
         }
 
-        let excludedRoutesDesc = excludedRoutes.ipv4.reduce("") { result, route in
+        let excludedRoutesDescIPv4 = excludedRoutes.ipv4.reduce("") { result, route in
             "\(result), \(route.destinationAddress)/\(route.destinationSubnetMask)"
         }
 
-        Logger.networkProtection.log("[GEN] Routing table information - Included Routes: \(includedRoutesDesc, privacy: .public)")
-        Logger.networkProtection.log("[GEN] Routing table information - Excluded Routes: \(excludedRoutesDesc, privacy: .public)")
+        Logger.networkProtection.log("[GEN] Routing table information - Included Routes (IPv4): \(includedRoutesDescIPv4, privacy: .public)")
+        Logger.networkProtection.log("[GEN] Routing table information - Excluded Routes (IPv4): \(excludedRoutesDescIPv4, privacy: .public)")
 
         let ipv6Settings = NEIPv6Settings(addresses: addresses.ipv6.map { $0.destinationAddress },
                                           networkPrefixLengths: addresses.ipv6.map { $0.destinationNetworkPrefixLength })
@@ -140,10 +147,21 @@ final class PacketTunnelSettingsGenerator {
         ipv6Settings.excludedRoutes = excludedRoutes.ipv6
         networkSettings.ipv6Settings = ipv6Settings
 
+        let includedRoutesDescIPv6 = includedRoutes.ipv6.reduce("") { result, route in
+            "\(result), \(route.destinationAddress)/\(route.destinationNetworkPrefixLength)"
+        }
+
+        let excludedRoutesDescIPv6 = excludedRoutes.ipv6.reduce("") { result, route in
+            "\(result), \(route.destinationAddress)/\(route.destinationNetworkPrefixLength)"
+        }
+
+        Logger.networkProtection.log("[GEN] Routing table information - Included Routes (IPv6): \(includedRoutesDescIPv6, privacy: .public)")
+        Logger.networkProtection.log("[GEN] Routing table information - Excluded Routes (IPv6): \(excludedRoutesDescIPv6, privacy: .public)")
+
         return networkSettings
     }
 
-    private static func routes(from addresses: [IPAddressRange]) -> (ipv4: [NEIPv4Route], ipv6: [NEIPv6Route]) {
+    private static func addresses(from addresses: [IPAddressRange]) -> (ipv4: [NEIPv4Route], ipv6: [NEIPv6Route]) {
         var ipv4Routes = [NEIPv4Route]()
         var ipv6Routes = [NEIPv6Route]()
         for addressRange in addresses {
@@ -157,6 +175,20 @@ final class PacketTunnelSettingsGenerator {
                  */
                 ipv6Routes.append(NEIPv6Route(destinationAddress: "\(addressRange.address)",
                                               networkPrefixLength: NSNumber(value: min(120, addressRange.networkPrefixLength))))
+            }
+        }
+        return (ipv4Routes, ipv6Routes)
+    }
+
+    private static func routes(from addresses: [IPAddressRange]) -> (ipv4: [NEIPv4Route], ipv6: [NEIPv6Route]) {
+        var ipv4Routes = [NEIPv4Route]()
+        var ipv6Routes = [NEIPv6Route]()
+        for addressRange in addresses {
+            if addressRange.address is IPv4Address {
+                ipv4Routes.append(NEIPv4Route(destinationAddress: "\(addressRange.address)", subnetMask: "\(addressRange.subnetMask())"))
+            } else if addressRange.address is IPv6Address {
+                ipv6Routes.append(NEIPv6Route(destinationAddress: "\(addressRange.address)",
+                                              networkPrefixLength: NSNumber(value: addressRange.networkPrefixLength)))
             }
         }
         return (ipv4Routes, ipv6Routes)

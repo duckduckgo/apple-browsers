@@ -16,7 +16,12 @@
 //  limitations under the License.
 //
 
+import Common
+import FoundationExtensions
+import PrivacyConfig
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class OnboardingNavigatingTests: XCTestCase {
@@ -28,7 +33,17 @@ final class OnboardingNavigatingTests: XCTestCase {
     override func setUp() {
         super.setUp()
         onboardingNavigation = Application.appDelegate.windowControllersManager
-        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        fireCoordinator = FireCoordinator(tld: TLD(),
+                                          featureFlagger: Application.appDelegate.featureFlagger,
+                                          historyCoordinating: HistoryCoordinatingMock(),
+                                          visualizeFireAnimationDecider: nil,
+                                          onboardingContextualDialogsManager: nil,
+                                          fireproofDomains: MockFireproofDomains(),
+                                          faviconManagement: FaviconManagerMock(),
+                                          windowControllersManager: WindowControllersManagerMock(),
+                                          dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
+                                          pixelFiring: nil,
+                                          historyProvider: MockHistoryViewDataProvider())
         assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
     }
 
@@ -36,7 +51,6 @@ final class OnboardingNavigatingTests: XCTestCase {
     override func tearDown() {
         onboardingNavigation = nil
         fireCoordinator = nil
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
         super.tearDown()
     }
 
@@ -46,11 +60,14 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mockWindow = MockWindow(isVisible: false)
         let mvc = MainWindowController(
             window: mockWindow,
-            mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
-            popUp: false,
-            fireViewModel: fireCoordinator.fireViewModel)
+            mainViewController: MainViewController(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()), aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()), fireCoordinator: fireCoordinator),
+            fireViewModel: fireCoordinator.fireViewModel,
+            themeManager: MockThemeManager())
         mvc.window = mockWindow
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
+        Application.appDelegate.windowControllersManager.register(mvc)
+        defer {
+            Application.appDelegate.windowControllersManager.unregister(mvc)
+        }
 
         // When
         onboardingNavigation.showImportDataView()
@@ -65,12 +82,15 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mockWindow = MockWindow(isVisible: false)
         let mvc = MainWindowController(
             window: mockWindow,
-            mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
-            popUp: false,
-            fireViewModel: fireCoordinator.fireViewModel
+            mainViewController: MainViewController(tabCollectionViewModel: TabCollectionViewModel(isPopup: false), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()), aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger()), fireCoordinator: fireCoordinator),
+            fireViewModel: fireCoordinator.fireViewModel,
+            themeManager: MockThemeManager()
         )
         mvc.window = mockWindow
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
+        Application.appDelegate.windowControllersManager.register(mvc)
+        defer {
+            Application.appDelegate.windowControllersManager.unregister(mvc)
+        }
 
         // When
         onboardingNavigation.focusOnAddressBar()

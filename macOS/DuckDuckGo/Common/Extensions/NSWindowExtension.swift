@@ -20,6 +20,10 @@ import Cocoa
 
 extension NSWindow {
 
+    var titlebarView: NSView? {
+        standardWindowButton(.closeButton)?.superview
+    }
+
     var frameInWindowCoordinates: NSRect {
         NSRect(origin: .zero, size: frame.size)
     }
@@ -30,29 +34,6 @@ extension NSWindow {
 
     func setFrameOrigin(cascadedFrom window: NSWindow) {
         setFrameTopLeftPoint(cascadeTopLeft(from: window.frame.topLeft))
-    }
-
-    private static let lastLeftHitKey = "_lastLeftHit"
-    var lastLeftHit: NSView? {
-        return try? NSException.catch {
-            self.value(forKey: Self.lastLeftHitKey) as? NSView
-        }
-    }
-
-    func evilHackToClearLastLeftHitInWindow() {
-        guard let oldValue = self.lastLeftHit else { return }
-        let oldValueRetainCount = CFGetRetainCount(oldValue)
-        defer {
-            // compensate unbalanced release call
-            if CFGetRetainCount(oldValue) < oldValueRetainCount {
-                _=Unmanaged.passUnretained(oldValue).retain()
-            }
-        }
-        NSException.try {
-            autoreleasepool {
-                self.setValue(nil, forKey: Self.lastLeftHitKey)
-            }
-        }
     }
 
     /// Checks if the given window is part of a specific window parent-child hierarchy or is the window itself.

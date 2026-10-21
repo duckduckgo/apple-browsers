@@ -1,0 +1,152 @@
+//
+//  AboutView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2017 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Core
+import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import Common
+import FoundationExtensions
+
+struct AboutView: View {
+
+    @EnvironmentObject var viewModel: SettingsViewModel
+
+    var body: some View {
+        List {
+            AboutViewText()
+            AboutViewVersion()
+        }
+        .conditionalInsetGroupedListStyle()
+    }
+}
+
+struct AboutViewText: View {
+    @EnvironmentObject var viewModel: SettingsViewModel
+
+    var body: some View {
+        VStack(spacing: 12) {
+            if AppRebrand.isAppRebranded() {
+                Image(.logoStacked)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 160, height: 128)
+                    .padding(.top)
+            } else {
+                Image(.logo)
+                    .resizable()
+                    .frame(width: 96, height: 96)
+                    .padding(.top)
+
+                Image(.textDuckDuckGo)
+            }
+
+            Text(UserText.aboutProtectionTagline)
+                .daxHeadline()
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Rectangle()
+                .frame(width: 80, height: 0.5)
+                .foregroundColor(Color(designSystemColor: .lines))
+                .padding()
+
+            Text(verbatim: "Welcome to the Duck Side!")
+                .lineLimit(nil)
+                .multilineTextAlignment(.leading)
+                .padding(.horizontal, 32)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(LocalizedStringKey(UserText.aboutText))
+                .lineLimit(nil)
+                .multilineTextAlignment(.leading)
+                .foregroundColor(.primary)
+                .tintIfAvailable(Color(designSystemColor: .accentPrimary))
+                .padding(.horizontal, 32)
+                .padding(.bottom)
+
+            Spacer()
+        }
+        .listRowInsets(EdgeInsets(top: -12, leading: -12, bottom: -12, trailing: -12))
+        .listRowBackground(Color(designSystemColor: .background).edgesIgnoringSafeArea(.all))
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct AboutViewVersion: View {
+
+    @EnvironmentObject var viewModel: SettingsViewModel
+
+    func copyVersion(_ version: String) {
+        guard viewModel.isInternalUser else { return }
+        UIPasteboard.general.string = version
+        // Internal user only so no translation required
+        ActionMessageView.present(message: "\"\(version)\" copied")
+    }
+
+    var body: some View {
+#if EXPERIMENTAL && !DEBUG
+        let version = "\(viewModel.state.version) (Experimental)"
+#elseif ALPHA && !DEBUG
+        let version = "\(viewModel.state.version) (Alpha)"
+#else
+        let version = viewModel.state.version
+#endif
+
+#if (ALPHA || EXPERIMENTAL) && !DEBUG
+        let build = AppVersion.shared.commitSHAShort
+#else
+        let build = ""
+#endif
+
+        let xcodeMajorVersion = AppVersion.shared.xcodeMajorVersion
+        let toolchainSuffix = xcodeMajorVersion.isEmpty ? "" : " (Xcode \(xcodeMajorVersion))"
+        let commitSuffix = build.isEmpty ? "" : "-(\(build))"
+        let copyable = "\(version)\(commitSuffix)"
+
+        Section(header: Text("DuckDuckGo for iOS"), footer: Text(UserText.settingsSendCrashReportsDescription)) {
+            Group {
+                SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
+
+                if !build.isEmpty {
+                    SettingsCellView(label: "Build", accessory: .rightDetail("\(build)\(toolchainSuffix)"))
+                }
+            }
+            .onTapGesture {
+                copyVersion(copyable)
+            }
+
+            // Send Crash Reports
+            SettingsCellView(label: UserText.settingsSendCrashReports,
+                             accessory: .toggle(isOn: viewModel.crashCollectionOptInStatusBinding))
+        }
+    }
+}
+
+extension View {
+    
+    @ViewBuilder func tintIfAvailable(_ color: Color) -> some View {
+        if #available(iOS 16.0, *) {
+            tint(color)
+        } else {
+            accentColor(color)
+        }
+    }
+}

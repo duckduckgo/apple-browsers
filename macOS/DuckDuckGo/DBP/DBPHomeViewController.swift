@@ -21,25 +21,40 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import AppKit
 import Common
+import FoundationExtensions
 import SwiftUI
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 
 public extension Notification.Name {
     static let dbpDidClose = Notification.Name("com.duckduckgo.DBP.DBPDidClose")
 }
 
 final class DBPHomeViewController: NSViewController {
+    private(set) var freemiumEntryPoint: FreemiumDBPEntryPoint?
+
     private var presentedWindowController: NSWindowController?
     private let dataBrokerProtectionManager: DataBrokerProtectionManager
     private let vpnBypassService: VPNBypassFeatureProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler()
+    private lazy var sharedPixelsHandler: DataBrokerProtectionSharedPixelsHandler? = PixelKit.shared.map {
+        DataBrokerProtectionSharedPixelsHandler(pixelKit: $0, platform: .macOS)
+    }
+    private lazy var interactionPixels: DataBrokerProtectionInteractionPixels? = sharedPixelsHandler.map {
+        DataBrokerProtectionInteractionPixels(
+            handler: $0,
+            repository: DataBrokerProtectionInteractionPixelsUserDefaults(userDefaults: .dbp)
+        )
+    }
     private var currentChildViewController: NSViewController?
+    private var isDBPUIDisplayed = false
     private var observer: NSObjectProtocol?
     private var freemiumDBPFeature: FreemiumDBPFeature
 
     private let prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private lazy var errorViewController: DataBrokerProtectionErrorViewController = {
         DataBrokerProtectionErrorViewController()
     }()
@@ -60,7 +75,7 @@ final class DBPHomeViewController: NSViewController {
                                                   inputFocusApi: false,
                                                   autocompleteAttributeSupport: false)
 
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
         let sessionKey = UUID().uuidString
         let messageSecret = UUID().uuidString
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
@@ -75,6 +90,7 @@ final class DBPHomeViewController: NSViewController {
             privacyConfig: privacyConfigurationManager,
             prefs: prefs,
             webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
+            isUserSubscribed: { Application.appDelegate.subscriptionManager.isUserAuthenticated },
             openURLHandler: { url in
                 Application.appDelegate.windowControllersManager.show(url: url, source: .link, newTab: true)
             })
@@ -84,11 +100,13 @@ final class DBPHomeViewController: NSViewController {
          vpnBypassService: VPNBypassFeatureProvider,
          prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier = DefaultDataBrokerPrerequisitesStatusVerifier(),
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          freemiumDBPFeature: FreemiumDBPFeature) {
         self.dataBrokerProtectionManager = dataBrokerProtectionManager
         self.vpnBypassService = vpnBypassService
         self.prerequisiteVerifier = prerequisiteVerifier
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.freemiumDBPFeature = freemiumDBPFeature
         super.init(nibName: nil, bundle: nil)
     }
@@ -111,9 +129,15 @@ final class DBPHomeViewController: NSViewController {
     override func viewDidAppear() {
         super.viewDidAppear()
 
-        if !dataBrokerProtectionManager.isUserAuthenticated() && !freemiumDBPFeature.isAvailable {
-            assertionFailure("This UI should never be presented if the user is not authenticated")
-            closeUI()
+        Task { @MainActor in
+            let isAuthenticated = await dataBrokerProtectionManager.isUserAuthenticated()
+            if !isAuthenticated && !freemiumDBPFeature.isAvailable {
+                assertionFailure("This UI should never be presented if the user is not authenticated")
+                closeUI()
+                return
+            }
+
+            await fireDashboardOpenPixelsIfNeeded(isAuthenticated: isAuthenticated)
         }
     }
 
@@ -135,7 +159,9 @@ final class DBPHomeViewController: NSViewController {
     }
 
     private func setupUIWithCurrentStatus() {
-        setupUIWithStatus(prerequisiteVerifier.checkStatus())
+        Task { @MainActor in
+            setupUIWithStatus(await prerequisiteVerifier.checkStatus())
+        }
     }
 
     private func setupUIWithStatus(_ status: DataBrokerPrerequisitesStatus) {
@@ -152,7 +178,16 @@ final class DBPHomeViewController: NSViewController {
         }
     }
 
+    private func fireDashboardOpenPixelsIfNeeded(isAuthenticated: Bool) async {
+        guard await prerequisiteVerifier.checkStatus() == .valid else { return }
+
+        interactionPixels?.fireInteractionPixel(isAuthenticated: isAuthenticated)
+        sharedPixelsHandler?.fire(.dashboardOpen(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+    }
+
     private func displayDBPUI() {
+        isDBPUIDisplayed = true
+        dataBrokerProtectionViewController.updateFreeScanEntryPoint(freemiumEntryPoint?.rawValue)
         replaceChildController(dataBrokerProtectionViewController)
     }
 
@@ -166,7 +201,16 @@ final class DBPHomeViewController: NSViewController {
     }
 
     deinit {
-        if let observer = observer {
+#if DEBUG
+        currentChildViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        if isLazyVar(named: "errorViewController", initializedIn: self) {
+            errorViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+        if isLazyVar(named: "dataBrokerProtectionViewController", initializedIn: self) {
+            dataBrokerProtectionViewController.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
+        if let observer {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -175,6 +219,14 @@ final class DBPHomeViewController: NSViewController {
         presentedWindowController?.window?.close()
         presentedWindowController = nil
         NotificationCenter.default.post(name: .dbpDidClose, object: nil)
+    }
+
+    func setFreemiumEntryPointIfKnown(_ entryPoint: FreemiumDBPEntryPoint?) {
+        guard let entryPoint else { return }
+        freemiumEntryPoint = entryPoint
+
+        guard isDBPUIDisplayed else { return }
+        dataBrokerProtectionViewController.updateFreeScanEntryPoint(entryPoint.rawValue)
     }
 }
 

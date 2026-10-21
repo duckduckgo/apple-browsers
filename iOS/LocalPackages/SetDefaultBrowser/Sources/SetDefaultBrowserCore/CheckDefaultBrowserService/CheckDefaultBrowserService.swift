@@ -28,7 +28,6 @@ public enum CheckDefaultBrowserServiceError: Error, Equatable {
     case unknownError(NSError)
 }
 
-@MainActor
 public protocol CheckDefaultBrowserService: AnyObject {
     func isDefaultWebBrowser() -> Result<Bool, CheckDefaultBrowserServiceError>
 }
@@ -38,24 +37,26 @@ public protocol CheckDefaultBrowserService: AnyObject {
 // Usually we would make an interface with the same method and have UIApplication conform to it.
 // The issue with the above approach is that it requires marking the protocol `@available(iOS 18.2, *)`.
 // That will cause issues with injecting the parameter as it is available only for iOS 18.2.
-@MainActor
+// [2025-07-30] Changed min required version to 18.3 due to some user experiencing crashes only on 18.2.
+// For more info: https://app.asana.com/1/137249556945/project/1206329551987282/task/1210878147492704?focus=true
 public protocol ApplicationDefaultCategoryChecking: AnyObject {
-    @available(iOS 18.2, *)
+    @available(iOS 18.3, *)
     func isDefault(_ category: UIApplication.Category) throws -> Bool
 }
 
 extension UIApplication: ApplicationDefaultCategoryChecking {}
 
-@MainActor
 public final class SystemCheckDefaultBrowserService: CheckDefaultBrowserService {
     private let application: ApplicationDefaultCategoryChecking
 
-    public init(application: ApplicationDefaultCategoryChecking = UIApplication.shared) {
+    public init(application: ApplicationDefaultCategoryChecking) {
         self.application = application
     }
 
     public func isDefaultWebBrowser() -> Result<Bool, CheckDefaultBrowserServiceError> {
-        guard #available(iOS 18.2, *) else { return .failure(.notSupportedOnThisOSVersion) }
+        // The feature is available since iOS 18.2 but users experienced a few crashes only in iOS 18.2.
+        // Bumping min required version to 18.3. For more info: https://app.asana.com/1/137249556945/project/1206329551987282/task/1210878147492704?focus=true
+        guard #available(iOS 18.3, *) else { return .failure(.notSupportedOnThisOSVersion) }
 
         do {
             let isDefaultBrowser = try application.isDefault(.webBrowser)

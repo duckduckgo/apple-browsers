@@ -19,7 +19,11 @@
 import Foundation
 import PixelKit
 
-enum SyncPromoPixelKitEvent: PixelKitEventV2 {
+enum SyncPromoPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     case syncPromoDisplayed
     case syncPromoConfirmed
     case syncPromoDismissed
@@ -36,11 +40,25 @@ enum SyncPromoPixelKitEvent: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .syncPromoDisplayed,
+                .syncPromoConfirmed,
+                .syncPromoDismissed:
+            return [.pixelSource]
+        }
     }
+}
 
-    var withoutMacPrefix: NonStandardEvent {
-        NonStandardEvent(self)
-    }
+enum SyncDeviceButtonTouchpoint: String {
+    case moreMenu
+    case bookmarkAdded
+    case bookmarksListEmpty
+    case bookmarksManagementEmpty
+    case bookmarksBar
+    case passwordsEmpty
+    case dataImportStart
+    case dataImportFinish
+    case aiChat
+    case nextStepsCard
 }

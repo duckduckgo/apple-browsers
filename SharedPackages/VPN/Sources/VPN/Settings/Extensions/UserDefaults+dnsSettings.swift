@@ -25,7 +25,7 @@ extension UserDefaults {
         let dnsServers: [String]
         let isBlockRiskyDomainsOn: Bool
 
-        init(usesCustomDNS: Bool = false, dnsServers: [String] = [], isBlockRiskyDomainsOn: Bool = false) {
+        init(usesCustomDNS: Bool = false, dnsServers: [String] = [], isBlockRiskyDomainsOn: Bool = true) {
             self.usesCustomDNS = usesCustomDNS
             self.dnsServers = dnsServers
             self.isBlockRiskyDomainsOn = isBlockRiskyDomainsOn
@@ -39,7 +39,7 @@ extension UserDefaults {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             self.usesCustomDNS = try container.decodeIfPresent(Bool.self, forKey: .usesCustomDNS) ?? false
             self.dnsServers = try container.decodeIfPresent([String].self, forKey: .dnsServers) ?? []
-            self.isBlockRiskyDomainsOn = try container.decodeIfPresent(Bool.self, forKey: .isBlockRiskyDomainsOn) ?? false
+            self.isBlockRiskyDomainsOn = try container.decodeIfPresent(Bool.self, forKey: .isBlockRiskyDomainsOn) ?? true
         }
 
         func encode(to encoder: Encoder) throws {
@@ -70,15 +70,6 @@ extension UserDefaults {
             if let data = try? JSONEncoder().encode(newValue) {
                 set(data, forKey: dnsSettingKey)
             }
-        }
-    }
-
-    var didBlockRiskyDomainsDefaultToTrue: Bool {
-        get {
-            return bool(forKey: "didBlockRiskyDomainsDefaultToTrue")
-        }
-        set {
-            set(newValue, forKey: "didBlockRiskyDomainsDefaultToTrue")
         }
     }
 

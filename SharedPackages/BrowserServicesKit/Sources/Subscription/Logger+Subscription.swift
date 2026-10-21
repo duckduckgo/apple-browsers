@@ -20,13 +20,14 @@ import Foundation
 import os.log
 
 public extension Logger {
-    private static var subscriptionSubsystem = "Subscription"
-    static var subscription = { Logger(subsystem: Self.subscriptionSubsystem, category: "") }()
-    static var subscriptionAppStorePurchaseFlow = { Logger(subsystem: Self.subscriptionSubsystem, category: "AppStorePurchaseFlow") }()
-    static var subscriptionAppStoreRestoreFlow = { Logger(subsystem: Self.subscriptionSubsystem, category: "AppStoreRestoreFlow") }()
-    static var subscriptionStripePurchaseFlow = { Logger(subsystem: Self.subscriptionSubsystem, category: "StripePurchaseFlow") }()
-    static var subscriptionEndpointService = { Logger(subsystem: Self.subscriptionSubsystem, category: "EndpointService") }()
-    static var subscriptionStorePurchaseManager = { Logger(subsystem: Self.subscriptionSubsystem, category: "StorePurchaseManager") }()
-    static var subscriptionKeychain = { Logger(subsystem: Self.subscriptionSubsystem, category: "KeyChain") }()
-    static var subscriptionCookieManager = { Logger(subsystem: Self.subscriptionSubsystem, category: "CookieManager") }()
+    private static let subscriptionSubsystem = "Subscription"
+    static let subscription = Logger(subsystem: Self.subscriptionSubsystem, category: "")
+    static let subscriptionAppStorePurchaseFlow = Logger(subsystem: Self.subscriptionSubsystem, category: "AppStorePurchaseFlow")
+    static let subscriptionAppStoreRestoreFlow = Logger(subsystem: Self.subscriptionSubsystem, category: "AppStoreRestoreFlow")
+    static let subscriptionStripePurchaseFlow = Logger(subsystem: Self.subscriptionSubsystem, category: "StripePurchaseFlow")
+    static let subscriptionEndpointService = Logger(subsystem: Self.subscriptionSubsystem, category: "EndpointService")
+    static let subscriptionStorePurchaseManager = Logger(subsystem: Self.subscriptionSubsystem, category: "StorePurchaseManager")
+    static let subscriptionKeychain = Logger(subsystem: Self.subscriptionSubsystem, category: "KeyChain")
+    static let subscriptionCachingService = Logger(subsystem: Self.subscriptionSubsystem, category: "CachingService")
+    static let subscriptionTokensManagement = Logger(subsystem: Self.subscriptionSubsystem, category: "TokensManagement")
 }

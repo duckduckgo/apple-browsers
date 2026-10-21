@@ -18,8 +18,8 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
-import Subscription
 
 public protocol VPNActivationDateProviding {
     func daysSinceActivation() -> Int?
@@ -30,20 +30,23 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
 
     private let statisticsStore: StatisticsStore
     private let vpnActivationDateStore: VPNActivationDateProviding
-    private let subscription: PrivacyProSubscription?
+    private let subscriptionDataProvider: SubscriptionSurveyDataProviding?
     private let localeIdentifier: String
     private let autofillUsageStore: AutofillUsageStore?
+    private let featureDiscovery: FeatureDiscovery?
 
     public init(statisticsStore: StatisticsStore,
                 vpnActivationDateStore: VPNActivationDateProviding,
-                subscription: PrivacyProSubscription?,
+                subscriptionDataProvider: SubscriptionSurveyDataProviding?,
                 localeIdentifier: String = Locale.current.identifier,
-                autofillUsageStore: AutofillUsageStore?) {
+                autofillUsageStore: AutofillUsageStore?,
+                featureDiscovery: FeatureDiscovery? = nil) {
         self.statisticsStore = statisticsStore
         self.vpnActivationDateStore = vpnActivationDateStore
-        self.subscription = subscription
+        self.subscriptionDataProvider = subscriptionDataProvider
         self.localeIdentifier = localeIdentifier
         self.autofillUsageStore = autofillUsageStore
+        self.featureDiscovery = featureDiscovery
     }
 
     // swiftlint:disable:next cyclomatic_complexity
@@ -80,31 +83,41 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
                    let daysSinceInstall = Calendar.current.numberOfDaysBetween(installDate, and: Date()) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysSinceInstall)))
                 }
+            case .lastDuckAIUsage:
+                let daysSinceLastUsed = featureDiscovery?.daysSinceLastUsed(.aiChat)
+                queryItems.append(URLQueryItem(name: parameter.rawValue, value: Self.usageState(daysSinceLastUsage: daysSinceLastUsed)))
             case .lastSearchState:
                 queryItems.append(URLQueryItem(name: parameter.rawValue, value: Self.searchState(lastSearchDate: autofillUsageStore?.searchDauDate)))
             case .locale:
                 let formattedLocale = LocaleMatchingAttribute.localeIdentifierAsJsonFormat(localeIdentifier)
                 queryItems.append(URLQueryItem(name: parameter.rawValue, value: formattedLocale))
-            case .privacyProStatus:
-                if let privacyProStatusSurveyParameter = subscription?.privacyProStatusSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProStatusSurveyParameter))
+            case .subscriptionStatus:
+                if let status = subscriptionDataProvider?.subscriptionStatus {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: status))
                 }
-            case .privacyProPlatform:
-                if let privacyProPlatformSurveyParameter = subscription?.privacyProPlatformSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProPlatformSurveyParameter))
+            case .subscriptionPlatform:
+                if let platform = subscriptionDataProvider?.subscriptionPlatform {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: platform))
                 }
-            case .privacyProBilling:
-                if let privacyProBillingSurveyParameter = subscription?.privacyProBillingSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProBillingSurveyParameter))
+            case .subscriptionBilling:
+                if let billing = subscriptionDataProvider?.subscriptionBilling {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: billing))
                 }
-
-            case .privacyProDaysSincePurchase:
-                if let startDate = subscription?.startedAt,
+            case .subscriptionTier:
+                if let tier = subscriptionDataProvider?.subscriptionTier {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: tier))
+                }
+            case .subscriptionTrialActive:
+                if let trialActive = subscriptionDataProvider?.subscriptionTrialActive {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(trialActive)))
+                }
+            case .subscriptionDaysSincePurchase:
+                if let startDate = subscriptionDataProvider?.subscriptionStartDate,
                    let daysSincePurchase = Calendar.current.numberOfDaysBetween(startDate, and: Date()) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysSincePurchase)))
                 }
-            case .privacyProDaysUntilExpiry:
-                if let expiryDate = subscription?.expiresOrRenewsAt,
+            case .subscriptionDaysUntilExpiry:
+                if let expiryDate = subscriptionDataProvider?.subscriptionExpiryDate,
                    let daysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: expiryDate) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysUntilExpiry)))
                 }
@@ -149,7 +162,15 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
             .dateComponents([.day], from: startOfLast, to: startOfToday)
             .day ?? Int.max
 
-        switch daysApart {
+        return usageState(daysSinceLastUsage: daysApart)
+    }
+
+    private static func usageState(daysSinceLastUsage: Int?) -> String {
+        guard let daysSinceLastUsage else {
+            return "none"
+        }
+
+        switch daysSinceLastUsage {
         case 0...1:
             return "day"
         case 2...7:
@@ -160,63 +181,41 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
     }
 
     public static func refreshLastSearchState(in urlString: String, lastSearchDate: Date?) -> String {
-        guard var comps = URLComponents(string: urlString),
-              let items = comps.queryItems,
-              items.contains(where: { $0.name == RemoteMessagingSurveyActionParameter.lastSearchState.rawValue }) else {
+        refreshUsageStates(in: urlString,
+                           updatedStates: [.lastSearchState: searchState(lastSearchDate: lastSearchDate)])
+    }
+
+    public static func refreshSurveyUsageStates(in urlString: String, lastSearchDate: Date?, daysSinceDuckAIUsed: Int?) -> String {
+        refreshUsageStates(
+            in: urlString,
+            updatedStates: [
+                .lastDuckAIUsage: usageState(daysSinceLastUsage: daysSinceDuckAIUsed),
+                .lastSearchState: searchState(lastSearchDate: lastSearchDate)
+            ]
+        )
+    }
+
+    private static func refreshUsageStates(in urlString: String, updatedStates: [RemoteMessagingSurveyActionParameter: String]) -> String {
+        guard var components = URLComponents(string: urlString),
+              let queryItems = components.queryItems else {
             return urlString
         }
 
-        let filtered = items.filter { $0.name != RemoteMessagingSurveyActionParameter.lastSearchState.rawValue }
+        var didUpdateState = false
+        components.queryItems = queryItems.map { queryItem in
+            guard let parameter = RemoteMessagingSurveyActionParameter(rawValue: queryItem.name),
+                  let updatedState = updatedStates[parameter] else {
+                return queryItem
+            }
 
-        let updatedState = Self.searchState(lastSearchDate: lastSearchDate)
-
-        comps.queryItems = filtered + [
-            URLQueryItem(name: RemoteMessagingSurveyActionParameter.lastSearchState.rawValue, value: updatedState)
-        ]
-
-        return comps.url?.absoluteString ?? urlString
-    }
-}
-
-extension PrivacyProSubscription {
-    var privacyProStatusSurveyParameter: String {
-        switch status {
-        case .autoRenewable:
-            return "auto_renewable"
-        case .notAutoRenewable:
-            return "not_auto_renewable"
-        case .gracePeriod:
-            return "grace_period"
-        case .inactive:
-            return "inactive"
-        case .expired:
-            return "expired"
-        case .unknown:
-            return "unknown"
+            didUpdateState = true
+            return URLQueryItem(name: queryItem.name, value: updatedState)
         }
-    }
 
-    var privacyProPlatformSurveyParameter: String {
-        switch platform {
-        case .apple:
-            return "apple"
-        case .google:
-            return "google"
-        case .stripe:
-            return "stripe"
-        case .unknown:
-            return "unknown"
+        guard didUpdateState else {
+            return urlString
         }
-    }
 
-    var privacyProBillingSurveyParameter: String {
-        switch billingPeriod {
-        case .monthly:
-            return "monthly"
-        case .yearly:
-            return "yearly"
-        case .unknown:
-            return "unknown"
-        }
+        return components.url?.absoluteString ?? urlString
     }
 }

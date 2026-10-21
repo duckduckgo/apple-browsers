@@ -33,6 +33,14 @@ public struct BrokerProfileQueryData: Sendable {
         optOutJobData.map { $0.extractedProfile }
     }
 
+    public var scanJobDataHistoryEventsSortedEarliestFirst: [HistoryEvent] {
+        scanJobData.historyEvents.sorted { $0.date < $1.date }
+    }
+
+    public var optOutJobDataHistoryEventsSortedWithinOptOutEarliestFirst: [[HistoryEvent]] {
+        optOutJobData.compactMap { $0.historyEventsSortedEarliestFirst }
+    }
+
     public var events: [HistoryEvent] {
         jobsData.flatMap { $0.historyEvents }.sorted { $0.date < $1.date }
     }
@@ -55,6 +63,8 @@ public struct BrokerProfileQueryData: Sendable {
         self.optOutJobData = optOutJobData
     }
 }
+
+extension BrokerProfileQueryData: SubJobContextProviding {}
 
 public extension BrokerProfileQueryData {
     func namesOfBrokersScannedIncludingMirrorSites() -> [String] {
@@ -80,7 +90,28 @@ public extension BrokerProfileQueryData {
     }
 }
 
+public enum BrokerProfileQueryDataFetchReason {
+    case oneTimeMigration
+    case profileHistoryReporting
+}
+
 public extension Array where Element == BrokerProfileQueryData {
+
+    var excludingRemovedBrokers: [BrokerProfileQueryData] {
+        filter { !$0.dataBroker.isRemoved }
+    }
+
+    var excludingBrokersRequiringSubscription: [BrokerProfileQueryData] {
+        filter { !$0.dataBroker.scanRequiresSubscription }
+    }
+
+    func excludingIneligibleBrokers(isAuthenticatedUser: Bool) -> [BrokerProfileQueryData] {
+        var result = excludingRemovedBrokers
+        if !isAuthenticatedUser {
+            result = result.excludingBrokersRequiringSubscription
+        }
+        return result
+    }
 
     func latestScanLastRunDate() -> Date? {
         self.lazy.compactMap { $0.scanJobData.lastRunDate }.max()

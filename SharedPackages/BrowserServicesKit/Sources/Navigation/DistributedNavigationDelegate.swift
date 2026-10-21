@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 import os.log
@@ -41,6 +42,10 @@ public final class DistributedNavigationDelegate: NSObject {
             navigationActionDecisionTask?.cancel()
         }
     }
+
+    /// Gater for createWebView callbacks to ensure they are ordered behind any in-flight `decidePolicyForNavigationAction` evaluation.
+    @MainActor
+    private let createWebViewCallbackGater = CreateWebViewCallbackGater()
 
     /// ongoing Main Frame navigation (after `navigationDidStart` event received)
     @MainActor
@@ -78,6 +83,7 @@ public final class DistributedNavigationDelegate: NSObject {
 
     public override init() {
         dispatchPrecondition(condition: .onQueue(.main))
+        super.init()
 #if !_MAIN_FRAME_NAVIGATION_ENABLED
         _=WKWebView.swizzleLoadMethodOnce
 #endif
@@ -93,6 +99,13 @@ public final class DistributedNavigationDelegate: NSObject {
         dispatchPrecondition(condition: .onQueue(.main))
 
         responders.setResponders(refs.compactMap { $0 })
+    }
+
+    /// Dispatches a callback so it runs only after all NavigationActions that were executing at the moment of dispatch
+    /// finish their `decidePolicyForNavigationAction` responder-chain processing.
+    @MainActor
+    public func dispatchCreateWebView(_ callback: @escaping @MainActor @Sendable () -> Void) {
+        createWebViewCallbackGater.dispatchCreateWebView(callback)
     }
 
 }
@@ -309,6 +322,12 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         // extract WKNavigationAction mapped to NavigationAction from the Navigation or make new for non-main-frame Navigation Actions
         let navigationAction = navigation?.navigationAction
             ?? NavigationAction(webView: webView, navigationAction: wkNavigationAction, currentHistoryItemIdentity: currentHistoryItemIdentity, redirectHistory: nil, mainFrameNavigation: startedNavigation)
+        createWebViewCallbackGater.beginExecutingNavigationAction(identifier: navigationAction.identifier)
+        let webKitDecisionHandler = decisionHandler
+        let decisionHandler = { [createWebViewCallbackGater] (policy: WKNavigationActionPolicy, preferences: WKWebpagePreferences) in
+            webKitDecisionHandler(policy, preferences)
+            createWebViewCallbackGater.endExecutingNavigationAction(identifier: navigationAction.identifier)
+        }
         // associate NavigationAction with WKNavigationAction object
         wkNavigationAction.navigationAction = navigationAction
 
@@ -432,17 +451,18 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
     private func willStart(_ navigation: Navigation) {
         Logger.navigation.log("willStart \(navigation.debugDescription)")
 
-        var isSameDocumentNavigation: Bool {
-            guard startedNavigation !== navigation && startedNavigation?.url.isSameDocument(navigation.url) == true else { return false }
+        let isRedirectedSameDocumentNavigation: Bool = {
+            guard startedNavigation !== navigation && startedNavigation?.url.equals(navigation.url, by: .sameDocument) == true else { return false }
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
             return navigation.navigationAction.navigationType == .sameDocumentNavigation(.anchorNavigation)
 #else
             return navigation.navigationAction.navigationType == .sameDocumentNavigation
 #endif
-        }
-        if navigation.navigationAction.navigationType.redirect?.isClient == true // is client redirect?
+        }()
+        if case .willPerformClientRedirect = startedNavigation?.state,
+           navigation.navigationAction.navigationType.redirect?.isClient == true // is client redirect?
             // is same document navigation received as client redirect?
-            || isSameDocumentNavigation {
+            || isRedirectedSameDocumentNavigation {
 
             // notify the original (redirected) Navigation about the redirect NavigationAction received
             // this should call the overriden ResponderChain inside `willPerformClientRedirect`
@@ -450,7 +470,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             startedNavigation?.didPerformClientRedirect(with: navigation.navigationAction)
         }
 
-        navigation.willStart()
+        navigation.willStart(isSameDocument: navigation.navigationAction.navigationType.isSameDocumentNavigation)
         for responder in navigation.navigationResponders {
             responder.willStart(navigation)
         }
@@ -651,10 +671,10 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         guard let redirectedNavigation = startedNavigation,
               redirectedNavigation.state.isResponseReceived,
               // don‘t handle same-document navigations
-              !(url.absoluteString.hashedSuffix != nil && redirectedNavigation.url.absoluteString.droppingHashedSuffix() == url.absoluteString.droppingHashedSuffix())
+              !(url.hasFragment && redirectedNavigation.url.equals(url, by: .sameDocument))
         else { return }
 
-        Logger.navigation.log("willPerformClientRedirect to: \(url.absoluteString), current: \(redirectedNavigation.debugDescription)")
+        Logger.navigation.log("willPerformClientRedirect to: \(url.shortDescription), current: \(redirectedNavigation.debugDescription)")
 
         // keep the original Navigation non-finished until the redirect NavigationAction is received
         let originalResponders = redirectedNavigation.navigationResponders
@@ -956,6 +976,20 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
     }
 #endif
 
+#if PRIVATE_NAVIGATION_PERFORMANCE_ENABLED
+    @MainActor
+    @objc(_webView:didGeneratePageLoadTiming:)
+    @available(macOS 15.2, *)
+    public func webView(_ webView: WKWebView, didGeneratePageLoadTiming timing: NSObject) {
+        // Create wrapper that extracts data from WebKit's private _WKPageLoadTiming object
+        let pageLoadTiming = WKPageLoadTiming(timing)
+
+        for responder in responders {
+            responder.didGeneratePageLoadTiming(pageLoadTiming)
+        }
+    }
+#endif
+
     // MARK: Downloads
 
     @MainActor
@@ -974,6 +1008,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             assert(wkNavigation == nil, "Unexpected didCommitNavigation without preceding didStart")
             return
         }
+
+        excludeUnwantedBackForwardListItemsIfNeeded(for: navigation, in: webView)
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
         updateCurrentHistoryItemIdentity(webView.backForwardList.currentItem)
 #endif
@@ -983,6 +1019,29 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         for responder in navigation.navigationResponders {
             responder.didCommit(navigation)
         }
+    }
+
+    @MainActor
+    private func excludeUnwantedBackForwardListItemsIfNeeded(for navigation: Navigation, in webView: WKWebView) {
+#if _SESSION_STATE_WITH_FILTER_ENABLED
+        guard !(navigation.redirectHistory.first ?? navigation.navigationAction).navigationType.isBackForward else { return }
+
+        // when developer redirect breaks client redirect in decidePolicyForNavigationAction
+        // the page initiated client-redirect lands in back history
+        // https://app.asana.com/1/137249556945/project/1177771139624306/task/1201280322539473?focus=true
+        let originalHistoryItemIdentity = (navigation.redirectHistory.first ?? navigation.navigationAction)?.fromHistoryItemIdentity
+        lazy var backList = webView.backForwardList.backList
+        // if extra back list item created during the navigation transaction - remove the extra item
+        if navigation.navigationAction.fromHistoryItemIdentity != originalHistoryItemIdentity,
+           !backList.isEmpty,
+           navigation.navigationAction.fromHistoryItemIdentity?.url == backList.last?.url {
+
+            // reload webView history without navigation excluding the filtered-out item
+            if let sessionState = webView.sessionState(withFilter: { $0.identity != navigation.navigationAction.fromHistoryItemIdentity }) {
+                webView.restoreSessionState(from: sessionState, andNavigate: false)
+            }
+        }
+#endif
     }
 
     @MainActor

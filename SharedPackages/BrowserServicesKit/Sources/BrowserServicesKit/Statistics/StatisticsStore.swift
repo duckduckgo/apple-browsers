@@ -25,5 +25,6 @@ public protocol StatisticsStore: AnyObject {
     var atb: String? { get set }
     var searchRetentionAtb: String? { get set }
     var appRetentionAtb: String? { get set }
+    var duckAIRetentionAtb: String? { get set }
     var variant: String? { get set }
 }

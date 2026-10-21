@@ -38,5 +38,23 @@
 			<string>%2$@ için şifreniz, alanlarından biri karakter sınırını aştığı için senkronize edilemiyor.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%2$@ kredi kartınız ve 1 diğer kart, bazı alanları karakter sınırını aştığı için senkronize edilemiyor.</string>
+			<key>other</key>
+			<string>%2$@ kredi kartınız ve %1$d diğer kart, bazı alanları karakter sınırını aştığı için senkronize edilemiyor.</string>
+			<key>zero</key>
+			<string>%2$@ kredi kartınız, bazı alanları karakter sınırını aştığı için senkronize edilemiyor.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -1,0 +1,69 @@
+//
+//  ContextualDaxDialogsProvider.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+import Onboarding
+
+final class ContextualDaxDialogsProvider: ContextualDaxDialogsFactory {
+    private let legacyDaxDialogsFactory: ContextualDaxDialogsFactory
+    private let rebrandedDaxDialogsFactory: ContextualDaxDialogsFactory
+
+    convenience init(
+        onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
+        subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
+        fireCoordinator: FireCoordinator
+    ) {
+        let legacyFactory = DefaultContextualDaxDialogViewFactory(
+            onboardingPixelReporter: onboardingPixelReporter,
+            subscriptionUpsellMetrics: subscriptionUpsellMetrics,
+            fireCoordinator: fireCoordinator
+        )
+        let rebrandedFactory = RebrandedContextualDaxDialogsFactory(
+            onboardingPixelReporter: onboardingPixelReporter,
+            subscriptionUpsellMetrics: subscriptionUpsellMetrics,
+            fireCoordinator: fireCoordinator
+        )
+        self.init(
+            legacyDaxDialogsFactory: legacyFactory,
+            rebrandedDaxDialogsFactory: rebrandedFactory
+        )
+    }
+
+    init(
+        legacyDaxDialogsFactory: ContextualDaxDialogsFactory,
+        rebrandedDaxDialogsFactory: ContextualDaxDialogsFactory
+    ) {
+        self.legacyDaxDialogsFactory = legacyDaxDialogsFactory
+        self.rebrandedDaxDialogsFactory = rebrandedDaxDialogsFactory
+    }
+
+    private var factory: ContextualDaxDialogsFactory {
+        // Rebranded panel layout breaks on macOS 12 and below. For now, we'll just
+        // ensure we show the legacy contextual dialogs on those versions.
+        if #available(macOS 13.0, *) {
+            rebrandedDaxDialogsFactory
+        } else {
+            legacyDaxDialogsFactory
+        }
+    }
+
+    func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
+        factory.makeView(for: type, delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed, onSuggestionPressed: onSuggestionPressed)
+    }
+
+}

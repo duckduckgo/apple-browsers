@@ -16,43 +16,43 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
+import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 
 extension Tab: NavigationResponder {
 
-    // "protected" navigationDelegate
-    private var navigationDelegate: DistributedNavigationDelegate! {
-        self.value(forKey: Tab.objcNavigationDelegateKeyPath) as? DistributedNavigationDelegate
-    }
-
-    // "protected" newWindowPolicyDecisionMakers
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]? {
-        get {
-            self.value(forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath) as? [NewWindowPolicyDecisionMaker]
-        }
-        set {
-            self.setValue(newValue, forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath)
-        }
-    }
-
-    func setupNavigationDelegate() {
+    func setupNavigationDelegate(navigationDelegate: DistributedNavigationDelegate,
+                                 newWindowPolicyDecisionMakers: inout [NewWindowPolicyDecisionMaking]?,
+                                 args: TabExtensionsBuilderArguments) {
         navigationDelegate.setResponders(
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 
-            .weak(nullable: self.navigationHotkeyHandler),
-            .weak(nullable: self.brokenSiteInfo),
+            // Re-collect page context/signals once a page finishes loading (sidebar suggestions)
+            .weak(nullable: self.pageContext),
+
             .weak(nullable: self.tabCrashRecovery),
+
+            // Pop-ups and Navigation Key Modifiers handling
+            .weak(nullable: self.popupHandling),
+            .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
+            .weak(nullable: self.brokenSiteInfo),
+            .weak(nullable: self.pageSignals),
 
             // redirect to SERP for non-valid domains entered by user
             // should be before `self` to avoid Tab presenting an error screen
             .weak(nullable: self.searchForNonexistentDomains),
 
             .weak(self),
+
+            // browsing history
+            .weak(nullable: self.history),
 
             // Duck Player overlay navigations handling
             .weak(nullable: self.duckPlayer),
@@ -75,18 +75,16 @@ extension Tab: NavigationResponder {
 
             .struct(redirectNavigationResponder),
 
+            // set autoplay policy based on user preferences
+            .weak(nullable: self.autoplayPolicy),
+
             // ensure Content Blocking Rules are applied before navigation
             .weak(nullable: self.contentBlockingAndSurrogates),
-            // update click-to-load state
-            .weak(nullable: self.fbProtection),
 
             // Special Error Page script handler and Malicious Site detection
             .weak(nullable: self.specialErrorPage),
 
             .weak(nullable: self.downloads),
-
-            // browsing history
-            .weak(nullable: self.history),
 
             // Find In Page
             .weak(nullable: self.findInPage),
@@ -95,21 +93,23 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.tabSnapshots),
 
             // Release Notes
-            .weak(nullable: self.releaseNotes),
+            .strong(nullable: makeReleaseNotesNavigationResponder(args: args)),
 
             .weak(nullable: self.networkProtection),
 
-            // Internal Feedback Form
-            .weak(nullable: self.internalFeedbackForm),
+            // Tab Suspension
+            .weak(nullable: self.tabSuspension),
+
+            // EventHub — observe navigation starts to reset per-tab web-event dedup on URL change
+            .weak(nullable: self.eventHub),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
-            // !! don‘t add Tab Extensions here !!
+            // !! don't add Tab Extensions after this line !!
         )
 
-        newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaker?](arrayLiteral:
+        newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaking?](arrayLiteral:
             self.contextMenuManager,
-            self.navigationHotkeyHandler,
             self.duckPlayer
         ).compactMap { $0 }
 
@@ -117,13 +117,31 @@ extension Tab: NavigationResponder {
             navigationDelegate
                 .registerCustomDelegateMethodHandler(.weak(downloadsExtension), forSelectorNamed: "_webView:contextMenuDidCreateDownload:")
         }
+
+        if featureFlagger.isFeatureOn(.pageSignals), let pageSignals = self.pageSignals {
+            navigationDelegate
+                .registerCustomDelegateMethodHandler(.weak(pageSignals), forSelectorNamed: PageSignalsTabExtension.contentRuleListActionSelectorName)
+        }
     }
 
     var redirectNavigationResponder: RedirectNavigationResponder {
-        let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
-        let redirectManager = PrivacyProSubscriptionRedirectManager(subscriptionManager: subscriptionManager,
+        let subscriptionManager = Application.appDelegate.subscriptionManager
+        let redirectManager = SubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                                     baseURL: subscriptionManager.url(for: .baseURL))
         return RedirectNavigationResponder(redirectManager: redirectManager)
+    }
+
+    private func makeReleaseNotesNavigationResponder(args: TabExtensionsBuilderArguments) -> (any NavigationResponder & AnyObject)? {
+        guard let updateController = args.updateController as? any SparkleUpdateControlling else { return nil }
+
+        let scriptsPublisher = args.userScriptsPublisher
+            .compactMap { $0 as (any ReleaseNotesUserScriptProvider)? }
+            .eraseToAnyPublisher()
+        return updateController.makeReleaseNotesNavigationResponder(
+            releaseNotesURL: .releaseNotes,
+            scriptsPublisher: scriptsPublisher,
+            webViewPublisher: args.webViewFuture
+        )
     }
 
 }

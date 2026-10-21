@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Foundation
 import Common
 import VPN
@@ -42,19 +44,16 @@ final class VPNAppEventsHandler {
         }
 
         let restartTunnel = {
-            self.tunnelController.ensureRiskyDomainsEnabledIfNeeded()
             Logger.networking.info("App updated from \(versionStore.lastAgentVersionRun ?? "null", privacy: .public) to \(currentVersion, privacy: .public): updating login items")
 
             self.restartTunnel()
         }
 
-#if DEBUG || REVIEW // Since DEBUG and REVIEW builds may not change version No. we want them to always reset.
-        restartTunnel()
-#else
-        if versionStore.lastAgentVersionRun != currentVersion {
+        // Since DEBUG and REVIEW builds may not change version No. we want them to always reset.
+        let buildType = StandardApplicationBuildType()
+        if versionStore.lastAgentVersionRun != currentVersion || buildType.isDebugBuild || buildType.isReviewBuild {
             restartTunnel()
         }
-#endif
     }
 
     // MARK: - Private code

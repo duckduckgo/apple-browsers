@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import VPN
 import PixelKit
@@ -86,7 +87,7 @@ extension EventMapping where Event == NetworkProtectionError {
             domainEvent = .networkProtectionUnmanagedSubscriptionError(error)
         }
 
-        let debugEvent = DebugEvent(eventType: .custom(domainEvent))
+        let debugEvent = DebugEvent(eventType: .custom(domainEvent), standardParameters: [.pixelSource])
         PixelKit.fire(debugEvent, frequency: .standard, includeAppVersionParameter: true)
     }
 }

@@ -1,0 +1,9 @@
+{
+    "privacy-stats_database_load_failed": {
+        "description": "Fired when the Privacy Stats Core Data store fails to load at launch, just before the app terminates. Without this the launch would freeze waiting for the store.",
+        "owners": ["hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    }
+}

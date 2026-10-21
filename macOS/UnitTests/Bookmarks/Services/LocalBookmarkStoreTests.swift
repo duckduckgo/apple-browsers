@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Bookmarks
+import Foundation
+import SharedTestUtilities
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+
 @testable import BrowserServicesKit
+@testable import DuckDuckGo_Privacy_Browser
 
 extension LocalBookmarkStore {
 
@@ -662,6 +664,46 @@ final class LocalBookmarkStoreTests: XCTestCase {
         let expectedBookmarkUUIDs = [bookmark3.id, bookmark1.id, bookmark2.id]
         let updatedFetchedBookmarkUUIDs = updatedParentFolder.children.map(\.id)
         XCTAssertEqual(expectedBookmarkUUIDs, updatedFetchedBookmarkUUIDs)
+    }
+
+    @MainActor
+    func testWhenMovingAllFolderChildrenInNameOrderThenOrderIsPersisted() async throws {
+        // GIVEN
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+        let parent = BookmarkFolder(id: UUID().uuidString, title: "Parent")
+        let zulu = Bookmark(
+            id: UUID().uuidString,
+            url: "https://zulu.example",
+            title: "Zulu",
+            isFavorite: false,
+            parentFolderUUID: parent.id
+        )
+        let alpha = BookmarkFolder(id: UUID().uuidString, title: "alpha", parentFolderUUID: parent.id)
+        let bravo = Bookmark(
+            id: UUID().uuidString,
+            url: "https://bravo.example",
+            title: "Bravo",
+            isFavorite: false,
+            parentFolderUUID: parent.id
+        )
+
+        _ = try await bookmarkStore.save(folder: parent)
+        _ = try await bookmarkStore.save(folder: alpha)
+        _ = try await bookmarkStore.save(bookmark: zulu, index: nil)
+        _ = try await bookmarkStore.save(bookmark: bravo, index: nil)
+
+        // WHEN
+        let error = await bookmarkStore.move(
+            objectUUIDs: [alpha.id, bravo.id, zulu.id],
+            toIndex: 0,
+            withinParentFolder: .parent(uuid: parent.id)
+        )
+
+        // THEN
+        XCTAssertNil(error)
+        let topLevelEntities = try await bookmarkStore.loadAll(type: .topLevelEntities)
+        let persistedParent = try XCTUnwrap(topLevelEntities.first(where: { $0.id == parent.id }) as? BookmarkFolder)
+        XCTAssertEqual(persistedParent.children.map(\.id), [alpha.id, bravo.id, zulu.id])
     }
 
     @MainActor
@@ -1488,6 +1530,68 @@ final class LocalBookmarkStoreTests: XCTestCase {
         waitForExpectations(timeout: 3, handler: nil)
     }
 
+    func testWhenBookmarksAreImported_AndURLUsesUnsafeScheme_ThenBookmarkIsDroppedAndCountedAsFailed() {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let javascriptBookmark = ImportedBookmarks.BookmarkOrFolder(name: "JS", type: .bookmark, urlString: "javascript:alert(1)", children: nil)
+        let dataBookmark = ImportedBookmarks.BookmarkOrFolder(name: "Data", type: .bookmark, urlString: "data:text/html,<script>alert(1)</script>", children: nil)
+        let safeBookmark = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [javascriptBookmark, dataBookmark, safeBookmark])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        let result = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.safari))
+
+        XCTAssertEqual(result.successful, 1)
+        XCTAssertEqual(result.failed, 2)
+
+        let loadingExpectation = self.expectation(description: "Loading")
+
+        bookmarkStore.loadAll(type: .bookmarks) { bookmarks, error in
+            XCTAssertNotNil(bookmarks)
+            XCTAssertNil(error)
+            // Only the safe bookmark should be persisted; the unsafe-scheme ones are dropped.
+            XCTAssert(bookmarks?.count == 1)
+
+            loadingExpectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+
+    func testWhenImportedFolderCarriesUnsafeSchemeURLThenFolderAndChildrenAreStillImported() {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let child = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
+        // Malformed input: a folder carrying a javascript: URL string. The folder (and its children)
+        // must NOT be dropped — the unsafe-scheme check applies to bookmarks/favorites only.
+        let folder = ImportedBookmarks.BookmarkOrFolder(name: "Folder", type: .folder, urlString: "javascript:alert(1)", children: [child])
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [folder])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        _ = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.safari))
+
+        let loadingExpectation = self.expectation(description: "Loading")
+
+        bookmarkStore.loadAll(type: .bookmarks) { bookmarks, error in
+            XCTAssertNotNil(bookmarks)
+            XCTAssertNil(error)
+            // The safe child survived: the folder was not dropped. Without the folder exemption this would be 0.
+            XCTAssert(bookmarks?.count == 1)
+
+            loadingExpectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 3, handler: nil)
+    }
+
     @MainActor
     func testWhenBookmarksAreImported_AndDuplicatesExist_ThenBookmarksAreStillImported() async throws {
         let context = container.viewContext
@@ -1709,6 +1813,82 @@ final class LocalBookmarkStoreTests: XCTestCase {
         XCTAssertEqual(totalFavorites, 1)
     }
 
+    // MARK: Count
+
+    @MainActor
+    func testWhenStoreHasNoBookmarks_ThenBookmarksCountIsZero() {
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+
+        XCTAssertEqual(bookmarkStore.bookmarksCount(), 0)
+    }
+
+    @MainActor
+    func testWhenBookmarksAreSavedInRootAndInFolder_ThenBookmarksCountIncludesAllBookmarksButNoFolders() async throws {
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+        let folder = BookmarkFolder(id: UUID().uuidString, title: "Folder", parentFolderUUID: "bookmarks_root")
+        let rootBookmark = Bookmark(id: UUID().uuidString, url: "https://example1.com", title: "Example 1", isFavorite: true, parentFolderUUID: "bookmarks_root")
+        let nestedBookmark = Bookmark(id: UUID().uuidString, url: "https://example2.com", title: "Example 2", isFavorite: false, parentFolderUUID: folder.id)
+
+        _ = try await bookmarkStore.save(folder: folder)
+        _ = try await bookmarkStore.save(bookmark: rootBookmark, index: nil)
+        _ = try await bookmarkStore.save(bookmark: nestedBookmark, index: nil)
+
+        XCTAssertEqual(bookmarkStore.bookmarksCount(), 2)
+    }
+
+    // MARK: Top-level entities
+
+    @MainActor
+    func testWhenStoreIsEmpty_ThenHasNoTopLevelEntitiesAndTopLevelListIsEmpty() async throws {
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+
+        let topLevelEntities = try await bookmarkStore.loadAll(type: .topLevelEntities)
+
+        XCTAssertFalse(bookmarkStore.hasTopLevelEntities())
+        XCTAssertTrue(topLevelEntities.isEmpty)
+    }
+
+    @MainActor
+    func testWhenStoreHasOnlyAFolder_ThenHasTopLevelEntitiesAndTopLevelListIsNotEmpty() async throws {
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+        let folder = BookmarkFolder(id: UUID().uuidString, title: "Folder", parentFolderUUID: "bookmarks_root")
+        _ = try await bookmarkStore.save(folder: folder)
+
+        let topLevelEntities = try await bookmarkStore.loadAll(type: .topLevelEntities)
+
+        XCTAssertTrue(bookmarkStore.hasTopLevelEntities())
+        XCTAssertEqual(topLevelEntities.map(\.id), [folder.id])
+    }
+
+    @MainActor
+    func testWhenStoreHasARootBookmark_ThenHasTopLevelEntitiesAndTopLevelListIsNotEmpty() async throws {
+        let bookmarkStore = LocalBookmarkStore(context: container.viewContext)
+        let bookmark = Bookmark(id: UUID().uuidString, url: "https://example.com", title: "Example", isFavorite: false, parentFolderUUID: "bookmarks_root")
+        _ = try await bookmarkStore.save(bookmark: bookmark, index: nil)
+
+        let topLevelEntities = try await bookmarkStore.loadAll(type: .topLevelEntities)
+
+        XCTAssertTrue(bookmarkStore.hasTopLevelEntities())
+        XCTAssertEqual(topLevelEntities.map(\.id), [bookmark.id])
+    }
+
+    @MainActor
+    func testWhenRootHasOnlyStubAndPendingDeletionChildren_ThenHasNoTopLevelEntitiesAndTopLevelListIsEmpty() async throws {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+        let rootMO = try XCTUnwrap(BookmarkUtils.fetchRootFolder(context))
+        let stubMO = BookmarkEntity.makeBookmark(title: "Stub", url: "", parent: rootMO, context: context)
+        stubMO.isStub = true
+        let deletedMO = BookmarkEntity.makeBookmark(title: "Deleted", url: "https://example.com", parent: rootMO, context: context)
+        deletedMO.markPendingDeletion()
+        try context.save()
+
+        let topLevelEntities = try await bookmarkStore.loadAll(type: .topLevelEntities)
+
+        XCTAssertFalse(bookmarkStore.hasTopLevelEntities())
+        XCTAssertTrue(topLevelEntities.isEmpty)
+    }
+
     private func createMockImportedBookmarks() -> ImportedBookmarks {
         let bookmark1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
         let bookmark2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck", type: .bookmark, urlString: "https://duck.com", children: nil)
@@ -1722,4 +1902,10 @@ final class LocalBookmarkStoreTests: XCTestCase {
         return ImportedBookmarks(topLevelFolders: topLevelFolders)
     }
 
+}
+
+extension CoreData {
+    public static func bookmarkContainer() -> NSPersistentContainer {
+        return createInMemoryPersistentContainer(modelName: "BookmarksModel", bundle: Bookmarks.bundle)
+    }
 }

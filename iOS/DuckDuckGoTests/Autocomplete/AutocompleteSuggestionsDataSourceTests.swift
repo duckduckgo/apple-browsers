@@ -20,16 +20,15 @@
 import Foundation
 
 import XCTest
-import Persistence
+@_spi(Testing) import Persistence
 import CoreData
 import Bookmarks
-import BrowserServicesKit
+import PrivacyConfig
 import Suggestions
 import History
 
 @testable import Core
 @testable import DuckDuckGo
-@testable import PersistenceTestingUtils
 
 final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
 
@@ -52,19 +51,14 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
         try? db.tearDown(deleteStores: true)
     }
 
+    @MainActor
     func testDataSourceReturnsHistory() {
-        let dataSource = makeDataSource(tabsEnabled: false)
+        let dataSource = makeDataSource()
         XCTAssertEqual(dataSource.history(for: MockSuggestionLoading()).count, 2)
     }
 
-    func testWhenSuggestTabsFeatureIsDisable_ThenNoTabsReturned() {
-        let dataSource = makeDataSource(tabsEnabled: false)
-
-        let result = dataSource.openTabs(for: MockSuggestionLoading())
-        XCTAssertTrue(result.isEmpty)
-    }
-
-    func testWhenSuggestTabsFeatureIsEnabled_ThenProvidesOpenTabsExcludingCurrent() {
+    @MainActor
+    func testDataSourceProvidesOpenTabsExcludingCurrent() {
         let dataSource = makeDataSource()
 
         // Current tab is the last one added, which has two tabs with the same URL, so only 2 of the 4 will be returned.
@@ -74,20 +68,52 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
         XCTAssertEqual("DDG", result[1].title)
     }
 
+    @MainActor
+    func testDataSourceReflectsTabModelChangesAfterConstruction() {
+        let tabsModel = makeTabsModel()
+        let dataSource = makeDataSource(tabsModel: tabsModel)
+
+        XCTAssertEqual(dataSource.openTabs(for: MockSuggestionLoading()).count, 2)
+
+        // A long-lived data source (e.g. the unified-input host) must reflect tabs cleared by fire,
+        // not a snapshot taken on first access.
+        tabsModel.clearAll()
+        XCTAssertTrue(dataSource.openTabs(for: MockSuggestionLoading()).isEmpty)
+    }
+
+    @MainActor
     func testDataSourceReturnsBookmarks() {
         let dataSource = makeDataSource()
         let bookmarks = dataSource.bookmarks(for: MockSuggestionLoading())
         XCTAssertEqual(bookmarks.count, 5)
     }
 
+    @MainActor
+    func testBookmarkCacheIsStaleUntilRefreshed() {
+        let dataSource = makeDataSource()
+        XCTAssertEqual(dataSource.bookmarks(for: MockSuggestionLoading()).count, 5)
+
+        let rootFolder = BookmarkUtils.fetchRootFolder(mainContext)!
+        _ = BasicBookmarksStructure.createBookmarksList(usingNames: ["NewBookmark"], parent: rootFolder, in: mainContext)
+        try? mainContext.save()
+
+        // A long-lived data source keeps the session snapshot until explicitly refreshed.
+        XCTAssertEqual(dataSource.bookmarks(for: MockSuggestionLoading()).count, 5)
+
+        dataSource.refreshCaches()
+        XCTAssertEqual(dataSource.bookmarks(for: MockSuggestionLoading()).count, 6)
+    }
+
+    @MainActor
     func testDataSourceReturnsEmptyInternalPages() {
         let dataSource = makeDataSource()
         XCTAssertTrue(dataSource.internalPages(for: MockSuggestionLoading()).isEmpty)
     }
 
-    private func makeDataSource(tabsEnabled: Bool = true) -> AutocompleteSuggestionsDataSource {
+    @MainActor
+    private func makeDataSource(tabsModel: TabsModel? = nil) -> AutocompleteSuggestionsDataSource {
 
-        var mockHistoryCoordinator = MockHistoryCoordinator()
+        var mockHistoryCoordinator = NullHistoryCoordinator()
         mockHistoryCoordinator.history = [
             makeHistory(.appStore, "App Store"),
             makeHistory(.mac, "DDG for macOS")
@@ -97,26 +123,18 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
         return AutocompleteSuggestionsDataSource(
             historyManager: MockHistoryManager(historyCoordinator: mockHistoryCoordinator, isEnabledByUser: true, historyFeatureEnabled: true),
             bookmarksDatabase: db,
-            featureFlagger: makeFeatureFlagger(tabsEnabled: tabsEnabled),
-            tabsModel: makeTabsModel()) { _, completion in
+            featureFlagger: MockFeatureFlagger(),
+            tabsModel: tabsModel ?? makeTabsModel()) { _, completion in
                 completion("[]".data(using: .utf8), nil)
         }
     }
 
-    private func makeFeatureFlagger(tabsEnabled: Bool = true) -> FeatureFlagger {
-        let mock = MockFeatureFlagger()
-        if tabsEnabled {
-            mock.enabledFeatureFlags.append(.autocompleteTabs)
-        }
-        return mock
-    }
-
     private func makeTabsModel() -> TabsModel {
         let model = TabsModel(desktop: false)
-        model.add(tab: Tab(uid: "uid1", link: Link(title: "Example", url: URL(string: "https://example.com")!)))
-        model.add(tab: Tab(uid: "uid2", link: Link(title: "Different", url: URL(string: "https://different.com")!)))
-        model.add(tab: Tab(uid: "uid3", link: Link(title: "DDG", url: URL(string: "https://duckduckgo.com")!)))
-        model.add(tab: Tab(uid: "uid4", link: Link(title: "Example", url: URL(string: "https://example.com")!)))
+        model.insert(tab: Tab(uid: "uid1", link: Link(title: "Example", url: URL(string: "https://example.com")!)), placement: .atEnd, selectNewTab: true)
+        model.insert(tab: Tab(uid: "uid2", link: Link(title: "Different", url: URL(string: "https://different.com")!)), placement: .atEnd, selectNewTab: true)
+        model.insert(tab: Tab(uid: "uid3", link: Link(title: "DDG", url: URL(string: "https://duckduckgo.com")!)), placement: .atEnd, selectNewTab: true)
+        model.insert(tab: Tab(uid: "uid4", link: Link(title: "Example", url: URL(string: "https://example.com")!)), placement: .atEnd, selectNewTab: true)
         return model
     }
 

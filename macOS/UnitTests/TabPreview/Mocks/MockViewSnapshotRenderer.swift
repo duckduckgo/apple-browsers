@@ -27,7 +27,13 @@ class MockViewSnapshotRenderer: ViewSnapshotRendering {
     var lastView: NSView?
 
     @MainActor
-    func renderSnapshot(view: NSView) async -> NSImage? {
+    func renderSnapshot(view: @escaping () -> NSView?) async -> NSImage? {
+        lastView = view()
+        return nextSnapshot
+    }
+
+    @MainActor
+    func renderSnapshotSync(view: NSView) -> NSImage? {
         lastView = view
         return nextSnapshot
     }

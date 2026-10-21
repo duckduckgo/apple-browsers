@@ -19,10 +19,13 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import Foundation
-import Navigation
+import DDGNavigation
+import PrivacyConfig
 import Subscription
+import TrackerRadarKit
 import os.log
 
 struct DetectedTracker {
@@ -51,14 +54,55 @@ final class ContentBlockingTabExtension: NSObject {
     private weak var userContentController: ContentBlockingAssetsInstalling?
     private let cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let fbBlockingEnabledProvider: FbBlockingEnabledProvider
+    private let tld: TLD
+    private let contentBlockingManager: ContentBlockerRulesManagerProtocol
+    private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
+
+    private var cachedMapper: TrackerProtectionEventMapper?
+    private var cachedMapperVendor: String?
+    private var cachedMapperAttributionTrackerData: TrackerData?
+
+    private func mapper(forAttributionTrackerData attributionTrackerData: TrackerData?,
+                        vendor: String?) -> TrackerProtectionEventMapper? {
+        if let cachedMapper,
+           cachedMapperVendor == vendor,
+           cachedMapperAttributionTrackerData == attributionTrackerData {
+            return cachedMapper
+        }
+        let mapper = makeMapper(attributionTrackerData: attributionTrackerData)
+        cachedMapper = mapper
+        cachedMapperVendor = vendor
+        cachedMapperAttributionTrackerData = attributionTrackerData
+        return mapper
+    }
+
+    private func makeMapper(attributionTrackerData: TrackerData?) -> TrackerProtectionEventMapper? {
+        let tdsName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
+        let rules = contentBlockingManager.currentRules
+        guard let mainTrackerData = rules.first(where: { $0.name == tdsName })?.trackerData else { return nil }
+
+        var supplementary: [TrackerData] = []
+        if let attributionTrackerData {
+            supplementary.append(attributionTrackerData)
+        }
+
+        let privacyConfig = privacyConfigurationManager.privacyConfig
+        let tempList = privacyConfig.tempUnprotectedDomains + privacyConfig.exceptionsList(forFeature: .contentBlocking)
+        return TrackerProtectionEventMapper(tld: tld,
+                                            mainTrackerData: mainTrackerData,
+                                            supplementaryTrackerData: supplementary,
+                                            unprotectedSites: privacyConfig.userUnprotectedDomains,
+                                            tempList: tempList,
+                                            contentBlockingEnabled: privacyConfig.isEnabled(featureKey: .contentBlocking),
+                                            trackerAllowlist: privacyConfig.trackerAllowlist.entries)
+    }
     private var trackersSubject = PassthroughSubject<DetectedTracker, Never>()
 
     private var cancellables = Set<AnyCancellable>()
 
 #if DEBUG
     /// set this to true when Navigation-related decision making is expected to take significant time to avoid assertions
-    /// used by BSK: Navigation.DistributedNavigationDelegate
+    /// used by BSK: DDGNavigation.DistributedNavigationDelegate
     var shouldDisableLongDecisionMakingChecks: Bool = false
     func disableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = true }
     func enableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = false }
@@ -67,26 +111,24 @@ final class ContentBlockingTabExtension: NSObject {
     func enableLongDecisionMakingChecks() {}
 #endif
 
-    init(fbBlockingEnabledProvider: FbBlockingEnabledProvider,
-         userContentControllerFuture: some Publisher<some ContentBlockingAssetsInstalling, Never>,
+    init(userContentControllerFuture: some Publisher<some ContentBlockingAssetsInstalling, Never>,
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         contentBlockerRulesUserScriptPublisher: some Publisher<ContentBlockerRulesUserScript?, Never>,
-         surrogatesUserScriptPublisher: some Publisher<SurrogatesUserScript?, Never>) {
+         trackerProtectionSubfeaturePublisher: some Publisher<TrackerProtectionSubfeature?, Never>,
+         tld: TLD,
+         contentBlockingManager: ContentBlockerRulesManagerProtocol) {
 
         self.cbaTimeReporter = cbaTimeReporter
-        self.fbBlockingEnabledProvider = fbBlockingEnabledProvider
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.tld = tld
+        self.contentBlockingManager = contentBlockingManager
         super.init()
 
         userContentControllerFuture.sink { [weak self] userContentController in
             self?.userContentController = userContentController
         }.store(in: &cancellables)
-        contentBlockerRulesUserScriptPublisher.sink { [weak self] contentBlockerRulesUserScript in
-            contentBlockerRulesUserScript?.delegate = self
-        }.store(in: &cancellables)
-        surrogatesUserScriptPublisher.sink { [weak self] surrogatesUserScript in
-            surrogatesUserScript?.delegate = self
+        trackerProtectionSubfeaturePublisher.sink { [weak self] trackerProtectionSubfeature in
+            trackerProtectionSubfeature?.delegate = self
         }.store(in: &cancellables)
     }
 
@@ -105,7 +147,11 @@ extension ContentBlockingTabExtension: NavigationResponder {
             // ContentScopeUserScript needs to be loaded for https://duckduckgo.com/subscriptions
             || navigationAction.url.absoluteString.hasPrefix(SubscriptionURL.baseURL.subscriptionURL(environment: .production).absoluteString)
             // ContentScopeUserScript needs to be loaded for https://duckduckgo.com/identity-theft-restoration
-            || navigationAction.url.absoluteString.hasPrefix(SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production).absoluteString) {
+            || navigationAction.url.absoluteString.hasPrefix(SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production).absoluteString)
+            // ContentScopeUserScript needs to be loaded for Duck.ai
+            || navigationAction.url.isDuckAIURL
+            // HomepageSearchModeToggleSeedUserScript must install before the homepage reads its settings
+            || (navigationAction.url.isDuckDuckGo && homepageSearchModeSeedPersistor.pendingShowSearchModeToggle != nil) {
             await prepareForContentBlocking()
         }
 
@@ -135,41 +181,33 @@ extension ContentBlockingTabExtension: NavigationResponder {
 
 }
 
-extension ContentBlockingTabExtension: ContentBlockerRulesUserScriptDelegate {
+extension ContentBlockingTabExtension: TrackerProtectionSubfeatureDelegate {
 
-    func contentBlockerRulesUserScriptShouldProcessTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
+    func trackerProtectionShouldProcessTrackers(_ subfeature: TrackerProtectionSubfeature) -> Bool {
         return true
     }
 
-    func contentBlockerRulesUserScriptShouldProcessCTLTrackers(_ script: ContentBlockerRulesUserScript) -> Bool {
-        return fbBlockingEnabledProvider.fbBlockingEnabled
-    }
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didObserveResource observation: TrackerProtectionSubfeature.ResourceObservation) {
+        guard let mapper = mapper(forAttributionTrackerData: subfeature.currentAttributionTrackerData,
+                                  vendor: subfeature.currentAdClickAttributionVendor) else { return }
 
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript, detectedTracker tracker: DetectedRequest) {
-        trackersSubject.send(DetectedTracker(request: tracker, type: .tracker))
-        if tracker.state == BlockingState.blocked && tracker.ownerName == fbBlockingEnabledProvider.fbEntity {
-            fbBlockingEnabledProvider.trackerDetected()
+        if let detected = mapper.classifyResource(observation,
+                                                   adClickAttributionVendor: subfeature.currentAdClickAttributionVendor) {
+            trackersSubject.send(DetectedTracker(request: detected, type: .tracker))
+        } else if let thirdParty = mapper.makeThirdPartyRequest(from: observation) {
+            trackersSubject.send(DetectedTracker(request: thirdParty, type: .thirdPartyRequest))
         }
     }
 
-    func contentBlockerRulesUserScript(_ script: ContentBlockerRulesUserScript, detectedThirdPartyRequest request: DetectedRequest) {
-        trackersSubject.send(DetectedTracker(request: request, type: .thirdPartyRequest))
-    }
-
-}
-
-extension ContentBlockingTabExtension: SurrogatesUserScriptDelegate {
-
-    func surrogatesUserScriptShouldProcessTrackers(_ script: SurrogatesUserScript) -> Bool {
-        return true
-    }
-
-    func surrogatesUserScriptShouldProcessCTLTrackers(_ script: SurrogatesUserScript) -> Bool {
-        fbBlockingEnabledProvider.fbBlockingEnabled
-    }
-
-    func surrogatesUserScript(_ script: SurrogatesUserScript, detectedTracker tracker: DetectedRequest, withSurrogate host: String) {
-        trackersSubject.send(DetectedTracker(request: tracker, type: .trackerWithSurrogate(host: host)))
+    func trackerProtection(_ subfeature: TrackerProtectionSubfeature,
+                           didInjectSurrogate surrogate: TrackerProtectionSubfeature.SurrogateInjection) {
+        guard let mapper = mapper(forAttributionTrackerData: subfeature.currentAttributionTrackerData,
+                                  vendor: subfeature.currentAdClickAttributionVendor),
+              let detected = mapper.classifySurrogate(surrogate,
+                                                      adClickAttributionVendor: subfeature.currentAdClickAttributionVendor),
+              let host = mapper.surrogateHost(from: surrogate) else { return }
+        trackersSubject.send(DetectedTracker(request: detected, type: .trackerWithSurrogate(host: host)))
     }
 }
 

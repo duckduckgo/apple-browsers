@@ -19,7 +19,7 @@
 import SwiftUI
 
 struct PasswordManagementBitwardenItemView: View {
-    var manager: PasswordManagerCoordinator
+    var manager: PasswordManagerCoordinating
     let didFinish: () -> Void
 
     var body: some View {
@@ -56,6 +56,6 @@ struct PasswordManagementBitwardenItemView: View {
 
 struct PasswordManagementBitwardenItemView_Previews: PreviewProvider {
     static var previews: some View {
-        PasswordManagementBitwardenItemView(manager: PasswordManagerCoordinator.shared, didFinish: {})
+        PasswordManagementBitwardenItemView(manager: PasswordManagerCoordinator(bitwardenManagement: nil), didFinish: {})
     }
 }

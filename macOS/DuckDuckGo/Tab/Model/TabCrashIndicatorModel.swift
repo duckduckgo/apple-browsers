@@ -17,6 +17,7 @@
 //
 
 import Combine
+import CombineExtensions
 import Foundation
 import PixelKit
 
@@ -41,7 +42,7 @@ final class TabCrashIndicatorModel: ObservableObject {
     /// in order to simplify unit testing.
     init(
         maxPresentationDuration: RunLoop.SchedulerTimeType.Stride = Const.maxIndicatorPresentationDuration,
-        firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }
+        firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }
     ) {
         self.maxPresentationDuration = maxPresentationDuration
         self.firePixel = firePixel
@@ -80,6 +81,6 @@ final class TabCrashIndicatorModel: ObservableObject {
     }
 
     private let maxPresentationDuration: RunLoop.SchedulerTimeType.Stride
-    private let firePixel: (PixelKitEvent) -> Void
+    private let firePixel: (PixelKit.Event) -> Void
     private var cancellables: Set<AnyCancellable> = []
 }

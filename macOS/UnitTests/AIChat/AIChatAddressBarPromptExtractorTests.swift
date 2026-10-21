@@ -21,38 +21,107 @@ import XCTest
 
 final class AIChatAddressBarPromptExtractorTests: XCTestCase {
 
-    func testQueryForTextValue() {
+    func testExtractAIChatQueryForTextValue() {
         let query = "example query"
         let value = AddressBarTextField.Value.text(query, userTyped: false)
-        let extractedQuery = AIChatAddressBarPromptExtractor().queryForValue(value)
-        XCTAssertEqual(extractedQuery, query)
+        let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
+
+        if case let .query(extractedQuery, shouldAutoSubmit) = result {
+            XCTAssertEqual(extractedQuery, query)
+            XCTAssertTrue(shouldAutoSubmit)
+        } else {
+            XCTFail("Expected .query case")
+        }
     }
 
-    func testQueryForSearchURLValue() {
+    func testExtractAIChatQueryForSearchURLValue() {
         let url = URL(string: "https://duckduckgo.com/?q=swift")!
         let value = AddressBarTextField.Value.url(urlString: url.absoluteString, url: url, userTyped: false)
-        let extractedQuery = AIChatAddressBarPromptExtractor().queryForValue(value)
-        XCTAssertEqual(extractedQuery, "swift")
+        let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
+
+        if case let .query(extractedQuery, shouldAutoSubmit) = result {
+            XCTAssertEqual(extractedQuery, "swift")
+            XCTAssertFalse(shouldAutoSubmit) // Should not auto-submit for DuckDuckGo search URLs
+        } else {
+            XCTFail("Expected .query case")
+        }
     }
 
-    func testQueryForAIChatPage() {
+    func testExtractAIChatQueryForAIChatPage() {
         let url = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
         let value = AddressBarTextField.Value.url(urlString: url.absoluteString, url: url, userTyped: false)
-        let extractedQuery = AIChatAddressBarPromptExtractor().queryForValue(value)
-        XCTAssertNil(extractedQuery)
+        let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
+
+        if case let .query(extractedQuery, shouldAutoSubmit) = result {
+            XCTAssertNil(extractedQuery)
+            XCTAssertFalse(shouldAutoSubmit) // Should not auto-submit for DuckDuckGo search URLs
+        } else {
+            XCTFail("Expected .query case")
+        }
     }
 
-    func testQueryForNonSearchURLValue() {
+    func testExtractAIChatQueryForNonSearchURLValue() {
         let url = URL(string: "https://zombo.com")!
         let value = AddressBarTextField.Value.url(urlString: url.absoluteString, url: url, userTyped: false)
-        let extractedQuery = AIChatAddressBarPromptExtractor().queryForValue(value)
-        XCTAssertNil(extractedQuery)
+        let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
+
+        if case let .query(extractedQuery, shouldAutoSubmit) = result {
+            XCTAssertNil(extractedQuery)
+            XCTAssertTrue(shouldAutoSubmit) // Should auto-submit for non-DuckDuckGo URLs
+        } else {
+            XCTFail("Expected .query case")
+        }
     }
 
-    func testQueryForSuggestionValue() {
+    func testExtractAIChatQueryForSuggestionValue() {
         let value = "Suggestion"
         let suggestion = AddressBarTextField.Value.suggestion(SuggestionViewModel(suggestion: .phrase(phrase: value), userStringValue: value))
-        let extractedQuery = AIChatAddressBarPromptExtractor().queryForValue(suggestion)
-        XCTAssertEqual(extractedQuery, value)
+        let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: suggestion)
+
+        if case let .query(extractedQuery, shouldAutoSubmit) = result {
+            XCTAssertEqual(extractedQuery, value)
+            XCTAssertTrue(shouldAutoSubmit)
+        } else {
+            XCTFail("Expected .query case")
+        }
+    }
+
+    func testExtractAIChatQueryForEmptyTextValue() {
+        let query = ""
+        let value = AddressBarTextField.Value.text(query, userTyped: false)
+        let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
+
+        if case let .query(extractedQuery, shouldAutoSubmit) = result {
+            XCTAssertEqual(extractedQuery, query)
+            XCTAssertTrue(shouldAutoSubmit)
+        } else {
+            XCTFail("Expected .query case")
+        }
+    }
+
+    func testExtractAIChatQueryForAIBangURL() {
+        let url = URL(string: "https://duckduckgo.com/?q=!ai+test+query")!
+        let value = AddressBarTextField.Value.url(urlString: url.absoluteString, url: url, userTyped: false)
+        let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
+
+        if case let .query(extractedQuery, shouldAutoSubmit) = result {
+            XCTAssertNil(extractedQuery) // Should be nil for duck.ai URLs
+            XCTAssertFalse(shouldAutoSubmit) // Should not auto-submit for DuckDuckGo search URLs
+        } else {
+            XCTFail("Expected .query case")
+        }
+    }
+
+    func testExtractAIChatQueryForDuckAIChatURL() {
+        let url = URL(string: "https://duckduckgo.com/?q=example&ia=chat")!
+        let value = AddressBarTextField.Value.url(urlString: url.absoluteString, url: url, userTyped: false)
+        let result = AIChatAddressBarPromptExtractor().extractAIChatQuery(for: value)
+
+        if case let .query(extractedQuery, shouldAutoSubmit) = result {
+            XCTAssertNil(extractedQuery) // Should be nil for duck.ai URLs
+            XCTAssertFalse(shouldAutoSubmit) // Should not auto-submit for DuckDuckGo search URLs
+        } else {
+            XCTFail("Expected .query case")
+        }
     }
 }

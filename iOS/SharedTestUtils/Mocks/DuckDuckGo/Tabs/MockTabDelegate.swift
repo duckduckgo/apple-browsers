@@ -1,0 +1,381 @@
+//
+//  MockTabDelegate.swift
+//  DuckDuckGo
+//
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import struct UIKit.UIKeyModifierFlags
+import WebExtensions
+import WebKit
+import BrowserServicesKit
+import BrowserServicesKitTestsUtils
+import EventHub
+import PrivacyDashboard
+import PixelKit
+import PrivacyConfig
+@_spi(Testing) import Persistence
+import Subscription
+import SubscriptionTestingUtilities
+import SpecialErrorPages
+import MaliciousSiteProtection
+import SitePermissions
+@testable import DuckDuckGo
+import Combine
+@testable import Core
+
+final class MockTabDelegate: TabDelegate {
+    var shouldRequestAppRatingPrompt = false
+    private(set) var grantedSitePermissions = [Set<SitePermissionType>]()
+    private(set) var sitePermissionAnimationCancellationCount = 0
+
+    func tab(_ tab: TabViewController, didGrantSitePermissions permissionTypes: Set<SitePermissionType>) {
+        grantedSitePermissions.append(permissionTypes)
+    }
+
+    func tabDidCancelSitePermissionAnimation(_ tab: TabViewController) {
+        sitePermissionAnimationCancellationCount += 1
+    }
+
+    private(set) var didLoadPageForAppRatingPromptCallCount = 0
+    private(set) var didRequestAppRatingPromptCallCount = 0
+
+    func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController) {
+        didLoadPageForAppRatingPromptCallCount += 1
+    }
+
+    func tabShouldRequestAppRatingPrompt(_ tab: TabViewController) -> Bool {
+        shouldRequestAppRatingPrompt
+    }
+
+    func tabDidRequestAppRatingPrompt(_ tab: TabViewController) {
+        didRequestAppRatingPromptCallCount += 1
+    }
+
+    func tab(_ tab: TabViewController, didShowPrompt id: PromptExposureID) {}
+
+    private(set) var didRequestLoadQueryCalled = false
+    private(set) var capturedQuery: String?
+    private(set) var didRequestLoadURLCalled = false
+    private(set) var capturedURL: URL?
+    private(set) var didRequestFireButtonPulseCalled = false
+    private(set) var tabDidRequestPrivacyDashboardButtonPulseCalled = false
+    private(set) var privacyDashboardAnimated: Bool?
+    private(set) var reportBrokenSiteEntryPoints: [PrivacyDashboardEntryPoint] = []
+    var isAIChatEnabled = false
+    var isEmailProtectionSignedIn = false
+
+    func tabWillRequestNewTab(_ tab: DuckDuckGo.TabViewController) -> UIKeyModifierFlags? { nil }
+
+    func tabDidRequestNewTab(_ tab: TabViewController) {}
+    
+    func newTab(reuseExisting: Bool) {}
+
+    func tabDidRequestActivate(_ tab: TabViewController) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewWebViewWithConfiguration configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) -> WKWebView? { nil }
+
+    func tabDidRequestClose(_ tab: DuckDuckGo.Tab,
+                            behavior: TabClosingBehavior,
+                            clearTabHistory: Bool) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewTabForUrl url: URL, openedByPage: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewDuckAITabForUrl url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource?) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didStartDuckAINavigationTo url: URL, entrySource: DuckDuckGo.AIChatEntryPointSource, opensNewTab: Bool, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestReopenClosedTabAt url: URL) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewBackgroundTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestNewFireTabForUrl url: URL, inheritingAttribution: BrowserServicesKit.AdClickAttributionLogic.State?) {}
+
+    func tabLoadingStateDidChange(tab: DuckDuckGo.TabViewController) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didUpdatePreview preview: UIImage) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didChangePrivacyInfo privacyInfo: PrivacyDashboard.PrivacyInfo?) {}
+
+    func tabDidRequestReportBrokenSite(tab: DuckDuckGo.TabViewController, entryPoint: PrivacyDashboardEntryPoint) {
+        reportBrokenSiteEntryPoints.append(entryPoint)
+    }
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestToggleReportWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {}
+
+    func tabDidRequestBookmarks(tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestEditBookmark(tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestDownloads(tab: DuckDuckGo.TabViewController) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestAutofillLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount?, source: DuckDuckGo.AutofillSettingsSource, extensionPromotionManager: (any DuckDuckGo.AutofillExtensionPromotionManaging)?) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestDataImport source: DuckDuckGo.DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {}
+
+    func tabDidRequestAIChat(tab: TabViewController) {}
+
+    func tabDidRequestNewAIChatTab(tab: TabViewController) {}
+
+    func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {}
+
+    func tab(_ tab: TabViewController, didRequestSearchForSelectedText text: String) {}
+
+    func tabDidRequestAIChatHistory(tab: TabViewController, source: AIChatHistorySource) {}
+
+    func tabDidRequestNewPrivateEmailAddress(tab: TabViewController) {}
+
+    func tabDidRequestSettings(tab: DuckDuckGo.TabViewController) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestSettingsToLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount, source: DuckDuckGo.AutofillSettingsSource) {}
+    
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestSettingsToCreditCards card: BrowserServicesKit.SecureVaultModels.CreditCard, source: DuckDuckGo.AutofillSettingsSource) {}
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController,
+                                                     source: AutofillSettingsSource) {}
+
+
+    func tabDidRequestSettingsToVPN(_ tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestSettingsToAIChat(_ tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestSettingsToSync(_ tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestFindInPage(tab: DuckDuckGo.TabViewController) {}
+
+    func closeFindInPage(tab: DuckDuckGo.TabViewController) {}
+
+    func tabContentProcessDidTerminate(tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidEngageWithPage(_ tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestFireButtonPulse(tab: DuckDuckGo.TabViewController) {
+        didRequestFireButtonPulseCalled = true
+    }
+
+    func tabDidRequestDeleteContextualChat(tab: DuckDuckGo.TabViewController, chatID: String) {}
+
+    func tabDidRequestPrivacyDashboardButtonPulse(tab: DuckDuckGo.TabViewController, animated: Bool) {
+        tabDidRequestPrivacyDashboardButtonPulseCalled = true
+        privacyDashboardAnimated = animated
+    }
+
+    func tabDidRequestSearchBarRect(tab: DuckDuckGo.TabViewController) -> CGRect { .zero }
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestPresentingTrackerAnimation privacyInfo: PrivacyDashboard.PrivacyInfo, isCollapsing: Bool) {}
+
+    func tabDidRequestPresentingYouTubeAdBlockAnimation(tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestShowingMenuHighlighter(tab: DuckDuckGo.TabViewController) {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestPresentingAlert alert: UIAlertController) {}
+
+    func tabCheckIfItsBeingCurrentlyPresented(_ tab: DuckDuckGo.TabViewController) -> Bool { false }
+
+    func showBars() {}
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestLoadURL url: URL) {
+        didRequestLoadURLCalled = true
+        capturedURL = url
+    }
+
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestLoadQuery query: String) {
+        didRequestLoadQueryCalled = true
+        capturedQuery = query
+    }
+
+    func tabDidRequestRefresh(tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestNavigationToDifferentSite(tab: DuckDuckGo.TabViewController) {}
+    
+    func tab(_ tab: DuckDuckGo.TabViewController, didExtractDaxEasterEggLogoURL logoURL: String?) {}
+
+    func tabDidRequestYouTubeAdBlockPicker(tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestSetYouTubeAdBlockingEnabled(_ enabled: Bool, tab: DuckDuckGo.TabViewController) {}
+
+    func tabDidRequestYouTubeAdBlockUnavailableDialog(tab: DuckDuckGo.TabViewController) {}
+}
+
+extension TabViewController {
+
+    static func fake(
+        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil,
+        contextualOnboardingPresenter: ContextualOnboardingPresenting = ContextualOnboardingPresenterMock(),
+        contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
+        contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
+        featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        sitePermissionsEnabled: Bool = false,
+        specialErrorPageNavigationHandler: SpecialErrorPageManaging = DummySpecialErrorPageNavigationHandler(),
+        webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
+        contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
+        link: Link = Link(title: nil, url: .ddg),
+        fireTab: Bool = false,
+        interactionStateData: Data? = nil,
+        initialRequest: URLRequest? = nil,
+        consumeCookies: Bool = false,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
+    ) -> TabViewController {
+        let tab = TabViewController.loadFromStoryboard(
+            model: .init(link: link, fireTab: fireTab),
+            privacyConfigurationManager: PrivacyConfigurationManagerMock(),
+            appSettings: AppSettingsMock(),
+            bookmarksDatabase: CoreDataDatabase.bookmarksMock,
+            historyManager: MockHistoryManager(),
+            syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
+            contextualOnboardingPresenter: contextualOnboardingPresenter,
+            contextualOnboardingLogic: contextualOnboardingLogic,
+            onboardingPixelReporter: contextualOnboardingPixelReporter,
+            featureFlagger: featureFlagger,
+            contentScopeExperimentManager: MockContentScopeExperimentManager(),
+            textZoomCoordinator: MockTextZoomCoordinator(),
+            autoconsentManagement: MockAutoconsentManagement(),
+            websiteDataManager: MockWebsiteDataManager(),
+            fireproofing: MockFireproofing(),
+            favicons: Favicons(),
+            tabInteractionStateSource: MockTabInteractionStateSource(),
+            specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
+            featureDiscovery: MockFeatureDiscovery(),
+            keyValueStore: MockKeyValueFileStore(),
+            daxDialogsManager: MockDaxDialogsManager(),
+            aiChatSettings: MockAIChatSettingsProvider(),
+            productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            privacyStats: MockPrivacyStats(),
+            voiceSearchHelper: MockVoiceSearchHelper(),
+            darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+            autoplaySettings: MockAutoplaySettings(),
+            usageContextProvider: UsageContextProvider(),
+            adBlockingAvailability: StubAdBlockingAvailability(),
+            eventHub: StubEventHub(),
+            webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
+            pixelFiring: pixelFiring,
+            sitePermissionsEnabled: sitePermissionsEnabled
+        )
+        tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), interactionStateData: interactionStateData,
+                          andLoadRequest: initialRequest, consumeCookies: consumeCookies, customWebView: customWebView)
+        return tab
+    }
+
+}
+
+class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
+    var delegate: (any DuckDuckGo.SpecialErrorPageNavigationDelegate)?
+    var handlesNavigationResponse = true
+    
+    var isSpecialErrorPageVisible: Bool = false
+
+    var failedURL: URL?
+    
+    var isSpecialErrorPageRequest: Bool = false
+
+    var currentThreatKind: MaliciousSiteProtection.ThreatKind?
+
+    func attachWebView(_ webView: WKWebView) {}
+    
+    func setUserScript(_ userScript: SpecialErrorPages.SpecialErrorPageUserScript?) {}
+    
+    func handleDecidePolicy(for navigationAction: WKNavigationAction, webView: WKWebView) {}
+    
+    func handleDecidePolicy(for navigationResponse: WKNavigationResponse, webView: WKWebView) async -> Bool {
+        handlesNavigationResponse
+    }
+    
+    func handleWebView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+
+    }
+    
+    func handleWebView(_ webView: WKWebView, didFailProvisionalNavigation navigation: (any WebViewNavigation)?, withError error: NSError) {}
+    
+    func handleWebView(_ webView: WKWebView, didFinish navigation: (any WebViewNavigation)?) {}
+
+    var errorData: SpecialErrorPages.SpecialErrorData?
+    
+    func leaveSiteAction() {}
+    
+    func visitSiteAction() {}
+    
+    func advancedInfoPresented() {}
+
+}
+
+final class MockPrivacyStats: PrivacyStatsProviding {
+    var total: Int64 = 0
+    var recordCalls: [String] = []
+    var clearCallCount = 0
+    var handleAppTerminationCallCount = 0
+
+    func recordBlockedTracker(_ name: String) async {
+        recordCalls.append(name)
+    }
+
+    func fetchPrivacyStatsTotalCount() async -> Int64 {
+        return total
+    }
+
+    func clearPrivacyStats() async -> Result<Void, Error> {
+        clearCallCount += 1
+        return .success(())
+    }
+
+    func handleAppTermination() async {
+        handleAppTerminationCallCount += 1
+    }
+}
+
+struct MockDarkReaderFeatureSettings: DarkReaderFeatureSettings {
+    var isFeatureEnabled: Bool = false
+    var isForceDarkModeEnabled: Bool = false
+    var excludedDomains: [String] = []
+    var forceDarkModeChangedPublisher: AnyPublisher<Bool, Never> = Empty().eraseToAnyPublisher()
+    var excludedDomainsChangedPublisher: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+    func setForceDarkModeEnabled(_ enabled: Bool) {}
+    func themeDidChange() {}
+}
+
+final class MockAutoplaySettings: AutoplaySettings {
+    var currentAutoplayBlockingMode: AutoplayBlockingMode = .blockAudio
+}
+
+final class StubAdBlockingAvailability: AdBlockingAvailabilityProviding {
+    var isFeatureSupported: Bool = false
+    var isEnabledByUser: Bool = false
+    func shouldShowAnimation(for url: URL) -> Bool { false }
+}
+
+/// Records the per-tab signals `TabViewController` reports, so tests can assert on them without
+/// standing up a real `EventHub` (and its store, scheduler and remote-config plumbing).
+final class StubEventHub: EventHubManaging {
+    private(set) var navigationStarts: [(tabID: EventHubTabID, url: String)] = []
+    private(set) var closedTabIDs: [EventHubTabID] = []
+
+    func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
+    func handleNativeEvent(_ type: String, data: Encodable?) {}
+
+    func onNavigationStarted(tabID: EventHubTabID, url: String) {
+        navigationStarts.append((tabID, url))
+    }
+
+    func onTabClosed(tabID: EventHubTabID) {
+        closedTabIDs.append(tabID)
+    }
+
+    func onConfigChanged() {}
+    func onAppForegrounded() {}
+    func onAppBackgrounded() {}
+}

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 public struct RemoteMessagingConfigMatcher {
@@ -48,91 +49,40 @@ public struct RemoteMessagingConfigMatcher {
     }
 
     func evaluate(remoteConfig: RemoteConfigModel) -> RemoteMessageModel? {
-        let rules = remoteConfig.rules
         let filteredMessages = remoteConfig.messages.filter { !dismissedMessageIds.contains($0.id) }
+        let rulesEvaluator = rulesEvaluator(remoteRules: remoteConfig.rules)
 
-        for message in filteredMessages {
-            if message.matchingRules.isEmpty && message.exclusionRules.isEmpty {
-                return message
+        return filteredMessages
+            .compactMap { message in
+                // Skip message if it fails message-level targeting rules
+                guard rulesEvaluator(message.id, message.matchingRules, message.exclusionRules) else { return nil }
+
+                // Messages without items pass as rules for the message have been evaluated and not discarded in the process.
+                guard let items = message.content?.listItems else { return message }
+
+                // Filter items by their individual targeting rules
+                let filteredItems = items.filter { item in
+                    rulesEvaluator(item.id, item.matchingRules, item.exclusionRules)
+                }
+
+                // Remove sections whose itemIds no longer exist after filtering
+                let sanitisedItemsAndSections = filteredItems.removingSectionsWithoutValidItems()
+
+                // Skip message if no items remain after filtering
+                guard !sanitisedItemsAndSections.isEmpty else { return nil }
+
+                // If items have been filtered return new content with items otherwise return the same message.
+                return items != sanitisedItemsAndSections ? message.withNewItems(sanitisedItemsAndSections) : message
             }
-
-            let matchingResult = evaluateMatchingRules(message.matchingRules, messageID: message.id, fromRules: rules)
-            let exclusionResult = evaluateExclusionRules(message.exclusionRules, messageID: message.id, fromRules: rules)
-
-            if matchingResult == .match && exclusionResult == .fail {
-                return message
-            }
-        }
-
-        return nil
+            .first
     }
 
-    func evaluateMatchingRules(_ matchingRules: [Int], messageID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
-        var result: EvaluationResult = .match
-
-        for rule in matchingRules {
-            guard let matchingRule = rules.first(where: { $0.id == rule }) else {
-                return .nextMessage
-            }
-
-            if let percentile = matchingRule.targetPercentile, let messagePercentile = percentile.before {
-                let userPercentile = percentileStore.percentile(forMessageId: messageID)
-
-                if userPercentile > messagePercentile {
-                    Logger.remoteMessaging.debug("Matching rule percentile check failed for message with ID \(messageID, privacy: .public)")
-                    return .fail
-                }
-            }
-
-            result = .match
-
-            for attribute in matchingRule.attributes {
-                result = evaluateAttribute(matchingAttribute: attribute)
-                if result == .fail || result == .nextMessage {
-                    Logger.remoteMessaging.debug("First failing matching attribute \(String(describing: attribute), privacy: .public)")
-                    break
-                }
-            }
-
-            if result == .nextMessage || result == .match {
-                return result
-            }
-        }
-        return result
+    func evaluateMatchingRules(_ matchingRules: [Int], entityID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
+        evaluateRules(matchingRules, entityID: entityID, fromRules: rules, type: .matching)
     }
 
-    func evaluateExclusionRules(_ exclusionRules: [Int], messageID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
-        var result: EvaluationResult = .fail
-
-        for rule in exclusionRules {
-            guard let matchingRule = rules.first(where: { $0.id == rule }) else {
-                return .nextMessage
-            }
-
-            if let percentile = matchingRule.targetPercentile, let messagePercentile = percentile.before {
-                let userPercentile = percentileStore.percentile(forMessageId: messageID)
-
-                if userPercentile > messagePercentile {
-                    Logger.remoteMessaging.debug("Exclusion rule percentile check failed for message with ID \(messageID, privacy: .public)")
-                    return .fail
-                }
-            }
-
-            result = .fail
-
-            for attribute in matchingRule.attributes {
-                result = evaluateAttribute(matchingAttribute: attribute)
-                if result == .fail || result == .nextMessage {
-                    Logger.remoteMessaging.debug("First failing exclusion attribute \(String(describing: attribute), privacy: .public)")
-                    break
-                }
-            }
-
-            if result == .nextMessage || result == .match {
-                return result
-            }
-        }
-        return result
+    func evaluateExclusionRules(_ exclusionRules: [Int], entityID: String, fromRules rules: [RemoteConfigRule]) -> EvaluationResult {
+        evaluateRules(exclusionRules, entityID: entityID, fromRules: rules, type: .exclusion)
     }
 
     func evaluateAttribute(matchingAttribute: MatchingAttribute) -> EvaluationResult {
@@ -148,4 +98,149 @@ public struct RemoteMessagingConfigMatcher {
 
         return .nextMessage
     }
+}
+
+private extension RemoteMessagingConfigMatcher {
+
+    enum RuleType {
+        case matching
+        case exclusion
+
+        var defaultResult: EvaluationResult {
+            switch self {
+            case .matching: return .match
+            case .exclusion: return .fail
+            }
+        }
+
+        var percentileFailMessage: String {
+            switch self {
+            case .matching: return "Matching rule percentile check failed"
+            case .exclusion: return "Exclusion rule percentile check failed"
+            }
+        }
+
+        var attributeFailMessage: String {
+            switch self {
+            case .matching: return "First failing matching attribute"
+            case .exclusion: return "First failing exclusion attribute"
+            }
+        }
+    }
+
+    func evaluateRules(
+        _ rules: [Int],
+        entityID: String,
+        fromRules configRules: [RemoteConfigRule],
+        type: RuleType
+    ) -> EvaluationResult {
+        var result: EvaluationResult = type.defaultResult
+
+        for rule in rules {
+            guard let matchingRule = configRules.first(where: { $0.id == rule }) else {
+                return .nextMessage
+            }
+
+            if let percentile = matchingRule.targetPercentile, let messagePercentile = percentile.before {
+                let userPercentile = percentileStore.percentile(forEntityId: entityID)
+
+                if userPercentile > messagePercentile {
+                    Logger.remoteMessaging.info("\(type.percentileFailMessage) for entity with ID \(entityID, privacy: .public)")
+                    result = .fail
+                    continue
+                }
+            }
+
+            result = type.defaultResult
+
+            for attribute in matchingRule.attributes {
+                result = evaluateAttribute(matchingAttribute: attribute)
+                if result == .fail || result == .nextMessage {
+                    Logger.remoteMessaging.info("\(type.attributeFailMessage) \(String(describing: attribute), privacy: .public)")
+                    break
+                }
+            }
+
+            if result == .nextMessage || result == .match {
+                return result
+            }
+        }
+
+        return result
+    }
+}
+
+private extension RemoteMessagingConfigMatcher {
+
+    func rulesEvaluator(remoteRules: [RemoteConfigRule]) -> (String, [Int], [Int]) -> Bool {
+        return { id, matchingRules, exclusionRules in
+            // Handle empty rules case (auto-match like messages do)
+            if matchingRules.isEmpty && exclusionRules.isEmpty {
+                return true
+            }
+
+            let matchingResult = self.evaluateMatchingRules(matchingRules, entityID: id, fromRules: remoteRules)
+            let exclusionResult = self.evaluateExclusionRules(exclusionRules, entityID: id, fromRules: remoteRules)
+            return matchingResult == .match && exclusionResult == .fail
+        }
+    }
+
+}
+
+extension RemoteMessageModel {
+
+    func withNewItems(_ items: [RemoteMessageModelType.ListItem]) -> RemoteMessageModel {
+        RemoteMessageModel(
+            id: self.id,
+            surfaces: self.surfaces,
+            content: content?.withNewItems(items),
+            matchingRules: self.matchingRules,
+            exclusionRules: self.exclusionRules,
+            isMetricsEnabled: self.isMetricsEnabled,
+            displayConditions: self.displayConditions
+        )
+    }
+
+}
+
+extension RemoteMessageModelType {
+
+    func withNewItems(_ items: [ListItem]) -> Self {
+        switch self {
+        case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
+            return self
+        case let .cardsList(titleText, placeholder, imageUrl, _, primaryActionText, primaryAction):
+            return .cardsList(titleText: titleText, placeholder: placeholder, imageUrl: imageUrl, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        }
+    }
+
+}
+
+private extension [RemoteMessageModelType.ListItem] {
+
+    // Removes sections whose referenced itemIds no longer exist in the filtered list.
+    // This ensures that sections without valid items are not displayed.
+    func removingSectionsWithoutValidItems() -> [RemoteMessageModelType.ListItem] {
+        // Build a set of all valid item IDs
+        let validItemIds = Set(self.compactMap { item -> String? in
+            switch item.type {
+            case .twoLinesItem:
+                return item.id
+            case .titledSection, .featuredTwoLinesSingleActionItem: // Featured Items cannot appear in sections
+                return nil
+            }
+        })
+
+        // Filter out sections that have no valid items
+        return self.filter { item in
+            switch item.type {
+            case .twoLinesItem, .featuredTwoLinesSingleActionItem:
+                return true
+            case .titledSection(_, let itemIDs):
+                // Keep section only if at least one of its itemIds exists in validItemIds
+                return !validItemIds.isDisjoint(with: itemIDs)
+            }
+        }
+    }
+
 }

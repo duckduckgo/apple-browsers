@@ -61,7 +61,9 @@ class ThemeManagerTests: XCTestCase {
     }
 
     func testEnablingThemeOverridesUserInterfaceStyle() {
-        let window = UIWindow()
+        // swiftlint:disable:next force_cast
+        let scene = UIApplication.shared.connectedScenes.first! as! UIWindowScene
+        let window = UIWindow(windowScene: scene)
         window.makeKeyAndVisible()
 
         let defaults = AppUserDefaults(groupName: "com.duckduckgo.mobile.ios.Tests")

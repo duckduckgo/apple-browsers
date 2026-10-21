@@ -45,4 +45,40 @@ final class DataBrokerProtectionErrorsTests: XCTestCase {
 
         XCTAssertEqual(result, .noActionFound)
     }
+
+    func testLocalizedDescriptionWhenActionFailed_returnsUnderlyingMessage() {
+        let error = DataBrokerProtectionError.actionFailed(actionID: "action-id", message: "Lorem ipsum dolor sit amet")
+
+        XCTAssertEqual(error.localizedDescription, "Action failed: [action-id] Lorem ipsum dolor sit amet")
+    }
+
+    func testLocalizedDescriptionWhenEmailError_returnsNestedDescription() {
+        let error = DataBrokerProtectionError.emailError(.cantFindEmail)
+
+        XCTAssertEqual(error.localizedDescription, "Email service error: Unable to find email")
+    }
+
+    func testHTTPEmailErrorDescription_exposesServerMessageOnlyForDebugging() {
+        let serverMessage = "INVALID_REQUEST: Invalid dataBroker parameter"
+        let error = DataBrokerProtectionError.emailError(.httpError(statusCode: 400, message: serverMessage))
+
+        XCTAssertEqual(error.localizedDescription, "Email service error: Email HTTP error 400")
+        XCTAssertFalse(error.localizedDescription.contains(serverMessage))
+        XCTAssertEqual(error.debugDescription, "Email service error: Email HTTP error 400: \(serverMessage)")
+    }
+
+    func testLocalizedDescriptionWhenEmailErrorUnknownStatus_doesNotExposeEmail() {
+        let email = "user@example.com"
+        let error = DataBrokerProtectionError.emailError(.unknownStatusReceived(email: email))
+
+        XCTAssertEqual(error.localizedDescription, "Email service error: Unknown email status received")
+        XCTAssertFalse(error.localizedDescription.contains(email)) // No leaked PII
+    }
+
+    func testLocalizedDescriptionWhenCaptchaServiceError_returnsNestedDescription() {
+        let nested = CaptchaServiceError.invalidRequestWhenSubmittingCaptcha
+        let error = DataBrokerProtectionError.captchaServiceError(nested)
+
+        XCTAssertEqual(error.localizedDescription, "Captcha service error: Invalid captcha submission request")
+    }
 }

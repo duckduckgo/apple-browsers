@@ -18,6 +18,9 @@
 
 import Foundation
 import Common
+import FoundationExtensions
+import Persistence
+import WebExtensions
 
 protocol AutofillPreferencesPersistor {
     var isAutoLockEnabled: Bool { get set }
@@ -28,6 +31,32 @@ protocol AutofillPreferencesPersistor {
     var autolockLocksFormFilling: Bool { get set }
     var passwordManager: PasswordManager { get set }
     var debugScriptEnabled: Bool { get set }
+    var showInMenuBar: Bool { get set }
+    /// Whether a password manager extension has taken autofill over, so DuckDuckGo leaves all of it alone:
+    /// it neither fills nor saves anything, including the login it would otherwise create without asking
+    /// when the user picks a private Duck Address. Only `WebExtensionAutofillTakeover` writes it.
+    var isManagedByExtension: Bool { get set }
+}
+
+extension AutofillPreferencesPersistor {
+
+    /// Whether DuckDuckGo autofills and offers to save usernames and passwords: the user wants it, and
+    /// no extension has taken autofill over.
+    var isUsernamesAndPasswordsAutofillActive: Bool {
+        askToSaveUsernamesAndPasswords && !isManagedByExtension
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save addresses: the user wants it, and no extension
+    /// has taken autofill over.
+    var isAddressesAutofillActive: Bool {
+        askToSaveAddresses && !isManagedByExtension
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save payment methods: the user wants it, and no
+    /// extension has taken autofill over.
+    var isPaymentMethodsAutofillActive: Bool {
+        askToSavePaymentMethods && !isManagedByExtension
+    }
 }
 
 enum PasswordManager: String, CaseIterable {
@@ -78,9 +107,15 @@ extension NSNotification.Name {
     static let autofillAutoLockSettingsDidChange = NSNotification.Name("autofillAutoLockSettingsDidChange")
     static let autofillUserSettingsDidChange = NSNotification.Name("autofillUserSettingsDidChange")
     static let autofillScriptDebugSettingsDidChange = NSNotification.Name("autofillScriptDebugSettingsDidChange")
+    static let autofillShowInMenuBarDidChange = NSNotification.Name("autofillShowInMenuBarDidChange")
 }
 
 final class AutofillPreferences: AutofillPreferencesPersistor {
+
+    enum Key: String {
+        case showPasswordsInMenuBar = "preferences.passwords.show-in-menu-bar"
+        case isManagedByExtension = "preferences.autofill.managed-by-extension"
+    }
 
     public var isAutoLockEnabled: Bool {
         get {
@@ -123,25 +158,62 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
     @UserDefaultsWrapper(key: .autolockLocksFormFilling, defaultValue: false)
     var autolockLocksFormFilling: Bool
 
-#if APPSTORE
-    var passwordManager: PasswordManager {
-        get { return .duckduckgo }
-        set {}
+    var showInMenuBar: Bool {
+        get {
+            return (try? keyValueStore.object(forKey: Key.showPasswordsInMenuBar.rawValue) as? Bool) ?? false
+        }
+        set {
+            let oldValue = showInMenuBar
+            try? keyValueStore.set(newValue, forKey: Key.showPasswordsInMenuBar.rawValue)
+            if oldValue != newValue {
+                NotificationCenter.default.post(name: .autofillShowInMenuBarDidChange, object: nil)
+            }
+        }
     }
-#else
+
+    var isManagedByExtension: Bool {
+        get {
+            (try? keyValueStore.object(forKey: Key.isManagedByExtension.rawValue) as? Bool) ?? false
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.isManagedByExtension.rawValue)
+        }
+    }
+
     var passwordManager: PasswordManager {
         get {
-            return PasswordManager(rawValue: selectedPasswordManager) ?? .duckduckgo
-        }
+            guard AppVersion.isAppStoreBuild else {
+                return PasswordManager(rawValue: selectedPasswordManager) ?? .duckduckgo
+            }
+            guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
+                // Roll back to original behavior if web extensions are not supported
+                // (mostly as a safety measure for disabling the feature flag)
+                return .duckduckgo
+            }
 
+            let passwordManager = PasswordManager(rawValue: selectedPasswordManager) ?? .duckduckgo
+
+            guard passwordManager != .bitwarden else {
+                return .duckduckgo
+            }
+
+            return passwordManager
+        }
         set {
+            if AppVersion.isAppStoreBuild {
+                guard #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled else {
+                    // Roll back to original behavior if web extensions are not supported
+                    // (mostly as a safety measure for disabling the feature flag)
+                    return
+                }
+            }
+
             selectedPasswordManager = newValue.rawValue
         }
     }
-#endif
 
     @UserDefaultsWrapper(key: .selectedPasswordManager, defaultValue: PasswordManager.duckduckgo.rawValue)
-    private var selectedPasswordManager: String
+    private(set) var selectedPasswordManager: String
 
     @UserDefaultsWrapper(key: .autofillDebugScriptEnabled, defaultValue: false)
     private var debugScriptEnabledWrapped: Bool
@@ -163,6 +235,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
     }
 
     private let injectedDependencyStore: StatisticsStore?
+    private let keyValueStore: ThrowingKeyValueStoring
     private lazy var defaultDependencyStore: StatisticsStore = {
 #if DEBUG
         // To prevent an assertion failure deep within dependencies in Database.makeDatabase
@@ -173,8 +246,10 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
         return LocalStatisticsStore()
     }()
 
-    init(statisticsStore: StatisticsStore? = nil) {
+    init(statisticsStore: StatisticsStore? = nil,
+         keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard) {
         self.injectedDependencyStore = statisticsStore
+        self.keyValueStore = keyValueStore
     }
 
 }

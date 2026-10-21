@@ -1,0 +1,238 @@
+//
+//  SubscriptionPixel.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import PixelKit
+import Networking
+import Subscription
+
+/// Why a purchase that should have gotten onboarding never launched the flow.
+/// This is telemetry only
+enum SubscriptionOnboardingLaunchFailureReason: String {
+    /// `SubscriptionFlowView` has no onboarding key-value store to read a persistor from.
+    case missingPersistor
+    /// The checklist came back empty — something is wrong with the entitlement read
+    case emptyChecklist
+    /// The screen meant to present onboarding was already presenting something else, or was no longer
+    /// attached to a window, at the moment the cover tried to present.
+    case notPresentable
+}
+
+enum SubscriptionPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
+    // Subscription
+    case subscriptionActive
+    // Auth
+    case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
+    case subscriptionInvalidRefreshTokenSignedOut
+    case subscriptionInvalidRefreshTokenRecovered
+    case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
+    // Pending Transaction
+    case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
+    case subscriptionPendingTransactionApproved(SubscriptionPixelHandler.Source)
+    // KeychainManager
+    case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
+    // VPN Subscription Funnel Entry Points
+    case subscriptionVPNToolbarImpression(isSubscriptionActive: Bool?)
+    case subscriptionVPNToolbarClick(isSubscriptionActive: Bool?)
+    case subscriptionVPNAddressBarImpression(isSubscriptionActive: Bool?)
+    case subscriptionVPNAddressBarClick(isSubscriptionActive: Bool?)
+    case subscriptionVPNWidgetClick
+    case subscriptionVPNShortcutClick
+    case subscriptionVPNNotificationClick
+    // Subscription Onboarding Flow
+    case subscriptionOnboardingStepShown(step: String, entryPoint: String)
+    case subscriptionOnboardingStepCompleted(step: String, entryPoint: String)
+    case subscriptionOnboardingStepSkipped(step: String, entryPoint: String)
+    case subscriptionOnboardingConnectionInfoFailure(Error)
+    case subscriptionOnboardingAIModelsFailure(Error)
+    case subscriptionOnboardingSubscriptionFailure(Error)
+    case subscriptionOnboardingLaunchFailure(SubscriptionOnboardingLaunchFailureReason)
+
+    var name: String {
+        switch self {
+        case .subscriptionActive: return "m_privacy-pro_app_subscription_active"
+            // Auth
+        case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
+        case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .subscriptionAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
+        case .subscriptionPurchaseSuccessAfterPendingTransaction: return "m_privacy-pro_purchase_success_after_pending_transaction"
+        case .subscriptionPendingTransactionApproved: return "m_privacy-pro_app_subscription-purchase_pending_transaction_approved"
+            // KeychainManager
+        case .subscriptionKeychainManagerDataAddedToTheBacklog: return "m_privacy-pro_keychain_manager_data_added_to_backlog"
+        case .subscriptionKeychainManagerDeallocatedWithBacklog: return "m_privacy-pro_keychain_manager_deallocated_with_backlog"
+        case .subscriptionKeychainManagerDataWroteFromBacklog: return "m_privacy-pro_keychain_manager_data_wrote_from_backlog"
+        case .subscriptionKeychainManagerFailedToWriteDataFromBacklog: return "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog"
+            // VPN Subscription Funnel Entry Points
+        case .subscriptionVPNToolbarImpression: return "subscription_vpn_toolbar_impression"
+        case .subscriptionVPNToolbarClick: return "subscription_vpn_toolbar_click"
+        case .subscriptionVPNAddressBarImpression: return "subscription_vpn_address-bar_impression"
+        case .subscriptionVPNAddressBarClick: return "subscription_vpn_address-bar_click"
+        case .subscriptionVPNWidgetClick: return "subscription_vpn_widget_click"
+        case .subscriptionVPNShortcutClick: return "subscription_vpn_shortcut_click"
+        case .subscriptionVPNNotificationClick: return "subscription_vpn_notification_click"
+            // Subscription Onboarding Flow
+        case .subscriptionOnboardingStepShown(let step, _): return "subscription_onboarding_step_shown_\(step)"
+        case .subscriptionOnboardingStepCompleted(let step, _): return "subscription_onboarding_step_completed_\(step)"
+        case .subscriptionOnboardingStepSkipped(let step, _): return "subscription_onboarding_step_skipped_\(step)"
+        case .subscriptionOnboardingConnectionInfoFailure: return "subscription_onboarding_connection-info_failure"
+        case .subscriptionOnboardingAIModelsFailure: return "subscription_onboarding_ai-models_failure"
+        case .subscriptionOnboardingSubscriptionFailure: return "subscription_onboarding_subscription_failure"
+        case .subscriptionOnboardingLaunchFailure: return "subscription_onboarding_post_purchase_launch_failure"
+        }
+    }
+
+    private struct SubscriptionPixelsDefaults {
+        static let policyCacheKey = "policycache"
+        static let sourceKey = "source"
+        static let platformKey = "platform"
+        static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
+        static let entryPointKey = "entry_point"
+        static let reasonKey = "reason"
+    }
+
+    private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
+        guard let isSubscriptionActive else {
+            return "no_subscription"
+        }
+        return String(isSubscriptionActive)
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .subscriptionInvalidRefreshTokenDetected(let source),
+                .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
+                .subscriptionPendingTransactionApproved(let source),
+                .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
+                .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
+                .subscriptionKeychainManagerDataWroteFromBacklog(let source),
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
+            return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionAuthV2GetTokensError(let policy, let source, _):
+            return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
+                    SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionVPNToolbarImpression(let isSubscriptionActive),
+                .subscriptionVPNToolbarClick(let isSubscriptionActive),
+                .subscriptionVPNAddressBarImpression(let isSubscriptionActive),
+                .subscriptionVPNAddressBarClick(let isSubscriptionActive):
+            return [SubscriptionPixelsDefaults.vpnSubscriptionActiveKey: Self.vpnSubscriptionActiveValue(isSubscriptionActive)]
+        case .subscriptionOnboardingStepShown(_, let entryPoint),
+                .subscriptionOnboardingStepCompleted(_, let entryPoint),
+                .subscriptionOnboardingStepSkipped(_, let entryPoint):
+            return [SubscriptionPixelsDefaults.entryPointKey: entryPoint]
+        case .subscriptionOnboardingLaunchFailure(let reason):
+            return [SubscriptionPixelsDefaults.reasonKey: reason.rawValue]
+        default:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .subscriptionActive,
+                .subscriptionInvalidRefreshTokenDetected,
+                .subscriptionInvalidRefreshTokenSignedOut,
+                .subscriptionInvalidRefreshTokenRecovered,
+                .subscriptionAuthV2GetTokensError,
+                .subscriptionPurchaseSuccessAfterPendingTransaction,
+                .subscriptionPendingTransactionApproved,
+                .subscriptionKeychainManagerDataAddedToTheBacklog,
+                .subscriptionKeychainManagerDeallocatedWithBacklog,
+                .subscriptionKeychainManagerDataWroteFromBacklog,
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog,
+                .subscriptionVPNToolbarImpression,
+                .subscriptionVPNToolbarClick,
+                .subscriptionVPNAddressBarImpression,
+                .subscriptionVPNAddressBarClick,
+                .subscriptionVPNWidgetClick,
+                .subscriptionVPNShortcutClick,
+                .subscriptionVPNNotificationClick,
+                .subscriptionOnboardingStepShown,
+                .subscriptionOnboardingStepCompleted,
+                .subscriptionOnboardingStepSkipped,
+                .subscriptionOnboardingConnectionInfoFailure,
+                .subscriptionOnboardingAIModelsFailure,
+                .subscriptionOnboardingSubscriptionFailure,
+                .subscriptionOnboardingLaunchFailure:
+            return [.pixelSource]
+        }
+    }
+}
+
+// This is a separate definition in order to get the correct platform and form factor suffixes, which the subscription pixels above do not have.
+enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyBeforeFrequencySuffix }
+
+    case automaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
+
+    private static let sourceKey = "source"
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .automaticSignOut: return "m_privacy-pro_auth_account_automatically_signed_out"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .automaticSignOut(let data, let source, _):
+            var parameters = data.parameters
+            parameters[Self.sourceKey] = source.rawValue
+            return parameters
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .automaticSignOut: return [.pixelSource]
+        }
+    }
+}
+
+// A separate definition so the name stays byte-identical to the other platforms': `SubscriptionPixel`
+// above omits the platform marker, which this pixel's siblings (`app-settings_vpn_click` and friends)
+// carry.
+enum SubscriptionPartnershipsHubPixel: PixelKit.Event {
+    /// Fired when the user taps Subscriber Offers in the DuckDuckGo Subscription section of Settings.
+    case subscriberOffersSettingsClick
+
+    /// The name is already fully qualified: it is shared verbatim with Android and Windows, which is
+    /// also why it keeps the `m_` prefix and the `partner-benefits` segment that predate the
+    /// "Subscriber Offers" rename.
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .subscriberOffersSettingsClick: return "m_privacy-pro_app-settings_partner-benefits_click"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}

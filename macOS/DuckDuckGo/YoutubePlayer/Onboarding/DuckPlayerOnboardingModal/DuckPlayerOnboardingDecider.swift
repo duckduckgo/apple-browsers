@@ -63,7 +63,7 @@ struct DefaultDuckPlayerOnboardingDecider: DuckPlayerOnboardingDecider {
 
     var valueChangedPublisher: PassthroughSubject<Void, Never> = .init()
 
-    init(defaults: UserDefaults = .standard, preferences: DuckPlayerPreferences = .shared) {
+    init(defaults: UserDefaults = .standard, preferences: DuckPlayerPreferences) {
         self.defaults = defaults
         self.preferences = preferences
         observer = NotificationCenter.default.addObserver(forName: .valuesDidChange, object: nil, queue: nil) { [valuesDidChange] _ in

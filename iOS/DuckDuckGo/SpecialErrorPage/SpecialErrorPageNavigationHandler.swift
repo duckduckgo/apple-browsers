@@ -66,13 +66,13 @@ extension SpecialErrorPageNavigationHandler: WebViewNavigationHandling {
 
     @MainActor
     func handleDecidePolicy(for navigationAction: WKNavigationAction, webView: WKWebView) {
-        guard navigationAction.isTargetingMainFrame() else { return }
+        guard navigationAction.isTargetingMainFrame else { return }
         maliciousSiteProtectionNavigationHandler.makeMaliciousSiteDetectionTask(for: navigationAction, webView: webView)
     }
 
     @MainActor
     func handleDecidePolicy(for navigationResponse: WKNavigationResponse, webView: WKWebView) async -> Bool {
-        guard let task = maliciousSiteProtectionNavigationHandler.getMaliciousSiteDectionTask(for: navigationResponse, webView: webView) else {
+        guard let task = maliciousSiteProtectionNavigationHandler.getMaliciousSiteDetectionTask(for: navigationResponse, webView: webView) else {
             return false
         }
 
@@ -115,6 +115,7 @@ extension SpecialErrorPageNavigationHandler: WebViewNavigationHandling {
         failedURL = sslSpecialError.error.url
         sslErrorPageNavigationHandler.errorPageVisited(errorType: sslSpecialError.type)
         errorData = sslSpecialError.error.errorData
+        isSpecialErrorPageRequest = true
         loadSpecialErrorPage(url: sslSpecialError.error.url)
     }
 
@@ -155,7 +156,7 @@ extension SpecialErrorPageNavigationHandler: SpecialErrorPageUserScriptDelegate 
             sslErrorPageNavigationHandler.leaveSite()
             navigateBackIfPossible()
         case .maliciousSite:
-            maliciousSiteProtectionNavigationHandler.leaveSite()
+            maliciousSiteProtectionNavigationHandler.leaveSite(errorData: errorData)
             closeTab(shouldCreateNewTab: true)
         }
     }

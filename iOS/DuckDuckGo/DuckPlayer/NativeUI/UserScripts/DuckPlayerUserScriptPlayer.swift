@@ -21,11 +21,13 @@
 import Foundation
 import WebKit
 import Common
+import FoundationExtensions
 import UserScript
 import Combine
 import Core
 import BrowserServicesKit
 import DuckPlayer
+import PixelKit
 
 
 // This Script Handler is used to communicate with ContentScopeScripts
@@ -106,8 +108,8 @@ final class DuckPlayerUserScriptPlayer: NSObject, Subfeature {
     @MainActor
     private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForNativeYouTubeErrorParams(params)
-        DailyPixel.fire(pixel: dailyPixel)
-        Pixel.fire(pixel: volumePixel)
+        PixelKit.fire(dailyPixel, frequency: .legacyDailyNoSuffix)
+        PixelKit.fire(volumePixel)
         return [:] as [String: String]
     }
     

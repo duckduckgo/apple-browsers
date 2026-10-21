@@ -24,12 +24,96 @@ public enum AIChatMetricName: String, Codable {
     case userDidOpenHistory
     case userDidSelectFirstHistoryItem
     case userDidCreateNewChat
+    case userDidTapKeyboardReturnKey
+    case userDidAcceptTermsAndConditions
+    case userDidSelectSuggestion
+    case userDidViewSuggestions
+
+    // MARK: - Subscription funnel metrics
+    // Reported by the frontend only inside a native app, where its own website pixel is suppressed.
+    // https://app.asana.com/1/137249556945/task/1216395339071571
+    case userDidViewAiSidebarUpgradeButton
+    case userDidViewActivateSubscriptionBanner
+    case userDidViewFreePlanBadge
+    case userDidViewFreeLimitMessage
+    case userDidViewImageGenerationLimitMessage
+    case userDidViewPlusLimitMessage
+    case userDidViewPromotionCard
+    case userDidViewSettingsSubscribeButton
+    case userDidViewSettingsResubscribeButton
+    case userDidViewProUpgradeDisclaimerBanner
+    case userDidViewVoiceChatLimitModal
+    case userDidViewVoiceChatDurationLimitModal
+    case userDidViewModelPickerUpgrade
+    case userDidViewReasoningDropdownUpgrade
+    case userDidViewSwitchModelUpgrade
+
+    case userDidClickAiSidebarUpgradeButton
+    case userDidClickActivateSubscriptionButton
+    case userDidClickFreePlanUpgradeButton
+    case userDidClickFreeLimitSubscribeLink
+    case userDidClickImageGenerationLimitSubscribeButton
+    case userDidClickPlusLimitUpgradeLink
+    case userDidClickPromotionCardButton
+    case userDidClickSettingsSubscribeButton
+    case userDidClickSettingsResubscribeButton
+    case userDidClickProUpgradeDisclaimerBannerButton
+    case userDidClickVoiceChatLimitModalSubscribeButton
+    case userDidClickVoiceChatDurationLimitModalSubscribeButton
+    case userDidClickModelPickerUpgrade
+    case userDidClickReasoningDropdownUpgrade
+    case userDidClickSwitchModelUpgrade
+
+    // MARK: - Subscription funnel modal metrics
+    // The subscribe / upgrade-to-Pro modal the funnel entry points above open. These carry `source`,
+    // naming the entry point the modal was opened from.
+    case userDidOpenSubscribeModal
+    case userDidClickSubscribeOnSubscribeModal
+    case userDidClickActivateOnSubscribeModal
+    case userDidOpenUpgradeToProModal
+    case userDidClickUpgradeOnUpgradeToProModal
+}
+
+// Model tier for AI Chat metrics
+public enum AIChatModelTier: String, Codable {
+    case free
+    case plus
+    case pro
+    case `internal`
+    case unknown
 }
 
 public struct AIChatMetric: Codable {
     public let metricName: AIChatMetricName
+    public let modelTier: AIChatModelTier?
+    /// Fixed catalog key identifying the tapped suggestion (e.g. `summarize-page`). Carried by `userDidSelectSuggestion`.
+    public let suggestionId: String?
+    /// Coarse page classification the FE derived from JSON-LD/OpenGraph. Decoded as a plain string so a new FE
+    /// page type never breaks decoding. Carried by `userDidSelectSuggestion` and `userDidViewSuggestions`.
+    public let pageType: String?
+    /// Whether the shown suggestions were smart (page-tailored) rather than generic. Carried by `userDidViewSuggestions`.
+    public let isSmart: Bool?
+    /// Funnel entry point a modal was opened from (e.g. `freelimit`). Decoded as a plain string so a new FE
+    /// slug never breaks decoding. Carried by the subscription funnel modal metrics.
+    public let source: String?
 
-     public init(metricName: AIChatMetricName) {
+     public init(metricName: AIChatMetricName, modelTier: AIChatModelTier? = nil, suggestionId: String? = nil, pageType: String? = nil, isSmart: Bool? = nil, source: String? = nil) {
          self.metricName = metricName
+         self.modelTier = modelTier
+         self.suggestionId = suggestionId
+         self.pageType = pageType
+         self.isSmart = isSmart
+         self.source = source
      }
+}
+
+extension AIChatMetric {
+    public var shouldIncludeTimestampParameters: Bool {
+        switch metricName {
+        case .userDidTapKeyboardReturnKey:
+            return false
+        default:
+            return true
+        }
+    }
 }

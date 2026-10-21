@@ -1,0 +1,139 @@
+// See https://app.asana.com/0/72649045549333/1208001118995887/f.
+{
+    "m_mac_autocomplete_click_phrase": {
+        "description": "Fires when the user selects a phrase suggestion from the autocomplete results.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Origin of the autocomplete interaction",
+                "enum": ["ntp_search_box", "address_bar"]
+            },
+            "appVersion",
+            "pixelSource",
+            "channel"
+        ]
+    },
+    "m_mac_autocomplete_click_website": {
+        "description": "Fires when the user selects a website suggestion from the autocomplete results.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Origin of the autocomplete interaction",
+                "enum": ["ntp_search_box", "address_bar"]
+            },
+            "appVersion",
+            "pixelSource",
+            "channel"
+        ]
+    },
+    "m_mac_autocomplete_click_history": {
+        "description": "Fires when the user selects a history entry from the autocomplete results.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Origin of the autocomplete interaction",
+                "enum": ["ntp_search_box", "address_bar"]
+            },
+            "appVersion",
+            "pixelSource",
+            "channel"
+        ]
+    },
+    "m_mac_autocomplete_click_bookmark": {
+        "description": "Fires when the user selects a bookmark from the autocomplete results.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Origin of the autocomplete interaction",
+                "enum": ["ntp_search_box", "address_bar"]
+            },
+            "appVersion",
+            "pixelSource",
+            "channel"
+        ]
+    },
+    "m_mac_autocomplete_click_favorite": {
+        "description": "Fires when the user selects a favorite from the autocomplete results.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Origin of the autocomplete interaction",
+                "enum": ["ntp_search_box", "address_bar"]
+            },
+            "appVersion",
+            "pixelSource",
+            "channel"
+        ]
+    },
+    "m_mac_autocomplete_click_opentab": {
+        "description": "Fires when the user selects an open tab from the autocomplete results.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Origin of the autocomplete interaction",
+                "enum": ["ntp_search_box", "address_bar"]
+            },
+            "appVersion",
+            "pixelSource",
+            "channel"
+        ]
+    },
+    "m_mac_suggestion_submitted_mouse": {
+        "description": "Fired when user selects a suggestion by clicking with the mouse",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "suggestionCategory",
+                "description": "Category of the selected suggestion (e.g., website, bookmark, history, tab, phrase, internal-page)",
+                "type": "string",
+                "enum": ["website", "bookmark", "history", "tab", "phrase", "internal-page"]
+            },
+            "channel"
+        ]
+    },
+    "m_mac_suggestion_submitted_keyboard": {
+        "description": "Fired when user selects a suggestion by pressing enter",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "suggestionCategory",
+                "description": "Category of the selected suggestion (e.g., website, bookmark, history, tab, phrase, internal-page)",
+                "type": "string",
+                "enum": ["website", "bookmark", "history", "tab", "phrase", "internal-page"]
+            },
+            "channel"
+        ]
+    }
+}

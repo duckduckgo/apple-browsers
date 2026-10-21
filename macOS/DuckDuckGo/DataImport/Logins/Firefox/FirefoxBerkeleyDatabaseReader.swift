@@ -31,7 +31,11 @@ enum FirefoxBerkeleyDatabaseReader {
         var currentKeyDBT = DBT()
         var currentDataDBT = DBT()
 
-        while db.pointee.seq(db, &currentKeyDBT, &currentDataDBT, UInt32(R_NEXT)) == 0 {
+        // R_FIRST positions at the first record; R_NEXT advances. macOS 26's libdb
+        // no longer treats R_NEXT-without-a-cursor as R_FIRST, so be explicit.
+        var flag = UInt32(R_FIRST)
+        while db.pointee.seq(db, &currentKeyDBT, &currentDataDBT, flag) == 0 {
+            flag = UInt32(R_NEXT)
             let currentKeyData = currentKeyDBT.data.withMemoryRebound(to: UInt8.self, capacity: currentKeyDBT.size) { pointer in
                 Data(bytes: pointer, count: currentKeyDBT.size)
             }

@@ -18,12 +18,7 @@
 
 import Foundation
 
-protocol HandshakeReporting {
-    /// Retrieves the number of seconds of the most recent handshake for the previously added peer entry, expressed relative to the Unix epoch.
-    ///
-    /// - Throws: ConfigReadingError
-    /// - Returns: Interval between the most recent handshake and the Unix epoch.
-    ///
+public protocol HandshakeReporting {
     func getMostRecentHandshake() async throws -> TimeInterval
 }
 

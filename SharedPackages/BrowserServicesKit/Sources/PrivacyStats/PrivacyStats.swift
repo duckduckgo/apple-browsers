@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import CoreData
 import Foundation
 import os.log
@@ -108,7 +109,7 @@ public protocol PrivacyStatsCollecting {
     /**
      * This function clears all blocked tracker stats from the database.
      */
-    func clearPrivacyStats() async
+    func clearPrivacyStats() async -> Result<Void, Error>
 
     /**
      * This function saves all pending changes to the persistent storage.
@@ -189,25 +190,27 @@ public final class PrivacyStats: PrivacyStatsCollecting {
         }
     }
 
-    public func clearPrivacyStats() async {
-        await withCheckedContinuation { continuation in
+    public func clearPrivacyStats() async -> Result<Void, Error> {
+        let result: Result<Void, Error> = await withCheckedContinuation { continuation in
             context.perform { [weak self] in
                 guard let self else {
-                    continuation.resume()
+                    continuation.resume(returning: .success(()))
                     return
                 }
                 do {
                     try PrivacyStatsUtils.deleteAllStats(in: context)
                     Logger.privacyStats.debug("Deleted outdated entries")
+                    continuation.resume(returning: .success(()))
                 } catch {
                     Logger.privacyStats.error("Save error: \(error)")
                     errorEvents?.fire(.failedToClearPrivacyStats(error))
+                    continuation.resume(returning: .failure(error))
                 }
-                continuation.resume()
             }
         }
         await currentPack.resetPack()
         statsUpdateSubject.send()
+        return result
     }
 
     public func handleAppTermination() async {

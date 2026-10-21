@@ -37,6 +37,11 @@ final class RampView: NSView {
     }
 
     var isFlippedHorizontally: Bool = false
+    var rampColor: NSColor = NSColor(resource: .surfacePrimary) {
+        didSet {
+            needsDisplay = true
+        }
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
@@ -49,7 +54,7 @@ final class RampView: NSView {
             context.scaleBy(x: -1, y: 1)
         }
 
-        NSColor.surfacePrimary.setFill()
+        rampColor.setFill()
 
         let path = NSBezierPath()
         path.move(to: NSPoint(x: Consts.rampWidth, y: 0))

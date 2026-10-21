@@ -17,8 +17,18 @@
 //
 
 import AppKit
+import Common
+import FoundationExtensions
 
 final class RoundedSelectionRowView: NSTableRowView {
+
+    private var palette: ThemeColors {
+        NSApp.delegateTyped.themeManager.theme.palette
+    }
+
+    private var selectionCornerRadius: CGFloat {
+        AppVersion.isLiquidGlassSupported ? 7 : 6
+    }
 
     var highlight = false {
         didSet {
@@ -31,6 +41,18 @@ final class RoundedSelectionRowView: NSTableRowView {
         }
     }
 
+    var requiresAccentColors = false {
+        didSet {
+            needsDisplay = true
+        }
+    }
+
+    var disclosureButton: NSButton? {
+        subviews.first { subview in
+            subview.identifier == NSOutlineView.disclosureButtonIdentifier
+        } as? NSButton
+    }
+
     var insets = NSEdgeInsets()
 
     override func drawDraggingDestinationFeedback(in dirtyRect: NSRect) {
@@ -41,8 +63,8 @@ final class RoundedSelectionRowView: NSTableRowView {
         selectionRect.size.width -= (insets.left + insets.right)
         selectionRect.size.height -= (insets.top + insets.bottom)
 
-        let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
-        NSColor.rowDragDrop.setFill()
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: selectionCornerRadius, yRadius: selectionCornerRadius)
+        NSColor(resource: .rowDragDrop).setFill()
         path.fill()
     }
 
@@ -54,8 +76,9 @@ final class RoundedSelectionRowView: NSTableRowView {
         selectionRect.size.width -= (insets.left + insets.right)
         selectionRect.size.height -= (insets.top + insets.bottom)
 
-        let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
-        NSColor.rowHover.setFill()
+        selectionBackgroundColor.setFill()
+
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: selectionCornerRadius, yRadius: selectionCornerRadius)
         path.fill()
     }
 
@@ -69,13 +92,9 @@ final class RoundedSelectionRowView: NSTableRowView {
         selectionRect.size.width -= (insets.left + insets.right)
         selectionRect.size.height -= (insets.top + insets.bottom)
 
-        let path = NSBezierPath(roundedRect: selectionRect, xRadius: 6, yRadius: 6)
+        highlightBackgroundColor.setFill()
 
-        if isInKeyWindow {
-            NSColor.controlAccentColor.setFill()
-        } else {
-            NSColor.buttonMouseOver.setFill()
-        }
+        let path = NSBezierPath(roundedRect: selectionRect, xRadius: selectionCornerRadius, yRadius: selectionCornerRadius)
         path.fill()
     }
 
@@ -83,4 +102,11 @@ final class RoundedSelectionRowView: NSTableRowView {
         return .normal
     }
 
+    private var selectionBackgroundColor: NSColor {
+        return requiresAccentColors && isInKeyWindow ? palette.accentPrimary : palette.controlsFillPrimary
+    }
+
+    private var highlightBackgroundColor: NSColor {
+        return requiresAccentColors && isInKeyWindow ? palette.accentPrimary : palette.controlsFillPrimary
+    }
 }

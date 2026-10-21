@@ -16,18 +16,24 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Carbon
 import Combine
-import Navigation
-import XCTest
-import History
 import Common
+import FoundationExtensions
+import History
+import DDGNavigation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import SharedTestUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
+class MockSearchPreferencesPersistor: SearchPreferencesPersistor {
+    var showAutocompleteSuggestions: Bool = false
+}
+
 // swiftlint:disable opening_brace
-@available(macOS 12.0, *)
 final class SearchNonexistentDomainTests: XCTestCase {
 
     struct URLs {
@@ -62,7 +68,7 @@ final class SearchNonexistentDomainTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 
@@ -239,7 +245,13 @@ final class SearchNonexistentDomainTests: XCTestCase {
                                                       bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
-        addressBar.suggestionContainerViewModel = SuggestionContainerViewModel(isHomePage: true, isBurner: false, suggestionContainer: suggestionContainer, visualStyle: VisualStyle.legacy)
+        addressBar.suggestionContainerViewModel = SuggestionContainerViewModel(
+            isHomePage: true,
+            isBurner: false,
+            suggestionContainer: suggestionContainer,
+            searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger()
+        )
 
         suggestionContainer.getSuggestions(for: enteredString)
         suggestionLoadingMock.completion!(.init(topHits: [.website(url: url)], duckduckgoSuggestions: [], localSuggestions: []), nil)

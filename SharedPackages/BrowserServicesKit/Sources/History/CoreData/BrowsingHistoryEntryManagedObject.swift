@@ -31,6 +31,7 @@ extension BrowsingHistoryEntryManagedObject {
     }
 
     @NSManaged public var blockedTrackingEntities: String?
+    @NSManaged public var cookiePopupBlocked: Bool
     @NSManaged public var failedToLoad: Bool
     @NSManaged public var identifier: UUID?
     @NSManaged public var lastVisit: Date?

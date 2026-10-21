@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 import DataBrokerProtectionCore
 
@@ -56,7 +57,7 @@ public protocol DataBrokerProtectionDataManagerDelegate: AnyObject {
     func dataBrokerProtectionDataManagerDidDeleteData()
     func dataBrokerProtectionDataManagerWillOpenSendFeedbackForm()
     func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(_ bypass: Bool) async
-    func isAuthenticatedUser() -> Bool
+    func isAuthenticatedUser() async -> Bool
     /// Returns whether the user is eligible for a free trial.
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
     func isUserEligibleForFreeTrial() -> Bool
@@ -69,20 +70,31 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     public weak var delegate: DataBrokerProtectionDataManagerDelegate?
 
+    /// Called when a profile is saved. Used for free trial conversion tracking.
+    public var onProfileSaved: (() -> Void)?
+
     internal let database: DataBrokerProtectionRepository
 
     required public init(database: DataBrokerProtectionRepository,
                          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {
         self.database = database
-
         self.profileSavedNotifier = profileSavedNotifier
+        self.onProfileSaved = nil
         communicator.delegate = self
+    }
+
+    public convenience init(database: DataBrokerProtectionRepository,
+                            profileSavedNotifier: DBPProfileSavedNotifier? = nil,
+                            onProfileSaved: (() -> Void)?) {
+        self.init(database: database, profileSavedNotifier: profileSavedNotifier)
+        self.onProfileSaved = onProfileSaved
     }
 
     public func saveProfile(_ profile: DataBrokerProtectionProfile) async throws {
         do {
             try await database.save(profile)
             profileSavedNotifier?.postProfileSavedNotificationIfPermitted()
+            onProfileSaved?()
         } catch {
             // We should still invalidate the cache if the save fails
             communicator.invalidateCache()
@@ -133,13 +145,13 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
             return communicator.brokerProfileQueryData
         }
 
-        let queryData = try database.fetchAllBrokerProfileQueryData()
+        let queryData = try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
         communicator.brokerProfileQueryData = queryData
         return queryData
     }
 
     public func prepareBrokerProfileQueryDataCache() throws {
-        communicator.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
+        communicator.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
     }
 
     public func hasMatches() throws -> Bool {
@@ -157,7 +169,7 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
     ///   - `brokerCount`: The number of brokers that have at least one match.
     /// - Throws: An error if fetching broker profile query data from the database fails.
     public func matchesFoundAndBrokersCount() throws -> (matchCount: Int, brokerCount: Int) {
-        let queryData = try database.fetchAllBrokerProfileQueryData()
+        let queryData = try database.fetchAllBrokerProfileQueryData(reason: .profileHistoryReporting)
         return matchesAndBrokersCount(forQueryData: queryData)
     }
 }
@@ -214,8 +226,8 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
         await delegate?.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(bypass)
     }
 
-    public func isAuthenticatedUser() -> Bool {
-        delegate?.isAuthenticatedUser() ?? true
+    public func isAuthenticatedUser() async -> Bool {
+        (await delegate?.isAuthenticatedUser()) ?? true
     }
 
     /// Determines whether the current user is eligible for a free trial.
@@ -241,7 +253,7 @@ public typealias DBPUICommunicatorDelegate = UserProfileDelegate & UserActionDel
 public protocol UserProfileDelegate: AnyObject {
     func saveCachedProfileToDatabase(_ profile: DataBrokerProtectionProfile) async throws
     func removeAllData() throws
-    func isAuthenticatedUser() -> Bool
+    func isAuthenticatedUser() async -> Bool
     /// Determines whether the current user is eligible for a free trial.
     ///
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
@@ -282,12 +294,13 @@ public final class DBPUICommunicator {
     }
 }
 
-extension DBPUICommunicator: DBPUICommunicationDelegate {
+extension DBPUICommunicator: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
 
-    public func getHandshakeUserData() -> DBPUIHandshakeUserData? {
-        let isAuthenticatedUser = delegate?.isAuthenticatedUser() ?? true
+    public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
+        let isAuthenticatedUser = (await delegate?.isAuthenticatedUser()) ?? true
         let isUserEligibleForFreeTrial = delegate?.isUserEligibleForFreeTrial() ?? false
-        return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser, isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
+        return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser,
+                                      isUserEligibleForFreeTrial: isUserEligibleForFreeTrial)
     }
 
     public func saveProfile() async throws {
@@ -350,14 +363,18 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
 
     public func getInitialScanState() async -> DBPUIInitialScanState {
         await scanDelegate?.updateCacheWithCurrentScans()
+        let isAuthenticatedUser = (await delegate?.isAuthenticatedUser()) ?? true
+        let eligibleQueryData = brokerProfileQueryData.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
-        return DBPUIInitialScanState(from: brokerProfileQueryData)
+        return DBPUIInitialScanState(from: eligibleQueryData)
     }
 
     public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         await scanDelegate?.updateCacheWithCurrentScans()
+        let isAuthenticatedUser = (await delegate?.isAuthenticatedUser()) ?? true
+        let eligibleQueryData = brokerProfileQueryData.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
-        return DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+        return DBPUIScanAndOptOutMaintenanceState(from: eligibleQueryData)
     }
 
     public func getDataBrokers() async -> [DBPUIDataBroker] {
@@ -393,5 +410,13 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
 
     public func removeOptOutFromDashboard(_ id: Int64) async {
         delegate?.willRemoveOptOutFromDashboard(id)
+    }
+
+    public func needBackgroundAppRefresh() async -> Bool {
+        false // macOS doesn't have Background App Refresh
+    }
+
+    public func enableBackgroundAppRefresh() async {
+        // No-op on macOS
     }
 }

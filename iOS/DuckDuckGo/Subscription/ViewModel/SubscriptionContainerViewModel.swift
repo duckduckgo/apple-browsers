@@ -20,6 +20,8 @@
 import Foundation
 import Subscription
 import Combine
+import DataBrokerProtection_iOS
+import Persistence
 
 final class SubscriptionContainerViewModel: ObservableObject {
 
@@ -30,28 +32,42 @@ final class SubscriptionContainerViewModel: ObservableObject {
     let restore: SubscriptionRestoreViewModel
     let email: SubscriptionEmailViewModel
 
-    init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
-         redirectPurchaseURL: URL? = nil,
+    init(subscriptionManager: SubscriptionManager,
+         initialURL: URL? = nil,
+         flowType: SubscriptionFlowType = .firstPurchase,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
-         subFeature: any SubscriptionPagesUseSubscriptionFeature) {
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         subFeature: any SubscriptionPagesUseSubscriptionFeature,
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         onboardingKeyValueStore: ThrowingKeyValueStoring?,
+         meetsPIRLocaleRequirement: @escaping () -> Bool,
+         onRequestDuckAIChat: ((String?) -> Bool)? = nil) {
 
         self.userScript = userScript
 
         subFeature.cleanup()
         self.subFeature = subFeature
 
-        self.flow = SubscriptionFlowViewModel(purchaseURL: redirectPurchaseURL ?? subscriptionManager.url(for: .purchase),
+        self.flow = SubscriptionFlowViewModel(initialURL: initialURL ?? subscriptionManager.url(for: .purchase),
+                                              flowType: flowType,
                                               isInternalUser: isInternalUser,
                                               userScript: userScript,
+                                              userScriptsDependencies: userScriptsDependencies,
                                               subFeature: subFeature,
-                                              subscriptionManager: subscriptionManager)
+                                              subscriptionManager: subscriptionManager,
+                                              dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+                                              onboardingKeyValueStore: onboardingKeyValueStore,
+                                              meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+                                              onRequestDuckAIChat: onRequestDuckAIChat)
         self.restore = SubscriptionRestoreViewModel(userScript: userScript,
                                                     subFeature: subFeature)
         self.email = SubscriptionEmailViewModel(isInternalUser: isInternalUser,
                                                 userScript: userScript,
+                                                userScriptsDependencies: userScriptsDependencies,
                                                 subFeature: subFeature,
-                                                subscriptionManager: subscriptionManager)
+                                                subscriptionManager: subscriptionManager,
+                                                dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
     }
 
 }

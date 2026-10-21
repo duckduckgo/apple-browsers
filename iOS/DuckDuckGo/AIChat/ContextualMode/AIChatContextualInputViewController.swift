@@ -1,0 +1,620 @@
+//
+//  AIChatContextualInputViewController.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import UIKit
+
+// MARK: - Delegate Protocol
+
+/// Delegate protocol for handling user interactions with the contextual input view controller.
+protocol AIChatContextualInputViewControllerDelegate: AnyObject {
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String)
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction)
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt)
+    func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController)
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController)
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didTapLink url: URL)
+}
+
+// MARK: - Input Surface
+
+protocol AIChatContextualInputSurface {
+    @discardableResult func becomeFirstResponder() -> Bool
+    @discardableResult func resignFirstResponder() -> Bool
+    var isContextChipVisible: Bool { get }
+    func setText(_ text: String)
+    func appendText(_ text: String)
+    func showContextChip(_ chipView: UIView)
+    func hideContextChip()
+    func updateContextChipState(_ state: AIChatContextChipView.State)
+    func setChipTapCallback(_ callback: @escaping () -> Void)
+}
+
+private struct NoContextualInputSurface: AIChatContextualInputSurface {
+    var isContextChipVisible: Bool { false }
+    func becomeFirstResponder() -> Bool { false }
+    func resignFirstResponder() -> Bool { false }
+    func setText(_ text: String) {}
+    func appendText(_ text: String) {}
+    func showContextChip(_ chipView: UIView) {}
+    func hideContextChip() {}
+    func updateContextChipState(_ state: AIChatContextChipView.State) {}
+    func setChipTapCallback(_ callback: @escaping () -> Void) {}
+}
+
+extension AIChatBasicNativeInputViewController: AIChatContextualInputSurface {}
+
+// MARK: - View Controller
+
+/// Container view controller that hosts the basic native input and handles keyboard adjustments.
+final class AIChatContextualInputViewController: UIViewController {
+
+    // MARK: - Constants
+
+    private enum Constants {
+        static let horizontalPadding: CGFloat = 20
+        static let quickActionsBottomSpacing: CGFloat = 12
+        static let keyboardSpacing: CGFloat = 20
+        static let iPadBottomPadding: CGFloat = 16
+        static let dimmedStartActionsAlpha: CGFloat = 0.4
+    }
+
+    // MARK: - Properties
+
+    weak var delegate: AIChatContextualInputViewControllerDelegate?
+
+    private let showsBasicNativeInput: Bool
+    private let showsWelcomeMessage: Bool
+    private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let inputOutcomeMeasurement: DuckAiInputOutcomeMeasurement
+    private lazy var basicNativeInputViewController = AIChatBasicNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
+    private lazy var inputSurface: AIChatContextualInputSurface = {
+        if showsBasicNativeInput {
+            return basicNativeInputViewController
+        } else {
+            return NoContextualInputSurface()
+        }
+    }()
+
+    private lazy var quickActionsScrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        return scrollView
+    }()
+
+    private lazy var quickActionsView: AIChatQuickActionsView<ContextualSheetAction> = {
+        let view = AIChatQuickActionsView<ContextualSheetAction>()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.setContentCompressionResistancePriority(.required, for: .vertical)
+        return view
+    }()
+
+    private lazy var welcomeLabel: UILabel = {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    /// Sits behind the basic native input and shows below it, like the UTI's footer card.
+    private lazy var termsOfServiceCard: UTIFooterCardView = {
+        let card = UTIFooterCardView()
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.isHidden = true
+        card.onLinkTap = { [weak self] url in
+            guard let self else { return }
+            delegate?.contextualInputViewController(self, didTapLink: url)
+        }
+        return card
+    }()
+
+    private var welcomeCenterYConstraint: NSLayoutConstraint?
+    private var startActionsLeadingConstraint: NSLayoutConstraint?
+    private var startActionsTrailingConstraint: NSLayoutConstraint?
+    /// Pins the input to the keyboard while the disclaimer is hidden.
+    private var bottomConstraint: NSLayoutConstraint?
+    /// Pins the disclaimer, and the input above it, to the keyboard while it shows.
+    private var termsOfServiceBottomConstraint: NSLayoutConstraint?
+    private var bottomInset: CGFloat = 0 {
+        didSet {
+            bottomConstraint?.constant = bottomInset
+            termsOfServiceBottomConstraint?.constant = bottomInset
+        }
+    }
+    private var displayedTermsOfServiceMessage: UTIFooterMessage?
+    private var renderedStartActions: [ContextualSheetAction] = []
+
+    // MARK: - Initialization
+
+    init(voiceSearchHelper: VoiceSearchHelperProtocol,
+         showsBasicNativeInput: Bool = true,
+         showsWelcomeMessage: Bool = true,
+         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(),
+         inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring = DuckAiInputOutcomePixelAdapter()) {
+        self.showsBasicNativeInput = showsBasicNativeInput
+        self.showsWelcomeMessage = showsWelcomeMessage
+        self.voiceSearchHelper = voiceSearchHelper
+        self.termsOfServiceDisclaimer = termsOfServiceDisclaimer
+        self.inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(pixelFiring: inputOutcomePixelFiring)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Lifecycle
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        if showsBasicNativeInput {
+            configureBasicNativeInput()
+            setupKeyboardObservers()
+            setupAppLifecycleObservers()
+            refreshTermsOfServiceDisclaimer()
+        }
+        configureQuickActions()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateWelcomeLabelCentering()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateBottomPaddingForOrientation()
+        refreshTermsOfServiceDisclaimer()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        startInputOutcomeMeasurement()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        inputOutcomeMeasurement.inputClosed()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { _ in
+            self.updateBottomPaddingForOrientation()
+        })
+    }
+
+    // MARK: - Public Methods
+
+    @discardableResult
+    override func becomeFirstResponder() -> Bool {
+        inputSurface.becomeFirstResponder()
+    }
+
+    @discardableResult
+    override func resignFirstResponder() -> Bool {
+        inputSurface.resignFirstResponder()
+    }
+
+    var isContextChipVisible: Bool {
+        inputSurface.isContextChipVisible
+    }
+
+    func setText(_ text: String) {
+        inputSurface.setText(text)
+    }
+
+    func appendText(_ text: String) {
+        inputSurface.appendText(text)
+    }
+
+    func showContextChip(_ chipView: UIView) {
+        inputSurface.showContextChip(chipView)
+    }
+
+    func hideContextChip() {
+        inputSurface.hideContextChip()
+    }
+
+    func updateContextChipState(_ state: AIChatContextChipView.State) {
+        inputSurface.updateContextChipState(state)
+    }
+
+    func setChipTapCallback(_ callback: @escaping () -> Void) {
+        inputSurface.setChipTapCallback(callback)
+    }
+
+    func updateStartActions(suggestions: [ContextualSuggestedPrompt], quickActions: [AIChatContextualQuickAction]) {
+        let actions = suggestions.map(ContextualSheetAction.suggestion)
+            + quickActions.map(ContextualSheetAction.quickAction)
+        guard actions != renderedStartActions else { return }
+        renderedStartActions = actions
+        quickActionsView.configure(with: actions)
+    }
+
+    func updateSuggestionsLoading(_ isLoading: Bool) {
+        quickActionsView.setLoading(isLoading)
+    }
+
+    /// Clipping is released because interactive glass scales a chip past its bounds on touch. Safe here:
+    /// the scroll view is sized to its content, so it never actually scrolls.
+    func useGlassStartActionBackgrounds() {
+        quickActionsView.chipBackgroundStyle = .glass
+        quickActionsScrollView.clipsToBounds = false
+        quickActionsView.clipsToBounds = false
+    }
+
+    var startActionCount: Int {
+        quickActionsView.chipCount
+    }
+
+    func showStartActions() {
+        quickActionsView.showChips()
+    }
+
+    /// Removes this controller's own horizontal inset so a host can align the chips itself.
+    func clearStartActionsHorizontalInset() {
+        startActionsLeadingConstraint?.constant = 0
+        startActionsTrailingConstraint?.constant = 0
+    }
+
+    /// Whether `point`, expressed in `view`'s coordinate space, lands on a chip rather than the gaps
+    /// around them. Lets a host pass taps in the empty areas through to whatever sits behind.
+    func containsStartAction(at point: CGPoint, from view: UIView) -> Bool {
+        !self.view.isHidden && quickActionsView.containsChip(at: point, from: view)
+    }
+
+    func setStartActionsDimmed(_ dimmed: Bool) {
+        quickActionsView.alpha = dimmed ? Constants.dimmedStartActionsAlpha : 1
+        quickActionsView.isUserInteractionEnabled = !dimmed
+    }
+
+    /// Call only for an Ask tap: sending with the disclaimer on screen is the acceptance, a chip never is.
+    /// Returns whether the terms are accepted afterwards, on this tap or an earlier one.
+    @discardableResult
+    func acceptTermsIfDisclaimerShown() -> Bool {
+        if termsOfServiceDisclaimer.acceptIfShown(visibleTermsOfServiceMessage) {
+            refreshTermsOfServiceDisclaimer()
+        }
+        return termsOfServiceDisclaimer.hasAccepted
+    }
+
+    /// Call before `acceptTermsIfDisclaimerShown()`, for every prompt the basic input sends.
+    func recordInputOutcome(_ outcome: DuckAiInputOutcome) {
+        inputOutcomeMeasurement.record(outcome)
+    }
+
+    /// The basic input shows only before the sheet's chat has a prompt, so every opening here starts a new chat.
+    private func startInputOutcomeMeasurement() {
+        guard showsBasicNativeInput, viewIfLoaded?.window != nil else { return }
+        inputOutcomeMeasurement.inputOpened(surface: .contextualChat,
+                                            isTermsOfServiceDisclaimerShown: visibleTermsOfServiceMessage != nil)
+    }
+
+    private var visibleTermsOfServiceMessage: UTIFooterMessage? {
+        guard viewIfLoaded?.window != nil else { return nil }
+        return displayedTermsOfServiceMessage
+    }
+
+}
+
+// MARK: - Private Setup
+
+private extension AIChatContextualInputViewController {
+
+    func setupUI() {
+        view.backgroundColor = .clear
+
+        if showsBasicNativeInput {
+            setupImprovedUI()
+        } else {
+            setupImmediateUTIUI()
+        }
+    }
+
+    func setupOriginalUI() {
+        view.addSubview(quickActionsScrollView)
+        quickActionsScrollView.addSubview(quickActionsView)
+        embedBasicNativeInputViewController()
+
+        bottomConstraint = basicNativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+
+        NSLayoutConstraint.activate([
+            quickActionsScrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: basicNativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
+
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            quickActionsView.heightAnchor.constraint(greaterThanOrEqualTo: quickActionsScrollView.frameLayoutGuide.heightAnchor),
+
+            basicNativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: quickActionsView.bottomAnchor, constant: Constants.quickActionsBottomSpacing),
+            basicNativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            basicNativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            bottomConstraint!,
+        ])
+    }
+
+    func setupImprovedUI() {
+        view.addSubview(quickActionsScrollView)
+        quickActionsScrollView.addSubview(quickActionsView)
+        view.addSubview(welcomeLabel)
+        embedBasicNativeInputViewController()
+        view.insertSubview(termsOfServiceCard, belowSubview: basicNativeInputViewController.view)
+
+        configureWelcomeLabel()
+
+        bottomConstraint = basicNativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+        termsOfServiceBottomConstraint = termsOfServiceCard.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+
+        let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        centerY.priority = .defaultHigh
+        welcomeCenterYConstraint = centerY
+
+        NSLayoutConstraint.activate([
+            // Scroll view wraps quick actions at natural size, pinned above input
+            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: basicNativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
+
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
+
+            // Welcome label centered horizontally, vertical position set dynamically
+            centerY,
+            welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            welcomeLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            welcomeLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+
+            basicNativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            basicNativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+            bottomConstraint!,
+
+            termsOfServiceCard.topAnchor.constraint(equalTo: basicNativeInputViewController.view.bottomAnchor,
+                                                    constant: -UTIFooterCardView.overlap),
+            termsOfServiceCard.leadingAnchor.constraint(equalTo: basicNativeInputViewController.view.leadingAnchor),
+            termsOfServiceCard.trailingAnchor.constraint(equalTo: basicNativeInputViewController.view.trailingAnchor),
+        ])
+    }
+
+    /// Re-read whenever the input comes on screen: the user may have accepted on the web since.
+    func refreshTermsOfServiceDisclaimer() {
+        guard showsBasicNativeInput else { return }
+        // The basic input has no tool picker, so Create Image never applies here.
+        let message = termsOfServiceDisclaimer.message(sendButton: .ask)
+        if let message {
+            termsOfServiceCard.configure(with: message, animateIcon: false)
+        }
+        displayedTermsOfServiceMessage = message
+        termsOfServiceCard.isHidden = message == nil
+        if visibleTermsOfServiceMessage != nil { inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible() }
+        basicNativeInputViewController.submitButtonTitle = message == nil ? nil : UserText.duckAIAskButtonTitle
+
+        // The outgoing pin goes first, so the two are never active together.
+        let (outgoing, incoming) = message == nil
+            ? (termsOfServiceBottomConstraint, bottomConstraint)
+            : (bottomConstraint, termsOfServiceBottomConstraint)
+        outgoing?.isActive = false
+        incoming?.isActive = true
+    }
+
+    func setupImmediateUTIUI() {
+        view.addSubview(quickActionsScrollView)
+        quickActionsScrollView.addSubview(quickActionsView)
+        view.addSubview(welcomeLabel)
+
+        configureWelcomeLabel()
+
+        let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
+        centerY.priority = .defaultHigh
+        welcomeCenterYConstraint = centerY
+
+        let scrollLeading = quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding)
+        startActionsLeadingConstraint = scrollLeading
+        let scrollTrailing = quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding)
+        startActionsTrailingConstraint = scrollTrailing
+
+        NSLayoutConstraint.activate([
+            scrollLeading,
+            scrollTrailing,
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Constants.quickActionsBottomSpacing),
+
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
+
+            centerY,
+            welcomeLabel.bottomAnchor.constraint(lessThanOrEqualTo: quickActionsScrollView.topAnchor, constant: -Constants.quickActionsBottomSpacing),
+            welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            welcomeLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            welcomeLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
+        ])
+    }
+
+    func embedBasicNativeInputViewController() {
+        addChild(basicNativeInputViewController)
+        basicNativeInputViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(basicNativeInputViewController.view)
+        basicNativeInputViewController.didMove(toParent: self)
+    }
+
+    func configureBasicNativeInput() {
+        basicNativeInputViewController.delegate = self
+        basicNativeInputViewController.placeholder = UserText.searchInputFieldPlaceholderDuckAI
+    }
+
+    func configureQuickActions() {
+        quickActionsView.onActionSelected = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case .quickAction(let quickAction):
+                delegate?.contextualInputViewController(self, didSelectQuickAction: quickAction)
+            case .suggestion(let suggestion):
+                delegate?.contextualInputViewController(self, didSelectSuggestion: suggestion)
+            }
+        }
+    }
+
+    func configureWelcomeLabel() {
+        welcomeLabel.isHidden = !showsWelcomeMessage
+
+        let font = UIFont(name: "DuckSansDisplay-Medium", size: 25) ?? UIFont.daxTitle2()
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+
+        let defaultAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor(designSystemColor: .textPrimary),
+            .paragraphStyle: paragraphStyle
+        ]
+
+        let shieldImage = DesignSystemImages.Color.Size32.shieldUtility
+        let iconAttachment = NSTextAttachment()
+        iconAttachment.image = shieldImage
+        let iconVerticalOffset = (font.capHeight - shieldImage.size.height) / 2
+        iconAttachment.bounds = CGRect(x: 0, y: iconVerticalOffset, width: shieldImage.size.width, height: shieldImage.size.height)
+        let iconString = NSAttributedString(attachment: iconAttachment)
+
+        let placeholder = "%@"
+        let fullText = UserText.aiChatWelcomeMessage
+        let mutableText = NSMutableAttributedString(string: fullText, attributes: defaultAttributes)
+
+        if let placeholderRange = fullText.range(of: placeholder) {
+            let nsRange = NSRange(placeholderRange, in: fullText)
+            mutableText.replaceCharacters(in: nsRange, with: iconString)
+        }
+
+        welcomeLabel.attributedText = mutableText
+    }
+
+    func updateWelcomeLabelCentering() {
+        let scrollViewTop = quickActionsScrollView.frame.minY
+        guard scrollViewTop > 0 else { return }
+        welcomeCenterYConstraint?.constant = scrollViewTop / 2
+    }
+
+    func scrollQuickActionsToBottom() {
+        view.layoutIfNeeded()
+        let bottomOffset = CGPoint(
+            x: 0,
+            y: max(0, quickActionsScrollView.contentSize.height - quickActionsScrollView.bounds.height)
+        )
+        quickActionsScrollView.setContentOffset(bottomOffset, animated: false)
+    }
+
+    func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    /// Going to the background closes the input for measurement; one still on screen on return counts as a new opening.
+    private func setupAppLifecycleObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+
+    @objc private func appDidEnterBackground() {
+        inputOutcomeMeasurement.inputClosed()
+    }
+
+    @objc private func appWillEnterForeground() {
+        startInputOutcomeMeasurement()
+    }
+
+    @objc func keyboardWillShow(_ notification: Notification) {
+        bottomInset = -Constants.keyboardSpacing
+    }
+
+    @objc func keyboardWillHide(_ notification: Notification) {
+        bottomInset = bottomPaddingForOrientation()
+    }
+
+    func updateBottomPaddingForOrientation() {
+        bottomInset = bottomPaddingForOrientation()
+    }
+
+    func bottomPaddingForOrientation() -> CGFloat {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return 0 }
+        return -Constants.iPadBottomPadding
+    }
+}
+
+// MARK: - AIChatBasicNativeInputViewControllerDelegate
+
+extension AIChatContextualInputViewController: AIChatBasicNativeInputViewControllerDelegate {
+
+    func basicNativeInputViewController(_ viewController: AIChatBasicNativeInputViewController, didSubmitPrompt prompt: String) {
+        delegate?.contextualInputViewController(self, didSubmitPrompt: prompt)
+    }
+
+    func basicNativeInputViewControllerDidTapVoice(_ viewController: AIChatBasicNativeInputViewController) {
+        delegate?.contextualInputViewControllerDidTapVoice(self)
+    }
+
+    func basicNativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatBasicNativeInputViewController) {
+        delegate?.contextualInputViewControllerDidRemoveContextChip(self)
+    }
+
+    func basicNativeInputViewController(_ viewController: AIChatBasicNativeInputViewController, didChangeText text: String) {
+        scrollQuickActionsToBottom()
+    }
+}

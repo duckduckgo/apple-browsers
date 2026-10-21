@@ -1,6 +1,7 @@
 # state_restoration.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---
@@ -14,27 +15,31 @@ tags:
     id: "searchEntry"
 - tapOn:
     id: "searchEntry"
-- inputText: "https://www.wikipedia.org/"
+- inputText: "https://duckduckgo.com"
 - pressKey: Enter
 
 # Create navigation stack
-- assertVisible: 'English.*'
-- tapOn: 
-    text: 'English.*'
-    childOf: "Top languages, navigation"
-- assertVisible: "Welcome to Wikipedia.*"
-- tapOn: "Wikipedia" 
-- assertVisible: "Article"
+- assertVisible: 'DuckDuckGo.*'
 - scrollUntilVisible:
-    element: "United States"
-# Make sure bottom bar is visible
+    element: "Terms of Service"
+    timeout: 50000
+    speed: 100
+- tapOn: 
+    text: 'Terms of Service'
+- assertVisible: "DuckDuckGo Terms of Service"
+- scrollUntilVisible:
+    element: "Privacy Policy"
+    timeout: 50000
+    speed: 100
+# Tap status bar to make sure bottom bar is visible
 - tapOn:
-    point: 80%, 99%
+    point: 90%, 1%
 - tapOn: "Browse Back"
-- assertVisible: "Welcome to Wikipedia.*"
+- assertVisible: "DuckDuckGo.*"
 
 # Load a new tab
-- longPressOn: "Tab Switcher"
+- tapOn: "Tab Switcher"
+- tapOn: "New Tab"
 - assertVisible:
     id: "searchEntry"
 - tapOn: 
@@ -45,13 +50,17 @@ tags:
 - assertVisible: ".*Example Domain.*"
 
 - stopApp
-- launchApp
+- launchApp:
+    arguments:
+        isRunningUITests: true
 
-- tapOn: "Tab Switcher"
+- tapOn:
+    text: "Tab Switcher"
+    retryTapIfNoChange: true
 - tapOn:
     point: 20%, 25%
 
 # Check if state from previous session was restored
-- assertVisible: "Welcome to Wikipedia.*"
+- assertVisible: "DuckDuckGo.*"
 - tapOn: "Browse Forward"
-- assertVisible: "United States"
+- assertVisible: "DuckDuckGo Terms of Service"

@@ -18,6 +18,7 @@
 
 import SwiftUI
 import Common
+import FoundationExtensions
 import SyncUI_macOS
 import SwiftUIExtensions
 import BrowserServicesKit
@@ -31,6 +32,8 @@ struct SyncView: View {
                 syncService: syncService,
                 syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
                 syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
+                syncCreditCardsAdapter: syncDataProviders.creditCardsAdapter,
+                syncIdentitiesAdapter: syncDataProviders.identitiesAdapter,
                 syncPausedStateManager: syncDataProviders.syncErrorHandler
             )
             SyncUI_macOS.ManagementView(model: syncPreferences)

@@ -1,1 +1,1 @@
-ddg,duckduckgo,duck duck go,İnternette arama,Arama,Tarayıcı,Sözlük,Yanıtlar,Referans,İnternet
+web,şifreleme,arama,güvenli,izleyici,duck,git,veri,ddg,gizli,reklam,blok,vpn,ai,sohbet,bot,asistan

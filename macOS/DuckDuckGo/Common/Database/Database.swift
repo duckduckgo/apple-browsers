@@ -17,12 +17,15 @@
 //
 
 import AppKit
+import AppKitExtensions
 import BrowserServicesKit
+import Common
+import FoundationExtensions
 import CoreData
 import Foundation
 import Persistence
 import PixelKit
-import Common
+import Utilities
 
 final class Database {
 
@@ -59,14 +62,20 @@ final class Database {
 
         let mainModel = NSManagedObjectModel.mergedModel(from: [.main])!
 
-        _ = mainModel.registerValueTransformers(withAllowedPropertyClasses: [
-            NSImage.self,
-            NSString.self,
-            NSURL.self,
-            NSNumber.self,
-            NSError.self,
-            NSData.self
-        ], keyStore: keyStore)
+        do {
+            _ = try mainModel.registerValueTransformers(withAllowedPropertyClasses: [
+                NSImage.self,
+                NSString.self,
+                NSURL.self,
+                NSNumber.self,
+                NSError.self,
+                NSData.self
+            ], keyStore: keyStore)
+        } catch {
+            PixelKit.fire(DebugEvent(GeneralPixel.dbValueTransformerRegistrationError, error: error), frequency: .dailyAndCount)
+            Thread.sleep(forTimeInterval: 1)
+            fatalError("Could not register value transformers: \(error.localizedDescription)")
+        }
 
         let httpsUpgradeModel = HTTPSUpgrade.managedObjectModel
 
@@ -78,70 +87,9 @@ final class Database {
     }
 }
 
-extension ValueTransformer {
-
-    static func registerValueTransformer(for propertyClass: AnyClass, with keyStore: EncryptionKeyStoring) -> NSValueTransformerName {
-        guard let encodableType = propertyClass as? (NSObject & NSSecureCoding).Type else {
-            fatalError("Unsupported type")
-        }
-        func registerValueTransformer<T: NSObject & NSSecureCoding>(for type: T.Type) -> NSValueTransformerName {
-            (try? EncryptedValueTransformer<T>.registerTransformer(keyStore: keyStore))!
-            return EncryptedValueTransformer<T>.transformerName
-        }
-        return registerValueTransformer(for: encodableType)
-    }
-
-}
-
-extension NSManagedObjectModel {
-
-    private static let transformerUserInfoKey = "transformer"
-    func registerValueTransformers(withAllowedPropertyClasses allowedPropertyClasses: [AnyClass]? = nil,
-                                   keyStore: EncryptionKeyStoring) -> [NSValueTransformerName] {
-        var registeredTransformers = [NSValueTransformerName]()
-        let allowedPropertyClassNames = allowedPropertyClasses.map { Set($0.map(NSStringFromClass)) }
-
-        // fix "no NSValueTransformer with class name 'X'" warnings
-        // https://stackoverflow.com/a/77623593/748453
-        for entity in self.entities {
-            for property in entity.properties {
-                guard let property = property as? NSAttributeDescription, property.attributeType == .transformableAttributeType else { continue }
-
-                let transformerName: String
-                if let valueTransformerName = property.valueTransformerName, !valueTransformerName.isEmpty {
-                    transformerName = valueTransformerName
-                } else if let transformerUserInfoValue = property.userInfo?[Self.transformerUserInfoKey] as? String, !transformerUserInfoValue.isEmpty {
-                    transformerName = transformerUserInfoValue
-                    property.userInfo?.removeValue(forKey: Self.transformerUserInfoKey)
-                    property.valueTransformerName = transformerName
-                } else {
-                    assertionFailure("Transformer (User Info `transformer` key) not set for \(entity).\(property)")
-                    continue
-                }
-
-                guard ValueTransformer(forName: .init(rawValue: transformerName)) == nil else { continue }
-
-                let propertyClassName = transformerName.dropping(suffix: "Transformer")
-                assert(propertyClassName != transformerName, "Expected Transformer name like `NSStringTransformer`")
-                guard allowedPropertyClassNames?.contains(propertyClassName) != false,
-                      let propertyClass = NSClassFromString(propertyClassName) else {
-                    assertionFailure("Invalid class name `\(propertyClassName)` for \(transformerName)")
-                    continue
-                }
-
-                let transformer = ValueTransformer.registerValueTransformer(for: propertyClass, with: keyStore)
-                assert(ValueTransformer(forName: .init(transformerName)) != nil)
-                registeredTransformers.append(transformer)
-            }
-        }
-        return registeredTransformers
-    }
-
-}
-
 extension NSManagedObjectContext {
 
-    func save(onErrorFire event: PixelKitEventV2) throws {
+    func save(onErrorFire event: PixelKit.Event) throws {
         do {
             try save()
         } catch {

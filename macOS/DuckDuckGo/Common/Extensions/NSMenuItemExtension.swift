@@ -31,9 +31,11 @@ extension NSMenuItem {
         self.init()
 
         title = bookmarkViewModel.menuTitle
-        image = bookmarkViewModel.menuFavicon
+        withImage(bookmarkViewModel.menuFavicon, visibleOnMacOS27: true)
         representedObject = bookmarkViewModel.entity
         action = bookmarkViewModel.entity.isFolder ? nil : #selector(MainViewController.openBookmark(_:))
+        // validate AppDelegate method used when no windows are open has the same signature
+        assert(action == nil || action == #selector(AppDelegate.openBookmark(_:)))
     }
 
     convenience init(bookmarkViewModels: [BookmarkViewModel]) {

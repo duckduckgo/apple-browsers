@@ -23,7 +23,7 @@ extension WKProcessPool {
 #if DEBUG
 
     private static let webViewsUsingProcessPoolKey = UnsafeRawPointer(bitPattern: "webViewsUsingProcessPoolKey".hashValue)!
-    var webViewsUsingProcessPool: Set<NSValue> {
+    @objc var webViewsUsingProcessPool: Set<NSValue> {
         get {
             objc_getAssociatedObject(self, Self.webViewsUsingProcessPoolKey) as? Set<NSValue> ?? []
         }

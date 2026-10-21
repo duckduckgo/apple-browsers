@@ -32,11 +32,17 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case noOptOutStep
     case captchaServiceError(CaptchaServiceError)
     case emailError(EmailError?)
+    /// The parent operation or task cancelled the scan or opt-out.
     case cancelled
     case solvingCaptchaWithCallbackError
     case cantCalculatePreferredRunDate
     case httpError(code: Int)
     case dataNotInDatabase
+    /// The scan or opt-out exceeded its configured deadline; action timeouts use `actionFailed`.
+    case jobTimeout
+    case webContentProcessTerminated
+    case secureVaultNotInitialized
+    case secureVaultNotNeeded
 
     static func parse(params: Any) -> DataBrokerProtectionError {
         let errorDataResult = try? JSONSerialization.data(withJSONObject: params)
@@ -85,6 +91,70 @@ extension DataBrokerProtectionError {
             return "httpError"
         case .dataNotInDatabase:
             return "dataNotInDatabase"
+        case .jobTimeout:
+            return "jobTimeout"
+        case .webContentProcessTerminated:
+            return "webContentProcessTerminated"
+        case .secureVaultNotInitialized:
+            return "secureVaultNotInitialized"
+        case .secureVaultNotNeeded:
+            return "secureVaultNotNeeded"
+        }
+    }
+}
+
+extension DataBrokerProtectionError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .malformedURL:
+            return "Malformed URL"
+        case .noActionFound:
+            return "No action found"
+        case .actionFailed(let actionID, let message):
+            return "Action failed: [\(actionID)] \(message)"
+        case .parsingErrorObjectFailed:
+            return "Parsing error object failed"
+        case .unknown(let message):
+            return message
+        case .unrecoverableError:
+            return "Unrecoverable error"
+        case .noOptOutStep:
+            return "No opt-out step available"
+        case .captchaServiceError(let captchaError):
+            return "Captcha service error: \(captchaError.localizedDescription)"
+        case .emailError(let emailError?):
+            return "Email service error: \(emailError.localizedDescription)"
+        case .emailError(nil):
+            return "Email error"
+        case .cancelled:
+            return "Cancelled"
+        case .solvingCaptchaWithCallbackError:
+            return "Solving captcha with callback failed"
+        case .cantCalculatePreferredRunDate:
+            return "Unable to calculate preferred run date"
+        case .httpError(let code):
+            return "HTTP \(code)"
+        case .dataNotInDatabase:
+            return "Data not in database"
+        case .jobTimeout:
+            return "Job timed out"
+        case .webContentProcessTerminated:
+            return "Web content process terminated"
+        case .secureVaultNotInitialized:
+            return "Secure Vault has not finished initializing"
+        case .secureVaultNotNeeded:
+            return "Secure Vault initialization not needed (no profile)"
+        }
+    }
+}
+
+extension DataBrokerProtectionError {
+    var debugDescription: String {
+        switch self {
+        case .emailError(let emailError?):
+            return "Email service error: \(emailError.debugDescription)"
+        default:
+            return localizedDescription
         }
     }
 }
@@ -106,6 +176,10 @@ extension DataBrokerProtectionError: CustomNSError {
         case .cantCalculatePreferredRunDate: return 111
         case .httpError: return 112
         case .dataNotInDatabase: return 113
+        case .secureVaultNotInitialized: return 114
+        case .jobTimeout: return 115
+        case .webContentProcessTerminated: return 116
+        case .secureVaultNotNeeded: return 117
         }
     }
 }

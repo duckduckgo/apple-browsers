@@ -4,9 +4,6 @@
 /* Bundle name */
 "CFBundleName" = "DuckDuckGo";
 
-/* No comment provided by engineer. */
-"Duck.ai" = "Duck.ai";
-
 /* Privacy - Camera Usage Description */
 "NSCameraUsageDescription" = "Vous permet de télécharger des photos et des vidéos";
 

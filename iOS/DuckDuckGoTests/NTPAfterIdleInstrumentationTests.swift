@@ -1,0 +1,354 @@
+//
+//  NTPAfterIdleInstrumentationTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import Testing
+import Core
+@testable import DuckDuckGo
+
+@Suite("NTP After Idle Instrumentation")
+struct NTPAfterIdleInstrumentationTests {
+
+    private final class PixelCollector {
+        var firedPixelNames: [String] = []
+    }
+
+    private func makeSUT(eligible: Bool = true) -> (DefaultNTPAfterIdleInstrumentation, PixelCollector) {
+        let eligibility = MockIdleReturnEligibilityManager()
+        eligibility.isEligibleForNTPAfterIdleResult = eligible
+        let collector = PixelCollector()
+        let sut = DefaultNTPAfterIdleInstrumentation(
+            eligibilityManager: eligibility,
+            firePixel: { collector.firedPixelNames.append($0.name) },
+            firePixelKitEvent: { collector.firedPixelNames.append($0.name) })
+        return (sut, collector)
+    }
+
+    // MARK: - Eligibility gating
+
+    @Test("When not eligible then ntpShown fires no pixel")
+    func whenNotEligibleThenNtpShownFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.ntpShown(afterIdle: true)
+        sut.ntpShown(afterIdle: false)
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
+    @Test("When not eligible then returnToPageTapped fires no pixel")
+    func whenNotEligibleThenReturnToPageTappedFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.returnToPageTapped(afterIdle: true)
+        sut.returnToPageTapped(afterIdle: false)
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
+    @Test("When not eligible then barUsedFromNTP fires no pixel")
+    func whenNotEligibleThenBarUsedFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.barUsedFromNTP(afterIdle: true)
+        sut.barUsedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
+    @Test("When not eligible then toggleUsedFromNTP fires no pixel")
+    func whenNotEligibleThenToggleUsedFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.toggleUsedFromNTP(afterIdle: true)
+        sut.toggleUsedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
+    @Test("When not eligible then backButtonUsedFromNTP fires no pixel")
+    func whenNotEligibleThenBackButtonFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.backButtonUsedFromNTP(afterIdle: true)
+        sut.backButtonUsedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
+    @Test("When not eligible then appBackgroundedFromNTP fires no pixel")
+    func whenNotEligibleThenAppBackgroundedFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.appBackgroundedFromNTP(afterIdle: true)
+        sut.appBackgroundedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("When not eligible then escapeHatchTabSwitcherTapped fires no pixel", .timeLimit(.minutes(1)))
+    func whenNotEligibleThenEscapeHatchTabSwitcherTappedFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.escapeHatchTabSwitcherTapped()
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
+    @Test("When not eligible then tabSwitcherSelectedFromNTP fires no pixel")
+    func whenNotEligibleThenTabSwitcherFiresNothing() {
+        let (sut, collector) = makeSUT(eligible: false)
+        sut.tabSwitcherSelectedFromNTP(afterIdle: true)
+        sut.tabSwitcherSelectedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames.isEmpty)
+    }
+
+    // MARK: - ntpShown
+
+    @Test("When NTP shown after idle then fires after_idle pixel")
+    func whenNtpShownAfterIdleThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.ntpShown(afterIdle: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleNTPShownAfterIdle.name])
+    }
+
+    @Test("When NTP shown user initiated then fires user_initiated pixel")
+    func whenNtpShownUserInitiatedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.ntpShown(afterIdle: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleNTPShownUserInitiated.name])
+    }
+
+    // MARK: - returnToPageTapped
+
+    @Test("When return to page tapped after idle then fires after_idle pixel")
+    func whenReturnToPageTappedAfterIdleThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.returnToPageTapped(afterIdle: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleReturnToPageTappedAfterIdle.name])
+    }
+
+    @Test("When return to page tapped user initiated then fires user_initiated pixel")
+    func whenReturnToPageTappedUserInitiatedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.returnToPageTapped(afterIdle: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleReturnToPageTappedUserInitiated.name])
+    }
+
+    // MARK: - barUsedFromNTP
+
+    @Test("When bar used from NTP after idle then fires after_idle pixel")
+    func whenBarUsedAfterIdleThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.barUsedFromNTP(afterIdle: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleBarUsedAfterIdle.name])
+    }
+
+    @Test("When bar used from NTP user initiated then fires user_initiated pixel")
+    func whenBarUsedUserInitiatedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.barUsedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleBarUsedUserInitiated.name])
+    }
+
+    // MARK: - toggleUsedFromNTP
+
+    @Test("When toggle used from NTP after idle then fires after_idle pixel")
+    func whenToggleUsedAfterIdleThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.toggleUsedFromNTP(afterIdle: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleToggleUsedAfterIdle.name])
+    }
+
+    @Test("When toggle used from NTP user initiated then fires user_initiated pixel")
+    func whenToggleUsedUserInitiatedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.toggleUsedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleToggleUsedUserInitiated.name])
+    }
+
+    // MARK: - backButtonUsedFromNTP
+
+    @Test("When back button used from NTP after idle then fires after_idle pixel")
+    func whenBackButtonAfterIdleThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.backButtonUsedFromNTP(afterIdle: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleBackButtonUsedAfterIdle.name])
+    }
+
+    @Test("When back button used from NTP user initiated then fires user_initiated pixel")
+    func whenBackButtonUserInitiatedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.backButtonUsedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleBackButtonUsedUserInitiated.name])
+    }
+
+    // MARK: - appBackgroundedFromNTP
+
+    @Test("When app backgrounded from NTP after idle then fires after_idle pixel")
+    func whenAppBackgroundedAfterIdleThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.appBackgroundedFromNTP(afterIdle: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleAppBackgroundedAfterIdle.name])
+    }
+
+    @Test("When app backgrounded from NTP user initiated then fires user_initiated pixel")
+    func whenAppBackgroundedUserInitiatedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.appBackgroundedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleAppBackgroundedUserInitiated.name])
+    }
+
+    // MARK: - tabSwitcherSelectedFromNTP
+
+    @Test("When tab switcher selected from NTP after idle then fires after_idle pixel")
+    func whenTabSwitcherAfterIdleThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.tabSwitcherSelectedFromNTP(afterIdle: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleTabSwitcherSelectedAfterIdle.name])
+    }
+
+    @Test("When tab switcher selected from NTP user initiated then fires user_initiated pixel")
+    func whenTabSwitcherUserInitiatedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.tabSwitcherSelectedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleTabSwitcherSelectedUserInitiated.name])
+    }
+
+    // MARK: - escapeHatchTabSwitcherTapped
+
+    @available(iOS 16, *)
+    @Test("When escape hatch tab switcher tapped then fires the after_idle pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchTabSwitcherTappedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchTabSwitcherTapped()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchTabSwitcherTappedAfterIdle.name])
+    }
+
+    // MARK: - escapeHatchCloseTabTapped
+
+    @available(iOS 16, *)
+    @Test("When escape hatch close tab tapped then fires the close_tab pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchCloseTabTappedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchCloseTabTapped()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchCloseTabTapped.name])
+    }
+
+    // MARK: - escapeHatchBurnTapped
+
+    @available(iOS 16, *)
+    @Test("When escape hatch burn tapped with confirmation then fires the with_confirmation pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchBurnTappedWithConfirmationThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTapped(requiredConfirmation: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnWithConfirmationTapped.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When escape hatch burn tapped immediately then fires the immediately pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchBurnTappedImmediatelyThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTapped(requiredConfirmation: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnImmediatelyTapped.name])
+    }
+
+    // MARK: - escapeHatchAfterInactivitySettingsTappedFromMenu
+
+    @available(iOS 16, *)
+    @Test("When after-inactivity settings tapped from menu then fires the settings-tapped pixel once", .timeLimit(.minutes(1)))
+    func whenAfterInactivitySettingsTappedFromMenuThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchAfterInactivitySettingsTappedFromMenu()
+        #expect(collector.firedPixelNames == ["ntp_after_idle_escape_hatch_after_inactivity_settings_tapped_from_menu"])
+    }
+
+    // MARK: - escapeHatchShown / escapeHatchMenuShown
+
+    @available(iOS 16, *)
+    @Test("When escape hatch shown then fires the shown pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchShownThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchShown()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchShown.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When escape hatch menu shown then fires the menu_shown pixel", .timeLimit(.minutes(1)))
+    func whenEscapeHatchMenuShownThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchMenuShown()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchMenuShown.name])
+    }
+
+    // MARK: - Menu-specific actions
+
+    @available(iOS 16, *)
+    @Test("When return to tab tapped from menu then fires the from_menu pixel", .timeLimit(.minutes(1)))
+    func whenReturnToTabTappedFromMenuThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchReturnToTabTappedFromMenu()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchReturnToTabTappedFromMenu.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When close tab tapped from menu then fires the from_menu pixel", .timeLimit(.minutes(1)))
+    func whenCloseTabTappedFromMenuThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchCloseTabTappedFromMenu()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchCloseTabTappedFromMenu.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When burn tapped from menu with confirmation then fires the with_confirmation_from_menu pixel", .timeLimit(.minutes(1)))
+    func whenBurnTappedFromMenuWithConfirmationThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTappedFromMenu(requiredConfirmation: true)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnWithConfirmationTappedFromMenu.name])
+    }
+
+    @available(iOS 16, *)
+    @Test("When burn tapped from menu immediately then fires the immediately_from_menu pixel", .timeLimit(.minutes(1)))
+    func whenBurnTappedFromMenuImmediatelyThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTappedFromMenu(requiredConfirmation: false)
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnImmediatelyTappedFromMenu.name])
+    }
+
+    // MARK: - escapeHatchSwipeActionPerformed
+
+    @available(iOS 16, *)
+    @Test("When swipe action performed then fires the swipe pixel", .timeLimit(.minutes(1)))
+    func whenSwipeActionPerformedThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchSwipeActionPerformed()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchSwipeActionPerformed.name])
+    }
+
+    // MARK: - escapeHatchBurnTappedFromButton
+
+    @available(iOS 16, *)
+    @Test("When burn tapped from button then fires the from_button pixel", .timeLimit(.minutes(1)))
+    func whenBurnTappedFromButtonThenFiresCorrectPixel() {
+        let (sut, collector) = makeSUT()
+        sut.escapeHatchBurnTappedFromButton()
+        #expect(collector.firedPixelNames == [Pixel.Event.ntpAfterIdleEscapeHatchBurnTappedFromButton.name])
+    }
+
+    // MARK: - Multiple calls accumulate
+
+    @Test("When multiple methods called then all pixels are recorded")
+    func whenMultipleMethodsCalledThenAllPixelsRecorded() {
+        let (sut, collector) = makeSUT()
+        sut.ntpShown(afterIdle: true)
+        sut.barUsedFromNTP(afterIdle: true)
+        sut.toggleUsedFromNTP(afterIdle: false)
+        #expect(collector.firedPixelNames.count == 3)
+        #expect(collector.firedPixelNames[0] == Pixel.Event.ntpAfterIdleNTPShownAfterIdle.name)
+        #expect(collector.firedPixelNames[1] == Pixel.Event.ntpAfterIdleBarUsedAfterIdle.name)
+        #expect(collector.firedPixelNames[2] == Pixel.Event.ntpAfterIdleToggleUsedUserInitiated.name)
+    }
+}

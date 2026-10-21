@@ -23,16 +23,18 @@ import SpecialErrorPages
 
 extension SpecialPagesUserScript {
     @MainActor
-    func withOnboarding() {
+    @discardableResult
+    func withOnboarding() -> OnboardingActionsManager {
         let onboardingManager = buildOnboardingActionsManager()
         let onboardingScript = OnboardingUserScript(onboardingActionsManager: onboardingManager)
         self.registerSubfeature(delegate: onboardingScript)
+        return onboardingManager
     }
 
     func withDuckPlayerIfAvailable() {
         var youtubePlayerUserScript: YoutubePlayerUserScript?
-        if DuckPlayer.shared.isAvailable {
-            youtubePlayerUserScript = YoutubePlayerUserScript()
+        if NSApp.delegateTyped.duckPlayer.isAvailable {
+            youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: NSApp.delegateTyped.duckPlayer)
         }
         if let youtubePlayerUserScript {
             self.registerSubfeature(delegate: youtubePlayerUserScript)
@@ -47,21 +49,28 @@ extension SpecialPagesUserScript {
     }
 
     @MainActor
-    func withAllSubfeatures() {
-        withOnboarding()
+    @discardableResult
+    func withAllSubfeatures() -> OnboardingActionsManager {
+        let manager = withOnboarding()
         withErrorPages()
         withDuckPlayerIfAvailable()
+        return manager
     }
 
     @MainActor
-    private func buildOnboardingActionsManager() -> OnboardingActionsManaging {
+    private func buildOnboardingActionsManager() -> OnboardingActionsManager {
         return OnboardingActionsManager(
             navigationDelegate: Application.appDelegate.windowControllersManager,
-            dockCustomization: DockCustomizer(),
+            dockCustomization: Application.appDelegate.dockCustomization,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: NSApp.delegateTyped.appearancePreferences,
             startupPreferences: NSApp.delegateTyped.startupPreferences,
-            bookmarkManager: NSApp.delegateTyped.bookmarkManager
+            bookmarkManager: NSApp.delegateTyped.bookmarkManager,
+            pinningManager: NSApp.delegateTyped.pinningManager,
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: NSApp.delegateTyped.keyValueStore),
+            installDateProvider: { AppDelegate.firstLaunchDate },
+            contextualOnboardingStateUpdater: Application.appDelegate.onboardingContextualDialogsManager
         )
     }
 }

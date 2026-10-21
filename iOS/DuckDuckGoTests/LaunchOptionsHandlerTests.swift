@@ -17,28 +17,36 @@
 //  limitations under the License.
 //
 
+import Foundation
 import Testing
 @testable import Core
+import Persistence
+import PrivacyConfig
+import SitePermissions
+@testable import DuckDuckGo
 
+@Suite(.serialized)
 final class LaunchOptionsHandlerTests {
     private static let suiteName = "testing_launchOptionsHandler"
-    private var userDefaults: UserDefaults!
+    private let userDefaults: UserDefaults
 
-    func setUp() {
-        userDefaults = UserDefaults(suiteName: Self.suiteName)
+    private class MockInternalUserStore: InternalUserStoring {
+        var isInternalUser: Bool = false
     }
 
-    func tearDown() {
+    init() {
+        userDefaults = UserDefaults(suiteName: Self.suiteName)!
+    }
+
+    deinit {
         userDefaults.removePersistentDomain(forName: Self.suiteName)
-        userDefaults = nil
     }
 
     // MARK: - isOnboardingCompleted
 
-    @Test("Developer completed status is overridden when onboarding is false in environment")
+    @Test
     func testShouldReturnStatusOverriddenDeveloperCompletedTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
         // GIVEN
-        setUp()
         let environment = ["ONBOARDING": "false"]
         let sut = LaunchOptionsHandler(environment: environment, userDefaults: userDefaults)
 
@@ -47,13 +55,11 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .overridden(.developer(completed: true)))
-        tearDown()
     }
 
-    @Test("Developer completed status is overridden when onboarding is true in environment")
+    @Test
     func testShouldReturnStatusOverriddenDeveloperCompletedFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
         // GIVEN
-        setUp()
         let environment = ["ONBOARDING": "true"]
         let sut = LaunchOptionsHandler(environment: environment, userDefaults: userDefaults)
 
@@ -62,13 +68,11 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .overridden(.developer(completed: false)))
-        tearDown()
     }
 
-    @Test("UI tests completed status is overridden when onboarding is completed in defaults")
+    @Test
     func testShouldReturnStatusOverriddenUITestsCompletedTrueWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsTrue() {
         // GIVEN
-        setUp()
         userDefaults.set("true", forKey: "isOnboardingCompleted")
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
@@ -77,13 +81,11 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .overridden(.uiTests(completed: true)))
-        tearDown()
     }
 
-    @Test("UI tests completed status is overridden when onboarding is not completed in defaults")
+    @Test
     func testShouldReturnStatusOverriddenCompletedFalseWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsFalse() {
         // GIVEN
-        setUp()
         userDefaults.set("false", forKey: "isOnboardingCompleted")
         let sut = LaunchOptionsHandler(userDefaults: userDefaults)
 
@@ -92,13 +94,11 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .overridden(.uiTests(completed: false)))
-        tearDown()
     }
 
-    @Test("Status is not overridden when defaults and environment are not defined")
+    @Test
     func testShouldReturnStatusNotOverriddenWhenIsOnboardingCompletedAndDefaultsAndEnvironmentAreNotDefined() {
         // GIVEN
-        setUp()
         userDefaults.removeObject(forKey: "isOnboardingCompleted")
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
@@ -107,15 +107,87 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .notOverridden)
-        tearDown()
+    }
+
+    @Test
+    func testStartupOnboardingDecisionShowsOnboardingWhenNotOverriddenAndOnboardingNotSeen() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(onboardingStatus: .notOverridden, tutorialSettings: tutorialSettings)
+
+        // THEN
+        #expect(decision.shouldShowOnboarding)
+    }
+
+    @Test
+    func testStartupOnboardingDecisionSkipsOnboardingWhenDeveloperOverrideMarksItCompleted() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.developer(completed: true)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        #expect(!(decision.shouldShowOnboarding))
+    }
+
+    @Test
+    func testStartupOnboardingDecisionShowsOnboardingWhenDeveloperOverrideMarksItIncomplete() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.developer(completed: false)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        #expect(decision.shouldShowOnboarding)
+    }
+
+    @Test
+    func testStartupOnboardingDecisionPersistsUITestCompletionOverride() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.uiTests(completed: true)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        #expect(!(decision.shouldShowOnboarding))
+        #expect(tutorialSettings.hasSeenOnboarding)
+    }
+
+    @Test
+    func testStartupOnboardingDecisionPersistsUITestIncompleteOverride() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
+
+        // WHEN
+        let decision = StartupOnboardingDecision(
+            onboardingStatus: .overridden(.uiTests(completed: false)),
+            tutorialSettings: tutorialSettings
+        )
+
+        // THEN
+        #expect(decision.shouldShowOnboarding)
+        #expect(!(tutorialSettings.hasSeenOnboarding))
     }
 
     // MARK: - App Variant
 
-    @Test("App variant is returned when defined in defaults")
+    @Test
     func testShouldReturnAppVariantWhenAppVariantIsCalledAndDefaultsContainsAppVariant() {
         // GIVEN
-        setUp()
         userDefaults.set("mb", forKey: "currentAppVariant")
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
@@ -124,13 +196,11 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == "mb")
-        tearDown()
     }
 
-    @Test("Nil is returned when app variant is not defined in defaults")
+    @Test
     func testShouldReturnNilWhenAppVariantIsCalledAndDefaultsDoesNotContainsAppVariant() {
         // GIVEN
-        setUp()
         userDefaults.removeObject(forKey: "currentAppVariant")
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
@@ -139,13 +209,11 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == nil)
-        tearDown()
     }
 
-    @Test("Nil is returned when app variant is 'null' in defaults")
+    @Test
     func testShouldReturnNilWhenAppVariantIsCalledAndDefaultsContainsNullStringAppVariant() {
         // GIVEN
-        setUp()
         userDefaults.set("null", forKey: "currentAppVariant")
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
@@ -154,15 +222,13 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == nil)
-        tearDown()
     }
 
     // MARK: - iPad 17.7.7 Issue
 
-    @Test("Developer overridden completed status is returned when iPad and iOS 17.7.7")
+    @Test
     func testShouldReturnDeveloperOverriddenCompletedWhenIpadAndOSIs17_7_7() throws {
         // GIVEN
-        setUp()
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: true, systemVersion: "17.7.7")
 
         // WHEN
@@ -170,13 +236,11 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .overridden(.developer(completed: true)))
-        tearDown()
     }
 
-    @Test("Developer overridden completed status is not returned when iPad and iOS is not 17.7.7")
+    @Test
     func testShouldNotReturnDeveloperOverriddenCompletedWhenIpadAndOSIsNot17_7_7() throws {
         // GIVEN
-        setUp()
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: true, systemVersion: "17.7.6")
 
         // WHEN
@@ -184,13 +248,11 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .notOverridden)
-        tearDown()
     }
 
-    @Test("Developer overridden completed status is not returned when not iPad and iOS 17.7.7")
+    @Test
     func testShouldNotReturnDeveloperOverriddenCompletedWhenIsNotIpadAndOSIs17_7_7() {
         // GIVEN
-        setUp()
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: false, systemVersion: "17.7.7")
 
         // WHEN
@@ -198,6 +260,193 @@ final class LaunchOptionsHandlerTests {
 
         // THEN
         #expect(result == .notOverridden)
-        tearDown()
     }
+
+    // MARK: - UI Test Overrides
+
+#if DEBUG
+    @MainActor
+    @Test
+    func testWhenSitePermissionsAreSeededForUITestsThenRecordsCanBeCleared() throws {
+        let argumentDomain = userDefaults.volatileDomain(forName: UserDefaults.argumentDomain)
+        userDefaults.setVolatileDomain(
+            ["sitePermissionsTestSeed": ["example.com": ["camera": "allow"]]],
+            forName: UserDefaults.argumentDomain)
+        defer { userDefaults.setVolatileDomain(argumentDomain, forName: UserDefaults.argumentDomain) }
+        let store = SitePermissionsStore(storage: userDefaults.keyedStoring())
+        let url = try #require(URL(string: "https://example.com"))
+        let site = try #require(SitePermissionKey(committedURL: url))
+
+        let normalLaunch = LaunchOptionsHandler(
+            environment: [:], userDefaults: userDefaults, arguments: [], internalUserStore: MockInternalUserStore())
+        normalLaunch.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
+        #expect(store.storedSites.isEmpty)
+
+        let testLaunch = LaunchOptionsHandler(
+            environment: ["UITEST_MODE": "1"], userDefaults: userDefaults, arguments: [], internalUserStore: MockInternalUserStore())
+        testLaunch.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
+        #expect(store.decision(for: .camera, at: site) == .allow)
+
+        store.clearSitePermissions()
+        #expect(store.storedSites.isEmpty)
+        #expect(userDefaults.dictionary(forKey: "sitePermissionsTestSeed") != nil)
+    }
+#endif
+
+    @Test
+    func testWhenNoOverridesPassedThenInternalUserNotEnabled() {
+        // GIVEN
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: [],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN - No overrides applied, internal user should NOT be enabled
+        #expect(!(mockInternalUserStore.isInternalUser))
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    @Test
+    func testWhenFeatureFlagOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
+        // GIVEN
+        userDefaults.set("true", forKey: "ff.uiTestFeatureFlag")
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: ["-ff.uiTestFeatureFlag", "true"],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN
+        #expect(featureFlagStore.bool(forKey: "localOverrideUiTestFeatureFlag"))
+        #expect(!(mockInternalUserStore.isInternalUser))
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    @Test
+    func testWhenExperimentCohortOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
+        // GIVEN
+        userDefaults.set("treatment", forKey: "experiment.uiTestExperiment")
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: ["-experiment.uiTestExperiment", "treatment"],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN
+        #expect(featureFlagStore.string(forKey: "localOverrideUiTestExperiment_cohort") == "treatment")
+        #expect(!(mockInternalUserStore.isInternalUser))
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    @Test
+    func testWhenConfigRolloutOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
+        // GIVEN
+        userDefaults.set("true", forKey: "config.rollout.duckPlayer.enableDuckPlayer")
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: ["-config.rollout.duckPlayer.enableDuckPlayer", "true"],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN
+        #expect(configStore.bool(forKey: "config.duckPlayer.enableDuckPlayer.enabled"))
+        #expect(!(mockInternalUserStore.isInternalUser))
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    @Test
+    func testWhenIsInternalUserArgIsTrueThenInternalUserIsEnabled() {
+        // GIVEN
+        userDefaults.set("true", forKey: "isInternalUser")
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: ["-isInternalUser", "true"],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN
+        #expect(mockInternalUserStore.isInternalUser)
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
+    /// Verifies the one-way semantics of `-isInternalUser`: the arg can only set the flag to `true`.
+    /// Passing `false` (or any non-"true" value) is a no-op. To detect "no-op", the mock starts at `true`
+    /// and the assertion checks it stayed `true`. Off is the default state, set by absence of the arg.
+    @Test
+    func testWhenIsInternalUserArgIsFalseThenInternalUserStoreIsNotModified() {
+        // GIVEN
+        userDefaults.set("false", forKey: "isInternalUser")
+        let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
+        let configStore = UserDefaults(suiteName: "testing_configRollout")!
+        let mockInternalUserStore = MockInternalUserStore()
+        mockInternalUserStore.isInternalUser = true
+        let sut = LaunchOptionsHandler(
+            environment: [:],
+            userDefaults: userDefaults,
+            arguments: ["-isInternalUser", "false"],
+            internalUserStore: mockInternalUserStore
+        )
+
+        // WHEN
+        sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
+
+        // THEN
+        #expect(mockInternalUserStore.isInternalUser)
+
+        // Cleanup
+        featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
+        configStore.removePersistentDomain(forName: "testing_configRollout")
+    }
+
 }

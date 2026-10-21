@@ -16,60 +16,517 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
+import Combine
 import Common
+import FoundationExtensions
+import History
+import HistoryView
+import Persistence
 import PixelKit
+import WideEvent
+import PrivacyConfig
+import AIChat
+
+// MARK: - Fire Dialog Presentation Abstractions (for testability)
+
+protocol FireDialogViewPresenting {
+    @MainActor
+    func present(in window: NSWindow, completion: (() -> Void)?)
+
+    /// Closes the presented dialog, and does nothing when it is not presented any more.
+    @MainActor
+    func dismiss()
+}
+
+struct FireDialogViewConfig {
+    let viewModel: FireDialogViewModel
+    let showIndividualSitesLink: Bool
+    let onConfirm: (FireDialogView.Response) -> Void
+}
+
+typealias FireDialogViewFactory = (_ config: FireDialogViewConfig) -> FireDialogViewPresenting
+
+private final class DefaultFireDialogPresenter: FireDialogViewPresenting {
+    private let view: any ModalView
+    private weak var window: NSWindow?
+    private var isPresented = false
+
+    init(view: any ModalView) {
+        self.view = view
+    }
+
+    @MainActor
+    func present(in window: NSWindow, completion: (() -> Void)?) {
+        self.window = window
+        isPresented = true
+        view.show(in: window) { [weak self] in
+            self?.isPresented = false
+            completion?()
+        }
+    }
+
+    @MainActor
+    func dismiss() {
+        guard isPresented, let window, let sheet = window.attachedSheet else { return }
+        window.endSheet(sheet)
+    }
+}
 
 @MainActor
 final class FireCoordinator {
 
     /// This is a lazy var in order to avoid initializing Fire directly at AppDelegate.init
     /// because of a significant number of dependencies that are still singletons.
-    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: NSApp.delegateTyped.visualizeFireAnimationDecider)
+    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
     private(set) var firePopover: FirePopover?
     private let tld: TLD
+    private let featureFlagger: FeatureFlagger
+    let historyProvider: HistoryViewDataProviding
+    private let historyCoordinating: (HistoryCoordinating & HistoryDataSource)
+    private let fireDialogViewFactory: FireDialogViewFactory
+    private let fireproofDomains: FireproofDomains
+    private let faviconManagement: FaviconManagement
+    private let onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)?
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let dataClearingPreferences: DataClearingPreferences
+    private let tabViewModelGetter: (NSWindow) -> TabCollectionViewModel?
+    private let pixelFiring: PixelFiring?
+    private let aiChatSyncCleaner: (() -> AIChatSyncCleaning?)?
+    private let onboardingFireReporting: (() -> OnboardingFireReporting)?
+    private let visualizeFireAnimationDecider: OverridableVisualizeFireSettingsDecider
+    let dataClearingPixelsReporter: DataClearingPixelsReporter
+    let dataClearingWideEventService: DataClearingWideEventService?
 
-    init(tld: TLD) {
+    init(tld: TLD,
+         featureFlagger: FeatureFlagger,
+         historyCoordinating: (HistoryCoordinating & HistoryDataSource),
+         visualizeFireAnimationDecider: VisualizeFireSettingsDecider?,
+         onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)?,
+         fireproofDomains: FireproofDomains,
+         faviconManagement: FaviconManagement,
+         windowControllersManager: WindowControllersManagerProtocol,
+         dataClearingPreferences: DataClearingPreferences,
+         pixelFiring: PixelFiring?,
+         wideEventManaging: WideEventManaging? = nil,
+         aiChatSyncCleaner: (() -> AIChatSyncCleaning?)? = nil,
+         historyProvider: HistoryViewDataProviding? = nil, // for testing: created if not provided
+         fireViewModel: FireViewModel? = nil, // for testing: created if not provided
+         tabViewModelGetter: ((NSWindow) -> TabCollectionViewModel?)? = nil, // for testing: created if not provided
+         fireDialogViewFactory: FireDialogViewFactory? = nil, // for testing: created if not provided
+         onboardingFireReporting: (() -> OnboardingFireReporting)? = nil // for testing: created if not provided
+    ) {
+
         self.tld = tld
+        self.featureFlagger = featureFlagger
+        self.historyCoordinating = historyCoordinating
+        self.fireproofDomains = fireproofDomains
+        self.faviconManagement = faviconManagement
+        self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
+        self.windowControllersManager = windowControllersManager
+        self.dataClearingPreferences = dataClearingPreferences
+        self.tabViewModelGetter = tabViewModelGetter ?? { window in
+            (window.contentViewController as? MainViewController)?.tabCollectionViewModel
+        }
+        self.pixelFiring = pixelFiring
+        self.aiChatSyncCleaner = aiChatSyncCleaner
+        self.onboardingFireReporting = onboardingFireReporting ?? { OnboardingPixelReporter() }
+        self.dataClearingPixelsReporter = .init(pixelFiring: self.pixelFiring)
+        if let wideEventManaging = wideEventManaging {
+            self.dataClearingWideEventService = .init(wideEvent: wideEventManaging)
+        } else {
+            self.dataClearingWideEventService = nil
+        }
+        self.visualizeFireAnimationDecider = OverridableVisualizeFireSettingsDecider(internalDecider: visualizeFireAnimationDecider)
+
+        self.fireDialogViewFactory = fireDialogViewFactory ?? { config in
+            guard featureFlagger.isFeatureOn(.fireDialogSimplified) else {
+                let view = LegacyFireDialogView(
+                    viewModel: config.viewModel,
+                    showIndividualSitesLink: config.showIndividualSitesLink,
+                    onConfirm: { response in
+                        if case .noAction = response {
+                            pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
+                        }
+                        config.onConfirm(response)
+                    }
+                )
+                return DefaultFireDialogPresenter(view: view)
+            }
+            let view = FireDialogView(
+                viewModel: config.viewModel,
+                onConfirm: { response in
+                    if case .noAction = response {
+                        pixelFiring?.fire(FireDialogPixel.fireDialogCancel, frequency: .dailyAndCount)
+                    }
+                    config.onConfirm(response)
+                }
+            )
+            return DefaultFireDialogPresenter(view: view)
+        }
+        var fireCoordinatorGetter: (() -> FireCoordinator)!
+        let historyBurner = FireHistoryBurner(fireproofDomains: self.fireproofDomains,
+                                              fire: { fireCoordinatorGetter().fireViewModel.fire },
+                                              recordAIChatHistoryClearForSync: { Task { await aiChatSyncCleaner?()?.recordLocalClear(date: Date()) } })
+        self.historyProvider = historyProvider ?? HistoryViewDataProvider(historyDataSource: self.historyCoordinating, historyBurner: historyBurner, tld: tld)
+        if let fireViewModel {
+            self.fireViewModel = fireViewModel
+        }
+        fireCoordinatorGetter = { [unowned self] in self }
     }
 
     func fireButtonAction() {
-        let burningWindow: NSWindow
-        let waitForOpening: Bool
-
-        if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window,
-           lastKeyWindow.isVisible {
-            burningWindow = lastKeyWindow
-            burningWindow.makeKeyAndOrderFront(nil)
-            waitForOpening = false
-        } else {
-            burningWindow = WindowsManager.openNewWindow(fireCoordinator: self)!
-            waitForOpening = true
-        }
-
-        guard let mainViewController = burningWindow.contentViewController as? MainViewController else {
-            assertionFailure("Burning window or its content view controller is nil")
+        // Don't open dialog if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
             return
         }
 
-        if waitForOpening {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) {
-                self.showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
-                                tabCollectionViewModel: mainViewController.tabCollectionViewModel)
+        // There must be a window when the Fire button is clicked
+        guard let lastKeyMainWindowController = windowControllersManager.lastKeyMainWindowController,
+              let burningWindow = lastKeyMainWindowController.window else {
+            assertionFailure("Burning window or its content view controller is nil")
+            return
+        }
+        burningWindow.makeKeyAndOrderFront(nil)
+        let mainViewController = lastKeyMainWindowController.mainViewController
+
+        // Use Fire dialog for regular windows, popover for Fire windows
+        if !mainViewController.isBurner {
+            Task { @MainActor in
+                _=await self.presentFireDialog(mode: .fireButton, in: burningWindow)
             }
         } else {
+            // Fire windows continue to use the legacy popover
             showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
                             tabCollectionViewModel: mainViewController.tabCollectionViewModel)
         }
     }
 
     func showFirePopover(relativeTo positioningView: NSView, tabCollectionViewModel: TabCollectionViewModel) {
-        guard !(firePopover?.isShown ?? false) else {
+        // Don't open popover if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
+            return
+        }
+
+        // Close any existing popover before creating a new one
+        if firePopover?.isShown ?? false {
             firePopover?.close()
             return
         }
+
         firePopover = FirePopover(fireViewModel: fireViewModel, tabCollectionViewModel: tabCollectionViewModel)
         firePopover?.show(positionedBelow: positioningView.bounds.insetBy(dx: 0, dy: 3), in: positioningView)
+    }
+
+}
+
+extension FireCoordinator {
+
+    /// Unified Fire dialog presenter for all entry points
+    @MainActor
+    func presentFireDialog(mode: FireDialogViewModel.Mode,
+                           in window: NSWindow? = nil,
+                           scopeVisits providedVisits: [Visit]? = nil,
+                           settings: (any KeyedStoring<FireDialogViewSettings>)? = nil) async -> FireDialogView.Response {
+        // Don't open dialog if burn is already in progress
+        guard fireViewModel.fire.burningData == nil else {
+            return .noAction
+        }
+
+        let targetWindow = window ?? windowControllersManager.lastKeyMainWindowController?.window
+        guard let parentWindow = targetWindow,
+              let tabCollectionViewModel = tabViewModelGetter(parentWindow) else { return .noAction }
+
+        let scopeQuery: DataModel.HistoryQueryKind
+        switch mode {
+        case .fireButton, .mainMenuAll:
+            scopeQuery = .rangeFilter(.all)
+        case .historyView(let query):
+            scopeQuery = query
+            // Disable fire animation for History View requests
+            visualizeFireAnimationDecider.isAnimationDisabled = true
+        }
+        defer {
+            visualizeFireAnimationDecider.isAnimationDisabled = false
+        }
+
+        let scopeVisits: [Visit]
+        // Use precomputed domains/visits when provided by caller (preferred)
+        if let providedVisits {
+            scopeVisits = providedVisits
+        } else {
+            // Fallback to querying provider
+            scopeVisits = await historyProvider.visits(matching: scopeQuery)
+        }
+        let scopeCookieDomains = scopeVisits.lazy.compactMap(\.historyEntry?.url.host).convertedToETLDPlus1(tld: tld)
+
+        let vm = FireDialogViewModel(
+            fireViewModel: self.fireViewModel,
+            tabCollectionViewModel: tabCollectionViewModel,
+            historyCoordinating: self.historyCoordinating,
+            aiChatHistoryCleaner: AIChatHistoryCleaner(featureFlagger: Application.appDelegate.featureFlagger,
+                                                       aiChatMenuConfiguration: Application.appDelegate.aiChatMenuConfiguration,
+                                                       featureDiscovery: DefaultFeatureDiscovery(),
+                                                       privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                                       nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler),
+            fireproofDomains: self.fireproofDomains,
+            faviconManagement: self.faviconManagement,
+            featureFlagger: self.featureFlagger,
+            clearingOption: mode.shouldShowSegmentedControl ? nil /* last selected */ : .allData,
+            includeTabsAndWindows: mode.shouldShowCloseTabsToggle ? nil /* last selected */ : false,
+            includeChatHistory: mode.shouldShowChatHistoryToggle(featureFlagger) ? nil /* last selected */ : false,
+            mode: mode,
+            settings: settings,
+            scopeCookieDomains: scopeCookieDomains,
+            scopeVisits: scopeVisits,
+            tld: tld,
+            windowControllersManager: self.windowControllersManager,
+            dataClearingPreferences: self.dataClearingPreferences,
+            pixelFiring: self.pixelFiring
+        )
+
+        var tabsChangedCancellable: AnyCancellable?
+
+        let response: FireDialogView.Response = await withCheckedContinuation { (continuation: CheckedContinuation<FireDialogView.Response, Never>) in
+            var didResume = false
+            func resumeOnce(returning value: FireDialogView.Response) {
+                if !didResume {
+                    didResume = true
+                    continuation.resume(returning: value)
+                }
+            }
+
+            let presenter = self.fireDialogViewFactory(
+                FireDialogViewConfig(
+                    viewModel: vm,
+                    showIndividualSitesLink: [.fireButton, .mainMenuAll].contains(mode),
+                    onConfirm: { response in
+                        resumeOnce(returning: response)
+                    }
+                )
+            )
+
+            // The tabs of the window can change while the dialog is open, without the user doing it
+            // in the browser: a link opened from another app adds a tab and selects it. Let's close the
+            // dialog then.
+            tabsChangedCancellable = tabCollectionViewModel.tabCollection.$tabs
+                .dropFirst()
+                .map { _ in () }
+                .merge(with: tabCollectionViewModel.$selectedTabViewModel.dropFirst().map { _ in () })
+                .sink { _ in
+                    presenter.dismiss()
+                }
+
+            presenter.present(in: parentWindow) {
+                resumeOnce(returning: .noAction)
+            }
+        }
+
+        // The dialog is closed here, so a later change of the tabs is none of its business.
+        tabsChangedCancellable?.cancel()
+
+        switch response {
+        case .noAction:
+            onboardingFireReporting?().measureFireDialogDismissed()
+            return .noAction
+
+        case .burn(let options):
+            guard var options else {
+                assertionFailure("Received nil burn options")
+                return .noAction
+            }
+
+            options.isToday = (scopeQuery == .rangeFilter(.today))
+
+            let isAllHistorySelected = (options.clearingOption == .allData /* not Current Tab or Window */)
+            && (scopeQuery == .rangeFilter(.all) || scopeQuery == .rangeFilter(.allSites))
+
+            if options.includeChatHistory, !tabCollectionViewModel.burnerMode.isBurner {
+                Task {
+                    await aiChatSyncCleaner?()?.recordLocalClear(date: Date())
+                }
+            }
+
+            await self.handleDialogResult(options, tabCollectionViewModel: tabCollectionViewModel, isAllHistorySelected: isAllHistorySelected)
+
+            if [.fireButton, .mainMenuAll].contains(mode) {
+                // Record fire button usage for contextual onboarding flows
+                onboardingContextualDialogsManager?().fireButtonUsed()
+            }
+            onboardingFireReporting?().measureFireDialogBurnAction()
+            return .burn(options: options)
+        }
+    }
+
+    @MainActor
+    func handleDialogResult(_ result: FireDialogResult, tabCollectionViewModel: TabCollectionViewModel?, isAllHistorySelected: Bool, from startTime: Double = CACurrentMediaTime()) async {
+        dataClearingPixelsReporter.fireRetriggerPixelIfNeeded()
+
+        if result.includeChatHistory {
+            pixelFiring?.fire(AIChatPixel.aiChatDeleteHistoryRequested, frequency: .dailyAndCount)
+        }
+        // If specific visits are provided (e.g., deleting for a day or a selection), burn only those visits
+        if result.clearingOption == .allData /* not Current Tab or Window */,
+           result.includeHistory, !isAllHistorySelected,
+           let visits = result.selectedVisits, !visits.isEmpty {
+            dataClearingWideEventService?.start(options: result, path: .burnVisits, isAutoClear: false)
+            await fireViewModel.fire.burnVisits(visits,
+                                                except: fireViewModel.fire.fireproofDomains,
+                                                isToday: result.isToday,
+                                                closeWindows: result.includeTabsAndWindows,
+                                                clearSiteData: result.includeCookiesAndSiteData,
+                                                clearChatHistory: result.includeChatHistory,
+                                                urlToOpenIfWindowsAreClosed: nil,
+                                                dataClearingWideEventService: dataClearingWideEventService)
+            dataClearingWideEventService?.complete()
+            return
+        }
+
+        switch result.clearingOption {
+        case .currentTab:
+            guard let tabCollectionViewModel,
+                  let tabViewModel = tabCollectionViewModel.selectedTabViewModel else {
+                assertionFailure("No tab selected")
+                return
+            }
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .tab))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .currentTab(
+                        .init(
+                            pinned: tabViewModel.isPinned,
+                            closeTab: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
+            let entity = Fire.BurningEntity.tab(tabViewModel: tabViewModel,
+                                                selectedDomains: result.selectedCookieDomains ?? [],
+                                                parentTabCollectionViewModel: tabCollectionViewModel,
+                                                close: result.includeTabsAndWindows)
+            dataClearingWideEventService?.start(options: result, path: .burnEntity, isAutoClear: false)
+            await fireViewModel.fire.burnEntity(entity,
+                                                includingHistory: result.includeHistory,
+                                                includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                includeChatHistory: result.includeChatHistory,
+                                                dataClearingWideEventService: dataClearingWideEventService)
+
+        case .currentWindow:
+            guard let tabCollectionViewModel else {
+                assertionFailure("Missing TabCollectionViewModel for window scope")
+                return
+            }
+
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .window))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .currentWindow(
+                        .init(
+                            hasPinnedTabs: !tabCollectionViewModel.pinnedTabs.isEmpty,
+                            closeWindow: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
+            let entity = Fire.BurningEntity.window(tabCollectionViewModel: tabCollectionViewModel,
+                                                   selectedDomains: result.selectedCookieDomains ?? [],
+                                                   close: result.includeTabsAndWindows)
+            dataClearingWideEventService?.start(options: result, path: .burnEntity, isAutoClear: false)
+            await fireViewModel.fire.burnEntity(entity,
+                                                includingHistory: result.includeHistory,
+                                                includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                includeChatHistory: result.includeChatHistory,
+                                                dataClearingWideEventService: dataClearingWideEventService)
+
+        case .allData:
+            pixelFiring?.fire(GeneralPixel.fireButton(option: .allSites))
+            pixelFiring?.fire(
+                FireDialogPixel.burn(
+                    .allData(
+                        .init(
+                            hasPinnedTabs: !windowControllersManager.pinnedTabsManagerProvider.arePinnedTabsEmpty,
+                            closeWindows: result.includeTabsAndWindows,
+                            clearHistory: result.includeHistory,
+                            clearSiteData: result.includeCookiesAndSiteData,
+                            clearAIChats: result.includeChatHistory
+                        )
+                    )
+                ),
+                frequency: .dailyAndCount
+            )
+
+            // "All" implies history too; respect includeHistory by routing via burnAll or burnEntity
+            if isAllHistorySelected && result.includeTabsAndWindows && result.includeHistory {
+                dataClearingWideEventService?.start(options: result, path: .burnAll, isAutoClear: false)
+                await fireViewModel.fire.burnAll(isBurnOnExit: false,
+                                                 opening: .newtab,
+                                                 includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                 includeChatHistory: result.includeChatHistory,
+                                                 dataClearingWideEventService: dataClearingWideEventService)
+            } else {
+                let entity = Fire.BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers,
+                                                           selectedDomains: result.selectedCookieDomains ?? [],
+                                                           customURLToOpen: nil,
+                                                           close: result.includeTabsAndWindows)
+                dataClearingWideEventService?.start(options: result, path: .burnEntity, isAutoClear: false)
+                await fireViewModel.fire.burnEntity(entity,
+                                                    includingHistory: result.includeHistory,
+                                                    includeCookiesAndSiteData: result.includeCookiesAndSiteData,
+                                                    includeChatHistory: result.includeChatHistory,
+                                                    dataClearingWideEventService: dataClearingWideEventService)
+            }
+        }
+        if result.includeHistory,
+           result.clearingOption != .allData || !result.includeTabsAndWindows {
+            // History View doesn't currently support having new data pushed to it
+            // so we need to instruct all open history tabs to reload themselves.
+            let historyTabs = self.windowControllersManager.mainWindowControllers
+                .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                .filter { $0.content.isHistory }
+            historyTabs.forEach { $0.reload() }
+        }
+
+        pixelFiring?.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
+        pixelFiring?.fire(FireDialogPixel.fireStarted, frequency: .dailyAndCount)
+        pixelFiring?.fire(FireDialogPixel.fireStartedInSession, frequency: .dailyAndCount)
+
+        // Complete wide event tracking
+        dataClearingWideEventService?.complete()
+    }
+}
+/// Allows locally disabling Fire animation depending on context
+final class OverridableVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
+    private let internalDecider: VisualizeFireSettingsDecider?
+
+    var isAnimationDisabled: Bool = false
+
+    var shouldShowFireAnimation: Bool {
+        isAnimationDisabled ? false : internalDecider?.shouldShowFireAnimation ?? false
+    }
+
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> {
+        internalDecider?.shouldShowFireAnimationPublisher ?? Empty().eraseToAnyPublisher()
+    }
+
+    var isOpenFireWindowByDefaultEnabled: Bool {
+        internalDecider?.isOpenFireWindowByDefaultEnabled ?? false
+    }
+
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> {
+        internalDecider?.shouldShowOpenFireWindowByDefaultPublisher ?? Empty().eraseToAnyPublisher()
+    }
+
+    init(internalDecider: VisualizeFireSettingsDecider?) {
+        self.internalDecider = internalDecider
     }
 
 }

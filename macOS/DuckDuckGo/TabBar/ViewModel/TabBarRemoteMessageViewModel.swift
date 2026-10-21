@@ -31,8 +31,8 @@ final class TabBarRemoteMessageViewModel: ObservableObject {
         self.tabBarRemoteActiveMessage = activeRemoteMessageModel
 
         cancellable = tabBarRemoteActiveMessage.remoteMessagePublisher
-            .sink(receiveValue: { model in
-                guard !isFireWindow else { return }
+            .sink(receiveValue: { [weak self] model in
+                guard let self, !isFireWindow else { return }
 
                 guard let model = model else {
                     self.remoteMessage = nil
@@ -41,8 +41,15 @@ final class TabBarRemoteMessageViewModel: ObservableObject {
 
                 if model.shouldShowTabBarRemoteMessage, let tabBarRemoteMessage = model.mapToTabBarRemoteMessage() {
                     self.remoteMessage = tabBarRemoteMessage
+                } else {
+                    self.remoteMessage = nil
                 }
         })
+    }
+
+    func refreshSurveyURL(_ surveyURL: URL) -> URL {
+        let refreshedURLString = tabBarRemoteActiveMessage.refreshSurveyURL(surveyURL.absoluteString)
+        return URL(string: refreshedURLString) ?? surveyURL
     }
 
     func onSurveyOpened() {
@@ -53,8 +60,12 @@ final class TabBarRemoteMessageViewModel: ObservableObject {
         Task { await tabBarRemoteActiveMessage.onMessageDismissed() }
     }
 
-    func markTabBarRemoteMessageAsShown() {
-        Task { await tabBarRemoteActiveMessage.markRemoteMessageAsShown() }
+    func refreshRemoteMessageForPresentation() {
+        tabBarRemoteActiveMessage.refreshRemoteMessageForPresentation()
+    }
+
+    func markTabBarRemoteMessageAsShown(withID messageID: String) {
+        Task { await tabBarRemoteActiveMessage.markRemoteMessageAsShown(withID: messageID) }
     }
 }
 
@@ -63,7 +74,9 @@ private extension RemoteMessageModel {
     var shouldShowTabBarRemoteMessage: Bool {
         guard let modelType = content else { return false }
 
-        return modelType.isSupported
+        let canShowOnTabBar = surfaces.contains(.tabBar) || id == TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId
+
+        return canShowOnTabBar && modelType.isSupported
     }
 
     func mapToTabBarRemoteMessage() -> TabBarRemoteMessage? {
@@ -73,11 +86,13 @@ private extension RemoteMessageModel {
         case .bigSingleAction(let titleText,
                               let descriptionText,
                               _,
+                              _,
                               let primaryActionText,
                               let primaryAction):
 
             if case .survey(let value) = primaryAction, let surveyURL = URL(string: value) {
-                return .init(buttonTitle: titleText,
+                return .init(id: id,
+                             buttonTitle: titleText,
                              popupTitle: primaryActionText,
                              popupSubtitle: descriptionText,
                              surveyURL: surveyURL)

@@ -1,0 +1,105 @@
+{
+  "name": "PublicRecordsUs",
+  "url": "publicrecords.us",
+  "version": "0.7.0",
+  "parent": "propertyrecord.com",
+  "addedDatetime": 1775829600000,
+  "optOutUrl": "https://dashboard.publicrecords.us/opt-out",
+  "steps": [
+    {
+      "stepType": "scan",
+      "scanType": "templatedUrl",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://dashboard.publicrecords.us/opt-out/records?name=${firstName}%20${lastName}&city=${city|downcase}&state=${state|upcase}&cityState=${city},%20${state|upcase}",
+          "id": "492b18f5-23a0-45ae-b215-75b03dbc9a2e"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//div[contains(text(), 'Search Results')]"
+            }
+          ],
+          "id": "eb08bbc0-dd52-41e4-8802-ba535b002678"
+        },
+        {
+          "actionType": "condition",
+          "_comment": "Click Use Original when the site offers a spelling correction.",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#spellcheck-original",
+              "failSilently": true
+            }
+          ],
+          "actions": [
+            {
+              "actionType": "click",
+              "elements": [
+                {
+                  "type": "button",
+                  "selector": "#spellcheck-original"
+                }
+              ],
+              "id": "9eb789a0-c09b-418b-b5cc-624e6617f98a"
+            }
+          ],
+          "id": "f44c622a-00e8-4be4-88c8-ee8d5ab2b641"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//div[contains(text(), 'Search Results')]"
+            }
+          ],
+          "id": "b9153480-1eae-42ea-8b42-172d68fb3d80"
+        },
+        {
+          "actionType": "extract",
+          "id": "30cdf1b8-399b-467a-a021-2014100e574f",
+          "selector": "//ul[@id='people-search-results']/li",
+          "noResultsSelector": "//h3[contains(text(), 'No results found')]",
+          "profile": {
+            "name": {
+              "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(concat(' ', normalize-space(@class), ' '), ' !text-black-900 ') and contains(concat(' ', normalize-space(@class), ' '), ' text-lg ')]"
+            },
+            "addressCityState": {
+              "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(@class,'!leading-tight')]"
+            },
+            "age": {
+              "selector": ".//div[contains(@class,'grid')]/div[contains(@class,'flex-col')][1]/div[contains(.,'Years Old') or contains(.,'Deceased')]"
+            },
+            "addressCityStateList": {
+              "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Locations Include']/following-sibling::div",
+              "findElements": true
+            },
+            "relativesList": {
+              "selector": ".//div[contains(@class,'text-xs') and normalize-space(.)='Possible Relatives']/following-sibling::div",
+              "findElements": true
+            },
+            "profileUrl": {
+              "identifierType": "hash"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "stepType": "optOut",
+      "optOutType": "parentSiteOptOut",
+      "actions": []
+    }
+  ],
+  "schedulingConfig": {
+    "retryError": 48,
+    "confirmOptOutScan": 72,
+    "maintenanceScan": 120,
+    "maxAttempts": -1
+  },
+  "removedAt": null
+}

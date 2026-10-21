@@ -19,26 +19,25 @@
 
 import XCTest
 import Core
-import Configuration
+@testable import Configuration
 @testable import DuckDuckGo
+import PrivacyConfig
 
 final class ConfigurationManagerIntegrationTests: XCTestCase {
 
     var configManager: ConfigurationManager!
-    var customURLProvider: CustomConfigurationURLProvider!
+    var customURLProvider: CustomConfigurationURLProviding!
 
     override func setUpWithError() throws {
-        // use default privacyConfiguration link
-        customURLProvider = CustomConfigurationURLProvider()
-        customURLProvider.customPrivacyConfigurationURL = URL.privacyConfig
-        Configuration.setURLProvider(customURLProvider)
-        configManager = ConfigurationManager()
+        let internalUserDecider = MockInternalUserDecider()
+        internalUserDecider.isInternalUser = true
+        customURLProvider = MockCustomURLProvider()
+        let fetcher = ConfigurationFetcher(store: MockConfigurationStoring(), configurationURLProvider: customURLProvider)
+        configManager = ConfigurationManager(fetcher: fetcher)
     }
 
     override func tearDownWithError() throws {
-        // use default privacyConfiguration link
-        customURLProvider.customPrivacyConfigurationURL = URL.privacyConfig
-        Configuration.setURLProvider(customURLProvider)
+        customURLProvider = nil
         configManager = nil
     }
 
@@ -48,8 +47,7 @@ final class ConfigurationManagerIntegrationTests: XCTestCase {
         await configManager.fetchAndUpdateTrackerBlockingDependencies()
         let etag = ContentBlocking.shared.trackerDataManager.fetchedData?.etag
         // use test privacyConfiguration link with tds experiments
-        customURLProvider.customPrivacyConfigurationURL = URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/test/macos-config.json")!
-        Configuration.setURLProvider(customURLProvider)
+        try? customURLProvider.setCustomURL(URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/test/macos-config.json"), for: .privacyConfiguration)
 
         // WHEN
         await configManager.fetchAndUpdateTrackerBlockingDependencies()
@@ -60,8 +58,7 @@ final class ConfigurationManagerIntegrationTests: XCTestCase {
         XCTAssertEqual(newEtag, "\"5c0f8d8cdcd80e3f26889323dae1dff9\"")
 
         // RESET
-        customURLProvider.customPrivacyConfigurationURL = URL.privacyConfig
-        Configuration.setURLProvider(customURLProvider)
+        try? customURLProvider.setCustomURL(nil, for: .privacyConfiguration)
         await configManager.fetchAndUpdateTrackerBlockingDependencies()
         let resetEtag = ContentBlocking.shared.trackerDataManager.fetchedData?.etag
         XCTAssertNotEqual(newEtag, resetEtag)

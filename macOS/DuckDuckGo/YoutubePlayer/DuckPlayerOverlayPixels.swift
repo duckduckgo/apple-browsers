@@ -107,7 +107,7 @@ final class DuckPlayerOverlayUsagePixels: NSObject, DuckPlayerOverlayPixelFiring
         }
     }
 
-    private func firePixelIfNeeded(_ pixel: PixelKitEventV2, url: URL?) {
+    private func firePixelIfNeeded(_ pixel: PixelKit.Event, url: URL?) {
         if let url, url.isYoutubeWatch, duckPlayerMode == .alwaysAsk {
             pixelFiring?.fire(pixel)
         }

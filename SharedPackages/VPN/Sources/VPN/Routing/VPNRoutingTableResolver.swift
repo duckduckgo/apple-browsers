@@ -31,19 +31,28 @@ struct VPNRoutingTableResolver {
 
     private let dnsServers: [DNSServer]
     private let excludeLocalNetworks: Bool
+    private let excludeCGNAT: Bool
 
     init(dnsServers: [DNSServer],
-         excludeLocalNetworks: Bool) {
+         excludeLocalNetworks: Bool,
+         excludeCGNAT: Bool = false) {
 
         self.dnsServers = dnsServers
         self.excludeLocalNetworks = excludeLocalNetworks
+        self.excludeCGNAT = excludeCGNAT
     }
 
     var excludedRoutes: [IPAddressRange] {
         var routes = VPNRoutingRange.alwaysExcludedIPv4Range
+                   + VPNRoutingRange.alwaysExcludedIPv6Range
 
         if excludeLocalNetworks {
             routes += VPNRoutingRange.localNetworkRangeWithoutDNS
+            routes += VPNRoutingRange.localIPv6NetworkRange
+        }
+
+        if excludeCGNAT {
+            routes += VPNRoutingRange.cgnatRange
         }
 
         return routes
@@ -56,6 +65,10 @@ struct VPNRoutingTableResolver {
             routes += VPNRoutingRange.localNetworkRange
         }
 
+        if !excludeCGNAT {
+            routes += VPNRoutingRange.cgnatRange
+        }
+
         return routes
     }
 
@@ -63,7 +76,9 @@ struct VPNRoutingTableResolver {
 
     private func dnsRoutes() -> [IPAddressRange] {
         dnsServers.map { server in
-            return IPAddressRange(address: server.address, networkPrefixLength: 32)
+            // Use correct prefix length for single host routes
+            let prefixLength: UInt8 = server.address is IPv4Address ? 32 : 128
+            return IPAddressRange(address: server.address, networkPrefixLength: prefixLength)
         }
     }
 }

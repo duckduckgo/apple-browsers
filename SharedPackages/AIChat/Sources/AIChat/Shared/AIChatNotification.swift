@@ -1,0 +1,40 @@
+//
+//  AIChatNotification.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+public extension NSNotification.Name {
+    static let aiChatUserDidSubmitPrompt: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.userDidSubmitPrompt")
+    static let aiChatResponseReceived: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.responseReceived")
+    static let aiChatVoiceSessionStarted: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceSessionStarted")
+    static let aiChatVoiceSessionEnded: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceSessionEnded")
+    static let aiChatVoiceModeOpened: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceModeOpened")
+    static let aiChatVoiceModeClosed: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.voiceModeClosed")
+    static let aiChatNewImageGenerationChatStarted: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.newImageGenerationChatStarted")
+    static let aiChatShowModelPicker: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.showModelPicker")
+    static let aiChatShowReasoningPicker: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.showReasoningPicker")
+    static let aiChatOpenFilePicker: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.openFilePicker")
+    static let aiChatCustomizeResponsesModalClosed: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.customizeResponsesModalClosed")
+    static let aiChatCustomizeResponsesDidChange: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.customizeResponsesDidChange")
+}
+
+/// `userInfo` keys for AIChat notifications.
+public enum AIChatNotificationUserInfoKey {
+    /// Hex background colour (`#RRGGBB`) carried by `aiChatVoiceModeOpened`.
+    public static let voiceModeBackgroundColor = "backgroundColor"
+}

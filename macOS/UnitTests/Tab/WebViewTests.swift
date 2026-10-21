@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
+import SharedTestUtilities
+import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -30,7 +33,7 @@ final class WebViewTests: XCTestCase {
     override func setUp() {
         autoreleasepool {
             window = MockWindow(isVisible: true)
-            webView = .init(frame: .zero)
+            webView = .init(frame: .zero, featureFlagger: MockFeatureFlagger())
             window.contentView = webView
             capturingZoomLevelDelegate = CapturingZoomLevelDelegate()
         }
@@ -140,10 +143,11 @@ final class WebViewTests: XCTestCase {
 
     @MainActor
     func testThatResetZoomLevelResetsZoom() {
-        let tabVM = TabViewModel(tab: Tab(content: .none))
+        let accessibilityPreferences = AccessibilityPreferences()
+        let tabVM = TabViewModel(tab: Tab(content: .none), accessibilityPreferences: accessibilityPreferences)
         let randomZoomLevel = DefaultZoomValue.percent300
         // Select Default zoom
-        AccessibilityPreferences.shared.defaultPageZoom = randomZoomLevel
+        accessibilityPreferences.defaultPageZoom = randomZoomLevel
 
         // Zooming out
         tabVM.tab.webView.zoomOut()
@@ -156,7 +160,7 @@ final class WebViewTests: XCTestCase {
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, randomZoomLevel)
 
         // Set new default zoom
-        AccessibilityPreferences.shared.defaultPageZoom = .percent75
+        accessibilityPreferences.defaultPageZoom = .percent75
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, .percent75)
     }
 
@@ -214,6 +218,38 @@ final class WebViewTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(capturingZoomLevelDelegate.setLevel, .percent100)
+    }
+
+    // MARK: - User scripts on deinit
+
+    func testWhenWebViewIsDeallocatedThenItsUserScriptsAreRemoved() {
+        let userContentController = makeUserContentControllerWithScript()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController = userContentController
+
+        autoreleasepool {
+            _ = WebView(frame: .zero, configuration: configuration, featureFlagger: MockFeatureFlagger())
+        }
+
+        XCTAssertTrue(userContentController.userScripts.isEmpty)
+    }
+
+    func testWhenWebViewSharingUserScriptsIsDeallocatedThenUserScriptsAreKept() {
+        let userContentController = makeUserContentControllerWithScript()
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController = userContentController
+
+        autoreleasepool {
+            _ = WebView(frame: .zero, configuration: configuration, featureFlagger: MockFeatureFlagger(), sharesUserScripts: true)
+        }
+
+        XCTAssertEqual(userContentController.userScripts.count, 1)
+    }
+
+    private func makeUserContentControllerWithScript() -> WKUserContentController {
+        let userContentController = WKUserContentController()
+        userContentController.addUserScript(WKUserScript(source: "void 0;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        return userContentController
     }
 }
 

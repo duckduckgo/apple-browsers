@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import BWManagementShared
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ConnectBitwardenViewModelTests: XCTestCase {
@@ -90,7 +91,7 @@ final class ConnectBitwardenViewModelTests: XCTestCase {
 class MockBitwardenManager: BWManagement {
 
     var handshakeSent = false
-    // var bitwardenStatus = BitwardenStatus.disabled
+    var installationService: BWInstallationService = MockBitwardenInstallationService()
 
     @Published var status: BWStatus = .disabled
     var statusPublisher: Published<BWStatus>.Publisher { $status }
@@ -126,5 +127,15 @@ class MockBitwardenManager: BWManagement {
     func update(credential: BWCredential, completion: @escaping (BWError?) -> Void) {
         // no-op
     }
+
+}
+
+private struct MockBitwardenInstallationService: BWInstallationService {
+
+    let installationState: BWInstallationState = .installed
+    let isSandboxContainerAccessApproved = true
+    let isIntegrationWithDuckDuckGoEnabled = true
+
+    func openBitwarden() {}
 
 }

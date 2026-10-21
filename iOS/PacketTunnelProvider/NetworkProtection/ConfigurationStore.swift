@@ -22,6 +22,7 @@ import os.log
 import Core
 import Configuration
 import Persistence
+import PixelKit
 
 struct ConfigurationStore: ConfigurationStoring {
 
@@ -29,7 +30,7 @@ struct ConfigurationStore: ConfigurationStoring {
         case unsupportedConfig
     }
 
-    private var defaults: KeyValueStoring
+    private let defaults: KeyValueStoring
 
     private var privacyConfigurationEtagKey: String {
         return "privacyConfiguration"
@@ -38,7 +39,7 @@ struct ConfigurationStore: ConfigurationStoring {
         get {
             defaults.object(forKey: privacyConfigurationEtagKey) as? String
         }
-        set {
+        nonmutating set {
             defaults.set(newValue, forKey: privacyConfigurationEtagKey)
         }
     }
@@ -60,10 +61,9 @@ struct ConfigurationStore: ConfigurationStoring {
             do {
                 data = try Data(contentsOf: fileUrl)
             } catch {
-                let nserror = error as NSError
-
-                if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    Pixel.fire(pixel: .trackerDataCouldNotBeLoaded, error: error, withAdditionalParameters: ["target": "vpn"])
+                if !Configuration.isExpectedFileReadError(error) {
+                    let pixel = Pixel.Event.couldNotLoadConfiguration(configuration: configuration, target: .vpn)
+                    PixelKit.fire(pixel.withError(error), frequency: .dailyAndCount)
                 }
             }
         }
@@ -84,11 +84,11 @@ struct ConfigurationStore: ConfigurationStoring {
     }
     
     func loadEmbeddedEtag(for configuration: Configuration) -> String? {
-        // If we ever need the full embedded config, we need to return its etag here
-        return nil
+        guard configuration == .privacyConfiguration else { return nil }
+        return AppPrivacyConfigurationDataProvider.Constants.embeddedDataETag
     }
     
-    mutating func saveData(_ data: Data, for configuration: Configuration) throws {
+    func saveData(_ data: Data, for configuration: Configuration) throws {
         guard configuration == .privacyConfiguration else { throw Error.unsupportedConfig }
         let file = fileUrl(for: configuration)
         var coordinatorError: NSError?
@@ -106,14 +106,14 @@ struct ConfigurationStore: ConfigurationStoring {
         }
     }
     
-    mutating func saveEtag(_ etag: String, for configuration: Configuration) throws {
+    func saveEtag(_ etag: String, for configuration: Configuration) throws {
         guard configuration == .privacyConfiguration else { throw Error.unsupportedConfig }
 
         privacyConfigurationEtag = etag
     }
     
     func fileUrl(for configuration: Configuration) -> URL {
-        let path = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "\(Global.groupIdPrefix).app-configuration")
+        let path = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Global.appConfigurationGroupName)
         return path!.appendingPathComponent(configuration.storeKey)
     }
 }

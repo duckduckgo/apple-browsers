@@ -16,15 +16,20 @@
 //  limitations under the License.
 //
 
-import Foundation
-import BrowserServicesKit
-import Persistence
+import AIChat
 import Bookmarks
-import RemoteMessaging
-import VPN
-import Subscription
+import BrowserServicesKit
+import Common
+import FoundationExtensions
+import DataBrokerProtection_macOS
+import FeatureFlags_macOS
+import Foundation
 import Freemium
-import FeatureFlags
+import Persistence
+import PrivacyConfig
+import RemoteMessaging
+import Subscription
+import VPN
 
 extension DefaultWaitlistActivationDateStore: VPNActivationDateProviding {}
 
@@ -34,66 +39,95 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         database: CoreDataDatabase,
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
-        startupPreferencesPersistor: @escaping @autoclosure () -> StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+        startupPreferences: StartupPreferences,
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
-        visualStyle: VisualStyleProviding
+        themeManager: ThemeManaging,
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
+        isReturningUser: @escaping () -> Bool?,
+        aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        triedAIChatDuringOnboarding: Bool = false,
+        isAIChatBoostActive: Bool? = nil
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
-            startupPreferencesPersistor: startupPreferencesPersistor(),
+            startupPreferences: startupPreferences,
             duckPlayerPreferencesPersistor: duckPlayerPreferencesPersistor(),
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             internalUserDecider: internalUserDecider,
             statisticsStore: LocalStatisticsStore(pixelDataStore: LocalPixelDataStore(database: database)),
+            featureDiscovery: DefaultFeatureDiscovery(),
             variantManager: DefaultVariantManager(database: database),
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
-            visualStyle: visualStyle
+            themeManager: themeManager,
+            dbpDataManagerProvider: dbpDataManagerProvider,
+            isReturningUser: isReturningUser,
+            aiChatPreferencesStorage: aiChatPreferencesStorage,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
     init(
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
-        startupPreferencesPersistor: @escaping @autoclosure () -> StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+        startupPreferences: StartupPreferences,
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
         statisticsStore: @escaping @autoclosure () -> StatisticsStore,
+        featureDiscovery: @escaping @autoclosure () -> FeatureDiscovery,
         variantManager: @escaping @autoclosure () -> VariantManager,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
-        visualStyle: VisualStyleProviding
+        themeManager: ThemeManaging,
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
+        isReturningUser: @escaping () -> Bool?,
+        aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        triedAIChatDuringOnboarding: Bool = false, // macOS onboarding has no Duck.ai step yet
+        isAIChatBoostActive: Bool? = nil  // `nil` by default until macOS provides it, so rules using it fail.
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
-        self.startupPreferencesPersistor = startupPreferencesPersistor
+        self.startupPreferences = startupPreferences
         self.duckPlayerPreferencesPersistor = duckPlayerPreferencesPersistor
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.internalUserDecider = internalUserDecider
         self.statisticsStore = statisticsStore
+        self.featureDiscovery = featureDiscovery
         self.variantManager = variantManager
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.visualStyle = visualStyle
+        self.themeManager = themeManager
+        self.dbpDataManagerProvider = dbpDataManagerProvider
+        self.isReturningUser = isReturningUser
+        self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.triedAIChatDuringOnboarding = triedAIChatDuringOnboarding
+        self.isAIChatBoostActive = isAIChatBoostActive
     }
 
     let bookmarksDatabase: CoreDataDatabase
     let appearancePreferences: AppearancePreferences
-    let startupPreferencesPersistor: () -> StartupPreferencesPersistor
+    let startupPreferences: StartupPreferences
     let duckPlayerPreferencesPersistor: () -> DuckPlayerPreferencesPersistor
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
     let internalUserDecider: InternalUserDecider
     let statisticsStore: () -> StatisticsStore
+    let featureDiscovery: () -> FeatureDiscovery
     let variantManager: () -> VariantManager
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManager: any SubscriptionManager
     let featureFlagger: FeatureFlagger
-    let visualStyle: VisualStyleProviding
+    let themeManager: ThemeManaging
+    let dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)?
+    let isReturningUser: () -> Bool?
+    let aiChatPreferencesStorage: AIChatPreferencesStorage
+    let triedAIChatDuringOnboarding: Bool
+    let isAIChatBoostActive: Bool?
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -105,65 +139,75 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             favoritesCount = BookmarkUtils.numberOfFavorites(for: appearancePreferences.favoritesDisplayMode, in: context)
         }
 
-        let isPrivacyProSubscriber = subscriptionManager.isUserAuthenticated
-        let isPrivacyProEligibleUser = subscriptionManager.canPurchase
+        let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
+        let isSubscriptionEligibleUser = subscriptionManager.isSubscriptionPurchaseEligible
 
         let activationDateStore = DefaultWaitlistActivationDateStore(source: .netP)
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
 
         let autofillUsageStore = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
 
-        var privacyProDaysSinceSubscribed = -1
-        var privacyProDaysUntilExpiry = -1
-        var isPrivacyProSubscriptionActive = false
-        var isPrivacyProSubscriptionExpiring = false
-        var isPrivacyProSubscriptionExpired = false
-        var privacyProPurchasePlatform: String?
+        var subscriptionDaysSinceSubscribed = -1
+        var subscriptionDaysUntilExpiry = -1
+        var isSubscriptionActive = false
+        var isSubscriptionExpiring = false
+        var isSubscriptionExpired = false
+        var subscriptionPurchasePlatform: String?
+        var subscriptionTier: String?
+        var subscriptionFreeTrialActive = false
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
         let statisticsStore = self.statisticsStore()
+        let featureDiscovery = self.featureDiscovery()
 
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
-            privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
-            privacyProPurchasePlatform = subscription.platform.rawValue
+            if let subscription = try await subscriptionManager.getSubscription() {
+                subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
+                subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
+                subscriptionPurchasePlatform = subscription.platform.rawValue
+                subscriptionTier = subscription.tier?.rawValue
+                subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
-            switch subscription.status {
-            case .autoRenewable, .gracePeriod:
-                isPrivacyProSubscriptionActive = true
-            case .notAutoRenewable:
-                isPrivacyProSubscriptionActive = true
-                isPrivacyProSubscriptionExpiring = true
-            case .expired, .inactive:
-                isPrivacyProSubscriptionExpired = true
-            case .unknown:
-                break // Not supported in RMF
+                switch subscription.status {
+                case .autoRenewable, .gracePeriod:
+                    isSubscriptionActive = true
+                case .notAutoRenewable:
+                    isSubscriptionActive = true
+                    isSubscriptionExpiring = true
+                case .expired, .inactive:
+                    isSubscriptionExpired = true
+                case .unknown:
+                    break // Not supported in RMF
+                }
+
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscriptionDataProvider: subscription,
+                    autofillUsageStore: autofillUsageStore,
+                    featureDiscovery: featureDiscovery
+                )
+            } else {
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscriptionDataProvider: nil,
+                    autofillUsageStore: autofillUsageStore,
+                    featureDiscovery: featureDiscovery
+                )
             }
-
-            surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
-                statisticsStore: statisticsStore,
-                vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscription: subscription,
-                autofillUsageStore: autofillUsageStore
-            )
         } catch {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscription: nil,
-                autofillUsageStore: autofillUsageStore
+                subscriptionDataProvider: nil,
+                autofillUsageStore: autofillUsageStore,
+                featureDiscovery: featureDiscovery
             )
         }
 
         let dismissedMessageIds = store.fetchDismissedRemoteMessageIDs()
         let shownMessageIds = store.fetchShownRemoteMessageIDs()
-
-#if APPSTORE
-        let isInstalledMacAppStore = true
-#else
-        let isInstalledMacAppStore = false
-#endif
 
         let duckPlayerPreferencesPersistor = duckPlayerPreferencesPersistor()
 
@@ -171,52 +215,101 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let isCurrentFreemiumDBPUser = !subscriptionManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
+        let hasPIREntitlement = (try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false
+
+        let dbpDataManager = dbpDataManagerProvider?()
+        let isCurrentPIRUser: Bool
+
+        if isCurrentFreemiumDBPUser || hasPIREntitlement, let dbpDataManager {
+            let profile = try? dbpDataManager.fetchProfile()
+            isCurrentPIRUser = profile != nil
+        } else {
+            isCurrentPIRUser = false
+        }
 
         let pinnedTabsCount: Int = await MainActor.run {
             pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +)
         }
 
         let enabledFeatureFlags: [String] = FeatureFlag.allCases.filter { flag in
-            switch flag {
-            case .visualUpdates:
-                /// For visual updates we need to make sure the user is seeing the new style in order to show the remote message.
-                return visualStyle.isNewStyle
-            default: return flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
-            }
+            flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
         }.map(\.rawValue)
+
+        let hardwareCanUpgradeOS = SupportedOSChecker(featureFlagger: featureFlagger).osUpgradeCapability.canUpgradeOS
+        let canUpgradeOS = OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: hardwareCanUpgradeOS)
+
+        let isAIChatEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
 
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager(),
                                                      isInternalUser: internalUserDecider.isInternalUser,
-                                                     isInstalledMacAppStore: isInstalledMacAppStore),
+                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild,
+                                                     canUpgradeOS: canUpgradeOS),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
+                                                       featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager(),
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,
-                                                       appTheme: appearancePreferences.currentThemeName.rawValue,
+                                                       appTheme: appearancePreferences.themeAppearance.rawValue,
                                                        daysSinceNetPEnabled: daysSinceNetworkProtectionEnabled,
-                                                       isPrivacyProEligibleUser: isPrivacyProEligibleUser,
-                                                       isPrivacyProSubscriber: isPrivacyProSubscriber,
-                                                       privacyProDaysSinceSubscribed: privacyProDaysSinceSubscribed,
-                                                       privacyProDaysUntilExpiry: privacyProDaysUntilExpiry,
-                                                       privacyProPurchasePlatform: privacyProPurchasePlatform,
-                                                       isPrivacyProSubscriptionActive: isPrivacyProSubscriptionActive,
-                                                       isPrivacyProSubscriptionExpiring: isPrivacyProSubscriptionExpiring,
-                                                       isPrivacyProSubscriptionExpired: isPrivacyProSubscriptionExpired,
+                                                       isSubscriptionEligibleUser: isSubscriptionEligibleUser,
+                                                       isDuckDuckGoSubscriber: isDuckDuckGoSubscriber,
+                                                       subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
+                                                       subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
+                                                       subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       subscriptionTier: subscriptionTier,
+                                                       isSubscriptionActive: isSubscriptionActive,
+                                                       isSubscriptionExpiring: isSubscriptionExpiring,
+                                                       isSubscriptionExpired: isSubscriptionExpired,
+                                                       subscriptionFreeTrialActive: subscriptionFreeTrialActive,
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
                                                        pinnedTabsCount: pinnedTabsCount,
-                                                       hasCustomHomePage: startupPreferencesPersistor().launchToCustomHomePage,
+                                                       hasCustomHomePage: startupPreferences.launchToCustomHomePage,
                                                        isDuckPlayerOnboarded: duckPlayerPreferencesPersistor.youtubeOverlayAnyButtonPressed,
                                                        isDuckPlayerEnabled: duckPlayerPreferencesPersistor.duckPlayerModeBool != false,
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,
+                                                       isCurrentPIRUser: isCurrentPIRUser,
                                                        dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs(),
-                                                       enabledFeatureFlags: enabledFeatureFlags
-                                                      ),
+                                                       enabledFeatureFlags: enabledFeatureFlags,
+                                                       isReturningUser: isReturningUser(),
+                                                       isAIChatEnabled: isAIChatEnabled,
+                                                       triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+                                                       isAIChatBoostActive: isAIChatBoostActive),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
         )
+    }
+}
+
+extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
+    public var subscriptionStatus: String? {
+        return status.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionPlatform: String? {
+        return platform.rawValue
+    }
+
+    public var subscriptionBilling: String? {
+        return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionTier: String? {
+        return tier?.rawValue
+    }
+
+    public var subscriptionStartDate: Date? {
+        return startedAt
+    }
+
+    public var subscriptionExpiryDate: Date? {
+        return expiresOrRenewsAt
+    }
+
+    public var subscriptionTrialActive: Bool? {
+        return hasActiveTrialOffer
     }
 }

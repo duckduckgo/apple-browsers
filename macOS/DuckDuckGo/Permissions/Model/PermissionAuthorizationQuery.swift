@@ -23,8 +23,14 @@ struct PermissionAuthorizationQueryInfo {
     let domain: String
     let permissions: [PermissionType]
     var wasShownOnce: Bool = false
+    var wasDismissed: Bool = false
     var shouldShowAlwaysAllowCheckbox: Bool = false
     var shouldShowCancelInsteadOfDeny: Bool = false
+    var opensOnSystemPermissionStep: Bool = false
+    /// Saves Always allow for the site without answering the request, which waits for macOS.
+    var saveAlwaysAllow: () -> Void = {}
+    /// Keep the pending system permission flow alive while its popover is hidden or reused for another request.
+    var authorizationViewModel: PermissionAuthorizationViewModel?
 }
 typealias PermissionAuthorizationQueryOutput = (granted: Bool, remember: Bool?)
 
@@ -39,6 +45,10 @@ extension PermissionAuthorizationQuery {
         get { parameters.wasShownOnce }
         set { parameters.wasShownOnce = newValue }
     }
+    var wasDismissed: Bool {
+        get { parameters.wasDismissed }
+        set { parameters.wasDismissed = newValue }
+    }
     var shouldShowAlwaysAllowCheckbox: Bool {
         get { parameters.shouldShowAlwaysAllowCheckbox }
         set { parameters.shouldShowAlwaysAllowCheckbox = newValue }
@@ -46,6 +56,14 @@ extension PermissionAuthorizationQuery {
     var shouldShowCancelInsteadOfDeny: Bool {
         get { parameters.shouldShowCancelInsteadOfDeny }
         set { parameters.shouldShowCancelInsteadOfDeny = newValue }
+    }
+    var opensOnSystemPermissionStep: Bool {
+        get { parameters.opensOnSystemPermissionStep }
+        set { parameters.opensOnSystemPermissionStep = newValue }
+    }
+
+    func saveAlwaysAllow() {
+        parameters.saveAlwaysAllow()
     }
 
     convenience init(domain: String, url: URL?, permissions: [PermissionType], decisionHandler: @escaping (CallbackResult) -> Void) {

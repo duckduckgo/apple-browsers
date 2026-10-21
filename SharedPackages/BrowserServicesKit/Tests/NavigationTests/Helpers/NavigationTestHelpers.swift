@@ -19,7 +19,7 @@
 import Combine
 import Common
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 
 // swiftlint:disable cyclomatic_complexity
@@ -292,7 +292,7 @@ extension TestsNavigationEvent.EitherResponseOrNavigation: TestComparable {
 extension URLResponse: TestComparable {
 
     static func difference(between lhs: URLResponse, and rhs: URLResponse) -> String? {
-        compare("url", lhs.url ?? .empty, rhs.url ?? .empty) { $0.matches($1) }
+        compare("url", lhs.url ?? .empty, rhs.url ?? .empty) { $0.equals($1, by: .fuzzyIdentity) }
         ?? compare("mimeType", lhs.mimeType, rhs.mimeType)
         ?? compare("expectedContentLength", lhs.expectedContentLength, rhs.expectedContentLength)
         ?? compare("textEncodingName", lhs.textEncodingName, rhs.textEncodingName)
@@ -310,9 +310,25 @@ private extension HTTPURLResponse {
 
     static func diff(_ lhs: HTTPURLResponse, and rhs: HTTPURLResponse) -> String? {
         compare("statusCode", lhs.statusCode, rhs.statusCode)
-        ?? compare("allHeaderFields", lhs.allHeaderFields as NSDictionary, rhs.allHeaderFields as NSDictionary)
+        ?? {
+            let lhsHeaders = normalizedHeaders(lhs.allHeaderFields)
+            let rhsHeaders = normalizedHeaders(rhs.allHeaderFields)
+            guard lhsHeaders.isEqual(rhsHeaders) else {
+                return "allHeaderFields: expected `\(rhsHeaders)` got `\(lhsHeaders)`"
+            }
+            return nil
+        }()
     }
 
+}
+
+private func normalizedHeaders(_ headers: [AnyHashable: Any]) -> NSDictionary {
+    let normalized = headers.reduce(into: [String: String]()) { result, pair in
+        let key = String(describing: pair.key).lowercased()
+        let value = String(describing: pair.value)
+        result[key] = value
+    }
+    return normalized as NSDictionary
 }
 
 class MockHTTPURLResponse: HTTPURLResponse, @unchecked Sendable {
@@ -343,7 +359,7 @@ extension WKError {
 
 private func urlConst(for url: URL, in urls: Any) -> String? {
     let m = Mirror(reflecting: urls)
-    for child in m.children where (child.value as? URL)?.matches(url) == true {
+    for child in m.children where (child.value as? URL)?.equals(url, by: .fuzzyIdentity) == true {
         return "urls." + child.label!
     }
     if url.isEmpty {
@@ -384,6 +400,7 @@ var defaultHeaders: [String: String] = {
 extension [String: String] {
 
     static let allowsExtraKeysKey = "_allowsExtraKeysKey"
+    static let allowsAnyCachePolicyKey = "_allowsAnyCachePolicyKey"
 
     var allowingExtraKeys: [String: String] {
         var result = self
@@ -393,6 +410,16 @@ extension [String: String] {
 
     var allowsExtraKeys: Bool {
         self[Self.allowsExtraKeysKey] == "1"
+    }
+
+    var allowingAnyCachePolicy: [String: String] {
+        var result = self
+        result[Self.allowsAnyCachePolicyKey] = "1"
+        return result
+    }
+
+    var allowsAnyCachePolicy: Bool {
+        self[Self.allowsAnyCachePolicyKey] == "1"
     }
 
 }
@@ -523,11 +550,13 @@ extension [NavigationAction]?: TestComparable {
 extension URLRequest: TestComparable {
 
     static func difference(between lhs: URLRequest, and rhs: URLRequest) -> String? {
-        compare("url", lhs.url ?? .empty, rhs.url ?? .empty) { $0.matches($1) }
+        let skipCachePolicyComparison = lhs.allHTTPHeaderFields?.allowsAnyCachePolicy == true
+            || rhs.allHTTPHeaderFields?.allowsAnyCachePolicy == true
+        return compare("url", lhs.url ?? .empty, rhs.url ?? .empty) { $0.equals($1, by: .fuzzyIdentity) }
         ?? compare("httpMethod", lhs.httpMethod, rhs.httpMethod)
         ?? compare("allHTTPHeaderFields", Headers(lhs.allHTTPHeaderFields), Headers(rhs.allHTTPHeaderFields))
-        ?? compare("cachePolicy", lhs.cachePolicy, rhs.cachePolicy)
-        ?? compare("timeoutInterval", lhs.timeoutInterval, rhs.timeoutInterval)
+        ?? (skipCachePolicyComparison ? nil : compare("cachePolicy", lhs.cachePolicy, rhs.cachePolicy))
+        // not comparing timeout since it may be 0 for local resources or cached pages on macOS Tahoe
     }
 
 }
@@ -544,7 +573,11 @@ struct Headers: TestComparable {
         var result = ""
         let lhs = lhs.dict
         let rhs = rhs.dict
-        for key in Set(lhs.keys).union(rhs.keys) where key != [String: String].allowsExtraKeysKey {
+        let ignoredKeys: Set<String> = [
+            [String: String].allowsExtraKeysKey,
+            [String: String].allowsAnyCachePolicyKey
+        ]
+        for key in Set(lhs.keys).union(rhs.keys) where !ignoredKeys.contains(key) {
             let value1 = lhs[key]
             let value2 = rhs[key]
             if let diff = compare(key, value1, value2) {
@@ -563,7 +596,7 @@ extension FrameInfo: TestComparable {
     static func difference(between lhs: FrameInfo, and rhs: FrameInfo) -> String? {
         compare("webView", lhs.webView, rhs.webView)
         ?? compare("handle", lhs.handle, rhs.handle)
-        ?? compare("url", lhs.url, rhs.url) { $0.matches($1) }
+        ?? compare("url", lhs.url, rhs.url) { $0.equals($1, by: .fuzzyIdentity) }
         ?? compare("securityOrigin", lhs.securityOrigin, rhs.securityOrigin)
     }
 }
@@ -1102,6 +1135,7 @@ final class CustomCallbacksHandler: NSObject, NavigationResponder {
     }
 
     var didSameDocumentNavigation: (@MainActor (Navigation, WKSameDocumentNavigationType) -> Void)?
+    @MainActor
     func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
         self.didSameDocumentNavigation?(navigation, navigationType)
     }

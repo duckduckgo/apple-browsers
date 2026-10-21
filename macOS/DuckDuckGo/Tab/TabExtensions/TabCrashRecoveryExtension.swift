@@ -16,12 +16,18 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import AppKitExtensions
+
+import AIChat
+import AppKit
 import Combine
+import Common
+import FoundationExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 import PixelKit
+import PrivacyConfig
 
 /// This enum describes the type of crash that can be reported by the extension,
 /// judging by the time since the last occurrence.
@@ -80,9 +86,14 @@ final class TabCrashRecoveryExtension {
 
     private let featureFlagger: FeatureFlagger
     private let crashLoopDetector: TabCrashLoopDetecting
-    private let firePixel: (PixelKitEvent, [String: String]) -> Void
+    private let firePixel: (PixelKit.Event, [String: String]) -> Void
+    private let reportBrokenSite: (NSWindow?) -> Void
+    private let tabCrashAggregator: TabCrashAggregator
+    /// Marks the next completed navigation so CPM health reporting can attribute it to this crash.
+    private let onTabCrash: () -> Void
 
     private var cancellables = Set<AnyCancellable>()
+    private var lastPixelFireTime: Date?
 
     init(
         featureFlagger: FeatureFlagger,
@@ -90,13 +101,19 @@ final class TabCrashRecoveryExtension {
         webViewPublisher: some Publisher<WKWebView, Never>,
         webViewErrorPublisher: some Publisher<WKError?, Never>,
         crashLoopDetector: TabCrashLoopDetecting = TabCrashLoopDetector(),
-        firePixel: @escaping (PixelKitEvent, [String: String]) -> Void = { event, parameters in
+        onTabCrash: @escaping () -> Void = {},
+        firePixel: @escaping (PixelKit.Event, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
-        }
+        },
+        reportBrokenSite: @escaping (NSWindow?) -> Void,
+        tabCrashAggregator: TabCrashAggregator
     ) {
         self.featureFlagger = featureFlagger
         self.crashLoopDetector = crashLoopDetector
+        self.onTabCrash = onTabCrash
         self.firePixel = firePixel
+        self.reportBrokenSite = reportBrokenSite
+        self.tabCrashAggregator = tabCrashAggregator
 
         contentPublisher.sink { [weak self] content in
             self?.content = content
@@ -117,6 +134,22 @@ final class TabCrashRecoveryExtension {
 
 extension TabCrashRecoveryExtension: NavigationResponder {
 
+    @MainActor
+    func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        guard navigationAction.url == .errorPageReportBrokenSite else {
+            return .next
+        }
+        guard navigationAction.isUserInitiated,
+              navigationAction.isForMainFrame,
+              navigationAction.sourceFrame.isMainFrame,
+              webViewError?.isWebContentProcessTerminated == true else {
+            return .cancel
+        }
+
+        reportBrokenSite(navigationAction.sourceFrame.webView?.window)
+        return .cancel
+    }
+
     func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?) {
         guard let webView, (webViewError?.code.rawValue ?? WKError.Code.unknown.rawValue) != WKError.Code.webContentProcessTerminated.rawValue else {
             return
@@ -130,38 +163,56 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             NSUnderlyingErrorKey: NSError(domain: WKErrorDomain, code: terminationReason)
         ])
 
-        attemptTabCrashRecovery(for: error, in: webView)
+        let isDuckAITab = webView.url?.isDuckAIURL == true || content?.urlForWebView?.isDuckAIURL == true
+        if isDuckAITab {
+            PixelKit.fire(AIChatPixel.aiChatTabDidTerminate(error: error), frequency: .dailyAndCount, includeAppVersionParameter: true)
+        }
 
-        Task.detached(priority: .utility) {
-#if APPSTORE
-            let additionalParameters = [String: String]()
-#else
-            let additionalParameters = await SystemInfo.pixelParameters()
-#endif
-            self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
+        attemptTabCrashRecovery(for: error, in: webView, isDuckAITab: isDuckAITab)
+
+        let now = Date()
+        let lastFireTime = lastPixelFireTime ?? Date.distantPast
+        if now.timeIntervalSince(lastFireTime) >= 0.1 {
+            lastPixelFireTime = now
+            let isDuckURL = webView.url?.isDuckURLScheme == true
+            let isDuckURLParameter = ["is_duck_url": String(isDuckURL)]
+
+            Task.detached(priority: .utility) {
+                let additionalParameters: [String: String]
+                if StandardApplicationBuildType().isAppStoreBuild {
+                    additionalParameters = isDuckURLParameter
+                } else {
+                    additionalParameters = await SystemInfo.pixelParameters().merging(isDuckURLParameter, uniquingKeysWith: { $1 })
+                }
+                self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
+            }
         }
     }
 
-    private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView) {
-        let shouldAutoReload: Bool
+    private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView, isDuckAITab: Bool) {
+        let crashTimestamp = crashLoopDetector.currentDate()
+        let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
+        tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
+        onTabCrash()
+        lastCrashedAt = crashTimestamp
 
-        if featureFlagger.isFeatureOn(.tabCrashRecovery) {
-            let crashTimestamp = crashLoopDetector.currentDate()
-            let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
-            tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
-            lastCrashedAt = crashTimestamp
+        if isCrashLoop {
+            tabCrashAggregator.recordCrash()
 
-            if isCrashLoop {
-                Task.detached(priority: .utility) {
-                    self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
-                }
+            Task.detached(priority: .utility) {
+                self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
             }
 
-            shouldAutoReload = !isCrashLoop
-        } else {
-            // disable auto-reload if tab crash debugging flag is enabled, to allow testing
-            shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser && !featureFlagger.isFeatureOn(.tabCrashDebugging)
+            if isDuckAITab {
+                PixelKit.fire(AIChatPixel.aiChatTabTerminationLoop(error: error), frequency: .dailyAndCount, includeAppVersionParameter: true)
+            }
         }
+
+#if DEBUG
+        let shouldAutoReload = !isCrashLoop && AppVersion.runType != .integrationTests
+#else
+        let shouldAutoReload = !isCrashLoop
+#endif
 
         handleTabCrash(error, in: webView, shouldAutoReload: shouldAutoReload)
     }

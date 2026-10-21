@@ -16,13 +16,21 @@
 //  limitations under the License.
 //
 
+import AppKit
 import NewTabPage
 
 final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
-
     var submitSearchHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
     var openSuggestionHandler: ((NewTabPageDataModel.Suggestion, NewTabPageDataModel.OpenTarget) -> Void)?
-    var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
+    var submitChatHandler: ((String, NewTabPageDataModel.OpenTarget, String?, [NewTabPageDataModel.SubmitChatImage]?, String?, [String]?, String?, [NewTabPageDataModel.OmnibarPageContext]?, [NewTabPageDataModel.OmnibarPromptFile]?) -> Void)?
+    var openAiChatHandler: ((String, Bool, NewTabPageDataModel.OpenAiChatTrigger, NewTabPageDataModel.OpenTarget) -> Void)?
+    var confirmDeleteAiChatHandler: ((String, String, NSWindow?) async -> Bool)?
+    var removeSuggestionHandler: ((String) -> Void)?
+    var openCustomizeResponsesHandler: (() -> Void)?
+    var setCustomizeResponsesActiveHandler: ((Bool) -> Void)?
+    var openPrivacyTermsHandler: (() -> Void)?
+    private(set) var lastSubmitChatAiTermsAccepted: Bool?
+    private(set) var openAttachmentPrivacyLearnMoreKinds: [NewTabPageDataModel.OmnibarAttachmentPrivacyKind] = []
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget) {
@@ -35,7 +43,57 @@ final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandlin
     }
 
     @MainActor
-    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget) {
-        submitChatHandler?(chat, target)
+    func submitChat(_ chat: String,
+                    target: NewTabPageDataModel.OpenTarget,
+                    modelId: String?,
+                    images: [NewTabPageDataModel.SubmitChatImage]?,
+                    mode: String?,
+                    toolChoice: [String]?,
+                    reasoningEffort: String?,
+                    pageContexts: [NewTabPageDataModel.OmnibarPageContext]?,
+                    files: [NewTabPageDataModel.OmnibarPromptFile]?,
+                    aiTermsAccepted: Bool) {
+        lastSubmitChatAiTermsAccepted = aiTermsAccepted
+        submitChatHandler?(chat, target, modelId, images, mode, toolChoice, reasoningEffort, pageContexts, files)
+    }
+
+    @MainActor
+    func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget) {
+        openAiChatHandler?(chatId, isPinned, trigger, target)
+    }
+
+    @MainActor
+    func viewAllAiChats(target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+
+    }
+
+    @MainActor
+    func confirmDeleteAiChat(chatId: String, title: String, sourceWindow: NSWindow?) async -> Bool {
+        await confirmDeleteAiChatHandler?(chatId, title, sourceWindow) ?? false
+    }
+
+    @MainActor
+    func removeSuggestion(_ url: String) {
+        removeSuggestionHandler?(url)
+    }
+
+    @MainActor
+    func openCustomizeResponses() {
+        openCustomizeResponsesHandler?()
+    }
+
+    @MainActor
+    func setCustomizeResponsesActive(_ active: Bool) {
+        setCustomizeResponsesActiveHandler?(active)
+    }
+
+    @MainActor
+    func openPrivacyTerms() {
+        openPrivacyTermsHandler?()
+    }
+
+    @MainActor
+    func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
+        openAttachmentPrivacyLearnMoreKinds.append(kind)
     }
 }

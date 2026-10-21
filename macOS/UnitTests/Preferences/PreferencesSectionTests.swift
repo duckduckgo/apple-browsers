@@ -29,12 +29,14 @@ final class PreferencesSectionTests: XCTestCase {
         let shouldIncludeDuckPlayer = false
         let shouldIncludeSync = false
         let shouldIncludeAIChat = false
-        let subscriptionState = PreferencesSidebarSubscriptionState.initial
+        let subscriptionState = PreferencesSidebarSubscriptionState()
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: shouldIncludeDuckPlayer,
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -42,6 +44,26 @@ final class PreferencesSectionTests: XCTestCase {
         XCTAssertFalse(regularPanesSection.panes.contains(.duckPlayer))
         XCTAssertFalse(regularPanesSection.panes.contains(.sync))
         XCTAssertFalse(regularPanesSection.panes.contains(.aiChat))
+        XCTAssertFalse(regularPanesSection.panes.contains(.websitePermissions))
+    }
+
+    func testWebsitePermissionsPaneAddedBeforeSyncWhenEnabled() throws {
+        // Given
+        let subscriptionState = PreferencesSidebarSubscriptionState()
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: true,
+                                                          includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: true,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        let regularPanesSection = sections.first { $0.id == .regularPreferencePanes }!
+        let websitePermissionsIndex = try XCTUnwrap(regularPanesSection.panes.firstIndex(of: .websitePermissions))
+        let syncIndex = try XCTUnwrap(regularPanesSection.panes.firstIndex(of: .sync))
+        XCTAssertEqual(websitePermissionsIndex + 1, syncIndex)
     }
 
     func testDuckPlayerPaneAddedToRegularSectionWhenEnabled() throws {
@@ -49,12 +71,14 @@ final class PreferencesSectionTests: XCTestCase {
         let shouldIncludeDuckPlayer = true
         let shouldIncludeSync = false
         let shouldIncludeAIChat = false
-        let subscriptionState = PreferencesSidebarSubscriptionState.initial
+        let subscriptionState = PreferencesSidebarSubscriptionState()
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: shouldIncludeDuckPlayer,
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -69,12 +93,14 @@ final class PreferencesSectionTests: XCTestCase {
         let shouldIncludeDuckPlayer = false
         let shouldIncludeSync = true
         let shouldIncludeAIChat = false
-        let subscriptionState = PreferencesSidebarSubscriptionState.initial
+        let subscriptionState = PreferencesSidebarSubscriptionState()
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: shouldIncludeDuckPlayer,
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -89,12 +115,14 @@ final class PreferencesSectionTests: XCTestCase {
         let shouldIncludeDuckPlayer = false
         let shouldIncludeSync = false
         let shouldIncludeAIChat = true
-        let subscriptionState = PreferencesSidebarSubscriptionState.initial
+        let subscriptionState = PreferencesSidebarSubscriptionState()
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: shouldIncludeDuckPlayer,
                                                           includingSync: shouldIncludeSync,
                                                           includingAIChat: shouldIncludeAIChat,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -104,128 +132,152 @@ final class PreferencesSectionTests: XCTestCase {
         XCTAssertTrue(regularPanesSection.panes.contains(.aiChat))
     }
 
-    func testNoPrivacyProSectionsArePresentWhenNoSubscriptionAndPurchaseOptions() throws {
+    func testNoSubscriptionSectionsArePresentWhenNoSubscriptionAndPurchaseOptions() throws {
         // Given
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: false,
-                                                                    subscriptionFeatures: nil,
-                                                                    userEntitlements: [],
-                                                                    shouldHideSubscriptionPurchase: true,
-                                                                    personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off,
-                                                                    paidAIChatStatus: .off,
-                                                                    isPaidAIChatEnabled: false)
+                                                                    shouldHideSubscriptionPurchase: true)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertFalse(sections.contains { $0.id ==  .privacyPro })
+        XCTAssertFalse(sections.contains { $0.id ==  .purchaseSubscription })
+        XCTAssertFalse(sections.contains { $0.id ==  .subscription })
     }
 
-    func testPurchasePrivacyProSectionIsPresentWhenNoSubscription() throws {
+    func testPurchaseSubscriptionSectionIsPresentWhenNoSubscription() throws {
         // Given
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: false,
-                                                                    subscriptionFeatures: nil,
-                                                                    userEntitlements: [],
-                                                                    shouldHideSubscriptionPurchase: false,
-                                                                    personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off,
-                                                                    paidAIChatStatus: .off,
-                                                                    isPaidAIChatEnabled: false)
+                                                                    shouldHideSubscriptionPurchase: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertTrue(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertFalse(sections.contains { $0.id ==  .privacyPro })
+        XCTAssertTrue(sections.contains { $0.id ==  .purchaseSubscription })
+        XCTAssertFalse(sections.contains { $0.id ==  .subscription })
 
-        let purchasePrivacyProSection = sections.first { $0.id ==  .purchasePrivacyPro }!
-        XCTAssertEqual(purchasePrivacyProSection.panes, [.privacyPro])
+        let purchaseSubscriptionSection = sections.first { $0.id ==  .purchaseSubscription }!
+        XCTAssertEqual(purchaseSubscriptionSection.panes, [.subscription])
     }
 
-    func testPrivacyProSectionIsPresentWhenHasSubscription() throws {
+    func testSubscriptionSectionIsPresentWhenHasSubscription() throws {
         // Given
-        let features: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
-                                                                    subscriptionFeatures: features,
-                                                                    userEntitlements: [],
                                                                     shouldHideSubscriptionPurchase: false,
-                                                                    personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off,
-                                                                    paidAIChatStatus: .off,
-                                                                    isPaidAIChatEnabled: true)
+                                                                    isNetworkProtectionRemovalEnabled: true,
+                                                                    isPersonalInformationRemovalEnabled: true,
+                                                                    isIdentityTheftRestorationEnabled: true,
+                                                                    isPaidAIChatEnabled: true,
+                                                                    isNetworkProtectionRemovalAvailable: true,
+                                                                    isPersonalInformationRemovalAvailable: true,
+                                                                    isIdentityTheftRestorationAvailable: true,
+                                                                    isPaidAIChatAvailable: true)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertTrue(sections.contains { $0.id ==  .privacyPro })
+        XCTAssertFalse(sections.contains { $0.id ==  .purchaseSubscription })
+        XCTAssertTrue(sections.contains { $0.id ==  .subscription })
 
-        let purchasePrivacyProSection = sections.first { $0.id ==  .privacyPro }!
-        XCTAssertEqual(purchasePrivacyProSection.panes, [.vpn, .personalInformationRemoval, .paidAIChat, .identityTheftRestoration, .subscriptionSettings])
+        let purchaseSubscriptionSection = sections.first { $0.id ==  .subscription }!
+        XCTAssertEqual(purchaseSubscriptionSection.panes, [.vpn, .personalInformationRemoval, .paidAIChat, .identityTheftRestoration, .subscriptionSettings])
     }
 
-    func testPrivacyPaidAIChatIsNotPresentWhenHasSubscriptionButFeatureFlagIsOff() throws {
+    func testSubscriptionSectionContentsIsDependantOnSubscriptionFeatures() throws {
         // Given
-        let features: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
-                                                                    subscriptionFeatures: features,
-                                                                    userEntitlements: [],
-                                                                    shouldHideSubscriptionPurchase: false,
-                                                                    personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off,
-                                                                    paidAIChatStatus: .off,
-                                                                    isPaidAIChatEnabled: false)
+                                                                    shouldHideSubscriptionPurchase: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertTrue(sections.contains { $0.id ==  .privacyPro })
+        XCTAssertFalse(sections.contains { $0.id ==  .purchaseSubscription })
+        XCTAssertTrue(sections.contains { $0.id ==  .subscription })
 
-        let purchasePrivacyProSection = sections.first { $0.id ==  .privacyPro }!
-        XCTAssertEqual(purchasePrivacyProSection.panes, [.vpn, .personalInformationRemoval, .identityTheftRestoration, .subscriptionSettings])
+        let purchaseSubscriptionSection = sections.first { $0.id ==  .subscription }!
+        XCTAssertEqual(purchaseSubscriptionSection.panes, [.subscriptionSettings])
     }
 
-    func testPrivacyProSectionContentsIsDependantOnSubscriptionFeatures() throws {
+    func testPartnershipsHubPaneIsAbsentWhenUnavailable() throws {
         // Given
-        let features: [Entitlement.ProductName] = []
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
-                                                                    subscriptionFeatures: features,
-                                                                    userEntitlements: [],
                                                                     shouldHideSubscriptionPurchase: false,
-                                                                    personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off,
-                                                                    paidAIChatStatus: .off,
-                                                                    isPaidAIChatEnabled: false)
+                                                                    isIdentityTheftRestorationAvailable: true,
+                                                                    isPartnershipsHubAvailable: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
                                                           includingSync: false,
                                                           includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
-        XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
-        XCTAssertTrue(sections.contains { $0.id ==  .privacyPro })
+        let subscriptionSection = sections.first { $0.id ==  .subscription }!
+        XCTAssertEqual(subscriptionSection.panes, [.identityTheftRestoration, .subscriptionSettings])
+    }
 
-        let purchasePrivacyProSection = sections.first { $0.id ==  .privacyPro }!
-        XCTAssertEqual(purchasePrivacyProSection.panes, [.subscriptionSettings])
+    func testPartnershipsHubPaneFollowsIdentityTheftRestorationAndPrecedesSubscriptionSettings() throws {
+        // Given
+        let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
+                                                                    shouldHideSubscriptionPurchase: false,
+                                                                    isNetworkProtectionRemovalAvailable: true,
+                                                                    isIdentityTheftRestorationAvailable: true,
+                                                                    isPartnershipsHubAvailable: true)
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: false,
+                                                          includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        let subscriptionSection = sections.first { $0.id ==  .subscription }!
+        XCTAssertEqual(subscriptionSection.panes, [.vpn, .identityTheftRestoration, .partnershipsHub, .subscriptionSettings])
+    }
+
+    func testPartnershipsHubPaneIsAbsentWithoutASubscription() throws {
+        // Given
+        // The entry point is for subscribers, so an available hub must not surface it on its own.
+        let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: false,
+                                                                    shouldHideSubscriptionPurchase: false,
+                                                                    isPartnershipsHubAvailable: true)
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: false,
+                                                          includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        XCTAssertFalse(sections.flatMap(\.panes).contains(.partnershipsHub))
     }
 }

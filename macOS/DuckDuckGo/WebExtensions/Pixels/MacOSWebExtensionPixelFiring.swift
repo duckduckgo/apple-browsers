@@ -1,0 +1,410 @@
+//
+//  MacOSWebExtensionPixelFiring.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import PixelKit
+import PrivacyConfig
+import WebExtensions
+
+enum WebExtensionPixel: PixelKit.Event {
+
+    // MARK: - Installation
+
+    case installed(extension: WebExtensionPixelExtension)
+    case installError(extension: WebExtensionPixelExtension, error: Error)
+
+    // MARK: - Uninstallation
+
+    case uninstalled(extension: WebExtensionPixelExtension)
+    case uninstallError(error: Error)
+    case uninstalledAll
+    case uninstallAllError(error: Error)
+
+    // MARK: - Loading (Startup)
+
+    case loaded
+    case loadError(error: Error)
+    case reloadError(parameters: [String: String])
+
+    // MARK: - Embedded Extensions
+
+    case embeddedInstalled
+    case embeddedUpgraded(fromVersion: String?, toVersion: String?)
+    case embeddedInstallError(error: Error)
+
+    // MARK: - DarkReader Extensions
+
+    case darkReaderInstalled
+    case darkReaderUpgraded(fromVersion: String?, toVersion: String?)
+    case darkReaderInstallError(error: Error)
+    case darkReaderEnabled
+    case darkReaderDisabled
+
+    // MARK: - Ad Blocking Extension
+
+    case adBlockingExtensionInstalled
+    case adBlockingExtensionUpgraded(fromVersion: String?, toVersion: String?)
+    case adBlockingExtensionInstallError(error: Error)
+    case adBlockingExtensionEnabled
+    case adBlockingExtensionDisabled
+
+    case adBlockingExtensionAddressBarActiveClicked
+    case adBlockingExtensionAddressBarInactiveClicked
+    case adBlockingExtensionPopoverAlwaysOn
+    case adBlockingExtensionPopoverAlwaysOff
+    case adBlockingExtensionPopoverDisableUntilRelaunch
+    case adBlockingExtensionBreakageReportEntered
+
+    // MARK: - Scriptlet Lifecycle
+
+    case scriptletFetchSuccess(extensionType: String, version: String, count: Int)
+    case scriptletFetchError(extensionType: String, error: Error)
+    case scriptletValidationError(extensionType: String, error: Error)
+    case scriptletInstalled(extensionType: String, version: String)
+    case scriptletInstallError(extensionType: String, error: Error)
+
+    // MARK: - State Monitor
+
+    case stateChecked
+    case embeddedNotLoaded
+    case darkReaderNotLoaded
+    case adBlockingExtensionNotLoaded
+    case adBlockingScriptletsNotFetched(extensionLoaded: Bool)
+    // MARK: - Daily State
+
+    case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
+    case bitwardenDailyActive(isDefault: Bool)
+
+    // MARK: - Default Password Manager
+
+    case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
+    case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
+
+    case cpmNetworkProcessRecoveryApplied
+
+    // MARK: - Debug
+
+    case debugCPM(CPMWebExtensionPixelMetadata)
+
+    // MARK: - PixelKit.Event
+
+    var name: String {
+        switch self {
+        case .installed:
+            return "m_mac_web_extension_installed"
+        case .installError:
+            return "m_mac_web_extension_install_error"
+        case .uninstalled:
+            return "m_mac_web_extension_uninstalled"
+        case .uninstallError:
+            return "m_mac_web_extension_uninstall_error"
+        case .uninstalledAll:
+            return "m_mac_web_extension_uninstalled_all"
+        case .uninstallAllError:
+            return "m_mac_web_extension_uninstall_all_error"
+        case .loaded:
+            return "m_mac_web_extension_loaded"
+        case .loadError:
+            return "m_mac_web_extension_load_error"
+        case .reloadError:
+            return "debug_web_extension_reload_failed"
+        case .embeddedInstalled:
+            return "m_mac_web_extension_embedded_installed"
+        case .embeddedUpgraded:
+            return "m_mac_web_extension_embedded_upgraded"
+        case .embeddedInstallError:
+            return "m_mac_web_extension_embedded_install_error"
+        case .darkReaderInstalled:
+            return "m_mac_web_extension_dark_reader_installed"
+        case .darkReaderUpgraded:
+            return "m_mac_web_extension_dark_reader_upgraded"
+        case .darkReaderInstallError:
+            return "m_mac_web_extension_dark_reader_install_error"
+        case .darkReaderEnabled:
+            return "m_mac_web_extension_dark_reader_enabled"
+        case .darkReaderDisabled:
+            return "m_mac_web_extension_dark_reader_disabled"
+        case .adBlockingExtensionInstalled:
+            return "m_mac_web_extension_ad_blocking_installed"
+        case .adBlockingExtensionUpgraded:
+            return "m_mac_web_extension_ad_blocking_upgraded"
+        case .adBlockingExtensionInstallError:
+            return "m_mac_web_extension_ad_blocking_install_error"
+        case .adBlockingExtensionEnabled:
+            return "m_mac_web_extension_ad_blocking_enabled"
+        case .adBlockingExtensionDisabled:
+            return "m_mac_web_extension_ad_blocking_disabled"
+        case .adBlockingExtensionAddressBarActiveClicked:
+            return "m_mac_web_extension_ad_blocking_addressbar_active_clicked"
+        case .adBlockingExtensionAddressBarInactiveClicked:
+            return "m_mac_web_extension_ad_blocking_addressbar_inactive_clicked"
+        case .adBlockingExtensionPopoverAlwaysOn:
+            return "m_mac_web_extension_ad_blocking_popover_always_on"
+        case .adBlockingExtensionPopoverAlwaysOff:
+            return "m_mac_web_extension_ad_blocking_popover_always_off"
+        case .adBlockingExtensionPopoverDisableUntilRelaunch:
+            return "m_mac_web_extension_ad_blocking_popover_disable_until_relaunch"
+        case .adBlockingExtensionBreakageReportEntered:
+            return "m_mac_web_extension_ad_blocking_breakage_report_entered"
+        case .scriptletFetchSuccess:
+            return "m_mac_web_extension_scriptlet_fetch_success"
+        case .scriptletFetchError:
+            return "m_mac_web_extension_scriptlet_fetch_error"
+        case .scriptletValidationError:
+            return "m_mac_web_extension_scriptlet_validation_error"
+        case .scriptletInstalled:
+            return "m_mac_web_extension_scriptlet_installed"
+        case .scriptletInstallError:
+            return "m_mac_web_extension_scriptlet_install_error"
+        case .dailyAdBlockingState:
+            return "m_mac_web_extension_daily_ad_blocking_state"
+        case .bitwardenDailyActive:
+            return "web_extension_bitwarden_dau_macos"
+        case .defaultPasswordManagerSet:
+            return "web_extension_default_password_manager_set_macos"
+        case .apiCompatibilityGaps(let catalogEntry, _, _, _):
+            // One pixel per catalog extension, so each gets its own once-a-day report.
+            return "web_extension_api_gaps_\(catalogEntry.rawValue.lowercased())_macos"
+        case .stateChecked:
+            return "web_extension_state_checked_macos"
+        case .embeddedNotLoaded:
+            return "web_extension_embedded_not_loaded_macos"
+        case .darkReaderNotLoaded:
+            return "web_extension_dark_reader_not_loaded_macos"
+        case .adBlockingExtensionNotLoaded:
+            return "web_extension_ad_blocking_not_loaded_macos"
+        case .adBlockingScriptletsNotFetched:
+            return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
+        case .debugCPM(let metadata):
+            // Preserve the shared canonical CPM names on both platforms.
+            return metadata.name
+        case .cpmNetworkProcessRecoveryApplied:
+            return "web_extension_cpm_network_process_recovery_applied"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .embeddedUpgraded(let fromVersion, let toVersion),
+             .darkReaderUpgraded(let fromVersion, let toVersion),
+             .adBlockingExtensionUpgraded(let fromVersion, let toVersion):
+            var params: [String: String] = [:]
+            if let fromVersion {
+                params["from_version"] = fromVersion
+            }
+            if let toVersion {
+                params["to_version"] = toVersion
+            }
+            return params.isEmpty ? nil : params
+        case .scriptletFetchSuccess(let extensionType, let version, let count):
+            return ["extension_type": extensionType, "version": version, "count": "\(count)"]
+        case .scriptletFetchError(let extensionType, _),
+             .scriptletValidationError(let extensionType, _),
+             .scriptletInstallError(let extensionType, _):
+            return ["extension_type": extensionType]
+        case .scriptletInstalled(let extensionType, let version):
+            return ["extension_type": extensionType, "version": version]
+        case .dailyAdBlockingState(let isEnabled, let analyticsEnabled):
+            return [
+                "is_enabled": isEnabled ? "true" : "false",
+                "analytics_enabled": analyticsEnabled ? "true" : "false"
+            ]
+        case .adBlockingScriptletsNotFetched(let extensionLoaded):
+            return ["extension_loaded": extensionLoaded ? "true" : "false"]
+        case .installed(let pixelExtension),
+             .installError(let pixelExtension, _),
+             .uninstalled(let pixelExtension),
+             .defaultPasswordManagerSet(let pixelExtension):
+            return ["extension": pixelExtension.parameterValue]
+        case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
+            return ["extension_version": version,
+                    "missing_api_count": String(missingAPICount),
+                    "unsupported_url_count": String(unsupportedURLCount)]
+        case .bitwardenDailyActive(let isDefault):
+            return ["is_default": isDefault ? "true" : "false"]
+        case .debugCPM(let metadata):
+            return metadata.parameters
+        case .reloadError(let parameters):
+            return parameters
+        default:
+            return nil
+        }
+    }
+
+    var namePrefix: PixelKitNamePrefix {
+        switch self {
+        case .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
+            return .none
+        default:
+            return .platformDefault
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        return [.pixelSource]
+    }
+}
+
+@available(macOS 15.4, *)
+private extension DuckDuckGoWebExtensionType {
+
+    var installedPixel: WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedInstalled
+        case .darkReader: return .darkReaderInstalled
+        case .adBlockingExtension: return .adBlockingExtensionInstalled
+        case .searchToken: return nil
+        }
+    }
+
+    func upgradedPixel(fromVersion: String?, toVersion: String?) -> WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .darkReader: return .darkReaderUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .adBlockingExtension: return .adBlockingExtensionUpgraded(fromVersion: fromVersion, toVersion: toVersion)
+        case .searchToken: return nil
+        }
+    }
+
+    func installErrorPixel(error: Error) -> WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedInstallError(error: error)
+        case .darkReader: return .darkReaderInstallError(error: error)
+        case .adBlockingExtension: return .adBlockingExtensionInstallError(error: error)
+        case .searchToken: return nil
+        }
+    }
+
+    var notLoadedPixel: WebExtensionPixel? {
+        switch self {
+        case .embedded: return .embeddedNotLoaded
+        case .darkReader: return .darkReaderNotLoaded
+        case .adBlockingExtension: return .adBlockingExtensionNotLoaded
+        case .searchToken: return nil
+        }
+    }
+}
+
+// MARK: - WebExtensionPixelFiring Implementation
+
+@available(macOS 15.4, *)
+struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
+
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        let pixel: WebExtensionPixel
+        let frequency: PixelKit.Frequency
+        switch event {
+        case .installed(let pixelExtension):
+            pixel = .installed(extension: pixelExtension)
+        case .installError(let pixelExtension, let error):
+            pixel = .installError(extension: pixelExtension, error: error)
+        case .uninstalled(let pixelExtension):
+            pixel = .uninstalled(extension: pixelExtension)
+        case .uninstallError(let error):
+            pixel = .uninstallError(error: error)
+        case .uninstalledAll:
+            pixel = .uninstalledAll
+        case .uninstallAllError(let error):
+            pixel = .uninstallAllError(error: error)
+        case .loaded:
+            pixel = .loaded
+        case .loadError(let error):
+            pixel = .loadError(error: error)
+        case .reloadError(let type, let trigger, let phase, let error):
+            let metadata = WebExtensionReloadErrorPixelMetadata(
+                type: type,
+                trigger: trigger,
+                phase: phase,
+                error: error
+            )
+            pixel = .reloadError(parameters: metadata.parameters)
+        case .embeddedInstalled(let type):
+            guard let macPixel = type.installedPixel else { return }
+            pixel = macPixel
+        case .embeddedUpgraded(let type, let fromVersion, let toVersion):
+            guard let macPixel = type.upgradedPixel(fromVersion: fromVersion, toVersion: toVersion) else { return }
+            pixel = macPixel
+        case .embeddedInstallError(let type, let error):
+            guard let macPixel = type.installErrorPixel(error: error) else { return }
+            pixel = macPixel
+        case .scriptletFetchSuccess(let type, let version, let count):
+            pixel = .scriptletFetchSuccess(extensionType: type.rawValue, version: version, count: count)
+        case .scriptletFetchError(let type, let error):
+            pixel = .scriptletFetchError(extensionType: type.rawValue, error: error)
+        case .scriptletValidationError(let type, let error):
+            pixel = .scriptletValidationError(extensionType: type.rawValue, error: error)
+        case .scriptletInstalled(let type, let version):
+            pixel = .scriptletInstalled(extensionType: type.rawValue, version: version)
+        case .scriptletInstallError(let type, let error):
+            pixel = .scriptletInstallError(extensionType: type.rawValue, error: error)
+        case .stateChecked:
+            pixel = .stateChecked
+        case .expectedExtensionNotLoaded(let type):
+            guard let macPixel = type.notLoadedPixel else { return }
+            pixel = macPixel
+        case .adBlockingScriptletsNotFetched(let extensionLoaded):
+            pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
+        case .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
+            guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
+            pixel = .debugCPM(metadata)
+        case .cpmNetworkProcessRecoveryApplied:
+            pixel = .cpmNetworkProcessRecoveryApplied
+        case .defaultPasswordManagerSet(let pixelExtension):
+            pixel = .defaultPasswordManagerSet(extension: pixelExtension)
+        case .bitwardenDailyActive(let isDefault):
+            pixel = .bitwardenDailyActive(isDefault: isDefault)
+        case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
+            pixel = .apiCompatibilityGaps(extension: catalogEntry, version: version,
+                                          missingAPICount: missingAPICount, unsupportedURLCount: unsupportedURLCount)
+        }
+        switch event {
+        case .bitwardenDailyActive, .apiCompatibilityGaps:
+            frequency = .daily
+        case .defaultPasswordManagerSet:
+            frequency = .standard
+        default:
+            frequency = Self.frequency(of: event)
+        }
+        pixelFiring?.fire(pixel, frequency: frequency)
+    }
+
+    private static func frequency(of event: WebExtensionPixelEvent) -> PixelKit.Frequency {
+        let frequency: PixelKit.Frequency
+        if case .reloadError = event {
+            frequency = .dailyAndCount
+        } else if let metadata = CPMWebExtensionPixelMetadata(event: event) {
+            frequency = metadata.frequency.pixelKitFrequency
+        } else {
+            frequency = .dailyAndStandard
+        }
+        return frequency
+    }
+}
+
+private extension CPMWebExtensionPixelFrequency {
+    var pixelKitFrequency: PixelKit.Frequency {
+        switch self {
+        case .dailyAndCount: return .dailyAndCount
+        }
+    }
+}

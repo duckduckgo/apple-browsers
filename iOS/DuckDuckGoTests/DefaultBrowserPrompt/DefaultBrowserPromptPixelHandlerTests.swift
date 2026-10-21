@@ -20,13 +20,10 @@
 import Testing
 import Core
 @testable import DuckDuckGo
+@_spi(Testing) import PixelKit
 
-@Suite("Default Browser Prompt - Pixel Handler Tests")
+@Suite("Default Browser Prompt - Pixel Handler Tests", .serialized)
 final class DefaultBrowserPromptPixelHandlerTests {
-
-    deinit {
-        PixelFiringMock.tearDown()
-    }
 
     @Test(
         "Check Modal Shown Event Fire Correct Pixel",
@@ -36,15 +33,16 @@ final class DefaultBrowserPromptPixelHandlerTests {
     )
     func whenModalShownEventFiredThenCorrectPixelIsSent(numberOfModalShown: Int) {
         // GIVEN
-        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: PixelFiringMock.self)
+        let pixelKitMock = PixelKitMock()
+        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: pixelKitMock)
 
         // WHEN
-        sut.fire(.modalShown(numberOfModalShown: numberOfModalShown))
+        sut.fire(.activeModalShown(numberOfModalShown: numberOfModalShown))
 
         // THEN
         let expectedParameter = numberOfModalShown <= 10 ? String(numberOfModalShown) : "10+"
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.defaultBrowserPromptModalShown.name)
-        #expect(PixelFiringMock.lastPixelInfo?.params == [PixelParameters.defaultBrowserPromptNumberOfModalsShown: expectedParameter])
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.defaultBrowserPromptModalShown.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == [PixelParameters.defaultBrowserPromptNumberOfModalsShown: expectedParameter])
     }
 
     @Test(
@@ -55,40 +53,101 @@ final class DefaultBrowserPromptPixelHandlerTests {
     )
     func whenModalActionedEventFiredThenCorrectPixelIsSent(numberOfModalShown: Int) {
         // GIVEN
-        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: PixelFiringMock.self)
+        let pixelKitMock = PixelKitMock()
+        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: pixelKitMock)
 
         // WHEN
-        sut.fire(.modalActioned(numberOfModalShown: numberOfModalShown))
+        sut.fire(.activeModalActioned(numberOfModalShown: numberOfModalShown))
 
         // THEN
         let expectedParameter = numberOfModalShown <= 10 ? String(numberOfModalShown) : "10+"
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped.name)
-        #expect(PixelFiringMock.lastPixelInfo?.params == [PixelParameters.defaultBrowserPromptNumberOfModalsShown: expectedParameter])
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters == [PixelParameters.defaultBrowserPromptNumberOfModalsShown: expectedParameter])
     }
 
     @Test("Check Modal Dismissed Event Fire Correct Pixel")
     func whenModalDismissedEventFiredThenCorrectPixelIsSent() {
         // GIVEN
-        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: PixelFiringMock.self)
+        let pixelKitMock = PixelKitMock()
+        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: pixelKitMock)
 
         // WHEN
-        sut.fire(.modalDismissed)
+        sut.fire(.activeModalDismissed)
 
         // THEN
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.defaultBrowserPromptModalClosedButtonTapped.name)
-        #expect(PixelFiringMock.lastPixelInfo?.params?.isEmpty == true)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.defaultBrowserPromptModalClosedButtonTapped.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty == true)
     }
 
     @Test("Check Modal Dismissed Permanently Event Fire Correct Pixel")
     func whenModalDismissedPermanentlyEventFiredThenCorrectPixelIsSent() {
         // GIVEN
-        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: PixelFiringMock.self)
+        let pixelKitMock = PixelKitMock()
+        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: pixelKitMock)
 
         // WHEN
-        sut.fire(.modalDismissedPermanently)
+        sut.fire(.activeModalDismissedPermanently)
 
         // THEN
-        #expect(PixelFiringMock.lastPixelInfo?.pixelName == Pixel.Event.defaultBrowserPromptModalDoNotAskAgainButtonTapped.name)
-        #expect(PixelFiringMock.lastPixelInfo?.params?.isEmpty == true)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.defaultBrowserPromptModalDoNotAskAgainButtonTapped.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty == true)
+    }
+
+    // MARK: - Inactive Browser Prompt
+
+    @Test("Check Inactive User Modal Shown Event Fire Correct Pixel")
+    func whenInactiveUserModalShownEventThenCorrectPixelIsSent() async throws {
+        // GIVEN
+        let pixelKitMock = PixelKitMock()
+        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: pixelKitMock)
+
+        // WHEN
+        sut.fire(.inactiveModalShown)
+
+        // THEN
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.defaultBrowserPromptInactiveUserModalShown.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty == true)
+    }
+
+    @Test("Check Inactive User Modal Shown Event Fire Correct Pixel")
+    func whenInactiveUserModalDismissEventThenCorrectPixelIsSent() async throws {
+        // GIVEN
+        let pixelKitMock = PixelKitMock()
+        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: pixelKitMock)
+
+        // WHEN
+        sut.fire(.inactiveModalDismissed)
+
+        // THEN
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.defaultBrowserPromptInactiveUserModalClosedButtonTapped.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty == true)
+    }
+
+    @Test("Check Inactive User Modal Shown Event Fire Correct Pixel")
+    func whenInactiveUserModalActionedEventThenCorrectPixelIsSent() async throws {
+        // GIVEN
+        let pixelKitMock = PixelKitMock()
+        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: pixelKitMock)
+
+        // WHEN
+        sut.fire(.inactiveModalActioned)
+
+        // THEN
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.defaultBrowserPromptInactiveUserModalSetAsDefaultBrowserButtonTapped.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty == true)
+    }
+
+    @Test("Check Inactive User Modal More Protections Event Fire Correct Pixel")
+    func whenInactiveUserModalMoreProtectionEventThenCorrectPixelIsSent() async throws {
+        // GIVEN
+        let pixelKitMock = PixelKitMock()
+        let sut = DefaultBrowserPromptPixelHandler(pixelFiring: pixelKitMock)
+
+        // WHEN
+        sut.fire(.inactiveModalMoreProtectionsAction)
+
+        // THEN
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.defaultBrowserPromptInactiveUserModalMoreProtectionsButtonTapped.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?.isEmpty == true)
     }
 }

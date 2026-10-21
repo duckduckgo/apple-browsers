@@ -1,0 +1,347 @@
+//
+//  AutoplayPolicyTabExtensionTests.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Combine
+import PrivacyConfig
+import UserScript
+import WebKit
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
+@testable import DDGNavigation
+
+@MainActor
+final class AutoplayPolicyTabExtensionTests: XCTestCase {
+
+    private var mockPermissionManager: PermissionManagerMock!
+    private var mockPrivacyConfigManager: MockPrivacyConfigurationManaging!
+    private var autoplayPreferences: AutoplayPreferences!
+    private var persistor: AutoplayPreferencesPersistorMock!
+    private var telemetryScriptSubject: PassthroughSubject<MockWebTelemetryScriptProvider, Never>!
+    private var webView: WKWebView!
+
+    override func setUp() {
+        super.setUp()
+        mockPermissionManager = PermissionManagerMock()
+        mockPrivacyConfigManager = MockPrivacyConfigurationManaging()
+        mockPrivacyConfigManager.mockConfig.identifier = UUID().uuidString
+        persistor = AutoplayPreferencesPersistorMock(autoplayBlockingModeRawValue: AutoplayBlockingMode.blockAudio.rawValue)
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        telemetryScriptSubject = PassthroughSubject<MockWebTelemetryScriptProvider, Never>()
+        telemetryScriptSubject.send(MockWebTelemetryScriptProvider())
+
+        webView = WKWebView()
+    }
+
+    override func tearDown() {
+        mockPermissionManager = nil
+        mockPrivacyConfigManager = nil
+        autoplayPreferences = nil
+        persistor = nil
+        telemetryScriptSubject = nil
+        webView = nil
+        super.tearDown()
+    }
+
+    // MARK: - Helpers
+
+    private func makeExtension() -> AutoplayPolicyTabExtension {
+        AutoplayPolicyTabExtension(
+            autoplayPreferences: autoplayPreferences,
+            permissionManager: mockPermissionManager,
+            privacyConfigurationManager: mockPrivacyConfigManager,
+            telemetryScriptPublisher: telemetryScriptSubject
+        )
+    }
+
+    private func makeNavigationAction(url: URL) -> NavigationAction {
+        let frame = FrameInfo(
+            webView: webView,
+            handle: FrameHandle(rawValue: 1),
+            isMainFrame: true,
+            url: url,
+            securityOrigin: url.securityOrigin
+        )
+        return NavigationAction(
+            request: URLRequest(url: url),
+            navigationType: .other,
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: false,
+            sourceFrame: frame,
+            targetFrame: frame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+    }
+
+    // MARK: - No per-site override (falls back to global preferences)
+
+    func testWhenNoPerSiteOverrideAndGlobalAllowAllThenPolicyIsAllow() async {
+        persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.allowAll.rawValue
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .allow)
+    }
+
+    func testWhenNoPerSiteOverrideAndGlobalBlockAudioThenPolicyIsAllowWithoutSound() async {
+        persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.blockAudio.rawValue
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .allowWithoutSound)
+    }
+
+    func testWhenNoPerSiteOverrideAndGlobalBlockAllThenPolicyIsDeny() async {
+        persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.blockAll.rawValue
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .deny)
+    }
+
+    // MARK: - Per-site override stored
+
+    func testWhenPerSiteAllowStoredThenPolicyIsAllow() async {
+        mockPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .allow)
+    }
+
+    func testWhenPerSiteAskStoredThenPolicyIsAllowWithoutSound() async {
+        mockPermissionManager.setPermission(.ask, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .allowWithoutSound)
+    }
+
+    func testWhenPerSiteDenyStoredThenPolicyIsDeny() async {
+        mockPermissionManager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .deny)
+    }
+
+    // MARK: - Per-site override takes precedence over global
+
+    func testWhenPerSiteDenyStoredAndGlobalAllowAllThenPolicyIsDeny() async {
+        persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.allowAll.rawValue
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        mockPermissionManager.setPermission(.deny, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .deny, "Per-site override should take precedence over global default")
+    }
+
+    // MARK: - mustApplyAutoplayPolicy
+
+    func testWhenURLIsHttpsThenMustApplyAutoplayPolicyIsTrue() async {
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertTrue(prefs.mustApplyAutoplayPolicy)
+    }
+
+    // MARK: - Non-HTTP URLs fall back to global default
+
+    func testWhenURLIsFileThenAutoplayPolicyIsNotApplied() async {
+        mockPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "file:///tmp/page.html")!), preferences: &prefs)
+
+        XCTAssertNil(prefs.autoplayPolicy, "file:// URLs should not have an autoplay policy set")
+        XCTAssertFalse(prefs.mustApplyAutoplayPolicy, "file:// URLs should not apply autoplay policy")
+    }
+
+    func testWhenURLIsAboutBlankThenAutoplayPolicyIsNotApplied() async {
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "about:blank")!), preferences: &prefs)
+
+        XCTAssertNil(prefs.autoplayPolicy, "about:blank should not have an autoplay policy set")
+        XCTAssertFalse(prefs.mustApplyAutoplayPolicy, "about:blank should not apply autoplay policy")
+    }
+
+    // MARK: - Per-site isolation (override for domain A does not leak to domain B)
+
+    func testWhenPerSiteOverrideExistsForDifferentDomainThenFallsBackToGlobalDefault() async {
+        persistor.autoplayBlockingModeRawValue = AutoplayBlockingMode.blockAudio.rawValue
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        mockPermissionManager.setPermission(.allow, forDomain: "other.com", permissionType: .autoplayPolicy)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertEqual(prefs.autoplayPolicy, .allowWithoutSound, "Per-site override for other.com should not affect example.com")
+    }
+
+    // MARK: - Return value
+
+    func testDecidePolicyAlwaysReturnsNext() async {
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        let policy = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertNil(policy, "Policy should be .next (nil) to pass to the next responder")
+    }
+
+    // MARK: - Video playback detection
+
+    func testWhenVideoPlaybackDetectedThenPublishedPropertyIsTrue() async {
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+
+        ext.webTelemetryUserScript(script, didDetectVideoPlaybackIn: webView)
+
+        XCTAssertTrue(ext.videoPlaybackDetected)
+    }
+
+    func testWhenNavigationOccursThenVideoPlaybackDetectedResets() async {
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+
+        ext.webTelemetryUserScript(script, didDetectVideoPlaybackIn: webView)
+        XCTAssertTrue(ext.videoPlaybackDetected)
+
+        var prefs = NavigationPreferences.default
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertFalse(ext.videoPlaybackDetected)
+    }
+
+    func testVideoPlaybackAndAutoplayAreTrackedIndependently() async {
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+
+        ext.webTelemetryUserScript(script, didDetectVideoPlaybackIn: webView)
+
+        XCTAssertTrue(ext.videoPlaybackDetected)
+        XCTAssertFalse(ext.videoAutoplayDetected, "Playback must not imply autoplay")
+
+        ext.webTelemetryUserScript(script, didDetectVideoAutoplayIn: webView)
+
+        XCTAssertTrue(ext.videoAutoplayDetected)
+    }
+
+    // MARK: - Video autoplay detection
+
+    func testWhenVideoAutoplayDetectedThenPublishedPropertyIsTrue() async {
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+
+        ext.webTelemetryUserScript(script, didDetectVideoAutoplayIn: webView)
+
+        XCTAssertTrue(ext.videoAutoplayDetected)
+    }
+
+    func testWhenNavigationOccursThenVideoAutoplayDetectedResets() async {
+        let ext = makeExtension()
+        let script = WebTelemetryUserScript()
+
+        ext.webTelemetryUserScript(script, didDetectVideoAutoplayIn: webView)
+        XCTAssertTrue(ext.videoAutoplayDetected)
+
+        var prefs = NavigationPreferences.default
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertFalse(ext.videoAutoplayDetected)
+    }
+
+    // MARK: - Default permission seeding
+
+    func testWhenNavigatingToConfigDomainThenDefaultPermissionIsSeeded() async {
+        mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"example.com\"]}"
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertTrue(mockPermissionManager.hasPermissionPersisted(forDomain: "example.com", permissionType: .autoplayPolicy))
+        XCTAssertEqual(mockPermissionManager.permission(forDomain: "example.com", permissionType: .autoplayPolicy), .allow)
+        XCTAssertTrue(persistor.seededDomains.contains("example.com"))
+    }
+
+    func testWhenNavigatingToNonConfigDomainThenNoPermissionIsSeeded() async {
+        mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"other.com\"]}"
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertFalse(mockPermissionManager.hasPermissionPersisted(forDomain: "example.com", permissionType: .autoplayPolicy))
+        XCTAssertTrue(persistor.seededDomains.isEmpty)
+    }
+
+    func testWhenDomainAlreadySeededThenPermissionIsNotReSeeded() async {
+        mockPrivacyConfigManager.mockConfig.subfeatureSettings = "{\"domainsAllowList\":[\"example.com\"]}"
+        persistor.seededDomains = ["example.com"]
+        autoplayPreferences = AutoplayPreferences(persistor: persistor)
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://example.com")!), preferences: &prefs)
+
+        XCTAssertFalse(mockPermissionManager.hasPermissionPersisted(forDomain: "example.com", permissionType: .autoplayPolicy))
+    }
+
+    func testWhenNoRemoteConfigThenYouTubeIsSeededByDefault() async {
+        // No subfeatureSettings configured — remote config returns nil
+        let ext = makeExtension()
+        var prefs = NavigationPreferences.default
+
+        _ = await ext.decidePolicy(for: makeNavigationAction(url: URL(string: "https://youtube.com")!), preferences: &prefs)
+
+        XCTAssertTrue(mockPermissionManager.hasPermissionPersisted(forDomain: "youtube.com", permissionType: .autoplayPolicy))
+        XCTAssertEqual(mockPermissionManager.permission(forDomain: "youtube.com", permissionType: .autoplayPolicy), .allow)
+        XCTAssertTrue(persistor.seededDomains.contains("youtube.com"))
+    }
+}
+
+private struct MockWebTelemetryScriptProvider: WebTelemetryUserScriptProvider {
+    var webTelemetryScript = WebTelemetryUserScript()
+}

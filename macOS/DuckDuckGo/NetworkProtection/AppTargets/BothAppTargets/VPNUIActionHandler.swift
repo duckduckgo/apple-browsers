@@ -17,12 +17,15 @@
 //
 
 import AppLauncher
+import Common
+import FoundationExtensions
 import Foundation
-import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
+import Subscription
 import SwiftUI
+import VPN
 import VPNAppLauncher
 import VPNAppState
 
@@ -35,27 +38,32 @@ final class VPNUIActionHandler {
     private let tunnelController: TunnelController
     private let vpnAppState: VPNAppState
     private let vpnURLEventHandler: VPNURLEventHandler
+    private let freeTrialConversionService: FreeTrialConversionInstrumentationService
 
     init(vpnIPCClient: VPNControllerXPCClient = .shared,
          vpnURLEventHandler: VPNURLEventHandler,
          tunnelController: TunnelController,
          proxySettings: TransparentProxySettings,
-         vpnAppState: VPNAppState) {
+         vpnAppState: VPNAppState,
+         freeTrialConversionService: FreeTrialConversionInstrumentationService) {
 
         self.vpnIPCClient = vpnIPCClient
         self.vpnURLEventHandler = vpnURLEventHandler
         self.tunnelController = tunnelController
         self.proxySettings = proxySettings
         self.vpnAppState = vpnAppState
+        self.freeTrialConversionService = freeTrialConversionService
     }
 
     func askUserToReportIssues(withDomain domain: String) async {
-        let parentWindow = await windowControllerManager.lastKeyMainWindowController?.window
-        await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow)
+        let parentWindow = await windowControllersManager.lastKeyMainWindowController?.window
+        await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow) { view, window in
+            await presentAsAppModal(view, in: window)
+        }
     }
 
     @MainActor
-    private var windowControllerManager: WindowControllersManager {
+    private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
     }
 }
@@ -63,7 +71,8 @@ final class VPNUIActionHandler {
 extension VPNUIActionHandler: VPNUIActionHandling {
 
     func moveAppToApplications() async {
-#if !APPSTORE && !DEBUG
+#if !DEBUG
+        guard !AppVersion.isAppStoreBuild else { return }
         await vpnURLEventHandler.moveAppToApplicationsFolder()
 #endif
     }
@@ -87,14 +96,18 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         await vpnURLEventHandler.showLocations()
     }
 
-    func showPrivacyPro() async {
-        await vpnURLEventHandler.showPrivacyPro()
+    func showVPNSettings() async {
+        await vpnURLEventHandler.showPreferences()
+    }
+
+    func showSubscription(origin: String?) async {
+        await vpnURLEventHandler.showSubscription(origin: origin)
     }
 
     @MainActor
     func willStopVPN() async -> Bool {
         guard vpnAppState.isUsingSystemExtension && !vpnAppState.dontAskAgainExclusionSuggestion,
-              let parentWindow = windowControllerManager.lastKeyMainWindowController?.window else {
+              let parentWindow = windowControllersManager.lastKeyMainWindowController?.window else {
             return true
         }
 
@@ -113,7 +126,7 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         }
 
         let modalAlert = VPNExclusionSuggestionAlert(userAction: binding, dontAskAgain: dontAskAgainBinding)
-        await modalAlert.show(in: parentWindow)
+        await presentAsAppModal(modalAlert, in: parentWindow)
 
         if dontAskAgain {
             vpnAppState.dontAskAgainExclusionSuggestion = true
@@ -126,9 +139,30 @@ extension VPNUIActionHandler: VPNUIActionHandling {
             Application.appDelegate.windowControllersManager.showVPNAppExclusions(addApp: true)
             return false
         case .excludeWebsite:
-            let domain = windowControllerManager.activeDomain ?? ""
-            windowControllerManager.showVPNDomainExclusions(domain: domain)
+            let domain = windowControllersManager.activeDomain ?? ""
+            windowControllersManager.showVPNDomainExclusions(domain: domain)
             return false
         }
     }
+
+    func didStartVPN() {
+        freeTrialConversionService.markVPNActivated()
+    }
+}
+
+/// Presents a SwiftUI view defined in a feature package through the app's standard modal-sheet
+/// presenter (`SheetHostingWindow`) — the same path used by Fire, bookmarks, etc. — so its
+/// `@Environment(\.dismiss)` works on all supported macOS versions. Returns once dismissed.
+@MainActor
+func presentAsAppModal(_ view: some View, in window: NSWindow?) async {
+    await withCheckedContinuation { continuation in
+        ModalSheetWrapper(content: view).show(in: window) {
+            continuation.resume()
+        }
+    }
+}
+
+private struct ModalSheetWrapper<Content: View>: ModalView {
+    let content: Content
+    var body: some View { content }
 }

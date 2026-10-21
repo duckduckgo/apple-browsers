@@ -3,7 +3,7 @@ appId: com.duckduckgo.mobile.ios
 
 - tapOn: Bookmarks
 - tapOn: Edit
-- tapOn: Spread Privacy
+- tapOn: ".*Spread Privacy.*"
 - scroll
 - scroll
 - tapOn: Delete

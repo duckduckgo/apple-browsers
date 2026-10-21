@@ -1,0 +1,193 @@
+//
+//  MockOmniBar.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import UIKit
+import PrivacyDashboard
+
+@testable import DuckDuckGo
+
+final class MockOmniBar: OmniBar {
+    
+    var mockBarView = MockOmniBarView()
+    var barView: any DuckDuckGo.OmniBarView {
+        mockBarView
+    }
+    var isBackButtonEnabled: Bool = false
+    var isForwardButtonEnabled: Bool = false
+    var omniDelegate: (any DuckDuckGo.OmniBarDelegate)?
+    var isExpandedPhone: Bool = false
+    func configureForSwipeTemplate(isExpandedPhone: Bool, tabCount: Int) { }
+    var isTextFieldEditing: Bool = false
+    var text: String?
+    var iPadDuckAIControlValues: IPadDuckAIControlValues = IPadDuckAIControlValuesSnapshot()
+
+    func bindIPadDraft(to tab: Tab?) { }
+    func updateQuery(_ query: String?) { }
+    func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
+    var onBeginEditing: (() -> Void)?
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
+        onBeginEditing?()
+    }
+    func endEditing() { }
+    func showSeparator() { }
+    func hideSeparator() { }
+    func moveSeparatorToTop() { }
+    func moveSeparatorToBottom() { }
+    func useSmallTopSpacing() { }
+    func useRegularTopSpacing() { }
+    func preventShadowsOnTop() { }
+    func preventShadowsOnBottom() { }
+    func enterPhoneState() { }
+    func enterPadState() { }
+    func startBrowsing() { }
+    func stopBrowsing() { }
+    func startLoading() { }
+    func stopLoading() { }
+    func cancel() { }
+    func removeTextSelection() { }
+    func selectTextToEnd(_ offset: Int) { }
+    func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) { }
+    func showYouTubeAdBlockNotification() { }
+    func showOrScheduleOnboardingPrivacyIconAnimation() { }
+    func dismissOnboardingPrivacyIconAnimation() { }
+    func startTrackersAnimation(_ privacyInfo: PrivacyDashboard.PrivacyInfo, forDaxDialog: Bool) { }
+    func updatePrivacyIcon(for privacyInfo: PrivacyDashboard.PrivacyInfo?) { }
+    func hidePrivacyIcon() { }
+    func resetPrivacyIcon(for url: URL?) { }
+    func cancelAllAnimations() { }
+    func completeAnimationForDaxDialog() { }
+    func setDaxEasterEggLogoURL(_ logoURL: String?, searchQuery: String?) { }
+    func refreshCustomizableButton() {}
+    func enterAIChatMode() { }
+    func setSelectedTextEntryMode(_ mode: TextEntryMode) { }
+
+    func endEditingInSearchMode() { }
+    func setDaxEasterEggLogoURL(_ logoURL: String?) { }
+    func refreshFireMode(fireMode: Bool) { }
+    func prepareForMoveTransition() { }
+    func moveTransitionCompleted() { }
+
+    final class MockOmniBarView: UIView, OmniBarView {
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+        
+        init() {
+            super.init(frame: .zero)
+        }
+        
+        var text: String?
+        static let expectedHeight: CGFloat = 52
+        var expectedHeight: CGFloat = MockOmniBarView.expectedHeight
+        var textField: DuckDuckGo.TextFieldWithInsets!
+        var privacyInfoContainer: DuckDuckGo.PrivacyInfoContainerView!
+        var notificationContainer: DuckDuckGo.OmniBarNotificationContainerView!
+        var searchContainer: UIView! = UIView()
+        var searchLoupe: UIView! = UIView()
+        var dismissButton: UIButton! = UIButton()
+        var backButton: UIButton! = UIButton()
+        var forwardButton: UIButton! = UIButton()
+        var settingsButton: UIButton! = UIButton()
+        var cancelButton: UIButton! = UIButton()
+        var bookmarksButton: UIButton! = UIButton()
+        var aiChatButton: UIButton! = UIButton()
+        var menuButton: UIButton! = UIButton()
+        var fireButton: UIButton! = UIButton()
+        var refreshButton: UIButton! = UIButton()
+        var leftIconContainerView: UIView! = UIView()
+        var customIconView: UIImageView = UIImageView()
+        var clearButton: UIButton! = UIButton()
+        var customizableButton: UIButton! = UIButton()
+
+        var tabSwitcherContainerView: UIView = UIView()
+        func configureForSwipeTemplate(mode: OmniBarLayoutMode, tabCount: Int) { }
+        func showSeparator() { }
+        func hideSeparator() { }
+        func moveSeparatorToTop() { }
+        func moveSeparatorToBottom() { }
+        func hideButtons() { }
+        func revealButtons() { }
+        func setBookmarksPosition(leading: Bool, hidden: Bool) { }
+        func refreshFireMode(fireMode: Bool) { }
+        func refreshLongPressMenuAvailability() { }
+        func prepareForMoveTransition() { }
+        func moveTransitionCompleted() { }
+        func setIconContainersAlpha(_ alpha: CGFloat) { }
+        func hideBarChrome() { }
+        func restoreBarChrome() { }
+        func makeGlass() { }
+        func makeOpaque() { }
+        func restoreFloatingFieldAppearance() { }
+        func updateAIChatButtonForContextualChat(hasContextualSession: Bool) { }
+        func setFloatingMinimalChromeBar(_ enabled: Bool) { }
+
+        var progressView: DuckDuckGo.ProgressView?
+        var privacyIconView: UIView?
+        var searchContainerWidth: CGFloat = 0
+        var onTextEntered: (() -> Void)?
+        var onVoiceSearchButtonPressed: (() -> Void)?
+        var onAbortButtonPressed: (() -> Void)?
+        var onClearButtonPressed: (() -> Void)?
+        var onPrivacyIconPressed: (() -> Void)?
+        var onMenuButtonPressed: (() -> Void)?
+        var onMenuButtonLongPressed: (() -> Void)?
+        var onTrackersViewPressed: (() -> Void)?
+        var onSettingsButtonPressed: (() -> Void)?
+        var onCancelPressed: (() -> Void)?
+        var onRefreshPressed: (() -> Void)?
+        var onBackPressed: (() -> Void)?
+        var onForwardPressed: (() -> Void)?
+        var onBookmarksPressed: (() -> Void)?
+        var onAIChatPressed: (() -> Void)?
+        var onDismissPressed: (() -> Void)?
+        var onFirePressed: (() -> Void)?
+        var onPasswordsPressed: (() -> Void)?
+        var onSettingsButtonLongPressed: (() -> Void)?
+        var onCustomizableButtonPressed: (() -> Void)?
+        var longPressMenuProvider: (() -> UIMenu?)?
+        var onLongPressMenuDisplayed: (() -> Void)?
+
+        static func create() -> Self {
+            Self.init()
+        }
+        
+        var isPrivacyInfoContainerHidden: Bool = true
+        var isClearButtonHidden: Bool = true
+        var isMenuButtonHidden: Bool = true
+        var isSettingsButtonHidden: Bool = true
+        var isCancelButtonHidden: Bool = true
+        var isRefreshButtonHidden: Bool = true
+        var isVoiceSearchButtonHidden: Bool = true
+        var isAbortButtonHidden: Bool = true
+        var isBackButtonHidden: Bool = true
+        var isForwardButtonHidden: Bool = true
+        var isBookmarksButtonHidden: Bool = true
+        var isAIChatButtonHidden: Bool = true
+        var isSearchLoupeHidden: Bool = true
+        var isDismissButtonHidden: Bool = true
+        var isCustomizableButtonHidden: Bool = true
+        var isFireButtonHidden: Bool = true
+        var isTabSwitcherButtonHidden: Bool = true
+        var isPasswordsButtonHidden: Bool = true
+        private(set) var layoutMode: OmniBarLayoutMode = .compact
+        func setLayoutMode(_ mode: OmniBarLayoutMode, animated: Bool) { layoutMode = mode }
+
+    }
+}

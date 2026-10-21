@@ -18,13 +18,17 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Combine
+import CombineExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import NewTabPage
 import WebKit
 import UserScript
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 enum DuckPlayerMode: Equatable, Codable {
     case enabled, alwaysAsk, disabled
@@ -149,22 +153,14 @@ struct CustomErrorSettings: Codable {
 }
 
 final class DuckPlayer {
-    static let usesSimulatedRequests: Bool = {
-        if #available(macOS 12.0, *) {
-            return true
-        } else {
-            return false
-        }
-    }()
-
     static let duckPlayerHost: String = "player"
     static let commonName = UserText.duckPlayer
-
-    static let shared = DuckPlayer()
 
     var isAvailable: Bool {
         isFeatureEnabled
     }
+
+    let preferences: DuckPlayerPreferences
 
     @Published var mode: DuckPlayerMode
 
@@ -176,10 +172,25 @@ final class DuckPlayer {
         isAvailable || preferences.shouldDisplayContingencyMessage
     }
 
+    convenience init(
+        preferencesPersistor: DuckPlayerPreferencesPersistor,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        internalUserDecider: InternalUserDecider
+    ) {
+        self.init(
+            preferences: DuckPlayerPreferences(
+                persistor: preferencesPersistor,
+                privacyConfigurationManager: privacyConfigurationManager,
+                internalUserDecider: internalUserDecider
+            ),
+            privacyConfigurationManager: privacyConfigurationManager
+        )
+    }
+
     init(
-        preferences: DuckPlayerPreferences = .shared,
-        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        onboardingDecider: DuckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
+        preferences: DuckPlayerPreferences,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        onboardingDecider: DuckPlayerOnboardingDecider? = nil
     ) {
         self.preferences = preferences
         isFeatureEnabled = privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .duckPlayer)
@@ -194,7 +205,7 @@ final class DuckPlayer {
             customErrorSignInRequiredSelector = customErrorSettings.signInRequiredSelector
         }
 
-        self.onboardingDecider = onboardingDecider
+        self.onboardingDecider = onboardingDecider ?? DefaultDuckPlayerOnboardingDecider(preferences: preferences)
 
         mode = preferences.duckPlayerMode
         bindDuckPlayerModeIfNeeded()
@@ -265,8 +276,8 @@ final class DuckPlayer {
 
     public func handleYoutubeError(params: Any, message: UserScriptMessage) -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
-        PixelKit.fire(NonStandardEvent(dailyPixel), frequency: .legacyDaily)
-        PixelKit.fire(NonStandardEvent(volumePixel))
+        PixelKit.fire(dailyPixel, frequency: .legacyDaily)
+        PixelKit.fire(volumePixel)
         return nil
     }
 
@@ -297,7 +308,7 @@ final class DuckPlayer {
     private func encodedPlayerSettings(with webView: WKWebView?) async -> InitialPlayerSettings {
         var isPiPEnabled = webView?.configuration.preferences[.allowsPictureInPictureMediaPlayback] == true
 
-        var isAutoplayEnabled = DuckPlayerPreferences.shared.duckPlayerAutoplay
+        var isAutoplayEnabled = preferences.duckPlayerAutoplay
 
         /// If the feature flag is disabled, we want to turn autoPlay to false
         /// https://app.asana.com/0/1204167627774280/1207906550241281/f
@@ -352,10 +363,11 @@ final class DuckPlayer {
     // MARK: - Private
 
     private static let websiteTitlePrefix = "\(commonName) - "
-    private let preferences: DuckPlayerPreferences
 
     private var isFeatureEnabled: Bool = false {
         didSet {
+            // Rebinding republishes `mode`, which re-shows the YouTube overlay mid-video.
+            guard isFeatureEnabled != oldValue else { return }
             bindDuckPlayerModeIfNeeded()
         }
     }
@@ -406,13 +418,13 @@ extension DuckPlayer {
         guard isAvailable, mode != .disabled, faviconView.url?.isDuckPlayer == true else {
             return nil
         }
-        return .duckPlayer
+        return NSImage(resource: .duckPlayer)
     }
 
     func image(for bookmark: Bookmark) -> NSImage? {
         // Bookmarks to Duck Player pages retain duck:// URL even when Duck Player is disabled,
         // so we keep the Duck Player favicon even if Duck Player is currently disabled
-        return (bookmark.urlObject?.isDuckPlayer ?? false) ? .duckPlayer : nil
+        return (bookmark.urlObject?.isDuckPlayer ?? false) ? NSImage(resource: .duckPlayer) : nil
     }
 
     func domainForRecentlyVisitedSite(with url: URL) -> String? {
@@ -423,12 +435,12 @@ extension DuckPlayer {
         return url.isDuckPlayer ? DuckPlayer.commonName : nil
     }
 
-    func sharingData(for title: String, url: URL) -> (title: String, url: URL)? {
+    func sharingData(for title: String?, url: URL) -> (title: String?, url: URL)? {
         guard isAvailable, mode != .disabled, url.isDuckURLScheme, let (videoID, timestamp) = url.youtubeVideoParams else {
             return nil
         }
 
-        let title = title.dropping(prefix: Self.websiteTitlePrefix)
+        let title = title?.dropping(prefix: Self.websiteTitlePrefix)
         let sharingURL = URL.youtube(videoID, timestamp: timestamp)
 
         return (title, sharingURL)
@@ -488,6 +500,10 @@ extension DuckPlayer {
         return DuckPlayer(preferences: preferences, privacyConfigurationManager: privacyConfigurationManager)
     }
 
+    static func mock(withPreferences preferences: DuckPlayerPreferences) -> DuckPlayer {
+        let privacyConfigurationManager = MockPrivacyConfigurationManager()
+        return DuckPlayer(preferences: preferences, privacyConfigurationManager: privacyConfigurationManager)
+    }
 }
 
 #else

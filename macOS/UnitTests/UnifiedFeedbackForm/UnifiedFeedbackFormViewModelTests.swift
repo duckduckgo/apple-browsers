@@ -16,23 +16,18 @@
 //  limitations under the License.
 //
 
-import XCTest
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
-import NetworkingTestingUtils
+import VPN
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-@testable import Networking
 
 final class UnifiedFeedbackFormViewModelTests: XCTestCase {
-    enum Error: String, Swift.Error {
-        case generic
-    }
-
     func testWhenCreatingViewModel_ThenInitialStateIsFeedbackPending() throws {
         let collector = MockVPNMetadataCollector()
         let sender = MockVPNFeedbackSender()
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
@@ -45,34 +40,11 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let collector = MockVPNMetadataCollector()
         let sender = MockVPNFeedbackSender()
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
                                                      featureFlagger: MockFeatureFlagger())
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        let text = "Some feedback report text"
-        viewModel.feedbackFormText = text
-
-        XCTAssertFalse(sender.sentMetadata)
-        await viewModel.process(action: .submit)
-        XCTAssertTrue(sender.sentMetadata)
-        XCTAssertEqual(sender.receivedData!.4, text)
-    }
-
-    func testGivenEmail_WhenSendingFeedbackSucceeds_ThenFeedbackIsSent() async throws {
-        let collector = MockVPNMetadataCollector()
-        let sender = MockVPNFeedbackSender()
-        let payload = UnifiedFeedbackFormViewModel.Response(message: "something", error: nil)
-        let response = APIResponseV2(data: try! JSONEncoder().encode(payload), httpResponse: HTTPURLResponse())
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .success(response)),
-                                                     vpnMetadataCollector: collector,
-                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
-        viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        viewModel.userEmail = "hello@example.com"
         let text = "Some feedback report text"
         viewModel.feedbackFormText = text
 
@@ -86,54 +58,11 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let collector = MockVPNMetadataCollector()
         let sender = MockVPNFeedbackSender()
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
                                                      featureFlagger: MockFeatureFlagger())
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        let text = "Some feedback report text"
-        viewModel.feedbackFormText = text
-        sender.throwErrorWhenSending = true
-
-        XCTAssertFalse(sender.sentMetadata)
-        await viewModel.process(action: .submit)
-        XCTAssertFalse(sender.sentMetadata)
-        XCTAssertEqual(viewModel.viewState, .feedbackSendingFailed)
-    }
-
-    func testGivenInvalidEmail_WhenSendingFeedbackFails_ThenFeedbackIsNotSent() async throws {
-        let collector = MockVPNMetadataCollector()
-        let sender = MockVPNFeedbackSender()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
-                                                     vpnMetadataCollector: collector,
-                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
-        viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        viewModel.userEmail = "invalid-email"
-        let text = "Some feedback report text"
-        viewModel.feedbackFormText = text
-        sender.throwErrorWhenSending = true
-
-        XCTAssertFalse(sender.sentMetadata)
-        await viewModel.process(action: .submit)
-        XCTAssertFalse(sender.sentMetadata)
-        XCTAssertEqual(viewModel.viewState, .feedbackSendingFailed)
-    }
-
-    func testGivenValidEmail_WhenSendingFeedbackFails_ThenFeedbackIsNotSent() async throws {
-        let collector = MockVPNMetadataCollector()
-        let sender = MockVPNFeedbackSender()
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
-                                                     vpnMetadataCollector: collector,
-                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender,
-                                                     featureFlagger: MockFeatureFlagger())
-        viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
-        viewModel.userEmail = "hello@example.com"
         let text = "Some feedback report text"
         viewModel.feedbackFormText = text
         sender.throwErrorWhenSending = true
@@ -149,7 +78,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let sender = MockVPNFeedbackSender()
         let delegate = MockVPNFeedbackFormViewModelDelegate()
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender,
@@ -163,12 +91,11 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func disabledTestWhenDuckAiFeatureIsEnabledAndSubscriptionIncludesPaidAIChat_ThenDuckAiCategoryIsAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        subscriptionManager.resultFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -188,11 +115,10 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testWhenDuckAiFeatureIsDisabled_ThenDuckAiCategoryIsNotAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        subscriptionManager.resultFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -204,12 +130,11 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testWhenSubscriptionDoesNotIncludePaidAIChat_ThenDuckAiCategoryIsNotAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
-        subscriptionManager.subscriptionFeatures = []
+        subscriptionManager.resultFeatures = []
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -221,7 +146,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testWhenSourceIsDuckAi_ThenDefaultCategoryIsDuckAi() throws {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -235,7 +159,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testWhenDuckAiCategoryIsSelected_ThenSubcategoryIsSetToPaidAIChatPrompt() throws {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
@@ -248,10 +171,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 
     func testGivenDuckAiCategorWhenSendingFeedbackSucceeds_ThenCorrectFeedbackIsSent() async throws {
         let sender = MockVPNFeedbackSender()
-        let payload = UnifiedFeedbackFormViewModel.Response(message: "success", error: nil)
-        let response = APIResponseV2(data: try! JSONEncoder().encode(payload), httpResponse: HTTPURLResponse())
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
-                                                     apiService: MockAPIService(apiResponse: .success(response)),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      defaultMetadataCollector: MockDBPMetadataCollector(),
@@ -262,7 +182,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.selectedCategory = UnifiedFeedbackCategory.duckAi.rawValue
         viewModel.selectedSubcategory = PaidAIChatFeedbackSubcategory.accessSubscriptionModels.rawValue
-        viewModel.userEmail = "test@example.com"
         let text = "Duck.ai feedback text"
         viewModel.feedbackFormText = text
 
@@ -270,6 +189,41 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         XCTAssertEqual(sender.capturedSource, .ppro)
         XCTAssertEqual(sender.capturedCategory, "duckAi")
         XCTAssertEqual(sender.capturedSubcategory, "accessSubscriptionModels")
+    }
+
+    func testWhenProTierPurchaseEnabled_ThenSubscriptionSubcategoriesIncludesUnableToAccessFeatures() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        let subcategories = viewModel.availableSubscriptionSubcategories
+
+        XCTAssertTrue(subcategories.contains(.selectSubcategory))
+        XCTAssertTrue(subcategories.contains(.otp))
+        XCTAssertTrue(subcategories.contains(.unableToAccessFeatures))
+        XCTAssertTrue(subcategories.contains(.somethingElse))
+    }
+
+    func testWhenProTierPurchaseDisabled_ThenSubscriptionSubcategoriesExcludesUnableToAccessFeatures() {
+        let featureFlagger = MockFeatureFlagger()
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        let subcategories = viewModel.availableSubscriptionSubcategories
+
+        XCTAssertTrue(subcategories.contains(.selectSubcategory))
+        XCTAssertTrue(subcategories.contains(.otp))
+        XCTAssertFalse(subcategories.contains(.unableToAccessFeatures))
+        XCTAssertTrue(subcategories.contains(.somethingElse))
     }
 
 }
@@ -303,7 +257,21 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             cpuArchitecture: "arm64"
         )
 
-        let networkInfo = VPNMetadata.NetworkInfo(currentPath: "path")
+        let networkInfo = VPNMetadata.NetworkInfo(
+            currentPath: NetworkProtectionNetworkPathInfo(
+                status: "satisfied",
+                unsatisfiedReason: nil,
+                mainInterfaceType: "wifi",
+                utunInterfaceCount: 1,
+                ipsecInterfaceCount: 0,
+                dnsInterfaceCount: 0,
+                unidentifiedInterfaceCount: 0,
+                isConstrained: false,
+                isExpensive: false
+            ),
+            deviceAddressCategories: [.ipv4Private192],
+            routerAddressCategories: [.ipv4Private192]
+        )
 
         let vpnState = VPNMetadata.VPNState(
             onboardingState: "onboarded",
@@ -312,7 +280,14 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             lastTunnelErrorDescription: "none",
             lastKnownFailureDescription: "none",
             connectedServer: "Paoli, PA",
-            connectedServerIP: "123.123.123.123"
+            connectedServerIP: "123.123.123.123",
+            dataVolume: NetworkProtectionDataVolumeBuckets(bytesSent: 10_485_760, bytesReceived: 20_971_520)
+        )
+
+        let dnsSettingsState = VPNMetadata.DNSSettingsState(
+            selection: .duckDuckGo,
+            blockRiskyDomainsEnabled: true,
+            customDNSServerAddressCategory: nil
         )
 
         let vpnSettingsState = VPNMetadata.VPNSettingsState(
@@ -320,24 +295,24 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             includeAllNetworksEnabled: true,
             enforceRoutesEnabled: true,
             excludeLocalNetworksEnabled: true,
+            excludeCGNATEnabled: true,
             notifyStatusChangesEnabled: true,
             showInMenuBarEnabled: true,
             selectedServer: "server",
             selectedEnvironment: "production",
-            customDNS: false
+            customDNS: false,
+            dnsSettings: dnsSettingsState
         )
 
         let loginItemState = VPNMetadata.LoginItemState(
             vpnMenuState: "enabled",
-            vpnMenuIsRunning: true,
-            notificationsAgentState: "enabled",
-            notificationsAgentIsRunning: true
+            vpnMenuIsRunning: true
         )
 
-        let privacyProInfo = VPNMetadata.PrivacyProInfo(
-            hasPrivacyProAccount: true,
-            isVPNFeatureIncludedInSubscription: true,
-            isVPNFeatureEnabled: true
+        let subscriptionInfo = VPNMetadata.SubscriptionInfo(
+            isSubscriptionAuthenticated: true,
+            subscriptionPlanIncludesVPN: true,
+            accountCanUseVPN: true
         )
 
         return VPNMetadata(
@@ -347,7 +322,7 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
             vpnState: vpnState,
             vpnSettingsState: vpnSettingsState,
             loginItemState: loginItemState,
-            privacyProInfo: privacyProInfo
+            subscriptionInfo: subscriptionInfo
         )
     }
 
@@ -407,26 +382,4 @@ private class MockVPNFeedbackFormViewModelDelegate: UnifiedFeedbackFormViewModel
         receivedDismissedViewCallback = true
     }
 
-}
-
-extension MockAPIService {
-    convenience init(apiResponse: Result<APIResponseV2, Error>) {
-        self.init { _ in apiResponse }
-    }
-}
-
-extension SubscriptionManagerMock {
-
-    convenience init() {
-        let accountManager = AccountManagerMock()
-        accountManager.accessToken = "token"
-        self.init(accountManager: accountManager,
-                  subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-                  authEndpointService: AuthEndpointServiceMock(),
-                  storePurchaseManager: StorePurchaseManagerMock(),
-                  currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
-                                                              purchasePlatform: .appStore),
-                  canPurchase: false,
-                  subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
-    }
 }

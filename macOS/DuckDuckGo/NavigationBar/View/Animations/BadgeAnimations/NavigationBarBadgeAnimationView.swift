@@ -20,6 +20,7 @@ import Cocoa
 
 protocol NotificationBarViewAnimated: NSView {
     func startAnimation(_ completion: @escaping () -> Void)
+    func cancelAnimation()
 }
 
 final class NavigationBarBadgeAnimationView: NSView {
@@ -28,17 +29,50 @@ final class NavigationBarBadgeAnimationView: NSView {
     enum AnimationType {
         case cookiePopupManaged
         case cookiePopupHidden
+        case trackersBlocked(count: Int)
+        case youTubeAdBlockOn
     }
 
     func prepareAnimation(_ type: AnimationType) {
         removeAnimation()
-        let viewToAnimate: NotificationBarViewAnimated
+        let viewToAnimate: BadgeNotificationContainerView
+        let accessibilityLabel: String
+        let accessibilityIdentifier: String
         switch type {
         case .cookiePopupHidden:
-            viewToAnimate = CookieManagedNotificationContainerView(isCosmetic: true)
+            viewToAnimate = BadgeNotificationContainerView(isCosmetic: true)
+            accessibilityLabel = UserText.cookiePopupHiddenNotification
+            accessibilityIdentifier = "NavigationBar.cookiePopupHiddenNotification"
         case .cookiePopupManaged:
-            viewToAnimate = CookieManagedNotificationContainerView(isCosmetic: false)
+            viewToAnimate = BadgeNotificationContainerView(isCosmetic: false)
+            accessibilityLabel = UserText.cookiePopupManagedNotification
+            accessibilityIdentifier = "NavigationBar.cookiePopupManagedNotification"
+        case .trackersBlocked(let count):
+            let textGenerator: (Int) -> String = { currentCount in
+                UserText.omnibarNotificationTrackersBlocked(currentCount)
+            }
+            let text = UserText.omnibarNotificationTrackersBlocked(count)
+            viewToAnimate = BadgeNotificationContainerView(
+                customText: text,
+                useShieldIcon: true,
+                trackerCount: count,
+                textGenerator: textGenerator
+            )
+            accessibilityLabel = text
+            accessibilityIdentifier = "NavigationBar.trackersBlockedNotification"
+        case .youTubeAdBlockOn:
+            viewToAnimate = BadgeNotificationContainerView(
+                customText: UserText.omnibarNotificationYouTubeAdBlockOn,
+                useVideoPlayerIcon: true
+            )
+            accessibilityLabel = UserText.omnibarNotificationYouTubeAdBlockOn
+            accessibilityIdentifier = "NavigationBar.youTubeAdBlockOnNotification"
         }
+
+        viewToAnimate.setAccessibilityElement(true)
+        viewToAnimate.setAccessibilityRole(.staticText)
+        viewToAnimate.setAccessibilityLabel(accessibilityLabel)
+        viewToAnimate.setAccessibilityIdentifier(accessibilityIdentifier)
 
         addSubview(viewToAnimate)
         animatedView = viewToAnimate
@@ -50,7 +84,9 @@ final class NavigationBarBadgeAnimationView: NSView {
     }
 
     func removeAnimation() {
+        animatedView?.cancelAnimation()
         animatedView?.removeFromSuperview()
+        animatedView = nil
     }
 
     private func setupConstraints() {

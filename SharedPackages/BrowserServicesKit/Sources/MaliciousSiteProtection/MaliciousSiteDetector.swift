@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import CryptoKit
 import Foundation
 import Networking
@@ -46,19 +47,17 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
     private let dataManager: DataManaging
     private let eventMapping: EventMapping<Event>
     private let supportedThreatsProvider: SupportedThreatsProvider
-    private let shouldRemoveWWWInCanonicalization: () -> Bool
 
-    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService, dataManager: DataManager, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider, shouldRemoveWWWInCanonicalization: @escaping () -> Bool
+    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService, dataManager: DataManager, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider
     ) {
-        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, supportedThreatsProvider: supportedThreatsProvider, shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization)
+        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, supportedThreatsProvider: supportedThreatsProvider)
     }
 
-    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider, shouldRemoveWWWInCanonicalization: @escaping () -> Bool) {
+    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
         self.apiClient = apiClient
         self.dataManager = dataManager
         self.eventMapping = eventMapping
         self.supportedThreatsProvider = supportedThreatsProvider
-        self.shouldRemoveWWWInCanonicalization = shouldRemoveWWWInCanonicalization
     }
 
     private func checkLocalFilters(hostHash: String, canonicalUrl: URL, for threatKind: ThreatKind) async -> Bool {
@@ -75,7 +74,7 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
         let matches: [Match]
         do {
             matches = try await apiClient.matches(forHashPrefix: hashPrefixParam).matches
-        } catch APIRequestV2.Error.urlSession(URLError.timedOut) {
+        } catch APIRequestV2Error.urlSession(URLError.timedOut) {
             eventMapping.fire(.matchesApiTimeout)
             return nil
         } catch {
@@ -93,8 +92,7 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
     /// Evaluates the given URL to determine its malicious category (e.g., phishing, malware).
     public func evaluate(_ url: URL) async -> ThreatKind? {
-        guard let canonicalHost = url.canonicalHost(shouldRemoveWWW: shouldRemoveWWWInCanonicalization()),
-              let canonicalUrl = url.canonicalURL(shouldRemoveWWW: shouldRemoveWWWInCanonicalization()) else { return .none }
+        guard let canonicalHost = url.canonicalHost() else { return .none }
         let supportedThreats = supportedThreatsProvider()
 
         let hostHash = canonicalHost.sha256
@@ -113,6 +111,9 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
         // Return no threats if no matching hash prefixes are found in the database.
         guard !hashPrefixMatchingThreatKinds.isEmpty else { return .none }
+
+        // Canonicalization copies the full URL, which can be very large. Only do it for hosts that need URL matching.
+        guard let canonicalUrl = url.canonicalURL() else { return .none }
 
         // 2. Check local Filter Sets.
         // The filter set acts as a local cache of some database entries, containing

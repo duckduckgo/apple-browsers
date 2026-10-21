@@ -23,13 +23,18 @@ import RemoteMessagingTestsUtils
 class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
     func testWhenValidJsonParsedThenMessagesMappedIntoRemoteConfig() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config.json")
-        XCTAssertEqual(config.messages.count, 8)
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config.json", bundle: .module)
+        XCTAssertEqual(config.messages.count, 9)
 
         XCTAssertEqual(config.messages[0], RemoteMessageModel(
                 id: "8274589c-8aeb-4322-a737-3852911569e3",
-                content: .bigSingleAction(titleText: "title", descriptionText: "description", placeholder: .announce,
-                                          primaryActionText: "Ok", primaryAction: .url(value: "https://duckduckgo.com")),
+                surfaces: .newTabPage,
+                content: .bigSingleAction(titleText: "title",
+                                          descriptionText: "description",
+                                          placeholder: .announce,
+                                          imageUrl: nil,
+                                          primaryActionText: "Ok",
+                                          primaryAction: .url(value: "https://duckduckgo.com")),
                 matchingRules: [],
                 exclusionRules: [],
                 isMetricsEnabled: true)
@@ -37,8 +42,12 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[1], RemoteMessageModel(
                 id: "8274589c-8aeb-4322-a737-3852911569e3",
-                content: .bigSingleAction(titleText: "Kedvenc hozzáadása", descriptionText: "Kedvenc eltávolítása", placeholder: .ddgAnnounce,
-                                          primaryActionText: "Ok", primaryAction: .url(value: "https://duckduckgo.com")),
+                surfaces: .newTabPage,
+                content: .bigSingleAction(titleText: "Kedvenc hozzáadása",
+                                          descriptionText: "Kedvenc eltávolítása",
+                                          placeholder: .ddgAnnounce,
+                                          imageUrl: nil, primaryActionText: "Ok",
+                                          primaryAction: .url(value: "https://duckduckgo.com")),
                 matchingRules: [],
                 exclusionRules: [],
                 isMetricsEnabled: true)
@@ -46,6 +55,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[2], RemoteMessageModel(
                 id: "26780792-49fe-4e25-ae27-aa6a2e6f013b",
+                surfaces: .newTabPage,
                 content: .small(titleText: "Here goes a title", descriptionText: "description"),
                 matchingRules: [5, 6],
                 exclusionRules: [7, 8, 9],
@@ -54,7 +64,11 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[3], RemoteMessageModel(
                 id: "c3549d64-b388-41d8-9649-33e6e2674e8e",
-                content: .medium(titleText: "Here goes a title", descriptionText: "description", placeholder: .criticalUpdate),
+                surfaces: .newTabPage,
+                content: .medium(titleText: "Here goes a title",
+                                 descriptionText: "description",
+                                 placeholder: .criticalUpdate,
+                                 imageUrl: nil),
                 matchingRules: [],
                 exclusionRules: [],
                 isMetricsEnabled: true)
@@ -62,9 +76,15 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[4], RemoteMessageModel(
                 id: "c2d0a1f1-6157-434f-8145-38416037d339",
-                content: .bigTwoAction(titleText: "Here goes a title", descriptionText: "description", placeholder: .appUpdate,
-                                       primaryActionText: "Ok", primaryAction: .appStore,
-                                       secondaryActionText: "Cancel", secondaryAction: .dismiss),
+                surfaces: .newTabPage,
+                content: .bigTwoAction(titleText: "Here goes a title",
+                                       descriptionText: "description",
+                                       placeholder: .appUpdate,
+                                       imageUrl: nil,
+                                       primaryActionText: "Ok",
+                                       primaryAction: .appStore,
+                                       secondaryActionText: "Cancel",
+                                       secondaryAction: .dismiss),
                 matchingRules: [],
                 exclusionRules: [],
                 isMetricsEnabled: true)
@@ -72,10 +92,16 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[5], RemoteMessageModel(
             id: "96EEA91B-030D-41E5-95A7-F11C1952A5FF",
-            content: .bigTwoAction(titleText: "Here goes a title", descriptionText: "description", placeholder: .newForMacAndWindows,
-                                   primaryActionText: "Ok", primaryAction: .share(value: "https://duckduckgo.com/app",
-                                                                                  title: "Share Title"),
-                                   secondaryActionText: "Cancel", secondaryAction: .dismiss),
+            surfaces: .newTabPage,
+            content: .bigTwoAction(titleText: "Here goes a title",
+                                   descriptionText: "description",
+                                   placeholder: .newForMacAndWindows,
+                                   imageUrl: nil,
+                                   primaryActionText: "Ok",
+                                   primaryAction: .share(value: "https://duckduckgo.com/app",
+                                                         title: "Share Title"),
+                                   secondaryActionText: "Cancel",
+                                   secondaryAction: .dismiss),
             matchingRules: [],
             exclusionRules: [],
             isMetricsEnabled: true)
@@ -83,8 +109,13 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[6], RemoteMessageModel(
             id: "6E58D3DA-AB9D-47A4-87B7-B8AF830BFB5E",
-            content: .promoSingleAction(titleText: "Promo Title", descriptionText: "Promo Description", placeholder: .newForMacAndWindows,
-                                        actionText: "Promo Action", action: .dismiss),
+            surfaces: .newTabPage,
+            content: .promoSingleAction(titleText: "Promo Title",
+                                        descriptionText: "Promo Description",
+                                        placeholder: .newForMacAndWindows,
+                                        imageUrl: nil,
+                                        actionText: "Promo Action",
+                                        action: .dismiss),
             matchingRules: [],
             exclusionRules: [],
             isMetricsEnabled: true)
@@ -92,10 +123,12 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[7], RemoteMessageModel(
             id: "8E909844-C809-4543-AAFE-2C75DC285B3B",
+            surfaces: .newTabPage,
             content: .promoSingleAction(
                 titleText: "Survey Title",
                 descriptionText: "Survey Description",
-                placeholder: .privacyShield,
+                placeholder: .subscription,
+                imageUrl: nil,
                 actionText: "Survey Action",
                 action: .survey(value: "https://duckduckgo.com/survey")
             ),
@@ -104,11 +137,27 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
             isMetricsEnabled: true)
         )
 
+        XCTAssertEqual(config.messages[8], RemoteMessageModel(
+            id: "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+            surfaces: .newTabPage,
+            content: .bigSingleAction(
+                titleText: "PIR Title",
+                descriptionText: "PIR Description",
+                placeholder: .subscription,
+                imageUrl: nil,
+                primaryActionText: "PIR Action",
+                primaryAction: .navigation(value: .personalInformationRemoval)
+            ),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: true)
+        )
+
     }
 
     func testWhenValidJsonParsedThenRulesMappedIntoRemoteConfig() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config.json")
-        XCTAssertTrue(config.rules.count == 6)
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config.json", bundle: .module)
+        XCTAssertTrue(config.rules.count == 8)
 
         let rule5 = config.rules.filter { $0.id == 5 }.first
         XCTAssertNotNil(rule5)
@@ -137,45 +186,64 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         let rule8 = config.rules.filter { $0.id == 8 }.first
         XCTAssertNotNil(rule8)
         XCTAssertNil(rule8?.targetPercentile)
-        XCTAssertTrue(rule8?.attributes.count == 7)
+        XCTAssertEqual(rule8?.attributes.count, 11)
 
         attribs = rule8?.attributes.filter { $0 is DaysSinceNetPEnabledMatchingAttribute }
         XCTAssertEqual(attribs?.count, 1)
         XCTAssertEqual(attribs?.first as? DaysSinceNetPEnabledMatchingAttribute, DaysSinceNetPEnabledMatchingAttribute(min: 5, fallback: nil))
 
-        attribs = rule8?.attributes.filter { $0 is IsPrivacyProEligibleUserMatchingAttribute }
+        attribs = rule8?.attributes.filter { $0 is DaysSinceDuckAIUsedMatchingAttribute }
+        XCTAssertEqual(attribs?.count, 1)
+        XCTAssertEqual(attribs?.first as? DaysSinceDuckAIUsedMatchingAttribute, DaysSinceDuckAIUsedMatchingAttribute(min: 3, fallback: nil))
+
+        attribs = rule8?.attributes.filter { $0 is PIRCurrentUserMatchingAttribute }
+        XCTAssertEqual(attribs?.count, 1)
+        XCTAssertEqual(attribs?.first as? PIRCurrentUserMatchingAttribute, PIRCurrentUserMatchingAttribute(value: true, fallback: nil))
+
+        attribs = rule8?.attributes.filter { $0 is IsSubscriptionEligibleUserMatchingAttribute }
         XCTAssertEqual(attribs?.count, 1)
         XCTAssertEqual(
-            attribs?.first as? IsPrivacyProEligibleUserMatchingAttribute,
-            IsPrivacyProEligibleUserMatchingAttribute(value: true, fallback: nil)
+            attribs?.first as? IsSubscriptionEligibleUserMatchingAttribute,
+            IsSubscriptionEligibleUserMatchingAttribute(value: true, fallback: nil)
         )
 
-        attribs = rule8?.attributes.filter { $0 is IsPrivacyProSubscriberUserMatchingAttribute }
+        attribs = rule8?.attributes.filter { $0 is IsDuckDuckGoSubscriberUserMatchingAttribute }
         XCTAssertEqual(attribs?.count, 1)
         XCTAssertEqual(
-            attribs?.first as? IsPrivacyProSubscriberUserMatchingAttribute,
-            IsPrivacyProSubscriberUserMatchingAttribute(value: true, fallback: nil)
+            attribs?.first as? IsDuckDuckGoSubscriberUserMatchingAttribute,
+            IsDuckDuckGoSubscriberUserMatchingAttribute(value: true, fallback: nil)
         )
 
-        attribs = rule8?.attributes.filter { $0 is PrivacyProDaysSinceSubscribedMatchingAttribute }
-        XCTAssertEqual(attribs?.first as? PrivacyProDaysSinceSubscribedMatchingAttribute, PrivacyProDaysSinceSubscribedMatchingAttribute(
+        attribs = rule8?.attributes.filter { $0 is SubscriptionDaysSinceSubscribedMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? SubscriptionDaysSinceSubscribedMatchingAttribute, SubscriptionDaysSinceSubscribedMatchingAttribute(
             min: 5, max: 8, fallback: nil
         ))
 
-        attribs = rule8?.attributes.filter { $0 is PrivacyProDaysUntilExpiryMatchingAttribute }
-        XCTAssertEqual(attribs?.first as? PrivacyProDaysUntilExpiryMatchingAttribute, PrivacyProDaysUntilExpiryMatchingAttribute(
+        attribs = rule8?.attributes.filter { $0 is SubscriptionDaysUntilExpiryMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? SubscriptionDaysUntilExpiryMatchingAttribute, SubscriptionDaysUntilExpiryMatchingAttribute(
             min: 25, max: 30, fallback: nil
         ))
 
-        attribs = rule8?.attributes.filter { $0 is PrivacyProPurchasePlatformMatchingAttribute }
-        XCTAssertEqual(attribs?.first as? PrivacyProPurchasePlatformMatchingAttribute, PrivacyProPurchasePlatformMatchingAttribute(
+        attribs = rule8?.attributes.filter { $0 is SubscriptionPurchasePlatformMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? SubscriptionPurchasePlatformMatchingAttribute, SubscriptionPurchasePlatformMatchingAttribute(
             value: ["apple", "stripe"], fallback: nil
         ))
 
-        attribs = rule8?.attributes.filter { $0 is PrivacyProSubscriptionStatusMatchingAttribute }
-        XCTAssertEqual(attribs?.first as? PrivacyProSubscriptionStatusMatchingAttribute, PrivacyProSubscriptionStatusMatchingAttribute(
+        attribs = rule8?.attributes.filter { $0 is SubscriptionStatusMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? SubscriptionStatusMatchingAttribute, SubscriptionStatusMatchingAttribute(
             value: ["active", "expiring"], fallback: nil
         ))
+
+        attribs = rule8?.attributes.filter { $0 is SubscriptionTierMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? SubscriptionTierMatchingAttribute, SubscriptionTierMatchingAttribute(
+            value: ["pro", "plus"], fallback: nil
+        ))
+
+        attribs = rule8?.attributes.filter { $0 is SubscriptionFreeTrialActiveMatchingAttribute }
+        XCTAssertEqual(
+            attribs?.first as? SubscriptionFreeTrialActiveMatchingAttribute,
+            SubscriptionFreeTrialActiveMatchingAttribute(value: true, fallback: nil)
+        )
 
         let rule9 = config.rules.filter { $0.id == 9 }.first
         XCTAssertNotNil(rule9)
@@ -191,16 +259,41 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         attribs = rule10?.attributes.filter { $0 is InteractedWithMessageMatchingAttribute }
         XCTAssertEqual(attribs?.first as? InteractedWithMessageMatchingAttribute, InteractedWithMessageMatchingAttribute(value: ["One", "Two"], fallback: nil))
 
+        let rule11 = config.rules.filter { $0.id == 11 }.first
+        XCTAssertNotNil(rule11)
+        XCTAssertNil(rule11?.targetPercentile)
+        XCTAssertTrue(rule11?.attributes.count == 1)
+
+        attribs = rule11?.attributes.filter { $0 is SyncEnabledMatchingAttribute }
+        XCTAssertEqual(attribs?.count, 1)
+        XCTAssertEqual(attribs?.first as? SyncEnabledMatchingAttribute, SyncEnabledMatchingAttribute(value: true, fallback: nil))
+
+        let rule12 = config.rules.filter { $0.id == 12 }.first
+        XCTAssertNotNil(rule12)
+        XCTAssertNil(rule12?.targetPercentile)
+        XCTAssertEqual(rule12?.attributes.count, 4)
+
+        attribs = rule12?.attributes.filter { $0 is IsReturningUserMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? IsReturningUserMatchingAttribute, IsReturningUserMatchingAttribute(value: true, fallback: nil))
+
+        attribs = rule12?.attributes.filter { $0 is IsDuckAIEnabledMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? IsDuckAIEnabledMatchingAttribute, IsDuckAIEnabledMatchingAttribute(value: true, fallback: nil))
+
+        attribs = rule12?.attributes.filter { $0 is TriedDuckAIDuringOnboardingMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? TriedDuckAIDuringOnboardingMatchingAttribute, TriedDuckAIDuringOnboardingMatchingAttribute(value: false, fallback: nil))
+
+        attribs = rule12?.attributes.filter { $0 is IsDuckAIBoostActiveMatchingAttribute }
+        XCTAssertEqual(attribs?.first as? IsDuckAIBoostActiveMatchingAttribute, IsDuckAIBoostActiveMatchingAttribute(value: false, fallback: nil))
     }
 
     func testWhenJsonMessagesHaveUnknownTypesThenMessagesNotMappedIntoConfig() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config-unsupported-items.json")
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-unsupported-items.json", bundle: .module)
         let countValidContent = config.messages.filter { $0.content != nil }.count
         XCTAssertEqual(countValidContent, 1)
     }
 
     func testWhenJsonMessagesHaveUnknownTypesThenRulesMappedIntoConfig() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config-unsupported-items.json")
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-unsupported-items.json", bundle: .module)
         XCTAssertTrue(config.rules.count == 2)
 
         let rule6 = config.rules.filter { $0.id == 6 }.first
@@ -223,7 +316,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         let remoteMessagingConfig = try JSONDecoder().decode(RemoteMessageResponse.JsonRemoteMessagingConfig.self, from: validJson)
         let surveyMapper = MockRemoteMessageSurveyActionMapper()
         XCTAssertNotNil(remoteMessagingConfig)
-        let config = JsonToRemoteConfigModelMapper.mapJson(remoteMessagingConfig: remoteMessagingConfig, surveyActionMapper: surveyMapper)
+        let config = JsonToRemoteConfigModelMapper.mapJson(remoteMessagingConfig: remoteMessagingConfig, surveyActionMapper: surveyMapper, supportedSurfacesForMessage: { _ in .newTabPage })
         XCTAssertTrue(config.rules.count == 2)
 
         let rule6 = config.rules.filter { $0.id == 6 }.first
@@ -234,11 +327,12 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
     }
 
     func testThatMetricsAreEnabledWhenStatedInJSONOrMissing() throws {
-        let config = try decodeAndMapJson(fileName: "remote-messaging-config-metrics.json")
+        let config = try RemoteMessagingConfigDecoder.decodeAndMapJson(fileName: "remote-messaging-config-metrics.json", bundle: .module)
         XCTAssertEqual(config.messages.count, 4)
 
         XCTAssertEqual(config.messages[0], RemoteMessageModel(
                 id: "1",
+                surfaces: .newTabPage,
                 content: .small(titleText: "title", descriptionText: "description"),
                 matchingRules: [],
                 exclusionRules: [],
@@ -247,6 +341,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[1], RemoteMessageModel(
                 id: "2",
+                surfaces: .newTabPage,
                 content: .small(titleText: "title", descriptionText: "description"),
                 matchingRules: [],
                 exclusionRules: [],
@@ -255,6 +350,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[2], RemoteMessageModel(
                 id: "3",
+                surfaces: .newTabPage,
                 content: .small(titleText: "title", descriptionText: "description"),
                 matchingRules: [],
                 exclusionRules: [],
@@ -263,6 +359,7 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
 
         XCTAssertEqual(config.messages[3], RemoteMessageModel(
                 id: "4",
+                surfaces: .newTabPage,
                 content: .small(titleText: "title", descriptionText: "description"),
                 matchingRules: [],
                 exclusionRules: [],
@@ -270,15 +367,4 @@ class JsonToRemoteConfigModelMapperTests: XCTestCase {
         )
     }
 
-    func decodeAndMapJson(fileName: String) throws -> RemoteConfigModel {
-        let resourceURL = Bundle.module.resourceURL!.appendingPathComponent(fileName, conformingTo: .json)
-        let validJson = try Data(contentsOf: resourceURL)
-        let remoteMessagingConfig = try JSONDecoder().decode(RemoteMessageResponse.JsonRemoteMessagingConfig.self, from: validJson)
-        let surveyMapper = MockRemoteMessageSurveyActionMapper()
-        XCTAssertNotNil(remoteMessagingConfig)
-
-        let config = JsonToRemoteConfigModelMapper.mapJson(remoteMessagingConfig: remoteMessagingConfig, surveyActionMapper: surveyMapper)
-        XCTAssertNotNil(config)
-        return config
-    }
 }

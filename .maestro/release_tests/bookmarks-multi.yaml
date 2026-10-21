@@ -1,6 +1,7 @@
 # bookmarks-multi.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---
@@ -29,14 +30,15 @@ tags:
             id: "searchEntry"
         - tapOn: 
             id: "searchEntry"
-        - inputText: ${ 'https://example.com/' + output.counter }
+        - inputText: ${ 'https://privacy-test-pages.site/' + output.counter }
         - pressKey: Enter
-        - assertVisible: "Example Domain"
+        - assertVisible: ${ 'Cannot GET /' + output.counter }
         - tapOn: "Tab Switcher"
         - tapOn: "New Tab"
         - evalScript: ${output.counter += 1}
 
-- tapOn: "Cancel"
+- runFlow:
+    file: ../shared/dismiss_address_bar_editing.yaml
 - tapOn: "Tab Switcher"
 - tapOn: "Edit"
 - tapOn: "Select Tabs"

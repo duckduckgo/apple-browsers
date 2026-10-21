@@ -19,14 +19,15 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
-import XCTest
 import BrowserServicesKit
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
+import XCTest
 @testable import TrackerRadarKit
 
 final class GPCReferenceTests: XCTestCase {
-    private let userScriptDelegateMock = MockSurrogatesUserScriptDelegate()
     private let navigationDelegateMock = MockNavigationDelegate()
     private let schemeHandler = TestSchemeHandler()
     private static let data = JsonTestDataLoader()
@@ -34,8 +35,8 @@ final class GPCReferenceTests: XCTestCase {
     private var javascriptTests = [GpcJavaScriptAPITest]()
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/global-privacy-control/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/global-privacy-control/tests.json"
+        static let config = "Res/privacy-reference-tests/global-privacy-control/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/global-privacy-control/tests.json"
     }
 
     private var privacyManager: PrivacyConfigurationManager {
@@ -130,7 +131,9 @@ final class GPCReferenceTests: XCTestCase {
         }
 
         let request = URLRequest(url: siteURL)
-        let webView = createWebViewForUserScripTests(gpcEnabled: test.gpcUserSettingOn, privacyConfig: privacyManager.privacyConfig)
+        guard let webView = try? createWebViewForUserScripTests(gpcEnabled: test.gpcUserSettingOn, privacyConfig: privacyManager.privacyConfig) else {
+            return XCTFail("Failed to create webview for test \(test.name)")
+        }
 
         WKWebsiteDataStore.default().removeData(ofTypes: [WKWebsiteDataTypeDiskCache,
                                                           WKWebsiteDataTypeMemoryCache,
@@ -167,16 +170,16 @@ final class GPCReferenceTests: XCTestCase {
         }
     }
 
-    private func createWebViewForUserScripTests(gpcEnabled: Bool, privacyConfig: PrivacyConfiguration) -> WKWebView {
+    private func createWebViewForUserScripTests(gpcEnabled: Bool, privacyConfig: PrivacyConfiguration) throws -> WKWebView {
 
         let properties = ContentScopeProperties(gpcEnabled: gpcEnabled,
                                                 sessionKey: UUID().uuidString,
                                                 messageSecret: UUID().uuidString,
                                                 featureToggles: ContentScopeFeatureToggles.allTogglesOn)
 
-        let contentScopeScript = ContentScopeUserScript(privacyManager,
-                                                        properties: properties,
-                                                        privacyConfigurationJSONGenerator: nil)
+        let contentScopeScript = try ContentScopeUserScript(privacyManager,
+                                                            properties: properties,
+                                                            privacyConfigurationJSONGenerator: nil)
 
         let configuration = WKWebViewConfiguration()
         configuration.setURLSchemeHandler(self.schemeHandler, forURLScheme: self.schemeHandler.scheme)

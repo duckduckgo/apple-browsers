@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
+import Foundation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 struct PrivacyReferenceTestHelper {
     static let privacyReferenceTestPlatformName = "macos-browser"

@@ -19,7 +19,28 @@
 import XCTest
 
 extension XCUIElementSnapshot {
-    func toDictionary(keys: [String]) -> [String: Any] {
+
+    var title: String {
+        ((self as? NSObject)?.value(forKey: "title") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    var trimmedLabel: String {
+        label.trimmingWhitespace()
+    }
+
+    var trimmedStringValue: String {
+        (value as? String)?.trimmingWhitespace() ?? ""
+    }
+
+    func toDictionary(keys: [String] = ["elementType",
+                                        "identifier",
+                                        "label",
+                                        "title",
+                                        "value",
+                                        "isEnabled",
+                                        "frame"],
+                      ignoringElementsOfType: [XCUIElement.ElementType] = []) -> [String: Any] {
         var dict: [String: Any] = [:]
 
         // Add requested properties
@@ -32,7 +53,10 @@ extension XCUIElementSnapshot {
         }
 
         // Recurse on children
-        dict["children"] = children.map { $0.toDictionary(keys: keys) }
+        dict["children"] = children.compactMap { element -> [String: Any]? in
+            guard !ignoringElementsOfType.contains(element.elementType) else { return nil }
+            return element.toDictionary(keys: keys, ignoringElementsOfType: ignoringElementsOfType)
+        }
 
         return dict
     }

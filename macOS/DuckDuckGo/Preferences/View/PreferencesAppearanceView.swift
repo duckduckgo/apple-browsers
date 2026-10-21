@@ -17,73 +17,178 @@
 //
 
 import Bookmarks
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
 
 extension Preferences {
 
-    struct ThemeButton: View {
-        let title: String
-        let imageName: String
-        @Binding var isSelected: Bool
+    // MARK: - Appearance View (Light / Dark / System)
+    //
+    struct ThemeAppearanceViewV2: View {
+        var appearance: ThemeAppearance
 
         var body: some View {
-            VStack {
-                Button(action: { isSelected.toggle() }) {
-                    VStack(spacing: 2) {
-                        Image(imageName)
-                            .padding(2)
-                            .background(selectionBackground)
-                        Text(title)
-                    }
-                }
-                .padding(.horizontal, 2)
-                .buttonStyle(.plain)
-            }
-        }
+            HStack(spacing: 6) {
+                Image(named: appearance.icon)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
 
-        @ViewBuilder
-        private var selectionBackground: some View {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color(.linkBlue), lineWidth: 2)
+                Text(appearance.displayName)
+                    .font(.system(size: 13))
+                    .foregroundColor(.primary)
             }
+            .frame(height: 30)
+            .frame(minWidth: 100, maxWidth: 139)
         }
-
     }
 
-    struct ThemePicker: View {
+    // MARK: - Picker: Appearance (Light / Dark / System)
+    //
+    struct ThemeAppearancePickerV2: View {
+        @EnvironmentObject var model: AppearancePreferences
+        var theme: ThemeStyleProviding
+
+        var body: some View {
+            SlidingPickerView(settings: .buildAppearancePickerSetting(theme: theme), allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
+                AnyView(
+                    ThemeAppearanceViewV2(appearance: appearance)
+                )
+            }
+            .frame(height: 32)
+            .onChange(of: model.themeAppearance) { _ in
+                PixelKit.fire(SettingsPixel.themeAppearanceChanged(source: .settings), frequency: .standard)
+            }
+        }
+    }
+
+    // MARK: - Theme View
+    //
+    struct ThemeView: View {
+
+        // MARK: - Constants / Radius
+        private let knobRadius: CGFloat = 7
+        private let innerCornerRadius: CGFloat = 7
+        private let outerCornerRadius: CGFloat = 8
+
+        // MARK: - Constants / Size
+        private let outerMinWidth: CGFloat = 32
+        private let outerMaxWidth: CGFloat = 42
+        private let outerHeight: CGFloat = 42
+        private let innerHeight: CGFloat = 31
+        private let innerTopHeight: CGFloat = 10
+        private let innerBottomHeight: CGFloat = 21
+        private let knobHeight: CGFloat = 8
+
+        // MARK: - Properties
+        private let themeColors: ThemeColors
+
+        /// Designated Initializer
+        ///
+        init(themeName: ThemeName) {
+            themeColors = ThemeColors(themeName: themeName)
+        }
+
+        var body: some View {
+            ZStack(alignment: .bottom) {
+                // Background
+                RoundedRectangle(cornerRadius: outerCornerRadius)
+                    .fill(Color(themeColors.surfaceBackdrop))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: outerCornerRadius)
+                        .stroke(Color(themeColors.surfaceDecorationPrimary), lineWidth: 1)
+                    )
+
+                // Inner Top
+                RoundedRectangle(cornerRadius: innerCornerRadius)
+                    .fill(Color(themeColors.surfacePrimary))
+                    .frame(height: innerHeight)
+                    .padding([.leading, .trailing], 1)
+                    .mask(
+                        VStack {
+                            Rectangle()
+                                .frame(height: innerTopHeight)
+                            Color.clear
+                        }
+                    )
+                    .padding(.bottom, 1)
+
+                // Inner Bottom
+                RoundedRectangle(cornerRadius: innerCornerRadius)
+                    .fill(Color(themeColors.surfaceTertiary))
+                    .padding([.leading, .trailing], 1)
+                    .frame(height: innerHeight)
+                    .mask(
+                        VStack {
+                            Color.clear
+                            Rectangle()
+                                .frame(height: innerBottomHeight)
+                        }
+                    )
+                    .padding(.bottom, 1)
+
+                // Knob
+                RoundedRectangle(cornerRadius: knobRadius)
+                    .fill(Color(themeColors.accentPrimary))
+                    .frame(height: knobHeight)
+                    .padding([.leading, .trailing], 7)
+                    .padding(.bottom, 6)
+            }
+            .frame(height: outerHeight)
+            .frame(minWidth: outerMinWidth, maxWidth: outerMaxWidth)
+        }
+    }
+
+    // MARK: - Picker: Themes
+    //
+    struct ThemesPickerView: View {
+        @EnvironmentObject var model: AppearancePreferences
+        var theme: ThemeStyleProviding
+
+        var body: some View {
+            SlidingPickerView(settings: .buildThemesPickerSettings(theme: theme),
+                              allValues: ThemeName.allCasesSorted,
+                              selectedValue: $model.themeName) { themeName in
+                AnyView(
+                    ThemeView(themeName: themeName)
+                )
+            }
+            .frame(height: 32)
+            .onChange(of: model.themeName) { newValue in
+                PixelKit.fire(SettingsPixel.themeNameChanged(name: newValue, source: .settings), frequency: .standard)
+            }
+        }
+    }
+
+    // MARK: - Reset Theme
+    //
+    struct ThemesResetView: View {
         @EnvironmentObject var model: AppearancePreferences
 
         var body: some View {
-            HStack(spacing: 24) {
-                ForEach(ThemeName.allCases, id: \.self) { theme in
-                    ThemeButton(
-                        title: theme.displayName,
-                        imageName: theme.imageName,
-                        isSelected: isThemeSelected(theme)
-                    )
-                }
-            }
-        }
+            Button {
+                model.themeName = .default
 
-        private func isThemeSelected(_ theme: ThemeName) -> Binding<Bool> {
-            .init(
-                get: {
-                    model.currentThemeName == theme
-                },
-                set: { isSelected in
-                    if isSelected {
-                        model.currentThemeName = theme
-                    }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(.reset)
+                    Text(UserText.themeReset)
                 }
-            )
+                .rebrandableLinkForeground()
+                .cursor(.pointingHand)
+            }
+            .buttonStyle(.plain)
         }
     }
 
+    // MARK: - Appearance Container View
+    //
     struct AppearanceView: View {
         @ObservedObject var model: AppearancePreferences
+        @ObservedObject var aiChatModel: AIChatPreferences
+        @ObservedObject var themeManager: ThemeManager
 
         var body: some View {
             PreferencePane(UserText.appearance) {
@@ -91,8 +196,29 @@ extension Preferences {
                 // SECTION 1: Theme
                 PreferencePaneSection(UserText.theme) {
 
-                    ThemePicker()
+                    ThemeAppearancePickerV2(theme: themeManager.theme)
                         .environmentObject(model)
+                        .padding(.bottom, 16)
+
+                    ThemesPickerView(theme: themeManager.theme)
+                        .environmentObject(model)
+                        .padding(.bottom, 16)
+
+                    ThemesResetView()
+                        .environmentObject(model)
+                        .padding(.bottom, 16)
+
+                    ToggleMenuItem(UserText.syncAppIconWithTheme, isOn: $model.syncAppIconWithTheme)
+
+                    if model.isForceDarkModeVisible {
+                        ToggleMenuItem(UserText.forceDarkModeOnWebsites, isOn: Binding(
+                            get: { model.forceDarkModeEnabled },
+                            set: { model.forceDarkModeEnabled = $0 }
+                        ))
+                        Text(UserText.forceDarkModeOnWebsitesFooter)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 // SECTION 2: Address Bar
@@ -105,7 +231,13 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         if model.isOmnibarAvailable {
-                            ToggleMenuItem(UserText.newTabOmnibarSectionTitle, isOn: $model.isOmnibarVisible).accessibilityIdentifier("Preferences.AppearanceView.showOmnibarToggle")
+                            ToggleMenuItem(UserText.newTabOmnibarSectionTitle, isOn: $model.isOmnibarVisible)
+                                .accessibilityIdentifier("Preferences.AppearanceView.showOmnibarToggle")
+                            ToggleMenuItem(UserText.newTabAIChatSectionTitle, isOn: $aiChatModel.showShortcutOnNewTabPage)
+                                .accessibilityIdentifier("Preferences.AppearanceView.showAIChatToggle")
+                                .padding(.leading, 19)
+                                .disabled(!model.isOmnibarVisible)
+                                .visibility(aiChatModel.isAIFeaturesEnabled ? .visible : .gone)
                         }
                         ToggleMenuItem(UserText.newTabFavoriteSectionTitle, isOn: $model.isFavoriteVisible).accessibilityIdentifier("Preferences.AppearanceView.showFavoritesToggle")
                         ToggleMenuItem(UserText.newTabProtectionsReportSectionTitle, isOn: $model.isProtectionsReportVisible)
@@ -120,7 +252,7 @@ extension Preferences {
                                 Text(UserText.customizeBackground)
                                 Image(.externalAppScheme)
                             }
-                            .foregroundColor(Color.linkBlue)
+                            .rebrandableLinkForeground()
                             .cursor(.pointingHand)
                         }
                         .buttonStyle(.plain)
@@ -168,5 +300,46 @@ extension Preferences {
                 }
             }
         }
+    }
+}
+
+// MARK: - ThemeAppearance Helpers
+//
+private extension ThemeAppearance {
+
+    var icon: Image.ImageName {
+        switch self {
+        case .light:
+            .appearanceLight
+        case .dark:
+            .appearanceDark
+        case .systemDefault:
+            .appearanceSystem
+        }
+    }
+}
+
+// MARK: - SlidingPickerSettings Helpers
+//
+private extension SlidingPickerSettings {
+
+    static func buildThemesPickerSettings(theme: ThemeStyleProviding) -> SlidingPickerSettings {
+        SlidingPickerSettings(
+            selectionBorderColor: Color(theme.palette.accentPrimary),
+            cornerRadius: 8,
+            elementsPadding: 12,
+            sliderInset: 1,
+            sliderLineWidth: 2)
+    }
+
+    static func buildAppearancePickerSetting(theme: ThemeStyleProviding) -> SlidingPickerSettings {
+        SlidingPickerSettings(
+            backgroundColor: Color(theme.palette.surfacePrimary),
+            borderColor: Color(theme.palette.surfaceDecorationPrimary),
+            selectionBackgroundColor: Color(theme.palette.surfaceTertiary),
+            selectionBorderColor: Color(theme.palette.shadowSecondary),
+            animationsEnabled: false,
+            dividerSize: CGSize(width: 1, height: 16),
+            elementsMargin: 1)
     }
 }

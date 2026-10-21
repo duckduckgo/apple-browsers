@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import SharedTestUtilities
 import XCTest
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserAndDockPromptPixelEventTests: XCTestCase {
@@ -201,7 +201,11 @@ final class DefaultBrowserAndDockPromptPixelEventTests: XCTestCase {
 
         // THEN
         for (event, context) in pixels {
-            verifyThat(event, frequency: context.frequency, meets: context.expectation, file: #file, line: #line)
+            verifyThat(event,
+                       frequency: context.frequency,
+                       meets: context.expectation,
+                       file: #file,
+                       line: #line)
         }
     }
 

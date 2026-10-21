@@ -21,13 +21,29 @@ import UniformTypeIdentifiers
 
 extension NSOpenPanel {
 
-    static func downloadDirectoryPanel(downloadsPreferences: DownloadsPreferences = .shared) -> NSOpenPanel {
+    static func downloadDirectoryPanel(downloadsPreferences: DownloadsPreferences) -> NSOpenPanel {
         let panel = NSOpenPanel()
 
         panel.directoryURL = downloadsPreferences.effectiveDownloadLocation
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
+
+        return panel
+    }
+
+    /// Panel asking the user to pick a directory so the app is granted access to it.
+    /// - Parameter directoryURL: the directory we need access to
+    static func directoryAccessPanel(directoryURL: URL, message: String, prompt: String) -> NSOpenPanel {
+        let panel = NSOpenPanel()
+
+        panel.directoryURL = directoryURL
+        panel.message = message
+        panel.prompt = prompt
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = false
 
         return panel
     }
@@ -39,6 +55,27 @@ extension NSOpenPanel {
         canChooseFiles = true
         allowedContentTypes = allowedFileTypes
         canChooseDirectories = false
+    }
+
+    static func openFilePanel() -> NSOpenPanel {
+        let panel = NSOpenPanel()
+
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [
+            .plainText,     // Plain text files
+            .html,          // HTML files  
+            .pdf,           // PDF files
+            .webArchive,    // Web archive files
+            .jpeg,          // JPEG images
+            .png,           // PNG images
+            .gif,           // GIF images
+            .svg,           // SVG images
+            .webP           // WebP images
+        ]
+
+        return panel
     }
 
 }

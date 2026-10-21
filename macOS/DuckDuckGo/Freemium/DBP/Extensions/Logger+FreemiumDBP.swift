@@ -26,5 +26,5 @@ import OSLog
 /// Logger.freemiumDBP.log("This is a log message.")
 /// ```
 public extension Logger {
-    static var freemiumDBP: Logger = { Logger(subsystem: "Freemium DBP", category: "") }()
+    static let freemiumDBP: Logger = { Logger(subsystem: "Freemium DBP", category: "") }()
 }

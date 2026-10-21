@@ -33,10 +33,10 @@ final class StartupOptionsTests: XCTestCase {
         let options = StartupOptions(options: rawOptions)
 
 #if os(macOS)
-        XCTAssertEqual(options.authToken, .useExisting)
+        XCTAssertEqual(options.tokenContainer, .useExisting)
 #endif
         XCTAssertEqual(options.enableTester, .useExisting)
-        XCTAssertEqual(options.keyValidity, .useExisting)
+        XCTAssertEqual(options.vpnSettings, .useExisting)
         XCTAssertFalse(options.simulateCrash)
         XCTAssertFalse(options.simulateError)
         XCTAssertFalse(options.simulateMemoryCrash)
@@ -57,10 +57,10 @@ final class StartupOptionsTests: XCTestCase {
         let options = StartupOptions(options: rawOptions)
 
 #if os(macOS)
-        XCTAssertEqual(options.authToken, .reset)
+        XCTAssertEqual(options.tokenContainer, .reset)
 #endif
         XCTAssertEqual(options.enableTester, .reset)
-        XCTAssertEqual(options.keyValidity, .reset)
+        XCTAssertEqual(options.vpnSettings, .reset)
         XCTAssertFalse(options.simulateCrash)
         XCTAssertFalse(options.simulateError)
         XCTAssertFalse(options.simulateMemoryCrash)
@@ -80,13 +80,156 @@ final class StartupOptionsTests: XCTestCase {
         let options = StartupOptions(options: rawOptions)
 
 #if os(macOS)
-        XCTAssertEqual(options.authToken, .useExisting)
+        XCTAssertEqual(options.tokenContainer, .useExisting)
 #endif
         XCTAssertEqual(options.enableTester, .useExisting)
-        XCTAssertEqual(options.keyValidity, .useExisting)
+        XCTAssertEqual(options.vpnSettings, .useExisting)
         XCTAssertFalse(options.simulateCrash)
         XCTAssertFalse(options.simulateError)
         XCTAssertFalse(options.simulateMemoryCrash)
         XCTAssertEqual(options.startupMethod, .automaticOnDemand)
+    }
+
+    // MARK: - VPN Settings Tests
+
+    func testVPNSettingsCanBeEncodedAndParsed() throws {
+        // Create a VPN settings snapshot
+        let settingsSnapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(86400), // 24 hours
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false
+        )
+
+        // Encode it
+        let encodedData = try JSONEncoder().encode(settingsSnapshot)
+
+        // Create startup options with encoded settings
+        let rawOptions: [String: Any] = [
+            NetworkProtectionOptionKey.activationAttemptId: UUID().uuidString,
+            NetworkProtectionOptionKey.settings: encodedData
+        ]
+
+        let options = StartupOptions(options: rawOptions)
+
+        // Verify the settings were parsed correctly
+        XCTAssertEqual(options.startupMethod, .manualByMainApp)
+
+        guard case .set(let parsedSnapshot) = options.vpnSettings else {
+            XCTFail("Expected .set case but got \(options.vpnSettings)")
+            return
+        }
+
+        XCTAssertEqual(parsedSnapshot.registrationKeyValidity, .custom(86400))
+        XCTAssertEqual(parsedSnapshot.selectedEnvironment, .production)
+        XCTAssertEqual(parsedSnapshot.selectedServer, .automatic)
+        XCTAssertEqual(parsedSnapshot.selectedLocation, .nearest)
+        XCTAssertEqual(parsedSnapshot.excludeLocalNetworks, false)
+    }
+
+    func testVPNSettingsSnapshotCanBeCapturedFromVPNSettings() {
+        let vpnSettings = VPNSettings(defaults: .standard)
+        vpnSettings.selectedEnvironment = .production
+        vpnSettings.selectedServer = .endpoint("test-server")
+        vpnSettings.selectedLocation = .nearest
+        vpnSettings.registrationKeyValidity = .custom(3600)
+        vpnSettings.excludeLocalNetworks = true
+
+        let snapshot = VPNSettingsSnapshot(from: vpnSettings)
+
+        XCTAssertEqual(snapshot.selectedEnvironment, .production)
+        XCTAssertEqual(snapshot.selectedServer, .endpoint("test-server"))
+        XCTAssertEqual(snapshot.selectedLocation, .nearest)
+        XCTAssertEqual(snapshot.registrationKeyValidity, .custom(3600))
+        XCTAssertEqual(snapshot.excludeLocalNetworks, true)
+    }
+
+    func testVPNSettingsSnapshotCanApplyToVPNSettings() {
+        let vpnSettings = VPNSettings(defaults: .standard)
+
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(7200),
+            selectedEnvironment: .production,
+            selectedServer: .endpoint("apply-server"),
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: false),
+            excludeLocalNetworks: true
+        )
+
+        snapshot.applyTo(vpnSettings)
+
+        XCTAssertEqual(vpnSettings.registrationKeyValidity, .custom(7200))
+        XCTAssertEqual(vpnSettings.selectedEnvironment, .production)
+        XCTAssertEqual(vpnSettings.selectedServer, .endpoint("apply-server"))
+        XCTAssertEqual(vpnSettings.selectedLocation, .nearest)
+        XCTAssertEqual(vpnSettings.excludeLocalNetworks, true)
+    }
+
+    func testVPNSettingsSnapshotRoundTripsEnforceRoutesFlag() throws {
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(3600),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false,
+            enforceRoutes: false
+        )
+
+        let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: JSONEncoder().encode(snapshot))
+
+        XCTAssertFalse(decoded.enforceRoutes)
+    }
+
+    func testVPNSettingsSnapshotDefaultsEnforceRoutesWhenMissingFromPayload() throws {
+        // Simulate a snapshot persisted by an older version that predates carrying the flag.
+        let snapshot = VPNSettingsSnapshot(
+            registrationKeyValidity: .custom(3600),
+            selectedEnvironment: .production,
+            selectedServer: .automatic,
+            selectedLocation: .nearest,
+            dnsSettings: .ddg(blockRiskyDomains: true),
+            excludeLocalNetworks: false
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json.removeValue(forKey: "enforceRoutes")
+        let legacyData = try JSONSerialization.data(withJSONObject: json)
+
+        let decoded = try JSONDecoder().decode(VPNSettingsSnapshot.self, from: legacyData)
+
+        XCTAssertTrue(decoded.enforceRoutes)
+    }
+
+    func testVPNSettingsSnapshotCarriesEnforceRoutesFromSettings() {
+        let sourceDefaults = UserDefaults(suiteName: "enforce-routes-source-test")!
+        defer { sourceDefaults.removePersistentDomain(forName: "enforce-routes-source-test") }
+        let vpnSettings = VPNSettings(defaults: sourceDefaults)
+        vpnSettings.enforceRoutes = false
+
+        let snapshot = VPNSettingsSnapshot(from: vpnSettings)
+        XCTAssertFalse(snapshot.enforceRoutes)
+
+        let targetDefaults = UserDefaults(suiteName: "enforce-routes-apply-test")!
+        defer { targetDefaults.removePersistentDomain(forName: "enforce-routes-apply-test") }
+        let other = VPNSettings(defaults: targetDefaults)
+        snapshot.applyTo(other)
+        XCTAssertFalse(other.enforceRoutes)
+    }
+
+    func testCorruptedVPNSettingsResultInResetOption() {
+        let corruptedData = "invalid json data".data(using: .utf8)!
+
+        let rawOptions: [String: Any] = [
+            NetworkProtectionOptionKey.activationAttemptId: UUID().uuidString,
+            NetworkProtectionOptionKey.settings: corruptedData
+        ]
+
+        let options = StartupOptions(options: rawOptions)
+
+        // Should fall back to .reset when JSON decoding fails
+        XCTAssertEqual(options.vpnSettings, .reset)
     }
 }

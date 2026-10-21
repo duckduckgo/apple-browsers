@@ -16,30 +16,35 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
+import AppUpdaterShared
 import BrowserServicesKit
+import os.log
 import Foundation
+import PrivacyConfig
 import HistoryView
+import Persistence
 import PixelKit
+import SERPInstallOrigin
+import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
+import WebExtensions
 import WebKit
 
 @MainActor
-final class UserScripts: UserScriptsProvider {
+final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let contextMenuScript = ContextMenuUserScript()
-    let printingUserScript = PrintingUserScript()
+    let contextMenuSubfeature = ContextMenuSubfeature()
+    let chromeWebStoreUserScript: Subfeature?
     let hoverUserScript = HoverUserScript()
-    let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
-    let clickToLoadScript: ClickToLoadUserScript
 
-    let contentBlockerRulesScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autofillScript: WebsiteAutofillUserScript
@@ -49,96 +54,246 @@ final class UserScripts: UserScriptsProvider {
     let youtubePlayerUserScript: YoutubePlayerUserScript?
     let specialErrorPageUserScript: SpecialErrorPageUserScript?
     let onboardingUserScript: OnboardingUserScript?
-#if SPARKLE
-    let releaseNotesUserScript: ReleaseNotesUserScript?
-#endif
+    let releaseNotesUserScript: Subfeature? /*ReleaseNotesUserScript*/
     let aiChatUserScript: AIChatUserScript?
+    let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
-    let historyViewUserScript: HistoryViewUserScript?
+    let internalFeedbackUserScript: InternalFeedbackUserScript
+    let historyViewUserScript: HistoryViewUserScript
+    let serpSettingsUserScript: SERPSettingsUserScript?
+    let serpUserScript: SERPInstallOriginUserScript
+    let trackerProtectionSubfeature = TrackerProtectionSubfeature()
+    let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
+    let webTelemetryScript = WebTelemetryUserScript()
+    let tabSuspensionScript = TabSuspensionUserScript()
+    /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
+    /// `nil` when web extensions are unavailable or the user is not an internal user.
+    let webExtensionPageStubUserScript: UserScript?
+
+    private let contentScopePreferences: ContentScopePreferences
 
     // swiftlint:disable:next cyclomatic_complexity
-    init(with sourceProvider: ScriptSourceProviding) {
-        clickToLoadScript = ClickToLoadUserScript()
-        contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
-        let aiChatDebugURLSettings = AIChatDebugURLSettings()
-        aiChatUserScript = AIChatUserScript(
-            handler: AIChatUserScriptHandler(
-                storage: DefaultAIChatPreferencesStorage(),
-                windowControllersManager: sourceProvider.windowControllersManager,
-                pixelFiring: PixelKit.shared
-            ),
-            urlSettings: aiChatDebugURLSettings
+    init(with sourceProvider: ScriptSourceProviding,
+         contentScopePreferences: ContentScopePreferences,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         buildType: ApplicationBuildType = StandardApplicationBuildType(),
+         aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
+
+        self.contentScopePreferences = contentScopePreferences
+        if #available(macOS 15.4, *) {
+            chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
+                NSApp.delegateTyped.webExtensionManager?.chromeWebStore
+            }, buildType: buildType)
+        } else {
+            chromeWebStoreUserScript = nil
+        }
+        // `setupSucceeded == nil` (setup still in flight) is treated as "available"
+        // so the launch path is not blocked. Only force the JS fallback when a
+        // permanent setup failure has been observed.
+        let isNativeStorageBridgeAvailable = sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage)
+            && duckAiNativeStorageHandler != nil
+            && duckAiNativeStorageHandler?.setupSucceeded != false
+        let homepageAiChatsProvider = HomepageAiChatsProvider(
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: sourceProvider.featureFlagger)
         )
+        let aiChatMessageHandler = AIChatMessageHandler(
+            featureFlagger: sourceProvider.featureFlagger,
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            homepageAiChatsProvider: homepageAiChatsProvider
+        )
+        let aiChatHandler = AIChatUserScriptHandler(
+            storage: DefaultAIChatPreferencesStorage(),
+            messageHandling: aiChatMessageHandler,
+            windowControllersManager: sourceProvider.windowControllersManager,
+            pixelFiring: PixelKit.shared,
+            statisticsLoader: StatisticsLoader.shared,
+            syncServiceProvider: sourceProvider.syncServiceProvider,
+            syncErrorHandler: sourceProvider.syncErrorHandler,
+            featureFlagger: sourceProvider.featureFlagger,
+            homepageAiChatsProvider: homepageAiChatsProvider
+        )
+        let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
+        aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
+        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
-            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
-            paidAIChatFlagStatusProvider: { NSApp.delegateTyped.featureFlagger.isFeatureOn(.paidAIChat) },
+            subscriptionManager: NSApp.delegateTyped.subscriptionManager,
+            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
+        let installOriginEnabled = StandardApplicationBuildType().isSparkleBuild
+        serpUserScript = SERPInstallOriginUserScript(
+            serpBaseURL: URL.duckDuckGo,
+            installOriginEnabled: installOriginEnabled,
+            installOriginVariantProvider: installOriginEnabled ? DefaultInstallOriginVariantProvider() : nil
+        )
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider,
+            attachmentsProvider: NSApp.delegateTyped.internalFeedbackAttachmentsProvider
+        )
+
+        if isNativeStorageBridgeAvailable,
+           let duckAiNativeStorageHandler {
+            var originRules: [HostnameMatchingRule] = [
+                .exactOrSubdomain(hostname: "duck.ai"),
+            ]
+            if let customHostname = aiChatDebugURLSettings.customURLHostname {
+                originRules.append(.exact(hostname: customHostname))
+            }
+            duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
+                handler: duckAiNativeStorageHandler,
+                originRules: originRules,
+                pixelFiring: DuckAiNativeStoragePixelAdapter()
+            )
+        } else {
+            duckAiNativeStorageUserScript = nil
+        }
+        homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
+
+        let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
         let sessionKey = sourceProvider.sessionKey ?? ""
         let messageSecret = sourceProvider.messageSecret ?? ""
         let currentCohorts = sourceProvider.currentCohorts ?? []
+        let themeVariant = Application.appDelegate.appearancePreferences.themeName.rawValue
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
+                                           isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
+                                           debug: contentScopePreferences.isDebugStateEnabled,
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
-                                           currentCohorts: currentCohorts)
-        contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-        contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                           currentCohorts: currentCohorts,
+                                           themeVariant: themeVariant)
+        do {
+            // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
+            // Windows found injecting it broke the aiChat message bridge, which is shared code.
+            let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: [PrivacyFeature.autoconsent.rawValue] + nativeOnlyFeatures)
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to initialize ContentScopeUserScript: \(error.localizedDescription)")
+        }
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
-        autoconsentUserScript = AutoconsentUserScript(scriptSource: sourceProvider, config: sourceProvider.privacyConfigurationManager.privacyConfig)
+        autoconsentUserScript = AutoconsentUserScript(
+            config: sourceProvider.privacyConfigurationManager.privacyConfig,
+            management: sourceProvider.autoconsentManagement,
+            preferences: sourceProvider.cookiePopupProtectionPreferences,
+            featureFlagger: sourceProvider.featureFlagger,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability
+        )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
+        let themeManager = NSApp.delegateTyped.themeManager
+
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),
-                                                                languageCode: lenguageCode)
+                                                                languageCode: lenguageCode,
+                                                                styleProvider: ScriptStyleProvider(themeManager: themeManager))
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
-            let historyViewUserScript = HistoryViewUserScript()
-            sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
-            self.historyViewUserScript = historyViewUserScript
+        let historyViewUserScript = HistoryViewUserScript()
+        sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
+        self.historyViewUserScript = historyViewUserScript
+
+        if sourceProvider.featureFlagger.isFeatureOn(.aiChatPageContext) {
+            pageContextUserScript = PageContextUserScript()
         } else {
-            historyViewUserScript = nil
+            pageContextUserScript = nil
         }
 
         specialPages = SpecialPagesUserScript()
 
-        if DuckPlayer.shared.isAvailable {
-            youtubeOverlayScript = YoutubeOverlayUserScript()
-            youtubePlayerUserScript = YoutubePlayerUserScript()
+        if sourceProvider.duckPlayer.isAvailable {
+            youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: sourceProvider.duckPlayer)
+            youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: sourceProvider.duckPlayer)
         } else {
             youtubeOverlayScript = nil
             youtubePlayerUserScript = nil
         }
 
-#if SPARKLE
-        releaseNotesUserScript = ReleaseNotesUserScript()
-#endif
+        // Release notes user script - only available for Sparkle builds
+        if let updateController = Application.appDelegate.updateController as? any SparkleUpdateControlling {
+            releaseNotesUserScript = updateController.makeReleaseNotesUserScript(
+                pixelFiring: PixelKit.shared,
+                releaseNotesURL: .releaseNotes
+            )
+        } else {
+            releaseNotesUserScript = nil
+        }
 
-        userScripts.append(autoconsentUserScript)
+        // A tab opened from an extension's web view configuration (the pop-out of a popup, for
+        // instance) gets the standard user content controller, which replaces the extension
+        // controller's, so its extension pages get the API stubs from here.
+        if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
+            webExtensionPageStubUserScript = WebExtensionPageStubUserScript.make(
+                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser)
+        } else {
+            webExtensionPageStubUserScript = nil
+        }
 
+        if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
+            userScripts.append(autoconsentUserScript)
+        }
+
+        if let webExtensionPageStubUserScript {
+            userScripts.append(webExtensionPageStubUserScript)
+        }
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: tabSuspensionScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
+        if let chromeWebStoreUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
+        }
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         }
 
+        if let pageContextUserScript {
+            contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
+        }
+
+        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
+
         if let subscriptionUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
 
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
+
         if let youtubeOverlayScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: youtubeOverlayScript)
+        }
+
+        if let serpSettingsUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        }
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: serpUserScript)
+
+        if let duckAiNativeStorageUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }
 
         if let specialPages = specialPages {
@@ -149,63 +304,59 @@ final class UserScripts: UserScriptsProvider {
             if let youtubePlayerUserScript {
                 specialPages.registerSubfeature(delegate: youtubePlayerUserScript)
             }
-#if SPARKLE
             if let releaseNotesUserScript {
                 specialPages.registerSubfeature(delegate: releaseNotesUserScript)
             }
-#endif
             if let onboardingUserScript {
                 specialPages.registerSubfeature(delegate: onboardingUserScript)
             }
 
-            if let historyViewUserScript {
-                specialPages.registerSubfeature(delegate: historyViewUserScript)
-            }
+            specialPages.registerSubfeature(delegate: historyViewUserScript)
+
             userScripts.append(specialPages)
         }
 
         var delegate: Subfeature
-        if !Application.appDelegate.isUsingAuthV2 {
-            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
-                assertionFailure("SubscriptionManager is not available")
-                return
-            }
+        let subscriptionManager = Application.appDelegate.subscriptionManager
+        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let flowPerformer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: subscriptionManager,
+            uiHandler: Application.appDelegate.subscriptionUIHandler,
+            wideEvent: Application.appDelegate.wideEvent,
+            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+            pendingTransactionHandler: pendingTransactionHandler
+        )
 
-            let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                               authEndpointService: subscriptionManager.authEndpointService,
-                                                               accountManager: subscriptionManager.accountManager)
-            delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                               stripePurchaseFlow: stripePurchaseFlow,
-                                                               uiHandler: Application.appDelegate.subscriptionUIHandler)
-        } else {
-            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
-                assertionFailure("subscriptionManager is not available")
-                return
-            }
-            let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
-            delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
-                                                                 stripePurchaseFlow: stripePurchaseFlow,
-                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL)
-        }
+        delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                           stripePurchaseFlow: stripePurchaseFlow,
+                                                           uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                           aiChatURL: AIChatRemoteSettings().aiChatURL,
+                                                           wideEvent: Application.appDelegate.wideEvent,
+                                                           pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager))
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                        isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
+
+        let homepageSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
+        if sourceProvider.featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg),
+           let pendingShowSearchModeToggle = homepageSeedPersistor.pendingShowSearchModeToggle {
+            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: pendingShowSearchModeToggle, onApplied: { applied in
+                if homepageSeedPersistor.pendingShowSearchModeToggle == applied {
+                    homepageSeedPersistor.pendingShowSearchModeToggle = nil
+                }
+            }))
+        }
     }
 
     lazy var userScripts: [UserScript] = [
-        debugScript,
-        contextMenuScript,
-        surrogatesScript,
-        contentBlockerRulesScript,
-        pageObserverScript,
-        printingUserScript,
-        hoverUserScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript
@@ -228,4 +379,76 @@ final class UserScripts: UserScriptsProvider {
         }
     }
 
+}
+
+/// Document-start, page-content-world script that mirrors the onboarding search-mode choice onto the
+/// duckduckgo.com homepage by writing `homepageSettings.showSearchModeToggle` in its localStorage,
+/// then reports the applied value so the one-shot marker is cleared and later web changes are kept.
+final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
+    private static let messageName = "homepageSearchModeSeedApplied"
+
+    var messageNames: [String] { [Self.messageName] }
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly: Bool = true
+    let requiresRunInPageContentWorld: Bool = true
+
+    private let showSearchModeToggle: Bool
+    private let onApplied: (Bool?) -> Void
+
+    var source: String {
+        """
+        const host = (window.location && window.location.hostname) || "";
+        if (host !== "duckduckgo.com" && !host.endsWith(".duckduckgo.com")) { return; }
+        const desired = \(showSearchModeToggle);
+        try {
+            const appliedKey = "__ddgSearchModeSeedApplied";
+            if (window.localStorage.getItem(appliedKey) !== String(desired)) {
+                let settings = {};
+                try { settings = JSON.parse(window.localStorage.getItem("homepageSettings") || "{}") || {}; } catch (e) {}
+                settings.showSearchModeToggle = desired;
+                window.localStorage.setItem("homepageSettings", JSON.stringify(settings));
+                window.localStorage.setItem(appliedKey, String(desired));
+            }
+        } catch (e) {}
+        try { window.webkit.messageHandlers.\(Self.messageName).postMessage({ showSearchModeToggle: desired }); } catch (e) {}
+        """
+    }
+
+    init(showSearchModeToggle: Bool, onApplied: @escaping (Bool?) -> Void) {
+        self.showSearchModeToggle = showSearchModeToggle
+        self.onApplied = onApplied
+        super.init()
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        let value = (message.body as? [String: Any])?["showSearchModeToggle"]
+        onApplied((value as? Bool) ?? (value as? NSNumber)?.boolValue)
+    }
+}
+
+protocol HomepageSearchModeSeedPersistor {
+    var pendingShowSearchModeToggle: Bool? { get nonmutating set }
+}
+
+struct HomepageSearchModeSeedUserDefaultsPersistor: HomepageSearchModeSeedPersistor {
+    enum Key: String {
+        case pendingShowSearchModeToggle = "aichat.homepage-search-mode-seed.pending"
+    }
+
+    private let keyValueStore: KeyValueStoring
+
+    init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var pendingShowSearchModeToggle: Bool? {
+        get { try? keyValueStore.object(forKey: Key.pendingShowSearchModeToggle.rawValue) as? Bool }
+        nonmutating set {
+            if let newValue {
+                try? keyValueStore.set(newValue, forKey: Key.pendingShowSearchModeToggle.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.pendingShowSearchModeToggle.rawValue)
+            }
+        }
+    }
 }

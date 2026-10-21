@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
-import os.log
 import BrowserServicesKit
+import Common
+import ConcurrencyExtensions
+import Foundation
+import os.log
 
 public enum JobType {
     case manualScan
@@ -28,8 +29,31 @@ public enum JobType {
     case all
 }
 
-public protocol BrokerProfileJobErrorDelegate: AnyObject {
-    func dataBrokerOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?)
+public struct CompletedJobIdentifier: Sendable {
+    public let brokerId: Int64
+    public let profileQueryId: Int64
+    public let extractedProfileId: Int64?
+    public let stepType: StepType?
+
+    public init(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64?, stepType: StepType?) {
+        self.brokerId = brokerId
+        self.profileQueryId = profileQueryId
+        self.extractedProfileId = extractedProfileId
+        self.stepType = stepType
+    }
+}
+
+public protocol BrokerProfileJobStatusReportingDelegate: AnyObject {
+    func dataBrokerOperationDidError(_ error: any Error,
+                                     withBrokerURL brokerURL: String?,
+                                     version: String?,
+                                     identifier: CompletedJobIdentifier?,
+                                     dataBrokerParent: String?,
+                                     isFreeScan: Bool?)
+    func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?,
+                                                    version: String?,
+                                                    dataBrokerParent: String?,
+                                                    identifier: CompletedJobIdentifier)
 }
 
 public class BrokerProfileJob: Operation, @unchecked Sendable {
@@ -38,7 +62,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     private let jobType: JobType
     private let priorityDate: Date? // The date to filter and sort operations priorities
     private let showWebView: Bool
-    private(set) weak var errorDelegate: BrokerProfileJobErrorDelegate? // Internal read-only to enable mocking
+    private(set) weak var statusReportingDelegate: BrokerProfileJobStatusReportingDelegate? // Internal read-only to enable mocking
     private let jobDependencies: BrokerProfileJobDependencyProviding
 
     private let id = UUID()
@@ -53,14 +77,14 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
          jobType: JobType,
          priorityDate: Date? = nil,
          showWebView: Bool,
-         errorDelegate: BrokerProfileJobErrorDelegate,
+         statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
          jobDependencies: BrokerProfileJobDependencyProviding) {
 
         self.dataBrokerID = dataBrokerID
         self.priorityDate = priorityDate
         self.jobType = jobType
         self.showWebView = showWebView
-        self.errorDelegate = errorDelegate
+        self.statusReportingDelegate = statusReportingDelegate
         self.jobDependencies = jobDependencies
         super.init()
     }
@@ -97,7 +121,12 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         }
     }
 
-    static func eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: [BrokerProfileQueryData], jobType: JobType, priorityDate: Date?) -> [BrokerJobData] {
+    public static func sortedEligibleJobs(
+        brokerProfileQueriesData: [BrokerProfileQueryData],
+        jobType: JobType,
+        priorityDate: Date?,
+        sortPredicate areInIncreasingOrder: BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default
+    ) -> [BrokerJobData] {
         let jobsData: [BrokerJobData]
 
         switch jobType {
@@ -114,30 +143,33 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         if let priorityDate = priorityDate {
             filteredAndSortedJobData = jobsData
                 .filteredByNilOrEarlierPreferredRunDateThan(date: priorityDate)
-                .sortedByEarliestPreferredRunDateFirst()
+                .sorted(by: areInIncreasingOrder)
         } else {
             filteredAndSortedJobData = jobsData
                 .excludingUserRemoved()
+                .excludingOptOutsWithEmailConfirmationBeingHalted()
         }
 
         return filteredAndSortedJobData
     }
 
     private func runJob() async {
-        let allBrokerProfileQueryData: [BrokerProfileQueryData]
+        let brokerProfileQueryData: [BrokerProfileQueryData]
 
         do {
-            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
+            // Jobs for removed brokers are already prevented from being scheduled upstream.
+            brokerProfileQueryData = try jobDependencies.database.fetchBrokerProfileQueryData(forBrokerId: dataBrokerID)
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
         }
 
-        let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
+        let isAuthenticatedUser = await jobDependencies.isAuthenticatedUser()
+        let isFreeScan = !isAuthenticatedUser
+        let brokerProfileQueriesData = brokerProfileQueryData
+            .excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
 
-        let filteredAndSortedJobData = Self.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: brokerProfileQueriesData,
-                                                                                  jobType: jobType,
-                                                                                  priorityDate: priorityDate)
+        let filteredAndSortedJobData = makeFilteredAndSortedJobData(brokerProfileQueriesData, isFreeScan: isFreeScan)
 
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
 
@@ -155,47 +187,116 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 continue
             }
 
+            Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
+
+            let stepType: StepType? = {
+                switch jobData {
+                case is ScanJobData:
+                    return .scan
+                case is OptOutJobData:
+                    return .optOut
+                default:
+                    return nil
+                }
+            }()
+            let identifier = CompletedJobIdentifier(
+                brokerId: jobData.brokerId,
+                profileQueryId: jobData.profileQueryId,
+                extractedProfileId: (jobData as? OptOutJobData)?.extractedProfile.id,
+                stepType: stepType
+            )
+
             do {
-                Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
+                var executed = false
 
                 if jobData is ScanJobData {
-                    try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
-                        brokerProfileQueryData: brokerProfileData,
-                        showWebView: showWebView,
-                        isManual: jobType == .manualScan,
-                        shouldRunNextStep: { [weak self] in
-                            guard let self = self else { return false }
-                            return !self.isCancelled
-                        })
+                    executed = try await withTimeout(jobDependencies.executionConfig.scanJobTimeout,
+                                                     throwing: DataBrokerProtectionError.jobTimeout) { [self] in
+                        try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
+                            brokerProfileQueryData: brokerProfileData,
+                            showWebView: showWebView,
+                            isManual: jobType == .manualScan,
+                            shouldRunNextStep: { [weak self] in
+                                guard let self = self else { return false }
+                                return !self.isCancelled && !Task.isCancelled
+                            })
+                    }
                 } else if let optOutJobData = jobData as? OptOutJobData {
-                    try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
-                        for: optOutJobData.extractedProfile,
-                        brokerProfileQueryData: brokerProfileData,
-                        showWebView: showWebView,
-                        shouldRunNextStep: { [weak self] in
-                            guard let self = self else { return false }
-                            return !self.isCancelled
-                        })
+                    executed = try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout,
+                                                     throwing: DataBrokerProtectionError.jobTimeout) { [self] in
+                        try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
+                            for: optOutJobData.extractedProfile,
+                            brokerProfileQueryData: brokerProfileData,
+                            showWebView: showWebView,
+                            shouldRunNextStep: { [weak self] in
+                                guard let self = self else { return false }
+                                return !self.isCancelled && !Task.isCancelled
+                            })
+                    }
                 } else {
                     assertionFailure("Unsupported job data type")
                 }
 
-                let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
-                Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
-                try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
+                if executed {
+                    let dataBroker = brokerProfileQueriesData.first?.dataBroker
+                    statusReportingDelegate?.dataBrokerOperationDidCompleteSuccessfully(withBrokerURL: dataBroker?.url,
+                                                                                        version: dataBroker?.version,
+                                                                                        dataBrokerParent: dataBroker?.parent,
+                                                                                        identifier: identifier)
+
+                    let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
+                    Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
+                    try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
+                } else {
+                    Logger.dataBrokerProtection.log("Job skipped, moving on...")
+                }
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
 
-                errorDelegate?.dataBrokerOperationDidError(error,
-                                                           withBrokerName: brokerProfileQueriesData.first?.dataBroker.name,
-                                                           version: brokerProfileQueriesData.first?.dataBroker.version)
+                let dataBroker = brokerProfileQueriesData.first?.dataBroker
+                statusReportingDelegate?.dataBrokerOperationDidError(error,
+                                                                     withBrokerURL: dataBroker?.url,
+                                                                     version: dataBroker?.version,
+                                                                     identifier: identifier,
+                                                                     dataBrokerParent: dataBroker?.parent,
+                                                                     isFreeScan: isFreeScan)
             }
         }
+    }
 
-        finish()
+    private func makeFilteredAndSortedJobData(_ brokerProfileQueriesData: [BrokerProfileQueryData], isFreeScan: Bool) -> [BrokerJobData] {
+        var didFireFreemiumMaintenanceScanSkippedPixel = false
+        return Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
+                                       jobType: jobType,
+                                       priorityDate: priorityDate,
+                                       sortPredicate: jobDependencies.jobSortPredicate)
+            .filter { jobData in
+                guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
+                    return true
+                }
+
+                let scanType = scanJobData.scanType()
+                didFireFreemiumMaintenanceScanSkippedPixel = fireFreemiumMaintenanceScanSkippedPixelIfNeeded(
+                    for: scanType,
+                    didFirePixel: didFireFreemiumMaintenanceScanSkippedPixel
+                )
+
+                return scanType != .maintenance
+            }
+    }
+
+    private func fireFreemiumMaintenanceScanSkippedPixelIfNeeded(for scanType: ScanJobData.ScanType, didFirePixel: Bool) -> Bool {
+        guard scanType == .maintenance, !didFirePixel else {
+            return didFirePixel
+        }
+
+        jobDependencies.pixelHandler.fire(.freemiumPIRMaintenanceScanSkipped)
+        return true
     }
 
     private func finish() {
+        Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
+
         willChangeValue(forKey: #keyPath(isExecuting))
         willChangeValue(forKey: #keyPath(isFinished))
 
@@ -204,8 +305,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         didChangeValue(forKey: #keyPath(isExecuting))
         didChangeValue(forKey: #keyPath(isFinished))
-
-        Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
     }
 }
 
@@ -227,25 +326,13 @@ private extension Array where Element == BrokerJobData {
         }
     }
 
-    /// Sorts BrokerJobData array based on their preferred run dates.
-    /// - Jobs with non-nil preferred run dates are sorted in ascending order (earliest date first).
-    /// - Opt-out jobs with nil preferred run dates come last, maintaining their original relative order.
-    func sortedByEarliestPreferredRunDateFirst() -> [BrokerJobData] {
-        sorted { lhs, rhs in
-            switch (lhs.preferredRunDate, rhs.preferredRunDate) {
-            case (nil, nil):
-                return false
-            case (_, nil):
-                return true
-            case (nil, _):
-                return false
-            case (let lhsRunDate?, let rhsRunDate?):
-                return lhsRunDate < rhsRunDate
-            }
-        }
-    }
-
     func excludingUserRemoved() -> [BrokerJobData] {
         filter { !$0.isRemovedByUser }
+    }
+
+    func excludingOptOutsWithEmailConfirmationBeingHalted() -> [BrokerJobData] {
+        filter { jobData in
+            jobData.historyEvents.max(by: { $0.date < $1.date })?.type != .optOutSubmittedAndAwaitingEmailConfirmation
+        }
     }
 }

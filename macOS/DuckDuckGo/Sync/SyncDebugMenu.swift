@@ -16,8 +16,11 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppKit
 import DDGSync
+import Persistence
 import Bookmarks
 
 final class SyncDebugMenu: NSMenu {
@@ -34,8 +37,17 @@ final class SyncDebugMenu: NSMenu {
 
             NSMenuItem(title: "Turn off Sync", action: #selector(turnOffSync), target: self)
                 .withAccessibilityIdentifier("SyncDebugMenu.turnOffSync")
+
+            NSMenuItem.separator()
+            NSMenuItem(title: "Ensure account_info key", action: #selector(ensureAccountInfoKey), target: self)
+                .withAccessibilityIdentifier("SyncDebugMenu.ensureAccountInfoKey")
+            NSMenuItem(title: "Validate account_info key", action: #selector(validateAccountInfoKey), target: self)
+                .withAccessibilityIdentifier("SyncDebugMenu.validateAccountInfoKey")
+            NSMenuItem.separator()
+
             NSMenuItem(title: "Reset Favicons Fetcher Onboarding Dialog", action: #selector(resetFaviconsFetcherOnboardingDialog), target: self)
             NSMenuItem(title: "Populate Stub objects", action: #selector(createStubsForDebug), target: self)
+            NSMenuItem(title: "Show Sync With Another Device (Chat Sync)", action: #selector(showSyncWithAnotherDevicePromo), target: self)
         }
     }
 
@@ -70,8 +82,9 @@ final class SyncDebugMenu: NSMenu {
     }
 
     @objc func switchSyncEnvironment(_ sender: NSMenuItem) {
-#if DEBUG || REVIEW
-        guard let syncService = NSApp.delegateTyped.syncService,
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild,
+              let syncService = NSApp.delegateTyped.syncService,
               let environment = sender.representedObject as? ServerEnvironment
         else {
             return
@@ -79,11 +92,11 @@ final class SyncDebugMenu: NSMenu {
 
         syncService.updateServerEnvironment(environment)
         UserDefaults.standard.set(environment.description, forKey: UserDefaultsWrapper<String>.Key.syncEnvironment.rawValue)
-#endif
     }
 
     @objc func createStubsForDebug() {
-#if DEBUG || REVIEW
+        let buildType = StandardApplicationBuildType()
+        guard buildType.isDebugBuild || buildType.isReviewBuild else { return }
         let db = NSApp.delegateTyped.bookmarkDatabase
 
         let context = db.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
@@ -121,23 +134,83 @@ final class SyncDebugMenu: NSMenu {
 
             try? context.save()
         }
-#endif
     }
 
+    @MainActor
     @objc func turnOffSync(_ sender: NSMenuItem) {
         if let syncService = NSApp.delegateTyped.syncService, let syncDataProviders = NSApp.delegateTyped.syncDataProviders {
-            let syncPreferences = SyncPreferences(
+            let syncPreferences = SyncDialogController(
                 syncService: syncService,
-                syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
-                syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
                 syncPausedStateManager: syncDataProviders.syncErrorHandler
             )
             syncPreferences.turnOffSync()
         }
     }
 
+    @MainActor
+    @objc func showSyncWithAnotherDevicePromo(_ sender: NSMenuItem) {
+        DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .aiChat, completion: nil)
+    }
+
+    @objc private func ensureAccountInfoKey() {
+        Task { @MainActor [weak self] in
+            guard let self, let syncService = NSApp.delegateTyped.syncService else { return }
+
+            do {
+                let wrapperCount = try await syncService.ensureAccountInfoKeyForDebug()
+                let message: String
+                if wrapperCount == 0 {
+                    message = "No wrappers were returned."
+                } else if wrapperCount == 1 {
+                    message = "Ensured 1 wrapper."
+                } else {
+                    message = "Ensured \(wrapperCount) wrappers."
+                }
+                await showAlert(title: "Account Info Key Ensured", message: message)
+            } catch {
+                await showAlert(title: "Unable to Ensure Account Info Key", message: String(reflecting: error))
+            }
+        }
+    }
+
+    @objc private func validateAccountInfoKey() {
+        Task { @MainActor [weak self] in
+            guard let self, let syncService = NSApp.delegateTyped.syncService else { return }
+
+            do {
+                let result = try await syncService.validateAccountInfoKeyForDebug()
+                guard result.refreshedKeyID == result.reloadedKeyID else {
+                    let message = """
+                    Refreshed key ID: \(result.refreshedKeyID)
+                    Reloaded key ID: \(result.reloadedKeyID)
+                    """
+                    await showAlert(title: "Account Info Key Reload Mismatch", message: message)
+                    return
+                }
+
+                let message = """
+                Key ID: \(result.reloadedKeyID)
+                Key size: \(result.keySizeInBits) bits
+                Cache-first reload: succeeded
+                """
+                await showAlert(title: "Account Info Key Validated", message: message)
+            } catch {
+                await showAlert(title: "Unable to Validate Account Info Key", message: String(reflecting: error))
+            }
+        }
+    }
+
+    @MainActor
+    private func showAlert(title: String, message: String) async {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        await alert.runModal()
+    }
+
     @objc func resetFaviconsFetcherOnboardingDialog(_ sender: NSMenuItem) {
-        UserDefaultsWrapper<Bool?>(key: .syncDidPresentFaviconsFetcherOnboarding).clear()
+        KeyedStorage<SyncFaviconsPromoSettings>(storage: UserDefaults.standard).didPresentLegacyDialog = nil
     }
 
 }

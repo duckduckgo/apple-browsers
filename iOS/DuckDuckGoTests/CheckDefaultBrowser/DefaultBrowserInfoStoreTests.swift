@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import Testing
+import SetDefaultBrowserCore
 @testable import DuckDuckGo
 
 class DefaultBrowserInfoStoreTests {
@@ -33,7 +34,7 @@ class DefaultBrowserInfoStoreTests {
     func testDefaultInfoIsPersisted() throws {
         // GIVEN
         let timeInterval: TimeInterval = 1773122108000 // March 10, 2026
-        let defaultBrowserInfo = DefaultBrowserInfo(
+        let defaultBrowserInfo = DefaultBrowserContext(
             isDefaultBrowser: true,
             lastSuccessfulCheckDate: timeInterval,
             lastAttemptedCheckDate: timeInterval,
@@ -43,11 +44,11 @@ class DefaultBrowserInfoStoreTests {
         let sut = DefaultBrowserInfoStore()
 
         // WHEN
-        sut.defaultBrowserInfo = defaultBrowserInfo
+        sut.defaultBrowserContext = defaultBrowserInfo
 
         // THEN
         let data = try #require(UserDefaults.app.data(forKey: Self.userDefaultsKey))
-        let retrievedBrowserInfo = try JSONDecoder().decode(DefaultBrowserInfo.self, from: data)
+        let retrievedBrowserInfo = try JSONDecoder().decode(DefaultBrowserContext.self, from: data)
         #expect(retrievedBrowserInfo == defaultBrowserInfo)
     }
 

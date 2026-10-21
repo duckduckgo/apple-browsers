@@ -19,6 +19,8 @@
 import AppKit
 import BrowserServicesKit
 import Foundation
+import UniformTypeIdentifiers
+import DesignResourcesKitIcons
 
 extension DataImport {
 
@@ -37,7 +39,22 @@ extension DataImport {
         private let validateProfileData: ProfileDataValidator
 
         var validImportableProfiles: [BrowserProfile] {
-            return profiles.filter { validateProfileData($0)()?.containsValidData == true }
+            let validProfiles = profiles.filter {
+                let validatedProfileData = validateProfileData($0)
+                let validationResult = validatedProfileData()
+                return validationResult?.containsValidData == true
+            }
+            return validProfiles
+        }
+
+        /// Profiles whose data directory exists on disk but can't be read because we need permissions (macOS 27+)
+        var permissionDeniedProfiles: [BrowserProfile] {
+            profiles.filter { $0.accessState == .permissionDenied }
+        }
+
+        /// Indicates if the browser has at least one profile the app can't access yet, and no importable profiles.
+        var requiresDirectoryAccessPermission: Bool {
+            validImportableProfiles.isEmpty && !permissionDeniedProfiles.isEmpty
         }
 
         init(browser: ThirdPartyBrowser, profiles: [BrowserProfile], validateProfileData: @escaping ProfileDataValidator = BrowserProfile.validateProfileData) {
@@ -51,7 +68,7 @@ extension DataImport {
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
                 preferredProfileName = Constants.chromiumDefaultProfileName
-                return validImportableProfiles.first { $0.profileName == Constants.chromiumDefaultProfileName } ?? validImportableProfiles.first ?? profiles.first
+                return validImportableProfiles.first { $0.profileName == Constants.chromiumDefaultProfileName } ?? validImportableProfiles.first ?? permissionDeniedProfiles.first ?? profiles.first
             case .firefox, .tor:
                 preferredProfileName = Constants.firefoxDefaultProfileName
             case .safari, .safariTechnologyPreview, .bitwarden, .lastPass, .onePassword7, .onePassword8:
@@ -63,15 +80,28 @@ extension DataImport {
 
                 return preferredProfile
             }
-            return validImportableProfiles.first ?? profiles.first
-        }
 
+            // Safari supports manual file import and doesn't require profile directory access
+            if browser.isSafari {
+                return validImportableProfiles.first ?? profiles.first
+            }
+
+            // Fall back to an access-restricted profile so the browser is still offered for import
+            return validImportableProfiles.first ?? permissionDeniedProfiles.first
+        }
     }
 
     struct BrowserProfile: Comparable {
 
         enum Constants {
             static let chromiumSystemProfileName = "System Profile"
+        }
+
+        /// Whether the app can read the profile's data directory.
+        /// On macOS 27+ apps with `com.apple.security.*` entitlements are denied access to other apps' `~/Library/Application Support/*` directories (TCC).
+        enum AccessState: Equatable {
+            case readable
+            case permissionDenied
         }
 
         let profileURL: URL
@@ -86,6 +116,11 @@ extension DataImport {
         let browser: ThirdPartyBrowser
         private let fileStore: FileStore
         private let fallbackProfileName: String
+
+        let accessState: AccessState
+        var requiresDirectoryAccessPermission: Bool {
+            accessState == .permissionDenied
+        }
 
         enum ProfilePreferences {
             case chromium(ChromiumPreferences)
@@ -115,10 +150,11 @@ extension DataImport {
             profilePreferences?.appVersion
         }
 
-        init(browser: ThirdPartyBrowser, profileURL: URL, fileStore: FileStore = FileManager.default) {
+        init(browser: ThirdPartyBrowser, profileURL: URL, fileStore: FileStore = FileManager.default, accessState: AccessState = .readable) {
             self.browser = browser
             self.fileStore = fileStore
             self.profileURL = profileURL
+            self.accessState = accessState
 
             self.fallbackProfileName = Self.getDefaultProfileName(at: profileURL)
 
@@ -150,13 +186,35 @@ extension DataImport {
             }
         }
 
+        func hasValidProfileData(for type: DataType) -> Bool {
+            let validateProfileDataResult = validateProfileData()
+
+            // Safari supports manual file import and doesn't require profile directory access
+            let canBypassValidation = browser.isSafari && validateProfileDataResult == nil
+
+            switch type {
+            case .passwords:
+                if canBypassValidation { return true }
+                if case .available = validateProfileDataResult?.logins { return true }
+                return false
+            case .bookmarks:
+                if canBypassValidation { return true }
+                if case .available = validateProfileDataResult?.bookmarks { return true }
+                return false
+            case .creditCards:
+                return false
+            }
+        }
+
         func validateProfileData() -> ProfileDataValidationResult? {
             guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return nil }
 
             let profileDirectoryContentsSet = Set(profileDirectoryContents)
+            let validateLogins = validateLoginsData(profileDirectoryContents: profileDirectoryContentsSet)
+            let validateBookmarks = validateBookmarksData(profileDirectoryContents: profileDirectoryContentsSet)
 
-            return .init(logins: validateLoginsData(profileDirectoryContents: profileDirectoryContentsSet),
-                         bookmarks: validateBookmarksData(profileDirectoryContents: profileDirectoryContentsSet))
+            return .init(logins: validateLogins,
+                         bookmarks: validateBookmarks)
         }
 
         private func validateLoginsData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {
@@ -274,9 +332,11 @@ extension DataImport.Source {
         case .onePassword8:
             return "1Password"
         case .csv:
-            return UserText.importLoginsCSV
+            return UserText.importLoginsCSVShort
         case .bookmarksHTML:
-            return UserText.importBookmarksHTML
+            return UserText.importBookmarksHTMLShort
+        case .fileImport:
+            return "\(UserText.importLoginsCSVShort)\n\(UserText.importBookmarksHTMLShort)"
         }
     }
 
@@ -284,6 +344,8 @@ extension DataImport.Source {
         switch self {
         case .brave, .chrome, .safari, .firefox, .bitwarden, .lastPass, .onePassword7, .onePassword8, .opera, .edge, .csv, .bookmarksHTML:
             return rawValue
+        case .fileImport:
+            return "fileImport"
         case .chromium, .coccoc, .tor, .yandex, .vivaldi:
             return "other"
         case .safariTechnologyPreview:
@@ -294,7 +356,31 @@ extension DataImport.Source {
     }
 
     var importSourceImage: NSImage? {
-        return ThirdPartyBrowser.browser(for: self)?.applicationIcon
+        switch self {
+        case .csv, .bookmarksHTML, .fileImport:
+            return DesignSystemImages.Color.Size56.fileCSV
+        default:
+            break
+        }
+        guard let importSourceImageResource = importSourceImageResource else {
+            return ThirdPartyBrowser.browser(for: self)?.applicationIcon
+        }
+        return NSImage(resource: importSourceImageResource)
+    }
+
+    var importSourceImageResource: ImageResource? {
+        switch self {
+        case .bitwarden: return .bitwarden
+        case .brave: return .brave
+        case .chrome: return .chrome
+        case .edge: return .edge
+        case .firefox: return .firefox
+        case .lastPass: return .lastPassIcon
+        case .opera: return .opera
+        case .safari, .safariTechnologyPreview: return .safari
+        case .vivaldi: return .vivaldi
+        default: return nil
+        }
     }
 
     var canImportData: Bool {
@@ -303,7 +389,7 @@ extension DataImport.Source {
         }
 
         switch self {
-        case .csv, .bitwarden, .onePassword8, .onePassword7, .lastPass, .bookmarksHTML:
+        case .csv, .bitwarden, .onePassword8, .onePassword7, .lastPass, .bookmarksHTML, .fileImport:
             // Users can always import from exported files
             return true
         case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .safari, .safariTechnologyPreview, .tor, .vivaldi, .yandex:
@@ -316,21 +402,39 @@ extension DataImport.Source {
         switch self {
         case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .safari, .safariTechnologyPreview, .vivaldi, .yandex, .tor:
             return true
-        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv, .bookmarksHTML:
+        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv, .bookmarksHTML, .fileImport:
             return false
         }
     }
 
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
-        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .safari, .safariTechnologyPreview, .vivaldi, .yandex:
+        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
             return [.bookmarks, .passwords]
+        case .safari, .safariTechnologyPreview:
+            if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
+                return [.bookmarks, .passwords, .creditCards]
+            } else {
+                return [.bookmarks, .passwords]
+            }
         case .tor:
             return [.bookmarks]
         case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
             return [.passwords]
         case .bookmarksHTML:
             return [.bookmarks]
+        case .fileImport:
+            return [.bookmarks, .passwords]
+        }
+    }
+
+    var archiveImportSupportedFiles: Set<UTType> {
+        switch self {
+        case .safari, .safariTechnologyPreview:
+            return [.zip, .commaSeparatedText, .json, .html]
+        default:
+            // Not implemented for other browsers yet
+            return []
         }
     }
 
@@ -359,7 +463,22 @@ extension DataImport.DataType {
         switch self {
         case .bookmarks: UserText.bookmarkImportBookmarks
         case .passwords: UserText.importLoginsPasswords
+        case .creditCards: UserText.importCreditCards
         }
     }
 
+}
+
+extension DataImport.DataType: @retroactive Comparable {
+    private var order: Int {
+        switch self {
+        case .bookmarks: return 0
+        case .passwords: return 1
+        case .creditCards: return 2
+        }
+    }
+
+    public static func < (lhs: Self, rhs: Self) -> Bool {
+        lhs.order < rhs.order
+    }
 }

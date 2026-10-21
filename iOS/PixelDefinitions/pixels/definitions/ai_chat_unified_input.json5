@@ -1,0 +1,661 @@
+// Unified Toggle Input (UTI) pixels - new Duck.ai input UI gated by the `unifiedToggleInput` feature flag.
+// The `surface` parameter (shared key `unified_input_surface`) distinguishes the contextual chat sheet
+// from the Duck.ai tab and the address bar. `voice_tapped` carries the same values under its pre-existing
+// `source` key. The subscription-funnel `origin` on the picker/upsell pixels intentionally folds the
+// contextual sheet into the Duck.ai bucket (keeps the funnel origin / subscription redirect URL stable).
+{
+    "m_aichat_unified_input_image_generation_selected": {
+        "description": "Fires when the user activates Create Image from the tools menu in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_image_generation_deselected": {
+        "description": "Fires when the user toggles the image generation tool off, either via menu re-tap or the chip's close button. Does not fire on auto-clear from a model switch.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_image_generation_submitted": {
+        "description": "Fires when the user submits a prompt with the image generation tool active in the Unified Toggle Input.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "has_reference_image",
+                "description": "Whether a reference image attachment was present in the input at submission time.",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_aichat_unified_input_web_search_selected": {
+        "description": "Fires when the user activates Web Search from the tools menu in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_web_search_deselected": {
+        "description": "Fires when the user toggles the web search tool off, either via menu re-tap or the chip's close button. Does not fire on auto-clear from a model switch.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_web_search_submitted": {
+        "description": "Fires when the user submits a prompt with the web search tool active in the Unified Toggle Input.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_customize_responses_selected": {
+        "description": "Fires when the user selects Customize Responses from the tools menu in the Unified Toggle Input. Unlike the other tools menu items, this is a one-shot action forwarded to the front-end rather than a toggleable model tool.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_model_selected": {
+        "description": "Fires when the user selects a different model in the Unified Toggle Input model picker (new model id differs from previous). Does not fire for gated/rejected models.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "model_id",
+                "description": "The id of the newly selected model.",
+                "type": "string"
+            }
+        ]
+    },
+    "m_aichat_unified_input_model_picker_shown": {
+        "description": "Fires when the user opens the Unified Toggle Input model picker by tapping the model chip.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the model picker impression.",
+                "type": "string",
+                "enum": ["funnel_addressbar_ios__modelpicker", "funnel_duckai_ios__modelpicker"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_reasoning_effort_selected": {
+        "description": "Fires when the user selects a reasoning effort level in the Unified Toggle Input reasoning picker. Does not fire for gated/rejected selections.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "effort_level",
+                "description": "The reasoning effort level selected.",
+                "type": "string",
+                "enum": ["fast", "reasoning", "extended_reasoning"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_reasoning_effort_picker_shown": {
+        "description": "Fires when the user opens the Unified Toggle Input reasoning effort picker by tapping the reasoning button.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the reasoning effort picker impression.",
+                "type": "string",
+                "enum": [
+                    "funnel_addressbar_ios__reasoningdropdown",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    // Shipped from 7.228.0 until the rename to ...__reasoningdropdown; kept so historic data validates.
+                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_duckai_ios__reasoningpicker"
+                ]
+            }
+        ]
+    },
+    "m_aichat_unified_input_image_attached": {
+        "description": "Fires when the user attaches an image (camera, photo library, or paste) in the Unified Toggle Input.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "source",
+                "description": "Source of the attached image.",
+                "type": "string",
+                "enum": ["camera", "photo_library", "paste"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_image_removed": {
+        "description": "Fires when the user removes an attached image from the Unified Toggle Input (tap on thumbnail close button).",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_image_validation_failed": {
+        "description": "Fires when a pasted image is rejected by the Unified Toggle Input attachment policy (image capacity reached, or extra images dropped from a multi-image paste).",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "reason",
+                "description": "Reason for the image validation failure.",
+                "type": "string",
+                "enum": ["count_exceeded", "paste_truncated"]
+            },
+            {
+                "key": "source",
+                "description": "Source of the rejected image.",
+                "type": "string",
+                "enum": ["camera", "photo_library", "paste"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_file_attached": {
+        "description": "Fires when the user attaches a file (file picker or paste) in the Unified Toggle Input (post-validation).",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "source",
+                "description": "Source of the attached file.",
+                "type": "string",
+                "enum": ["file_picker", "paste"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_file_removed": {
+        "description": "Fires when the user removes an attached file (or invalid file) from the Unified Toggle Input.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_file_validation_failed": {
+        "description": "Fires when an attached file is rejected by the Unified Toggle Input attachment policy.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "reason",
+                "description": "Reason for the file validation failure.",
+                "type": "string",
+                "enum": ["size_exceeded", "count_exceeded", "unsupported_type", "encrypted", "unreadable", "other"]
+            },
+            {
+                "key": "source",
+                "description": "Source of the rejected file.",
+                "type": "string",
+                "enum": ["file_picker", "paste"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_voice_tapped": {
+        "description": "Fires when the user taps the voice waveform button in the Unified Toggle Input.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Surface from which voice chat was triggered, based on input mode at the time of tap.",
+                "type": "string",
+                "enum": ["address_bar", "duck_ai", "contextual_chat"]
+            },
+            {
+                "key": "has_pending_page_context",
+                "description": "Whether page context was attached but not yet submitted at the moment of the tap (contextual chat only; always false on other surfaces). Measures users tapping voice expecting the attached context to carry into the voice chat.",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_aichat_unified_input_stop_generation_tapped": {
+        "description": "Fires when the user taps the stop button during Duck.ai stream in the Unified Toggle Input.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_opened": {
+        "description": "Fires when the frontend requests to edit a previously sent message and the Unified Toggle Input enters edit mode.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_submitted": {
+        "description": "Fires when the user submits an edited message from the Unified Toggle Input.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_cancelled": {
+        "description": "Fires when the user leaves edit mode in the Unified Toggle Input without submitting (cancel button or sheet dismissal).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_image_removed": {
+        "description": "Fires when the user removes an image attachment while editing a previously sent message in the Unified Toggle Input. Fired in addition to the generic image removed pixel.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_edit_prompt_file_removed": {
+        "description": "Fires when the user removes a file attachment while editing a previously sent message in the Unified Toggle Input. Fired in addition to the generic file removed pixel.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_subscription_upsell_triggered": {
+        "description": "Fires when the user taps a gated model or reasoning level in the Unified Toggle Input and the native subscription/upgrade flow is triggered.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "Surface that triggered the upsell.",
+                "type": "string",
+                "enum": ["model_picker", "reasoning_picker"]
+            },
+            {
+                "key": "current_tier",
+                "description": "Current subscription tier of the user.",
+                "type": "string",
+                "enum": ["free", "plus"]
+            },
+            {
+                "key": "required_tier",
+                "description": "Subscription tier required for the gated feature.",
+                "type": "string",
+                "enum": ["plus", "pro"]
+            },
+            {
+                "key": "flow_type",
+                "description": "Type of subscription flow.",
+                "type": "string",
+                "enum": ["purchase", "upgrade"]
+            },
+            {
+                "key": "origin",
+                "description": "Origin value for the gated model or reasoning picker upsell.",
+                "type": "string",
+                "enum": [
+                    "funnel_addressbar_ios__modelpicker",
+                    "funnel_addressbar_ios__reasoningdropdown",
+                    "funnel_duckai_ios__modelpicker",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    // Shipped from 7.228.0 until the rename to ...__reasoningdropdown; kept so historic data validates.
+                    "funnel_addressbar_ios__reasoningpicker",
+                    "funnel_duckai_ios__reasoningpicker"
+                ]
+            }
+        ]
+    },
+    "m_aichat_unified_input_chat_header_upgrade_tapped": {
+        "description": "Fires when the user taps the Upgrade label in the AI Chat tab header. The header is only shown to users without an active subscription.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the Duck.ai tab-header upgrade label tap.",
+                "type": "string",
+                "enum": ["funnel_duckai_ios__freelabel"]
+            }
+        ]
+    },
+    "m_aichat_unified_input_chat_header_upgrade_shown": {
+        "description": "Fires each time the 'Free Plan / Upgrade' label in the Duck.ai tab header becomes visible.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Origin value for the Duck.ai tab-header upgrade label impression.",
+                "type": "string",
+                "enum": ["funnel_duckai_ios__freelabel"]
+            }
+        ]
+    },
+    "autocomplete_duckai_shown": {
+        "description": "Fires when the Duck.ai-mode suggestion list comes on screen with rows, at most once per address-bar focus (iPhone Unified Input and the iPad popover). The denominator for the m_autocomplete_duckai_click_* pixels.",
+        "owners": ["jaceklyp"],
+        "triggers": ["impression"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_website": {
+        "description": "Fires when user clicks on a website suggestion in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_bookmark": {
+        "description": "Fires when user clicks on a bookmark suggestion in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_favorite": {
+        "description": "Fires when user clicks on a favorite suggestion in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_history_search": {
+        "description": "Fires when user clicks on a search-based history item in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_history_site": {
+        "description": "Fires when user clicks on a site-based history item in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_switch_to_tab": {
+        "description": "Fires when user taps an open-tab suggestion in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_chat_history": {
+        "description": "Fires when user taps a previous Duck.ai conversation in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_autocomplete_duckai_click_search_duckduckgo": {
+        "description": "Fires when user taps the 'Search DuckDuckGo: X' exit row in the Duck.ai autocomplete suggestion list.",
+        "owners": ["pikorddg"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_aichat_unified_input_prompt_submitted": {
+        "description": "Fires on every Duck.ai submission in the unified toggle input, with the submit-time state of the composer. Divide against m_aichat_unified_input_query_submitted for the Search vs Duck.ai mix.",
+        "owners": ["pikorddg", "aataraxiaa", "Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "aichat_first_prompt_new_install",
+            "unified_input_page_type",
+            "usage_layout",
+            "usage_hardware_keyboard",
+            {
+                "key": "default_mode",
+                "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch. Absent before iPad's address bar reported it; filter on it being present for any Search-vs-Duck.ai ratio.",
+                "type": "string",
+                "enum": ["search", "duckAI", "lastUsed"]
+            },
+            {
+                "key": "origin",
+                "description": "How the user reached the surface the prompt was typed on, as an m_aichat_entry_point source value — same value set as that pixel's source param and the duckai-prompt wide event's feature.data.ext.prompt.origin. Not a subscription-funnel origin. Absent when the entry is unknown.",
+                "type": "string",
+                "enum": [
+                    "address_bar_prompt",
+                    "address_bar_icon",
+                    "address_bar_shortcut_chip",
+                    "address_bar_editing_state",
+                    "suggestion_ask_ai",
+                    "ipad_toggle_prompt",
+                    "browsing_menu_ntp",
+                    "browsing_menu_webpage",
+                    "tab_switcher",
+                    "tabs_bar_button",
+                    "new_tab_long_press_menu",
+                    "chat_history_new_chat",
+                    "chat_history_open_chat",
+                    "chat_history_view_all",
+                    "voice",
+                    "onboarding",
+                    "subscription_onboarding",
+                    "paid_settings",
+                    "direct_url",
+                    "serp",
+                    "icon_shortcut",
+                    "contextual_chat",
+                    "widget_quick_actions",
+                    "widget_quick_actions_medium",
+                    "widget_favorite",
+                    "widget_lock_screen",
+                    "widget_control_center",
+                    "siri",
+                    "deep_link_other",
+                    "browsing_menu_duckai",
+                    "duck_ai_new_chat",
+                    "tab_switcher_existing_chat",
+                    "tabs_bar_existing_chat",
+                    "return_to_chat_card",
+                    "ddg_homepage"
+                ]
+            },
+            "unified_input_surface",
+            {
+                "key": "selected_tool",
+                "description": "Selected tool at submission time.",
+                "type": "string",
+                "enum": ["none", "image_generation", "web_search"]
+            },
+            {
+                "key": "model_id",
+                "description": "Identifier of the selected model at submission time.",
+                "type": "string"
+            },
+            {
+                "key": "reasoning_effort",
+                "description": "Reasoning effort at submission time. Sends 'none' when the reasoning picker is hidden (e.g. image generation active, or model has no reasoning picker)",
+                "type": "string",
+                "enum": ["fast", "reasoning", "extended_reasoning", "none"]
+            },
+            {
+                "key": "has_image_attachment",
+                "description": "Whether an image attachment was present at submission time.",
+                "type": "boolean"
+            },
+            {
+                "key": "has_file_attachment",
+                "description": "Whether a file attachment (valid or invalid) was present at submission time.",
+                "type": "boolean"
+            },
+            {
+                "key": "has_tab_attachment",
+                "description": "Whether an explicitly selected tab attachment was present at submission time.",
+                "type": "boolean"
+            },
+            {
+                "key": "has_text",
+                "description": "Whether the input contained non-whitespace text at submission time. Combined with attachment flags allows deriving attachment-only submits.",
+                "type": "boolean"
+            }
+        ]
+    },
+    "m_aichat_unified_input_query_submitted": {
+        "description": "Fires on every Search submission in the unified toggle input and the iPad address bar (typed, a suggestion tapped or picked with the keyboard, an address typed in Duck.ai mode, or the Search DuckDuckGo row in Duck.ai mode). On iPad query_type follows what the address bar loads — the Search-side denominator for m_aichat_unified_input_prompt_submitted. Filter on default_mode being present for any Search-vs-Duck.ai ratio.",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_page_type",
+            {
+                "key": "query_type",
+                "description": "search for a search, url for an address the user typed or picked, so addresses can be filtered out without changing existing counts.",
+                "type": "string",
+                "enum": ["search", "url"]
+            },
+            "usage_layout",
+            "usage_hardware_keyboard",
+            {
+                "key": "default_mode",
+                "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch.",
+                "type": "string",
+                "enum": ["search", "duckAI", "lastUsed"]
+            },
+            {
+                "key": "toggle_visible",
+                "description": "Whether the Search/Duck.ai toggle was on screen. false means no choice was available, so exclude those from a choice-rate denominator.",
+                "type": "boolean"
+            },
+            "unified_input_surface"
+        ]
+    },
+    "aichat_unified_input_show_model_picker": {
+        "description": "Fires when native surfaces the model picker in response to the FE showModelPicker bridge message (recovery picker session entry).",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_submit_change_model": {
+        "description": "Fires when native emits submitChangeModelAction to the FE during an active recovery picker session.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "model_id",
+                "description": "The model id reported to the FE via submitChangeModelAction.",
+                "type": "string"
+            }
+        ]
+    },
+    "aichat_unified_input_submit_change_model_prompt_sent": {
+        "description": "Fires when the user successfully submits a prompt that ends a recovery picker session.",
+        "owners": ["pikorddg", "aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "m_aichat_unified_input_duck_ai_direct_navigation": {
+        "description": "Fires when Duck.ai is disabled under AI Features settings yet the user navigates directly to Duck.ai by typing its address into the Unified Toggle Input and submitting. Does not fire for the in-input Duck.ai shortcut button or other Duck.ai entry points.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_unified_input_create_image_model_switched": {
+        "description": "Fires when picking Create Image automatically moves the user onto an image-capable model, because the selected model cannot generate images.",
+        "owners": ["pikorddg", "Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "unified_input_surface",
+            {
+                "key": "from_model_id",
+                "description": "The model the user was moved off, which cannot generate images.",
+                "type": "string"
+            },
+            {
+                "key": "to_model_id",
+                "description": "The image-capable model the user was moved onto.",
+                "type": "string"
+            },
+            {
+                "key": "from_model_privacy_preserving",
+                "description": "Whether the model the user was moved off is one of the models with extra privacy protections.",
+                "type": "boolean"
+            },
+            {
+                "key": "entry_point",
+                "description": "Where the user turned Create Image on.",
+                "type": "string",
+                "enum": ["tools_menu", "chat_header_new_image"]
+            }
+        ]
+    },
+    "aichat_unified_input_create_image_model_switch_notice_dismissed": {
+        "description": "Fires when the user closes the footer notice that explains an automatic Create Image model switch.",
+        "owners": ["pikorddg", "Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_unified_input_create_image_unavailable": {
+        "description": "Fires when Create Image is asked for on a model that cannot generate images and the model list offers nothing to move to.",
+        "owners": ["pikorddg", "Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_unified_input_attachment_privacy_image_shown": {
+        "description": "Fires once per attachment privacy card appearance in the Unified Toggle Input or iPad address bar. The first valid attachment was an image when this appearance began.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_attachment_privacy_image_learn_more_tapped": {
+        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input or iPad address bar. The first valid attachment staged at the time of the tap is an image.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_attachment_privacy_file_shown": {
+        "description": "Fires once per attachment privacy card appearance in the Unified Toggle Input or iPad address bar. The first valid attachment was a file when this appearance began.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    },
+    "aichat_unified_input_attachment_privacy_file_learn_more_tapped": {
+        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input or iPad address bar. The first valid attachment staged at the time of the tap is a file.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "unified_input_surface"]
+    }
+}

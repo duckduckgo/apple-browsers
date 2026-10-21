@@ -18,15 +18,18 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 struct JsonToRemoteConfigModelMapper {
 
     static func mapJson(remoteMessagingConfig: RemoteMessageResponse.JsonRemoteMessagingConfig,
-                        surveyActionMapper: RemoteMessagingSurveyActionMapping) -> RemoteConfigModel {
+                        surveyActionMapper: RemoteMessagingSurveyActionMapping,
+                        supportedSurfacesForMessage: @escaping (RemoteMessageModelType) -> RemoteMessageSurfaceType) -> RemoteConfigModel {
         let remoteMessages = JsonToRemoteMessageModelMapper.maps(
             jsonRemoteMessages: remoteMessagingConfig.messages,
-            surveyActionMapper: surveyActionMapper
+            surveyActionMapper: surveyActionMapper,
+            supportedSurfacesForMessage: supportedSurfacesForMessage
         )
         Logger.remoteMessaging.debug("remoteMessages mapped = \(String(describing: remoteMessages), privacy: .public)")
         let rules = JsonToRemoteMessageModelMapper.maps(jsonRemoteRules: remoteMessagingConfig.rules)

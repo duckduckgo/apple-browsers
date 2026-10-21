@@ -34,6 +34,7 @@ public final class ConnectionStatusObserverThroughIPC: ConnectionStatusObserver 
 
     // MARK: - Publishing Updates
 
+    @MainActor
     func publish(_ status: ConnectionStatus) {
         subject.send(status)
     }

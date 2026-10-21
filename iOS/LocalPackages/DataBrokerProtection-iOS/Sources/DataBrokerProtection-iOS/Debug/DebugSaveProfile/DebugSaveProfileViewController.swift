@@ -23,11 +23,8 @@ import DataBrokerProtectionCore
 
 public final class DebugSaveProfileViewController: UIHostingController<DebugSaveProfileView> {
 
-    let database: DataBrokerProtectionRepository
-
-    public init(database: DataBrokerProtectionRepository) {
-        self.database = database
-        let viewModel = DebugSaveProfileViewModel(database: self.database)
+    public init(databaseDelegate: DBPIOSInterface.DatabaseDelegate?) {
+        let viewModel = DebugSaveProfileViewModel(databaseDelegate: databaseDelegate)
         let contentView = DebugSaveProfileView(viewModel: viewModel)
         super.init(rootView: contentView)
     }

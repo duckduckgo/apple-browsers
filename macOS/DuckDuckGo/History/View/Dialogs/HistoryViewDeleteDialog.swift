@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import SwiftUIExtensions
 
 struct HistoryViewDeleteDialog: ModalView {
@@ -46,12 +47,25 @@ struct HistoryViewDeleteDialog: ModalView {
 
                     Text(model.dataClearingExplanation)
                         .fixMultilineScrollableText()
-                        .foregroundColor(.blackWhite60)
+                        .foregroundColor(Color(.blackWhite60))
                         .font(.system(size: 11))
                         .padding(.leading, 19)
+
+                    if model.canClearChatHistory {
+                        Toggle(UserText.deleteChatHistory, isOn: $model.shouldClearChatHistory)
+                            .font(.system(size: 13))
+                            .fixMultilineScrollableText()
+                            .toggleStyle(.checkbox)
+
+                        Text(UserText.deleteChatHistoryExplanation)
+                            .fixMultilineScrollableText()
+                            .foregroundColor(Color(.blackWhite60))
+                            .font(.system(size: 11))
+                            .padding(.leading, 19)
+                    }
                 }
                 .padding(.init(top: 16, leading: 12, bottom: 16, trailing: 12))
-                .background(RoundedRectangle(cornerRadius: 8.0).stroke(.blackWhite5))
+                .background(RoundedRectangle(cornerRadius: 8.0).stroke(Color(.blackWhite5)))
             }
             .padding(.bottom, 16)
 
@@ -65,7 +79,7 @@ struct HistoryViewDeleteDialog: ModalView {
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(StandardButtonStyle(topPadding: 0, bottomPadding: 0))
+                .buttonStyle(StandardButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true))
                 .keyboardShortcut(.cancelAction)
                 .accessibilityIdentifier("ClearAllHistoryAndDataAlert.cancelButton")
 
@@ -78,13 +92,13 @@ struct HistoryViewDeleteDialog: ModalView {
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
-                .buttonStyle(DestructiveActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0))
+                .buttonStyle(DestructiveActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, pillShape: true))
                 .keyboardShortcut(.defaultAction)
                 .accessibilityIdentifier("ClearAllHistoryAndDataAlert.clearButton")
 
             }
         }
-        .padding(16)
+        .padding(AppVersion.isLiquidGlassSupported ? 20 : 16)
         .frame(width: 330)
     }
 }

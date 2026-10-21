@@ -1,4 +1,4 @@
-// swift-tools-version: 6.1
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -25,7 +25,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../DuckUI"),
-        .package(path: "../../../SharedPackages/DesignResourcesKitIcons"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../../../SharedPackages/UIComponents"),
         .package(path: "../MetricBuilder"),
         .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
     ],
@@ -40,6 +41,7 @@ let package = Package(
                 .product(name: "DuckUI", package: "DuckUI"),
                 .product(name: "MetricBuilder", package: "MetricBuilder"),
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
+                .product(name: "UIComponents", package: "UIComponents"),
             ]
         ),
         .target(

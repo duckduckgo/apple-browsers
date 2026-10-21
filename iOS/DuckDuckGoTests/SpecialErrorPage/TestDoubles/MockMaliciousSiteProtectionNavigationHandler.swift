@@ -37,6 +37,7 @@ final class MockMaliciousSiteProtectionNavigationHandler: MaliciousSiteProtectio
     private(set) var capturedErrorData: SpecialErrorData?
 
     private(set) var didCallLeaveSite = false
+    private(set) var capturedLeaveSiteErrorData: SpecialErrorData?
 
     private(set) var didCallAdvancedInfoPresented = false
 
@@ -59,7 +60,7 @@ final class MockMaliciousSiteProtectionNavigationHandler: MaliciousSiteProtectio
         capturedWebView = webView
     }
     
-    func getMaliciousSiteDectionTask(for navigationResponse: WKNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>? {
+    func getMaliciousSiteDetectionTask(for navigationResponse: WKNavigationResponse, webView: WKWebView) -> Task<MaliciousSiteProtectionNavigationResult, Never>? {
         didCallHandleMaliciousSiteProtectionForNavigationResponse = true
         capturedNavigationResponse = navigationResponse
         capturedWebView = webView
@@ -73,8 +74,9 @@ final class MockMaliciousSiteProtectionNavigationHandler: MaliciousSiteProtectio
         capturedErrorData = errorData
     }
     
-    func leaveSite() {
+    func leaveSite(errorData: SpecialErrorData) {
         didCallLeaveSite = true
+        capturedLeaveSiteErrorData = errorData
     }
     
     func advancedInfoPresented() {

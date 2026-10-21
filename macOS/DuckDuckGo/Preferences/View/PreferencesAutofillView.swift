@@ -16,26 +16,23 @@
 //  limitations under the License.
 //
 
+import BWManagementShared
+import Combine
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
-import PixelKit
 
 fileprivate extension Preferences.Const {
-    static let autoLockWarningOffset: CGFloat = {
-        if #available(macOS 12.0, *) {
-            return 18
-        } else {
-            return 20
-        }
-    }()
+    static let autoLockWarningOffset: CGFloat = 18
 }
 
 extension Preferences {
 
     struct AutofillView: View {
         @ObservedObject var model: AutofillPreferencesModel
-        @ObservedObject var bitwardenManager = BWManager.shared
+        private let bitwardenManager = Application.appDelegate.bitwardenManager
+        @State private var bitwardenStatus: BWStatus = Application.appDelegate.bitwardenManager?.status ?? .disabled
         @State private var showingResetNeverPromptSitesSheet = false
 
         var passwordManagerBinding: Binding<PasswordManager> {
@@ -70,68 +67,81 @@ extension Preferences {
                 }
 
                 // Autofill Content  Button
-                PreferencePaneSection {
+                PreferencePaneSection(spacing: 12) {
                     Button(UserText.autofillViewContentButtonPasswords) {
                         model.showAutofillPopover(.logins, source: .settings)
                     }
                     Button(UserText.autofillViewContentButtonIdentities) {
                         model.showAutofillPopover(.identities, source: .settings)
                     }
-                    Button(UserText.autofillViewContentButtonPaymentMethods) {
+                    Button(UserText.autofillViewContentButtonCreditCards) {
                         model.showAutofillPopover(.cards, source: .settings)
                     }
-#if APPSTORE
-                    Button(UserText.importPasswords) {
-                        model.openImportPasswordsWindow()
+                    if NSApp.isSandboxed {
+                        Button(UserText.importPasswords) {
+                            model.openImportPasswordsWindow()
+                        }
+                        Button(UserText.exportLogins) {
+                            model.openExportLogins()
+                        }
                     }
-                    Button(UserText.exportLogins) {
-                        model.openExportLogins()
-                    }
-#endif
 
+                    Text(UserText.autofillContentStoredSecurelyInfo)
+                        .foregroundColor(Color(.textSecondary))
                 }
 
-#if !APPSTORE
-                // SECTION 1: Password Manager
-                PreferencePaneSection(UserText.autofillPasswordManager) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        passwordManagerPicker(passwordManagerBinding) {
-                            Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
-                        }
+                if let managingExtension = model.managingExtension {
+                    // SECTION 1: Password Manager, taken over by an extension. Shown in every build,
+                    // since an extension can take autofill over in App Store builds too.
+                    PreferencePaneSection(UserText.autofillPasswordManager) {
+                        managingExtensionView(managingExtension)
                     }
-
-                    if model.passwordManager != .bitwarden {
-                        VStack {
-                            Button(UserText.importPasswords) {
-                                model.openImportPasswordsWindow()
-                            }
-                            Button(UserText.exportLogins) {
-                                model.openExportLogins()
+                } else if !NSApp.isSandboxed {
+                    // SECTION 1: Password Manager
+                    PreferencePaneSection(UserText.autofillPasswordManager) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            passwordManagerPicker(passwordManagerBinding) {
+                                Text(UserText.autofillPasswordManagerDuckDuckGo).tag(PasswordManager.duckduckgo)
                             }
                         }
-                        .padding(.leading, 15)
-                    }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        passwordManagerPicker(passwordManagerBinding) {
-                            Text(UserText.autofillPasswordManagerBitwarden).tag(PasswordManager.bitwarden)
+                        if shouldShowImportExportButtons {
+                            VStack(spacing: 12) {
+                                Button(UserText.importPasswords) {
+                                    model.openImportPasswordsWindow()
+                                }
+                                Button(UserText.exportLogins) {
+                                    model.openExportLogins()
+                                }
+                            }
+                            .padding(.leading, 15)
+                            .padding(.bottom, 4)
                         }
-                        if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
-                            bitwardenStatusView(for: bitwardenManager.status)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            passwordManagerPicker(passwordManagerBinding) {
+                                Text(UserText.autofillPasswordManagerBitwarden).tag(PasswordManager.bitwarden)
+                            }
+                            if model.passwordManager == .bitwarden && !model.isBitwardenSetupFlowPresented {
+                                bitwardenStatusView(for: bitwardenStatus)
+                            }
                         }
+
                     }
                 }
-#endif
 
-                // SECTION 2: Ask to Save:
-                PreferencePaneSection {
-                    TextMenuItemHeader(UserText.autofillAskToSave)
-                    VStack(alignment: .leading, spacing: 6) {
-                        ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
-                        ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
-                        ToggleMenuItem(UserText.autofillPaymentMethods, isOn: $model.askToSavePaymentMethods)
+                // SECTION 2: Ask to Save. Hidden while an extension manages autofill: DuckDuckGo neither
+                // saves nor autofills anything then.
+                if model.managingExtension == nil {
+                    PreferencePaneSection {
+                        TextMenuItemHeader(UserText.autofillAskToSave)
+                        VStack(alignment: .leading, spacing: 6) {
+                            ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
+                            ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
+                            ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
+                        }
+                        TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                     }
-                    TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                 }
 
                 // SECTION 3: Reset excluded (aka never prompt to save) sites:
@@ -182,9 +192,24 @@ extension Preferences {
                         Text(UserText.autofillNeverLock).tag(false)
                     }, label: {})
                     .pickerStyle(.radioGroup)
+                    .rebrandedControlTint()
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                     TextMenuItemCaption(UserText.autofillNeverLockWarning)
                 }
+
+                if Application.appDelegate.featureFlagger.isFeatureOn(.autofillPasswordsStatusBar) {
+                    // SECTION 5: Menu Bar
+                    PreferencePaneSection {
+                        TextMenuItemHeader(UserText.passwordsMenuBarSection)
+                        ToggleMenuItem(UserText.showPasswordsInMenuBar, isOn: $model.showInMenuBar)
+                    }
+                }
+            }
+            .onReceive(bitwardenStatusPublisher) { status in
+                bitwardenStatus = status
+            }
+            .onAppear {
+                model.viewDidAppear()
             }
         }
 
@@ -194,7 +219,40 @@ extension Preferences {
                 content()
             }, label: {})
             .pickerStyle(.radioGroup)
+            .rebrandedControlTint()
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+        }
+
+        /// The extension that took autofill over: who, and a way to give it back.
+        @ViewBuilder
+        private func managingExtensionView(_ managingExtension: AutofillManagingExtension) -> some View {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    if let icon = managingExtension.icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 16, height: 16)
+                    }
+                    Text(UserText.autofillManagedByExtension(managingExtension.name))
+                }
+                TextMenuItemCaption(UserText.autofillManagedByExtensionExplanation(managingExtension.name))
+                Button(UserText.autofillUseDuckDuckGoInstead) {
+                    model.useDuckDuckGoInstead()
+                }
+            }
+        }
+
+        // MARK: - Password Manager Availability Methods
+
+        private var shouldShowImportExportButtons: Bool {
+            return model.passwordManager == .duckduckgo
+        }
+
+        private var bitwardenStatusPublisher: AnyPublisher<BWStatus, Never> {
+            if let bitwardenManager {
+                return bitwardenManager.statusPublisher.eraseToAnyPublisher()
+            }
+            return Just(.disabled).eraseToAnyPublisher()
         }
 
         @ViewBuilder private func bitwardenStatusView(for status: BWStatus) -> some View {
@@ -350,12 +408,15 @@ private struct BitwardenStatusView: View {
 }
 
 struct BitwardenDowngradeInfoView: View, PreferencesTabOpening {
+    var windowControllersManager: WindowControllersManagerProtocol {
+        Application.appDelegate.windowControllersManager
+    }
 
     var body: some View {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
                 HStack {
-                    Text("1.")
+                    Text(verbatim: "1.")
                     Button(UserText.bitwardenIncompatibleStep1, action: {
                         openNewTab(with: URL(string: "https://github.com/bitwarden/clients/releases/download/desktop-mac-v2025.4.2/Bitwarden-2025.4.2-universal.dmg")!)
                     }).foregroundColor(.accentColor)

@@ -26,9 +26,14 @@ public final class MockDefaultBrowserPromptUserActivityManager: DefaultBrowserPr
     public private(set) var didCallResetNumberOfActiveDays = false
 
     public var numberOfActiveDaysPassed = 0
+    public var numberOfInactiveDaysPassed = 0
 
     public func numberOfActiveDays() -> Int {
         numberOfActiveDaysPassed
+    }
+
+    public func numberOfInactiveDays() -> Int {
+        numberOfInactiveDaysPassed
     }
 
     public func resetNumberOfActiveDays() {

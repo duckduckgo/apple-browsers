@@ -17,31 +17,84 @@
 //
 
 import Foundation
+import Persistence
 
 protocol TabsPreferencesPersistor {
     var switchToNewTabWhenOpened: Bool { get set }
     var preferNewTabsToWindows: Bool { get set }
     var newTabPosition: NewTabPosition { get set }
     var sharedPinnedTabs: Bool { get set }
+    var warnBeforeQuitting: Bool { get set }
+    var warnBeforeClosingPinnedTabs: Bool { get set }
 }
 
 struct TabsPreferencesUserDefaultsPersistor: TabsPreferencesPersistor {
-    @UserDefaultsWrapper(key: .preferNewTabsToWindows, defaultValue: true)
-    var preferNewTabsToWindows: Bool
 
-    @UserDefaultsWrapper(key: .switchToNewTabWhenOpened, defaultValue: false)
-    var switchToNewTabWhenOpened: Bool
+    var preferNewTabsToWindows: Bool {
+        get {
+            (try? keyValueStore.object(forKey: UserDefaultsWrapper<Any>.Key.preferNewTabsToWindows.rawValue) as? Bool) ?? true
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: UserDefaultsWrapper<Any>.Key.preferNewTabsToWindows.rawValue)
+        }
+    }
 
-    @UserDefaultsWrapper(key: .newTabPosition, defaultValue: .atEnd)
-    var newTabPosition: NewTabPosition
+    var switchToNewTabWhenOpened: Bool {
+        get {
+            (try? keyValueStore.object(forKey: UserDefaultsWrapper<Any>.Key.switchToNewTabWhenOpened.rawValue) as? Bool) ?? false
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: UserDefaultsWrapper<Any>.Key.switchToNewTabWhenOpened.rawValue)
+        }
+    }
 
-    @UserDefaultsWrapper(key: .sharedPinnedTabs, defaultValue: true)
-    var sharedPinnedTabs: Bool
+    var newTabPosition: NewTabPosition {
+        get {
+            guard let rawValue = try? keyValueStore.object(forKey: UserDefaultsWrapper<Any>.Key.newTabPosition.rawValue) as? String else {
+                return .atEnd
+            }
+            return NewTabPosition(rawValue: rawValue) ?? .atEnd
+        }
+        set {
+            try? keyValueStore.set(newValue.rawValue, forKey: UserDefaultsWrapper<Any>.Key.newTabPosition.rawValue)
+        }
+    }
+
+    var sharedPinnedTabs: Bool {
+        get {
+            (try? keyValueStore.object(forKey: UserDefaultsWrapper<Any>.Key.sharedPinnedTabs.rawValue) as? Bool) ?? true
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: UserDefaultsWrapper<Any>.Key.sharedPinnedTabs.rawValue)
+        }
+    }
+
+    var warnBeforeQuitting: Bool {
+        get {
+            (try? keyValueStore.object(forKey: UserDefaultsWrapper<Any>.Key.warnBeforeQuitting.rawValue) as? Bool) ?? true
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: UserDefaultsWrapper<Any>.Key.warnBeforeQuitting.rawValue)
+        }
+    }
+
+    var warnBeforeClosingPinnedTabs: Bool {
+        get {
+            (try? keyValueStore.object(forKey: UserDefaultsWrapper<Any>.Key.warnBeforeClosingPinnedTabs.rawValue) as? Bool) ?? true
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: UserDefaultsWrapper<Any>.Key.warnBeforeClosingPinnedTabs.rawValue)
+        }
+    }
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
 }
 
 final class TabsPreferences: ObservableObject, PreferencesTabOpening {
-
-    static let shared = TabsPreferences()
 
     @Published var preferNewTabsToWindows: Bool {
         didSet {
@@ -67,14 +120,33 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
-    init(persistor: TabsPreferencesPersistor = TabsPreferencesUserDefaultsPersistor()) {
+    @Published var warnBeforeQuitting: Bool {
+        didSet {
+            persistor.warnBeforeQuitting = warnBeforeQuitting
+        }
+    }
+
+    @Published var warnBeforeClosingPinnedTabs: Bool {
+        didSet {
+            persistor.warnBeforeClosingPinnedTabs = warnBeforeClosingPinnedTabs
+        }
+    }
+
+    init(
+        persistor: TabsPreferencesPersistor,
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
         self.persistor = persistor
+        self.windowControllersManager = windowControllersManager
         preferNewTabsToWindows = persistor.preferNewTabsToWindows
         switchToNewTabWhenOpened = persistor.switchToNewTabWhenOpened
         newTabPosition = persistor.newTabPosition
         pinnedTabsMode = persistor.sharedPinnedTabs ? .shared : .separate
+        warnBeforeQuitting = persistor.warnBeforeQuitting
+        warnBeforeClosingPinnedTabs = persistor.warnBeforeClosingPinnedTabs
     }
 
+    let windowControllersManager: WindowControllersManagerProtocol
     private var persistor: TabsPreferencesPersistor
 
     // MARK: - Pinned Tabs Setting Migration
@@ -104,3 +176,14 @@ enum PinnedTabsMode: String, CaseIterable {
     case shared
     case separate
 }
+
+#if DEBUG
+final class MockTabsPreferencesPersistor: TabsPreferencesPersistor {
+    var preferNewTabsToWindows: Bool = false
+    var switchToNewTabWhenOpened: Bool = false
+    var newTabPosition: NewTabPosition = .atEnd
+    var sharedPinnedTabs: Bool = false
+    var warnBeforeQuitting: Bool = true
+    var warnBeforeClosingPinnedTabs: Bool = true
+}
+#endif

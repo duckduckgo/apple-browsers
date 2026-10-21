@@ -1,0 +1,442 @@
+//
+//  DefaultColorPalette.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import SwiftUI
+
+#if os(iOS)
+
+/// See [Figma](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
+struct DefaultColorPalette: ColorPaletteDefinition {
+    private static let x1F1F1F = Color(0x1F1F1F)
+    private static let xF3F6FF = Color(0xF3F6FF)
+    private static let xF9F9F9 = Color(0xF9F9F9)
+    private static let x000000 = Color(0x000000)
+    private static let xFFFFFF = Color(0xFFFFFF)
+
+    // New dark mode colors
+    private static let x080808 = Color(0x080808)
+    private static let x090909 = Color(0x090909)
+    private static let x282828 = Color(0x282828)
+    private static let x373737 = Color(0x373737)
+    private static let x3D3D3D = Color(0x3D3D3D)
+    private static let x474747 = Color(0x474747)
+    private static let x1C1C1C = Color(0x1C1C1C)
+    private static let xF6CDD1 = Color(0xF6CDD1)
+    private static let x5A2A2A = Color(0x5A2A2A)
+    private static let xD4452F = Color(0xD4452F)
+
+    // URL bar
+    private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
+
+    // Surfaces
+    private static let surface = DynamicColor(lightHex: 0xFCFCFC, darkHex: 0x2B2B2B)
+    private static let surfaceSecondary = DynamicColor(lightHex: 0xFCFCFC, darkHex: 0x2B2B2B)
+    private static let surfaceTertiary = DynamicColor(lightHex: 0xFFFFFF, darkHex: 0x333333)
+    private static let surfaceCanvas = DynamicColor(lightHex: 0xFDFDFD, darkHex: 0x1C1C1C)
+
+    // Backgrounds
+    private static let backdrop = DynamicColor(lightHex: 0xE4E4E4, darkHex: 0x050505)
+    private static let background = DynamicColor(lightHex: 0xF8F8F8, darkHex: 0x212121)
+    private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x3D3D3D)
+    private static let backgroundSheets = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let backgroundPromptMessage = DynamicColor(lightColor: xF3F6FF, darkColor: xFFFFFF.opacity(0.09))
+
+    // Shadow
+    private static let shadowPrimary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.05, darkHex: 0x000000, darkOpacity: 0.16)
+    private static let shadowSecondary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.08, darkHex: 0x000000, darkOpacity: 0.24)
+    private static let shadowTertiary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.16, darkHex: 0x000000, darkOpacity: 0.32)
+
+    // Controls
+    private static let controlsFillPrimary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.06, darkHex: 0xFFFFFF, darkOpacity: 0.06)
+    private static let controlsFillSecondary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.09, darkHex: 0xFFFFFF, darkOpacity: 0.09)
+    private static let controlsFillTertiary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.12, darkHex: 0xFFFFFF, darkOpacity: 0.12)
+    private static let controlsRaisedBackdrop = DynamicColor(lightColor: x000000.opacity(0.09), darkColor: xFFFFFF.opacity(0.12))
+
+    private static let controlsRaisedFillPrimary = DynamicColor(lightColor: .white, darkColor: xFFFFFF.opacity(0.18))
+
+    // Icons
+    private static let icons = DynamicColor(lightHex: 0x000000, lightOpacity: 0.84, darkHex: 0xFFFFFF, darkOpacity: 0.78)
+    private static let iconsSecondary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.6, darkHex: 0xFFFFFF, darkOpacity: 0.48)
+    private static let iconsTertiary = DynamicColor(lightColor: x000000.opacity(0.36), darkColor: xFFFFFF.opacity(0.24))
+
+    // Text
+    private static let textPrimary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.96, darkHex: 0xFFFFFF, darkOpacity: 1)
+    private static let textSecondary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.6, darkHex: 0xFFFFFF, darkOpacity: 0.7)
+    private static let textTertiary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.36, darkHex: 0xFFFFFF, darkOpacity: 0.4)
+    private static let textPlaceholder = DynamicColor(lightColor: x1F1F1F.opacity(0.4), darkColor: .tint(0.4))
+
+    // Container
+    private static let containerBorderPrimary = DynamicColor(lightColor: x000000.opacity(0.06), darkColor: xFFFFFF.opacity(0.09))
+
+    // System
+    private static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
+
+    // Decorations
+    private static let decorationPrimary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.09, darkHex: 0xFFFFFF, darkOpacity: 0.12)
+    private static let decorationSecondary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.16, darkHex: 0xFFFFFF, darkOpacity: 0.2)
+    private static let decorationTertiary = DynamicColor(lightHex: 0x000000, lightOpacity: 0.24, darkHex: 0xFFFFFF, darkOpacity: 0.32)
+    private static let decorationQuaternary = DynamicColor(lightColor: x1F1F1F.opacity(0.03), darkColor: xF9F9F9.opacity(0.03))
+
+    // Fire Tabs
+    private static let fireModeAccent = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+    private static let fireModeAccentDark = DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin40)
+    private static let fireModeAccentTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Mandarin.mandarin60)
+    private static let fireModeBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x080808)
+    private static let fireModeCardBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x1C1C1C)
+    private static let fireModeFieldBackground = DynamicColor(lightColor: x3D3D3D, darkColor: x090909)
+
+    // DuckAI Cells
+    private static let duckAIVoiceCellBackground = DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater90)
+    private static let duckAIVoiceModeBackground = DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater100)
+
+    // Highlight
+    private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
+
+    // Accents
+    private static let accentContentPrimary = DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Eggshell.eggshell90)
+
+    private static let accentTertiary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
+
+    // Text
+    private static let accentTextPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+    private static let textSelectionFill = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
+
+    // Brand
+    private static let accentPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+    private static let accentGlowSecondary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.12), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.12))
+    private static let accentGlowPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
+    private static let accentAltGlowPrimary = DynamicColor(lightColor: Color(0xA1CFF7).opacity(0.16), darkColor: Color(0xA1CFF7).opacity(0.12))
+    private static let accentAltContentPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater90, darkColor: RebrandingColor.Pondwater.pondwater0)
+
+    private static let accentBrandPrimary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
+    private static let accentBrandTertiary = DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
+    private static let accentBrandContentPrimary = DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+
+    // System
+    private static let border = DynamicColor(lightColor: .gray30, darkColor: .gray40)
+
+    // Alert
+    private static let alertGreen = DynamicColor(staticColor: RebrandingColor.Green.green40)
+    private static let alertYellow = DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
+    private static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
+
+    // Destructive
+    private static let destructivePrimary = DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
+    private static let destructiveContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
+    private static let destructiveTertiary = DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
+    private static let destructiveGlowPrimary = DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xEE6D87).opacity(0.2))
+
+    // Buttons/Primary
+    private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
+    private static let buttonsPrimaryDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
+    private static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
+    private static let buttonsPrimaryTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+
+    // Buttons/SecondaryFill
+    private static let buttonsSecondaryFillDefault = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
+    private static let buttonsSecondaryFillPressed = DynamicColor(lightColor: .shade(0.18), darkColor: .tint(0.3))
+    private static let buttonsSecondaryFillDisabled = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.18))
+    private static let buttonsSecondaryFillText = DynamicColor(lightColor: .shade(0.84), darkColor: .white)
+    private static let buttonsSecondaryFillTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+
+    // Buttons/SecondaryWire
+    private static let buttonsSecondaryWireDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let buttonsSecondaryWirePressedFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    private static let buttonsSecondaryWireDisabledStroke = DynamicColor(lightColor: .shade(0.12), darkColor: .tint(0.24))
+    private static let buttonsSecondaryWireText = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let buttonsSecondaryWireTextPressed = DynamicColor(lightColor: .blue70, darkColor: .blue20)
+    private static let buttonsSecondaryWireTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+
+    // Buttons/Ghost
+    private static let buttonsGhostPressedFill = DynamicColor(lightColor: .blue50.opacity(0.2), darkColor: .blue30.opacity(0.2))
+    private static let buttonsGhostText = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let buttonsGhostTextPressed = DynamicColor(lightColor: .blue70, darkColor: .blue20)
+    private static let buttonsGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+
+    // Buttons/Color
+    private static let buttonsWhite = DynamicColor(lightColor: .white, darkColor: .black)
+
+    // Buttons/DeleteGhost
+    private static let buttonsDeleteGhostPressedFill = DynamicColor(lightColor: .alertRed50.opacity(0.12), darkColor: .alertRed20.opacity(0.18))
+    private static let buttonsDeleteGhostTextPressed = DynamicColor(lightColor: .alertRed70, darkColor: .alertRed10)
+    private static let buttonsDeleteGhostText = DynamicColor(lightColor: .alertRedOnLight, darkColor: .alertRedOnDark)
+    private static let buttonsDeleteGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+
+    // Buttons/DestructivePrimary
+    private static let buttonsDestructivePrimaryPressed = DynamicColor(lightColor: .alertRed80, darkColor: .alertRed40)
+
+    static func dynamicColor(for designSystemColor: DesignSystemColor) -> DynamicColor {
+        switch designSystemColor {
+
+        case .urlBar: return urlBar
+        case .background: return background
+        case .backgroundTertiary: return backgroundTertiary
+        case .backgroundSheets: return backgroundSheets
+        case .backgroundPromptMessage: return backgroundPromptMessage
+        case .backdrop: return backdrop
+        case .panel: return background
+        case .icons: return icons
+        case .iconsSecondary: return iconsSecondary
+        case .iconsTertiary: return iconsTertiary
+        case .textPrimary: return textPrimary
+        case .containerBorderPrimary: return containerBorderPrimary
+        case .lines: return lines
+        case .shadowPrimary: return shadowPrimary
+        case .shadowSecondary: return shadowSecondary
+        case .shadowTertiary: return shadowTertiary
+        case .controlsFillPrimary: return controlsFillPrimary
+        case .controlsFillSecondary: return controlsFillSecondary
+        case .controlsFillTertiary: return controlsFillTertiary
+        case .controlsRaisedBackdrop: return controlsRaisedBackdrop
+        case .controlsRaisedFillPrimary: return controlsRaisedFillPrimary
+        case .decorationPrimary: return decorationPrimary
+        case .decorationSecondary: return decorationSecondary
+        case .decorationTertiary: return decorationTertiary
+        case .decorationQuaternary: return decorationQuaternary
+        case .highlightDecoration: return highlightDecoration
+        case .accentContentPrimary: return accentContentPrimary
+        case .accentTertiary: return accentTertiary
+
+        case .surface: return surface
+        case .surfaceSecondary: return surfaceSecondary
+        case .surfaceTertiary: return surfaceTertiary
+        case .surfaceCanvas: return surfaceCanvas
+
+        case .accentPrimary: return accentPrimary
+        case .accentGlowPrimary: return accentGlowPrimary
+        case .accentGlowSecondary: return accentGlowSecondary
+        case .accentAltGlowPrimary: return accentAltGlowPrimary
+        case .accentAltContentPrimary: return accentAltContentPrimary
+        case .accentBrandPrimary: return accentBrandPrimary
+        case .accentBrandTertiary: return accentBrandTertiary
+        case .accentBrandContentPrimary: return accentBrandContentPrimary
+        case .alertGreen: return alertGreen
+        case .alertYellow: return alertYellow
+        case .shieldPrivacy: return shieldPrivacy
+        // VPN pill + header animation, per the Figma spec. Backgrounds and foregrounds (text/icon)
+        // vary by light/dark mode, with a darker interaction (hover/press) variant of each.
+        case .vpnGreen:
+            return DynamicColor(lightColor: RebrandingColor.Green.green20, darkColor: RebrandingColor.Green.green70)
+        case .vpnGreenPressed:
+            return DynamicColor(lightColor: RebrandingColor.Green.green30, darkColor: RebrandingColor.Green.green80)
+        case .vpnGreenForeground:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad90, darkColor: RebrandingColor.Lilypad.lilypad10)
+        case .vpnGreenForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad100, darkColor: RebrandingColor.Lilypad.lilypad0)
+        case .vpnYellow:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen30, darkColor: RebrandingColor.Pollen.pollen70)
+        case .vpnYellowPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen40, darkColor: RebrandingColor.Pollen.pollen80)
+        case .vpnYellowForeground:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen80, darkColor: RebrandingColor.Pollen.pollen20)
+        case .vpnYellowForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
+        case .border: return border
+        case .accentTextPrimary: return accentTextPrimary
+        case .textPlaceholder: return textPlaceholder
+        case .textSecondary: return textSecondary
+        case .textTertiary: return textTertiary
+        case .textSelectionFill: return textSelectionFill
+
+        // Destructive
+        case .destructivePrimary: return destructivePrimary
+        case .destructiveTertiary: return destructiveTertiary
+        case .destructiveContentPrimary: return destructiveContentPrimary
+        case .destructiveGlowPrimary: return destructiveGlowPrimary
+
+            // Buttons/SecondaryFill
+        case .buttonsSecondaryFillDefault: return buttonsSecondaryFillDefault
+        case .buttonsSecondaryFillPressed: return buttonsSecondaryFillPressed
+        case .buttonsSecondaryFillDisabled: return buttonsSecondaryFillDisabled
+        case .buttonsSecondaryFillText: return buttonsSecondaryFillText
+        case .buttonsSecondaryFillTextDisabled: return buttonsSecondaryFillTextDisabled
+
+            // Buttons/Primary
+        case .buttonsPrimaryDefault: return buttonsPrimaryDefault
+        case .buttonsPrimaryPressed: return buttonsPrimaryPressed
+        case .buttonsPrimaryDisabled: return buttonsPrimaryDisabled
+        case .buttonsPrimaryText: return buttonsPrimaryText
+        case .buttonsPrimaryTextDisabled: return buttonsPrimaryTextDisabled
+
+            // Buttons/SecondaryWire
+        case .buttonsSecondaryWireDefault: return buttonsSecondaryWireDefault
+        case .buttonsSecondaryWirePressedFill: return buttonsSecondaryWirePressedFill
+        case .buttonsSecondaryWireDisabledStroke: return buttonsSecondaryWireDisabledStroke
+        case .buttonsSecondaryWireText: return buttonsSecondaryWireText
+        case .buttonsSecondaryWireTextPressed: return buttonsSecondaryWireTextPressed
+        case .buttonsSecondaryWireTextDisabled: return buttonsSecondaryWireTextDisabled
+
+            // Buttons/Ghost
+        case .buttonsGhostPressedFill: return buttonsGhostPressedFill
+        case .buttonsGhostText: return buttonsGhostText
+        case .buttonsGhostTextPressed: return buttonsGhostTextPressed
+        case .buttonsGhostTextDisabled: return buttonsGhostTextDisabled
+
+            // Buttons/Color
+        case .buttonsWhite: return buttonsWhite
+
+            // Buttons/DeleteGhost
+        case .buttonsDeleteGhostPressedFill: return buttonsDeleteGhostPressedFill
+        case .buttonsDeleteGhostText: return buttonsDeleteGhostText
+        case .buttonsDeleteGhostTextPressed: return buttonsDeleteGhostTextPressed
+        case .buttonsDeleteGhostTextDisabled: return buttonsDeleteGhostTextDisabled
+
+            // Buttons/DestructivePrimary
+        case .buttonsDestructivePrimaryPressed: return buttonsDestructivePrimaryPressed
+        }
+    }
+
+    static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
+        switch singleUseColor {
+        case .controlWidgetBackground:
+            return DynamicColor(staticColor: .x818387)
+        case .unifiedFeedbackFieldBackground:
+            return DynamicColor(lightColor: xF9F9F9, darkColor: .x1C1C1E)
+        case .privacyDashboardBackground:
+            return DynamicColor(lightColor: xF9F9F9, darkColor: x282828)
+        case .inputContentSeparator:
+            return DynamicColor(lightColor: x1F1F1F.opacity(0.16), darkColor: highlightDecoration.darkColor)
+        case .whatsNewBackground:
+            return DynamicColor(lightColor: .white, darkColor: x282828)
+        case .duckAIContextualSheetBackground:
+            return DynamicColor(lightColor: .white, darkColor: .x161616)
+        case .duckAIWebViewBackground:
+            return DynamicColor(lightColor: .white, darkColor: .x111111)
+        case .unifiedToggleInputCardBackground:
+            return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
+        case .unifiedToggleInputStopButtonBackground:
+            return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
+        case .floatingAddressBarBackground:
+            return DynamicColor(lightColor: .shade(0.05), darkColor: .tint(0.08))
+        case .floatingEmbeddedAddressBarBackground:
+            return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.08))
+        case .unifiedToggleInputAttachmentErrorBannerBackground:
+            return DynamicColor(lightColor: xF6CDD1, darkColor: x5A2A2A)
+        case .unifiedToggleInputAttachmentErrorText:
+            return DynamicColor(lightColor: .black.opacity(0.84), darkColor: .white.opacity(0.88))
+        case .unifiedToggleInputAttachmentErrorIcon:
+            return DynamicColor(staticColor: xD4452F)
+        case .tabSwitcherTrackerCountBackground:
+            return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
+        case let .rebranding(rebrandingColor):
+            return dynamicColor(for: rebrandingColor)
+        case .toolbarButton:
+            return DynamicColor(lightColor: x1F1F1F.opacity(0.918), darkColor: .tint(0.905))
+        case .fireModeAccent: return fireModeAccent
+        case .fireModeAccentDark: return fireModeAccentDark
+        case .fireModeAccentTertiary: return fireModeAccentTertiary
+        case .fireModeBackground: return fireModeBackground
+        case .fireModeCardBackground: return fireModeCardBackground
+        case .fireModeFieldBackground: return fireModeFieldBackground
+        case .duckAIVoiceCellBackground: return duckAIVoiceCellBackground
+        case .duckAIVoiceModeBackground: return duckAIVoiceModeBackground
+        case .newTabPageModuleTint:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.03), darkColor: .tint(0.06))
+        case .newTabPageSearchCardBackground:
+            return DynamicColor(lightColor: surfaceSecondary.lightColor, darkColor: RebrandingColor.Pondwater.pondwater100)
+        case .confettiMandarinFill:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin50)
+        case .confettiMandarinStroke:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin70)
+        case .confettiPondwaterFill:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater50)
+        case .confettiPondwaterStroke:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater70)
+        case .confettiLilypadFill:
+            return DynamicColor(staticColor: RebrandingColor.Lilypad.lilypad50)
+        case .confettiLilypadStroke:
+            return DynamicColor(staticColor: RebrandingColor.Lilypad.lilypad70)
+        case .confettiBlossomFill:
+            return DynamicColor(staticColor: RebrandingColor.Blossom.blossom50)
+        case .confettiBlossomStroke:
+            return DynamicColor(staticColor: RebrandingColor.Blossom.blossom70)
+        case .confettiPollenFill:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
+        case .confettiPollenStroke:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen70)
+        }
+    }
+}
+
+// MARK: - Rebranding 2026
+
+private extension DefaultColorPalette {
+
+    private static func dynamicColor(for rebrandingColor: SingleUseColor.Rebranding) -> DynamicColor {
+        switch rebrandingColor {
+        case .textPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
+        case .textSecondary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell70, darkColor: RebrandingColor.Eggshell.eggshell30)
+        case .textLink:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+        case .accentPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+        case .accentPrimaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
+        case .accentPrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .accentGlowPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
+        case .backdrop:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: .blue80)
+        case .buttonsPrimaryDefault:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Pollen.pollen40)
+        case .buttonsPrimaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin70, darkColor: RebrandingColor.Pollen.pollen60)
+        case .buttonsPrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .buttonsContentDisabled:
+            return DynamicColor(lightColor: Color(0xF5F4F6), darkColor: Color(0x212020))
+        case .buttonsSecondaryDefault:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.04))
+        case .buttonsSecondaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.12), darkColor: RebrandingColor.GrayScale.white.opacity(0.08))
+        case .buttonsSecondaryText:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90, darkColor: RebrandingColor.GrayScale.white)
+        case .buttonsSecondaryDisabledBackground:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: .clear)
+        case .buttonsSecondaryDisabledText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.36), darkColor: Color(0x707070))
+        case .destructivePrimary:
+            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
+        case .destructivePrimaryPressed:
+            return DynamicColor(lightColor: RebrandingColor.Red.red70, darkColor: RebrandingColor.Red.red60)
+        case .destructivePrimaryText:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.white, darkColor: RebrandingColor.Pollen.pollen100)
+        case .destructiveGlowPrimary:
+            return DynamicColor(lightColor: Color(0xE5244B).opacity(0.2), darkColor: Color(0xE5244B).opacity(0.2))
+        case .controlsFillPrimary:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.06), darkColor: RebrandingColor.GrayScale.white.opacity(0.12))
+        case .controlBorderTertiary:
+            return DynamicColor(lightColor: RebrandingColor.GrayScale.black.opacity(0.6), darkColor: RebrandingColor.GrayScale.white.opacity(0.72))
+        case .decorationPrimary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.09), darkColor: RebrandingColor.GrayScale.white.opacity(0.06))
+        case .decorationSecondary:
+            return DynamicColor(lightColor: RebrandingColor.Eggshell.eggshell90.opacity(0.16), darkColor: RebrandingColor.GrayScale.white.opacity(0.09))
+        case .alertGreen:
+            return DynamicColor(staticColor: RebrandingColor.Green.green40)
+        case .calendarStripYellow:
+            return DynamicColor(staticColor: RebrandingColor.Pollen.pollen20)
+        }
+    }
+
+}
+
+#endif

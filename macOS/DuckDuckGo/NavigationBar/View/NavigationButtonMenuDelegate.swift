@@ -18,6 +18,7 @@
 
 import Cocoa
 import Common
+import FoundationExtensions
 import WebKit
 import History
 import os.log
@@ -33,11 +34,13 @@ final class NavigationButtonMenuDelegate: NSObject {
     private let buttonType: ButtonType
     private let tabCollectionViewModel: TabCollectionViewModel
     private let historyCoordinator: HistoryCoordinating
+    private let tabsPreferences: TabsPreferences
 
-    init(buttonType: ButtonType, tabCollectionViewModel: TabCollectionViewModel, historyCoordinator: HistoryCoordinating) {
+    init(buttonType: ButtonType, tabCollectionViewModel: TabCollectionViewModel, historyCoordinator: HistoryCoordinating, tabsPreferences: TabsPreferences) {
         self.buttonType = buttonType
         self.tabCollectionViewModel = tabCollectionViewModel
         self.historyCoordinator = historyCoordinator
+        self.tabsPreferences = tabsPreferences
     }
 
 }
@@ -65,7 +68,7 @@ extension NavigationButtonMenuDelegate: NSMenuDelegate {
                                                              isCurrentItem: index == 0)
 
         item.title = listItemViewModel.title
-        item.image = listItemViewModel.image
+        item.withImage(listItemViewModel.image, visibleOnMacOS27: true)
         item.state =  listItemViewModel.state
 
         item.target = self
@@ -83,7 +86,7 @@ extension NavigationButtonMenuDelegate: NSMenuDelegate {
         }
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
-            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
             canOpenLinkInCurrentTab: true
         )
 

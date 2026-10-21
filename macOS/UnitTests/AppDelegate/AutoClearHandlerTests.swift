@@ -16,51 +16,91 @@
 //  limitations under the License.
 //
 
+import AppKit
+import Combine
+import Common
 import Foundation
+import History
+@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
+
+final class MockAutoClearAlertPresenter: AutoClearAlertPresenting {
+    var responseToReturn: NSApplication.ModalResponse = .alertFirstButtonReturn
+    var confirmAutoClearCalled = false
+    var clearChatsParameter: Bool?
+
+    func confirmAutoClear(clearChats: Bool) -> NSApplication.ModalResponse {
+        confirmAutoClearCalled = true
+        clearChatsParameter = clearChats
+        return responseToReturn
+    }
+}
+
+final class MockAppStateRestorationManager: AppStateRestorationManaging {
+    var isRelaunchingAutomatically: Bool = false
+    var resetRelaunchFlagCalled = false
+
+    func resetRelaunchFlag() {
+        resetRelaunchFlagCalled = true
+        isRelaunchingAutomatically = false
+    }
+}
 
 @MainActor
 class AutoClearHandlerTests: XCTestCase {
 
+    private var burnOnExitCalls: [Bool] = []
     var handler: AutoClearHandler!
     var dataClearingPreferences: DataClearingPreferences!
     var startupPreferences: StartupPreferences!
     var fireViewModel: FireViewModel!
+    var mockAlertPresenter: MockAutoClearAlertPresenter!
+    var mockStateRestoration: MockAppStateRestorationManager!
 
     override func setUp() {
         super.setUp()
+        burnOnExitCalls = []
         let persistor = MockFireButtonPreferencesPersistor()
         dataClearingPreferences = DataClearingPreferences(
             persistor: persistor,
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
         let persistor2 = StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: "duckduckgo.com")
         let appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            aiChatMenuConfig: MockAIChatConfig()
         )
-        startupPreferences = StartupPreferences(persistor: persistor2,
-                                                appearancePreferences: appearancePreferences)
+        startupPreferences = StartupPreferences(
+            pinningManager: MockPinningManager(),
+            persistor: persistor2,
+            appearancePreferences: appearancePreferences
+        )
 
-        fireViewModel = FireViewModel(tld: Application.appDelegate.tld,
-                                      visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider())
-        let fileName = "AutoClearHandlerTests"
-        let fileStore = FileStoreMock()
-        let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
-        let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
-                                                                    service: service,
-                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
+        let fire = AutoClearFireMock()
+        fire.onBurnAll = { [weak self] isBurnOnExit in self?.burnOnExitCalls.append(isBurnOnExit) }
+        fireViewModel = FireViewModel(fire: fire)
+        mockStateRestoration = MockAppStateRestorationManager()
+        mockAlertPresenter = MockAutoClearAlertPresenter()
         handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                    startupPreferences: startupPreferences,
                                    fireViewModel: fireViewModel,
-                                   stateRestorationManager: appStateRestorationManager)
+                                   stateRestorationManager: mockStateRestoration,
+                                   aiChatSyncCleaner: nil,
+                                   wideEvent: WideEventMock(),
+                                   pixelFiring: nil,
+                                   alertPresenter: mockAlertPresenter)
     }
 
     override func tearDown() {
@@ -68,24 +108,94 @@ class AutoClearHandlerTests: XCTestCase {
         dataClearingPreferences = nil
         startupPreferences = nil
         fireViewModel = nil
+        mockAlertPresenter = nil
+        mockStateRestoration = nil
+        burnOnExitCalls = []
         super.tearDown()
     }
 
-    func testWhenBurningEnabledAndNoWarningRequiredThenTerminateLaterIsReturned() {
+    func testWhenBurningEnabledAndNoWarningRequiredThenAsyncTaskIsReturned() async {
         dataClearingPreferences.isAutoClearEnabled = true
         dataClearingPreferences.isWarnBeforeClearingEnabled = false
 
-        let response = handler.handleAppTermination()
+        let query = handler.shouldTerminate(isAsync: false)
 
-        XCTAssertEqual(response, .terminateLater)
+        switch query {
+        case .async(let task):
+            _ = await task.value
+            XCTAssertEqual(burnOnExitCalls, [true])
+        case .sync:
+            XCTFail("Expected async query for auto-clear, got sync")
+        }
     }
 
-    func testWhenBurningDisabledThenNoTerminationResponse() {
+    func testWhenBurningDisabledThenSyncNextIsReturned() {
         dataClearingPreferences.isAutoClearEnabled = false
 
-        let response = handler.handleAppTermination()
+        let query = handler.shouldTerminate(isAsync: false)
 
-        XCTAssertNil(response)
+        switch query {
+        case .sync(.next):
+            // Expected: continue to next decider
+            break
+        case .sync(.cancel):
+            XCTFail("Expected .sync(.next), got .sync(.cancel)")
+        case .async:
+            XCTFail("Expected .sync(.next), got .async")
+        }
+    }
+
+    func testWhenBurningEnabledWithWarningAndUserChoosesClearAndQuitThenAsyncTaskIsReturned() async {
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = true
+        mockAlertPresenter.responseToReturn = .alertFirstButtonReturn // Clear and Quit
+
+        let query = handler.shouldTerminate(isAsync: false)
+
+        XCTAssertTrue(mockAlertPresenter.confirmAutoClearCalled)
+        switch query {
+        case .async(let task):
+            _ = await task.value
+            XCTAssertEqual(burnOnExitCalls, [true])
+        case .sync:
+            XCTFail("Expected async query for clear and quit, got sync")
+        }
+    }
+
+    func testWhenBurningEnabledWithWarningAndUserChoosesQuitWithoutClearingThenSyncNextIsReturned() {
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = true
+        mockAlertPresenter.responseToReturn = .alertSecondButtonReturn // Quit without Clearing
+
+        let query = handler.shouldTerminate(isAsync: false)
+
+        XCTAssertTrue(mockAlertPresenter.confirmAutoClearCalled)
+        switch query {
+        case .sync(.next):
+            XCTAssertTrue(burnOnExitCalls.isEmpty)
+        case .sync(.cancel):
+            XCTFail("Expected .sync(.next), got .sync(.cancel)")
+        case .async:
+            XCTFail("Expected .sync(.next), got .async")
+        }
+    }
+
+    func testWhenBurningEnabledWithWarningAndUserCancelsThenSyncCancelIsReturned() {
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = true
+        mockAlertPresenter.responseToReturn = .alertThirdButtonReturn // Cancel
+
+        let query = handler.shouldTerminate(isAsync: false)
+
+        XCTAssertTrue(mockAlertPresenter.confirmAutoClearCalled)
+        switch query {
+        case .sync(.cancel):
+            XCTAssertTrue(burnOnExitCalls.isEmpty)
+        case .sync(.next):
+            XCTFail("Expected .sync(.cancel), got .sync(.next)")
+        case .async:
+            XCTFail("Expected .sync(.cancel), got .async")
+        }
     }
 
     func testWhenBurningEnabledAndFlagFalseThenBurnOnStartTriggered() {
@@ -93,6 +203,7 @@ class AutoClearHandlerTests: XCTestCase {
         handler.resetTheCorrectTerminationFlag()
 
         XCTAssertTrue(handler.burnOnStartIfNeeded())
+        XCTAssertEqual(burnOnExitCalls, [false])
     }
 
     func testWhenBurningDisabledThenBurnOnStartNotTriggered() {
@@ -102,13 +213,114 @@ class AutoClearHandlerTests: XCTestCase {
         XCTAssertFalse(handler.burnOnStartIfNeeded())
     }
 
+    func testShouldTerminate_whenRelaunchingAutomatically_skipsClearPrompt() {
+        mockStateRestoration.isRelaunchingAutomatically = true
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = true
+        handler.resetTheCorrectTerminationFlag() // Ensure flag is false initially
+
+        let result = handler.shouldTerminate(isAsync: false)
+
+        // Verify bypass returns .sync(.next)
+        switch result {
+        case .sync(.next):
+            break
+        case .sync(.cancel):
+            XCTFail("Expected .sync(.next), got .sync(.cancel)")
+        case .async:
+            XCTFail("Expected .sync(.next), got .async")
+        }
+
+        // Verify prompt was not shown
+        XCTAssertFalse(mockAlertPresenter.confirmAutoClearCalled)
+
+        // Verify burn-on-start will NOT trigger on next launch
+        XCTAssertFalse(handler.burnOnStartIfNeeded(),
+                       "Burn-on-start should not trigger after automatic relaunch termination")
+    }
+
+    func testDeciderSequenceCompleted_whenTerminationCancelledAndRelaunchFlagTrue_resetsFlag() {
+        mockStateRestoration.isRelaunchingAutomatically = true
+        dataClearingPreferences.isAutoClearEnabled = true
+
+        handler.deciderSequenceCompleted(shouldProceed: false)
+
+        XCTAssertTrue(mockStateRestoration.resetRelaunchFlagCalled)
+        XCTAssertFalse(mockStateRestoration.isRelaunchingAutomatically)
+    }
+
+    func testDeciderSequenceCompleted_whenTerminationSucceedsAndRelaunchFlagTrue_doesNotResetFlag() {
+        mockStateRestoration.isRelaunchingAutomatically = true
+        dataClearingPreferences.isAutoClearEnabled = true
+
+        handler.deciderSequenceCompleted(shouldProceed: true)
+
+        XCTAssertFalse(mockStateRestoration.resetRelaunchFlagCalled)
+        XCTAssertTrue(mockStateRestoration.isRelaunchingAutomatically)
+    }
+
+    func testDeciderSequenceCompleted_whenTerminationCancelledAndRelaunchFlagFalse_doesNothing() {
+        mockStateRestoration.isRelaunchingAutomatically = false
+
+        handler.deciderSequenceCompleted(shouldProceed: false)
+
+        XCTAssertFalse(mockStateRestoration.resetRelaunchFlagCalled)
+    }
+
 }
 
-final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+final class MockVisualizeFireAnimationDecider: VisualizeFireSettingsDecider {
+    var isOpenFireWindowByDefaultEnabled: Bool = false
+
+    var shouldShowOpenFireWindowByDefaultPublisher: AnyPublisher<Bool, Never> = Just(false)
+        .eraseToAnyPublisher()
+
     var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true)
         .eraseToAnyPublisher()
 
     var shouldShowFireAnimation: Bool {
         return true
+    }
+}
+
+private final class AutoClearFireMock: FireProtocol {
+    var burningData: Fire.BurningData? { nil }
+    let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD())
+    let visualizeFireAnimationDecider: VisualizeFireSettingsDecider = MockVisualizeFireAnimationDecider()
+    var burningDataPublisher: AnyPublisher<Fire.BurningData?, Never> { Just(nil).eraseToAnyPublisher() }
+    var onBurnAll: ((Bool) -> Void)?
+
+    func fireAnimationDidStart() {}
+    func fireAnimationDidFinish() {}
+
+    @MainActor
+    func burnAll(isBurnOnExit: Bool, opening url: URL, includeCookiesAndSiteData: Bool,
+                 includeChatHistory: Bool, isAutoClear: Bool, dataClearingWideEventService: DataClearingWideEventService?,
+                 completion: (@MainActor () -> Void)?) {
+        onBurnAll?(isBurnOnExit)
+        completion?()
+    }
+
+    @MainActor
+    func burnEntity(_ entity: Fire.BurningEntity, includingHistory: Bool, includeCookiesAndSiteData: Bool,
+                    includeChatHistory: Bool, dataClearingWideEventService: DataClearingWideEventService?,
+                    completion: (@MainActor () -> Void)?) {
+        XCTFail("Unexpected entity burn")
+        completion?()
+    }
+
+    @MainActor
+    func burnVisits(_ visits: [Visit], except fireproofDomains: DomainFireproofStatusProviding,
+                    isToday: Bool, closeWindows: Bool, clearSiteData: Bool, clearChatHistory: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL?, dataClearingWideEventService: DataClearingWideEventService?,
+                    completion: (@MainActor () -> Void)?) {
+        XCTFail("Unexpected visits burn")
+        completion?()
+    }
+
+    @MainActor
+    func burnChatHistory() async -> Result<Void, Error> {
+        XCTFail("Unexpected chat burn")
+        return .success(())
     }
 }

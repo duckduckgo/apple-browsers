@@ -96,6 +96,7 @@ final class SuggestionLoadingTests: XCTestCase {
 
     struct E: Error {}
 
+    @MainActor
     func testWhenQueryIsEmpty_ThenSuggestionsAreEmpty() {
         let dataSource = SuggestionLoadingDataSourceMock(platform: .desktop)
         let loader = SuggestionLoader()
@@ -109,6 +110,7 @@ final class SuggestionLoadingTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    @MainActor
     func testWhenGetSuggestionsIsCalled_ThenDataSourceAsksForHistoryBookmarksAndDataOnce() {
         let dataSource = SuggestionLoadingDataSourceMock(data: Data.anAPIResultData,
                                                          platform: .desktop,
@@ -126,6 +128,7 @@ final class SuggestionLoadingTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    @MainActor
     func testWhenAPIReturnsError_ThenErrorAndLocalSuggestionsAreReturned() {
         let dataSource = SuggestionLoadingDataSourceMock(error: E(), platform: .desktop, bookmarks: [], delay: 0)
         let loader = SuggestionLoader()
@@ -139,6 +142,7 @@ final class SuggestionLoadingTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    @MainActor
     func testWhenAPIReturnsMalformedData_ThenErrorAndLocalSuggestionsAreReturned() {
         let dataSource = SuggestionLoadingDataSourceMock(data: "malformed data".data(using: .utf8),
                                                          platform: .desktop,
@@ -154,6 +158,7 @@ final class SuggestionLoadingTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    @MainActor
     func testWhenDataSourceProvidesAllData_ThenResultAndNoErrorIsReturned() {
         let dataSource = SuggestionLoadingDataSourceMock(data: Data.anAPIResultData,
                                                          platform: .desktop,
@@ -184,7 +189,7 @@ fileprivate extension Data {
 fileprivate extension SuggestionLoader {
 
     convenience init() {
-        self.init(urlFactory: { _ in return nil }, isUrlIgnored: { _ in false })
+        self.init(shouldLoadSuggestionsForUserInput: { _ in return true }, isUrlIgnored: { _ in false })
     }
 
 }

@@ -23,23 +23,35 @@ protocol AIChatPromptExtracting {
     /// The type of value from which a query string can be extracted.
     associatedtype ValueType
 
-    /// Extracts a query string from the given value.
+    /// Extracts AI chat content from the given value.
     ///
-    /// - Parameter value: The value from which to extract the query string.
-    /// - Returns: A query string if it can be extracted from the value, otherwise `nil`.
-    func queryForValue(_ value: ValueType) -> String?
+    /// - Parameter value: The value from which to extract the AI chat content.
+    /// - Returns: An `AIChatOpenTrigger` instance containing the query and auto-submit preference.
+    func extractAIChatQuery(for value: ValueType) -> AIChatOpenTrigger
 }
 
-/// A struct that implements the `QueryExtractable` protocol for extracting query strings
+/// A struct that implements the `AIChatPromptExtracting` protocol for extracting AI chat content
 /// from values of type `AddressBarTextField.Value`.
 struct AIChatAddressBarPromptExtractor: AIChatPromptExtracting {
     typealias ValueType = AddressBarTextField.Value
+
+    public func extractAIChatQuery(for value: ValueType) -> AIChatOpenTrigger {
+        // Extract query from address bar text field value
+        let query: String? = queryForValue(value)
+
+        // We don't want to auto-submit if the user is opening duck.ai from the SERP
+        let shouldAutoSubmit: Bool = shouldAutoSubmitForValue(value)
+
+        return AIChatOpenTrigger.query(query, shouldAutoSubmit: shouldAutoSubmit)
+    }
 
     /// Extracts a query string from the given `AddressBarTextField.Value`.
     ///
     /// - Parameter value: The `AddressBarTextField.Value` from which to extract the query string.
     /// - Returns: A query string if it can be extracted from the value, otherwise `nil`.
-    func queryForValue(_ value: ValueType) -> String? {
+    ///   For URL values, returns `nil` if the URL is already a duck.ai URL, otherwise returns the search query.
+    ///   For text values, returns the text itself. For suggestions, returns the suggestion string.
+    private func queryForValue(_ value: ValueType) -> String? {
         switch value {
         case let .text(text, _):
             return text
@@ -52,6 +64,20 @@ struct AIChatAddressBarPromptExtractor: AIChatPromptExtracting {
             }
         case let .suggestion(suggestion):
             return suggestion.string
+        }
+    }
+
+    /// Determines whether the AI chat query should be auto-submitted based on the given value.
+    ///
+    /// - Parameter value: The `AddressBarTextField.Value` to evaluate for auto-submission.
+    /// - Returns: `true` if the query should be auto-submitted, `false` otherwise.
+    ///   Returns `false` for DuckDuckGo search URLs to prevent auto-submission when navigating from SERP.
+    ///   Returns `true` for all other value types.
+    private func shouldAutoSubmitForValue(_ value: ValueType) -> Bool {
+        if case let .url(_, url, _) = value {
+            !url.isDuckDuckGoSearch
+        } else {
+            true
         }
     }
 }

@@ -26,7 +26,7 @@ public enum AuthenticationError: Error, Equatable {
 }
 
 public protocol DataBrokerProtectionAuthenticationManaging {
-    var isUserAuthenticated: Bool { get }
+    var isUserAuthenticated: Bool { get async }
     /// Returns whether the user is eligible for a free trial
     var isUserEligibleForFreeTrial: Bool { get }
     func accessToken() async -> String?
@@ -38,15 +38,10 @@ public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtecti
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
 
     public var isUserAuthenticated: Bool {
-        var token: String?
-        // extremely ugly hack, will be removed as soon auth v1 is removed
-        let semaphore = DispatchSemaphore(value: 0)
-        Task {
-            token = await accessToken()
-            semaphore.signal()
+        get async {
+            let token = await accessToken()
+            return token != nil
         }
-        semaphore.wait()
-        return token != nil
     }
 
     /// Returns whether the user is eligible for a free trial

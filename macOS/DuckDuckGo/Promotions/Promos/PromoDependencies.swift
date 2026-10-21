@@ -1,0 +1,59 @@
+//
+//  PromoDependencies.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AppUpdaterShared
+import BrowserServicesKit
+import DDGSync
+import Foundation
+import Persistence
+import PrivacyConfig
+import RemoteMessaging
+
+/// Centralized dependencies required to build promo delegates.
+/// Add new fields as promo groups require them (e.g. subscriptionManager, onboardingState).
+struct PromoDependencies {
+    let keyValueStore: ThrowingKeyValueStoring
+    let isExternallyActivated: Bool
+    let isNewUserProvider: () -> Bool
+    let isOnboardingCompletedProvider: () -> Bool
+    let activeRemoteMessageModel: ActiveRemoteMessageModel
+    let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
+    let sessionRestoreCoordinator: SessionRestorePromptCoordinating
+    let subscriptionPromoDelegate: FireWindowSubscriptionPromoDelegate
+    let featureFlagger: FeatureFlagger
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    let windowControllersManager: WindowControllersManagerProtocol
+    let syncService: DDGSyncing?
+    let syncBookmarksAdapter: SyncBookmarksAdapter?
+    let pinningManager: PinningManager
+    let cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate
+    let duckPlayerOverlayObserver: DuckPlayerOverlayObserver
+    let updateController: (any UpdateController)?
+    let updateNotificationBridge: UpdateNotificationPromoBridge?
+    let brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator
+    let quitSurveyPromoObserver: QuitSurveyPromoObserver
+    let vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate
+    let vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate
+    let autofillImportPromoObserver: AutofillImportPromoObserver
+    let syncSetupBookmarksPromoManager: SyncPromoManager
+    let syncSetupAutofillPromoManager: SyncPromoManager
+    let bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate
+    let bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate
+    let bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate
+    let autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate
+}

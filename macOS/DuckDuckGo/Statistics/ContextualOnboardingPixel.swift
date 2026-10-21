@@ -26,7 +26,7 @@ import PixelKit
  * [Privacy Triage]()
  * [Detailed Pixels description](https://app.asana.com/0/1201621853593513/1208114308034584/f)
  */
-enum ContextualOnboardingPixel: PixelKitEventV2 {
+enum ContextualOnboardingPixel: PixelKit.Event {
     /**
      * Event Trigger: User types into the address bar when the search suggestions dialog is shown during the contextual onboarding
      *
@@ -80,7 +80,7 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      * Event Trigger: The privacy dashboard is opened from the Trackers dialog during the contextual onboarding
      *
      * Anomaly Investigation:
-     * It is triggered on privacyEntryPointButtonAction on AddressBarButtonViewController
+     * It is triggered on privacyDashboardButtonAction on AddressBarButtonViewController
      * the OnboardingPixelProvider sends it only if the state is not onboardingCompleted
      * Check code in that area  to check it behaves as expected
      */
@@ -159,7 +159,23 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .onboardingSearchCustom,
+                .onboardingVisitSiteCustom,
+                .onboardingFireButtonTryItPressed,
+                .onboardingFinished,
+                .onboardingFireButtonPressed,
+                .onboardingPrivacyDashboardOpened,
+                .secondSiteVisited,
+                .trySearchDismissed,
+                .searchResultDismissed,
+                .tryVisitSiteDismissed,
+                .trackersBlockedDismissed,
+                .tryFireButtonDismissed,
+                .finalDialogDismissed:
+            return [.pixelSource]
+        }
     }
+
 }

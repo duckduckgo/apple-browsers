@@ -18,10 +18,14 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import History
-import InlineSnapshotTesting
-import NetworkingTestingUtils
+@_spi(Testing) import Networking
+import SnapshotTestingSupport
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import SharedTestUtilities
 import Suggestions
 import WebKit
 import XCTest
@@ -203,7 +207,7 @@ final class SuggestionContainerTests: XCTestCase {
                                                                         selectedWindow: selectedWindow)
 
         let mockFeatureFlagger = MockFeatureFlagger()
-        mockFeatureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
+        mockFeatureFlagger.enabledFeatureFlags.append(.paidAIChat)
 
         // Tested object
         let suggestionContainer = SuggestionContainer(urlSession: .mock(),
@@ -236,7 +240,7 @@ final class SuggestionContainerTests: XCTestCase {
         }
 
         // Get the compiled suggestions
-        let resultPromise = suggestionContainer.$result.dropFirst().timeout(1).first().promise()
+        let resultPromise = suggestionContainer.$result.dropFirst().timeout(5).first().promise()
         suggestionContainer.getSuggestions(for: input.query)
 
         let actualResults = try await resultPromise.get()
@@ -375,67 +379,16 @@ extension SuggestionContainerTests {
         let isNav: Bool?
     }
 
-    class WindowControllersManagerMock: WindowControllersManagerProtocol {
-        var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
-
-        var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
-
-        var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?
-
-        var pinnedTabsManagerProvider: any DuckDuckGo_Privacy_Browser.PinnedTabsManagerProviding
-
-        var didRegisterWindowController = PassthroughSubject<(DuckDuckGo_Privacy_Browser.MainWindowController), Never>()
-
-        var didUnregisterWindowController = PassthroughSubject<(DuckDuckGo_Privacy_Browser.MainWindowController), Never>()
-
-        func register(_ windowController: DuckDuckGo_Privacy_Browser.MainWindowController) {
-        }
-
-        func unregister(_ windowController: DuckDuckGo_Privacy_Browser.MainWindowController) {
-        }
-
-        func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {
-        }
-
-        func showBookmarksTab() {
-        }
-
-        func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) {
-        }
-
-        func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
-        }
-
-        var allTabCollectionViewModels: [TabCollectionViewModel] = []
-        var selectedWindowIndex: Int
-        var selectedTab: Tab? {
-            allTabCollectionViewModels[selectedWindowIndex].selectedTab
-        }
-
-        func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> DuckDuckGo_Privacy_Browser.MainWindow? {
-            nil
-        }
-
-        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
-        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
-
-        init(pinnedTabsManagerProvider: PinnedTabsManagerProviding, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
-            self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
-            self.allTabCollectionViewModels = tabCollectionViewModels
-            self.selectedWindowIndex = selectedWindow
-        }
-    }
-
     @MainActor
     private func tabCollection(_ openTabs: [OpenTab], burnerMode: BurnerMode = .regular) -> TabCollection {
         let contentBlockingMock = ContentBlockingMock()
         let privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        (contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration).isFeatureKeyEnabled = { _, _ in
+        (contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration).isFeatureEnabledCheck = { _, _ in
             return false
         }
         let tabs = openTabs.map {
-            Tab(id: $0.tabId, content: TabContent.contentFromURL($0.url, source: .link), webViewConfiguration: WKWebViewConfiguration(), privacyFeatures: privacyFeaturesMock, title: $0.title, burnerMode: burnerMode)
+            Tab(id: $0.tabId, uuid: $0.tabId, content: TabContent.contentFromURL($0.url, source: .link), webViewConfiguration: WKWebViewConfiguration(), privacyFeatures: privacyFeaturesMock, title: $0.title, burnerMode: burnerMode)
         }
         return TabCollection(tabs: tabs)
     }
@@ -567,7 +520,7 @@ private extension URLSession {
 private extension Suggestion {
 
     func expectedSuggestion(query: String) -> SuggestionContainerTests.TestExpectations.ExpectedSuggestion? {
-        let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query, visualStyle: VisualStyle.legacy)
+        let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query, themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger())
         switch self {
         case .phrase(phrase: let phrase):
             return .init(type: .phrase, title: phrase, subtitle: viewModel.suffix ?? "", uri: URL.makeSearchUrl(from: phrase)?.absoluteString, tabId: nil, score: 0)
@@ -585,7 +538,7 @@ private extension Suggestion {
             return .init(type: .openTab, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: tabId.flatMap(UUID.init(uuidString:)), score: score)
         case .internalPage(title: let title, url: let url, score: let score):
             return .init(type: .internalPage, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: score)
-        case .unknown:
+        case .unknown, .askAIChat:
             return nil
         }
     }

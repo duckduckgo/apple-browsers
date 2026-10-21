@@ -20,17 +20,15 @@ import Foundation
 import Combine
 import SwiftUI
 import PixelKit
-import Networking
 import Subscription
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
     func feedbackViewModelDismissedView(_ viewModel: UnifiedFeedbackFormViewModel)
 }
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
-    private static let feedbackEndpoint = URL(string: "https://subscriptions.duckduckgo.com/api/feedback")!
-    private static let platform = "macos"
+    private let featureFlagger: FeatureFlagger
 
     enum ViewState {
         case feedbackPending
@@ -48,11 +46,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }
     }
 
-    enum Error: String, Swift.Error {
-        case missingAccessToken
-        case invalidResponse
-    }
-
     enum ViewAction {
         case cancel
         case submit
@@ -60,26 +53,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         case reportShow
         case reportSubmitShow
         case reportFAQClick
-    }
-
-    struct Payload: Codable {
-        let userEmail: String
-        let feedbackSource: String
-        let platform: String
-        let problemCategory: String
-
-        let feedbackText: String
-        let problemSubCategory: String
-        let customMetadata: String
-
-        func toData() -> Data? {
-            try? JSONEncoder().encode(self)
-        }
-    }
-
-    struct Response: Codable {
-        let message: String?
-        let error: String?
+        case contactSupportClick
     }
 
     @Published var viewState: ViewState {
@@ -122,16 +96,10 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }
     }
 
-    @Published var userEmail = "" {
-        didSet {
-            updateSubmitButtonStatus()
-        }
-    }
-
     private var selectedSubcategoryPrompt: String {
         switch UnifiedFeedbackCategory(rawValue: selectedCategory) {
         case .selectFeature, nil: return ""
-        case .subscription: return PrivacyProFeedbackSubcategory.prompt.rawValue
+        case .subscription: return SubscriptionFeedbackSubcategory.prompt.rawValue
         case .vpn: return VPNFeedbackSubcategory.prompt.rawValue
         case .pir: return PIRFeedbackSubcategory.prompt.rawValue
         case .itr: return ITRFeedbackSubcategory.prompt.rawValue
@@ -152,19 +120,24 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
     weak var delegate: UnifiedFeedbackFormViewModelDelegate?
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    private let apiService: any Networking.APIService
+    private let subscriptionManager: any SubscriptionManager
     private let vpnMetadataCollector: any UnifiedMetadataCollector
     private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
-    private let featureFlagger: FeatureFlagger
 
     let source: UnifiedFeedbackSource
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         apiService: any Networking.APIService,
+    var availableSubscriptionSubcategories: [SubscriptionFeedbackSubcategory] {
+        var subcategories: [SubscriptionFeedbackSubcategory] = SubscriptionFeedbackSubcategory.allCases
+        if !featureFlagger.isFeatureOn(.allowProTierPurchase) {
+            subcategories = subcategories.filter { $0 != .unableToAccessFeatures }
+        }
+        return subcategories
+    }
+
+    init(subscriptionManager: any SubscriptionManager,
          vpnMetadataCollector: any UnifiedMetadataCollector,
          dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadataCollector: any UnifiedMetadataCollector = EmptyMetadataCollector(),
@@ -174,7 +147,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.viewState = .feedbackPending
 
         self.subscriptionManager = subscriptionManager
-        self.apiService = apiService
         self.vpnMetadataCollector = vpnMetadataCollector
         self.dbpMetadataCollector = dbpMetadataCollector
         self.defaultMetadataCollector = defaultMetadataCollector
@@ -185,7 +157,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         Task {
             // This requires follow-up work:
             // https://app.asana.com/1/137249556945/task/1210799126744217
-            let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
+            let features = (try? await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false)) ?? []
 
             if features.contains(.networkProtection) {
                 availableCategories.append(.vpn)
@@ -231,9 +203,12 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                          reportType: selectedReportType,
                                                          category: selectedCategory,
                                                          subcategory: selectedSubcategory)
+        case .contactSupportClick:
+            openSupport()
         }
     }
 
+    @MainActor
     private func openFAQ() async {
         guard !selectedReportType.isEmpty, UnifiedFeedbackReportType(rawValue: selectedReportType) == .reportIssue,
               !selectedCategory.isEmpty, let category = UnifiedFeedbackCategory(rawValue: selectedCategory),
@@ -244,7 +219,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         let url: URL? = {
             switch category {
             case .selectFeature: return nil
-            case .subscription: return PrivacyProFeedbackSubcategory(rawValue: selectedSubcategory)?.url
+            case .subscription: return SubscriptionFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .vpn: return VPNFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .pir: return PIRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .itr: return ITRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
@@ -253,7 +228,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }()
 
         if let url {
-            NSWorkspace.shared.open(url)
+            Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
         }
     }
 
@@ -276,7 +251,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         switch UnifiedFeedbackCategory(rawValue: selectedCategory) {
         case .vpn:
             let metadata = await vpnMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
@@ -284,7 +258,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                           metadata: metadata as? VPNMetadata)
         case .pir:
             let metadata = await dbpMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
@@ -292,7 +265,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                           metadata: metadata as? DBPFeedbackMetadata)
         default:
             let metadata = await defaultMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
@@ -301,34 +273,8 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         }
     }
 
-    private func submitIssue(metadata: UnifiedFeedbackMetadata?) async throws {
-        guard !userEmail.isEmpty else { return }
-
-        guard let accessToken = try? await subscriptionManager.getAccessToken() else {
-            throw Error.missingAccessToken
-        }
-
-        let payload = Payload(userEmail: userEmail,
-                              feedbackSource: source.rawValue,
-                              platform: Self.platform,
-                              problemCategory: selectedCategory,
-                              feedbackText: feedbackFormText,
-                              problemSubCategory: selectedSubcategory,
-                              customMetadata: metadata?.toString() ?? "")
-        let headers = APIRequestV2.HeadersV2(additionalHeaders: [HTTPHeaderKey.authorization: "Bearer \(accessToken)"])
-        guard let request = APIRequestV2(url: Self.feedbackEndpoint, method: .post, headers: headers, body: payload.toData()) else {
-            assertionFailure("Invalid request")
-            return
-        }
-
-        let response: Response = try await apiService.fetch(request: request).decodeBody()
-        if let error = response.error, !error.isEmpty {
-            throw Error.invalidResponse
-        }
-    }
-
     private func updateSubmitButtonStatus() {
-        self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty && (userEmail.isEmpty || userEmail.isValidEmail)
+        self.submitButtonEnabled = viewState.canSubmit && !feedbackFormText.isEmpty
     }
 
     private func updateSubmitShowStatus() {
@@ -343,11 +289,9 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             }
         }()
     }
-}
 
-private extension String {
-    var isValidEmail: Bool {
-        guard let regex = try? NSRegularExpression(pattern: #"[^\s]+@[^\s]+\.[^\s]+"#) else { return false }
-        return matches(regex)
+    @MainActor
+    private func openSupport() {
+        Application.appDelegate.windowControllersManager.show(url: URL.subscriptionSupport, source: .ui, newTab: true)
     }
 }

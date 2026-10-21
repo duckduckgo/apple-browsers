@@ -1,0 +1,105 @@
+// swift-tools-version: 5.10
+//
+//  Package.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import PackageDescription
+
+let package = Package(
+    name: "CrashReporting",
+    platforms: [.macOS("12.3")],
+    products: [
+        .library(name: "CrashReportingShared", targets: ["CrashReportingShared"]),
+        .library(name: "CrashReporting", targets: ["CrashReporting"]),
+        .library(name: "AppStoreCrashCollection", targets: ["AppStoreCrashCollection"]),
+    ],
+    dependencies: [
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/Persistence"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
+        .package(path: "../FeatureFlags-macOS"),
+    ],
+    targets: [
+        .target(
+            name: "CrashReportingShared",
+            dependencies: [
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "Crashes", package: "BrowserServicesKit"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug)),
+            ]
+        ),
+        .target(
+            name: "CrashReporting",
+            dependencies: [
+                "CrashReportingShared",
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "Crashes", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug)),
+            ]
+        ),
+        .target(
+            name: "AppStoreCrashCollection",
+            dependencies: [
+                "CrashReportingShared",
+                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "Crashes", package: "BrowserServicesKit"),
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug)),
+            ]
+        ),
+        .testTarget(
+            name: "CrashReportingTests",
+            dependencies: [
+                "CrashReporting",
+            ],
+            path: "Tests/CrashReportingTests",
+            resources: [
+                .process("DuckDuckGo-ExampleCrash.ips"),
+            ]
+        ),
+        .testTarget(
+            name: "AppStoreCrashCollectionTests",
+            dependencies: [
+                "AppStoreCrashCollection",
+            ],
+            path: "Tests/AppStoreCrashCollectionTests"
+        )
+    ]
+)

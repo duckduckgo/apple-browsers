@@ -23,7 +23,7 @@ import Subscription
 extension SubscriptionEnvironment {
 
     public static var `default`: SubscriptionEnvironment {
-#if ALPHA || DEBUG
+#if ALPHA || EXPERIMENTAL || DEBUG
         let environment: SubscriptionEnvironment.ServiceEnvironment = .staging
 #else
         let environment: SubscriptionEnvironment.ServiceEnvironment = .production

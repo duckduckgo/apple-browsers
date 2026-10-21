@@ -18,6 +18,7 @@
 
 import Foundation
 import WebKit
+import PrivacyConfig
 import BrowserServicesKit
 import UserScript
 import Common
@@ -36,38 +37,69 @@ public protocol WebViewHandler: NSObject {
 }
 
 @MainActor
-final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
+public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     private var activeContinuation: CheckedContinuation<Void, Error>?
 
     private let isFakeBroker: Bool
-    private var webViewConfiguration: WKWebViewConfiguration?
+    private let executionConfig: BrokerJobExecutionConfig
+    private let challengePixelDataBroker: String?
+    private let challengePixelBrokerVersion: String?
+    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
+    private(set) var webViewConfiguration: WKWebViewConfiguration?
     private var userContentController: DataBrokerUserContentController?
 
     private var webView: WebView?
 
 #if os(macOS)
+    private var urlObservation: NSKeyValueObservation?
     private var window: NSWindow?
+    private var addressBarTextField: NSTextField?
+    private var toolbar: NSToolbar?
+    private var didDetectChallenge = false
+    private var didReportChallengeClearance = false
 #elseif os(iOS)
     private var window: UIWindow?
 #endif
 
     private var timer: Timer?
 
-    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, isFakeBroker: Bool = false) {
+    public init(privacyConfig: PrivacyConfigurationManaging,
+                prefs: ContentScopeProperties,
+                delegate: CCFCommunicationDelegate,
+                isFakeBroker: Bool = false,
+                executionConfig: BrokerJobExecutionConfig,
+                challengePixelDataBroker: String? = nil,
+                challengePixelBrokerVersion: String? = nil,
+                shouldContinueActionHandler: @escaping () -> Bool,
+                applicationNameForUserAgentProvider: () -> String?,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil) throws {
+        self.isFakeBroker = isFakeBroker
+        self.executionConfig = executionConfig
+        self.challengePixelDataBroker = challengePixelDataBroker
+        self.challengePixelBrokerVersion = challengePixelBrokerVersion
+        self.pixelHandler = pixelHandler
         let configuration = WKWebViewConfiguration()
-        configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig, prefs: prefs, delegate: delegate)
+        try configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig,
+                                                       prefs: prefs,
+                                                       delegate: delegate,
+                                                       executionConfig: executionConfig,
+                                                       shouldContinueActionHandler: shouldContinueActionHandler,
+                                                       contentBlocking: contentBlocking)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
+        if let applicationNameForUserAgent = applicationNameForUserAgentProvider() {
+            configuration.applicationNameForUserAgent = applicationNameForUserAgent
+        }
 
         self.webViewConfiguration = configuration
-        self.isFakeBroker = isFakeBroker
 
         let userContentController = configuration.userContentController as? DataBrokerUserContentController
         assert(userContentController != nil)
         self.userContentController = userContentController
     }
 
-    func initializeWebView(showWebView: Bool) async {
+    public func initializeWebView(showWebView: Bool) async {
         guard let configuration = self.webViewConfiguration else {
             return
         }
@@ -77,24 +109,48 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
         if showWebView {
 #if os(macOS)
+            urlObservation = webView?.observe(\.url, options: [.initial, .new]) { [weak self] _, change in
+                let url = change.newValue ?? nil
+                Task { @MainActor in
+                    self?.updateAddressBar(with: url)
+                }
+            }
+
             window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024), styleMask: [.titled],
+                contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered, defer: false
             )
             window?.title = "Data Broker Protection"
-            window?.contentView = self.webView
+            window?.toolbarStyle = .expanded
+            let toolbar = makeToolbar()
+            self.toolbar = toolbar
+            window?.toolbar = toolbar
+
+            window?.delegate = self
+            window?.isReleasedWhenClosed = false
+            window?.contentView = webView
+
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
             cleanupExistingPIRDebugWindow()
+
+            if #available(iOS 16.4, *) {
+                webView?.isInspectable = true
+            }
 
             let viewController = UIViewController.init()
             viewController.view = webView
             let navigationController = UINavigationController(rootViewController: viewController)
             viewController.title = "PIR Debug Mode"
 
-            window = UIWindow(frame: UIScreen.main.bounds)
-            window?.rootViewController = navigationController
-            window?.windowLevel = UIWindow.Level.alert
+            if let currentWindowScene = UIApplication.shared.connectedScenes.first as?  UIWindowScene {
+                window = UIWindow(windowScene: currentWindowScene)
+                window?.rootViewController = navigationController
+                window?.windowLevel = UIWindow.Level.alert
+            } else {
+                assertionFailure("Could not find window scene")
+            }
 #endif
 
         }
@@ -104,19 +160,23 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         try? await load(url: URL(string: "\(WebViewSchemeHandler.dataBrokerProtectionScheme)://blank")!)
     }
 
-    func load(url: URL) async throws {
+    public func load(url: URL) async throws {
+#if os(macOS)
+        didDetectChallenge = false
+        didReportChallengeClearance = false
+#endif
         webView?.load(url)
-        Logger.action.log("Loading URL: \(String(describing: url.absoluteString))")
+        Logger.action.log("Loading URL: \(url.shortDescription)")
         try await waitForWebViewLoad()
     }
 
-    func setCookies(_ cookies: [HTTPCookie]) async {
+    public func setCookies(_ cookies: [HTTPCookie]) async {
         for cookie in cookies {
             await webView?.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
         }
     }
 
-    func finish() {
+    public func finish() {
         Logger.action.log("WebViewHandler finished")
         webView?.stopLoading()
         userContentController?.cleanUpBeforeClosing()
@@ -130,34 +190,49 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         userContentController = nil
         webView?.navigationDelegate = nil
         webView = nil
+#if os(macOS)
+        urlObservation?.invalidate()
+        urlObservation = nil
+#endif
     }
 
     deinit {
         Logger.action.log("WebViewHandler Deinit")
     }
 
-    func waitForWebViewLoad() async throws {
-        try await withCheckedThrowingContinuation { continuation in
-            self.activeContinuation = continuation
+    public func waitForWebViewLoad() async throws {
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                self.activeContinuation = continuation
+            }
+        } onCancel: {
+            Task { @MainActor in
+                self.resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))
+            }
         }
     }
 
-    func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
+    private func resumeActiveContinuation(with result: Result<Void, Error>) {
+        let continuation = activeContinuation
+        activeContinuation = nil
+        continuation?.resume(with: result)
+    }
+
+    public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
         Logger.action.log("Executing action: \(String(describing: action.actionType.rawValue), privacy: .public)")
 
         userContentController?.dataBrokerUserScripts?.dataBrokerFeature.pushAction(
             method: .onActionReceived,
             webView: self.webView!,
-            params: Params(state: ActionRequest(action: action, data: data)),
-            canTimeOut: action.canTimeOut(while: stepType)
+            params: Params(state: ActionRequest(action: action, data: data))
         )
     }
 
-    func evaluateJavaScript(_ javaScript: String) async throws {
+    public func evaluateJavaScript(_ javaScript: String) async throws {
         try await webView?.evaluateJavaScript(javaScript) as Void?
     }
 
-    func takeSnaphost(path: String, fileName: String) async throws {
+    public func takeSnaphost(path: String, fileName: String) async throws {
         guard let height: CGFloat = try await webView?.evaluateJavaScript("document.body.scrollHeight") else { return }
 
         webView?.frame = CGRect(origin: .zero, size: CGSize(width: 1024, height: height))
@@ -171,7 +246,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 #endif
     }
 
-    func saveHTML(path: String, fileName: String) async throws {
+    public func saveHTML(path: String, fileName: String) async throws {
         guard let htmlString: String = try await webView?.evaluateJavaScript("document.documentElement.outerHTML") else { return }
         let fileManager = FileManager.default
 
@@ -262,32 +337,136 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
 }
 
+#if os(macOS)
+private extension DataBrokerProtectionWebViewHandler {
+    @objc func copyURLFromAddressBar() {
+        let urlString = addressBarTextField?.stringValue ?? ""
+        guard !urlString.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(urlString, forType: .string)
+    }
+
+    func makeToolbar() -> NSToolbar {
+        let toolbar = NSToolbar(identifier: NSToolbar.Identifier("PIRDebugToolbar"))
+        toolbar.delegate = self
+        toolbar.displayMode = .iconOnly
+        return toolbar
+    }
+
+    func makeAddressBarView() -> NSView {
+        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: 760, height: 22))
+        let addressField = NSTextField(labelWithString: "")
+        addressField.isEditable = false
+        addressField.isSelectable = true
+        addressField.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        addressField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        addressField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        addressField.cell?.lineBreakMode = .byTruncatingTail
+        addressField.usesSingleLineMode = true
+        addressBarTextField = addressField
+        updateAddressBar(with: webView?.url)
+
+        let copyButton = NSButton(title: "Copy URL", target: self, action: #selector(copyURLFromAddressBar))
+        copyButton.setContentHuggingPriority(.required, for: .horizontal)
+        copyButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let addressRow = NSStackView(views: [addressField, copyButton])
+        addressRow.orientation = .horizontal
+        addressRow.spacing = 8
+        addressRow.alignment = .centerY
+        addressRow.distribution = .fill
+        addressRow.translatesAutoresizingMaskIntoConstraints = false
+
+        containerView.addSubview(addressRow)
+        NSLayoutConstraint.activate([
+            addressRow.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            addressRow.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            addressRow.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 0),
+            addressRow.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: 0)
+        ])
+
+        return containerView
+    }
+
+    func updateAddressBar(with url: URL?) {
+        addressBarTextField?.stringValue = url?.absoluteString ?? ""
+    }
+}
+
+extension DataBrokerProtectionWebViewHandler: NSWindowDelegate {
+    public func windowShouldClose(_ sender: NSWindow) -> Bool {
+        sender.orderOut(nil)
+        return false
+    }
+}
+
+extension DataBrokerProtectionWebViewHandler: NSToolbarDelegate {
+    private enum ToolbarItemIdentifier {
+        static let addressBar = NSToolbarItem.Identifier("PIRDebugToolbar.AddressBar")
+    }
+
+    public func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [ToolbarItemIdentifier.addressBar, .flexibleSpace]
+    }
+
+    public func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        [ToolbarItemIdentifier.addressBar, .flexibleSpace]
+    }
+
+    public func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier
+                        itemIdentifier: NSToolbarItem.Identifier,
+                        willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        guard itemIdentifier == ToolbarItemIdentifier.addressBar else { return nil }
+        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
+        let view = makeAddressBarView()
+        item.view = view
+        item.minSize = view.fittingSize
+        item.maxSize = NSSize(width: 2000, height: view.fittingSize.height)
+        return item
+    }
+}
+#endif
+
 extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
-    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+    public func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         Logger.action.log("WebViewHandler didFinish")
+#if os(macOS)
+        updateAddressBar(with: webView.url)
+#endif
 
-        self.activeContinuation?.resume()
-        self.activeContinuation = nil
+        resumeActiveContinuation(with: .success(()))
     }
 
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+    public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFail: \(error.localizedDescription, privacy: .public)")
-        self.activeContinuation?.resume(throwing: error)
-        self.activeContinuation = nil
+        resumeActiveContinuation(with: .failure(error))
     }
 
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.action.error("WebViewHandler didFailProvisionalNavigation: \(error.localizedDescription, privacy: .public)")
-        self.activeContinuation?.resume(throwing: error)
-        self.activeContinuation = nil
+        resumeActiveContinuation(with: .failure(error))
     }
 
-    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
-        guard let statusCode = (navigationResponse.response as? HTTPURLResponse)?.statusCode else {
+    public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+#if os(macOS)
+        updateAddressBar(with: webView.url)
+#endif
+    }
+
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        let response = navigationResponse.response
+#if os(macOS)
+        recordChallengeDetectionIfPresent(in: response, isForMainFrame: navigationResponse.isForMainFrame)
+        if navigationResponse.isForMainFrame {
+            observeChallengeClearance(in: webView)
+        }
+#endif
+
+        guard let statusCode = (response as? HTTPURLResponse)?.statusCode else {
             // if there's no http status code to act on, exit and allow navigation
             return .allow
         }
@@ -297,15 +476,20 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
             Logger.action.log("WebViewHandler continuing despite error")
         } else if statusCode >= 400 {
             Logger.action.log("WebViewHandler failed with status code: \(String(describing: statusCode), privacy: .public)")
-            self.activeContinuation?.resume(throwing: DataBrokerProtectionError.httpError(code: statusCode))
-            self.activeContinuation = nil
+            resumeActiveContinuation(with: .failure(DataBrokerProtectionError.httpError(code: statusCode)))
         }
 
         return .allow
     }
 
-    func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge,
-                 completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        Logger.action.error("WebViewHandler web content process terminated")
+        resumeActiveContinuation(with: .failure(DataBrokerProtectionError.webContentProcessTerminated))
+    }
+
+    public func webView(_ webView: WKWebView,
+                        didReceive challenge: URLAuthenticationChallenge,
+                        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         if !isFakeBroker {
             completionHandler(.performDefaultHandling, nil)
             return
@@ -330,6 +514,48 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         }
     }
 }
+
+#if os(macOS)
+extension DataBrokerProtectionWebViewHandler {
+
+    func recordChallengeDetectionIfPresent(in response: URLResponse, isForMainFrame: Bool) {
+        guard isForMainFrame,
+              let response = response as? HTTPURLResponse,
+              response.value(forHTTPHeaderField: "cf-mitigated")?.caseInsensitiveCompare("challenge") == .orderedSame else {
+            return
+        }
+
+        didDetectChallenge = true
+
+        guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
+        pixelHandler?.fire(.mainFrameChallengeDetected(
+            dataBroker: challengePixelDataBroker,
+            brokerVersion: challengePixelBrokerVersion))
+    }
+
+    func recordChallengeClearanceIfPresent(in cookies: [HTTPCookie]) {
+        guard didDetectChallenge,
+              !didReportChallengeClearance,
+              cookies.contains(where: { $0.name.caseInsensitiveCompare("cf_clearance") == .orderedSame }) else {
+            return
+        }
+
+        guard let challengePixelDataBroker, let challengePixelBrokerVersion else { return }
+        didReportChallengeClearance = true
+        pixelHandler?.fire(.challengeClearanceObserved(
+            dataBroker: challengePixelDataBroker,
+            brokerVersion: challengePixelBrokerVersion))
+    }
+
+    private func observeChallengeClearance(in webView: WKWebView) {
+        webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { [weak self] cookies in
+            Task { @MainActor in
+                self?.recordChallengeClearanceIfPresent(in: cookies)
+            }
+        }
+    }
+}
+#endif
 
 private class WebView: WKWebView {
 

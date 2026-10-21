@@ -43,15 +43,8 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.authState = .inactive
 
         let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(appSettings: appSettings, syncService: syncService)
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
 
-        importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
 
         XCTAssertNotNil(appSettings.autofillImportViaSyncStart)
     }
@@ -62,16 +55,8 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.registeredDevices = []
 
         let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(appSettings: appSettings, syncService: syncService)
-        
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
 
-        importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
 
         XCTAssertNotNil(appSettings.autofillImportViaSyncStart)
     }
@@ -82,16 +67,8 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.registeredDevices = [RegisteredDevice(id: "1", name: "Device 1", type: "desktop")]
 
         let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(appSettings: appSettings, syncService: syncService)
-
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
         
-        importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
 
         XCTAssertNil(appSettings.autofillImportViaSyncStart)
     }
@@ -99,15 +76,7 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
     func testWhenNeverStartedImportThenNoPixelFired() async {
 
         let importPasswordsStatusHandler = TestImportPasswordsViaSyncStatusHandler.init(appSettings: appSettings, syncService: syncService)
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
-
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.checkSyncSuccessStatus()
 
         XCTAssertNil(importPasswordsStatusHandler.lastFiredPixel)
     }
@@ -119,15 +88,7 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.registeredDevices = [RegisteredDevice(id: "1", name: "Device 1", type: "desktop")]
 
         let importPasswordsStatusHandler = TestImportPasswordsViaSyncStatusHandler.init(appSettings: appSettings, syncService: syncService)
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
-
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.checkSyncSuccessStatus()
 
         XCTAssertEqual(importPasswordsStatusHandler.lastFiredPixel, .autofillLoginsImportSuccess)
         XCTAssertNil(appSettings.autofillImportViaSyncStart)
@@ -140,15 +101,7 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.registeredDevices = []
 
         let importPasswordsStatusHandler = TestImportPasswordsViaSyncStatusHandler.init(appSettings: appSettings, syncService: syncService)
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
-
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.checkSyncSuccessStatus()
 
         XCTAssertNil(importPasswordsStatusHandler.lastFiredPixel)
         XCTAssertNotNil(appSettings.autofillImportViaSyncStart)
@@ -160,15 +113,7 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.authState = .inactive
 
         let importPasswordsStatusHandler = TestImportPasswordsViaSyncStatusHandler.init(appSettings: appSettings, syncService: syncService)
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
-
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.checkSyncSuccessStatus()
 
         XCTAssertNil(importPasswordsStatusHandler.lastFiredPixel)
         XCTAssertNotNil(appSettings.autofillImportViaSyncStart)
@@ -181,15 +126,7 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.registeredDevices = [RegisteredDevice(id: "1", name: "Device 1", type: "desktop")]
 
         let importPasswordsStatusHandler = TestImportPasswordsViaSyncStatusHandler.init(appSettings: appSettings, syncService: syncService)
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
-
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.checkSyncSuccessStatus()
 
         XCTAssertNil(importPasswordsStatusHandler.lastFiredPixel)
         XCTAssertNil(appSettings.autofillImportViaSyncStart)
@@ -202,15 +139,7 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.registeredDevices = []
 
         let importPasswordsStatusHandler = TestImportPasswordsViaSyncStatusHandler.init(appSettings: appSettings, syncService: syncService)
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
-
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.checkSyncSuccessStatus()
 
         XCTAssertEqual(importPasswordsStatusHandler.lastFiredPixel, .autofillLoginsImportFailure)
         XCTAssertNil(appSettings.autofillImportViaSyncStart)
@@ -222,15 +151,7 @@ final class ImportPasswordsViaSyncStatusHandlerTests: XCTestCase {
         syncService.authState = .inactive
 
         let importPasswordsStatusHandler = TestImportPasswordsViaSyncStatusHandler.init(appSettings: appSettings, syncService: syncService)
-        let expectation = XCTestExpectation(description: "CheckSyncSuccessStatus completes")
-
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-              expectation.fulfill()
-        }
-
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await importPasswordsStatusHandler.checkSyncSuccessStatus()
 
         XCTAssertEqual(importPasswordsStatusHandler.lastFiredPixel, .autofillLoginsImportFailure)
         XCTAssertNil(appSettings.autofillImportViaSyncStart)

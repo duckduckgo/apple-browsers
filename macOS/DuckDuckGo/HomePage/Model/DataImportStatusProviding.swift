@@ -20,21 +20,25 @@ import Foundation
 import Bookmarks
 import BrowserServicesKit
 import PixelKit
+import AppKit
 
 protocol DataImportStatusProviding {
     var didImport: Bool { get }
-    func showImportWindow(customTitle: String?, completion: (() -> Void)?)
+    func showImportWindow(completion: (() -> Void)?)
 }
 
 final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding {
 
     let secureVault: (any AutofillSecureVault)?
     let bookmarkManager: BookmarkManager
+    let pinningManager: PinningManager
 
     init(secureVault: (any AutofillSecureVault)? = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared),
-         bookmarkManager: BookmarkManager) {
+         bookmarkManager: BookmarkManager,
+         pinningManager: PinningManager) {
         self.secureVault = secureVault
         self.bookmarkManager = bookmarkManager
+        self.pinningManager = pinningManager
     }
 
     @UserDefaultsWrapper(key: .homePageContinueSetUpImport, defaultValue: nil)
@@ -50,8 +54,8 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
     }
 
     @MainActor
-    func showImportWindow(customTitle: String?, completion: (() -> Void)?) {
-        DataImportView(title: customTitle ?? UserText.importDataTitle, isDataTypePickerExpanded: false).show(completion: completion)
+    func showImportWindow(completion: (() -> Void)?) {
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: completion)
     }
 
     // It only cover the case in which the user has imported bookmar AFTER already having some bookmarks

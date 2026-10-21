@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 
 public class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
     public var allActiveContentScopeExperiments: Experiments = [:]

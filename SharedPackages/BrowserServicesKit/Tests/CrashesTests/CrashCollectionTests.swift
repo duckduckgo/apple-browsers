@@ -19,8 +19,7 @@
 @testable import Crashes
 import MetricKit
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import Common
 
 class CrashCollectionTests: XCTestCase {
@@ -32,7 +31,7 @@ class CrashCollectionTests: XCTestCase {
         // 2 pixels with first = true attached
         XCTAssertTrue(crashCollection.isFirstCrash)
         crashCollection.start { pixelParameters, _, _ in
-            let firstFlags = pixelParameters.compactMap { $0["first"] }
+            let firstFlags = pixelParameters.compactMap { $0[.first] }
             XCTAssertFalse(firstFlags.isEmpty)
         }
         crashCollection.crashHandler.didReceive([
@@ -51,7 +50,7 @@ class CrashCollectionTests: XCTestCase {
         // 2 pixels with no first parameter
         crashCollection.isFirstCrash = false
         crashCollection.start { pixelParameters, _, _ in
-            let firstFlags = pixelParameters.compactMap { $0["first"] }
+            let firstFlags = pixelParameters.compactMap { $0[.first] }
             XCTAssertTrue(firstFlags.isEmpty)
         }
         crashCollection.crashHandler.didReceive([
@@ -60,6 +59,77 @@ class CrashCollectionTests: XCTestCase {
                 MXCrashDiagnostic()
             ])
         ])
+        XCTAssertFalse(crashCollection.isFirstCrash)
+    }
+
+    func testCrashesOlderThanMaxAgeAreExcludedFromCrashPixels() {
+        let crashReportSender = CrashReportSender(platform: .iOS, pixelEvents: nil)
+        let crashCollection = CrashCollection(crashReportSender: crashReportSender,
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        var uploadedPayloadCount = 0
+        crashCollection.start(process: { payloads in
+            uploadedPayloadCount = payloads.count
+            return payloads.map { _ in Data() }
+        }, didFindCrashReports: { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        })
+
+        let threeDaysAgo = Date().addingTimeInterval(-3 * 24 * 60 * 60)
+        let tenDaysAgo = Date().addingTimeInterval(-10 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: threeDaysAgo),
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: tenDaysAgo)
+        ])
+
+        XCTAssertEqual(reportedPixelParameters.count, 1, "Only the crash within the age limit should be reported as a pixel")
+        XCTAssertEqual(uploadedPayloadCount, 2, "Both crashes should still be uploaded regardless of age")
+    }
+
+    func testCrashesWithinMaxAgeAreReportedAsCrashPixels() {
+        let crashReportSender = CrashReportSender(platform: .iOS, pixelEvents: nil)
+        let crashCollection = CrashCollection(crashReportSender: crashReportSender,
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        let sixDaysAgo = Date().addingTimeInterval(-6 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: sixDaysAgo)
+        ])
+
+        XCTAssertEqual(reportedPixelParameters.count, 1)
+    }
+
+    func testFirstCrashFlagIsRetainedUntilAnInWindowCrashIsReported() {
+        let crashReportSender = CrashReportSender(platform: .iOS, pixelEvents: nil)
+        let crashCollection = CrashCollection(crashReportSender: crashReportSender,
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        // A batch of exclusively stale crashes fires no pixel and must not consume the first-crash flag.
+        let tenDaysAgo = Date().addingTimeInterval(-10 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: tenDaysAgo)
+        ])
+        XCTAssertTrue(reportedPixelParameters.isEmpty)
+        XCTAssertTrue(crashCollection.isFirstCrash)
+
+        // A later in-window crash should still be reported as the first crash.
+        let oneDayAgo = Date().addingTimeInterval(-1 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: oneDayAgo)
+        ])
+        XCTAssertEqual(reportedPixelParameters.count, 1)
+        XCTAssertEqual(reportedPixelParameters.first?[.first], "1")
         XCTAssertFalse(crashCollection.isFirstCrash)
     }
 
@@ -159,14 +229,188 @@ class CrashCollectionTests: XCTestCase {
 
         XCTAssertEqual(store.object(forKey: CRCIDManager.crcidKey) as? String, crcid)
     }
+
+    // MARK: - Termination Reason Tests
+
+    func testCrashPixelIncludesNormalizedTerminationReason() {
+        let crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .iOS, pixelEvents: nil),
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [
+                MockCrashDiagnostic(terminationReason: "Namespace SPRINGBOARD, Code 0x8badf00d, scene-update watchdog transgression"),
+                MockCrashDiagnostic(terminationReason: nil)
+            ])
+        ])
+
+        XCTAssertEqual(reportedPixelParameters.map { $0[.terminationReason] }, ["springboard_0x8badf00d", "-1"])
+    }
+
+    func testPixelTerminationReason_keepsOnlyNamespaceAndCode() {
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace SPRINGBOARD, Code 0x8badf00d"), "springboard_0x8badf00d")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace RUNNINGBOARD, Code 0xDEAD10CC"), "runningboard_0xdead10cc")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace SIGNAL, Code 9"), "signal_9")
+        XCTAssertEqual(
+            CrashCollection.pixelTerminationReason(from: "Namespace FRONTBOARD, Code 0xc51bad03, process-launch watchdog transgression for user@example.com"),
+            "frontboard_0xc51bad03"
+        )
+    }
+
+    func testPixelTerminationReason_withMissingOrUnparseableReason() {
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: nil), "-1")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: ""), "-1")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Something unexpected happened"), "unknown")
+    }
+
+    // MARK: - limitCallStackTreeDepth Tests
+
+    func testLimitCallStackTreeDepth_withZeroMaxDepth_returnsEmptyDictionary() {
+        let tree: [AnyHashable: Any] = ["key": "value", "nested": ["inner": "data"]]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 0)
+
+        XCTAssertTrue(result.isEmpty)
+    }
+
+    func testLimitCallStackTreeDepth_withShallowTree_preservesAllContent() {
+        let tree: [AnyHashable: Any] = [
+            "string": "value",
+            "number": 42,
+            "array": [1, 2, 3]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 5)
+
+        XCTAssertEqual(result["string"] as? String, "value")
+        XCTAssertEqual(result["number"] as? Int, 42)
+        XCTAssertEqual(result["array"] as? [Int], [1, 2, 3])
+    }
+
+    func testLimitCallStackTreeDepth_withNestedDictionary_truncatesAtMaxDepth() {
+        let tree: [AnyHashable: Any] = [
+            "level0": "value0",
+            "nested": [
+                "level1": "value1",
+                "deeper": [
+                    "level2": "value2",
+                    "evenDeeper": [
+                        "level3": "value3"
+                    ]
+                ]
+            ]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 2)
+
+        // Level 0 should be preserved
+        XCTAssertEqual(result["level0"] as? String, "value0")
+
+        // Level 1 nested dict should exist
+        let nested = result["nested"] as? [AnyHashable: Any]
+        XCTAssertNotNil(nested)
+        XCTAssertEqual(nested?["level1"] as? String, "value1")
+
+        // Level 2 should be truncated (depth 2 means levels 0 and 1 are preserved)
+        XCTAssertNil(nested?["deeper"])
+    }
+
+    func testLimitCallStackTreeDepth_withArrayOfDictionaries_truncatesAtMaxDepth() {
+        let tree: [AnyHashable: Any] = [
+            "frames": [
+                ["name": "frame1", "nested": ["deep": "value"]],
+                ["name": "frame2", "nested": ["deep": "value"]]
+            ]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 2)
+
+        let frames = result["frames"] as? [[AnyHashable: Any]]
+        XCTAssertNotNil(frames)
+        XCTAssertEqual(frames?.count, 2)
+        XCTAssertEqual(frames?[0]["name"] as? String, "frame1")
+        XCTAssertEqual(frames?[1]["name"] as? String, "frame2")
+        // Nested dictionaries inside array items should be truncated at depth 2
+        XCTAssertNil(frames?[0]["nested"])
+        XCTAssertNil(frames?[1]["nested"])
+    }
+
+    func testLimitCallStackTreeDepth_preservesPrimitiveArrays() {
+        let tree: [AnyHashable: Any] = [
+            "addresses": [0x1000, 0x2000, 0x3000],
+            "names": ["a", "b", "c"]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 1)
+
+        XCTAssertEqual(result["addresses"] as? [Int], [0x1000, 0x2000, 0x3000])
+        XCTAssertEqual(result["names"] as? [String], ["a", "b", "c"])
+    }
+
+    func testLimitCallStackTreeDepth_withDeeplyNestedStructure_doesNotCauseStackOverflow() {
+        // Build a deeply nested structure iteratively (simulating what could cause stack overflow)
+        var tree: [AnyHashable: Any] = ["leaf": "value"]
+        for i in 0..<1000 {
+            tree = ["level\(i)": tree]
+        }
+
+        // This should complete without stack overflow
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 10)
+
+        // Verify it truncated properly
+        XCTAssertFalse(result.isEmpty)
+    }
+
+    func testLimitCallStackTreeDepth_withCallStackTreeStructure_limitsDepthCorrectly() {
+        // Simulate a realistic callStackTree structure
+        let tree: [AnyHashable: Any] = [
+            "callStacks": [
+                [
+                    "threadAttributed": true,
+                    "callStackRootFrames": [
+                        [
+                            "address": 123456,
+                            "subFrames": [
+                                [
+                                    "address": 789012,
+                                    "subFrames": [
+                                        ["address": 345678]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+        let result = CrashCollection.limitCallStackTreeDepth(tree, maxDepth: 3)
+
+        let callStacks = result["callStacks"] as? [[AnyHashable: Any]]
+        XCTAssertNotNil(callStacks)
+        XCTAssertEqual(callStacks?.first?["threadAttributed"] as? Bool, true)
+
+        let rootFrames = callStacks?.first?["callStackRootFrames"] as? [[AnyHashable: Any]]
+        XCTAssertNotNil(rootFrames)
+        XCTAssertEqual(rootFrames?.first?["address"] as? Int, 123456)
+
+        // subFrames should be truncated at depth 3
+        XCTAssertNil(rootFrames?.first?["subFrames"])
+    }
 }
 
 class MockPayload: MXDiagnosticPayload {
 
     var mockCrashes: [MXCrashDiagnostic]?
+    let mockTimeStampBegin: Date
 
-    init(mockCrashes: [MXCrashDiagnostic]?) {
+    init(mockCrashes: [MXCrashDiagnostic]?, timeStampBegin: Date = Date()) {
         self.mockCrashes = mockCrashes
+        self.mockTimeStampBegin = timeStampBegin
         super.init()
     }
 
@@ -174,8 +418,30 @@ class MockPayload: MXDiagnosticPayload {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override var timeStampBegin: Date {
+        return mockTimeStampBegin
+    }
+
     override var crashDiagnostics: [MXCrashDiagnostic]? {
         return mockCrashes
+    }
+}
+
+class MockCrashDiagnostic: MXCrashDiagnostic {
+
+    let mockTerminationReason: String?
+
+    init(terminationReason: String?) {
+        self.mockTerminationReason = terminationReason
+        super.init()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var terminationReason: String? {
+        return mockTerminationReason
     }
 }
 
@@ -185,9 +451,9 @@ class MockCrashReportSender: CrashReportSending {
     var responseCRCID: String?
     var responseStatusCode = 200
 
-    var pixelEvents: EventMapping<CrashReportSenderError>?
+    var pixelEvents: EventMapping<CrashReportSenderEvent>?
 
-    required init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderError>?) {
+    required init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderEvent>?) {
         self.platform = platform
     }
 

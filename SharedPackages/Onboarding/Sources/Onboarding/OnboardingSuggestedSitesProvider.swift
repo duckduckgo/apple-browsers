@@ -85,13 +85,13 @@ public struct OnboardingSuggestedSitesProvider: OnboardingSuggestionsItemsProvid
         let site: String
         switch Countries(rawValue: country) {
         case .indonesia: site = "kompas.com"
-        case .gb: site = "bbc.co.uk"
+        case .gb: site = "uk.yahoo.com"
         case .germany: site = "tagesschau.de"
         case .canada: site = "ctvnews.ca"
         case .netherlands: site = "nu.nl"
         case .australia: site = "yahoo.com"
         case .sweden: site = "dn.se"
-        case .ireland: site = "bbc.co.uk"
+        case .ireland: site = "uk.yahoo.com"
         default: site = "yahoo.com"
         }
         return ContextualOnboardingListItem.site(title: scheme + site)

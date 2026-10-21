@@ -99,13 +99,14 @@ final class PasswordManagementNoteModel: ObservableObject, PasswordManagementIte
         }
     }
 
-    func save() {
-        guard var note = note else { return }
+    func save() -> Bool {
+        guard var note = note else { return false }
 
         note.title = title
         note.text = text
 
         onSaveRequested(note)
+        return true
     }
 
     func clearSecureVaultModel() {

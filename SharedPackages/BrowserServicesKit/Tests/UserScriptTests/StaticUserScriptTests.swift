@@ -25,7 +25,12 @@ class StaticUserScriptTests: XCTestCase {
     class TestStaticUserScript: NSObject, StaticUserScript {
         @MainActor
         static var source: String = {
-            TestStaticUserScript.loadJS("testUserScript", from: .module, withReplacements: ["${val}": "Test"])
+            do {
+                return try TestStaticUserScript.loadJS("testUserScript", from: .module, withReplacements: ["${val}": "Test"])
+            } catch {
+                XCTFail("Failed to load testUserScript.js")
+                return ""
+            }
         }()
         @MainActor
         static var injectionTime: WKUserScriptInjectionTime = .atDocumentEnd

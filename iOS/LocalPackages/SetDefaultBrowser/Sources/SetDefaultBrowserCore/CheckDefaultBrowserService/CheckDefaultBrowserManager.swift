@@ -20,14 +20,12 @@
 import Foundation
 import class UIKit.UIApplication
 
-@MainActor
 public protocol DefaultBrowserManaging: AnyObject {
     func defaultBrowserInfo() -> DefaultBrowserInfoResult
 }
 
 // MARK: - DefaultBrowserManager
 
-@MainActor
 public final class DefaultBrowserManager: DefaultBrowserManaging {
     private let defaultBrowserInfoStore: DefaultBrowserContextStorage
     private let defaultBrowserEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>
@@ -37,7 +35,7 @@ public final class DefaultBrowserManager: DefaultBrowserManaging {
     public init(
         defaultBrowserInfoStore: DefaultBrowserContextStorage,
         defaultBrowserEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
-        defaultBrowserChecker: CheckDefaultBrowserService = SystemCheckDefaultBrowserService(),
+        defaultBrowserChecker: CheckDefaultBrowserService,
         dateProvider: @escaping () -> Date = Date.init
     ) {
         self.defaultBrowserChecker = defaultBrowserChecker

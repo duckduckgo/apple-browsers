@@ -19,27 +19,64 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Configuration
 import Foundation
 import BrowserServicesKit
 import Persistence
 import PixelKit
+import PrivacyConfig
 import RemoteMessaging
 import Subscription
+import DataBrokerProtection_macOS
 
 protocol RemoteMessagingStoreProviding {
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring
 }
 
 struct DefaultRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring {
         RemoteMessagingStore(
             database: database,
             notificationCenter: .default,
             errorEvents: RemoteMessagingStoreErrorHandling(),
+            autoDismissEvents: EventMapping<RemoteMessageAutoDismissEvent> { event, _, _, _ in
+                switch event {
+                case .messageAutoDismissed(let messageID):
+                    pixelFiring?.fire(RemoteMessagePixel.autoDismissed(messageID: messageID))
+                }
+            },
+            enforcesMaxImpressions: true,
             remoteMessagingAvailabilityProvider: availabilityProvider
         )
     }
+}
+
+private enum RemoteMessagePixel: PixelKit.Event {
+    case autoDismissed(messageID: String)
+
+    var name: String {
+        switch self {
+        case .autoDismissed:
+            return "m_mac_remote_message_auto_dismissed"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .autoDismissed(let messageID):
+            return ["message": messageID]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
 }
 
 final class RemoteMessagingClient: RemoteMessagingProcessing {
@@ -60,6 +97,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
     let configFetcher: RemoteMessagingConfigFetching
     let configMatcherProvider: RemoteMessagingConfigMatcherProviding
     let remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
+    let remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding
     private(set) var store: RemoteMessagingStoring?
 
     convenience init(
@@ -67,30 +105,40 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         bookmarksDatabase: CoreDataDatabase,
         database: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStoring,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
-        visualStyle: VisualStyleProviding
+        configurationURLProvider: ConfigurationURLProviding,
+        themeManager: ThemeManaging,
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
+        isReturningUser: @escaping () -> Bool?
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             database: database,
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             internalUserDecider: internalUserDecider,
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
-            visualStyle: visualStyle
+            themeManager: themeManager,
+            dbpDataManagerProvider: dbpDataManagerProvider,
+            isReturningUser: isReturningUser
         )
         self.init(
             remoteMessagingDatabase: remoteMessagingDatabase,
             configMatcherProvider: provider,
             configurationStore: configurationStore,
-            remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
+            configurationURLProvider: configurationURLProvider,
+            remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider,
+            remoteMessagingSurfacesProvider: remoteMessagingSurfacesProvider
         )
     }
 
@@ -98,13 +146,16 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         remoteMessagingDatabase: CoreDataDatabase,
         configMatcherProvider: RemoteMessagingConfigMatcherProviding,
         configurationStore: ConfigurationStoring,
+        configurationURLProvider: ConfigurationURLProviding,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider()
     ) {
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(
                 store: configurationStore,
                 urlSession: .session(),
+                configurationURLProvider: configurationURLProvider,
                 eventMapping: ConfigurationManager.configurationDebugEvents
             ),
             configurationStore: configurationStore
@@ -115,6 +166,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             configFetcher: configFetcher,
             configMatcherProvider: configMatcherProvider,
             remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider,
+            remoteMessagingSurfacesProvider: remoteMessagingSurfacesProvider,
             remoteMessagingStoreProvider: remoteMessagingStoreProvider
         )
     }
@@ -127,12 +179,14 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         configFetcher: RemoteMessagingConfigFetching,
         configMatcherProvider: RemoteMessagingConfigMatcherProviding,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider()
     ) {
         self.remoteMessagingDatabase = remoteMessagingDatabase
         self.configFetcher = configFetcher
         self.configMatcherProvider = configMatcherProvider
         self.remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
+        self.remoteMessagingSurfacesProvider = remoteMessagingSurfacesProvider
         self.remoteMessagingStoreProvider = remoteMessagingStoreProvider
 
         subscribeToFeatureFlagChanges()
@@ -206,9 +260,9 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             remoteMessagingDatabase.loadStore { context, error in
                 guard context != nil else {
                     if let error = error {
-                        PixelKit.fire(DebugEvent(GeneralPixel.syncMetadataCouldNotLoadDatabase, error: error))
+                        PixelKit.fire(DebugEvent(GeneralPixel.remoteMessageDebugCouldNotLoadDatabase, error: error), frequency: .dailyAndStandard)
                     } else {
-                        PixelKit.fire(DebugEvent(GeneralPixel.syncMetadataCouldNotLoadDatabase))
+                        PixelKit.fire(DebugEvent(GeneralPixel.remoteMessageDebugCouldNotLoadDatabase), frequency: .dailyAndStandard)
                     }
 
                     Thread.sleep(forTimeInterval: 1)

@@ -25,17 +25,35 @@ public extension PixelKit {
         public static let category = "category"
         public static let settingToggledTo = "newState"
         public static let datasetType = "type"
+        public static let fromRevision = "fromRevision"
+        public static let toRevision = "toRevision"
+        public static let updateFrequencyMinutes = "updateFrequencyMinutes"
+        public static let isFullReplacement = "isFullReplacement"
+        public static let numberOfDataSetsProcessed = "numberOfDatasetsProcessed"
+        public static let numberOfSuccessfulDataSetsUpdated = "numberOfSuccessfulDatasetsUpdated"
+        public static let performanceBucket = "performanceBucket"
+        public static let diskUsageBucket = "diskUsageBucket"
     }
 }
 
-public enum Event: PixelKitEventV2 {
+public enum Event: PixelKit.Event {
+    /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
+    public var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+
     case errorPageShown(category: ThreatKind, clientSideHit: Bool?)
     case visitSite(category: ThreatKind)
+    case leaveSite(category: ThreatKind)
     case iframeLoaded(category: ThreatKind)
     case settingToggled(to: Bool)
     case matchesApiTimeout
     case matchesApiFailure(Error)
     case failedToDownloadInitialDataSets(category: ThreatKind, type: DataManager.StoredDataType.Kind)
+    #if os(iOS)
+    case singleDataSetUpdatePerformance(SingleDataSetUpdatePerformanceInfo)
+    case singleDataSetUpdateDiskUsage(SingleDataSetUpdateDiskUsageInfo)
+    case aggregateDataSetUpdatePerformance(AggregateDataSetPerformanceInfo)
+    case aggregateDataSetUpdateDiskUsage(AggregateDataSetUpdateDiskUsageInfo)
+    #endif
 
     public var name: String {
         switch self {
@@ -43,6 +61,8 @@ public enum Event: PixelKitEventV2 {
             return "malicious-site-protection_error-page-shown"
         case .visitSite:
             return "malicious-site-protection_visit-site"
+        case .leaveSite:
+            return "malicious-site-protection_leave-site"
         case .iframeLoaded:
             return "malicious-site-protection_iframe-loaded"
         case .settingToggled:
@@ -53,6 +73,16 @@ public enum Event: PixelKitEventV2 {
             return "malicious-site-protection_matches-api-error"
         case .failedToDownloadInitialDataSets:
             return "malicious-site-protection_failed-to-fetch-initial-datasets"
+        #if os(iOS)
+        case .singleDataSetUpdatePerformance:
+            return "malicious-site-protection_single-dataset-update-performance"
+        case .singleDataSetUpdateDiskUsage:
+            return "malicious-site-protection_single-dataset-update-disk-usage"
+        case .aggregateDataSetUpdatePerformance:
+            return "malicious-site-protection_aggregate-dataset-update-performance"
+        case .aggregateDataSetUpdateDiskUsage:
+            return "malicious-site-protection_aggregate-dataset-update-disk-usage"
+        #endif
         }
     }
 
@@ -71,7 +101,8 @@ public enum Event: PixelKitEventV2 {
             }
             return parameters
         case .visitSite(category: let category),
-             .iframeLoaded(category: let category):
+                .leaveSite(category: let category),
+                .iframeLoaded(category: let category):
             return [
                 PixelKit.Parameters.category: category.rawValue,
             ]
@@ -87,26 +118,68 @@ public enum Event: PixelKitEventV2 {
                 PixelKit.Parameters.category: category.rawValue,
                 PixelKit.Parameters.datasetType: datasetType.rawValue,
             ]
+        #if os(iOS)
+        case .singleDataSetUpdatePerformance(let info):
+            return [
+                PixelKit.Parameters.category: info.category.rawValue,
+                PixelKit.Parameters.datasetType: info.type.rawValue,
+                PixelKit.Parameters.fromRevision: String(info.fromRevision),
+                PixelKit.Parameters.toRevision: String(info.toRevision),
+                PixelKit.Parameters.isFullReplacement: String(info.isFullReplacement),
+                PixelKit.Parameters.updateFrequencyMinutes: String(info.updateFrequencyMinutes),
+                PixelKit.Parameters.performanceBucket: info.performanceBucket
+            ]
+        case .singleDataSetUpdateDiskUsage(let info):
+            return [
+                PixelKit.Parameters.category: info.category.rawValue,
+                PixelKit.Parameters.datasetType: info.type.rawValue,
+                PixelKit.Parameters.toRevision: String(info.toRevision),
+                PixelKit.Parameters.updateFrequencyMinutes: String(info.updateFrequencyMinutes),
+                PixelKit.Parameters.diskUsageBucket: info.diskUsageBucket
+            ]
+        case .aggregateDataSetUpdatePerformance(let info):
+            return [
+                PixelKit.Parameters.datasetType: info.type.rawValue,
+                PixelKit.Parameters.updateFrequencyMinutes: String(info.updateFrequencyMinutes),
+                PixelKit.Parameters.performanceBucket: info.performanceBucket
+            ]
+        case .aggregateDataSetUpdateDiskUsage(let info):
+            return [
+                PixelKit.Parameters.datasetType: info.type.rawValue,
+                PixelKit.Parameters.updateFrequencyMinutes: String(info.updateFrequencyMinutes),
+                PixelKit.Parameters.diskUsageBucket: info.diskUsageBucket
+            ]
+        #endif
         }
     }
 
-    public var error: (any Error)? {
+    public var standardParameters: [PixelKitStandardParameter]? {
         switch self {
-        case .errorPageShown:
-            return nil
-        case .visitSite:
-            return nil
-        case .iframeLoaded:
-            return nil
-        case .settingToggled:
-            return nil
-        case .matchesApiTimeout:
-            return nil
-        case .matchesApiFailure(let error):
-            return error
-        case .failedToDownloadInitialDataSets:
-            return nil
+        #if os(iOS)
+        case .errorPageShown,
+                .visitSite,
+                .leaveSite,
+                .iframeLoaded,
+                .settingToggled,
+                .matchesApiTimeout,
+                .matchesApiFailure,
+                .failedToDownloadInitialDataSets,
+                .singleDataSetUpdatePerformance,
+                .singleDataSetUpdateDiskUsage,
+                .aggregateDataSetUpdatePerformance,
+                .aggregateDataSetUpdateDiskUsage:
+            return [.pixelSource]
+        #else
+        case .errorPageShown,
+                .visitSite,
+                .leaveSite,
+                .iframeLoaded,
+                .settingToggled,
+                .matchesApiTimeout,
+                .matchesApiFailure,
+                .failedToDownloadInitialDataSets:
+            return [.pixelSource]
+        #endif
         }
     }
-
 }

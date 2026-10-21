@@ -40,7 +40,7 @@ struct BookmarkDialogContainerView<Content: View, Buttons: View>: View {
             horizontalPadding: 20.0,
             top: {
                 Text(title)
-                    .foregroundColor(.primary)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fontWeight(.semibold)
                     .padding(.top, 20)
             },

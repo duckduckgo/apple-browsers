@@ -1,0 +1,14 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DDG Tests//ICSParser//EN
+BEGIN:VEVENT
+UID:recurring-weekly-001@duckduckgo.com
+DTSTAMP:20260501T120000Z
+DTSTART:20260601T140000Z
+DTEND:20260601T150000Z
+SUMMARY:Spike Weekly Mondays (4 occurrences)
+DESCRIPTION:Weekly on Mondays for 4 occurrences. Editor should show recurrence.
+LOCATION:Recurring Test Room
+RRULE:FREQ=WEEKLY;COUNT=4;BYDAY=MO
+END:VEVENT
+END:VCALENDAR

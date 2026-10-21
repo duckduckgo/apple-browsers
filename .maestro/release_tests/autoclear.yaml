@@ -1,6 +1,7 @@
 # autoclear.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - release
 
 ---
@@ -13,6 +14,8 @@ tags:
     arguments:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         "autoclear-ui-test": true
+        isRunningUITests: true
+        isInternalUser: ${INTERNAL_USER_MODE}
 
 # Enable autoclear
 
@@ -27,8 +30,8 @@ tags:
 - assertVisible: "Data Clearing"
 - tapOn: "Data Clearing"
 - assertVisible: "Off"
-- assertVisible: "Automatically Clear Data"
-- tapOn: "Automatically Clear Data"
+- assertVisible: "Automatically Delete Data"
+- tapOn: "Automatically Delete Data"
 - assertVisible: 
     id: "AutoclearEnabledToggle"
 - tapOn: 
@@ -58,7 +61,8 @@ tags:
 - assertVisible: "Storage Counter: 1"
 
 # Load a new tab
-- longPressOn: "Tab Switcher"
+- tapOn: "Tab Switcher"
+- tapOn: "New Tab"
 - assertVisible:
     id: "searchEntry"
 - tapOn: 

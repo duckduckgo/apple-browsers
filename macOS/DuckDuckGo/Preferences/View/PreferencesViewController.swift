@@ -17,14 +17,16 @@
 //
 
 import AppKit
-import BrowserServicesKit
+import BWManagementShared
 import SwiftUI
 import SwiftUIExtensions
 import Combine
 import DDGSync
 import VPN
 import AIChat
+import PrivacyConfig
 import Subscription
+import WebExtensions
 
 final class PreferencesViewController: NSViewController {
 
@@ -37,27 +39,63 @@ final class PreferencesViewController: NSViewController {
     private var selectedTabContentCancellable: AnyCancellable?
     private var selectedPreferencePaneCancellable: AnyCancellable?
 
-    private var bitwardenManager: BWManagement = BWManager.shared
+    private var bitwardenManager: BWManagement? = Application.appDelegate.bitwardenManager
+    private let featureFlagger: FeatureFlagger
+    private let pinningManager: PinningManager
+    private let permissionManager: PermissionManagerProtocol
 
     init(
         syncService: DDGSyncing,
-        duckPlayer: DuckPlayer = DuckPlayer.shared,
+        duckPlayer: DuckPlayer,
         tabCollectionViewModel: TabCollectionViewModel,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge = Application.appDelegate.subscriptionAuthV1toV2Bridge,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        permissionManager: PermissionManagerProtocol,
+        defaultBrowserPreferences: DefaultBrowserPreferences,
+        downloadsPreferences: DownloadsPreferences,
+        searchPreferences: SearchPreferences,
+        tabsPreferences: TabsPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+        aiChatPreferences: AIChatPreferences,
+        aboutPreferences: AboutPreferences,
+        dockPreferences: DockPreferencesModel,
+        accessibilityPreferences: AccessibilityPreferences,
+        duckPlayerPreferences: DuckPlayerPreferences,
+        youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
+        subscriptionManager: any SubscriptionManager,
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+        pinningManager: PinningManager,
+        adBlockingAvailability: AdBlockingAvailabilityProviding
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.featureFlagger = featureFlagger
+        self.permissionManager = permissionManager
         self.aiChatRemoteSettings = aiChatRemoteSettings
+        self.pinningManager = pinningManager
         model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
                                         featureFlagger: featureFlagger,
                                         syncService: syncService,
-                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
+                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(vpnUninstaller: VPNUninstaller(pinningManager: pinningManager), subscriptionManager: subscriptionManager),
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
-                                        subscriptionManager: subscriptionManager)
+                                        subscriptionManager: subscriptionManager,
+                                        defaultBrowserPreferences: defaultBrowserPreferences,
+                                        downloadsPreferences: downloadsPreferences,
+                                        searchPreferences: searchPreferences,
+                                        tabsPreferences: tabsPreferences,
+                                        webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                                        aiChatPreferences: aiChatPreferences,
+                                        aboutPreferences: aboutPreferences,
+                                        dockPreferences: dockPreferences,
+                                        accessibilityPreferences: accessibilityPreferences,
+                                        duckPlayerPreferences: duckPlayerPreferences,
+                                        youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
+                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                                        adBlockingAvailability: adBlockingAvailability)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -71,27 +109,22 @@ final class PreferencesViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        if !Application.appDelegate.isUsingAuthV2 {
-            let prefRootView = Preferences.RootView(model: model,
-                                                    subscriptionManager: Application.appDelegate.subscriptionManagerV1!,
-                                                    subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
-            let host = NSHostingView(rootView: prefRootView)
-            view.addAndLayout(host)
-        } else {
-            let prefRootView = Preferences.RootViewV2(model: model,
-                                                      subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
-                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
-                                                      aiChatURLSettings: aiChatRemoteSettings)
-            let host = NSHostingView(rootView: prefRootView)
-            view.addAndLayout(host)
-        }
+        let prefRootView = Preferences.RootViewV2(model: model,
+                                                  subscriptionManager: Application.appDelegate.subscriptionManager,
+                                                  subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
+                                                  featureFlagger: featureFlagger,
+                                                  aiChatURLSettings: aiChatRemoteSettings,
+                                                  wideEvent: Application.appDelegate.wideEvent,
+                                                  pinningManager: pinningManager,
+                                                  permissionManager: permissionManager)
+        let host = NSHostingView(rootView: prefRootView)
+        view.addAndLayout(host)
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
         model.refreshSections()
-        bitwardenManager.refreshStatusIfNeeded()
+        bitwardenManager?.refreshStatusIfNeeded()
     }
 
     override func viewDidAppear() {

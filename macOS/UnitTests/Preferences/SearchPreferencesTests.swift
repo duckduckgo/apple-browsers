@@ -27,7 +27,9 @@ class MockSearchPreferencesPersistor: SearchPreferencesPersistor {
 class SearchPreferencesTests: XCTestCase {
 
     override func setUpWithError() throws {
-        PixelKit.setUp(appVersion: "",
+        PixelKit.setUp(dryRun: true,
+                       appVersion: "",
+                       session: "test",
                        defaultHeaders: [:],
                        defaults: UserDefaults()) { _, _, _, _, _, _ in }
     }
@@ -36,17 +38,19 @@ class SearchPreferencesTests: XCTestCase {
         PixelKit.tearDown()
     }
 
+    @MainActor
     func testWhenInitializedThenItLoadsPersistedValues() {
         let mockPersistor = MockSearchPreferencesPersistor()
         mockPersistor.showAutocompleteSuggestions = true
-        let searchPreferences = SearchPreferences(persistor: mockPersistor)
+        let searchPreferences = SearchPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
 
         XCTAssertTrue(searchPreferences.showAutocompleteSuggestions)
     }
 
+    @MainActor
     func testWhenShowAutocompleteSuggestionsUpdatedThenPersistorUpdates() {
         let mockPersistor = MockSearchPreferencesPersistor()
-        let searchPreferences = SearchPreferences(persistor: mockPersistor)
+        let searchPreferences = SearchPreferences(persistor: mockPersistor, windowControllersManager: WindowControllersManagerMock())
         searchPreferences.showAutocompleteSuggestions = true
 
         XCTAssertTrue(mockPersistor.showAutocompleteSuggestions)

@@ -1,19 +1,25 @@
 appId: com.duckduckgo.mobile.ios
 tags:
+    - iphone
     - sync
 name: 04_sync_data_setup
 
 ---
 
-# Set up 
-- runFlow: 
-    file: ../shared/setup.yaml
+# Set up
+- runFlow:
+    file: ../shared/sync_setup.yaml
 
 # Add local favorite and bookmark
 - runFlow:
     file: ../shared/add_bookmarks_and_favorites.yaml
-- tapOn: Close Tabs and Clear Data
-- tapOn: Close Tabs and Clear Data
+- runFlow:
+    file: ../shared/use_firebutton.yaml
+- runFlow:
+    when:
+      visible: Back
+    commands:
+      - tapOn: Back
 
 # Add local login
 - runFlow:
@@ -27,6 +33,12 @@ name: 04_sync_data_setup
 - runFlow:
     file: ../shared/add_login_from_settings.yaml
 
+# Add local credit card
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/add_credit_card_from_settings.yaml
+
 #  Copy Recovery Code
 - tapOn: Browsing menu
 - tapOn: Settings
@@ -39,7 +51,7 @@ name: 04_sync_data_setup
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
 
-    # Set Dev environment
+# Set Dev environment
 - runFlow:
     file: ../shared/set_sync_dev_environment.yaml
 
@@ -60,10 +72,14 @@ name: 04_sync_data_setup
 - runFlow:
     file: ../shared/remove_local_bookmarks.yaml
 
-# Remove Login that were added locally
+# Remove Login that was added locally
 - runFlow:
     file: ../shared/remove_local_logins.yaml
 
+# Remove Credit Card that was added locally
+- runFlow:
+    file: ../shared/remove_local_credit_cards.yaml
+
 # Maestro seems to get stuck without an additional step here
-- assertVisible: 
+- assertVisible:
     id: searchEntry

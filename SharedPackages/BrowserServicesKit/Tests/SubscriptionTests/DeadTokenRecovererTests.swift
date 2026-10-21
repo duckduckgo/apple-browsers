@@ -18,21 +18,20 @@
 
 import XCTest
 @testable import Subscription
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 import SubscriptionTestingUtilities
 
 final class DeadTokenRecovererTests: XCTestCase {
 
-    var subscriptionManager: SubscriptionManagerMockV2!
-    var restoreFlow: AppStoreRestoreFlowMockV2!
+    var subscriptionManager: SubscriptionManagerMock!
+    var restoreFlow: AppStoreRestoreFlowMock!
 
     func test_recoveryRunsOnceForAppStore() async throws {
         let recoverer = DeadTokenRecoverer()
-        let manager = SubscriptionManagerMockV2()
+        let manager = SubscriptionManagerMock()
         manager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
-        let restoreFlow = AppStoreRestoreFlowMockV2()
+        let restoreFlow = AppStoreRestoreFlowMock()
 
         try await recoverer.attemptRecoveryFromPastPurchase(purchasePlatform: manager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
 
@@ -41,16 +40,16 @@ final class DeadTokenRecovererTests: XCTestCase {
 
     func test_recoveryThrowsForStripePlatform() async {
         let recoverer = DeadTokenRecoverer()
-        let manager = SubscriptionManagerMockV2()
+        let manager = SubscriptionManagerMock()
         manager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
 
-        let restoreFlow = AppStoreRestoreFlowMockV2()
+        let restoreFlow = AppStoreRestoreFlowMock()
 
         do {
             _ = try await recoverer.attemptRecoveryFromPastPurchase(purchasePlatform: manager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
             XCTFail("Expected error was not thrown")
         } catch let error as SubscriptionManagerError {
-            XCTAssertEqual(error, .noTokenAvailable)
+            XCTAssertEqual(error, .tokenRecoveryNotAttempted)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -60,10 +59,10 @@ final class DeadTokenRecovererTests: XCTestCase {
 
     func test_recoveryAttemptResetsAfterCompletion() async throws {
         let recoverer = DeadTokenRecoverer()
-        let manager = SubscriptionManagerMockV2()
+        let manager = SubscriptionManagerMock()
         manager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
-        let restoreFlow = AppStoreRestoreFlowMockV2()
+        let restoreFlow = AppStoreRestoreFlowMock()
 
         try await recoverer.attemptRecoveryFromPastPurchase(purchasePlatform: manager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
         XCTAssertTrue(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
@@ -76,10 +75,10 @@ final class DeadTokenRecovererTests: XCTestCase {
 
     func test_restoreFailsWithError() async {
         let recoverer = DeadTokenRecoverer()
-        let manager = SubscriptionManagerMockV2()
+        let manager = SubscriptionManagerMock()
         manager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
-        let restoreFlow = AppStoreRestoreFlowMockV2()
+        let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenError = TestError.restoreFailed
 
         do {
@@ -98,9 +97,9 @@ final class DeadTokenRecovererTests: XCTestCase {
 
     func test_concurrentRecoveryCallsAreSerialized() async throws {
         let recoverer = DeadTokenRecoverer()
-        let manager = SubscriptionManagerMockV2()
+        let manager = SubscriptionManagerMock()
         manager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
-        let restoreFlow = AppStoreRestoreFlowMockV2()
+        let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreAccountFromPastPurchaseResult = .success("some")
 
         actor TestCoordinator {

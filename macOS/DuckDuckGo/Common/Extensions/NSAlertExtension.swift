@@ -32,12 +32,24 @@ extension NSAlert {
         return button
     }
 
+    /// Confirmation for deleting a single recent Duck.ai chat, shared by the address-bar omnibar
+    /// and the New Tab Page so the two dialogs stay identical. `title` is the chat's title.
+    static func recentChatDeleteConfirmation(title: String) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = UserText.removeRecentChatConfirmationTitle
+        alert.informativeText = String(format: UserText.removeRecentChatConfirmationMessage, title)
+        alert.addButton(withTitle: UserText.removeRecentChatConfirmationButton, response: .OK)
+        alert.buttons.first?.hasDestructiveAction = true
+        alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
+        return alert
+    }
+
     static func fireproofAlert(with domain: String) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.fireproofConfirmationTitle(domain: domain)
         alert.informativeText = UserText.fireproofConfirmationMessage
         alert.alertStyle = .warning
-        alert.icon = .fireproof
+        alert.icon = NSImage(resource: .fireproof)
         alert.addButton(withTitle: UserText.fireproof)
         alert.addButton(withTitle: UserText.notNow)
         return alert
@@ -48,35 +60,6 @@ extension NSAlert {
         alert.messageText = UserText.homePageBurnFireproofSiteAlert
         alert.addButton(withTitle: UserText.homePageClearHistory, response: .OK)
         alert.addButton(withTitle: UserText.cancel, response: .cancel)
-        return alert
-    }
-
-    static func clearAllHistoryAndDataAlert() -> NSAlert {
-        let alert = NSAlert()
-        alert.messageText = UserText.clearAllDataQuestion
-        alert.informativeText = UserText.clearAllDataDescription
-        alert.alertStyle = .warning
-        alert.icon = .burnAlert
-        let clearButton = alert.addButton(withTitle: UserText.clear)
-        let cancelButton = alert.addButton(withTitle: UserText.cancel)
-        clearButton.setAccessibilityIdentifier("ClearAllHistoryAndDataAlert.clearButton")
-        cancelButton.setAccessibilityIdentifier("ClearAllHistoryAndDataAlert.cancelButton")
-        return alert
-    }
-
-    static func clearHistoryAndDataAlert(dateString: String?) -> NSAlert {
-        let alert = NSAlert()
-        if let dateString = dateString {
-            alert.messageText = String(format: UserText.clearDataHeader, dateString)
-            alert.informativeText = UserText.clearDataDescription
-        } else {
-            alert.messageText = String(format: UserText.clearDataTodayHeader)
-            alert.informativeText = UserText.clearDataTodayDescription
-        }
-        alert.alertStyle = .warning
-        alert.icon = .burnAlert
-        alert.addButton(withTitle: UserText.clear)
-        alert.addButton(withTitle: UserText.cancel)
         return alert
     }
 
@@ -182,25 +165,6 @@ extension NSAlert {
         return alert
     }
 
-    static func osNotSupported(_ supportWarning: OSSupportWarning) -> NSAlert {
-        let alert = NSAlert()
-
-        switch supportWarning {
-        case .unsupported(let minVersion):
-            alert.messageText = UserText.aboutUnsupportedDeviceInfo1
-            alert.informativeText = UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
-        case .willDropSupportSoon(let upcomingMinVersion):
-            alert.messageText = UserText.aboutWillSoonBeUnsupportedDeviceInfo1
-            alert.informativeText = UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
-        }
-
-        alert.alertStyle = .warning
-
-        alert.addButton(withTitle: UserText.checkForUpdate)
-        alert.addButton(withTitle: UserText.ok)
-        return alert
-    }
-
     static func syncPaused(title: String, informative: String) -> NSAlert {
         let alert = NSAlert()
         alert.messageText = title
@@ -208,6 +172,22 @@ extension NSAlert {
         alert.alertStyle = .warning
         alert.addButton(withTitle: UserText.ok)
         alert.addButton(withTitle: UserText.syncErrorAlertAction)
+        return alert
+    }
+
+    static func syncCloseSetupConfirmation(isImprovedPairingFlowEnabled: Bool) -> NSAlert {
+        let alert = NSAlert()
+        alert.informativeText = UserText.syncCloseSetupConfirmationMessage
+        alert.alertStyle = .informational
+        if isImprovedPairingFlowEnabled {
+            alert.messageText = UserText.syncCloseSetupConfirmationTitleImproved
+            alert.addButton(withTitle: UserText.syncCloseSetupConfirmationConfirmActionImproved)
+            alert.addButton(withTitle: UserText.syncCloseSetupConfirmationGoBackActionImproved)
+        } else {
+            alert.messageText = UserText.syncCloseSetupConfirmationTitle
+            alert.addButton(withTitle: UserText.syncCloseSetupConfirmationAction)
+            alert.addButton(withTitle: UserText.cancel)
+        }
         return alert
     }
 
@@ -238,11 +218,11 @@ extension NSAlert {
         return alert
     }
 
-    static func autoClearAlert() -> NSAlert {
+    static func autoClearAlert(clearChats: Bool) -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = UserText.warnBeforeQuitDialogHeader
+        alert.messageText = UserText.warnBeforeQuitDialogHeader(clearChats)
         alert.alertStyle = .warning
-        alert.icon = .burnAlert
+        alert.icon = NSImage(resource: .burnAlert)
         alert.addButton(withTitle: UserText.clearAndQuit)
         alert.addButton(withTitle: UserText.quitWithoutClearing)
         alert.addButton(withTitle: UserText.cancel)
@@ -276,6 +256,26 @@ extension NSAlert {
         alert.addButton(withTitle: UserText.close)
         return alert
     }
+
+    /// Creates a prompt for adding a new Fireproof domain, returning the configured alert and the bound text field.
+    /// Caller can run it as a sheet or modally and read the domain from the returned text field.
+    static func fireproofAddDomainPrompt() -> (alert: NSAlert, textField: NSTextField) {
+        let alert = NSAlert()
+        alert.messageText = UserText.fireproofAddTitle
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: UserText.fireproofAddButton)
+        alert.addButton(withTitle: UserText.cancel)
+
+        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        textField.maximumNumberOfLines = 1
+        textField.lineBreakMode = .byTruncatingTail
+        textField.placeholderString = "example.com"
+        alert.accessoryView = textField
+        alert.window.initialFirstResponder = textField
+        return (alert, textField)
+    }
+
+    // Intentionally no presenting helper: callers own sheet presentation and validation
 
     @discardableResult
     func runModal() async -> NSApplication.ModalResponse {

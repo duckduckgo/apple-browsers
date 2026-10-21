@@ -23,6 +23,7 @@ import os.log
 enum OperationPreferredDateUpdaterOrigin {
     case optOut
     case scan
+    case emailConfirmation
 }
 
 protocol OperationPreferredDateUpdating {
@@ -37,10 +38,22 @@ protocol OperationPreferredDateUpdating {
     func updateChildrenBrokerForParentBroker(_ parentBroker: DataBroker, profileQueryId: Int64) throws
 }
 
-struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
+public protocol OperationPreferredDateNilMigrator {
+    func runPreferredRunDateNilMigrationIfNeeded(settings: DataBrokerProtectionSettings)
+}
 
-    let database: DataBrokerProtectionRepository
+public struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
+
+    public let database: DataBrokerProtectionRepository
     private let calculator = OperationPreferredDateCalculator()
+    private let featureFlagger: OptOutRetryErrorFeatureFlagging
+    private static let optOutRetryError96Hours = 96
+
+    public init(database: DataBrokerProtectionRepository,
+                featureFlagger: OptOutRetryErrorFeatureFlagging) {
+        self.database = database
+        self.featureFlagger = featureFlagger
+    }
 
     func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,
                                   brokerId: Int64,
@@ -97,9 +110,12 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
                                         brokerProfileQuery: BrokerProfileQueryData) throws {
 
         let currentScanPreferredRunDate = brokerProfileQuery.scanJobData.preferredRunDate
+        let scanHistoryEvents = brokerProfileQuery.scanJobDataHistoryEventsSortedEarliestFirst
+        let optOutHistoryEvents = brokerProfileQuery.optOutJobDataHistoryEventsSortedWithinOptOutEarliestFirst
 
         var newScanPreferredRunDate = try calculator.dateForScanOperation(currentPreferredRunDate: currentScanPreferredRunDate,
-                                                                          historyEvents: brokerProfileQuery.events,
+                                                                          scanHistoryEvents: scanHistoryEvents,
+                                                                          optOutsHistoryEvents: optOutHistoryEvents,
                                                                           extractedProfileID: extractedProfileId,
                                                                           schedulingConfig: schedulingConfig,
                                                                           isDeprecated: brokerProfileQuery.profileQuery.deprecated)
@@ -125,10 +141,11 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         let optOutJob = brokerProfileQuery.optOutJobData.filter { $0.extractedProfile.id == extractedProfileId }.first
         let currentOptOutPreferredRunDate = optOutJob?.preferredRunDate
 
+        let effectiveSchedulingConfig = effectiveSchedulingConfig(for: origin, schedulingConfig: schedulingConfig)
         var newOptOutPreferredDate = try calculator.dateForOptOutOperation(currentPreferredRunDate: currentOptOutPreferredRunDate,
-                                                                           historyEvents: brokerProfileQuery.events,
+                                                                           optOutHistoryEvents: optOutJob?.historyEventsSortedEarliestFirst ?? [],
                                                                            extractedProfileID: extractedProfileId,
-                                                                           schedulingConfig: schedulingConfig,
+                                                                           schedulingConfig: effectiveSchedulingConfig,
                                                                            attemptCount: optOutJob?.attemptCount)
 
         if let newDate = newOptOutPreferredDate, origin == .scan {
@@ -159,6 +176,19 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         return min(date1, date2)
     }
 
+    private func effectiveSchedulingConfig(for origin: OperationPreferredDateUpdaterOrigin,
+                                           schedulingConfig: DataBrokerScheduleConfig) -> DataBrokerScheduleConfig {
+        guard origin == .optOut,
+              featureFlagger.isOptOutRetryErrorFrequencyExperimentOn else {
+            return schedulingConfig
+        }
+
+        return DataBrokerScheduleConfig(retryError: Self.optOutRetryError96Hours,
+                                        confirmOptOutScan: schedulingConfig.confirmOptOutScan,
+                                        maintenanceScan: schedulingConfig.maintenanceScan,
+                                        maxAttempts: schedulingConfig.maxAttempts)
+    }
+
     private func updatePreferredRunDate(_ date: Date?,
                                         brokerId: Int64,
                                         profileQueryId: Int64,
@@ -175,5 +205,52 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         }
 
         Logger.dataBrokerProtection.log("Updating preferredRunDate on operation with brokerId \(brokerId.description, privacy: .public) and profileQueryId \(profileQueryId.description, privacy: .public)")
+    }
+}
+
+extension OperationPreferredDateUpdater: OperationPreferredDateNilMigrator {
+    // One-time migration: backfill preferredRunDate for any scan or opt-out job that has nil by running them through the preferred date calculator.
+    public func runPreferredRunDateNilMigrationIfNeeded(settings: DataBrokerProtectionSettings) {
+        guard !settings.hasPerformedPreferredRunDateMigration else {
+            Logger.dataBrokerProtection.log("PreferredRunDateNilMigration already completed, returning")
+            return
+        }
+        do {
+            try runPreferredRunDateNilMigration()
+            settings.hasPerformedPreferredRunDateMigration = true
+            Logger.dataBrokerProtection.log("PreferredRunDateNilMigration completed successfully")
+        } catch {
+            Logger.dataBrokerProtection.error("PreferredRunDateNilMigration failed: \(error.localizedDescription, privacy: .public). Will retry on next launch.")
+        }
+    }
+
+    private func runPreferredRunDateNilMigration() throws {
+        let allQueryData = try database.fetchAllBrokerProfileQueryData(reason: .oneTimeMigration)
+        for queryData in allQueryData {
+            guard let brokerId = queryData.dataBroker.id,
+                  let profileQueryId = queryData.profileQuery.id else {
+                continue
+            }
+
+            let schedulingConfig = queryData.dataBroker.schedulingConfig
+            if queryData.scanJobData.preferredRunDate == nil {
+                try updateScanJobDataDates(origin: .scan,
+                                           brokerId: brokerId,
+                                           profileQueryId: profileQueryId,
+                                           extractedProfileId: nil,
+                                           schedulingConfig: schedulingConfig,
+                                           brokerProfileQuery: queryData)
+            }
+
+            let optOutsWithNilRunDate = queryData.optOutJobData.filter { $0.preferredRunDate == nil }
+            for optOut in optOutsWithNilRunDate {
+                try updateOptOutJobDataDates(origin: .optOut,
+                                             brokerId: brokerId,
+                                             profileQueryId: profileQueryId,
+                                             extractedProfileId: optOut.extractedProfile.id,
+                                             schedulingConfig: schedulingConfig,
+                                             brokerProfileQuery: queryData)
+            }
+        }
     }
 }

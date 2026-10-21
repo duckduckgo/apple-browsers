@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
-import FeatureFlags
+import DesignResourcesKitIcons
+import FoundationExtensions
+import FeatureFlags_macOS
 import History
 import os.log
+import PrivacyConfig
 
 final class HistoryMenu: NSMenu {
 
@@ -30,8 +32,15 @@ final class HistoryMenu: NSMenu {
         case mainMenu, moreOptionsMenu
     }
 
+    private enum Constants {
+        static let maxRecentlyVisitedItems = 12
+        static let itemNotFoundIndex = -1
+    }
+
     let backMenuItem = NSMenuItem(title: UserText.navigateBack, action: #selector(MainViewController.back), keyEquivalent: "[")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowLeft)
     let forwardMenuItem = NSMenuItem(title: UserText.navigateForward, action: #selector(MainViewController.forward), keyEquivalent: "]")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowRight)
 
     private let recentlyClosedMenuItem = NSMenuItem(title: UserText.mainMenuHistoryRecentlyClosed)
     private let reopenLastClosedMenuItem = NSMenuItem(title: UserText.reopenLastClosedTab, action: #selector(AppDelegate.reopenLastClosedTab))
@@ -43,32 +52,37 @@ final class HistoryMenu: NSMenu {
         keyEquivalent: "y",
         representedObject: location
     )
+        .withImage(DesignSystemImages.Glyphs.Size12.history, visibleOnMacOS27: true)
     private let showHistorySeparator = NSMenuItem.separator()
-    private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryClearAllHistory,
-                                                     action: #selector(AppDelegate.clearAllHistory),
-                                                     keyEquivalent: [.command, .shift, .backspace])
+    private lazy var clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryDeleteAllHistory,
+                                                         action: #selector(AppDelegate.clearAllHistory),
+                                                         keyEquivalent: [.command, .shift, .backspace])
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
+        .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: location == .moreOptionsMenu)
     private let clearAllHistorySeparator = NSMenuItem.separator()
 
     private let historyGroupingProvider: HistoryGroupingProvider
+    private let recentlyClosedCoordinator: RecentlyClosedCoordinating
     private let featureFlagger: FeatureFlagger
     @MainActor
     private let reopenMenuItemKeyEquivalentManager = ReopenMenuItemKeyEquivalentManager()
     private let location: Location
 
     @MainActor
-    convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, featureFlagger: FeatureFlagger) {
+    convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, recentlyClosedCoordinator: RecentlyClosedCoordinating, featureFlagger: FeatureFlagger) {
         self.init(
             location: location,
-            historyGroupingProvider: .init(dataSource: historyGroupingDataSource, featureFlagger: featureFlagger),
+            historyGroupingProvider: .init(dataSource: historyGroupingDataSource),
+            recentlyClosedCoordinator: recentlyClosedCoordinator,
             featureFlagger: featureFlagger
         )
     }
 
     @MainActor
-    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider, featureFlagger: FeatureFlagger) {
+    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider, recentlyClosedCoordinator: RecentlyClosedCoordinating, featureFlagger: FeatureFlagger) {
         self.location = location
         self.historyGroupingProvider = historyGroupingProvider
+        self.recentlyClosedCoordinator = recentlyClosedCoordinator
         self.featureFlagger = featureFlagger
 
         super.init(title: UserText.mainMenuHistory)
@@ -110,34 +124,19 @@ final class HistoryMenu: NSMenu {
     override func update() {
         super.update()
 
-        showHistoryMenuItem.isHidden = !featureFlagger.isFeatureOn(.historyView)
-
         updateRecentlyClosedMenu()
         updateReopenLastClosedMenuItem()
 
-        clearOldVariableMenuItems()
-        addRecentlyVisited()
-        if !featureFlagger.isFeatureOn(.shortHistoryMenu) {
-            addHistoryGroupings()
-        }
-        addClearAllAndShowHistoryOnTheBottom()
-        clearAllHistoryMenuItem.title = featureFlagger.isFeatureOn(.historyView) ? UserText.mainMenuHistoryDeleteAllHistory : UserText.mainMenuHistoryClearAllHistory
-    }
+        updateRecentlyVisited()
 
-    private func clearOldVariableMenuItems() {
-        items.removeAll { menuItem in
-            recentlyVisitedMenuItems.contains(menuItem) ||
-            historyGroupingsMenuItems.contains(menuItem) ||
-            menuItem == clearAllHistoryMenuItem ||
-            (menuItem == showHistoryMenuItem && location == .mainMenu)
-        }
+        alignItemTextWithIcons()
     }
 
     // MARK: - Last Closed & Recently Closed
 
     @MainActor
     private func updateReopenLastClosedMenuItem() {
-        switch RecentlyClosedCoordinator.shared.cache.last {
+        switch recentlyClosedCoordinator.cache.last {
         case is RecentlyClosedWindow:
             reopenLastClosedMenuItem.title = UserText.reopenLastClosedWindow
             reopenLastClosedMenuItem.setAccessibilityIdentifier("HistoryMenu.reopenLastClosedWindow")
@@ -150,7 +149,7 @@ final class HistoryMenu: NSMenu {
 
     @MainActor
     private func updateRecentlyClosedMenu() {
-        let recentlyClosedMenu = RecentlyClosedMenu(recentlyClosedCoordinator: RecentlyClosedCoordinator.shared)
+        let recentlyClosedMenu = RecentlyClosedMenu(recentlyClosedCoordinator: recentlyClosedCoordinator)
         recentlyClosedMenuItem.submenu = recentlyClosedMenu
         recentlyClosedMenuItem.isEnabled = !recentlyClosedMenu.items.isEmpty
     }
@@ -167,157 +166,43 @@ final class HistoryMenu: NSMenu {
     private var recentlyVisitedMenuItems = [NSMenuItem]()
 
     @MainActor
-    private func addRecentlyVisited() {
-        recentlyVisitedMenuItems = [recentlyVisitedHeaderMenuItem]
-        let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: 12)
-        for (index, visit) in zip(
-            recentVisits.indices, recentVisits
-        ) {
+    private func updateRecentlyVisited() {
+        let oldMenuItems = recentlyVisitedMenuItems
+        recentlyVisitedMenuItems = makeRecentlyVisitedMenuItems()
+        insert(recentlyVisitedMenuItems, before: anchorSeparator)
+        removeMenuItems(oldItems: oldMenuItems)
+    }
+
+    private var anchorSeparator: NSMenuItem {
+        location == .mainMenu ? showHistorySeparator : clearAllHistorySeparator
+    }
+
+    @MainActor
+    private func makeRecentlyVisitedMenuItems() -> [NSMenuItem] {
+        var menuItems = [recentlyVisitedHeaderMenuItem]
+        let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: Constants.maxRecentlyVisitedItems)
+        for (index, visit) in zip(recentVisits.indices, recentVisits) {
             let visitMenuItem = VisitMenuItem(visitViewModel: VisitViewModel(visit: visit))
             visitMenuItem.setAccessibilityIdentifier("HistoryMenu.recentlyVisitedMenuItem.\(index)")
-            recentlyVisitedMenuItems.append(visitMenuItem)
-        }
-        for recentlyVisitedMenuItem in recentlyVisitedMenuItems {
-            addItem(recentlyVisitedMenuItem)
-        }
-    }
-
-    // MARK: - History Groupings
-
-    private var historyGroupingsMenuItems = [NSMenuItem]()
-
-    @MainActor
-    private func addHistoryGroupings() {
-        let groupings = historyGroupingProvider.getVisitGroupings()
-        var firstWeek = [HistoryGrouping](), older = [HistoryGrouping]()
-        groupings.forEach { grouping in
-            if grouping.date > Date.weekAgo.startOfDay {
-                firstWeek.append(grouping)
-            } else if !featureFlagger.isFeatureOn(.historyView) {
-                older.append(grouping)
-            }
-        }
-
-        historyGroupingsMenuItems = [NSMenuItem.separator()]
-
-        // First week
-        let firstWeekMenuItems = makeGroupingMenuItems(from: firstWeek)
-        historyGroupingsMenuItems.append(contentsOf: firstWeekMenuItems)
-
-        // Older
-        let olderMenuItems = makeGroupingMenuItems(from: older)
-        if let olderRootMenuItem = makeOlderRootMenuItem(from: olderMenuItems) {
-            historyGroupingsMenuItems.append(olderRootMenuItem)
-        }
-
-        historyGroupingsMenuItems.forEach {
-            addItem($0)
-        }
-    }
-
-    @MainActor
-    private func makeGroupingMenuItems(from groupings: [HistoryGrouping]) -> [NSMenuItem] {
-
-        func makeGroupingRootMenuItem(from grouping: HistoryGrouping) -> NSMenuItem {
-            let title = makeTitle(for: grouping)
-            let menuItem = NSMenuItem(title: "\(title.0), \(title.1)")
-            let isToday = NSCalendar.current.isDateInToday(grouping.date)
-            let dateString = isToday ? nil : title.1
-            let subMenuItems = makeClearThisHistoryMenuItems(with: dateString) + makeMenuItems(from: grouping)
-            let submenu = NSMenu(items: subMenuItems)
-            menuItem.submenu = submenu
-            return menuItem
-        }
-
-        return groupings.map { grouping in
-            makeGroupingRootMenuItem(from: grouping)
-        }
-    }
-
-    private func makeOlderRootMenuItem(from submenuItems: [NSMenuItem]) -> NSMenuItem? {
-        guard submenuItems.count > 0 else {
-            return nil
-        }
-
-        let rootMenuItem = NSMenuItem(title: UserText.olderMenuItem)
-        rootMenuItem.submenu = NSMenu(items: submenuItems)
-        return rootMenuItem
-    }
-
-    @MainActor
-    private func makeMenuItems(from grouping: HistoryGrouping) -> [NSMenuItem] {
-        let date = grouping.date
-        let isToday = NSCalendar.current.isDateInToday(date)
-        let visits = grouping.visits
-        var menuItems = [NSMenuItem]()
-        for (index, visit) in zip(
-            visits.indices, visits
-        ) {
-            let menuItem = VisitMenuItem(visitViewModel: VisitViewModel(visit: visit))
-            menuItem.setAccessibilityIdentifier("HistoryMenu.historyMenuItem.\(isToday ? "Today" : "\(date)").\(index)")
-            menuItems.append(menuItem)
+            menuItems.append(visitMenuItem)
         }
         return menuItems
     }
 
-    private func makeTitle(for grouping: HistoryGrouping) -> (String, String) {
-        let prefix: String
-        if grouping.date > Date.daysAgo(2).startOfDay {
-            prefix = relativePrefixFormatter.string(from: grouping.date)
-        } else {
-            prefix = prefixFormatter.string(from: grouping.date)
+    private func insert(_ menuItems: [NSMenuItem], before anchor: NSMenuItem) {
+        var insertionIndex = index(of: anchor)
+        guard insertionIndex != Constants.itemNotFoundIndex else {
+            assertionFailure("HistoryMenu: anchor separator missing")
+            return
         }
-        let suffix = suffixFormatter.string(from: grouping.date)
-        return (prefix, suffix)
+        for menuItem in menuItems {
+            insertItem(menuItem, at: insertionIndex)
+            insertionIndex += 1
+        }
     }
 
-    let relativePrefixFormatter: DateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.timeStyle = .none
-        dateFormatter.dateStyle = .medium
-        dateFormatter.doesRelativeDateFormatting = true
-        return dateFormatter
-    }()
-
-    let suffixFormatter: DateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MMMM dd, YYYY"
-        return dateFormatter
-    }()
-
-    let prefixFormatter: DateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "EEEE"
-        return dateFormatter
-    }()
-
-    private func makeClearThisHistoryMenuItems(with dateString: String?) -> [NSMenuItem] {
-        let headerItem = ClearThisHistoryMenuItem(title: featureFlagger.isFeatureOn(.historyView) ? UserText.deleteThisHistoryMenuItem : UserText.clearThisHistoryMenuItem,
-                                                  action: #selector(AppDelegate.clearThisHistory(_:)),
-                                                  keyEquivalent: "")
-        let historyTimeWindow = ClearThisHistoryMenuItem.HistoryTimeWindow(dateString: dateString)
-        headerItem.setRepresentingObject(historyTimeWindow: historyTimeWindow)
-        return [
-            headerItem,
-            .separator()
-        ]
-    }
-
-    // MARK: - Clear All History
-
-    private func addClearAllAndShowHistoryOnTheBottom() {
-        if featureFlagger.isFeatureOn(.historyView) && location == .mainMenu {
-            if showHistorySeparator.menu != nil {
-                removeItem(showHistorySeparator)
-            }
-            addItem(showHistorySeparator)
-            addItem(showHistoryMenuItem)
-        }
-        if clearAllHistorySeparator.menu != nil {
-            removeItem(clearAllHistorySeparator)
-        }
-        addItem(clearAllHistorySeparator)
-        addItem(clearAllHistoryMenuItem)
+    private func removeMenuItems(oldItems: [NSMenuItem]) {
+        oldItems.filter { $0.menu === self }.forEach(removeItem)
     }
 }
 
@@ -325,7 +210,7 @@ extension HistoryMenu {
 
     /**
      * This class manages the shortcut assignment to either of the
-     * "Reopen Last Closed Tab" or "Reopen All Windows From Last Session"
+     * "Reopen Last Closed Tab" or "Reopen All Windows and Tabs From Last Session"
      * menu items.
      */
     final class ReopenMenuItemKeyEquivalentManager {

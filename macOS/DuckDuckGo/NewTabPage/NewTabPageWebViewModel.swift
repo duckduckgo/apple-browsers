@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import NewTabPage
 import PixelKit
+import PrivacyConfig
+import UniformTypeIdentifiers
 import WebKit
 
 /**
@@ -36,29 +37,32 @@ import WebKit
 final class NewTabPageWebViewModel: NSObject {
     let newTabPageUserScript: NewTabPageUserScript
     let webView: WebView
+    private let newTabPageLoadMetrics: NewTabPageLoadMetrics
     private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, activeRemoteMessageModel: ActiveRemoteMessageModel) {
+    init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, newTabPageLoadMetrics: NewTabPageLoadMetrics) {
         newTabPageUserScript = NewTabPageUserScript()
         actionsManager.registerUserScript(newTabPageUserScript)
 
         let configuration = WKWebViewConfiguration()
         configuration.applyNewTabPageWebViewConfiguration(with: featureFlagger, newTabPageUserScript: newTabPageUserScript)
-        webView = WebView(frame: .zero, configuration: configuration)
+        webView = WebView(frame: .zero, configuration: configuration, featureFlagger: featureFlagger)
+
+        self.newTabPageLoadMetrics = newTabPageLoadMetrics
 
         super.init()
 
         webView.navigationDelegate = self
+        webView.uiDelegate = self
         webView.load(URLRequest(url: URL.newtab))
         newTabPageUserScript.webView = webView
 
         webView.publisher(for: \.window)
             .map { $0 != nil }
-            .sink { [weak activeRemoteMessageModel] isOnScreen in
+            .sink { isOnScreen in
                 if isOnScreen && OnboardingActionsManager.isOnboardingFinished && AppDelegate.isNewUser {
                     PixelKit.fire(GeneralPixel.newTabInitial, frequency: .legacyInitial)
                 }
-                activeRemoteMessageModel?.isViewOnScreen = isOnScreen
                 if isOnScreen {
                     NotificationCenter.default.post(name: .newTabPageWebViewDidAppear, object: nil)
                 }
@@ -81,9 +85,31 @@ final class NewTabPageWebViewModel: NSObject {
 
 }
 
+extension NewTabPageWebViewModel: WKUIDelegate {
+    func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
+        guard let window = webView.window else {
+            completionHandler(nil)
+            return
+        }
+
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = parameters.allowsDirectories
+        openPanel.allowsMultipleSelection = true
+        openPanel.allowedContentTypes = [.jpeg, .png, .webP, .pdf]
+        openPanel.beginSheetModal(for: window) { response in
+            completionHandler(response == .OK ? openPanel.urls : nil)
+        }
+    }
+}
+
 extension NewTabPageWebViewModel: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         navigationAction.request.url == .newtab ? .allow : .cancel
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        newTabPageLoadMetrics.onNTPDidPresent()
     }
 }
 

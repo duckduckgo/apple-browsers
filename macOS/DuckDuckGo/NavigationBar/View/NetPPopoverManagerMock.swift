@@ -80,12 +80,22 @@ final class IPCClientMock: NetworkProtectionIPCClient {
     }
     var ipcKnownFailureObserver: any VPN.KnownFailureObserver = KnownFailureObserverMock()
 
+    final class VPNEnabledObserverMock: VPN.VPNEnabledObserver {
+        var isVPNEnabled: Bool = false
+        var publisher: AnyPublisher<Bool, Never> = PassthroughSubject().eraseToAnyPublisher()
+    }
+    var ipcVPNEnabledObserver: any VPN.VPNEnabledObserver = VPNEnabledObserverMock()
+
     func start(completion: @escaping (Error?) -> Void) {
         completion(nil)
     }
 
     func stop(completion: @escaping (Error?) -> Void) {
         completion(nil)
+    }
+
+    func refreshSystemState() async throws {
+        return
     }
 
     func command(_ command: VPNCommand) async throws {

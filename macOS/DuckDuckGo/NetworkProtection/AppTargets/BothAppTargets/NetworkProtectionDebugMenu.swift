@@ -17,13 +17,16 @@
 //
 
 import AppKit
+import AppKitExtensions
 import Common
+import ConcurrencyExtensions
 import Foundation
-import VPN
+import FoundationExtensions
 import NetworkProtectionProxy
-import SwiftUI
 import os.log
 import Subscription
+import SwiftUI
+import VPN
 
 /// Controller for the VPN debug menu.
 ///
@@ -34,6 +37,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     // MARK: - Menus
 
     private let environmentMenu = NSMenu()
+    private let upsellMenu = NSMenu()
 
     private let preferredServerMenu: NSMenu
     private let preferredServerAutomaticItem = NSMenuItem(title: "Automatic", action: #selector(NetworkProtectionDebugMenu.setSelectedServer))
@@ -51,10 +55,18 @@ final class NetworkProtectionDebugMenu: NSMenu {
     private let disableRekeyingMenuItem = NSMenuItem(title: "Disable Rekeying", action: #selector(NetworkProtectionDebugMenu.toggleRekeyingDisabled))
 
     private let excludeLocalNetworksMenuItem = NSMenuItem(title: "excludeLocalNetworks", action: #selector(NetworkProtectionDebugMenu.toggleShouldExcludeLocalRoutes))
+    private let excludeCGNATMenuItem = NSMenuItem(title: "excludeCGNAT", action: #selector(NetworkProtectionDebugMenu.toggleExcludeCGNAT))
+    private let excludeAPNsMenuItem = NSMenuItem(title: "excludeAPNs", action: #selector(NetworkProtectionDebugMenu.toggleExcludeAPNs))
+    private let excludeCellularServicesMenuItem = NSMenuItem(title: "excludeCellularServices", action: #selector(NetworkProtectionDebugMenu.toggleExcludeCellularServices))
+    private let excludeDeviceCommunicationMenuItem = NSMenuItem(title: "excludeDeviceCommunication", action: #selector(NetworkProtectionDebugMenu.toggleExcludeDeviceCommunication))
+
+    private let resetTunnelSettingsMenuItem = NSMenuItem(title: "Reset to Defaults", action: #selector(NetworkProtectionDebugMenu.resetTunnelSettings))
 
     private let networkProtectionDeviceManager: NetworkProtectionDeviceManager
+    private let pinningManager: PinningManager
 
-    init() {
+    init(pinningManager: PinningManager) {
+        self.pinningManager = pinningManager
         preferredServerMenu = NSMenu { [preferredServerAutomaticItem] in
             preferredServerAutomaticItem
         }
@@ -65,13 +77,8 @@ final class NetworkProtectionDebugMenu: NSMenu {
         let settings = Application.appDelegate.vpnSettings
         let keyStore = NetworkProtectionKeychainKeyStore(keychainType: .default,
                                                          errorEvents: .networkProtectionAppDebugEvents)
-        var tokenHandler: any SubscriptionTokenHandling
-        if !Application.appDelegate.isUsingAuthV2 {
-            tokenHandler = NetworkProtectionKeychainTokenStore()
-        } else {
-            // swiftlint:disable:next force_cast
-            tokenHandler = Application.appDelegate.subscriptionManagerV2 as! DefaultSubscriptionManagerV2
-        }
+        // swiftlint:disable:next force_cast
+        let tokenHandler: any SubscriptionTokenHandling = Application.appDelegate.subscriptionManager as! DefaultSubscriptionManager
         networkProtectionDeviceManager = NetworkProtectionDeviceManager(environment: settings.selectedEnvironment,
                                                                         tokenHandler: tokenHandler,
                                                                         keyStore: keyStore,
@@ -110,6 +117,14 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Show Excluded Sites", action: #selector(NetworkProtectionDebugMenu.showExcludedDomainsScreen(_:)))
+                .targetting(self)
+
+            NSMenuItem(title: "Show Excluded Apps", action: #selector(NetworkProtectionDebugMenu.showExcludedAppsScreen(_:)))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
             NSMenuItem(title: "Adapter") {
                 NSMenuItem(title: "Restart Adapter", action: #selector(NetworkProtectionDebugMenu.restartAdapter(_:)))
                     .targetting(self)
@@ -119,13 +134,30 @@ final class NetworkProtectionDebugMenu: NSMenu {
             }
 
             NSMenuItem(title: "Tunnel Settings") {
+                resetTunnelSettingsMenuItem
+                    .targetting(self)
+
+                NSMenuItem.separator()
+
                 shouldIncludeAllNetworksMenuItem
                     .targetting(self)
 
                 excludeLocalNetworksMenuItem
                     .targetting(self)
 
+                excludeCGNATMenuItem
+                    .targetting(self)
+
                 shouldEnforceRoutesMenuItem
+                    .targetting(self)
+
+                excludeAPNsMenuItem
+                    .targetting(self)
+
+                excludeCellularServicesMenuItem
+                    .targetting(self)
+
+                excludeDeviceCommunicationMenuItem
                     .targetting(self)
             }
 
@@ -134,7 +166,13 @@ final class NetworkProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Send Test Notification", action: #selector(NetworkProtectionDebugMenu.sendTestNotification))
                 .targetting(self)
 
+            NSMenuItem(title: "Trigger VPN Leak Check Now", action: #selector(NetworkProtectionDebugMenu.triggerLeakCheck))
+                .targetting(self)
+
             NSMenuItem(title: "Log Feedback Metadata to Console", action: #selector(NetworkProtectionDebugMenu.logFeedbackMetadataToConsole))
+                .targetting(self)
+
+            NSMenuItem(title: "Export Diagnostics…", action: #selector(NetworkProtectionDebugMenu.exportDiagnostics))
                 .targetting(self)
 
             NSMenuItem(title: "Onboarding")
@@ -162,8 +200,14 @@ final class NetworkProtectionDebugMenu: NSMenu {
 #endif
             }
 
+            NSMenuItem(title: "Simulate Subscription Expiration in Tunnel", action: #selector(NetworkProtectionDebugMenu.simulateSubscriptionExpirationInTunnel))
+                .targetting(self)
+
             NSMenuItem(title: "Simulate Failure")
                 .submenu(NetworkProtectionSimulateFailureMenu())
+
+            NSMenuItem(title: "Upsell")
+                .submenu(upsellMenu)
 
             NSMenuItem.separator()
 
@@ -173,6 +217,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
         preferredServerMenu.autoenablesItems = false
         populateNetworkProtectionEnvironmentListMenuItems()
+        populateNetworkProtectionUpsellMenuItems()
         Task {
             try? await populateNetworkProtectionServerListMenuItems()
         }
@@ -191,7 +236,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     // MARK: - Debug Logic
 
-    private let debugUtilities = NetworkProtectionDebugUtilities()
+    private lazy var debugUtilities = NetworkProtectionDebugUtilities(pinningManager: pinningManager)
 
     // MARK: - Debug Menu Actions
 
@@ -225,11 +270,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     ///
     @objc func disableLoginItem(_ sender: Any?) {
         Task { @MainActor in
-            do {
-                try await debugUtilities.disableLoginItems()
-            } catch {
-                await NSAlert(error: error).runModal()
-            }
+            await debugUtilities.disableLoginItems()
         }
     }
 
@@ -263,10 +304,44 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     /// Removes the system extension and agents for DuckDuckGo VPN.
     ///
+    /// The VPN section only appears in Settings with an active subscription, so this is the
+    /// only way to reach the screen on a build without one.
+    @objc func showExcludedDomainsScreen(_ sender: Any?) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.showVPNDomainExclusions()
+        }
+    }
+
+    @objc func showExcludedAppsScreen(_ sender: Any?) {
+        Task { @MainActor in
+            Application.appDelegate.windowControllersManager.showVPNAppExclusions()
+        }
+    }
+
     @objc func restartAdapter(_ sender: Any?) {
         Task { @MainActor in
             do {
                 try await debugUtilities.restartAdapter()
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
+        }
+    }
+
+    @objc func simulateSubscriptionExpirationInTunnel(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                try await debugUtilities.simulateSubscriptionExpirationInTunnel()
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
+        }
+    }
+
+    @objc func triggerLeakCheck(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                try await debugUtilities.triggerLeakCheck()
             } catch {
                 await NSAlert(error: error).runModal()
             }
@@ -289,10 +364,31 @@ final class NetworkProtectionDebugMenu: NSMenu {
     ///
     @objc func logFeedbackMetadataToConsole(_ sender: Any?) {
         Task { @MainActor in
-            let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+            let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManager)
             let metadata = await collector.collectMetadata()
 
             print(metadata.toPrettyPrintedJSON()!)
+        }
+    }
+
+    @objc func exportDiagnostics(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                let exporter = NetworkProtectionDiagnosticsExporter(subscriptionManager: Application.appDelegate.subscriptionManager)
+                let diagnosticsURLs = try await exporter.exportToDesktop()
+
+                let alert = NSAlert()
+                alert.messageText = "VPN diagnostics exported"
+                alert.informativeText = "Saved overview and log files to your Desktop."
+                alert.addButton(withTitle: "Show in Finder")
+                alert.addButton(withTitle: "OK")
+
+                if await alert.runModal() == .alertFirstButtonReturn {
+                    NSWorkspace.shared.activateFileViewerSelecting(diagnosticsURLs)
+                }
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
         }
     }
 
@@ -362,6 +458,51 @@ final class NetworkProtectionDebugMenu: NSMenu {
         }
     }
 
+    @objc func toggleExcludeCGNAT(_ sender: Any?) {
+        settings.excludeCGNAT.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func toggleExcludeAPNs(_ sender: Any?) {
+        settings.excludeAPNs.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func toggleExcludeCellularServices(_ sender: Any?) {
+        settings.excludeCellularServices.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func toggleExcludeDeviceCommunication(_ sender: Any?) {
+        settings.excludeDeviceCommunication.toggle()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
+    @objc func resetTunnelSettings(_ sender: Any?) {
+        settings.resetTunnelFlagsToDefaults()
+
+        Task {
+            try await Task.sleep(interval: 0.1)
+            try await debugUtilities.restartAdapter()
+        }
+    }
+
     @objc func openAppContainerInFinder(_ sender: Any?) {
         let containerURL = URL.sandboxApplicationSupportURL
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: containerURL.path)
@@ -376,6 +517,14 @@ final class NetworkProtectionDebugMenu: NSMenu {
             NSMenuItem.separator(),
             NSMenuItem(title: "Production", action: #selector(setSelectedEnvironment(_:)), target: self, keyEquivalent: ""),
             NSMenuItem(title: "Staging", action: #selector(setSelectedEnvironment(_:)), target: self, keyEquivalent: ""),
+        ]
+    }
+
+    private func populateNetworkProtectionUpsellMenuItems() {
+        upsellMenu.items = [
+            NSMenuItem(title: "⚠️ Please restart the browser after resetting upsell state", action: nil, target: nil),
+            NSMenuItem.separator(),
+            NSMenuItem(title: "Reset Upsell State", action: #selector(resetUpsellState), target: self, keyEquivalent: ""),
         ]
     }
 
@@ -512,7 +661,48 @@ final class NetworkProtectionDebugMenu: NSMenu {
         shouldEnforceRoutesMenuItem.state = settings.enforceRoutes ? .on : .off
         shouldIncludeAllNetworksMenuItem.state = settings.includeAllNetworks ? .on : .off
         excludeLocalNetworksMenuItem.state = settings.excludeLocalNetworks ? .on : .off
+        excludeCGNATMenuItem.state = settings.excludeCGNAT ? .on : .off
         disableRekeyingMenuItem.state = settings.disableRekeying ? .on : .off
+
+        if #available(macOS 13.3, *) {
+            excludeAPNsMenuItem.state = settings.excludeAPNs ? .on : .off
+            excludeAPNsMenuItem.isEnabled = true
+            excludeCellularServicesMenuItem.state = settings.excludeCellularServices ? .on : .off
+            excludeCellularServicesMenuItem.isEnabled = true
+        } else {
+            excludeAPNsMenuItem.title = "excludeAPNs (macOS 13.3+)"
+            excludeAPNsMenuItem.state = .off
+            excludeAPNsMenuItem.isEnabled = false
+            excludeCellularServicesMenuItem.title = "excludeCellularServices (macOS 13.3+)"
+            excludeCellularServicesMenuItem.state = .off
+            excludeCellularServicesMenuItem.isEnabled = false
+        }
+
+        if #available(macOS 14.4, *) {
+            excludeDeviceCommunicationMenuItem.state = settings.excludeDeviceCommunication ? .on : .off
+            excludeDeviceCommunicationMenuItem.isEnabled = true
+        } else {
+            excludeDeviceCommunicationMenuItem.title = "excludeDeviceCommunication (macOS 14.4+)"
+            excludeDeviceCommunicationMenuItem.state = .off
+            excludeDeviceCommunicationMenuItem.isEnabled = false
+        }
+    }
+
+    // MARK: - Upsell
+
+    @objc func resetUpsellState(_ sender: Any?) {
+        // Clear all statistics to simulate first launch
+        Application.appDelegate.resetInstallStatistics()
+
+        // Set install date to today to simulate new user
+        Application.appDelegate.changeInstallDateToToday(nil)
+
+        // Reset onboarding states using existing AppDelegate methods
+        Application.appDelegate.resetOnboarding(nil)
+        Application.appDelegate.resetContextualOnboarding(nil)
+        Application.appDelegate.resetHomePageSettingsOnboarding(nil)
+
+        Application.appDelegate.resetVPNUpsell()
     }
 
     // MARK: - Exclusions
@@ -558,6 +748,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
 #if DEBUG
 #Preview {
-    return MenuPreview(menu: NetworkProtectionDebugMenu())
+    return MenuPreview(menu: NetworkProtectionDebugMenu(pinningManager: LocalPinningManager()))
 }
 #endif

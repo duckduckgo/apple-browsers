@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
+import Combine
+import ConcurrencyExtensions
 import Foundation
 import Network
 import NetworkExtension
 import os.log
-import Combine
 
-public actor NetworkProtectionTunnelFailureMonitor {
+public actor NetworkProtectionTunnelFailureMonitor: TunnelFailureMonitoring {
     public enum Result {
         case failureDetected
         case failureRecovered
@@ -48,7 +49,7 @@ public actor NetworkProtectionTunnelFailureMonitor {
         }
     }
 
-    var isStarted: Bool {
+    public var isStarted: Bool {
         task?.isCancelled == false
     }
 
@@ -77,7 +78,7 @@ public actor NetworkProtectionTunnelFailureMonitor {
 
     // MARK: - Start/Stop monitoring
 
-    func start(callback: @escaping (Result) -> Void) {
+    public func start(callback: @escaping (Result) -> Void) {
         Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Starting tunnel failure monitor")
 
         failureReported = false
@@ -92,7 +93,7 @@ public actor NetworkProtectionTunnelFailureMonitor {
         }
     }
 
-    func stop() {
+    public func stop() {
         Logger.networkProtectionTunnelFailureMonitor.log("⚫️ Stopping tunnel failure monitor")
 
         networkMonitor.cancel()
@@ -176,19 +177,9 @@ extension Network.NWPath {
         }
     }
 
-    /// A description that's safe from a privacy standpoint.
+    /// Counts of the known interface families backing this path.
     ///
-    /// Ref: https://app.asana.com/0/0/1206712493935053/1206712516729780/f
-    ///
-    public var anonymousDescription: String {
-        var description = "NWPath("
-
-        description += "status: \(status), "
-
-        if #available(iOS 14.2, *), case .unsatisfied = status {
-            description += "unsatisfiedReason: \(unsatisfiedReason), "
-        }
-
+    private var interfaceCounts: (utun: Int, ipsec: Int, dns: Int, unidentified: Int) {
         var dnsCount = 0
         var ipsecCount = 0
         var utunCount = 0
@@ -207,15 +198,56 @@ extension Network.NWPath {
             }
         }
 
+        return (utunCount, ipsecCount, dnsCount, unidentifiedCount)
+    }
+
+    /// A description that's safe from a privacy standpoint.
+    ///
+    /// Ref: https://app.asana.com/0/0/1206712493935053/1206712516729780/f
+    ///
+    public var anonymousDescription: String {
+        var description = "NWPath("
+
+        description += "status: \(status), "
+
+        if #available(iOS 14.2, *), case .unsatisfied = status {
+            description += "unsatisfiedReason: \(unsatisfiedReason), "
+        }
+
+        let counts = interfaceCounts
+
         description += "mainInterfaceType: \(String(describing: availableInterfaces.first?.type)), "
-        description += "utunInterfaceCount: \(utunCount), "
-        description += "ipsecInterfaceCount: \(ipsecCount), "
-        description += "dnsInterfaceCount: \(dnsCount)), "
-        description += "unidentifiedInterfaceCount: \(unidentifiedCount)), "
+        description += "utunInterfaceCount: \(counts.utun), "
+        description += "ipsecInterfaceCount: \(counts.ipsec), "
+        description += "dnsInterfaceCount: \(counts.dns)), "
+        description += "unidentifiedInterfaceCount: \(counts.unidentified)), "
         description += "isConstrained: \(isConstrained ? "true" : "false"), "
         description += "isExpensive: \(isExpensive ? "true" : "false")"
         description += ")"
 
         return description
+    }
+
+    /// A privacy-safe, structured view of this path holding the same anonymized fields as `anonymousDescription`.
+    ///
+    public var anonymousPathInfo: NetworkProtectionNetworkPathInfo {
+        let counts = interfaceCounts
+
+        var unsatisfiedReasonDescription: String?
+        if #available(iOS 14.2, *), case .unsatisfied = status {
+            unsatisfiedReasonDescription = String(describing: unsatisfiedReason)
+        }
+
+        return NetworkProtectionNetworkPathInfo(
+            status: String(describing: status),
+            unsatisfiedReason: unsatisfiedReasonDescription,
+            mainInterfaceType: availableInterfaces.first.map { String(describing: $0.type) },
+            utunInterfaceCount: counts.utun,
+            ipsecInterfaceCount: counts.ipsec,
+            dnsInterfaceCount: counts.dns,
+            unidentifiedInterfaceCount: counts.unidentified,
+            isConstrained: isConstrained,
+            isExpensive: isExpensive
+        )
     }
 }

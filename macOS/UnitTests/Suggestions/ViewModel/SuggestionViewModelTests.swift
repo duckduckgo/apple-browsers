@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import Suggestions
 import XCTest
 
@@ -44,7 +45,7 @@ final class SuggestionViewModelTests: XCTestCase {
         let urlString = "https://spreadprivacy.com"
         let url = URL(string: urlString)!
         let suggestion = Suggestion.website(url: url)
-        let suggestionViewModel = SuggestionViewModel(isHomePage: true, suggestion: suggestion, userStringValue: "w", visualStyle: VisualStyle.legacy)
+        let suggestionViewModel = SuggestionViewModel(isHomePage: true, suggestion: suggestion, userStringValue: "w", themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger())
 
         XCTAssertEqual(suggestionViewModel.string, "www.spreadprivacy.com")
     }
@@ -213,10 +214,55 @@ final class SuggestionViewModelTests: XCTestCase {
         XCTAssertEqual(suggestionViewModel.title, title)
         XCTAssertEqual(suggestionViewModel.suffix, UserText.duckDuckGo)
     }
+
+    // MARK: - Website Suggestion Suffix Tests
+
+    func testWhenSuggestionIsWebsite_ThenSuffixIsNil() {
+        let urlString = "https://spreadprivacy.com"
+        let url = URL(string: urlString)!
+        let suggestion = Suggestion.website(url: url)
+        let featureFlagger = MockFeatureFlagger()
+
+        let suggestionViewModel = SuggestionViewModel(
+            isHomePage: false,
+            suggestion: suggestion,
+            userStringValue: "",
+            themeManager: MockThemeManager(),
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertNil(suggestionViewModel.suffix)
+    }
+
+    // MARK: - Ask AI Chat Suggestion Tests
+
+    func testWhenSuggestionIsAskAIChat_ThenStringReturnsValue() {
+        let value = "What is privacy?"
+        let suggestion = Suggestion.askAIChat(value: value)
+        let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
+
+        XCTAssertEqual(suggestionViewModel.string, value)
+    }
+
+    func testWhenSuggestionIsAskAIChat_ThenTitleIsNil() {
+        let value = "What is privacy?"
+        let suggestion = Suggestion.askAIChat(value: value)
+        let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
+
+        XCTAssertNil(suggestionViewModel.title)
+    }
+
+    func testWhenSuggestionIsAskAIChat_ThenSuffixIsNil() {
+        let value = "What is privacy?"
+        let suggestion = Suggestion.askAIChat(value: value)
+        let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
+
+        XCTAssertNil(suggestionViewModel.suffix)
+    }
 }
 
 extension SuggestionViewModel {
     init(suggestion: Suggestion, userStringValue: String) {
-        self.init(isHomePage: false, suggestion: suggestion, userStringValue: userStringValue, visualStyle: VisualStyle.legacy)
+        self.init(isHomePage: false, suggestion: suggestion, userStringValue: userStringValue, themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger())
     }
 }

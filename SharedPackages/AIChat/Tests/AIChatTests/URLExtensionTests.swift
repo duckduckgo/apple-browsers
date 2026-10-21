@@ -24,75 +24,12 @@ final class URLExtensionTests: XCTestCase {
         static let exampleDomain = "https://example.com"
         static let duckDuckGoDomain = "https://duckduckgo.com"
 
-        static let example = "\(exampleDomain)"
-        static let exampleWithKeyOldValue = "\(exampleDomain)?key=oldValue"
         static let exampleWithExistingQuery = "\(exampleDomain)?existingKey=existingValue"
-        static let exampleWithMultipleQueryItems = "\(exampleDomain)?key1=value1&key2=value2"
         static let duckDuckGoChat = "\(duckDuckGoDomain)/?ia=chat"
         static let duckDuckGoWithMissingQuery = "\(duckDuckGoDomain)/"
         static let duckDuckGoDifferentQuery = "\(duckDuckGoDomain)/?ia=search"
         static let duckDuckGoAdditionalQueryItems = "\(duckDuckGoDomain)/?ia=chat&other=param"
-        static let privacyPro = "\(duckDuckGoDomain)/privacypro"
-    }
-
-    func testAddingQueryItemToEmptyURL() {
-        let url = URL(string: TestURLs.example)!
-        let queryItem = URLQueryItem(name: "key", value: "value")
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["key": "value"])
-    }
-
-    func testReplacingExistingQueryItem() {
-        let url = URL(string: TestURLs.exampleWithKeyOldValue)!
-        let queryItem = URLQueryItem(name: "key", value: "newValue")
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["key": "newValue"])
-    }
-
-    func testAddingQueryItemToExistingQuery() {
-        let url = URL(string: TestURLs.exampleWithExistingQuery)!
-        let queryItem = URLQueryItem(name: "newKey", value: "newValue")
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["existingKey": "existingValue", "newKey": "newValue"])
-    }
-
-    func testReplacingOneOfMultipleQueryItems() {
-        let url = URL(string: TestURLs.exampleWithMultipleQueryItems)!
-        let queryItem = URLQueryItem(name: "key1", value: "newValue1")
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["key1": "newValue1", "key2": "value2"])
-    }
-
-    func testAddingQueryItemWithNilValue() {
-        let url = URL(string: TestURLs.example)!
-        let queryItem = URLQueryItem(name: "key", value: nil)
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, [:])
-    }
-
-    func testReplacingQueryItemWithNilValue() {
-        let url = URL(string: "\(TestURLs.example)?key=value")!
-        let queryItem = URLQueryItem(name: "key", value: nil)
-        let result = url.addingOrReplacing(queryItem)
-
-        XCTAssertEqual(result.scheme, "https")
-        XCTAssertEqual(result.host, "example.com")
-        XCTAssertEqual(result.queryItemsDictionary, ["key": "value"])
+        static let subscription = "\(duckDuckGoDomain)/privacypro"
     }
 
     func testIsDuckAIURLWithValidURL() {
@@ -103,8 +40,8 @@ final class URLExtensionTests: XCTestCase {
         }
     }
 
-    func testPrivacyProURL() {
-        if let url = URL(string: TestURLs.privacyPro) {
+    func testSubscriptionURL() {
+        if let url = URL(string: TestURLs.subscription) {
             XCTAssertFalse(url.isDuckAIURL, "The URL should not be identified as a DuckDuckGo AI URL due to the domain.")
         } else {
             XCTFail("Failed to create URL from string.")
@@ -223,6 +160,186 @@ final class URLExtensionTests: XCTestCase {
         } else {
             XCTFail("Failed to create URL from string.")
         }
+    }
+
+    // MARK: - Subdomain Tests
+
+    func testIsDuckAIURLWithSubdomain() {
+        let urlString = "https://euw-serp-dev-testing7.duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4"
+        if let url = URL(string: urlString) {
+            XCTAssertTrue(url.isDuckAIURL, "The URL should be identified as a DuckDuckGo AI URL with subdomain.")
+        } else {
+            XCTFail("Failed to create URL from string.")
+        }
+    }
+
+    func testIsDuckAIBangWithSubdomain() {
+        let urlString = "https://euw-serp-dev-testing7.duckduckgo.com/?q=!ai+some+query"
+        if let url = URL(string: urlString) {
+            XCTAssertTrue(url.isDuckAIBang, "The URL should be identified as a DuckDuckGo AI Bang URL with subdomain.")
+        } else {
+            XCTFail("Failed to create URL from string.")
+        }
+    }
+
+    func testIsDuckAIURLRejectsMaliciousDomain() {
+        let urlString = "https://evilduckduckgo.com/?ia=chat"
+        if let url = URL(string: urlString) {
+            XCTAssertFalse(url.isDuckAIURL, "The URL should not be identified as a DuckDuckGo AI URL due to malicious domain.")
+        } else {
+            XCTFail("Failed to create URL from string.")
+        }
+    }
+
+    func testIsDuckAIBangRejectsMaliciousDomain() {
+        let urlString = "https://evilduckduckgo.com/?q=!ai+some+query"
+        if let url = URL(string: urlString) {
+            XCTAssertFalse(url.isDuckAIBang, "The URL should not be identified as a DuckDuckGo AI Bang URL due to malicious domain.")
+        } else {
+            XCTFail("Failed to create URL from string.")
+        }
+    }
+
+    // MARK: - Voice Mode Tests
+
+    func testIsDuckAIVoiceModeWithVoiceURL() {
+        let url = URL(string: "https://duck.ai?mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithVoiceURLAndOtherParams() {
+        let url = URL(string: "https://duck.ai?q=hello&mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithDuckDuckGoDomain() {
+        let url = URL(string: "https://duckduckgo.com/?ia=chat&mode=voice")!
+        XCTAssertTrue(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithNonVoiceURL() {
+        let url = URL(string: "https://duck.ai")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithDifferentModeValue() {
+        let url = URL(string: "https://duck.ai?mode=chat")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
+    func testIsDuckAIVoiceModeWithNonDuckAIURL() {
+        let url = URL(string: "https://example.com?mode=voice")!
+        XCTAssertFalse(url.isDuckAIVoiceMode)
+    }
+
+    // MARK: - Deep-link Surface Tests (Chat Protection)
+
+    func testIsDuckAIChatProtectionOpen() {
+        XCTAssertTrue(URL(string: "https://duck.ai/?chatProtection=open")!.isDuckAIChatProtectionOpen)
+        XCTAssertTrue(URL(string: "https://alice.duck.ai/?chatProtection=open")!.isDuckAIChatProtectionOpen)
+        XCTAssertFalse(URL(string: "https://duck.ai/?chatProtection=closed")!.isDuckAIChatProtectionOpen)
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckAIChatProtectionOpen)
+    }
+
+    // MARK: - Chat ID Tests
+
+    func testDuckAIChatIDWithValidChatID() {
+        let urlString = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4&chatID=e0328fe7-be35-43e1-9142-92c28e7e9a3b"
+        let url = URL(string: urlString)!
+        XCTAssertEqual(url.duckAIChatID, "e0328fe7-be35-43e1-9142-92c28e7e9a3b")
+    }
+
+    func testDuckAIChatIDWithMissingChatID() {
+        let urlString = "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=4"
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithEmptyChatID() {
+        let urlString = "https://duckduckgo.com/?ia=chat&chatID="
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithNonDuckAIURL() {
+        let urlString = "https://example.com/?chatID=e0328fe7-be35-43e1-9142-92c28e7e9a3b"
+        let url = URL(string: urlString)!
+        XCTAssertNil(url.duckAIChatID)
+    }
+
+    func testDuckAIChatIDWithDuckAIHost() {
+        let urlString = "https://duck.ai/?chatID=abc123"
+        let url = URL(string: urlString)!
+        XCTAssertEqual(url.duckAIChatID, "abc123")
+    }
+
+    // MARK: - DuckDuckGo Homepage Tests
+
+    func testIsDuckDuckGoHomepageBareRoot() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/")!.isDuckDuckGoHomepage)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageWithNonSearchQueryParams() {
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?atb=v1-1")!.isDuckDuckGoHomepage)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?ia=web")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsSERP() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?q=test")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?ia=web&q=test&origin=funnel_home_website__tagline")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsSubPages() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/settings")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/about")!.isDuckDuckGoHomepage)
+    }
+
+    func testIsDuckDuckGoHomepageRejectsNonDDGAndSubdomains() {
+        XCTAssertFalse(URL(string: "https://example.com/")!.isDuckDuckGoHomepage)
+        XCTAssertFalse(URL(string: "https://help.duckduckgo.com/")!.isDuckDuckGoHomepage) // Different subdomain
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckDuckGoHomepage)
+    }
+
+    // MARK: - Homepage Funnel Tests
+
+    /// The URL duckduckgo.com redirects to when its homepage composer hands a prompt to Duck.ai.
+    func testIsDuckAIOpenedFromHomepage() {
+        let url = URL(string: "https://duck.ai/chat?ia=chat&duckai=1&home=1&prompt=1&origin=funnel_home_website&t=h_")!
+        XCTAssertTrue(url.isDuckAIOpenedFromHomepage)
+    }
+
+    func testIsDuckAIOpenedFromHomepageRejectsChatsWithoutTheMarker() {
+        XCTAssertFalse(URL(string: "https://duck.ai/")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/chat?ia=chat")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://duck.ai/chat?ia=chat&origin=other")!.isDuckAIOpenedFromHomepage)
+    }
+
+    /// The marker only means something on a chat; elsewhere it is just a query parameter.
+    func testIsDuckAIOpenedFromHomepageRequiresAChat() {
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?origin=funnel_home_website")!.isDuckAIOpenedFromHomepage)
+        XCTAssertFalse(URL(string: "https://example.com/?origin=funnel_home_website")!.isDuckAIOpenedFromHomepage)
+    }
+
+    // MARK: - AIChatTabMetadata.shouldExcludeFromTabPicker
+
+    func testShouldExcludeFromTabPickerCoversAllThreeRules() {
+        // Homepage — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?ia=web")!))
+        // about:blank — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "about:blank")!))
+        // Duck.ai — excluded
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duck.ai/")!))
+        XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?ia=chat")!))
+    }
+
+    func testShouldExcludeFromTabPickerKeepsAttachableURLs() {
+        // SERP — must remain attachable
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?q=test")!))
+        // Regular site — attachable
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://example.com/article")!))
+        // DDG sub-page — attachable (not the bare homepage)
+        XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/settings")!))
     }
 
 }

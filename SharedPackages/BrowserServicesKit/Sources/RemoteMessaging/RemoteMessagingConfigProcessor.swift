@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
 
 /**
@@ -31,7 +32,8 @@ public protocol RemoteMessagingConfigProcessing {
 
     func process(
         jsonRemoteMessagingConfig: RemoteMessageResponse.JsonRemoteMessagingConfig,
-        currentConfig: RemoteMessagingConfig?
+        currentConfig: RemoteMessagingConfig?,
+        supportedSurfacesForMessage: @escaping (RemoteMessageModelType) -> RemoteMessageSurfaceType
     ) -> RemoteMessagingConfigProcessor.ProcessorResult?
 }
 
@@ -45,7 +47,9 @@ public struct RemoteMessagingConfigProcessor: RemoteMessagingConfigProcessing {
     public let remoteMessagingConfigMatcher: RemoteMessagingConfigMatcher
 
     public func process(jsonRemoteMessagingConfig: RemoteMessageResponse.JsonRemoteMessagingConfig,
-                        currentConfig: RemoteMessagingConfig?) -> ProcessorResult? {
+                        currentConfig: RemoteMessagingConfig?,
+                        supportedSurfacesForMessage: @escaping (RemoteMessageModelType) -> RemoteMessageSurfaceType
+    ) -> ProcessorResult? {
         Logger.remoteMessaging.debug("Processing version \(jsonRemoteMessagingConfig.version, privacy: .public)")
 
         let currentVersion = currentConfig?.version ?? 0
@@ -56,12 +60,17 @@ public struct RemoteMessagingConfigProcessor: RemoteMessagingConfigProcessing {
         if isNewVersion || shouldProcessConfig(currentConfig) {
             let config = JsonToRemoteConfigModelMapper.mapJson(
                 remoteMessagingConfig: jsonRemoteMessagingConfig,
-                surveyActionMapper: remoteMessagingConfigMatcher.surveyActionMapper
+                surveyActionMapper: remoteMessagingConfigMatcher.surveyActionMapper,
+                supportedSurfacesForMessage: supportedSurfacesForMessage
             )
             let message = remoteMessagingConfigMatcher.evaluate(remoteConfig: config)
-            Logger.remoteMessaging.debug("Message to present next: \(message.debugDescription, privacy: .public)")
 
-            return ProcessorResult(version: jsonRemoteMessagingConfig.version, message: message)
+            // Reorder items to place featured item first if needed, otherwise return the same message.
+            let presentableMessage = moveFeaturedItemToFirstPositionIfNeeded(message: message)
+
+            Logger.remoteMessaging.debug("Message to present next: \(presentableMessage.debugDescription, privacy: .public)")
+
+            return ProcessorResult(version: jsonRemoteMessagingConfig.version, message: presentableMessage)
         }
 
         return nil
@@ -74,4 +83,47 @@ public struct RemoteMessagingConfigProcessor: RemoteMessagingConfigProcessing {
 
         return currentConfig.invalidate || currentConfig.expired()
     }
+}
+
+// MARK: - Remote Message More
+
+private extension RemoteMessagingConfigProcessor {
+
+    func moveFeaturedItemToFirstPositionIfNeeded(message: RemoteMessageModel?) -> RemoteMessageModel? {
+
+        func reorderedListItems(_ items: [RemoteMessageModelType.ListItem]) -> [RemoteMessageModelType.ListItem] {
+            // If message does not have a featured item or the featured item appears at the first position return the message unchanged
+            guard
+                let featuredIndex = items.firstIndex(where: \.type.isFeaturedItem),
+                featuredIndex != 0
+            else {
+                return items
+            }
+
+            // Move featured item to first position
+            var reordered = items
+            let featuredItem = reordered.remove(at: featuredIndex)
+            reordered.insert(featuredItem, at: 0)
+            return reordered
+        }
+
+        // Exit early if the message is nil
+        guard let message else { return nil }
+
+        // If message is not a list item return the message unchanged
+        guard let items = message.content?.listItems else {
+            return message
+        }
+
+        // If message is a list item but there are no featured items, return the message unchanged
+        guard items.contains(where: \.type.isFeaturedItem) else {
+            return message
+        }
+
+        // Reorder with featured item first
+        let reorderedItems = reorderedListItems(items)
+
+        return message.withNewItems(reorderedItems)
+    }
+
 }

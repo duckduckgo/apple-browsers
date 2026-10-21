@@ -18,6 +18,8 @@
 
 import Foundation
 import PixelKit
+import Common
+import FoundationExtensions
 
 // A type that send pixels that needs attributions parameters.
 protocol AttributionPixelHandler {
@@ -33,6 +35,7 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
     enum Parameters {
         static let origin = "origin"
         static let locale = "locale"
+        static let freeTrial = "free_trial"
     }
 
     private let fireRequest: FireRequest
@@ -62,9 +65,8 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
             [:],
             self.parameters(additionalParameters, withOrigin: origin, locale: locale.identifier),
             nil,
-            nil,
-            nil,
-            true, { _, _ in }
+            true,
+            { _, _ in }
         )
     }
 }
@@ -90,8 +92,6 @@ extension GenericAttributionPixelHandler {
         _ frequency: PixelKit.Frequency,
         _ headers: [String: String],
         _ parameters: [String: String]?,
-        _ error: Error?,
-        _ namePrefix: String?,
         _ allowedQueryReservedCharacters: CharacterSet?,
         _ includeAppVersionParameter: Bool,
         _ onComplete: @escaping (Bool, Error?) -> Void

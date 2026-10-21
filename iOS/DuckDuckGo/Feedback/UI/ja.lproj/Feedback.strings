@@ -1,0 +1,57 @@
+/* Class = "UIImageView"; accessibilityLabel = "Negative Feedback"; ObjectID = "1RQ-bi-6hU"; */
+"1RQ-bi-6hU.accessibilityLabel" = "否定的なフィードバック";
+
+/* Class = "UIButton"; normalTitle = "Share Feedback"; ObjectID = "7zN-Xh-yYi"; */
+"7zN-Xh-yYi.normalTitle" = "フィードバックを共有する";
+
+/* Class = "UINavigationItem"; title = "Share Feedback"; ObjectID = "46v-cB-2YV"; */
+"46v-cB-2YV.title" = "フィードバックを共有する";
+
+/* Class = "UIButton"; normalTitle = "No Thanks! I’m Done"; ObjectID = "A1s-GY-hbq"; */
+"A1s-GY-hbq.normalTitle" = "いいえ、結構です！完了しました。";
+
+/* Class = "UINavigationItem"; title = "Share Feedback"; ObjectID = "D8A-B7-Dqu"; */
+"D8A-B7-Dqu.title" = "フィードバックを共有する";
+
+/* Class = "UIBarButtonItem"; title = "Back"; ObjectID = "epz-Ta-KQ7"; */
+"epz-Ta-KQ7.title" = "戻る";
+
+/* Class = "UIBarButtonItem"; title = "Back"; ObjectID = "h2M-TW-0QG"; */
+"h2M-TW-0QG.title" = "戻る";
+
+/* Class = "UITextView"; accessibilityHint = "Your feedback."; ObjectID = "iVe-E1-jAH"; */
+"iVe-E1-jAH.accessibilityHint" = "あなたのフィードバック。";
+
+/* Class = "UIBarButtonItem"; title = "Back"; ObjectID = "JF8-Ow-zXL"; */
+"JF8-Ow-zXL.title" = "戻る";
+
+/* Class = "UIButton"; normalTitle = "Submit"; ObjectID = "lsB-Kq-U8p"; */
+"lsB-Kq-U8p.normalTitle" = "送信";
+
+/* Class = "UITableViewController"; title = "Share Feedback"; ObjectID = "lY6-5c-iu4"; */
+"lY6-5c-iu4.title" = "フィードバックを共有する";
+
+/* Class = "UIBarButtonItem"; title = "Back"; ObjectID = "m0a-EJ-h27"; */
+"m0a-EJ-h27.title" = "戻る";
+
+/* Class = "UIButton"; accessibilityLabel = "Negative"; ObjectID = "msl-mT-bMG"; */
+"msl-mT-bMG.accessibilityLabel" = "否定的";
+
+/* Class = "UINavigationItem"; title = "Share Feedback"; ObjectID = "oHj-cX-c6z"; */
+"oHj-cX-c6z.title" = "フィードバックを共有する";
+
+/* Class = "UIViewController"; title = "Share Feedback"; ObjectID = "rAY-cv-mjl"; */
+"rAY-cv-mjl.title" = "フィードバックを共有する";
+
+/* Class = "UIViewController"; title = "Share Feedback"; ObjectID = "Rvx-dM-etJ"; */
+"Rvx-dM-etJ.title" = "フィードバックを共有する";
+
+/* Class = "UITextField"; placeholder = "Which website is broken?"; ObjectID = "TMj-NM-j3b"; */
+"TMj-NM-j3b.placeholder" = "問題のあるウェブサイトはどれですか？";
+
+/* Class = "UINavigationItem"; title = "Share Feedback"; ObjectID = "Xb0-Zu-opM"; */
+"Xb0-Zu-opM.title" = "フィードバックを共有する";
+
+/* Class = "UIButton"; accessibilityLabel = "Positive"; ObjectID = "ze4-T7-OFN"; */
+"ze4-T7-OFN.accessibilityLabel" = "肯定的";
+

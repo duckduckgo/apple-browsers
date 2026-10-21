@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Core
 import Common
+import FoundationExtensions
 import VPN
 import NetworkExtension
 import Network
@@ -40,10 +41,12 @@ struct VPNMetadata: Encodable {
     }
 
     struct NetworkInfo: Encodable {
-        let currentPath: String
+        let currentPath: NetworkProtectionNetworkPathInfo?
         let lastPathChangeDate: String
         let lastPathChange: String
         let secondsSincePathChange: String
+        let deviceAddressCategories: [NetworkProtectionIPAddressCategory]
+        let routerAddressCategories: [NetworkProtectionIPAddressCategory]
     }
 
     struct VPNState: Encodable {
@@ -52,6 +55,18 @@ struct VPNMetadata: Encodable {
         let underlyingErrors: [LastDisconnectError]?
         let connectedServer: String
         let connectedServerIP: String
+        let dataVolume: NetworkProtectionDataVolumeBuckets?
+    }
+
+    struct DNSSettingsState: Encodable {
+        enum Selection: String, Encodable {
+            case duckDuckGo
+            case custom
+        }
+
+        let selection: Selection
+        let blockRiskyDomainsEnabled: Bool?
+        let customDNSServerAddressCategory: NetworkProtectionIPAddressCategory?
     }
 
     struct VPNSettingsState: Encodable {
@@ -59,19 +74,23 @@ struct VPNMetadata: Encodable {
         let includeAllNetworksEnabled: Bool
         let enforceRoutesEnabled: Bool
         let excludeLocalNetworksEnabled: Bool
+        let excludeCGNATEnabled: Bool
         let notifyStatusChangesEnabled: Bool
         let selectedServer: String
         let customDNS: Bool
+        let dnsSettings: DNSSettingsState
     }
 
-    struct PrivacyProInfo: Encodable {
-        let hasPrivacyProAccount: Bool
+    struct SubscriptionInfo: Encodable {
+        /// Whether the app has authenticated subscription account state.
+        let isSubscriptionAuthenticated: Bool
 
-        // nil means unknown
-        let isVPNFeatureIncludedInSubscription: Bool?
+        /// Whether the user's subscription plan/SKU includes VPN, based on cached plan feature data. `nil` means the lookup failed.
+        let subscriptionPlanIncludesVPN: Bool?
 
-        // nil means unknown
-        let isVPNFeatureEnabled: Bool?
+        /// Whether the subscription account's current access token grants VPN access. This does not guarantee VPN can start on this device.
+        /// `nil` means the token entitlement lookup failed.
+        let accountCanUseVPN: Bool?
     }
 
     struct LastDisconnectError: Encodable {
@@ -85,7 +104,7 @@ struct VPNMetadata: Encodable {
     let networkInfo: NetworkInfo
     let vpnState: VPNState
     let vpnSettingsState: VPNSettingsState
-    let privacyProInfo: PrivacyProInfo
+    let subscriptionInfo: SubscriptionInfo
 
     func toPrettyPrintedJSON() -> String? {
         let encoder = JSONEncoder()
@@ -107,17 +126,20 @@ protocol VPNMetadataCollector {
 final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: any SubscriptionManager
     private let settings: VPNSettings
     private let defaults: UserDefaults
+    private let tunnelSessionProvider: TunnelSessionProvider
 
     init(statusObserver: ConnectionStatusObserver,
          serverInfoObserver: ConnectionServerInfoObserver,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+         tunnelSessionProvider: TunnelSessionProvider = VPNMetadataTunnelSessionProvider(),
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          settings: VPNSettings = .init(defaults: .networkProtectionGroupDefaults),
          defaults: UserDefaults = .networkProtectionGroupDefaults) {
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
+        self.tunnelSessionProvider = tunnelSessionProvider
         self.subscriptionManager = subscriptionManager
         self.settings = settings
         self.defaults = defaults
@@ -129,7 +151,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         let networkInfoMetadata = await collectNetworkInformation()
         let vpnState = await collectVPNState()
         let vpnSettingsState = collectVPNSettingsState()
-        let privacyProInfo = await collectPrivacyProInfo()
+        let subscriptionInfo = await collectSubscriptionInfo()
 
         return VPNMetadata(
             appInfo: appInfoMetadata,
@@ -137,7 +159,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             networkInfo: networkInfoMetadata,
             vpnState: vpnState,
             vpnSettingsState: vpnSettingsState,
-            privacyProInfo: privacyProInfo
+            subscriptionInfo: subscriptionInfo
         )
     }
 
@@ -156,7 +178,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     }
 
     private func collectDeviceInfoMetadata() -> VPNMetadata.DeviceInfo {
-        .init(osVersion: AppVersion.shared.osVersion, lowPowerModeEnabled: ProcessInfo.processInfo.isLowPowerModeEnabled)
+        .init(osVersion: AppVersion.shared.osVersionMajorMinorPatch, lowPowerModeEnabled: ProcessInfo.processInfo.isLowPowerModeEnabled)
     }
 
     func collectNetworkInformation() async -> VPNMetadata.NetworkInfo {
@@ -186,35 +208,60 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
                 let path = monitor.currentPath
                 monitor.cancel()
 
-                return .init(currentPath: path.anonymousDescription,
+                return .init(currentPath: path.anonymousPathInfo,
                              lastPathChangeDate: lastPathChangeDate,
                              lastPathChange: lastPathChange,
-                             secondsSincePathChange: secondsSincePathChange)
+                             secondsSincePathChange: secondsSincePathChange,
+                             deviceAddressCategories: NetworkProtectionAddressMetadata.deviceAddressCategories(for: path),
+                             routerAddressCategories: NetworkProtectionAddressMetadata.routerAddressCategories(for: path))
             }
 
             // Wait up to 3 seconds to fetch the path.
             let currentExecutionTime = CFAbsoluteTimeGetCurrent() - startTime
             if currentExecutionTime >= 3.0 {
-                return .init(currentPath: "Timed out fetching path",
+                return .init(currentPath: nil,
                              lastPathChangeDate: lastPathChangeDate,
                              lastPathChange: lastPathChange,
-                             secondsSincePathChange: secondsSincePathChange)
+                             secondsSincePathChange: secondsSincePathChange,
+                             deviceAddressCategories: [.unknown],
+                             routerAddressCategories: [.unknown])
             }
         }
     }
 
     @MainActor
     func collectVPNState() async -> VPNMetadata.VPNState {
-        let connectionState = String(describing: statusObserver.recentValue)
+        let status = statusObserver.recentValue
+        let connectionState = String(describing: status)
         let connectedServer = serverInfoObserver.recentValue.serverLocation?.serverLocation ?? "none"
         let connectedServerIP = serverInfoObserver.recentValue.serverAddress ?? "none"
+        let dataVolume = await collectDataVolumeIfAvailable(for: status)
         let lastDisconnectError = await lastDisconnectError()
 
         return .init(connectionState: connectionState,
                      lastDisconnectError: lastDisconnectError?.error,
                      underlyingErrors: lastDisconnectError?.underlyingErrors,
                      connectedServer: connectedServer,
-                     connectedServerIP: connectedServerIP)
+                     connectedServerIP: connectedServerIP,
+                     dataVolume: dataVolume)
+    }
+
+    private func collectDataVolumeIfAvailable(for status: ConnectionStatus) async -> NetworkProtectionDataVolumeBuckets? {
+        guard status.canReportActiveDataVolume,
+              let activeSession = await tunnelSessionProvider.activeSession(),
+              let data: ExtensionMessageString = try? await activeSession.sendProviderMessage(.getDataVolume) else {
+            return nil
+        }
+
+        let bytes = data.value.components(separatedBy: ",")
+        guard let receivedString = bytes.first,
+              let sentString = bytes.last,
+              let received = Int64(receivedString),
+              let sent = Int64(sentString) else {
+            return nil
+        }
+
+        return NetworkProtectionDataVolumeBuckets(bytesSent: sent, bytesReceived: received)
     }
 
     public func lastDisconnectError() async -> (error: VPNMetadata.LastDisconnectError, underlyingErrors: [VPNMetadata.LastDisconnectError])? {
@@ -240,20 +287,56 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             includeAllNetworksEnabled: settings.includeAllNetworks,
             enforceRoutesEnabled: settings.enforceRoutes,
             excludeLocalNetworksEnabled: settings.excludeLocalNetworks,
+            excludeCGNATEnabled: settings.excludeCGNAT,
             notifyStatusChangesEnabled: settings.notifyStatusChanges,
             selectedServer: settings.selectedServer.stringValue ?? "automatic",
-            customDNS: settings.dnsSettings.usesCustomDNS
+            customDNS: settings.dnsSettings.usesCustomDNS,
+            dnsSettings: collectDNSSettingsState()
         )
     }
 
-    func collectPrivacyProInfo() async -> VPNMetadata.PrivacyProInfo {
-        let isVPNFeatureIncludedInSubscription = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
-        let isVPNFeatureEnabled = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
+    func collectDNSSettingsState() -> VPNMetadata.DNSSettingsState {
+        switch settings.dnsSettings {
+        case .ddg(let blockRiskyDomains):
+            return .init(
+                selection: .duckDuckGo,
+                blockRiskyDomainsEnabled: blockRiskyDomains,
+                customDNSServerAddressCategory: nil
+            )
+        case .custom(let servers):
+            return .init(
+                selection: .custom,
+                blockRiskyDomainsEnabled: nil,
+                customDNSServerAddressCategory: servers.first.map(NetworkProtectionIPAddressClassifier.classify)
+            )
+        }
+    }
+
+    func collectSubscriptionInfo() async -> VPNMetadata.SubscriptionInfo {
+        let subscriptionPlanIncludesVPN = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
+        let accountCanUseVPN = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
 
         return .init(
-            hasPrivacyProAccount: subscriptionManager.isUserAuthenticated,
-            isVPNFeatureIncludedInSubscription: isVPNFeatureIncludedInSubscription,
-            isVPNFeatureEnabled: isVPNFeatureEnabled)
+            isSubscriptionAuthenticated: subscriptionManager.isUserAuthenticated,
+            subscriptionPlanIncludesVPN: subscriptionPlanIncludesVPN,
+            accountCanUseVPN: accountCanUseVPN)
+    }
+}
+
+private final class VPNMetadataTunnelSessionProvider: TunnelSessionProvider {
+    func activeSession() async -> NETunnelProviderSession? {
+        await AppDependencyProvider.shared.networkProtectionTunnelController.activeSession()
+    }
+}
+
+private extension ConnectionStatus {
+    var canReportActiveDataVolume: Bool {
+        switch self {
+        case .connected, .reasserting:
+            return true
+        case .notConfigured, .disconnected, .disconnecting, .connecting, .snoozing:
+            return false
+        }
     }
 }
 

@@ -19,6 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 import PixelKit
+import PreferencesUI_macOS
 
 struct SyncPromoView: View {
 
@@ -54,7 +55,7 @@ struct SyncPromoView: View {
         .background(
             GeometryReader { geometry in
                 Color.clear.onAppear {
-                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
+                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
                     width = geometry.size.width
                 }
                 .onChange(of: geometry.size.width) { newWidth in
@@ -68,7 +69,7 @@ struct SyncPromoView: View {
         HStack {
             Spacer()
             VStack {
-                CloseButton(icon: .close, size: 16) {
+                CloseButton(icon: NSImage(resource: .close), size: 16) {
                     dismissAction()
                 }
                 .padding(6)
@@ -80,11 +81,11 @@ struct SyncPromoView: View {
 
     private var backgroundRectangle: some View {
         RoundedRectangle(cornerRadius: 8)
-            .foregroundColor(isHovering ? Color.black.opacity(0.06) : Color.blackWhite3)
+            .foregroundColor(isHovering ? Color.black.opacity(0.06) : Color(.blackWhite3))
     }
 
     private var image: some View {
-        Image(viewModel.image)
+        Image(nsImage: viewModel.image)
             .resizable()
             .frame(width: 48, height: 48)
     }
@@ -239,12 +240,12 @@ struct SyncPromoView: View {
 
     private func primaryAction() {
         viewModel.primaryButtonAction?()
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
     }
 
     private func dismissAction() {
         viewModel.dismissButtonAction?()
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
+        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
     }
 }
 
@@ -268,7 +269,6 @@ struct SyncPromoView: View {
         .frame(height: 300)
 }
 
-@available(macOS 12.0, *)
 #Preview("Auto") {
     ResizablePreviewView(maxSize: CGSize(width: 500, height: 500),
                          minSize: CGSize(width: 224, height: 80)) {

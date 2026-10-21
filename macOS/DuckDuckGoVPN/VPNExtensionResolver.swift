@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import FeatureFlags
+import PrivacyConfig
+import FeatureFlags_macOS
 import Foundation
 import NetworkProtectionUI
+import VPN
 import VPNAppState
-import VPNExtensionManagement
 
 final class VPNExtensionResolver {
 

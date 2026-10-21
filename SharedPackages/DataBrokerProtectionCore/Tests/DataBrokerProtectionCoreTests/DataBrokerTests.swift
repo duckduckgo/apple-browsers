@@ -25,7 +25,8 @@ final class DataBrokerTests: XCTestCase {
 
     func testInitValidBroker() throws {
         let jsonURL = Bundle.module.url(forResource: "valid-broker", withExtension: "json", subdirectory: "BundleResources")!
-        let broker = try DataBroker.initFromResource(jsonURL)
+        let brokerResource = try DataBroker.initFromResource(jsonURL)
+        let broker = brokerResource.broker
 
         XCTAssertEqual(broker.name, "DDG Fake Broker")
         XCTAssertEqual(broker.url, "fakebroker.com")
@@ -36,9 +37,12 @@ final class DataBrokerTests: XCTestCase {
 
         let scanStep = try broker.scanStep()
         XCTAssertEqual(scanStep.type, .scan)
-        XCTAssertEqual(scanStep.actions.count, 2)
+        XCTAssertEqual(scanStep.actions.count, 4)
         XCTAssertTrue(scanStep.actions[0] is NavigateAction)
-        XCTAssertTrue(scanStep.actions[1] is ExtractAction)
+        XCTAssertTrue(scanStep.actions[1] is ConditionAction)
+        XCTAssertTrue(scanStep.actions[2] is ExtractAction)
+        let executeScriptAction = try XCTUnwrap(scanStep.actions[3] as? ExecuteScriptAction)
+        XCTAssertEqual(executeScriptAction.script, "document.body.dataset.result = 'ok';")
 
         let optOutStep = broker.optOutStep()!
         XCTAssertEqual(optOutStep.type, .optOut)
@@ -46,6 +50,22 @@ final class DataBrokerTests: XCTestCase {
         XCTAssertEqual(optOutStep.actions.count, 4)
 
         XCTAssertFalse(broker.performsOptOutWithinParent())
+    }
+
+    func testInitFromResource_preservesRawBrokerFileBytes() throws {
+        // Given: a bundled broker JSON resource.
+        let jsonURL = try XCTUnwrap(Bundle.module.url(
+            forResource: "valid-broker",
+            withExtension: "json",
+            subdirectory: "BundleResources"
+        ))
+        let expectedRawBytes = try Data(contentsOf: jsonURL)
+
+        // When: loading the broker resource from file.
+        let brokerResource = try DataBroker.initFromResource(jsonURL)
+
+        // Then: raw JSON bytes are preserved for storage/injection paths.
+        XCTAssertEqual(brokerResource.rawJSON, expectedRawBytes)
     }
 
     func testInitInvalidBrokerWithUnsupportedStep() throws {

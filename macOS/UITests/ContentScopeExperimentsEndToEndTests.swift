@@ -20,54 +20,73 @@ import XCTest
 
 final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
+    private var didSetCustomConfiguration = false
+
+    override func tearDownWithError() throws {
+        if didSetCustomConfiguration, let app {
+            app.debugMenu.click()
+            app.debugMenu.menuItems["Remote Configuration"].click()
+            app.debugMenu.menuItems["Reset configuration to default"].firstMatch.click()
+
+            let configUpdateComplete = app.staticTexts["Configuration Update Complete"]
+            XCTAssertTrue(configUpdateComplete.waitForExistence(timeout: UITests.Timeouts.navigation), "Default configuration was not restored")
+            app.typeKey(.return, modifierFlags: [])
+        }
+
+        try super.tearDownWithError()
+    }
+
     func testContentScopeExperiments() throws {
-        // Initial set up
-        super.setUp()
-        UITests.firstRun()
-        let app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp()
         app.openNewTab()
 
-        // Step 1: Load custom remote config
-        let menuBarsQuery = app.menuBars
-        menuBarsQuery.menuBarItems["Debug"].click()
-        menuBarsQuery.menuItems["Remote Configuration"].click()
-        menuBarsQuery.menuItems["setCustomConfigurationURL:"].click()
+        // Step 1: Enable internal user if needed
+        app.debugMenu.click()
+        let searchField = app.searchFields["Search debug menu..."]
+        searchField.click()
+        searchField.typeText("internal")
+        let internalUserMenuItem = app.menuItems["Set Internal User State"]
+        if internalUserMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            internalUserMenuItem.click()
+            app.debugMenu.click()
+        }
+        let activeSearchField = app.searchFields["Search debug menu..."]
+        activeSearchField.click()
+        activeSearchField.typeKey("a", modifierFlags: .command)
+        activeSearchField.typeKey(.delete, modifierFlags: [])
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Step 2: Load custom remote config
+        app.debugMenu.click()
+        app.debugMenu.menuItems["Remote Configuration"].click()
+        app.debugMenu.menuItems["Set custom configuration URL…"].click()
 
         let configURL = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json")!
         let textField = app.dialogs["alert"].children(matching: .textField).element
-        XCTAssertTrue(textField.waitForExistence(timeout: 3), "Custom config alert did not appear.")
+        XCTAssertTrue(textField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Custom config alert did not appear.")
         textField.typeURL(configURL, pressingEnter: false)
         app.typeKey(.return, modifierFlags: [])
+        didSetCustomConfiguration = true
+        let configUpdateComplete = app.staticTexts["Configuration Update Complete"]
+        XCTAssertTrue(configUpdateComplete.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Custom config alert did not appear.")
+        app.typeKey(.return, modifierFlags: [])
 
-        // Step 2: Load test page
+        // Step 3: Load test page
         let testPageUrl = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/pages/conditional-matching-experiments.html")!
-        let addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
         XCTAssertTrue(
-            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(testPageUrl)
+        app.typeURL(testPageUrl)
         XCTAssertTrue(
-            app.windows.firstMatch.webViews["Conditional Matching experiments"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.firstMatch.webViews["Conditional Matching experiments"].waitForExistence(timeout: UITests.Timeouts.navigation),
             "Test page didn't load with the expected title in a reasonable timeframe."
         )
 
-        // Step 3: Check test passes
-        let tableRow = app.windows["Conditional Matching experiments"]
-            .webViews["Conditional Matching experiments"]
-            .tables.children(matching: .tableRow).element(boundBy: 2)
-
-        let firstCell = tableRow.children(matching: .cell).element(boundBy: 1).staticTexts.element
-        let secondCell = tableRow.children(matching: .cell).element(boundBy: 2).staticTexts.element
-
-        let existsPredicate = NSPredicate(format: "exists == true")
-
-        expectation(for: existsPredicate, evaluatedWith: firstCell, handler: nil)
-        expectation(for: existsPredicate, evaluatedWith: secondCell, handler: nil)
-
-        waitForExpectations(timeout: 5, handler: nil)
-
-        XCTAssertEqual(firstCell.label, secondCell.label, "The two numbers do not match.")
+        // Step 4: Check test passes
+        let webView = app.windows.firstMatch.webViews["Conditional Matching experiments"]
+        let suiteStatusValue = webView.descendants(matching: .any)["pass"]
+        XCTAssertTrue(suiteStatusValue.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Test suite status should be pass")
     }
 
 }

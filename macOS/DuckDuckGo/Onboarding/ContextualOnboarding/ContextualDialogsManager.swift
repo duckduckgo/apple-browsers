@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Combine
 import PrivacyDashboard
 
 /// Represents the current state of onboarding.
@@ -34,6 +35,7 @@ enum ContextualDialogType: Equatable {
     case trackers(message: NSAttributedString, shouldFollowUp: Bool)
     case tryFireButton
     case highFive
+    case subscriptionUpsell
 }
 
 /// Protocol for providing the appropriate dialog type based on a Tab.
@@ -51,6 +53,7 @@ protocol ContextualOnboardingDialogTypeProviding {
 /// Protocol to update the onboarding state (e.g., when the user uses the fire button or the feature is turned off).
 protocol ContextualOnboardingStateUpdater: AnyObject {
     var state: ContextualOnboardingState { get set }
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { get }
     func gotItPressed()
     func fireButtonUsed()
     func turnOffFeature()
@@ -87,16 +90,22 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
 }
 
 /// Main manager responsible for deciding which onboarding dialog to display based on the current state and tab.
-public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
+public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
 
     private let trackerMessageProvider: TrackerMessageProviding
+    private let subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling
     private var stateStorage: ContextualOnboardingStateStoring
+    private let isNonBlocking: () -> Bool
 
     // The last dialog that was presented.
     var lastDialog: ContextualDialogType?
 
     // The last tab for which a dialog was provided.
     private weak var lastTab: Tab?
+
+    // Publisher for contextual onboarding completion
+    @Published private(set) var isContextualOnboardingCompleted: Bool
+    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
 
     // Computed property for managing state.
     var state: ContextualOnboardingState {
@@ -106,6 +115,13 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
         set {
             // Update persistent state.
             stateStorage.stateString = newValue.rawValue
+
+            // Publish completion status
+            let isCompleted = newValue == .onboardingCompleted
+            if isContextualOnboardingCompleted != isCompleted {
+                isContextualOnboardingCompleted = isCompleted
+            }
+
             // If onboarding is restarted, clear all stored dialogs and flags.
             if state == ContextualOnboardingState.notStarted {
                 stateStorage.contextualDialogsSeen = []
@@ -115,13 +131,22 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
         }
     }
 
-    init(trackerMessageProvider: TrackerMessageProviding, stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
+    init(trackerMessageProvider: TrackerMessageProviding,
+         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
+         isNonBlocking: @escaping () -> Bool = { false }) {
+        self.isNonBlocking = isNonBlocking
         self.trackerMessageProvider = trackerMessageProvider
+        self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
         self.stateStorage = stateStorage
+        self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
     }
 
     // Returns the last dialog shown if it was shown for the given tab.
     func lastDialogForTab(_ tab: Tab) -> ContextualDialogType? {
+        if isNonBlocking(), case .onboarding = tab.content { return nil }
+        if isNonBlocking(), state == .onboardingCompleted { return nil }
+        if isNonBlocking(), lastDialog == .tryASearch, !canShowSearchPrompt(in: tab) { return nil }
         // If the provided tab is the same as the last tab we processed, return the stored last dialog.
         if tab == lastTab {
             return lastDialog
@@ -131,6 +156,7 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
 
     // Called when the user taps the "Got It" button present on some dialogs.
     public func gotItPressed() {
+        if isNonBlocking(), state == .onboardingCompleted { return }
         // Update state based on the type of dialog that was last shown.
         switch lastDialog {
         case .searchDone(shouldFollowUp: true)?:
@@ -141,13 +167,36 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
             // When user press got it "trackers" dialog it will automatically show "tryFireButton" therefore we mark it as seen and as lastDialog
             markSeen(.tryFireButton)
             lastDialog = .tryFireButton
+        case .tryFireButton?:
+            // When user skips the "tryFireButton" dialog it will automatically show "highFive" therefore we mark it as seen and as lastDialog
+            lastDialog = .highFive
+            enteredHighFive()
         case .highFive?:
-            // If highFive dialog, complete onboarding.
+            advancePastHighFive()
+        case .subscriptionUpsell?:
             state = .onboardingCompleted
             lastDialog = nil
         default:
             break
         }
+    }
+
+    // Enrol on entering highFive, not on leaving it, so every exit resolves against the same cohort.
+    private func enteredHighFive() {
+        if !hasSeen(.highFive) {
+            markSeen(.highFive)
+        }
+        subscriptionUpsellExperiment.enroll()
+    }
+
+    private func advancePastHighFive() {
+        guard subscriptionUpsellExperiment.cohort == .treatment else {
+            state = .onboardingCompleted
+            lastDialog = nil
+            return
+        }
+        markSeen(.subscriptionUpsell)
+        lastDialog = .subscriptionUpsell
     }
 
     // Called when the user uses the fire button
@@ -157,18 +206,36 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
 
     // Called to turn off the contextual onboarding.
     func turnOffFeature() {
+        if isNonBlocking() {
+            lastDialog = nil
+            lastTab = nil
+        }
         state = .onboardingCompleted
     }
 
     // Determines and returns which dialog should be shown for a given tab and privacy info.
     func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo? = nil) -> ContextualDialogType? {
+        // No contextual transition or presentation belongs on the first-run onboarding page.
+        if isNonBlocking(), case .onboarding = tab.content { return nil }
         // If onboarding is complete, return nil.
         guard state != .onboardingCompleted else { return nil }
         // If onboarding hasn't started, mark it as ongoing.
         if state == .notStarted { state = .ongoing }
-        // If a highFive has already been seen, conclude onboarding (it's just for extra safety).
-        if hasSeen(.highFive) {
+        // The upsell shows once. The persisted marker also prevents it returning after relaunch.
+        if hasSeen(.subscriptionUpsell) {
             state = .onboardingCompleted
+            lastDialog = nil
+            return nil
+        }
+        // Browsing on is the third way out of highFive, so it takes the same transition.
+        if hasSeen(.highFive) {
+            advancePastHighFive()
+
+            if lastDialog == .subscriptionUpsell {
+                lastTab = tab
+                return .subscriptionUpsell
+            }
+
             return nil
         }
 
@@ -178,8 +245,9 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
         case .newtab:
             selectedDialog = dialogForNewTab()
         case .url(let url, _, _):
-            // Check if the URL is a DuckDuckGo search.
-            if url.isDuckDuckGoSearch {
+            if isNonBlocking(), !hasSeen(.tryASearch), canShowSearchPrompt(in: tab) {
+                selectedDialog = .tryASearch
+            } else if url.isDuckDuckGoSearch {
                 selectedDialog = dialogForDuckDuckGoSearch()
             } else {
                 // For website visit, decide dialog also based on the tracker type.
@@ -190,10 +258,6 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
             selectedDialog = nil
         }
 
-        // If highFive is the selected dialog, end onboarding.
-        if let dialog = selectedDialog, dialog == .highFive {
-            state = .onboardingCompleted
-        }
         // Mark the dialog as seen.
         if let dialog = selectedDialog { markSeen(dialog) }
 
@@ -201,10 +265,23 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
         lastDialog = selectedDialog
         lastTab = tab
 
+        if selectedDialog == .highFive { enteredHighFive() }
+
         return selectedDialog
     }
 
     // MARK: - Helpers
+
+    private func canShowSearchPrompt(in tab: Tab) -> Bool {
+        switch tab.content {
+        case .newtab:
+            return true
+        case .url(let url, _, _):
+            return url.host?.lowercased() == "duckduckgo.com" || url.host?.lowercased() == "www.duckduckgo.com"
+        default:
+            return false
+        }
+    }
 
     // Determines the dialog for a new tab.
     private func dialogForNewTab() -> ContextualDialogType? {
@@ -249,8 +326,8 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
 
     // Determines the dialog for a website visit based on tracker type and privacy info.
     private func dialogForRegularUrl(trackerType: OnboardingTrackersType?, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
-        // If "tryASearch" hasn't been seen, show it.
-        if !hasSeen(.tryASearch) { return .tryASearch }
+        // The blocking flow also introduces search on other websites.
+        if !isNonBlocking(), !hasSeen(.tryASearch) { return .tryASearch }
         // If a blocked tracker dialog (specific tracker dialog where trackers were blocked) was not shown
         if !stateStorage.blockedTrackerSeen {
             // If the tracker type is blocked, mark it and show a tracker dialog.
@@ -313,6 +390,8 @@ extension ContextualDialogType {
             return "tryFireButton"
         case .highFive:
             return "highFive"
+        case .subscriptionUpsell:
+            return "subscriptionUpsell"
         }
     }
 

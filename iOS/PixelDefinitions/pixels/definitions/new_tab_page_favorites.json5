@@ -1,0 +1,43 @@
+// New Tab Page favorites grid.
+{
+    "new-tab-page_favorites_reorder": {
+        "description": "Fires when the user finishes a drag gesture that reordered the favorites grid on the New Tab Page.",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "new-tab-page_favorites_expansion_changed": {
+        "description": "Fires when the user expands or collapses the favorites on the redesigned New Tab Page with See all, See less or the collapse button.",
+        "owners": ["dus7"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "expanded",
+                "description": "Whether the favorites are expanded after the change: true or false",
+                "type": "boolean"
+            },
+            {
+                "key": "is_autocomplete",
+                "description": "Whether the favorites were shown in the autocomplete area under the search input rather than on the New Tab Page: true or false",
+                "type": "boolean"
+            }
+        ]
+    },
+    "new-tab-page_add_favorite_opened": {
+        "description": "Fires when the Add Favorite sheet is opened from the redesigned New Tab Page.",
+        "owners": ["dus7"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "new-tab-page_add_favorite_saved": {
+        "description": "Fires when the user saves a new favorite from the Add Favorite sheet on the redesigned New Tab Page.",
+        "owners": ["dus7"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

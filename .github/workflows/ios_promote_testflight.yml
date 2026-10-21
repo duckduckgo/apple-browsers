@@ -5,15 +5,20 @@ defaults:
     working-directory: iOS
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      freeze-release:
+        description: "Freeze the release branch"
+        type: boolean
+        default: true
 
 jobs:
   promote-testflight-to-appstore:
-    runs-on: macos-15
+    runs-on: [image:osx-tahoe-27, m4pro]
 
     steps:
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ github.ref_name }}
         sparse-checkout: |
@@ -22,6 +27,9 @@ jobs:
           iOS/Gemfile.lock
           iOS/fastlane
           iOS/scripts
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -38,3 +46,10 @@ jobs:
         git config --global user.name "Dax the Duck"
         git config --global user.email "dax@duckduckgo.com"
         bundle exec fastlane promote_latest_testflight_to_appstore
+
+    - name: Freeze the release branch
+      if: ${{ github.event.inputs.freeze-release == 'true' }}
+      run: |
+        bundle exec fastlane run freeze_release_branch \
+          platform:ios \
+          github_token:"${{ secrets.GITHUB_TOKEN }}"

@@ -17,40 +17,85 @@
 //
 
 import Foundation
+import Networking
 @testable import Subscription
 
 /// Provides all mocks needed for testing subscription initialised with positive outcomes and basic configurations. All mocks can be partially reconfigured with failures or incorrect data
 public struct SubscriptionMockFactory {
 
-    public static let appleSubscription = PrivacyProSubscription(productId: UUID().uuidString,
+    public static let appleSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                   name: "Subscription test #1",
                                                   billingPeriod: .monthly,
                                                   startedAt: Date(),
                                                   expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(+30)),
                                                   platform: .apple,
                                                   status: .autoRenewable,
-                                                  activeOffers: [])
-    public static let expiredSubscription = PrivacyProSubscription(productId: UUID().uuidString,
+                                                  activeOffers: [],
+                                                  tier: nil,
+                                                  availableChanges: nil,
+                                                  pendingPlans: nil)
+    public static let expiredSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                          name: "Subscription test #2",
                                                          billingPeriod: .monthly,
                                                          startedAt: Date().addingTimeInterval(TimeInterval.days(-31)),
                                                          expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(-1)),
                                                          platform: .apple,
                                                          status: .expired,
-                                                         activeOffers: [])
+                                                         activeOffers: [],
+                                                         tier: nil,
+                                                         availableChanges: nil,
+                                                         pendingPlans: nil)
 
-    public static let expiredStripeSubscription = PrivacyProSubscription(productId: UUID().uuidString,
+    public static let expiredStripeSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                          name: "Subscription test #2",
                                                          billingPeriod: .monthly,
                                                          startedAt: Date().addingTimeInterval(TimeInterval.days(-31)),
                                                          expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(-1)),
                                                          platform: .stripe,
                                                          status: .expired,
-                                                         activeOffers: [])
+                                                         activeOffers: [],
+                                                         tier: nil,
+                                                         availableChanges: nil,
+                                                         pendingPlans: nil)
 
-    public static let productsItems: [GetProductsItem] = [GetProductsItem(productId: appleSubscription.productId,
-                                                                          productLabel: appleSubscription.name,
-                                                                          billingPeriod: appleSubscription.billingPeriod.rawValue,
-                                                                          price: "0.99",
-                                                                          currency: "USD")]
+    public static let tierProductsResponse = GetTierProductsResponse(products: [
+        TierProduct(
+            productName: "Plus Subscription",
+            tier: .plus,
+            regions: ["us", "row"],
+            entitlements: [
+                TierFeature(product: .networkProtection, name: .plus),
+                TierFeature(product: .dataBrokerProtection, name: .plus),
+                TierFeature(product: .identityTheftRestoration, name: .plus),
+                TierFeature(product: .paidAIChat, name: .plus)
+            ],
+            billingCycles: [
+                BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD"),
+                BillingCycle(productId: "yearly-plus", period: "Yearly", price: "99.99", currency: "USD")
+            ]
+        )
+    ])
+
+    public static func subscription(
+        status: DuckDuckGoSubscription.Status,
+        platform: DuckDuckGoSubscription.Platform = .apple,
+        activeOffers: [DuckDuckGoSubscription.Offer] = [],
+        tier: TierName? = nil,
+        availableChanges: DuckDuckGoSubscription.AvailableChanges? = nil,
+        pendingPlans: [DuckDuckGoSubscription.PendingPlan]? = nil
+    ) -> DuckDuckGoSubscription {
+        DuckDuckGoSubscription(
+            productId: UUID().uuidString,
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(+30)),
+            platform: platform,
+            status: status,
+            activeOffers: activeOffers,
+            tier: tier,
+            availableChanges: availableChanges,
+            pendingPlans: pendingPlans
+        )
+    }
 }

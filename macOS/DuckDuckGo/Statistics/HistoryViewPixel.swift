@@ -32,7 +32,7 @@ import PixelKit
  * Anomaly Investigation:
  * - Unless otherwise specified, anomaly in all the pixels will be related to an increase/drop in app use.
  */
-enum HistoryViewPixel: PixelKitEventV2 {
+enum HistoryViewPixel: PixelKit.Event {
 
     // MARK: - Permanent Pixels
 
@@ -83,14 +83,16 @@ enum HistoryViewPixel: PixelKitEventV2 {
     enum FilterKind: String {
         case range, searchTerm = "search-term", domain
 
-        init(_ queryKind: DataModel.HistoryQueryKind) {
+        init?(_ queryKind: DataModel.HistoryQueryKind) {
             switch queryKind {
-            case .rangeFilter:
+            case .rangeFilter, .dateFilter:
                 self = .range
             case .domainFilter:
                 self = .domain
             case .searchTerm:
                 self = .searchTerm
+            case .visits:
+                return nil
             }
         }
     }
@@ -100,14 +102,16 @@ enum HistoryViewPixel: PixelKitEventV2 {
 
         init(_ queryKind: DataModel.HistoryQueryKind) {
             switch queryKind {
-            case .rangeFilter(.all):
+            case .rangeFilter(.all), .rangeFilter(.allSites):
                 self = .all
-            case .rangeFilter:
+            case .rangeFilter, .dateFilter:
                 self = .range
             case .domainFilter:
                 self = .domain
             case .searchTerm:
                 self = .searchTerm
+            case .visits:
+                self = .multiSelect
             }
         }
     }
@@ -160,14 +164,24 @@ enum HistoryViewPixel: PixelKitEventV2 {
         }
     }
 
-    var error: (any Error)? {
-        nil
-    }
-
     enum Parameters {
         static let filter = "filter"
         static let type = "type"
         static let message = "message"
         static let source = "source"
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .historyPageShown,
+                .filterSet,
+                .filterCleared,
+                .itemOpened,
+                .delete,
+                .singleItemDeleted,
+                .multipleItemsDeleted,
+                .historyPageExceptionReported:
+            return [.pixelSource]
+        }
     }
 }

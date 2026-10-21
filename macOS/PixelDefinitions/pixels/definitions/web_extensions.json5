@@ -1,0 +1,677 @@
+{
+    "web_extension_cpm_network_process_recovery_applied": {
+        "description": "Fires after restarting the embedded CPM background because its Network process PID changed. Measures application of the mitigation, not confirmed messaging recovery. Daily counts affected installations; count counts applications. No URL, process ID or extension identifier is sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_installed": {
+        "description": "Fires when a web extension is successfully installed.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
+    },
+    "m_mac_web_extension_install_error": {
+        "description": "Fires when a web extension installation fails.",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            "channel",
+            "web_extension"
+        ]
+    },
+    "m_mac_web_extension_uninstalled": {
+        "description": "Fires when a web extension is successfully uninstalled.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "web_extension"]
+    },
+    "m_mac_web_extension_uninstall_error": {
+        "description": "Fires when a web extension uninstallation fails.",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_uninstalled_all": {
+        "description": "Fires when all web extensions are successfully uninstalled.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_uninstall_all_error": {
+        "description": "Fires when uninstalling all web extensions fails (at least one extension failed to uninstall).",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_loaded": {
+        "description": "Fires during app startup when installed web extensions are successfully loaded.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_load_error": {
+        "description": "Fires during app startup when loading installed web extensions fails (at least one extension failed to load).",
+        "owners": ["tomasstrba"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_embedded_installed": {
+        "description": "Fires when the embedded (bundled) web extension is successfully installed for the first time.",
+        "owners": ["tomasstrba", "miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_embedded_upgraded": {
+        "description": "Fires when the embedded (bundled) web extension is upgraded to a newer version.",
+        "owners": ["tomasstrba", "miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the embedded extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the embedded extension after upgrade"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_embedded_install_error": {
+        "description": "Fires when installing or upgrading the embedded (bundled) web extension fails.",
+        "owners": ["tomasstrba", "miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_dark_reader_installed": {
+        "description": "Fires when the Dark Reader web extension is successfully installed for the first time.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_dark_reader_upgraded": {
+        "description": "Fires when the Dark Reader web extension is upgraded to a newer version.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the Dark Reader extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the Dark Reader extension after upgrade"
+            }
+        ]
+    },
+    "m_mac_web_extension_dark_reader_install_error": {
+        "description": "Fires when installing or upgrading the Dark Reader web extension fails.",
+        "owners": ["ayoy"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_dark_reader_enabled": {
+        "description": "Fires when the user enables force dark mode on websites.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_dark_reader_disabled": {
+        "description": "Fires when the user disables force dark mode on websites.",
+        "owners": ["ayoy"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_web_extension_ad_blocking_installed": {
+        "description": "Fires when the ad blocking web extension is successfully installed for the first time.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_upgraded": {
+        "description": "Fires when the ad blocking web extension is upgraded to a newer version.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from_version",
+                "type": "string",
+                "description": "The previous version of the ad blocking extension before upgrade"
+            },
+            {
+                "key": "to_version",
+                "type": "string",
+                "description": "The new version of the ad blocking extension after upgrade"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_ad_blocking_install_error": {
+        "description": "Fires when installing or upgrading the ad blocking web extension fails.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "m_mac_web_extension_ad_blocking_enabled": {
+        "description": "Fires when the user enables YouTube ad blocking in settings.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_disabled": {
+        "description": "Fires when the user disables YouTube ad blocking in settings.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_addressbar_active_clicked": {
+        "description": "Fires when the user clicks the YouTube Ad Block address-bar button while ad blocking is active (feature available, user opted in, no session override).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_addressbar_inactive_clicked": {
+        "description": "Fires when the user clicks the YouTube Ad Block address-bar button while ad blocking is inactive (user disabled, disabled until relaunch, or remotely disabled).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_popover_always_on": {
+        "description": "Fires when the user selects 'Always On' in the YouTube Ad Block popover dropdown.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_popover_always_off": {
+        "description": "Fires when the user selects 'Always Off' in the YouTube Ad Block popover dropdown, persistently disabling ad blocking.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_popover_disable_until_relaunch": {
+        "description": "Fires when the user selects 'Disable Until Relaunch' in the YouTube Ad Block popover dropdown. The selection suppresses ad blocking for the current app session only and is not persisted to storage.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_breakage_report_entered": {
+        "description": "Fires when the user clicks 'Report' on the breakage report banner shown inside the YouTube Ad Block popover after disabling ad blocking.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_scriptlet_fetch_success": {
+        "description": "Fires when scriptlets are successfully fetched from the server and saved to cache.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets belong to (e.g. com.duckduckgo.content-blocker-extension)"
+            },
+            {
+                "key": "version",
+                "type": "string",
+                "description": "The version of the fetched scriptlets"
+            },
+            {
+                "key": "count",
+                "type": "string",
+                "description": "The number of scriptlet files fetched"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_scriptlet_fetch_error": {
+        "description": "Fires when fetching or saving scriptlets fails (network error, empty response, storage failure).",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets belong to"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_scriptlet_validation_error": {
+        "description": "Fires when scriptlet signature validation fails in production, blocking the update.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets belong to"
+            }
+        ]
+    },
+    "m_mac_web_extension_scriptlet_installed": {
+        "description": "Fires when scriptlets are successfully installed into a web extension directory.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets were installed for"
+            },
+            {
+                "key": "version",
+                "type": "string",
+                "description": "The version of the installed scriptlets"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_scriptlet_install_error": {
+        "description": "Fires when installing scriptlets into a web extension directory fails.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "extension_type",
+                "type": "string",
+                "description": "The web extension type the scriptlets were being installed for"
+            },
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_daily_ad_blocking_state": {
+        "description": "Fires once daily to report whether YouTube ad blocking is currently enabled (feature flag on and user opted in).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "is_enabled",
+                "type": "string",
+                "description": "Whether ad blocking is currently enabled (true/false)"
+            },
+            {
+                "key": "analytics_enabled",
+                "type": "string",
+                "description": "Whether the user opted in to anonymous breakage reports for YouTube ad blocking (true/false)"
+            },
+            "channel"
+        ]
+    },
+    "web_extension_bitwarden_dau_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation, when the Bitwarden extension from the Chrome Web Store is loaded, reporting whether it is the default password manager.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "is_default",
+                "type": "boolean",
+                "description": "Whether Bitwarden is the default password manager, so DuckDuckGo leaves passwords to it"
+            },
+            "channel"
+        ]
+    },
+    "web_extension_default_password_manager_set_macos": {
+        "description": "Fires when an extension turns off the browser's password saving through chrome.privacy, which makes it the default password manager.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_api_gaps_bitwarden_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the Bitwarden extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "web_extension_api_gaps_onepassword_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the 1Password extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "web_extension_api_gaps_lastpass_macos": {
+        "description": "Fires once a day, on the first tab switch or page navigation after the app has run for an hour, while the LastPass extension from the Chrome Web Store is loaded. Reports its version and how many distinct missing Chrome APIs it used and Chrome pages it tried to open since launch.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["user_interaction", "page_load"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension_version",
+            "web_extension_missing_api_count",
+            "web_extension_unsupported_url_count",
+            "channel"
+        ]
+    },
+    "m_mac_web_extension_state_checked_macos": {
+        "description": "Fires on each web-extension consistency check (denominator for the not-loaded rate).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_embedded_not_loaded_macos": {
+        "description": "Fires when the embedded (autoconsent) extension is enabled but not loaded into the controller.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_dark_reader_not_loaded_macos": {
+        "description": "Fires when the Dark Reader extension is enabled but not loaded into the controller.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_not_loaded_macos": {
+        "description": "Fires when the ad-blocking extension is enabled but not loaded into the controller.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_web_extension_ad_blocking_scriptlets_not_fetched_macos": {
+        "description": "Fires when the ad-blocking extension is expected but its scriptlets have not been fetched.",
+        "owners": ["miasma13"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_standard"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "extension_loaded",
+                "type": "boolean",
+                "description": "Whether the ad-blocking extension itself was loaded (true) or also missing (false)."
+            }
+        ]
+    },
+    "debug_web_extension_reload_failed": {
+        "description": "Fires when unloading or loading a web extension context fails during a reload. Parameters distinguish the reload trigger, failed phase, extension type, and original/underlying error domains and codes.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "web_extension_type",
+            "web_extension_reload_trigger",
+            "web_extension_reload_phase",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
+    },
+    "web_extension_cpm_install_readiness": {
+        "description": "CPM install readiness fix observation. Background-ready means a successful public WebKit callback after a slow load (or any error-6 retry), not a document ACK. Reload-started counts one accepted GET document reload after a known unfinished startup and missing dashboard response; response-received counts an unambiguously attributed dashboard response after that reload, not an initResp ACK. No URLs, tab IDs, field values or raw errors are sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": ["background_ready"],
+                "description": "Observed stage; background readiness and reload acceptance do not imply response delivery."
+            }
+        ]
+    },
+    "web_extension_cpm_upgrade_readiness": {
+        "description": "CPM upgrade readiness fix observation. Background-ready means a successful public WebKit callback after a slow load (or any error-6 retry), not a document ACK. Reload-started counts one accepted GET document reload after a known unfinished startup and missing dashboard response; response-received counts an unambiguously attributed dashboard response after that reload, not an initResp ACK. No URLs, tab IDs, field values or raw errors are sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": ["background_ready"],
+                "description": "Observed stage; background readiness and reload acceptance do not imply response delivery."
+            }
+        ]
+    },
+    "web_extension_cpm_background_wake": {
+        "description": "CPM background wake fix observation. Background-ready means a successful public WebKit callback after a slow load (or any error-6 retry), not a document ACK. Reload-started counts one accepted GET document reload after a known unfinished startup and missing dashboard response; response-received counts an unambiguously attributed dashboard response after that reload, not an initResp ACK. No URLs, tab IDs, field values or raw errors are sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": ["background_ready"],
+                "description": "Observed stage; background readiness and reload acceptance do not imply response delivery."
+            }
+        ]
+    },
+    "web_extension_cpm_background_load_retry": {
+        "description": "CPM background load retry fix observation. Background-ready means a successful public WebKit callback after a slow load (or any error-6 retry), not a document ACK. Reload-started counts one accepted GET document reload after a known unfinished startup and missing dashboard response; response-received counts an unambiguously attributed dashboard response after that reload, not an initResp ACK. No URLs, tab IDs, field values or raw errors are sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": ["background_ready"],
+                "description": "Observed stage; background readiness and reload acceptance do not imply response delivery."
+            }
+        ]
+    },
+    "web_extension_cpm_startup_response_missing": {
+        "description": "A document committed during the first monitored background startup for its embedded extension context timed out waiting for a CPM dashboard response, despite that startup succeeding within 30 seconds. Recorded once per document, independently of the late-document recovery flag and GET/form reload eligibility. Ordinary idle wakes and failed background startups are excluded. This is a P4 candidate signature, not proof of a lost initResp or its root cause. Daily estimates affected installations per day; count measures detected documents. No URL, tab ID, field value or raw error is sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "web_extension_cpm_late_document_reload": {
+        "description": "CPM late document reload fix observation. Background-ready means a successful public WebKit callback after a slow load (or any error-6 retry), not a document ACK. Reload-started counts one accepted GET document reload after a known unfinished startup and missing dashboard response; response-received counts an unambiguously attributed dashboard response after that reload, not an initResp ACK. No URLs, tab IDs, field values or raw errors are sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": ["reload_started", "response_received"],
+                "description": "Observed stage; background readiness and reload acceptance do not imply response delivery."
+            }
+        ]
+    },
+    "web_extension_cpm_episode": {
+        "description": "One terminal CPM failure-episode report: a qualifying dashboard response or the five-minute observation deadline. Time while the app is suspended (iOS background, macOS sleep) does not count: waits and the deadline stop, pending waits restart in full on resume (8 s for a response wait, 30 s for an extension-load wait), and the deadline keeps at least 30 s after resume. First failure and later stuck/reload transitions emit nothing. Response attribution does not prove initResp delivery or recovery of every failed tab. No response by the deadline is not proof of permanent failure. Unfinished in-memory episodes may be lost on process termination. Includes allowlisted first-failure facts, background readiness/view age and conditional attributed error-6 timing/app state, and the existing bounded bg_events timeline, which may contain error descriptors; no tab/document identifiers, diagnostic counts or app/memory ages. Load facts are frozen at the first failure: pending can later fail, and errors observed later are not included. One logical report uses dailyAndCount: the first completed episode of the day sends the same summary in daily and count requests; subsequent episodes send count only. Daily estimates affected installations per day; count measures completed episodes.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle", "exception"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "type": "string",
+                "enum": ["session_restoration", "tab_crash", "extension_reload", "other"],
+                "description": "Navigation context of the first timeout in this episode."
+            },
+            {
+                "key": "was_stuck",
+                "type": "boolean",
+                "description": "Whether, after the first failure, a regular (non-restoration) navigation also timed out in a different tab than the one that opened the episode. Repeated timeouts in the same tab do not set it, although they still trigger the recovery reload. False does not distinguish a transient or page-specific failure from a persistent one in a single-tab session; reload_state helps to tell them apart. True does not prove all tabs failed."
+            },
+            {
+                "key": "tabs_affected",
+                "type": "string",
+                "enum": ["1", "2", "3+"],
+                "description": "Distinct tabs that timed out during the episode, including concurrent and restoration timeouts. One does not prove other tabs healthy. No tab identifiers are sent."
+            },
+            {
+                "key": "repeat_failures",
+                "type": "string",
+                "enum": ["0", "1", "2+"],
+                "description": "Timeouts beyond the first in tabs that had already timed out during the episode. Repeats in one tab confirm the hang and start the recovery reload without making was_stuck true."
+            },
+            {
+                "key": "interrupted",
+                "type": "boolean",
+                "description": "Whether the measurement that opened the episode waited across an app suspension (iOS background, macOS sleep), so its wait was restarted on resume."
+            },
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": [
+                    "failed_measurement_response",
+                    "failed_tab_response",
+                    "other_tab_response",
+                    "unattributed_response",
+                    "no_response_before_deadline"
+                ],
+                "description": "Dashboard response on the timed-out measurement, a later measurement on a failed tab, another tab, an ambiguous current-document match, or no qualifying response by the deadline. No document-level ACK is implied."
+            },
+            {
+                "key": "reload_state",
+                "type": "string",
+                "enum": ["none", "pending", "failed", "loaded", "response_timed_out"],
+                "description": "Latest embedded-extension reload evidence during the episode: no reload observed, replacement in progress, context replacement failed, replacement loaded, or its first eligible CPM measurement timed out. Loaded alone does not mean messaging recovered."
+            },
+            {
+                "key": "response_after",
+                "type": "string",
+                "enum": ["under_30s", "30s_to_1m", "1m_to_deadline"],
+                "description": "Elapsed time from first failure to qualifying dashboard response: under 30 seconds, 30 to under 60 seconds, or at least 60 seconds before the deadline. Measured on the monitor's own time, which excludes time the app was suspended. Omitted when no response was observed."
+            },
+            "extension_context_loaded",
+            "background_view_alive",
+            "background_web_process_alive",
+            "background_web_process_responsive",
+            "tab_known_to_webkit",
+            "native_handler_registered",
+            "tab_controller_matches_context",
+            "tab_has_extension_user_scripts",
+            "background_events",
+            "background_ready_after",
+            "background_view_age",
+            "background_load_error_after",
+            "background_load_error_app_state"
+        ]
+    }
+}

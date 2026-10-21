@@ -1,12 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "PrivacyProHeaderAlert.pdf",
+      "filename" : "PrivacyProHeaderAlert.svg",
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
   }
 }

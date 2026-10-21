@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-@_exported import os.log
+@_documentation(visibility: internal) @_exported import os.log
 
 public extension Logger {
     static let defaultBrowserPrompt = Logger(subsystem: "Default Browser Prompt", category: "")

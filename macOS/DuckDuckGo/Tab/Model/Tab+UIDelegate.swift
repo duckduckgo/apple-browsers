@@ -18,24 +18,20 @@
 
 import Combine
 import Common
+import CommonObjCExtensions
+import DDGNavigation
 import Foundation
-import Navigation
+import FoundationExtensions
+import PDFKit
 import PixelKit
 import UniformTypeIdentifiers
 import WebKit
-import PDFKit
-import CommonObjCExtensions
 
-extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
+extension Tab: WKUIDelegate {
 
     // "protected" delegate property
     private var delegate: TabDelegate? {
         self.value(forKey: Tab.objcDelegateKeyPath) as? TabDelegate
-    }
-
-    // "protected" newWindowPolicyDecisionMakers
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]? {
-        self.value(forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath) as? [NewWindowPolicyDecisionMaker]
     }
 
     @MainActor private static var expectedSaveDataToFileCallback: (@MainActor (URL?) -> Void)?
@@ -62,128 +58,76 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
     }
 
     @MainActor
+    @objc(_webView:createWebViewWithConfiguration:forNavigationAction:windowFeatures:completionHandler:)
+    func webView(_ webView: WKWebView,
+                 createWebViewWithConfiguration configuration: WKWebViewConfiguration,
+                 for navigationAction: WKNavigationAction,
+                 windowFeatures: WKWindowFeatures,
+                 completionHandler: @escaping (WKWebView?) -> Void) {
+
+        guard isCreateWebViewGatingFailsafeEnabled else {
+            completionHandler(self.popupHandling?.createWebView(from: webView,
+                                                                with: configuration,
+                                                                for: navigationAction,
+                                                                windowFeatures: windowFeatures))
+            return
+        }
+
+        // Defer createWebView handling until any in-flight `decidePolicyForNavigationAction` responder-chain work completes.
+        // This prevents a race condition where the createWebView callback for a pop-up is called before a PopupHandlingTabExtension decision
+        // to open a pop-up is made.
+        // https://app.asana.com/1/137249556945/project/1202406491309510/task/1212353379833164?focus=true
+        dispatchCreateWebView { [weak self] in
+            completionHandler(self?.popupHandling?.createWebView(from: webView,
+                                                                 with: configuration,
+                                                                 for: navigationAction,
+                                                                 windowFeatures: windowFeatures))
+        }
+    }
+
+    @MainActor
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-
-        var isCalledSynchronously = true
-        var synchronousResultWebView: WKWebView?
-        handleCreateWebViewRequest(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures) { [weak self] webView in
-            guard self != nil else { return }
-            if isCalledSynchronously {
-                synchronousResultWebView = webView
-            } else {
-                // automatic loading won‘t start for asynchronous callback as we‘ve already returned nil at this point
-                webView?.load(navigationAction.request)
-            }
-        }
-        isCalledSynchronously = false
-
-        return synchronousResultWebView
+        self.popupHandling?.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
     }
 
+    /// Called by WebKit to get the website's camera / microphone decision, see how getUserMedia works below.
+    ///
+    /// How WebKit (since Safari 26, WebKit commit 75d48825d9) handles getUserMedia before it reaches requestMediaCapturePermissionFor:
+    /// 1. `queryPermission` is called for both "camera" and "microphone" to get the website's stored state.
+    /// 2. `requestSystemValidation` reads `AVCaptureDevice.authorizationStatus(for:)` for each requested media type:
+    ///    `.denied`/`.restricted` rejects the request without calling any other delegate method,
+    ///    `.notDetermined` shows the macOS prompt before ours.
+    /// 3. Only then `requestMediaCapturePermissionFor:` is called.
+    /// With websitePermissionsPrompts on, to show our prompt first (with its System Settings step for denied access),
+    /// step 1 sets a one-shot token making step 2 read `.authorized` (see AVCaptureDevice+SwizzledAuthState.swift),
+    /// step 3 drops this tab's tokens that weren't used.
+    /// `queryPermission` is also called for navigator.permissions.query and enumerateDevices, which skip steps 2-3:
+    /// those tokens are dropped on the next request or when they expire.
+    /// Earlier WebKit calls `checkUserMediaPermissionForURL` below for step 1 and `queryPermission` only for
+    /// navigator.permissions.query.
+    /// https://github.com/WebKit/WebKit/blob/99051d5d08cd9f19ec76ce599f7539d070b1ae09/Source/WebKit/UIProcess/UserMediaPermissionRequestManagerProxy.cpp#L620
+    /// https://github.com/WebKit/WebKit/blob/99051d5d08cd9f19ec76ce599f7539d070b1ae09/Source/WebKit/UIProcess/Cocoa/UserMediaPermissionRequestManagerProxy.mm#L158
     @MainActor
-    private func handleCreateWebViewRequest(from webView: WKWebView,
-                                            with configuration: WKWebViewConfiguration,
-                                            for navigationAction: WKNavigationAction,
-                                            windowFeatures: WKWindowFeatures,
-                                            completionHandler: @escaping (WKWebView?) -> Void) {
-
-        switch newWindowPolicy(for: navigationAction) {
-        // popup kind is known, action doesn‘t require Popup Permission
-        case .allow(var targetKind):
-            // replace `.tab` with `.window` when user prefers windows over tabs
-            if case .tab(_, let isBurner, contextMenuInitiated: false) = targetKind,
-               !tabsPreferences.preferNewTabsToWindows  {
-                targetKind = .window(active: true, burner: isBurner)
-            }
-
-            // proceed to web view creation
-            completionHandler(self.createWebView(from: webView, with: configuration,
-                                                 for: navigationAction, of: targetKind.preferringSelectedTabs(tabsPreferences.switchToNewTabWhenOpened)))
-            return
-        case .cancel:
-            // navigation action was handled before and cancelled
-            completionHandler(nil)
-            return
-        case .none:
-            break
-        }
-
-        // select new tab by default; ⌘-click modifies the selection state
-        let linkOpenBehavior = LinkOpenBehavior(event: NSApp.currentEvent, switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened, canOpenLinkInCurrentTab: false, shouldSelectNewTab: true)
-
-        // determine popup kind from provided windowFeatures and current key modifiers
-        let targetKind = NewWindowPolicy(windowFeatures, linkOpenBehavior: linkOpenBehavior, isBurner: burnerMode.isBurner, preferTabsToWindows: tabsPreferences.preferNewTabsToWindows)
-
-        // action doesn‘t require Popup Permission as it‘s user-initiated
-        // TO BE FIXED: this also opens a new window when a popup ad is shown on click simultaneously with the main frame navigation:
-        // https://app.asana.com/0/1177771139624306/1203798645462846/f
-        if navigationAction.isUserInitiated == true {
-            // proceed to web view creation
-            completionHandler(self.createWebView(from: webView, with: configuration, for: navigationAction, of: targetKind))
-            return
-        }
-
-        let url = navigationAction.request.url
-        let sourceUrl = navigationAction.safeSourceFrame?.safeRequest?.url ?? self.url ?? .empty
-        guard let domain = sourceUrl.isFileURL ? .localhost : sourceUrl.host else {
-            completionHandler(nil)
-            return
-        }
-        // Popup Permission is needed: firing an async PermissionAuthorizationQuery
-        self.permissions.request([.popups], forDomain: domain, url: url).receive { [weak self] result in
-            guard let self, case .success(true) = result else {
-                completionHandler(nil)
-                return
-            }
-            let webView = self.createWebView(from: webView, with: configuration, for: navigationAction, of: targetKind)
-
-            completionHandler(webView)
-        }
+    @available(macOS 13.0, *)
+    @objc(_webView:queryPermission:forOrigin:completionHandler:)
+    func webView(_ webView: WKWebView,
+                 queryPermission name: String,
+                 forOrigin origin: WKSecurityOrigin,
+                 completionHandler: @escaping (WKPermissionDecision) -> Void) {
+        permissions.queryMediaPermission(name)
+        // Always `.prompt`: the actual decision (stored website decision + macOS status) is made in step 3, which
+        // WebKit calls regardless of this answer. `.grant` would mark the origin as having persistent access and
+        // reveal device labels/IDs to enumerateDevices before we've decided, `.deny` would hide the devices,
+        // and both would be reported to the page by navigator.permissions.query.
+        // https://github.com/WebKit/WebKit/blob/99051d5d08cd9f19ec76ce599f7539d070b1ae09/Source/WebKit/UIProcess/UserMediaPermissionRequestManagerProxy.cpp#L993
+        completionHandler(.prompt)
     }
 
+    /// WebKit before Safari 26 (macOS 12–13, and 14–15 without Safari 26): step 1 of the flow above, called instead of
+    /// `queryPermission` without telling the requested media type, so both media types get a token.
+    /// Without website prompts it only observes step 2 to reflect a macOS denial in the address bar.
+    @available(macOS, deprecated: 26.0, message: "Safari 26's WebKit calls _webView:queryPermission:forOrigin:completionHandler: instead. Remove when macOS 26 is the minimum.")
     @MainActor
-    private func newWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision? {
-        if let newWindowPolicy = self.decideNewWindowPolicy(for: navigationAction) {
-            return newWindowPolicy
-        }
-
-        // Are we handling custom Context Menu navigation action or link click with a hotkey?
-        for handler in self.newWindowPolicyDecisionMakers ?? [] {
-            guard let newWindowPolicy = handler.decideNewWindowPolicy(for: navigationAction) else { continue }
-            return newWindowPolicy
-        }
-
-        // allow popups opened from an empty window console
-        let sourceUrl = navigationAction.safeSourceFrame?.safeRequest?.url ?? self.url ?? .empty
-        if sourceUrl.isEmpty || sourceUrl.scheme == URL.NavigationalScheme.about.rawValue {
-            return .allow(.tab(selected: true, burner: burnerMode.isBurner))
-        }
-
-        return nil
-    }
-
-    /// create a new Tab returning its WebView to a createWebViewWithConfiguration callback
-    @MainActor
-    private func createWebView(from webView: WKWebView, with configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, of kind: NewWindowPolicy) -> WKWebView? {
-        guard let delegate else { return nil }
-        // disable opening 'javascript:' links in new tab
-        guard navigationAction.request.url?.navigationalScheme != .javascript else { return nil }
-
-        let tab = Tab(content: .none,
-                      webViewConfiguration: configuration,
-                      parentTab: self,
-                      securityOrigin: navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) },
-                      burnerMode: burnerMode,
-                      canBeClosedWithBack: kind.isSelectedTab,
-                      webViewSize: webView.superview?.bounds.size ?? .zero)
-        delegate.tab(self, createdChild: tab, of: kind)
-
-        let webView = tab.webView
-
-        // WebKit automatically loads the request in the returned web view.
-        return webView
-    }
-
     @objc(_webView:checkUserMediaPermissionForURL:mainFrameURL:frameIdentifier:decisionHandler:)
     func webView(_ webView: WKWebView,
                  checkUserMediaPermissionFor url: NSURL?,
@@ -193,9 +137,10 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         self.permissions.checkUserMediaPermission(for: url as? URL, mainFrameURL: mainFrameURL as? URL, decisionHandler: decisionHandler)
     }
 
-    // https://github.com/WebKit/WebKit/blob/995f6b1595611c934e742a4f3a9af2e678bc6b8d/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegate.h#L147
+    /// Asks for camera and/or microphone access (getUserMedia), step 3 of the flow described at `queryPermission`.
+    /// Decided by `PermissionModel.permissions(_:requestedForDomain:)` for the top-level website: saved decision, prompt, macOS status.
+    /// https://github.com/WebKit/WebKit/blob/995f6b1595611c934e742a4f3a9af2e678bc6b8d/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegate.h#L147
     @objc(webView:requestMediaCapturePermissionForOrigin:initiatedByFrame:type:decisionHandler:)
-    @available(macOS 12, *)
     func webView(_ webView: WKWebView,
                  requestMediaCapturePermissionFor origin: WKSecurityOrigin,
                  initiatedByFrame frame: WKFrameInfo,
@@ -207,18 +152,21 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
             return
         }
 
-        self.permissions.permissions(permissions, requestedForDomain: origin.host, decisionHandler: decisionHandler)
+        self.permissions.permissions(permissions, requestedForDomain: self.permissions.permissionDomain(for: SecurityOrigin(origin)), decisionHandler: decisionHandler)
     }
 
-    // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L126
+    /// Legacy variant of `requestMediaCapturePermissionFor:`: WebKit only calls it when that one isn't implemented.
+    /// Decided for the requesting frame's host; an unknown device set or host is denied.
+    /// https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L126
     @objc(_webView:requestUserMediaAuthorizationForDevices:url:mainFrameURL:decisionHandler:)
     func webView(_ webView: WKWebView,
-                 requestUserMediaAuthorizationFor devices: _WKCaptureDevices,
+                 requestUserMediaAuthorizationFor devices: UInt,
                  url: URL,
                  mainFrameURL: URL,
                  decisionHandler: @escaping (Bool) -> Void) {
+        let devices = _WKCaptureDevices(rawValue: devices)
         guard let permissions = [PermissionType](devices: devices),
-              let host = url.isFileURL ? .localhost : url.host,
+              case let host = self.permissions.permissionDomain(for: url),
               !host.isEmpty else {
             decisionHandler(false)
             return
@@ -227,28 +175,30 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         self.permissions.permissions(permissions, requestedForDomain: host, decisionHandler: decisionHandler)
     }
 
+    /// Camera or microphone capture started, stopped or was muted: updates the address bar permission states.
     @objc(_webView:mediaCaptureStateDidChange:)
-    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: _WKMediaCaptureStateDeprecated) {
+    func webView(_ webView: WKWebView, mediaCaptureStateDidChange state: UInt /*_WKMediaCaptureStateDeprecated*/) {
         self.permissions.mediaCaptureStateDidChange()
     }
 
-    // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L131
+    /// Legacy location request: WebKit only calls it when the origin-based variant below isn't implemented.
+    /// Decided for the requesting frame's host.
+    /// https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L131
     @objc(_webView:requestGeolocationPermissionForFrame:decisionHandler:)
     func webView(_ webView: WKWebView, requestGeolocationPermissionFor frame: WKFrameInfo, decisionHandler: @escaping (Bool) -> Void) {
-        let url = frame.safeRequest?.url ?? .empty
-        let host = url.isFileURL ? .localhost : (url.host ?? "")
+        let host = self.permissions.permissionDomain(for: frame.safeRequest?.url ?? .empty)
         self.permissions.permissions(.geolocation, requestedForDomain: host, decisionHandler: decisionHandler)
     }
 
-    // https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L132
+    /// Asks for location access (navigator.geolocation), decided for the requesting frame's host.
+    /// https://github.com/WebKit/WebKit/blob/9d7278159234e0bfa3d27909a19e695928f3b31e/Source/WebKit/UIProcess/API/Cocoa/WKUIDelegatePrivate.h#L132
     @objc(_webView:requestGeolocationPermissionForOrigin:initiatedByFrame:decisionHandler:)
-    @available(macOS 12, *)
+
     func webView(_ webView: WKWebView,
                  requestGeolocationPermissionFor origin: WKSecurityOrigin,
                  initiatedBy frame: WKFrameInfo,
                  decisionHandler: @escaping (WKPermissionDecision) -> Void) {
-        let url = frame.safeRequest?.url ?? .empty
-        let host = url.isFileURL ? .localhost : (url.host ?? "")
+        let host = self.permissions.permissionDomain(for: frame.safeRequest?.url ?? .empty)
         self.permissions.permissions(.geolocation, requestedForDomain: host) { granted in
             decisionHandler(granted ? .grant : .deny)
         }
@@ -336,15 +286,20 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
     }
 
     private func createAlertDialog(initiatedByFrame frame: WKFrameInfo, prompt: String, defaultInputText: String? = nil, queryCreator: (JSAlertParameters) -> JSAlertQuery) {
+        let url = frame.safeRequest?.url
+        // in case the web view is navigating to another host
+        ?? webView.backForwardList.currentItem?.url
+        ?? self.url
+        ?? .empty
+        let host = url.isFileURL ? .localhost : (url.host ?? "")
+
         let parameters = JSAlertParameters(
-            domain: frame.safeRequest?.url?.host ?? "",
+            domain: host,
             prompt: prompt,
             defaultInputText: defaultInputText
         )
         let alertQuery = queryCreator(parameters)
         let dialog = UserDialogType.jsDialog(alertQuery)
-        let url = frame.safeRequest?.url ?? .empty
-        let host = url.isFileURL ? .localhost : (url.host ?? "")
         userInteractionDialog = UserDialog(sender: .page(domain: host), dialog: dialog)
     }
 
@@ -379,7 +334,7 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         self.runPrintOperation(for: frameHandle, in: webView) { _ in completionHandler() }
     }
 
-    @MainActor(unsafe)
+    @preconcurrency @MainActor
     func print(pdfHUD: WKPDFHUDViewWrapper? = nil) {
         if let pdfHUD {
             Self.expectedSaveDataToFileCallback = { [weak self] url in
@@ -405,6 +360,14 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         self.runPrintOperation(for: nil, in: self.webView)
     }
 
+    @objc(_webView:hasVideoInPictureInPictureDidChange:)
+    func webView(_ webView: WKWebView, hasVideoInPictureInPictureDidChange hasVideoInPictureInPicture: Bool) {
+        self.tabSuspension?.hasVideoInPictureInPicture = hasVideoInPictureInPicture
+        if hasVideoInPictureInPicture {
+            // Fire pixel when Picture-in-Picture is activated
+            PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
+        }
+    }
 }
 
 extension Tab: WKInspectorDelegate {
@@ -421,13 +384,5 @@ extension Tab: WKInspectorDelegate {
     func webView(_ webView: WKWebView, didAttachLocalInspector inspector: NSObject) {
         // Fire pixel when developer tools are opened
         PixelKit.fire(GeneralPixel.developerToolsOpened, frequency: .dailyAndCount)
-    }
-
-    @objc(_webView:hasVideoInPictureInPictureDidChange:)
-    func webView(_ webView: WKWebView, hasVideoInPictureInPictureDidChange hasVideoInPictureInPicture: Bool) {
-        if hasVideoInPictureInPicture {
-            // Fire pixel when Picture-in-Picture is activated
-            PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
-        }
     }
 }

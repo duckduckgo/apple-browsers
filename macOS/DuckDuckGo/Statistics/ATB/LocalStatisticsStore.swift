@@ -59,6 +59,7 @@ final class LocalStatisticsStore: StatisticsStore {
         static let atb = "stats.atb.key"
         static let searchRetentionAtb = "stats.retentionatb.key"
         static let appRetentionAtb = "stats.appretentionatb.key"
+        static let duckAIRetentionAtb = "stats.duckairetentionatb.key"
         static let variant = "stats.variant.key"
         static let lastAppRetentionRequestDate = "stats.appretentionatb.last.request.key"
         static let waitlistUnlocked = "waitlist.unlocked"
@@ -160,6 +161,19 @@ final class LocalStatisticsStore: StatisticsStore {
         }
     }
 
+    var duckAIRetentionAtb: String? {
+        get {
+            pixelDataStore.value(forKey: Keys.duckAIRetentionAtb)
+        }
+        set {
+            if let value = newValue {
+                pixelDataStore.set(value, forKey: Keys.duckAIRetentionAtb)
+            } else {
+                pixelDataStore.removeValue(forKey: Keys.duckAIRetentionAtb)
+            }
+        }
+    }
+
     var variant: String? {
         get {
             pixelDataStore.value(forKey: Keys.variant)
@@ -232,6 +246,22 @@ final class LocalStatisticsStore: StatisticsStore {
 
 }
 
+extension LocalStatisticsStore {
+
+    /// Debug helper: clears install-attribution state so the next launch re-runs first-launch logic
+    /// (variant assignment from xattr, ATB request, install pixel). Bypasses the property-setter
+    /// assertions on `atb` / `installDate` since this clearing is intentional.
+    func resetInstallAttributionState() {
+        pixelDataStore.removeValue(forKey: Keys.atb)
+        pixelDataStore.removeValue(forKey: Keys.variant)
+        pixelDataStore.removeValue(forKey: Keys.installDate)
+        pixelDataStore.removeValue(forKey: Keys.searchRetentionAtb)
+        pixelDataStore.removeValue(forKey: Keys.appRetentionAtb)
+        pixelDataStore.removeValue(forKey: Keys.duckAIRetentionAtb)
+        pixelDataStore.removeValue(forKey: Keys.lastAppRetentionRequestDate)
+    }
+}
+
 #if DEBUG
 
 // For use in tests to avoid indirect access of Database.makeDatabase
@@ -241,6 +271,7 @@ final class StubStatisticsStore: StatisticsStore {
     var atb: String?
     var searchRetentionAtb: String?
     var appRetentionAtb: String?
+    var duckAIRetentionAtb: String?
     var variant: String?
     var lastAppRetentionRequestDate: Date?
 

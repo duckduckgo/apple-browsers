@@ -68,7 +68,7 @@ final class ShadowView: NSView {
     lazy private var mask: CAShapeLayer = {
         let mask = CAShapeLayer()
         mask.fillRule = CAShapeLayerFillRule.evenOdd
-        layer!.mask = mask
+        layer?.mask = mask
         return mask
     }()
 
@@ -141,11 +141,17 @@ final class ShadowView: NSView {
         return maskPath
     }
 
+    /// Decoration mounted above the content it shadows. The ring is carved out by a layer mask,
+    /// which doesn't affect hit testing, so without this it swallows clicks meant for that content.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
     override func layout() {
         super.layout()
 
         let shadowPath = self.shadowPath()
-        layer!.shadowPath = shadowPath
+        layer?.shadowPath = shadowPath
 
         mask.path = self.maskPath(shadowPath: shadowPath)
     }
@@ -166,13 +172,13 @@ final class ShadowView: NSView {
     private func updateProperties() {
         self.wantsLayer = true
 
-        layer!.masksToBounds = false
-        layer!.backgroundColor = NSColor.clear.cgColor
-        layer!.cornerRadius = cornerRadius
-        layer!.shadowColor = shadowColor?.cgColor
-        layer!.shadowRadius = shadowRadius
-        layer!.shadowOffset = shadowOffset
-        layer!.shadowOpacity = Float(shadowOpacity)
+        layer?.masksToBounds = false
+        layer?.backgroundColor = NSColor.clear.cgColor
+        layer?.cornerRadius = cornerRadius
+        layer?.shadowColor = shadowColor?.cgColor
+        layer?.shadowRadius = shadowRadius
+        layer?.shadowOffset = shadowOffset
+        layer?.shadowOpacity = Float(shadowOpacity)
     }
 
 }

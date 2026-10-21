@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Foundation
 import MaliciousSiteProtection
-import PersistenceTestingUtils
-import NetworkingTestingUtils
+@_spi(Testing) import Persistence
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+@_spi(Testing) import Networking
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -31,10 +32,10 @@ final class MaliciousSiteProtectionTests: XCTestCase {
     lazy var phishingDetection: MaliciousSiteProtectionManager! = { () -> MaliciousSiteProtectionManager in
         let configManager = MockPrivacyConfigurationManager()
         let privacyConfig = MockPrivacyConfiguration()
-        privacyConfig.isSubfeatureKeyEnabled = { (subfeature: any PrivacySubfeature, _: AppVersionProvider) -> Bool in
+        privacyConfig.isSubfeatureEnabledCheck = { (subfeature: any PrivacySubfeature, _: AppVersionProvider) -> Bool in
             if case MaliciousSiteProtectionSubfeature.onByDefault = subfeature { true } else { false }
         }
-        configManager.mockPrivacyConfig = privacyConfig
+        configManager.privacyConfig = privacyConfig
         return MaliciousSiteProtectionManager(apiService: apiService, dataManager: dataManager, detector: MockMaliciousSiteDetector(), featureFlagger: featureFlagger)
     }()
     var apiService: MockAPIService!
@@ -44,7 +45,7 @@ final class MaliciousSiteProtectionTests: XCTestCase {
 
     override func setUp() async throws {
         featureFlagger.enabledFeatureFlags = [.maliciousSiteProtection]
-        apiService = MockAPIService(apiResponse: .failure(CancellationError()))
+        apiService = MockAPIService { _ in .failure(CancellationError()) }
         let mockFileStore = MockMaliciousSiteFileStore()
         mockDataProvider = MockMaliciousSiteDataProvider()
         dataManager = MaliciousSiteProtection.DataManager(fileStore: mockFileStore, embeddedDataProvider: mockDataProvider, fileNameProvider: { _ in "file.json" })

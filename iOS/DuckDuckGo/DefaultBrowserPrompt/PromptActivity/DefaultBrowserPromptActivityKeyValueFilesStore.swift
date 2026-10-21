@@ -30,6 +30,7 @@ final class DefaultBrowserPromptActivityKeyValueFilesStore: DefaultBrowserPrompt
         case lastModalShownDate = "com.duckduckgo.defaultBrowserPrompt.lastModalShownDate"
         case modalShownOccurrences = "com.duckduckgo.defaultBrowserPrompt.modalShownOccurrences"
         case promptPermanentlyDismissed = "com.duckduckgo.defaultBrowserPrompt.modalPermanentlyDismissed"
+        case inactiveModalShown = "com.duckduckgo.defaultBrowserPrompt.inactiveModalShown"
     }
 
     private let keyValueFilesStore: ThrowingKeyValueStoring
@@ -41,15 +42,6 @@ final class DefaultBrowserPromptActivityKeyValueFilesStore: DefaultBrowserPrompt
     ) {
         self.keyValueFilesStore = keyValueFilesStore
         self.eventMapper = eventMapper
-    }
-
-    var lastModalShownDate: TimeInterval? {
-        get {
-            getValue(forKey: .lastModalShownDate)
-        }
-        set {
-            write(value: newValue, forKey: .lastModalShownDate)
-        }
     }
 
     var modalShownOccurrences: Int {
@@ -67,6 +59,15 @@ final class DefaultBrowserPromptActivityKeyValueFilesStore: DefaultBrowserPrompt
         }
         set {
             write(value: newValue, forKey: .promptPermanentlyDismissed)
+        }
+    }
+
+    var hasInactiveModalShown: Bool {
+        get {
+            getValue(forKey: .inactiveModalShown) ?? false
+        }
+        set {
+            write(value: newValue, forKey: .inactiveModalShown)
         }
     }
 
@@ -98,6 +99,7 @@ extension DefaultBrowserPromptActivityKeyValueFilesStore {
             case lastModalShownDate(Error)
             case modalShownOccurrences(Error)
             case permanentlyDismissPrompt(Error)
+            case inactiveModalShown(Error)
         }
 
         case failedToRetrieveValue(Value)
@@ -118,6 +120,8 @@ private extension DefaultBrowserPromptActivityKeyValueFilesStore.DebugEvent.Valu
             self = .modalShownOccurrences(error)
         case .promptPermanentlyDismissed:
             self = .permanentlyDismissPrompt(error)
+        case .inactiveModalShown:
+            self = .inactiveModalShown(error)
         }
     }
 

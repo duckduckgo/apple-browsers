@@ -59,7 +59,7 @@ extension Preferences {
                         .frame(width: 512)
                         .onAppear {
                             if !hasFiredSettingsDisplayedPixel {
-                                PixelKit.fire(NonStandardEvent(GeneralPixel.duckPlayerContingencySettingsDisplayed))
+                                PixelKit.fire(GeneralPixel.duckPlayerContingencySettingsDisplayed)
                                 hasFiredSettingsDisplayedPixel = true
                             }
                         }
@@ -71,17 +71,21 @@ extension Preferences {
                         Text(UserText.duckPlayerAlwaysOpenInPlayer)
                             .padding(.bottom, 4)
                             .tag(DuckPlayerMode.enabled)
+                            .accessibilityIdentifier("DuckPlayerMode.enabled")
 
                         Text(UserText.duckPlayerShowPlayerButtons)
                             .padding(.bottom, 4)
                             .tag(DuckPlayerMode.alwaysAsk)
+                            .accessibilityIdentifier("DuckPlayerMode.alwaysAsk")
 
                         Text(UserText.duckPlayerOff)
                             .padding(.bottom, 4)
                             .tag(DuckPlayerMode.disabled)
+                            .accessibilityIdentifier("DuckPlayerMode.disabled")
 
                     }, label: {})
                     .pickerStyle(.radioGroup)
+                    .rebrandedControlTint()
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
 
                     TextMenuItemCaption(UserText.duckPlayerExplanation)

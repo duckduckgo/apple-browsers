@@ -17,16 +17,20 @@
 //
 
 import Cocoa
+import PrivacyConfig
+import SwiftUI
 
 final class PermissionAuthorizationPopover: NSPopover {
 
     @nonobjc private var didShow: Bool = false
+    private let featureFlagger: FeatureFlagger
 
-    override init() {
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         super.init()
 
         behavior = .applicationDefined
-        setupContentController()
+        contentViewController = PermissionAuthorizationViewController(featureFlagger: featureFlagger)
         self.delegate = self
     }
 
@@ -34,16 +38,21 @@ final class PermissionAuthorizationPopover: NSPopover {
         fatalError("PermissionAuthorizationPopover: Bad initializer")
     }
 
-    // swiftlint:disable force_cast
-    var viewController: PermissionAuthorizationViewController { contentViewController as! PermissionAuthorizationViewController }
-    // swiftlint:enable force_cast
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
 
     // swiftlint:disable force_cast
-    private func setupContentController() {
-        let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
-        let controller = storyboard
-            .instantiateController(withIdentifier: "PermissionAuthorizationViewController") as! PermissionAuthorizationViewController
-        contentViewController = controller
+    var viewController: PermissionAuthorizationViewController {
+        get {
+            if contentViewController == nil {
+                contentViewController = PermissionAuthorizationViewController(featureFlagger: featureFlagger)
+            }
+            return contentViewController as! PermissionAuthorizationViewController
+        }
     }
     // swiftlint:enable force_cast
 

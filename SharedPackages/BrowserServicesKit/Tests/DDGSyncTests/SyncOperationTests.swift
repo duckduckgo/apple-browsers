@@ -63,7 +63,7 @@ class SyncOperationTests: XCTestCase {
         let dataProvider = DataProvidingMock(feature: feature)
         let syncOperation = SyncOperation(dataProviders: [dataProvider], storage: storage, crypter: crypter, requestMaker: requestMaker)
 
-        request.error = .noResponseBody
+        request.error = SyncError.noResponseBody
         await assertThrowsAnyError({
             try await syncOperation.sync(fetchOnly: false)
         }, errorHandler: { error in
@@ -86,7 +86,7 @@ class SyncOperationTests: XCTestCase {
         }
         let syncOperation = SyncOperation(dataProviders: [dataProvider], storage: storage, crypter: crypter, requestMaker: requestMaker)
 
-        request.error = .noResponseBody
+        request.error = SyncError.noResponseBody
         await assertThrowsAnyError({
             try await syncOperation.sync(fetchOnly: false)
         }, errorHandler: { error in
@@ -131,7 +131,7 @@ class SyncOperationTests: XCTestCase {
 
         let syncOperation = SyncOperation(dataProviders: [dataProvider1, dataProvider2, dataProvider3], storage: storage, crypter: crypter, requestMaker: requestMaker)
 
-        request.error = .noResponseBody
+        request.error = SyncError.noResponseBody
         await assertThrowsAnyError {
             try await syncOperation.sync(fetchOnly: false)
         }
@@ -308,6 +308,36 @@ class SyncOperationTests: XCTestCase {
             XCTFail("Unexpected error thrown: \(error)")
             return
         }
+    }
+
+    func testPatchRequestMakerCrashesWhenUsedFromMultipleThreads() {
+        let maker = requestMaker!
+        let syncRequest = SyncRequest(
+            feature: .init(name: "bookmarks"),
+            previousSyncTimestamp: "1234",
+            sent: [Syncable(jsonObject: ["id": "1"])]
+        )
+
+        let start = DispatchSemaphore(value: 0)
+        let done = DispatchGroup()
+        let iterations = 1000
+
+        for _ in 0..<iterations {
+            done.enter()
+            DispatchQueue.global(qos: .userInitiated).async {
+                start.wait()
+                _ = try? maker.makePatchRequest(with: syncRequest,
+                                                clientTimestamp: Date(),
+                                                isCompressed: false)
+                done.leave()
+            }
+        }
+
+        for _ in 0..<iterations {
+            start.signal()
+        }
+
+        done.wait()
     }
 }
 

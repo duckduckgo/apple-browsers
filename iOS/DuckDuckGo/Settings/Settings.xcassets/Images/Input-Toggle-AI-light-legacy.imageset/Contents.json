@@ -1,0 +1,22 @@
+{
+  "images" : [
+    {
+      "filename" : "Mobile-SearchBox-WithAI.pdf",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Mobile-SearchBox-WithAI-OnDark.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

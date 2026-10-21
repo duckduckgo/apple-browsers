@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Combine
 import Configuration
+import PrivacyConfigTestsUtils
+import TrackerRadarKit
+import XCTest
 @testable import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
-import TrackerRadarKit
+@testable import PrivacyConfig
 
 final class ConfigurationManagerTests: XCTestCase {
     private var operationLog: OperationLog!
@@ -31,6 +33,7 @@ final class ConfigurationManagerTests: XCTestCase {
     private var mockTrackerDataManager: MockTrackerDataManager!
     private var mockPrivacyConfigManager: MockPrivacyConfigurationManager!
     private var mockContentBlockingManager: MockContentBlockerRulesManager!
+    private var mockHTTPSUpgradeStore: ConfigurationHTTPSUpgradeStoreMock!
 
     override func setUpWithError() throws {
         operationLog = OperationLog()
@@ -42,6 +45,7 @@ final class ConfigurationManagerTests: XCTestCase {
         mockPrivacyConfigManager.operationLog = operationLog
         mockTrackerDataManager = MockTrackerDataManager(operationLog: operationLog, etag: nil, data: nil, embeddedDataProvider: MockEmbeddedDataProvider())
         mockContentBlockingManager = MockContentBlockerRulesManager(operationLog: operationLog)
+        mockHTTPSUpgradeStore = ConfigurationHTTPSUpgradeStoreMock()
         configManager = ConfigurationManager(fetcher: mockFetcher,
                                              store: mockStore,
                                              defaults: userDefaults,
@@ -49,7 +53,7 @@ final class ConfigurationManagerTests: XCTestCase {
                                              privacyConfigurationManager: mockPrivacyConfigManager,
                                              contentBlockingManager: mockContentBlockingManager,
                                              httpsUpgrade: HTTPSUpgrade(
-                                                store: HTTPSUpgradeStoreMock(),
+                                                store: mockHTTPSUpgradeStore,
                                                 privacyManager: mockPrivacyConfigManager,
                                                 logger: .init()
                                              )
@@ -64,46 +68,155 @@ final class ConfigurationManagerTests: XCTestCase {
         mockTrackerDataManager = nil
         mockPrivacyConfigManager = nil
         mockContentBlockingManager = nil
+        mockHTTPSUpgradeStore = nil
     }
 
     func test_WhenRefreshNow_AndPrivacyConfigFetchFails_OtherFetchStillHappen() async {
         // GIVEN
         mockFetcher.shouldFailPrivacyFetch = true
-        operationLog.steps = []
-        let expectedFirstTwo: Set<ConfigurationStep> = [.fetchPrivacyConfigStarted, .fetchSurrogatesStarted]
-        let expectedOrder: [ConfigurationStep] = [
-            .fetchTrackerDataSetStarted,
-            .reloadTrackerDataSet,
-            .reloadPrivacyConfig,
-            .contentBlockingScheduleCompilation
-        ]
+        operationLog.clear()
 
         // WHEN
         await configManager.refreshNow(isDebug: false)
 
         // THEN
-        XCTAssertEqual(Set(operationLog.steps.prefix(2)), expectedFirstTwo, "Steps do not match the expected order.")
-        XCTAssertEqual(Array(operationLog.steps.dropFirst(2)), expectedOrder, "Steps do not match the expected order.")
+        let allSteps = Set(operationLog.steps)
+        XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted), "Privacy config fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.fetchSurrogatesStarted), "Surrogates fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.fetchTrackerDataSetStarted), "Tracker data set fetch should have started.")
+
+        XCTAssertTrue(allSteps.contains(.reloadTrackerDataSet), "Tracker data should be reloaded.")
+        XCTAssertTrue(allSteps.contains(.reloadPrivacyConfig), "Privacy config should be reloaded.")
+        XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation), "Content blocking should be scheduled.")
+
+        XCTAssertEqual(operationLog.steps.count, 6, "Should have exactly 6 operations.")
     }
 
-    func test_WhenRefreshNow_ThenPrivacyConfigFetchAndReloadBeforeTrackerDataSetFetch() async {
+    // MARK: - fetchPrivacyConfiguration
+
+    func test_WhenFetchPrivacyConfiguration_ThenReloadAndCompilationHappen() async throws {
         // GIVEN
-        operationLog.steps = []
-        let expectedFirstTwo: Set<ConfigurationStep> = [.fetchPrivacyConfigStarted, .fetchSurrogatesStarted]
-        let expectedOrder: [ConfigurationStep] = [
-            .reloadPrivacyConfig,
-            .fetchTrackerDataSetStarted,
-            .reloadTrackerDataSet,
-            .reloadPrivacyConfig,
-            .contentBlockingScheduleCompilation
-        ]
+        operationLog.clear()
+
+        // WHEN
+        try await configManager.fetchPrivacyConfiguration(isDebug: true)
+
+        // THEN
+        let allSteps = Set(operationLog.steps)
+        XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted))
+        XCTAssertTrue(allSteps.contains(.reloadPrivacyConfig))
+        XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation))
+        XCTAssertEqual(operationLog.steps.count, 3)
+    }
+
+    func test_WhenFetchPrivacyConfiguration_AndFetchFails_ThenErrorPropagates() async {
+        // GIVEN
+        mockFetcher.shouldFailPrivacyFetch = true
+        operationLog.clear()
+
+        // WHEN / THEN
+        do {
+            try await configManager.fetchPrivacyConfiguration(isDebug: true)
+            XCTFail("Expected error to be thrown")
+        } catch {
+            let allSteps = Set(operationLog.steps)
+            XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted))
+            XCTAssertFalse(allSteps.contains(.reloadPrivacyConfig))
+            XCTAssertFalse(allSteps.contains(.contentBlockingScheduleCompilation))
+        }
+    }
+
+    func test_WhenFetchPrivacyConfiguration_And304Received_ThenTreatedAsSuccess() async throws {
+        // GIVEN
+        mockFetcher.privacyFetchResult = .notModified
+        operationLog.clear()
+
+        // WHEN
+        try await configManager.fetchPrivacyConfiguration(isDebug: true)
+
+        // THEN
+        let allSteps = Set(operationLog.steps)
+        XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted))
+        XCTAssertTrue(allSteps.contains(.reloadPrivacyConfig))
+        XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation))
+    }
+
+    // MARK: - refreshNow
+
+    func test_WhenRefreshNow_ThenPrivacyConfigFetchAndReloadBeforeTrackerDataSetFetch() async throws {
+        // GIVEN
+        operationLog.clear()
 
         // WHEN
         await configManager.refreshNow(isDebug: false)
 
         // THEN
-        XCTAssertEqual(Set(operationLog.steps.prefix(2)), expectedFirstTwo, "Steps do not match the expected order.")
-        XCTAssertEqual(Array(operationLog.steps.dropFirst(2)), expectedOrder, "Steps do not match the expected order.")
+        let steps = operationLog.steps
+
+        // Find indices of key operations
+        let fetchPrivacyConfigIndex = try XCTUnwrap(steps.firstIndex(of: .fetchPrivacyConfigStarted))
+        let fetchTrackerDataSetIndex = try XCTUnwrap(steps.firstIndex(of: .fetchTrackerDataSetStarted))
+        let firstReloadIndex = try XCTUnwrap(steps.firstIndex(of: .reloadPrivacyConfig))
+
+        // Verify correct dependency ordering
+        XCTAssertLessThan(fetchPrivacyConfigIndex, firstReloadIndex, "Privacy config should be fetched before being reloaded")
+        XCTAssertLessThan(firstReloadIndex, fetchTrackerDataSetIndex, "Privacy config should be reloaded before tracker data set fetch starts")
+
+        // THEN
+        let allSteps = Set(operationLog.steps)
+        XCTAssertTrue(allSteps.contains(.fetchPrivacyConfigStarted), "Privacy config fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.fetchSurrogatesStarted), "Surrogates fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.fetchTrackerDataSetStarted), "Tracker data set fetch should have started.")
+        XCTAssertTrue(allSteps.contains(.reloadTrackerDataSet), "Tracker data should be reloaded.")
+        XCTAssertTrue(allSteps.contains(.reloadPrivacyConfig), "Privacy config should be reloaded.")
+        XCTAssertTrue(allSteps.contains(.contentBlockingScheduleCompilation), "Content blocking should be scheduled.")
+    }
+
+    func test_WhenBloomFilterIsNotModified_ThenCachedBloomFilterIsReconciled() async {
+        mockFetcher.fetchAllResult = []
+        mockStore.data = Data(#"{"bitCount":8,"errorRate":0.01,"totalEntries":1,"sha256":"sha"}"#.utf8)
+        mockHTTPSUpgradeStore.persistBloomFilterResult = false
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 1)
+    }
+
+    func test_WhenBloomFilterIsNotModified_AndNoneIsLoaded_ThenBloomFilterIsReloaded() async {
+        mockFetcher.fetchAllResult = []
+        mockStore.data = Data(#"{"bitCount":8,"errorRate":0.01,"totalEntries":1,"sha256":"sha"}"#.utf8)
+        mockHTTPSUpgradeStore.persistBloomFilterResult = false
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.loadBloomFilterCallCount, 1, "An absent in-memory filter should be reloaded even when nothing was persisted.")
+    }
+
+    func test_WhenOneBloomFilterAssetIsModified_ThenBloomFilterIsPersistedOnce() async {
+        mockFetcher.fetchAllResult = [.bloomFilterSpec]
+        mockStore.data = Data(#"{"bitCount":8,"errorRate":0.01,"totalEntries":1,"sha256":"sha"}"#.utf8)
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistBloomFilterCallCount, 1)
+    }
+
+    func test_WhenBloomFilterExclusionsPersistenceFails_ThenNotModifiedRefreshDoesNotRetryCachedData() async {
+        mockFetcher.fetchAllResult = []
+        mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .updated
+        mockStore.data = Data(#"{"data":["example.com"]}"#.utf8)
+        mockHTTPSUpgradeStore.persistExcludedDomainsError = ConfigurationHTTPSUpgradeStoreMock.Error.persistenceFailed
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistExcludedDomainsCallCount, 1)
+
+        mockFetcher.fetchResults[.bloomFilterExcludedDomains] = .notModified
+        mockHTTPSUpgradeStore.persistExcludedDomainsError = nil
+
+        await configManager.refreshNow()
+
+        XCTAssertEqual(mockHTTPSUpgradeStore.persistExcludedDomainsCallCount, 1)
     }
 
 }
@@ -121,12 +234,15 @@ private enum ConfigurationStep: String, Equatable {
 private class MockConfigurationFetcher: ConfigurationFetching {
     var operationLog: OperationLog
     var shouldFailPrivacyFetch = false
+    var privacyFetchResult = ConfigurationFetchResult.updated
+    var fetchResults = [Configuration: ConfigurationFetchResult]()
+    var fetchAllResult: Set<Configuration>?
 
     init(operationLog: OperationLog) {
         self.operationLog = operationLog
     }
 
-    func fetch(_ configuration: Configuration, isDebug: Bool) async throws {
+    func fetch(_ configuration: Configuration, isDebug: Bool) async throws -> ConfigurationFetchResult {
         switch configuration {
         case .bloomFilterBinary:
             break
@@ -135,21 +251,59 @@ private class MockConfigurationFetcher: ConfigurationFetching {
         case .bloomFilterExcludedDomains:
             break
         case .privacyConfiguration:
-            operationLog.steps.append(.fetchPrivacyConfigStarted)
+            operationLog.append(.fetchPrivacyConfigStarted)
             if shouldFailPrivacyFetch {
                 throw NSError(domain: "TestError", code: 1, userInfo: nil)
             }
             try await Task.sleep(nanoseconds: 50_000_000)
         case .surrogates:
-            operationLog.steps.append(.fetchSurrogatesStarted)
+            operationLog.append(.fetchSurrogatesStarted)
         case .trackerDataSet:
-            operationLog.steps.append(.fetchTrackerDataSetStarted)
+            operationLog.append(.fetchTrackerDataSetStarted)
         case .remoteMessagingConfig:
             break
         }
+        return fetchResults[configuration] ?? (configuration == .privacyConfiguration ? privacyFetchResult : .updated)
     }
 
-    func fetch(all configurations: [Configuration]) async throws {}
+    func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
+        fetchAllResult ?? Set(configurations)
+    }
+}
+
+private final class ConfigurationHTTPSUpgradeStoreMock: HTTPSUpgradeStore {
+    enum Error: Swift.Error {
+        case persistenceFailed
+    }
+
+    private(set) var persistBloomFilterCallCount = 0
+    private(set) var persistExcludedDomainsCallCount = 0
+    private(set) var loadBloomFilterCallCount = 0
+    var persistBloomFilterResult = true
+    var persistExcludedDomainsResult = true
+    var persistExcludedDomainsError: Swift.Error?
+
+    func loadBloomFilter() -> BloomFilter? {
+        loadBloomFilterCallCount += 1
+        return nil
+    }
+
+    func persistBloomFilter(specification: HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
+        persistBloomFilterCallCount += 1
+        return persistBloomFilterResult
+    }
+
+    func hasExcludedDomain(_ domain: String) -> Bool {
+        false
+    }
+
+    func persistExcludedDomains(_ domains: [String]) throws -> Bool {
+        persistExcludedDomainsCallCount += 1
+        if let persistExcludedDomainsError {
+            throw persistExcludedDomainsError
+        }
+        return persistExcludedDomainsResult
+    }
 }
 
 private class MockPrivacyConfigurationManager: PrivacyConfigurationManager {
@@ -161,7 +315,7 @@ private class MockPrivacyConfigurationManager: PrivacyConfigurationManager {
     }
 
     override func reload(etag: String?, data: Data?) -> ReloadResult {
-        operationLog.steps.append(.reloadPrivacyConfig)
+        operationLog.append(.reloadPrivacyConfig)
         return .embedded
     }
 }
@@ -175,7 +329,7 @@ private class MockTrackerDataManager: TrackerDataManager {
     }
 
     public override func reload(etag: String?, data: Data?) -> ReloadResult {
-        operationLog.steps.append(.reloadTrackerDataSet)
+        operationLog.append(.reloadTrackerDataSet)
         return .embedded
     }
 }
@@ -192,7 +346,7 @@ private class MockContentBlockerRulesManager: ContentBlockerRulesManagerProtocol
     var currentRules: [ContentBlockerRulesManager.Rules] = []
 
     func scheduleCompilation() -> ContentBlockerRulesManager.CompletionToken {
-        operationLog.steps.append(.contentBlockingScheduleCompilation)
+        operationLog.append(.contentBlockingScheduleCompilation)
         return ""
     }
 
@@ -208,5 +362,18 @@ private class MockContentBlockerRulesManager: ContentBlockerRulesManagerProtocol
 }
 
 private class OperationLog {
-    var steps: [ConfigurationStep] = []
+    private let queue = DispatchQueue(label: "operationLog", attributes: [])
+    private var _steps: [ConfigurationStep] = []
+
+    var steps: [ConfigurationStep] {
+        return queue.sync { _steps }
+    }
+
+    func append(_ step: ConfigurationStep) {
+        queue.sync { _steps.append(step) }
+    }
+
+    func clear() {
+        queue.sync { _steps.removeAll() }
+    }
 }

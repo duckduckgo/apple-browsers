@@ -20,9 +20,9 @@ import AppKit
 
 /// Used to catch `performKeyEquivalent:` events in View Controllers
 final class KeyEquivalentView: NSView {
-    private let keyEquivalents: [NSEvent.KeyEquivalent: (NSEvent) -> Bool]
+    private var keyEquivalents: [NSEvent.KeyEquivalent: @MainActor (NSEvent) -> Bool]
 
-    init(keyEquivalents: [NSEvent.KeyEquivalent: (NSEvent) -> Bool]) {
+    init(keyEquivalents: [NSEvent.KeyEquivalent: @MainActor (NSEvent) -> Bool] = [:]) {
         self.keyEquivalents = keyEquivalents
         super.init(frame: .zero)
     }
@@ -31,8 +31,14 @@ final class KeyEquivalentView: NSView {
         fatalError("\(type(of: self)): Bad initializer")
     }
 
+    func addKeyEquivalent(_ keyEquivalent: NSEvent.KeyEquivalent, action: @escaping @MainActor (NSEvent) -> Bool) {
+        keyEquivalents[keyEquivalent] = action
+    }
+
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        guard let keyEquivalent = event.keyEquivalent,
+        guard let window, window.isKeyWindow,
+              !(window.childWindows ?? []).contains(where: { $0.isKeyWindow }),
+              let keyEquivalent = event.keyEquivalent,
               let handler = keyEquivalents[keyEquivalent] else { return false }
         return handler(event)
     }

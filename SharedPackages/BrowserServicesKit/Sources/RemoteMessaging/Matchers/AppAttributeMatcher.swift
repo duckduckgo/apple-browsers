@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
 import BrowserServicesKit
+import Common
+import FoundationExtensions
+import Foundation
 
 #if os(iOS)
 public typealias AppAttributeMatcher = MobileAppAttributeMatcher
@@ -26,15 +27,18 @@ public typealias AppAttributeMatcher = MobileAppAttributeMatcher
 public typealias AppAttributeMatcher = DesktopAppAttributeMatcher
 #endif
 
-public typealias MobileAppAttributeMatcher = CommonAppAttributeMatcher
-
-public struct DesktopAppAttributeMatcher: AttributeMatching {
-    private let isInstalledMacAppStore: Bool
+public struct MobileAppAttributeMatcher: AttributeMatching {
+    private let canUpgradeOS: Bool
 
     private let commonAppAttributeMatcher: CommonAppAttributeMatcher
 
-    public init(statisticsStore: StatisticsStore, variantManager: VariantManager, isInternalUser: Bool = true, isInstalledMacAppStore: Bool) {
-        self.isInstalledMacAppStore = isInstalledMacAppStore
+    public init(
+        statisticsStore: StatisticsStore,
+        variantManager: VariantManager,
+        isInternalUser: Bool = true,
+        canUpgradeOS: Bool = true
+    ) {
+        self.canUpgradeOS = canUpgradeOS
 
         commonAppAttributeMatcher = .init(statisticsStore: statisticsStore, variantManager: variantManager, isInternalUser: isInternalUser)
     }
@@ -45,9 +49,59 @@ public struct DesktopAppAttributeMatcher: AttributeMatching {
         isInternalUser: Bool,
         statisticsStore: StatisticsStore,
         variantManager: VariantManager,
-        isInstalledMacAppStore: Bool
+        canUpgradeOS: Bool = true
+    ) {
+        self.canUpgradeOS = canUpgradeOS
+
+        commonAppAttributeMatcher = .init(
+            bundleId: bundleId,
+            appVersion: appVersion,
+            isInternalUser: isInternalUser,
+            statisticsStore: statisticsStore,
+            variantManager: variantManager
+        )
+    }
+
+    public func evaluate(matchingAttribute: MatchingAttribute) -> EvaluationResult? {
+        switch matchingAttribute {
+        case let matchingAttribute as OSUpgradeCapabilityMatchingAttribute:
+            return matchingAttribute.evaluate(for: canUpgradeOS)
+        default:
+            return commonAppAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
+        }
+    }
+}
+
+public struct DesktopAppAttributeMatcher: AttributeMatching {
+    private let isInstalledMacAppStore: Bool
+    private let canUpgradeOS: Bool
+
+    private let commonAppAttributeMatcher: CommonAppAttributeMatcher
+
+    public init(
+        statisticsStore: StatisticsStore,
+        variantManager: VariantManager,
+        isInternalUser: Bool = true,
+        isInstalledMacAppStore: Bool,
+        canUpgradeOS: Bool = true
     ) {
         self.isInstalledMacAppStore = isInstalledMacAppStore
+        self.canUpgradeOS = canUpgradeOS
+
+        commonAppAttributeMatcher = .init(statisticsStore: statisticsStore, variantManager: variantManager, isInternalUser: isInternalUser)
+    }
+
+    public init(
+        bundleId: String,
+        appVersion: String,
+        isInternalUser: Bool,
+        statisticsStore: StatisticsStore,
+        variantManager: VariantManager,
+        isInstalledMacAppStore: Bool,
+        canUpgradeOS: Bool = true
+    ) {
+        self.isInstalledMacAppStore = isInstalledMacAppStore
+        self.canUpgradeOS = canUpgradeOS
 
         commonAppAttributeMatcher = .init(
             bundleId: bundleId,
@@ -62,6 +116,8 @@ public struct DesktopAppAttributeMatcher: AttributeMatching {
         switch matchingAttribute {
         case let matchingAttribute as IsInstalledMacAppStoreMatchingAttribute:
             return matchingAttribute.evaluate(for: isInstalledMacAppStore)
+        case let matchingAttribute as OSUpgradeCapabilityMatchingAttribute:
+            return matchingAttribute.evaluate(for: canUpgradeOS)
         default:
             return commonAppAttributeMatcher.evaluate(matchingAttribute: matchingAttribute)
         }

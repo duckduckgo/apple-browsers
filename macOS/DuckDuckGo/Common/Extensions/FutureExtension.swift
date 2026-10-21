@@ -21,15 +21,7 @@ import Combine
 extension Future {
 
     func get() async throws -> Output {
-        if #available(macOS 12.0, *) {
-            return try await self.value
-        } else {
-            return try await withCheckedThrowingContinuation { continuation in
-                self.receive { result in
-                    continuation.resume(with: result)
-                }
-            }
-        }
+        return try await self.value
     }
 
     func receive(completionHandler: @escaping (Result<Output, Failure>) -> Void) {
@@ -55,6 +47,16 @@ extension Future where Failure == Never {
         let future = Future<Output, Never> { fulfill = $0 }
         assert(fulfill != nil)
         return (future, { fulfill(.success($0)) })
+    }
+
+}
+extension Future where Failure: Error {
+
+    static func promise() -> (future: Future<Output, Failure>, fulfill: (Result<Output, Failure>) -> Void) {
+        var fulfill: ((Result<Output, Failure>) -> Void)!
+        let future = Future<Output, Failure> { fulfill = $0 }
+        assert(fulfill != nil)
+        return (future, { fulfill($0) })
     }
 
 }

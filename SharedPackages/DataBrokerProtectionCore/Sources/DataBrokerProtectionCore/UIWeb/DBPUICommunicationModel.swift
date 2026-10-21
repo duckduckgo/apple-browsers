@@ -50,9 +50,14 @@ public struct DBPUIHandshakeUserData: Codable, Equatable {
     /// Indicates whether the user is eligible for a subscription free trial.
     public let isUserEligibleForFreeTrial: Bool
 
-    public init(isAuthenticatedUser: Bool, isUserEligibleForFreeTrial: Bool = false) {
+    public let freeScanEntryPoint: String?
+
+    public init(isAuthenticatedUser: Bool,
+                isUserEligibleForFreeTrial: Bool = false,
+                freeScanEntryPoint: String? = nil) {
         self.isAuthenticatedUser = isAuthenticatedUser
         self.isUserEligibleForFreeTrial = isUserEligibleForFreeTrial
+        self.freeScanEntryPoint = freeScanEntryPoint
     }
 }
 
@@ -186,13 +191,15 @@ public struct DBPUIDataBroker: Codable, Hashable {
     public let date: Double?
     public let parentURL: String?
     public let optOutUrl: String
+    public let removedAt: Double?
 
-    public init(name: String, url: String, date: Double? = nil, parentURL: String?, optOutUrl: String) {
+    public init(name: String, url: String, date: Double? = nil, parentURL: String?, optOutUrl: String, removedAt: Double? = nil) {
         self.name = name
         self.url = url
         self.date = date
         self.parentURL = parentURL
         self.optOutUrl = optOutUrl
+        self.removedAt = removedAt
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -207,6 +214,7 @@ public extension DBPUIDataBroker {
         self.date = date?.timeIntervalSince1970
         parentURL = dataBroker.parent
         optOutUrl = dataBroker.optOutUrl
+        removedAt = dataBroker.removedAt?.timeIntervalSince1970
     }
 
     init(from mirrorSite: MirrorSite, parentBroker: DataBroker, withDate date: Date? = nil) {
@@ -215,6 +223,7 @@ public extension DBPUIDataBroker {
         self.date = date?.timeIntervalSince1970
         parentURL = parentBroker.url
         optOutUrl = parentBroker.optOutUrl
+        removedAt = (mirrorSite.removedAt ?? parentBroker.removedAt)?.timeIntervalSince1970
     }
 
     static func brokerWithMirrorSites(from broker: DataBroker, withDate date: Date? = nil) -> [Self] {
@@ -251,12 +260,18 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let alternativeNames: [String]
     public let relatives: [String]
     public let foundDate: Double
+    /// The moment the broker acknowledged the opt-out for email-confirming brokers, or the moment our
+    /// form submission completed for brokers that don't email-confirm. For a value that consistently
+    /// represents form submission across both broker types, see `optOutFormSubmittedDate`.
     public let optOutSubmittedDate: Double?
+    /// The moment our form submission to the broker successfully completed, regardless of broker
+    /// type. For child brokers, propagated from the parent broker's most recent opt-out.
+    public let optOutFormSubmittedDate: Double?
     public let estimatedRemovalDate: Double?
     public let removedDate: Double?
     public let hasMatchingRecordOnParentBroker: Bool
 
-    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, optOutFormSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
         self.id = id
         self.dataBroker = dataBroker
         self.name = name
@@ -265,6 +280,7 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
         self.relatives = relatives
         self.foundDate = foundDate
         self.optOutSubmittedDate = optOutSubmittedDate
+        self.optOutFormSubmittedDate = optOutFormSubmittedDate
         self.estimatedRemovalDate = estimatedRemovalDate
         self.removedDate = removedDate
         self.hasMatchingRecordOnParentBroker = hasMatchingRecordOnParentBroker
@@ -273,11 +289,8 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
 
 extension DBPUIDataBrokerProfileMatch {
     public init(optOutJobData: OptOutJobData,
-                dataBrokerName: String,
-                dataBrokerURL: String,
-                dataBrokerParentURL: String?,
-                parentBrokerOptOutJobData: [OptOutJobData]?,
-                optOutUrl: String) {
+                dataBroker: DBPUIDataBroker,
+                parentBrokerOptOutJobData: [OptOutJobData]?) {
         let extractedProfile = optOutJobData.extractedProfile
 
         /*
@@ -307,34 +320,43 @@ extension DBPUIDataBrokerProfileMatch {
         }
         let estimatedRemovalDate = Calendar.current.date(byAdding: .day, value: 14, to: optOutSubmittedDate ?? foundDate)
 
+        // For child brokers, propagate the parent's most recent form submission. Strict profile
+        // matching is intentionally avoided: brokers scrape name granularity inconsistently
+        // (e.g. "Adam Joseph Smith" vs "Adam P Smith") so matching rejects nearly every
+        // real-world child↔parent pairing.
+        let optOutFormSubmittedDate: Date?
+        if let parentBrokerOptOutJobData {
+            optOutFormSubmittedDate = parentBrokerOptOutJobData
+                .compactMap(Self.formSubmittedDate(from:))
+                .max()
+        } else {
+            optOutFormSubmittedDate = Self.formSubmittedDate(from: optOutJobData)
+        }
+
         // Check for any matching records on the parent broker
         let hasFoundParentMatch = parentBrokerOptOutJobData?.contains { parentOptOut in
             extractedProfile.doesMatchExtractedProfile(parentOptOut.extractedProfile)
         } ?? false
 
         self.init(id: extractedProfile.id,
-                  dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
+                  dataBroker: dataBroker,
                   name: extractedProfile.fullName ?? "No name",
                   addresses: extractedProfile.addresses?.map { DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),
                   relatives: extractedProfile.relatives ?? [String](),
                   foundDate: foundDate.timeIntervalSince1970,
                   optOutSubmittedDate: optOutSubmittedDate?.timeIntervalSince1970,
+                  optOutFormSubmittedDate: optOutFormSubmittedDate?.timeIntervalSince1970,
                   estimatedRemovalDate: estimatedRemovalDate?.timeIntervalSince1970,
                   removedDate: extractedProfile.removedDate?.timeIntervalSince1970,
                   hasMatchingRecordOnParentBroker: hasFoundParentMatch)
     }
 
-    public init(optOutJobData: OptOutJobData,
-                dataBroker: DataBroker,
-                parentBrokerOptOutJobData: [OptOutJobData]?,
-                optOutUrl: String) {
-        self.init(optOutJobData: optOutJobData,
-                  dataBrokerName: dataBroker.name,
-                  dataBrokerURL: dataBroker.url,
-                  dataBrokerParentURL: dataBroker.parent,
-                  parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                  optOutUrl: optOutUrl)
+    private static func formSubmittedDate(from optOutJobData: OptOutJobData) -> Date? {
+        optOutJobData.historyEvents
+            .filter { $0.isFormSubmittedEvent() }
+            .min(by: { $0.date < $1.date })?
+            .date
     }
 
     /// Generates an array of `DBPUIDataBrokerProfileMatch` objects from the provided query data.
@@ -364,9 +386,8 @@ extension DBPUIDataBrokerProfileMatch {
 
                 // Create a profile match for the current data broker and append it to the list of profiles.
                 profiles.append(DBPUIDataBrokerProfileMatch(optOutJobData: optOutJobData,
-                                                            dataBroker: dataBroker,
-                                                            parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                            optOutUrl: dataBroker.optOutUrl))
+                                                            dataBroker: DBPUIDataBroker(from: dataBroker),
+                                                            parentBrokerOptOutJobData: parentBrokerOptOutJobData))
 
                 // Handle mirror sites associated with the data broker.
                 if !dataBroker.mirrorSites.isEmpty {
@@ -374,11 +395,8 @@ extension DBPUIDataBrokerProfileMatch {
                     let mirrorSitesMatches = dataBroker.mirrorSites.compactMap { mirrorSite in
                         if mirrorSite.isExtant() {
                             return DBPUIDataBrokerProfileMatch(optOutJobData: optOutJobData,
-                                                               dataBrokerName: mirrorSite.name,
-                                                               dataBrokerURL: mirrorSite.url,
-                                                               dataBrokerParentURL: dataBroker.parent,
-                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData,
-                                                               optOutUrl: dataBroker.optOutUrl)
+                                                               dataBroker: DBPUIDataBroker(from: mirrorSite, parentBroker: dataBroker),
+                                                               parentBrokerOptOutJobData: parentBrokerOptOutJobData)
                         }
                         return nil
                     }
@@ -608,5 +626,14 @@ struct DBPUIRemoveOptOutFromDashboardResult: DBPUISendableMessage {
     init(success: Bool, error: String? = nil) {
         self.success = success
         self.error = error
+    }
+}
+
+/// Message sent when background app refresh availability changes (iOS only)
+public struct DBPUIBackgroundAppRefreshDidChange: DBPUISendableMessage {
+    public let needBackgroundAppRefresh: Bool
+
+    public init(needBackgroundAppRefresh: Bool) {
+        self.needBackgroundAppRefresh = needBackgroundAppRefresh
     }
 }

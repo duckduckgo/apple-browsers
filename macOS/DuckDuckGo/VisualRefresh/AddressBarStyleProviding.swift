@@ -18,180 +18,193 @@
 
 import AppKit
 import DesignResourcesKitIcons
+import FeatureFlags_macOS
 import Foundation
+import PrivacyConfig
 
 protocol AddressBarStyleProviding {
-    func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat
+    // MARK: - Public API(s)
+    func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
+    func addressBarHorizontalPadding(focused: Bool) -> CGFloat?
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
+    func addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat
 
-    var defaultAddressBarFontSize: CGFloat { get }
-    var newTabOrHomePageAddressBarFontSize: CGFloat { get }
+    // MARK: - Configuration
     var shouldShowNewSearchIcon: Bool { get }
-    var addressBarLogoImage: NSImage? { get }
-    var addressBarButtonsCornerRadius: CGFloat { get }
-    var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var shouldAddPaddingToAddressBarButtons: Bool { get }
     var shouldAddAddressBarShadowWhenInactive: Bool { get }
-    var addressBarButtonSize: CGFloat { get }
-    var addTabButtonPadding: CGFloat { get }
+    var shouldLeaveBottomPaddingInSuggestions: Bool { get }
+    var shouldUseLegacyAddressBarSpacingMechanism: Bool { get }
+
+    // MARK: - Font Sizes
+    var defaultAddressBarFontSize: CGFloat { get }
+    var newTabOrHomePageAddressBarFontSize: CGFloat { get }
+
+    // MARK: - Metrics
     var addressBarActiveBackgroundViewRadius: CGFloat { get }
-    var addressBarInactiveBackgroundViewRadius: CGFloat { get }
-    var addressBarInnerBorderViewRadius: CGFloat { get }
+    var addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat { get }
+    var addressBarActiveBackgroundViewVerticalPadding: CGFloat { get }
     var addressBarActiveOuterBorderViewRadius: CGFloat { get }
     var addressBarActiveOuterBorderSize: CGFloat { get }
-    var suggestionIconViewLeadingPadding: CGFloat { get }
-    var suggestionTextFieldLeadingPadding: CGFloat { get }
-    var topSpaceForSuggestionWindow: CGFloat { get }
-    var suggestionShadowRadius: CGFloat { get }
+    var addressBarButtonSize: CGFloat { get }
+    var addressBarButtonsCornerRadius: CGFloat { get }
+    var addressBarPrivacyAnimationSize: CGSize? { get }
+    var addressBarInactiveBackgroundViewVerticalPadding: CGFloat { get }
+    var addressBarInactiveBackgroundViewLeadingPadding: CGFloat { get }
+    var addressBarInactiveBackgroundViewTrailingPadding: CGFloat { get }
+    var addressBarButtonsContainerViewLeadingPadding: CGFloat { get }
+    var addressBarButtonsContainerViewTrailingPadding: CGFloat { get }
+    var addressBarInactiveBackgroundViewRadius: CGFloat { get }
+    var addressBarTextFieldLeadingPadding: CGFloat { get }
+    var addressBarToggleIndicatorGap: CGFloat { get }
+    var addressBarToggleIndicatorHorizontalInset: CGFloat { get }
+    var addTabButtonPadding: CGFloat { get }
+    var aiChatOmnibarTextContainerTopPadding: CGFloat { get }
+    var aiChatOmnibarTextContainerLeadingPadding: CGFloat { get }
+    var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var suggestionHighlightCornerRadius: CGFloat { get }
-    var shouldLeaveBottomPaddingInSuggestions: Bool { get }
+    var suggestionHighlightHorizontalPadding: CGFloat { get }
+    var suggestionIconViewLeadingPadding: CGFloat { get }
+    var suggestionShadowRadius: CGFloat { get }
+    var suggestionTextFieldLeadingPadding: CGFloat { get }
+    var tabBarBackgroundTopPadding: CGFloat { get }
+    var topSpaceForSuggestionWindow: CGFloat { get }
 }
 
-final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
-    private let navigationBarHeightForDefault: CGFloat = 48
-    private let navigationBarHeightForHomePage: CGFloat = 52
-    private let navigationBarHeightForPopUpWindow: CGFloat = 42
-    private let addressBarTopPaddingForDefault: CGFloat = 6
-    private let addressBarTopPaddingForHomePage: CGFloat = 10
-    private let addressBarTopPaddingForPopUpWindow: CGFloat = 0
-    private let addressBarBottomPaddingForDefault: CGFloat = 6
-    private let addressBarBottomPaddingForHomePage: CGFloat = 8
-    private let addressBarBottomPaddingForPopUpWindow: CGFloat = 0
+struct AddressBarStyleProvidingFactory {
 
-    let defaultAddressBarFontSize: CGFloat = 13
-    let newTabOrHomePageAddressBarFontSize: CGFloat = 15
-    let addressBarButtonsCornerRadius: CGFloat = 0
-    let addressBarLogoImage: NSImage? = nil
-    let shouldShowNewSearchIcon: Bool = false
-    let shouldAddPaddingToAddressBarButtons: Bool = false
-    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = LegacyPrivacyShieldAddressBarStyleProvider()
-    let shouldAddAddressBarShadowWhenInactive: Bool = false
-    let tabBarButtonSize: CGFloat = 28
-    let addressBarButtonSize: CGFloat = 32
-    let addTabButtonPadding: CGFloat = 4
-    let addressBarActiveBackgroundViewRadius: CGFloat = 8
-    let addressBarInactiveBackgroundViewRadius: CGFloat = 6
-    let addressBarInnerBorderViewRadius: CGFloat = 8
-    let addressBarActiveOuterBorderViewRadius: CGFloat = 10
-    let addressBarActiveOuterBorderSize: CGFloat = -3
-    let suggestionIconViewLeadingPadding: CGFloat = 13
-    let suggestionTextFieldLeadingPadding: CGFloat = 7
-    let topSpaceForSuggestionWindow: CGFloat = 21
-    let suggestionShadowRadius: CGFloat = 8.0
-    let suggestionHighlightCornerRadius: CGFloat = 3.0
-    let shouldLeaveBottomPaddingInSuggestions: Bool = true
-
-    func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat {
-        switch type {
-        case .default: return navigationBarHeightForDefault
-        case .homePage: return navigationBarHeightForHomePage
-        case .popUpWindow: return navigationBarHeightForPopUpWindow
-        }
-    }
-
-    func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
-        switch type {
-        case .default: return addressBarTopPaddingForDefault
-        case .homePage: return addressBarTopPaddingForHomePage
-        case .popUpWindow: return addressBarTopPaddingForPopUpWindow
-        }
-    }
-
-    func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
-        switch type {
-        case .default: return addressBarBottomPaddingForDefault
-        case .homePage: return addressBarBottomPaddingForHomePage
-        case .popUpWindow: return addressBarBottomPaddingForPopUpWindow
-        }
-    }
-
-    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
-        switch type.isLogoVisible {
-        case true: return 16
-        case false: return 0
-        }
-    }
-
-    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
-        return isHomePage
-    }
-
-    func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
-        return isHomePage ? 34 : 28
+    static func buildStyleProvider() -> AddressBarStyleProviding {
+        AddressBarStyleProvider()
     }
 }
 
-final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
+final class AddressBarStyleProvider: AddressBarStyleProviding {
+
+    // MARK: - Private Properties
     private let navigationBarHeightForDefault: CGFloat = 52
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
-    private let addressBarTopPaddingForDefault: CGFloat = 7
-    private let addressBarTopPaddingForHomePage: CGFloat = 7
+    private let addressBarTopPaddingForDefault: CGFloat = 2
     private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
-    private let addressBarBottomPaddingForDefault: CGFloat = 7
-    private let addressBarBottomPaddingForHomePage: CGFloat = 7
+    private let addressBarBottomPaddingForDefault: CGFloat = 2
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
+    private let addressBarHorizontalPaddingExtended: CGFloat = 1
+    private let addressBarHorizontalPaddingIDLE: CGFloat = 4
+    private let addressBarTrailingStackViewOmnibarPadding: CGFloat = 1
+    private let addressBarTrailingStackViewFocusedPadding: CGFloat = 3
+    private let addressBarTrailingStackViewDefaultPadding: CGFloat = 3
 
-    let defaultAddressBarFontSize: CGFloat = 13
-    let newTabOrHomePageAddressBarFontSize: CGFloat = 13
-    let addressBarButtonsCornerRadius: CGFloat = 9
-    let addressBarLogoImage: NSImage? = DesignSystemImages.Glyphs.Size16.findSearch
+    // MARK: - Configuration
     let shouldShowNewSearchIcon: Bool = true
     let shouldAddPaddingToAddressBarButtons: Bool = true
-    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = CurrentPrivacyShieldAddressBarStyleProvider()
-    let shouldAddAddressBarShadowWhenInactive: Bool = true
-    let tabBarButtonSize: CGFloat = 28
-    let addressBarButtonSize: CGFloat = 28
-    let addTabButtonPadding: CGFloat = 32 // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
-    let addressBarActiveBackgroundViewRadius: CGFloat = 15
-    let addressBarInactiveBackgroundViewRadius: CGFloat = 12
-    let addressBarInnerBorderViewRadius: CGFloat = 15
-    let addressBarActiveOuterBorderViewRadius: CGFloat = 17
-    let addressBarActiveOuterBorderSize: CGFloat = -2
-    let suggestionIconViewLeadingPadding: CGFloat = 8
-    let suggestionTextFieldLeadingPadding: CGFloat = 8
-    let topSpaceForSuggestionWindow: CGFloat = 16
-    let suggestionShadowRadius: CGFloat = 3.0
-    let suggestionHighlightCornerRadius: CGFloat = 6.0
+    let shouldAddAddressBarShadowWhenInactive: Bool = false
     let shouldLeaveBottomPaddingInSuggestions: Bool = true
+    let shouldUseLegacyAddressBarSpacingMechanism: Bool = false
 
-    func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat {
+    // MARK: - Font Sizes
+    let defaultAddressBarFontSize: CGFloat = 13
+    let newTabOrHomePageAddressBarFontSize: CGFloat = 13
+
+    // MARK: - Metrics
+
+    let addressBarActiveBackgroundViewRadius: CGFloat = 19
+    let addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat = 24
+    let addressBarActiveBackgroundViewVerticalPadding: CGFloat = 5
+    let addressBarActiveOuterBorderViewRadius: CGFloat = 0      // Deprecated
+    let addressBarActiveOuterBorderSize: CGFloat = 0            // Deprecated
+    let addressBarButtonSize: CGFloat = 28
+    let addressBarButtonsCornerRadius: CGFloat = 14
+    let addressBarPrivacyAnimationSize: CGSize? = CGSize(width: 34, height: 34)
+    let addressBarInactiveBackgroundViewVerticalPadding: CGFloat = 7
+    let addressBarInactiveBackgroundViewRadius: CGFloat = 17
+    let addressBarInactiveBackgroundViewLeadingPadding: CGFloat = 6
+    let addressBarInactiveBackgroundViewTrailingPadding: CGFloat = 6
+    let addressBarButtonsContainerViewLeadingPadding: CGFloat = 7
+    let addressBarButtonsContainerViewTrailingPadding: CGFloat = 7
+    let addressBarTextFieldLeadingPadding: CGFloat = 23
+    let addressBarToggleIndicatorGap: CGFloat = 0
+    let addressBarToggleIndicatorHorizontalInset: CGFloat = 1
+    let addTabButtonPadding: CGFloat = 32                       // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
+    let aiChatOmnibarTextContainerLeadingPadding: CGFloat = 13
+    let aiChatOmnibarTextContainerTopPadding: CGFloat = 6
+    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding = PrivacyShieldAddressBarStyleProvider()
+    let suggestionHighlightCornerRadius: CGFloat = 12
+    let suggestionHighlightHorizontalPadding: CGFloat = 5
+    let suggestionIconViewLeadingPadding: CGFloat = 17
+    let suggestionShadowRadius: CGFloat = 3.0
+    let suggestionTextFieldLeadingPadding: CGFloat = 8
+    let tabBarButtonSize: CGFloat = 28
+    let topSpaceForSuggestionWindow: CGFloat = 16
+
+    let tabBarBackgroundTopPadding: CGFloat = {
+#if compiler(>=6.2)
+        if #available(macOS 26.0, *), Bundle.main.designCompatibilityEnabled == false {
+            return 2
+        }
+#endif
+
+        return 0
+    }()
+
+    // MARK: - Public API(s)
+
+    func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
-        case .default: return navigationBarHeightForDefault
-        case .homePage: return navigationBarHeightForHomePage
-        case .popUpWindow: return navigationBarHeightForPopUpWindow
+        case .default:
+            return navigationBarHeightForDefault
+        case .homePage:
+            return navigationBarHeightForHomePage
+        case .popUpWindow:
+            return navigationBarHeightForPopUpWindow
         }
     }
 
+    /// Deprecated: Remove once `.appRebranding` Ships
     func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
-        case .default: return focused ? addressBarTopPaddingForDefault - 1 : addressBarTopPaddingForDefault
-        case .homePage: return focused ? addressBarTopPaddingForHomePage - 1 : addressBarTopPaddingForHomePage
-        case .popUpWindow: return addressBarTopPaddingForPopUpWindow
+        case .default, .homePage:
+            return addressBarTopPaddingForDefault
+        case .popUpWindow:
+            return addressBarTopPaddingForPopUpWindow
         }
     }
 
+    /// Deprecated: Remove once `.appRebranding` Ships
     func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
-        case .default: return focused ? addressBarBottomPaddingForDefault - 1 : addressBarBottomPaddingForDefault
-        case .homePage: return focused ? addressBarBottomPaddingForHomePage - 1 : addressBarBottomPaddingForHomePage
-        case .popUpWindow: return addressBarBottomPaddingForPopUpWindow
+        case .default, .homePage:
+            return addressBarBottomPaddingForDefault
+        case .popUpWindow:
+            return addressBarBottomPaddingForPopUpWindow
         }
+    }
+
+    func addressBarHorizontalPadding(focused: Bool) -> CGFloat? {
+        return focused ? addressBarHorizontalPaddingExtended : addressBarHorizontalPaddingIDLE
     }
 
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
         return 0
     }
 
+    func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat {
+        return showsToggle ? addressBarTrailingStackViewOmnibarPadding : addressBarTrailingStackViewDefaultPadding
+    }
+
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
-        return true
+        return false
     }
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
-        return 32
+        return 34
+    }
+
+    func addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat {
+        isSuggestionsWindowVisible ? addressBarActiveBackgroundViewRadiusWithSuggestions : addressBarActiveBackgroundViewRadius
     }
 }

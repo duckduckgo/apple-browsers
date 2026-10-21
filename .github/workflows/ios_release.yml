@@ -9,7 +9,6 @@ on:
     inputs:
       destination:
         description: "Upload destination (App Store or TestFlight)"
-        required: true
         default: testflight
         type: choice
         options:
@@ -29,11 +28,19 @@ on:
         description: "Branch name"
         required: false
         type: string
+      commit-sha:
+        description: "Commit SHA"
+        required: false
+        type: string
       destination:
         description: "Upload destination (TestFlight or App Store)"
-        required: false
         default: testflight
         type: string
+      measure-app-size:
+        description: "Whether to measure and track app sizes"
+        required: false
+        default: false
+        type: boolean
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -53,10 +60,12 @@ on:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
+      SSH_PRIVATE_KEY_DUCKSANS_FONT:
+        required: true
 
 jobs:
   make-release:
-    runs-on: macos-15-xlarge
+    runs-on: [image:osx-tahoe-27, m4pro]
     name: Make App Store Connect Release
 
     env:
@@ -67,10 +76,13 @@ jobs:
     steps:
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
-        ref: ${{ env.branch }}
+        ref: ${{ inputs.commit-sha || env.branch }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Set destination output
       id: destination
@@ -87,10 +99,12 @@ jobs:
           *) echo "👎 Not a release, hotfix, or coldfix branch"; exit 1 ;;
         esac
 
-    - name: Register SSH keys for access to certificates
-      uses: webfactory/ssh-agent@v0.9.1
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
@@ -116,11 +130,23 @@ jobs:
         echo "app_version=${app_version}" >> $GITHUB_ENV
         echo "build_number=${build_number}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}
-        mv -f "$original_dsyms_path" "$dsyms_path" 
+        mv -f "$original_dsyms_path" "$dsyms_path"
+
+    - name: Measure App Size
+      id: measure-app-size
+      if: success() && inputs.measure-app-size == true
+      continue-on-error: true
+      uses: ./.github/actions/measure-app-size
+      with:
+        report-file: "iOS/App Thinning Size Report.txt"
+        download-size-pixel-name: "m_ci_apple_ios_release_download_size"
+        installation-size-pixel-name: "m_ci_apple_ios_release_installation_size"
+        app-version: ${{ env.app_version }}
+        build-number: ${{ env.build_number }}
 
     - name: Upload dSYMs artifact
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DuckDuckGo-${{ steps.destination.outputs.destination }}-dSYM-${{ env.app_version }}.${{ env.build_number }}
         path: ${{ env.dsyms_path }}

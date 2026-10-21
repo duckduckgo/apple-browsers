@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import SpecialErrorPages
+import BrowserServicesKitTestsUtils
 import UserScript
 import WebKit
 
@@ -108,7 +109,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
     @MainActor
     func test_WhenHandlerForInitialSetUpCalled_AndIsEnabledTrue_ThenRightParameterReturned() async {
         // GIVEN
-        let expectedData = SpecialErrorData.ssl(type: .invalid, domain: "someDomain", eTldPlus1: nil)
+        let expectedData = SpecialErrorData.ssl(type: .invalid, domain: "someDomain", eTldPlus1: "")
         var encodable: Encodable?
         userScript.isEnabled = true
         delegate.errorData = expectedData
@@ -116,7 +117,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // WHEN
         let handler = userScript.handler(forMethodNamed: "initialSetup")
         if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage())
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
 
         // THEN
@@ -136,7 +137,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // WHEN
         let handler = userScript.handler(forMethodNamed: "leaveSite")
         if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage())
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
 
         // THEN
@@ -155,7 +156,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // WHEN
         let handler = userScript.handler(forMethodNamed: "visitSite")
         if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage())
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
 
         // THEN
@@ -174,7 +175,7 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         // WHEN
         let handler = userScript.handler(forMethodNamed: "advancedInfo")
         if let handler {
-            encodable = try? await handler(Data(), WKScriptMessage())
+            encodable = try? await handler(Data(), WKScriptMessage.mock())
         }
 
         // THEN

@@ -1,0 +1,104 @@
+//
+//  ThemeStyleProviding.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AppKit
+import Combine
+import FeatureFlags_macOS
+import NetworkProtectionUI
+import DesignResourcesKit
+import PixelKit
+import PrivacyConfig
+
+protocol ThemeStyleProviding {
+    var name: ThemeName { get }
+    var palette: ThemeColors { get }
+
+    var toolbarButtonsCornerRadius: CGFloat { get }
+    var fireWindowGraphic: NSImage { get }
+    var fireButtonSize: CGFloat { get }
+    var navigationToolbarButtonsSpacing: CGFloat { get }
+    var tabBarButtonSize: CGFloat { get }
+    var addToolbarShadow: Bool { get }
+
+    var addressBarStyleProvider: AddressBarStyleProviding { get }
+    var navigationBarStyleProvider: NavigationBarStyleProviding { get }
+    var tabStyleProvider: TabStyleProviding { get }
+    var colorsProvider: ColorsProviding { get }
+    var iconsProvider: IconsProviding { get }
+}
+
+enum AddressBarSizeClass {
+    case `default`
+    case homePage
+    case popUpWindow
+
+    var logoWidth: CGFloat {
+        switch self {
+        case .homePage: 44
+        case .popUpWindow, .default: 0
+        }
+    }
+
+    var isLogoVisible: Bool {
+        switch self {
+        case .homePage: true
+        case .popUpWindow, .default: false
+        }
+    }
+}
+
+struct ThemeStyle: ThemeStyleProviding {
+    let name: ThemeName
+    let palette: ThemeColors
+
+    let toolbarButtonsCornerRadius: CGFloat
+    let fireWindowGraphic: NSImage
+
+    let addressBarStyleProvider: AddressBarStyleProviding
+    let navigationBarStyleProvider: NavigationBarStyleProviding
+    let tabStyleProvider: TabStyleProviding
+    let colorsProvider: ColorsProviding
+    let iconsProvider: IconsProviding
+    let fireButtonSize: CGFloat
+    let navigationToolbarButtonsSpacing: CGFloat
+    let tabBarButtonSize: CGFloat
+    let addToolbarShadow: Bool
+
+    static func buildThemeStyle(themeName: ThemeName) -> ThemeStyle {
+        let palette = ThemeColors(themeName: themeName)
+        return buildThemeStyle(name: themeName, palette: palette)
+    }
+
+    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors) -> ThemeStyle {
+        ThemeStyle(
+            name: name,
+            palette: palette,
+            toolbarButtonsCornerRadius: 9,
+            fireWindowGraphic: NSImage(resource: .burnerWindowGraphicNew),
+            addressBarStyleProvider: AddressBarStyleProvidingFactory.buildStyleProvider(),
+            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(),
+            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette),
+            colorsProvider: ColorsProvidingFactory.buildColorsProvider(palette: palette),
+            iconsProvider: IconsProvidingFactory.buildIconsProvider(),
+            fireButtonSize: 32,
+            navigationToolbarButtonsSpacing: 2,
+            tabBarButtonSize: 30,
+            addToolbarShadow: true
+        )
+    }
+}

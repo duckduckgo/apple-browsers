@@ -19,7 +19,7 @@
 import XCTest
 
 class BookmarksBarVisibilityTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var pageTitle: String!
     private var urlForBookmarksBar: URL!
     private let titleStringLength = 12
@@ -27,32 +27,25 @@ class BookmarksBarVisibilityTests: UITestCase {
     private var addressBarTextField: XCUIElement!
     private var bookmarksBarCollectionView: XCUIElement!
     private var defaultBookmarkDialogButton: XCUIElement!
-    private var resetBookMarksMenuItem: XCUIElement!
     private var skipOnboardingMenuItem: XCUIElement!
     private var bookmarksBarPromptPopover: XCUIElement!
 
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
 
-        addressBarTextField = app.textFields["AddressBarViewController.addressBarTextField"]
+        addressBarTextField = app.addressBar
         bookmarksBarCollectionView = app.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
         defaultBookmarkDialogButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
-        resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         skipOnboardingMenuItem = app.menuItems["MainMenu.skipOnboarding"]
-        bookmarksBarPromptPopover = app.popovers.containing(NSPredicate(format: "title == %@", "Show Bookmarks Bar?")).element
+        bookmarksBarPromptPopover = app.popovers.containing(\.title, equalTo: "Show Bookmarks Bar?").element
 
-        resetBookmarks()
+        app.resetBookmarks()
+        app.resetPromo(withID: "bookmark-toolbar")
         skipOnboarding()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows
-        app.typeKey("n", modifierFlags: .command) // Open new window
+        app.enforceSingleWindow()
     }
 
     func test_bookmarksBar_remainsVisibleAfterAcceptingPrompt() throws {
@@ -65,7 +58,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Wait for the page to load
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -103,7 +96,7 @@ class BookmarksBarVisibilityTests: UITestCase {
         )
 
         // Open a new tab
-        app.typeKey("t", modifierFlags: .command)
+        app.openNewTab()
 
         // Verify bookmarks bar is shown in the new tab
         XCTAssertTrue(
@@ -122,7 +115,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Wait for the page to load
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -170,7 +163,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Wait for the page to load
         XCTAssertTrue(
-            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
@@ -200,21 +193,13 @@ class BookmarksBarVisibilityTests: UITestCase {
         app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
 
         // Open a new tab
-        app.typeKey("t", modifierFlags: .command)
+        app.openNewTab()
 
         // Verify bookmarks bar is hidden in the new tab
         XCTAssertFalse(
             bookmarksBarCollectionView.exists,
             "Bookmarks bar should be hidden in new tab after dismissing prompt popover."
         )
-    }
-
-    private func resetBookmarks() {
-        XCTAssertTrue(
-            resetBookMarksMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Reset bookmarks menu item didn't become available in a reasonable timeframe."
-        )
-        resetBookMarksMenuItem.click()
     }
 
     private func skipOnboarding() {

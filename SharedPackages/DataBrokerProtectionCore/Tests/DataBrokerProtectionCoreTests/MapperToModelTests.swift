@@ -22,6 +22,18 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class MapperToModelTests: XCTestCase {
 
+    private enum LegacyEmailError: Codable, Equatable {
+        case httpError(statusCode: Int)
+    }
+
+    private enum LegacyDataBrokerProtectionError: Codable, Equatable {
+        case emailError(LegacyEmailError?)
+    }
+
+    private enum LegacyHistoryEventType: Codable, Equatable {
+        case error(error: LegacyDataBrokerProtectionError)
+    }
+
     private var sut = MapperToModel(mechanism: { _ in Data() })
     private var jsonDecoder: JSONDecoder!
     private var jsonEncoder: JSONEncoder!
@@ -29,6 +41,32 @@ final class MapperToModelTests: XCTestCase {
     override func setUpWithError() throws {
         jsonDecoder = JSONDecoder()
         jsonEncoder = JSONEncoder()
+    }
+
+    func testMapToModel_decodesLegacyHTTPEmailErrorHistoryEvent() throws {
+        let legacyEventData = Data(
+            #"{"error":{"error":{"emailError":{"_0":{"httpError":{"statusCode":400}}}}}}"#.utf8
+        )
+        let scanEvent = ScanHistoryEventDB(brokerId: 1,
+                                           profileQueryId: 2,
+                                           event: legacyEventData,
+                                           timestamp: Date())
+
+        let result = try sut.mapToModel(scanEvent)
+
+        XCTAssertEqual(result.type, .error(error: .emailError(.httpError(statusCode: 400, message: nil))))
+    }
+
+    func testMapToDB_encodesHTTPEmailErrorHistoryEventReadableByLegacyModel() throws {
+        let historyEvent = HistoryEvent(brokerId: 1,
+                                        profileQueryId: 2,
+                                        type: .error(error: .emailError(.httpError(statusCode: 400,
+                                                                                   message: "INVALID_REQUEST"))))
+
+        let encodedEvent = try MapperToDB(mechanism: { $0 }).mapToDB(historyEvent, brokerId: 1, profileQueryId: 2)
+        let legacyEvent = try jsonDecoder.decode(LegacyHistoryEventType.self, from: encodedEvent.event)
+
+        XCTAssertEqual(legacyEvent, .error(error: .emailError(.httpError(statusCode: 400))))
     }
 
     func testMapToModel_validData() throws {
@@ -43,10 +81,11 @@ final class MapperToModelTests: XCTestCase {
             parent: "ParentBroker",
             mirrorSites: [],
             optOutUrl: "https://example.com/opt-out",
-            eTag: ""
+            eTag: "",
+            removedAt: nil
         )
         let jsonData = try jsonEncoder.encode(brokerData)
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: jsonData, version: "1.0", url: "https://example.com", eTag: "")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: jsonData, version: "1.0", url: "https://example.com", eTag: "", removedAt: nil)
 
         // When
         let result = try sut.mapToModel(brokerDB)
@@ -73,7 +112,7 @@ final class MapperToModelTests: XCTestCase {
                 "schedulingConfig": {"retryError": 1, "confirmOptOutScan": 2, "maintenanceScan": 3, "maxAttempts": -1}
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "https://example.com", eTag: "")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "https://example.com", eTag: "", removedAt: nil)
 
         // When
         let result = try sut.mapToModel(brokerDB)
@@ -91,7 +130,13 @@ final class MapperToModelTests: XCTestCase {
                 "invalidKey": "value"
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "InvalidBroker", json: invalidJsonData, version: "1.0", url: "https://example.com", eTag: "")
+        let brokerDB = BrokerDB(id: 1,
+                                name: "InvalidBroker",
+                                json: invalidJsonData,
+                                version: "1.0",
+                                url: "https://example.com",
+                                eTag: "",
+                                removedAt: nil)
 
         // When & Then
         XCTAssertThrowsError(try sut.mapToModel(brokerDB)) { error in
@@ -109,12 +154,233 @@ final class MapperToModelTests: XCTestCase {
                 "schedulingConfig": {"retryError": 1, "confirmOptOutScan": 2, "maintenanceScan": 3, "maxAttempts": -1}
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "", eTag: "")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "", eTag: "", removedAt: nil)
 
         // When
         let result = try sut.mapToModel(brokerDB)
 
         // Then
         XCTAssertEqual(result.url, brokerDB.name)
+    }
+
+    func testMapToModel_legacyNormalizedBrokerJSON_decodesSuccessfully() throws {
+        // Given
+        let legacyBrokerJSON = """
+            {
+                "name": "ExampleBroker",
+                "url": "example.com",
+                "steps": [
+                    {
+                        "stepType": "scan",
+                        "actions": [
+                            {
+                                "actionType": "click",
+                                "id": "click-1",
+                                "selector": "#submit",
+                                "dataSource": "userProfile",
+                                "elements": [
+                                    {
+                                        "type": "button",
+                                        "selector": "#submit",
+                                        "parent": {
+                                            "selector": ".button-parent"
+                                        },
+                                        "multiple": true,
+                                        "min": "1",
+                                        "max": "3",
+                                        "failSilently": true
+                                    }
+                                ]
+                            },
+                            {
+                                "actionType": "fillForm",
+                                "id": "fill-1",
+                                "selector": "#opt-out-form",
+                                "dataSource": "userProfile",
+                                "elements": [
+                                    {
+                                        "type": "email",
+                                        "selector": "input[type='email']",
+                                        "parent": {
+                                            "selector": "#email-wrapper"
+                                        },
+                                        "multiple": false,
+                                        "min": "1",
+                                        "max": "1",
+                                        "failSilently": false
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "version": "1.0.0",
+                "schedulingConfig": {"retryError": 48, "confirmOptOutScan": 72, "maintenanceScan": 120, "maxAttempts": -1},
+                "optOutUrl": "https://example.com"
+            }
+            """.data(using: .utf8)!
+        let brokerDB = BrokerDB(
+            id: 1,
+            name: "ExampleBroker",
+            json: legacyBrokerJSON,
+            version: "1.0.0",
+            url: "example.com",
+            eTag: "legacy-etag",
+            removedAt: nil
+        )
+
+        // When
+        let result = try sut.mapToModel(brokerDB)
+
+        // Then
+        XCTAssertEqual(result.name, "ExampleBroker")
+        XCTAssertEqual(result.url, "example.com")
+        XCTAssertEqual(result.steps.count, 1)
+        XCTAssertEqual(result.steps.first?.actions.count, 2)
+        XCTAssertEqual(result.steps.first?.actions.first?.actionType, .click)
+        XCTAssertEqual(result.steps.first?.actions.last?.actionType, .fillForm)
+
+        let fillFormAction = try XCTUnwrap(result.steps.first?.actions.last as? FillFormAction)
+        XCTAssertEqual(fillFormAction.elements.first?.type, "email")
+        XCTAssertTrue(fillFormAction.needsEmail)
+    }
+
+    func testMapToModel_rawBrokerDBJSON_preservesUnknownActionFieldsWhenEncodingActionRequest() throws {
+        // Given: DB broker JSON includes action fields that native models do not define.
+        let rawBrokerJSON = """
+            {
+                "name": "ExampleBroker",
+                "url": "example.com",
+                "steps": [
+                    {
+                        "stepType": "scan",
+                        "actions": [
+                            {
+                                "actionType": "navigate",
+                                "id": "navigate-1",
+                                "url": "https://example.com",
+                                "someNewField": "hello-world",
+                                "someNewArrayField": ["one", "two"],
+                                "anotherNewField": {
+                                    "flag": true
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "version": "1.0.0",
+                "schedulingConfig": {"retryError": 48, "confirmOptOutScan": 72, "maintenanceScan": 120, "maxAttempts": -1},
+                "optOutUrl": "https://example.com"
+            }
+            """.data(using: .utf8)!
+        let brokerDB = BrokerDB(
+            id: 1,
+            name: "ExampleBroker",
+            json: rawBrokerJSON,
+            version: "1.0.0",
+            url: "example.com",
+            eTag: "etag-raw",
+            removedAt: nil
+        )
+
+        // When: broker JSON is decoded to typed model and action request payload is encoded for WebView injection.
+        let mappedBroker = try sut.mapToModel(brokerDB)
+        let action = try XCTUnwrap(mappedBroker.steps.first?.actions.first)
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+
+        // Then: DB -> model mapping still preserves new fields for final action payload encoding.
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "navigate")
+        XCTAssertEqual(rawActionPayload["someNewField"] as? String, "hello-world")
+        XCTAssertEqual((rawActionPayload["anotherNewField"] as? [String: Any])?["flag"] as? Bool, true)
+    }
+
+    func testMapToModel_legacyBrokerDBJSON_canStillEncodeActionRequestPayload() throws {
+        // Given: legacy normalized DB JSON with fields trimmed from current native action structs.
+        let legacyBrokerJSON = """
+            {
+                "name": "ExampleBroker",
+                "url": "example.com",
+                "steps": [
+                    {
+                        "stepType": "scan",
+                        "actions": [
+                            {
+                                "actionType": "fillForm",
+                                "id": "fill-1",
+                                "selector": "#opt-out-form",
+                                "dataSource": "userProfile",
+                                "elements": [
+                                    {
+                                        "type": "email",
+                                        "selector": "input[type='email']",
+                                        "parent": {
+                                            "selector": "#email-wrapper"
+                                        },
+                                        "multiple": false,
+                                        "min": "1",
+                                        "max": "1",
+                                        "failSilently": false
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "version": "1.0.0",
+                "schedulingConfig": {"retryError": 48, "confirmOptOutScan": 72, "maintenanceScan": 120, "maxAttempts": -1},
+                "optOutUrl": "https://example.com"
+            }
+            """.data(using: .utf8)!
+        let brokerDB = BrokerDB(
+            id: 1,
+            name: "ExampleBroker",
+            json: legacyBrokerJSON,
+            version: "1.0.0",
+            url: "example.com",
+            eTag: "legacy-etag",
+            removedAt: nil
+        )
+
+        // When: broker JSON is mapped and then encoded as a WebView action payload.
+        let mappedBroker = try sut.mapToModel(brokerDB)
+        let action = try XCTUnwrap(mappedBroker.steps.first?.actions.first)
+        let params = Params(state: ActionRequest(action: action, data: .userData(makeProfileQuery(), nil, nil, [:])))
+        let rawActionPayload = try XCTUnwrap((try params.toDictionary()["state"] as? [String: Any])?["action"] as? [String: Any])
+
+        // Then: legacy fields are still forwarded because encoding uses attached action JSON.
+        XCTAssertEqual(rawActionPayload["actionType"] as? String, "fillForm")
+        XCTAssertEqual(rawActionPayload["id"] as? String, "fill-1")
+        XCTAssertEqual(rawActionPayload["selector"] as? String, "#opt-out-form")
+        XCTAssertEqual(rawActionPayload["dataSource"] as? String, "userProfile")
+
+        let elements = try XCTUnwrap(rawActionPayload["elements"] as? [[String: Any]])
+        let firstElement = try XCTUnwrap(elements.first)
+        XCTAssertEqual(firstElement["type"] as? String, "email")
+        XCTAssertEqual(firstElement["selector"] as? String, "input[type='email']")
+        XCTAssertEqual((firstElement["parent"] as? [String: Any])?["selector"] as? String, "#email-wrapper")
+    }
+
+    func testMapToModel_extractedProfileRoundTripsExtras() throws {
+        // Given
+        let extractedProfile = ExtractedProfile(name: "Jane Smith",
+                                                addresses: [AddressCityState(city: "Springfield", state: "IL", extras: ["zip": "62701"])],
+                                                identifier: "https://broker.example/id/jane-smith",
+                                                extras: ["county": "Sangamon"])
+        let profileData = try MapperToDB(mechanism: { $0 }).mapToDB(extractedProfile)
+        let extractedProfileDB = ExtractedProfileDB(id: 1, brokerId: 1, profileQueryId: 1, profile: profileData, removedDate: nil)
+
+        // When
+        let result = try MapperToModel(mechanism: { $0 }).mapToModel(extractedProfileDB)
+
+        // Then
+        XCTAssertEqual(result.extras, ["county": "Sangamon"])
+        XCTAssertEqual(result.addresses?.first?.extras, ["zip": "62701"])
+    }
+
+    // MARK: - Helpers
+
+    private func makeProfileQuery() -> ProfileQuery {
+        ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 1985)
     }
 }

@@ -1,0 +1,33 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - duckplayer_native
+
+---
+
+# Load constants
+- runFlow:
+    file: shared/constants.yaml
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Navigate to a video
+# Load Site
+- runFlow: 
+    file: shared/load_serp_url.yaml
+
+- runFlow:
+    file: shared/tap_serp_title.yaml
+
+# Validate Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml
+
+- assertVisible:
+    id: ${output.watchOnYoutubeLabel}
+
+# Validate Duck Player Closes
+- runFlow: 
+    file: shared/close_player.yaml

@@ -49,7 +49,7 @@ protocol UnifiedFeedbackSender {
 }
 
 extension UnifiedFeedbackSender {
-    func sendStandardPixel(_ pixel: PixelKitEventV2) async throws {
+    func sendStandardPixel(_ pixel: PixelKit.Event) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             PixelKit.fire(pixel, frequency: .standard) { _, error in
                 if let error {
@@ -89,6 +89,7 @@ struct DefaultFeedbackSender: UnifiedFeedbackSender {
         case nothingOnSpecificSite, notMe, scanStuck, removalStuck
         case accessCode, cantContactAdvisor, advisorUnhelpful
         case accessSubscriptionModels, loginThirdPartyBrowser
+        case unableToAccessFeatures
         case somethingElse
         static var `default` = Subcategory.somethingElse
     }

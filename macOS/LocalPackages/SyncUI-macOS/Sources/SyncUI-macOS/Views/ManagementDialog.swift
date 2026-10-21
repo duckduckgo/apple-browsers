@@ -21,13 +21,17 @@ import SwiftUI
 public enum ManagementDialogKind: Equatable {
     case deleteAccount(_ devices: [SyncDevice])
     case turnOffSync
+    case turnOffSyncOptions(thisDevice: SyncDevice, devices: [SyncDevice], deletesServerDataByDefault: Bool)
     case deviceDetails(_ device: SyncDevice)
     case removeDevice(_ device: SyncDevice)
     case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
     case prepareToSync
+    case waitForOtherDevice
     case saveRecoveryCode(_ code: String)
-    case nowSyncing
-    case syncWithServer
+    case pairingSuccess
+    case syncAnotherDevicePrompt
+    case syncThisDeviceFallback
+    case syncAuthenticationCancelled
     case enterRecoveryCode(stringForQRCode: String)
     case recoverSyncedData
     case empty
@@ -42,12 +46,10 @@ public struct ManagementDialog: View {
     }
 
     var errorDescription: String {
-        guard let typeDescription = model.syncErrorMessage?.type.description,
-              let errorDescription = model.syncErrorMessage?.errorDescription
-        else {
-            return ""
-        }
-        return typeDescription + "\n" + errorDescription
+        composeErrorDescription(
+            primary: model.syncErrorMessage?.type.description,
+            detail: model.syncErrorMessage?.errorDescription
+        )
     }
 
     var buttonTitle: String {
@@ -74,13 +76,7 @@ public struct ManagementDialog: View {
                         }
                     )
                 } else {
-                    Alert(
-                        title: Text(errorTitle),
-                        message: Text(errorDescription),
-                        dismissButton: .default(Text(buttonTitle)) {
-                            model.endFlow()
-                        }
-                    )
+                    syncErrorAlert
                 }
             }
     }
@@ -90,6 +86,8 @@ public struct ManagementDialog: View {
             switch model.currentDialog {
             case .turnOffSync:
                 TurnOffSyncView()
+            case .turnOffSyncOptions(let thisDevice, let devices, let deletesServerDataByDefault):
+                TurnOffSyncOptionsView(thisDevice: thisDevice, devices: devices, isDeleteServerDataSelected: deletesServerDataByDefault)
             case .deviceDetails(let device):
                 DeviceDetailsView(device: device)
             case .removeDevice(let device):
@@ -99,13 +97,21 @@ public struct ManagementDialog: View {
             case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
                 SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
             case .prepareToSync:
-                PreparingToSyncView()
+                PreparingToSyncView(state: .connecting, isAnimationPaused: model.isPreparingToSyncAnimationPaused) {
+                    model.preparingToSyncAnimationDidFinish()
+                }
+            case .waitForOtherDevice:
+                PreparingToSyncView(state: .waitingForOtherDevice)
             case .saveRecoveryCode(let code):
-                SaveRecoveryPDFView(code: code)
-            case .nowSyncing:
-                DeviceSyncedView()
-            case .syncWithServer:
-                SyncWithServerView()
+                SyncSuccessView(code: code)
+            case .pairingSuccess:
+                SyncSuccessView(code: nil)
+            case .syncAnotherDevicePrompt:
+                SyncAnotherDevicePromptView()
+            case .syncThisDeviceFallback:
+                SyncThisDeviceFallbackView()
+            case .syncAuthenticationCancelled:
+                SyncAuthenticationCancelledView()
             case .enterRecoveryCode(let stringForQRCode):
                 EnterRecoveryCodeView(stringForQRCode: stringForQRCode)
             case .recoverSyncedData:
@@ -116,5 +122,38 @@ public struct ManagementDialog: View {
         }
         .environmentObject(model)
         .environmentObject(recoveryCodeModel)
+    }
+
+    private func composeErrorDescription(primary: String?, detail: String?) -> String {
+        let primary = primary?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let detail = detail?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let primary, !primary.isEmpty else {
+            return detail ?? ""
+        }
+        // Some callers use the default type description as the detail when there is no underlying error.
+        // This is to avoid showing the same message twice in those cases.
+        guard let detail, !detail.isEmpty, detail != primary else {
+            return primary
+        }
+
+        return primary + "\n" + detail
+    }
+
+    private var syncErrorAlert: Alert {
+        let dismissButton = Alert.Button.default(Text(buttonTitle)) {
+            model.endFlow()
+        }
+        let errorDescription = errorDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !errorDescription.isEmpty else {
+            return Alert(title: Text(errorTitle), dismissButton: dismissButton)
+        }
+
+        return Alert(
+            title: Text(errorTitle),
+            message: Text(errorDescription),
+            dismissButton: dismissButton
+        )
     }
 }

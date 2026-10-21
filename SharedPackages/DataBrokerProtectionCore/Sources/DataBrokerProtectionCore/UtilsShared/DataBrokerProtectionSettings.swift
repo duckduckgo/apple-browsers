@@ -30,11 +30,10 @@ public final class DataBrokerProtectionSettings {
 
     public enum Keys {
         public static let runType = "dbp.environment.run-type"
-        static let isAuthV2Enabled = "dbp.environment.isAuthV2Enabled"
-
         static let mainConfigETagKey = "dbp.mainConfigETag"
         static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
+        static let preferredRunDateMigrationKey = "dbp.preferredRunDateMigration"
     }
 
     public enum SelectedEnvironment: String, Codable {
@@ -60,15 +59,6 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
-    public var isAuthV2Enabled: Bool {
-        get {
-            defaults.value(forKey: Keys.isAuthV2Enabled) as? Bool ?? false
-        }
-        set {
-            defaults.setValue(newValue, forKey: Keys.isAuthV2Enabled)
-        }
-    }
-
     // MARK: - Broker JSONs
 
     public var mainConfigETag: String? {
@@ -80,7 +70,7 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
-    private(set) var lastBrokerJSONUpdateCheckTimestamp: TimeInterval {
+    public private(set) var lastBrokerJSONUpdateCheckTimestamp: TimeInterval {
         get {
             defaults.double(forKey: Keys.lastBrokerJSONUpdateCheckTimestampKey)
         }
@@ -98,6 +88,17 @@ public final class DataBrokerProtectionSettings {
         updateLastSuccessfulBrokerJSONUpdateCheckTimestamp(Date.distantPast.timeIntervalSince1970)
     }
 
+    // MARK: - Preferred run date migration
+
+    public var hasPerformedPreferredRunDateMigration: Bool {
+        get {
+            defaults.bool(forKey: Keys.preferredRunDateMigrationKey)
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.preferredRunDateMigrationKey)
+        }
+    }
+
     // MARK: - Service root
 
     public var serviceRoot: String {
@@ -110,6 +111,13 @@ public final class DataBrokerProtectionSettings {
     }
 
     public var endpointURL: URL {
+#if DEBUG
+        if serviceRoot.hasPrefix("http://") || serviceRoot.hasPrefix("https://"),
+           let override = URL(string: serviceRoot) {
+            return override
+        }
+#endif
+
         switch selectedEnvironment {
         case .production:
             return URL(string: "https://dbp.duckduckgo.com")!
@@ -154,59 +162,3 @@ extension UserDefaults {
         }
     }
 }
-
-// This should never ever go to production and only exists for internal testing
-#if os(iOS)
-extension DataBrokerProtectionSettings {
-    static let deviceIdentifierKey = "dbp.deviceIdentifier"
-    static let defaults = UserDefaults.standard
-
-    public static var deviceIdentifier: String {
-        get {
-            let id = defaults.string(forKey: deviceIdentifierKey)
-            if let id = id {
-                return id
-            } else {
-                let newID = UUID().uuidString
-                self.deviceIdentifier = newID
-                return newID
-            }
-        }
-        set {
-            defaults.set(newValue, forKey: deviceIdentifierKey)
-        }
-    }
-
-    @discardableResult
-    public static func incrementDeviceIdentifier() -> String {
-        let currentDeviceIdentifier = self.deviceIdentifier
-
-        // If the current identifier already ends with "-n" where n is an integer, increment that integer.
-        // Otherwise, start counting from 1.
-        let components = currentDeviceIdentifier.split(separator: "-")
-        var base = currentDeviceIdentifier
-        var nextNumber = 1
-
-        if let last = components.last, last.allSatisfy({ $0.isNumber }) {
-            // The identifier already has a numeric suffix – increment it.
-            base = components.dropLast().joined(separator: "-")
-            nextNumber = (Int(last) ?? 0) + 1
-        }
-
-        let newIdentifier = "\(base)-\(nextNumber)"
-        self.deviceIdentifier = newIdentifier
-        return self.deviceIdentifier
-    }
-
-    public static var modelName: String {
-        var systemInfo = utsname()
-        uname(&systemInfo)
-        let machineMirror = Mirror(reflecting: systemInfo.machine)
-        let identifier = machineMirror.children.reduce("") { identifier, element in
-            guard let value = element.value as? Int8, value != 0 else { return identifier }
-            return identifier + String(UnicodeScalar(UInt8(value)))
-        }
-        return identifier
-    }
-}
-#endif

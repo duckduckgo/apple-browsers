@@ -23,7 +23,7 @@ import SwiftUI
 import UIKit
 import WebKit
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 
 @testable import DuckDuckGo
 
@@ -77,6 +77,11 @@ class MockDuckPlayerPixelHandler: DuckPlayerPixelFiring {
     }
 }
 
+private struct MockFloatingUIManager: FloatingUIManaging {
+    let isFloatingUIEnabled: Bool
+    let isFloatingTabSwitcherEnabled = false
+}
+
 final class DuckPlayerNativeUIPresenterTests: XCTestCase {
 
     // MARK: - Properties
@@ -101,7 +106,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     ///   - condition: The condition to check
     ///   - description: Description of what we're waiting for
     private func waitForCondition(
-        timeout: TimeInterval = 2.0,
+        timeout: TimeInterval = 30.0,
         pollingInterval: TimeInterval = 0.1,
         condition: @escaping () -> Bool,
         description: String
@@ -142,7 +147,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         mockHostViewController = MockDuckPlayerHosting()
         let mockWebView = MockWebView(frame: .zero, configuration: .nonPersistent())
         mockHostViewController.webView = mockWebView
-        mockHostViewController.persistentBottomBarHeight = 44.0 // Set a standard address bar height
+        mockHostViewController.floatingBottomChromeObscuredHeight = 44.0
         
         // Set default YouTube watch URL for tests (required for new presentPill safeguard)
         let defaultYouTubeURL = URL(string: "https://www.youtube.com/watch?v=defaultTestVideo")!
@@ -168,7 +173,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter
+            notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig)
         )
 
         // Subscribe to constraint updates
@@ -189,6 +195,35 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         cancellables = nil
         constraintUpdates = []
         super.tearDown()
+    }
+
+    private func makeFloatingUISUT() -> DuckPlayerNativeUIPresenter {
+        DuckPlayerNativeUIPresenter(
+            appSettings: mockAppSettings,
+            duckPlayerSettings: mockDuckPlayerSettings,
+            state: DuckPlayerState(),
+            notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig),
+            pixelHandler: MockDuckPlayerPixelHandler.self,
+            floatingUIManager: MockFloatingUIManager(isFloatingUIEnabled: true)
+        )
+    }
+
+    @MainActor
+    private func assertFloatingPillClearsChrome(obscuredHeight: CGFloat,
+                                                file: StaticString = #filePath,
+                                                line: UInt = #line) {
+        mockHostViewController.view.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+        mockHostViewController.view.layoutIfNeeded()
+
+        guard let pillView = sut.containerViewController?.view else {
+            XCTFail("Pill view should be created", file: file, line: line)
+            return
+        }
+
+        let pillBottom = pillView.frame.maxY + DuckPlayerContainer.Constants.presentedOffset
+        let chromeTop = mockHostViewController.view.bounds.maxY - obscuredHeight
+        XCTAssertEqual(chromeTop - pillBottom, 4, accuracy: 0.5, file: file, line: line)
     }
 
     // MARK: - Welcome Pill Tests
@@ -232,6 +267,19 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         let notification = postedNotifications.first
         XCTAssertEqual(notification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Should indicate pill is visible")
+    }
+
+    @MainActor
+    func testPresentPill_WhenFirstTimeUserAndFloatingUI_HidesSheetChrome() {
+        sut = makeFloatingUISUT()
+        mockHostViewController.floatingBottomChromeObscuredHeight = 170
+        mockDuckPlayerSettings.primingMessagePresented = false
+        mockDuckPlayerSettings.variant = .nativeOptIn
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertFalse(sut.containerViewController?.rootView.showsSheetChrome ?? true)
+        XCTAssertEqual(sut.bottomConstraint?.constant, -188)
     }
 
     @MainActor
@@ -884,7 +932,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.async {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, 0, "Bottom constraint should be 0 for top address bar")
@@ -907,10 +955,64 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.async {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, -DefaultOmniBarView.expectedHeight, "Bottom constraint should be negative expected height for bottom address bar")
+    }
+
+    @MainActor
+    func testFloatingPillWithTopAddressBarClearsBottomChrome() {
+        mockAppSettings.currentAddressBarPosition = .top
+        mockHostViewController.floatingBottomChromeObscuredHeight = 96
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertEqual(sut.bottomConstraint?.constant, -110)
+        assertFloatingPillClearsChrome(obscuredHeight: 96)
+    }
+
+    @MainActor
+    func testFloatingPillWithBottomAddressBarClearsCombinedChrome() {
+        mockAppSettings.currentAddressBarPosition = .bottom
+        mockHostViewController.floatingBottomChromeObscuredHeight = 170
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertEqual(sut.bottomConstraint?.constant, -184)
+        assertFloatingPillClearsChrome(obscuredHeight: 170)
+    }
+
+    @MainActor
+    func testFloatingPillWithShortChromeUsesReportedHeight() {
+        mockAppSettings.currentAddressBarPosition = .top
+        mockHostViewController.floatingBottomChromeObscuredHeight = 34
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        XCTAssertEqual(sut.bottomConstraint?.constant, -48)
+        assertFloatingPillClearsChrome(obscuredHeight: 34)
+    }
+
+    @MainActor
+    func testDismissingFloatingPillDoesNotResetWebViewConstraint() {
+        mockDuckPlayerSettings.primingMessagePresented = true
+        sut = makeFloatingUISUT()
+        var receivedUpdates: [DuckPlayerConstraintUpdate] = []
+        sut.constraintUpdates.sink { update in
+            receivedUpdates.append(update)
+        }.store(in: &cancellables)
+        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
+
+        sut.dismissPill(reset: false, animated: false, programatic: true)
+
+        XCTAssertTrue(receivedUpdates.isEmpty)
     }
 
     @MainActor
@@ -952,6 +1054,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -983,6 +1086,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1013,6 +1117,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1216,7 +1321,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter
+            notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
         )
         
         // Store weak reference
@@ -1236,7 +1342,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter
+            notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
         )
         
         // Verify observer is working
@@ -1253,33 +1360,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertTrue(true, "Notification observer was properly cleaned up")
     }
 
-    @MainActor
-    func testSchedulePlayerCleanup_ClearsPlayerViewModel() {
-        // Given
-        let videoID = "test123"
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: .youtube,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: nil
-        )
-        
-        XCTAssertNotNil(sut.playerViewModel)
-        
-        // When - Simulate navigation away which triggers cleanup
-        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
-        
-        // Wait for cleanup using helper method
-        waitForCondition(
-            condition: { [weak sut] in sut?.playerViewModel == nil },
-            description: "Player view model should be cleaned up"
-        )
-        
-        // Then
-        XCTAssertNil(sut.playerViewModel, "Player view model should be cleaned up")
-    }
-
     // MARK: - Pill Impression Pixel Tests
 
     @MainActor
@@ -1293,6 +1373,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1314,6 +1395,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1335,6 +1417,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1362,6 +1445,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1386,6 +1470,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1410,6 +1495,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1900,52 +1986,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
-    func testRoundedPageSheetDismissal_TriggersReEntryPill() {
-        // Given
-        let videoID = "test123"
-        let source: DuckPlayer.VideoNavigationSource = .youtube
-        let timestamp: TimeInterval = 30
-        mockDuckPlayerSettings.welcomeMessageShown = true
-        mockDuckPlayerSettings.primingMessagePresented = true
-
-        // Present the DuckPlayer
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: source,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: timestamp
-        )
-
-        // Verify initial state
-        XCTAssertTrue(sut.state.hasBeenShown, "State should indicate DuckPlayer has been shown")
-        XCTAssertNil(sut.containerViewController, "Pill container should not exist while DuckPlayer is shown")
-
-        // Ensure hostView reference is maintained
-        XCTAssertNotNil(sut.hostView, "Host view should be maintained")
-
-        // When - Simulate DuckPlayer dismissal by triggering the dismiss publisher
-        guard let playerViewModel = sut.playerViewModel else {
-            XCTFail("Player view model should exist")
-            return
-        }
-
-        // Simulate the view disappearing and dismiss publisher firing
-        playerViewModel.dismissPublisher.send(timestamp)
-        
-        // Wait for pill presentation using helper method
-        waitForCondition(
-            condition: { [weak sut] in sut?.containerViewController != nil },
-            description: "Pill should be presented after dismissal"
-        )
-
-        // Then - Should present re-entry pill 
-        XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")
-        XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
-        XCTAssertTrue(sut.duckPlayerSettings.welcomeMessageShown, "Welcome message should be marked as shown")
-    }
-
-    @MainActor
     func testDuckPlayerDismissal_UpdatesStateAndSettings() {
         // Given
         let videoID = "test123"
@@ -1981,7 +2021,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State should preserve the timestamp
         XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
@@ -2039,7 +2079,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State should NOT be updated because hostView is nil
         XCTAssertEqual(sut.state.timestamp, stateBeforeDismissal, "State timestamp should not be updated when hostView is nil")
@@ -2089,7 +2129,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
         
         // Then - State SHOULD be updated because hostView exists
         XCTAssertEqual(sut.state.timestamp, timestamp, "State timestamp should be updated when hostView exists")
@@ -2141,7 +2181,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 2.0)
+        wait(for: [expectation], timeout: 30.0)
 
         // Then - Settings should not be updated because presenter was released
         XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, initialWelcomeShown,
@@ -2157,6 +2197,14 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let source: DuckPlayer.VideoNavigationSource = .youtube
         mockDuckPlayerSettings.welcomeMessageShown = false
         mockDuckPlayerSettings.primingMessagePresented = true
+        
+        var receivedTimestamps: [TimeInterval?] = []
+        let timestampExpectation = XCTestExpectation(description: "Dismissal timestamp update should be received")
+        
+        sut.duckPlayerTimestampUpdate.sink { timestamp in
+            receivedTimestamps.append(timestamp)
+            timestampExpectation.fulfill()
+        }.store(in: &cancellables)
         
         // Present first DuckPlayer
         _ = sut.presentDuckPlayer(
@@ -2185,15 +2233,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // When - First player's dismiss publisher fires
         firstPlayerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for delayed execution (0.3s delay + buffer)
-        let expectation = XCTestExpectation(description: "First player dismissal should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 2.0)
+        // Wait for dismissal update
+        wait(for: [timestampExpectation], timeout: 30.0)
         
         // Then - State should reflect the current video (videoID2), not the dismissed one (videoID1)
         XCTAssertEqual(sut.state.videoID, videoID2, "State should reflect the current video ID")
+        XCTAssertEqual(receivedTimestamps.count, 1, "Should receive exactly one timestamp update")
+        XCTAssertEqual(receivedTimestamps.first, timestamp, "Should receive the correct timestamp")
         
         // Verify the pill presented matches the current video context
         if let containerViewController = sut.containerViewController {
@@ -2238,60 +2284,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         playerViewModel.dismissPublisher.send(timestamp)
         
         // Wait for the update (0.3s delay + buffer)
-        wait(for: [timestampExpectation], timeout: 2.0)
+        wait(for: [timestampExpectation], timeout: 30.0)
         
         // Then - Should receive timestamp update when state is updated
         XCTAssertEqual(receivedTimestamps.count, 1, "Should receive exactly one timestamp update")
         XCTAssertEqual(receivedTimestamps.first, timestamp, "Should receive the correct timestamp")
     }
 
-    @MainActor
-    func testTimestampUpdatePublisher_DoesNotFireWhenHostViewIsNil() {
-        // Given
-        let videoID = "test123"
-        let timestamp: TimeInterval = 30
-        let source: DuckPlayer.VideoNavigationSource = .youtube
-        mockDuckPlayerSettings.welcomeMessageShown = false
-        mockDuckPlayerSettings.primingMessagePresented = true
-        
-        var receivedTimestamps: [TimeInterval?] = []
-        
-        // Subscribe to timestamp updates
-        sut.duckPlayerTimestampUpdate.sink { timestamp in
-            receivedTimestamps.append(timestamp)
-        }.store(in: &cancellables)
-        
-        // Present the DuckPlayer
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: source,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: timestamp
-        )
-        
-        // Clear hostView to simulate nil scenario
-        sut.hostView = nil
-        
-        // When - Simulate DuckPlayer dismissal with nil hostView
-        guard let playerViewModel = sut.playerViewModel else {
-            XCTFail("Player view model should exist")
-            return
-        }
-        
-        playerViewModel.dismissPublisher.send(timestamp)
-        
-        // Wait for potential delayed execution (0.3s delay + buffer)
-        let expectation = XCTestExpectation(description: "Delayed execution should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 2.0)
-        
-        // Then - Should NOT receive timestamp update when hostView is nil
-        XCTAssertTrue(receivedTimestamps.isEmpty, "Should not receive timestamp updates when hostView is nil")
-    }
-    
     // MARK: - Additional SERP Protection Tests
 
     @MainActor

@@ -31,8 +31,12 @@ public final class MockKeychainService: KeychainService {
 
     public var latestAddQuery: [String: Any] = [:]
     public var latestItemMatchingQuery: [String: Any] = [:]
+    public var latestUpdateQuery: [String: Any] = [:]
+    public var latestUpdateAttributes: [String: Any] = [:]
     public var itemMatchingCallCount = 0
     public var addCallCount = 0
+    public var updateCallCount = 0
+    public var updateStatusToReturn: OSStatus = errSecSuccess
 
     public var mode: Mode = .nothingFound
 
@@ -92,6 +96,13 @@ public final class MockKeychainService: KeychainService {
         latestAddQuery = query
         addCallCount += 1
         return errSecSuccess
+    }
+
+    public func update(_ query: [String: Any], _ attributesToUpdate: [String: Any]) -> OSStatus {
+        latestUpdateQuery = query
+        latestUpdateAttributes = attributesToUpdate
+        updateCallCount += 1
+        return updateStatusToReturn
     }
 
     public func delete(_ query: [String: Any]) -> OSStatus {

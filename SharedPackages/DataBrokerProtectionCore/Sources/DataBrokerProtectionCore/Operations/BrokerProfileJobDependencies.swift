@@ -19,7 +19,9 @@
 import Foundation
 import Common
 import os.log
+import PrivacyConfig
 import BrowserServicesKit
+import WideEvent
 
 public protocol BrokerProfileJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }
@@ -30,15 +32,22 @@ public protocol BrokerProfileJobDependencyProviding {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var eventsHandler: EventMapping<JobEvent> { get }
     var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
-    var emailService: EmailServiceProtocol { get }
+    var emailConfirmationDataService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var vpnBypassService: VPNBypassFeatureProvider? { get }
+    var jobSortPredicate: BrokerJobDataComparators.Predicate { get }
+    var featureFlagger: DBPFeatureFlagging { get }
+    var applicationNameForUserAgentProvider: () -> String? { get }
+    var wideEvent: WideEventManaging? { get }
+    var contentBlocking: DBPWebViewContentBlocking? { get }
 
-    func createScanRunner(profileQuery: BrokerProfileQueryData,
+    func isAuthenticatedUser() async -> Bool
+
+    func createScanRunner(profileQuery: SubJobContextProviding,
                           stageDurationCalculator: StageDurationCalculator,
                           shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileScanSubJobWebRunning
 
-    func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+    func createOptOutRunner(profileQuery: SubJobContextProviding,
                             stageDurationCalculator: StageDurationCalculator,
                             shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning
 }
@@ -52,9 +61,15 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let eventsHandler: EventMapping<JobEvent>
     public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
-    public let emailService: EmailServiceProtocol
+    public let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     public let captchaService: CaptchaServiceProtocol
     public let vpnBypassService: VPNBypassFeatureProvider?
+    public let jobSortPredicate: BrokerJobDataComparators.Predicate
+    public let featureFlagger: DBPFeatureFlagging
+    public let applicationNameForUserAgentProvider: () -> String?
+    public let wideEvent: WideEventManaging?
+    public let contentBlocking: DBPWebViewContentBlocking?
+    public let isAuthenticatedUserProvider: () async -> Bool
 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
@@ -64,9 +79,16 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 eventsHandler: EventMapping<JobEvent>,
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
-                emailService: EmailServiceProtocol,
+                emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
-                vpnBypassService: VPNBypassFeatureProvider? = nil) {
+                featureFlagger: DBPFeatureFlagging,
+                applicationNameForUserAgentProvider: @escaping () -> String?,
+                vpnBypassService: VPNBypassFeatureProvider? = nil,
+                jobSortPredicate: @escaping BrokerJobDataComparators.Predicate = BrokerJobDataComparators.default,
+                wideEvent: WideEventManaging? = nil,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
+                isAuthenticatedUserProvider: @escaping () async -> Bool = { true }
+    ) {
         self.database = database
         self.contentScopeProperties = contentScopeProperties
         self.privacyConfig = privacyConfig
@@ -75,38 +97,57 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
         self.pixelHandler = pixelHandler
         self.eventsHandler = eventsHandler
         self.dataBrokerProtectionSettings = dataBrokerProtectionSettings
-        self.emailService = emailService
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.vpnBypassService = vpnBypassService
+        self.jobSortPredicate = jobSortPredicate
+        self.featureFlagger = featureFlagger
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
+        self.wideEvent = wideEvent
+        self.contentBlocking = contentBlocking
+        self.isAuthenticatedUserProvider = isAuthenticatedUserProvider
     }
 
-    public func createScanRunner(profileQuery: BrokerProfileQueryData,
+    public func createScanRunner(profileQuery: SubJobContextProviding,
                                  stageDurationCalculator: StageDurationCalculator,
                                  shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileScanSubJobWebRunning {
         return BrokerProfileScanSubJobWebRunner(
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,
-            query: profileQuery,
-            emailService: self.emailService,
+            context: profileQuery,
+            emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
+            featureFlagger: self.featureFlagger,
+            applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
             stageDurationCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
+            executionConfig: self.executionConfig,
+            contentBlocking: self.contentBlocking,
             shouldRunNextStep: shouldRunNextStep
         )
     }
 
-    public func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+    public func createOptOutRunner(profileQuery: SubJobContextProviding,
                                    stageDurationCalculator: StageDurationCalculator,
                                    shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning {
         return BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: self.privacyConfig,
             prefs: self.contentScopeProperties,
-            query: profileQuery,
-            emailService: self.emailService,
+            context: profileQuery,
+            emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
+            featureFlagger: self.featureFlagger,
+            applicationNameForUserAgentProvider: self.applicationNameForUserAgentProvider,
             stageCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
+            executionConfig: self.executionConfig,
+            actionsHandlerMode: .optOut,
+            contentBlocking: self.contentBlocking,
             shouldRunNextStep: shouldRunNextStep
         )
+    }
+
+    public func isAuthenticatedUser() async -> Bool {
+        await isAuthenticatedUserProvider()
     }
 }

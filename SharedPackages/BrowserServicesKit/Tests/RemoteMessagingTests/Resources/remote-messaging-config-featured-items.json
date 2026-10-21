@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "messages": [
+    {
+      "id": "featured_item_first_position",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "What's New",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "featured-1",
+            "type": "featured_two_line_single_action_list_item",
+            "titleText": "Featured Feature",
+            "descriptionText": "This is a featured item",
+            "placeholder": "VisualDesignUpdate",
+            "primaryActionText": "Learn More",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com/featured"
+            }
+          },
+          {
+            "id": "item-1",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 1",
+            "descriptionText": "First regular item",
+            "placeholder": "Announce"
+          },
+          {
+            "id": "item-2",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 2",
+            "descriptionText": "Second regular item",
+            "placeholder": "Announce"
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "featured_item_middle_position",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "What's New",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "item-1",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 1",
+            "descriptionText": "First regular item",
+            "placeholder": "Announce"
+          },
+          {
+            "id": "featured-1",
+            "type": "featured_two_line_single_action_list_item",
+            "titleText": "Featured Feature",
+            "descriptionText": "This is a featured item",
+            "placeholder": "VisualDesignUpdate",
+            "primaryActionText": "Learn More",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com/featured"
+            }
+          },
+          {
+            "id": "item-2",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 2",
+            "descriptionText": "Second regular item",
+            "placeholder": "Announce"
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "featured_item_last_position",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "What's New",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "item-1",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 1",
+            "descriptionText": "First regular item",
+            "placeholder": "Announce"
+          },
+          {
+            "id": "item-2",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 2",
+            "descriptionText": "Second regular item",
+            "placeholder": "Announce"
+          },
+          {
+            "id": "featured-1",
+            "type": "featured_two_line_single_action_list_item",
+            "titleText": "Featured Feature",
+            "descriptionText": "This is a featured item",
+            "placeholder": "VisualDesignUpdate",
+            "primaryActionText": "Learn More",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com/featured"
+            }
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "no_featured_item",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "What's New",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "item-1",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 1",
+            "descriptionText": "First regular item",
+            "placeholder": "Announce"
+          },
+          {
+            "id": "item-2",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 2",
+            "descriptionText": "Second regular item",
+            "placeholder": "Announce"
+          },
+          {
+            "id": "item-3",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 3",
+            "descriptionText": "Third regular item",
+            "placeholder": "Announce"
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "featured_item_with_sections",
+      "surfaces": ["modal"],
+      "content": {
+        "messageType": "cards_list",
+        "titleText": "What's New",
+        "descriptionText": "",
+        "listItems": [
+          {
+            "id": "item-1",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 1",
+            "descriptionText": "First regular item",
+            "placeholder": "Announce"
+          },
+          {
+            "id": "item-2",
+            "type": "two_line_list_item",
+            "titleText": "Regular Item 2",
+            "descriptionText": "Second regular item",
+            "placeholder": "Announce"
+          },
+          {
+            "id": "section-1",
+            "type": "section_title",
+            "titleText": "More Features",
+            "itemIDs": ["item-1", "item-2"]
+          },
+          {
+            "id": "featured-1",
+            "type": "featured_two_line_single_action_list_item",
+            "titleText": "Featured Feature",
+            "descriptionText": "This is a featured item",
+            "placeholder": "VisualDesignUpdate",
+            "primaryActionText": "Learn More",
+            "primaryAction": {
+              "type": "url_in_context",
+              "value": "https://example.com/featured"
+            }
+          }
+        ],
+        "primaryActionText": "Got It",
+        "primaryAction": {
+          "type": "dismiss",
+          "value": ""
+        }
+      }
+    }
+  ],
+  "rules": []
+}

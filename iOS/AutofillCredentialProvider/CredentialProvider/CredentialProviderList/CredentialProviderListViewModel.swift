@@ -22,8 +22,10 @@ import AuthenticationServices
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Core
 import os.log
+import PixelKit
 
 final class CredentialProviderListViewModel: ObservableObject {
 
@@ -39,7 +41,7 @@ final class CredentialProviderListViewModel: ObservableObject {
     var isSearching: Bool = false {
         didSet {
             if oldValue != isSearching, isSearching {
-                Pixel.fire(pixel: .autofillExtensionPasswordsSearch)
+                PixelKit.fire(Pixel.Event.autofillExtensionPasswordsSearch)
             }
         }
     }
@@ -198,8 +200,6 @@ final class CredentialProviderListViewModel: ObservableObject {
             return items.count
         case .credentials(_, let items):
             return items.count
-        default:
-            return 0
         }
     }
 

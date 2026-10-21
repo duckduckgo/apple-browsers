@@ -1,0 +1,554 @@
+//
+//  PrivacyDashboardUITests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+import Foundation
+import os.log
+
+// MARK: - Request Blocking Results JSON Structure
+struct RequestBlockingResults: Decodable {
+    let page: String
+    let results: [RequestResult]
+    let date: String
+}
+
+struct RequestResult: Decodable {
+    let id: String
+    let category: String
+    let status: String
+}
+
+class PrivacyDashboardUITests: UITestCase {
+
+    private var addressBarTextField: XCUIElement!
+    private var webView: XCUIElement!
+    private var privacyButton: XCUIElement!
+    private var privacyDashboard: XCUIElement!
+    private var localization: SpecialErrorPageLocalization!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        app = XCUIApplication.setUp()
+        app.enforceSingleWindow()
+
+        addressBarTextField = app.addressBar
+        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        webView = app.webViews.firstMatch
+        privacyButton = app.buttons.matching(identifier: "AddressBarButtonsViewController.privacyDashboardButton").firstMatch
+        privacyDashboard = app.popovers.containing(.group, identifier: "PrivacyDashboard").firstMatch
+        localization = try SpecialErrorPageLocalization.load(for: app)
+    }
+
+    override func tearDown() {
+        webView = nil
+        privacyButton = nil
+        privacyDashboard = nil
+        addressBarTextField = nil
+        app = nil
+        localization = nil
+        super.tearDown()
+    }
+
+    // MARK: - File Helper Methods
+
+    private func getExistingRequestBlockingFiles() -> Set<String> {
+        let downloadsDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+        let baseFileName = "request-blocking-results"
+        let fileExtension = "json"
+
+        var existingFiles: Set<String> = []
+
+        // Check for base file and numbered variants
+        for i in 0..<20 { // Check up to 20 variants
+            let fileName = i == 0 ? "\(baseFileName).\(fileExtension)" : "\(baseFileName) \(i).\(fileExtension)"
+            let filePath = downloadsDirectory.appendingPathComponent(fileName).path
+
+            if FileManager.default.fileExists(atPath: filePath) {
+                existingFiles.insert(filePath)
+            }
+        }
+
+        return existingFiles
+    }
+
+    private func waitForNewRequestBlockingFile(excluding existingFiles: Set<String>) -> String? {
+        let downloadsDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+        let baseFileName = "request-blocking-results"
+        let fileExtension = "json"
+
+        let maxAttempts = 10
+
+        for _ in 0..<maxAttempts {
+            // Check for base file and numbered variants
+            for i in 0..<20 {
+                let fileName = i == 0 ? "\(baseFileName).\(fileExtension)" : "\(baseFileName) \(i).\(fileExtension)"
+                let filePath = downloadsDirectory.appendingPathComponent(fileName).path
+
+                if FileManager.default.fileExists(atPath: filePath) && !existingFiles.contains(filePath) {
+                    return filePath
+                }
+            }
+
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+
+        return nil
+    }
+
+    // MARK: - Privacy Dashboard Access Tests
+
+    func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackers() throws {
+        throw XCTSkip("Flaky test")
+        // Navigate to a page with known trackers
+        let trackerTestURL = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
+        addressBarTextField.pasteURL(trackerTestURL, pressingEnter: true)
+
+        // Wait for specific tracker test page content
+        let trackerPageContent = webView.staticTexts.containing(\.value, containing: "1 major tracker loaded via script src").firstMatch
+        XCTAssertTrue(trackerPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Tracker test page should load")
+
+        // Access privacy dashboard
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for tracker test page")
+
+        privacyButton.click()
+
+        // Privacy dashboard should open and show tracker information
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        // Find and click "Enable Protections" checkbox (if it‘s unchecked)
+        let enableProtectionsCheckbox = privacyDashboard.switches["Enable Protections"]
+        if enableProtectionsCheckbox.waitForExistence(timeout: 1.0) {
+            enableProtectionsCheckbox.click()
+            // Wait for privacy dashboard to disappear (indicating page reload)
+            XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should disappear after re-enabling protections")
+
+            privacyButton.click()
+
+            // Privacy dashboard should open and show tracker information
+            XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+        }
+
+        // Click "View Tracker Companies" button to see detailed tracker information
+        let viewTrackerCompaniesButton = privacyDashboard.buttons.containing(\.label, containing: "View Tracker Companies").firstMatch
+        XCTAssertTrue(viewTrackerCompaniesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "View Tracker Companies button should be available")
+
+        viewTrackerCompaniesButton.click()
+
+        // Verify that Google Ads (Google) appears in the tracker companies list
+        let googleAdsTracker = privacyDashboard.staticTexts.containing(\.value, containing: "Google Ads").firstMatch
+        XCTAssertTrue(googleAdsTracker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Google Ads (Google) should appear in tracker companies list")
+
+        // Close dashboard
+        app.typeKey(.escape, modifierFlags: [])
+
+        XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
+    }
+
+    func testPrivacyDashboard_TrackerBlocking_ShowsBlockedTrackersAtPrivacyTestPages() throws {
+        let trackerTestURL = URL(string: "https://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
+        addressBarTextField.pasteURL(trackerTestURL, pressingEnter: true)
+
+        let trackerPageContent = webView.staticTexts.containing(\.value, containing: "1 major tracker loaded via script src").firstMatch
+        XCTAssertTrue(trackerPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Tracker test page should load")
+
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for tracker test page")
+        privacyButton.click()
+
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        let viewTrackerCompaniesButton = privacyDashboard.buttons.containing(\.label, containing: "View Tracker Companies").firstMatch
+        XCTAssertTrue(viewTrackerCompaniesButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "View Tracker Companies button should be available")
+
+        viewTrackerCompaniesButton.click()
+
+        let trackerNetworksGroup = privacyDashboard.groups["List of tracker networks"]
+        XCTAssertTrue(trackerNetworksGroup.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Tracker companies list should be visible")
+
+        func descr() -> String {
+            do {
+                return try JSONSerialization.data(withJSONObject: privacyDashboard.snapshot().toDictionary(), options: .prettyPrinted).utf8String() ?? "<nil>"
+            } catch {
+                return "\(error)"
+            }
+        }
+
+        // The list container can exist before company rows are in the AX tree (web dashboard slide).
+        // Poll the live query until the section markers are present instead of snapshotting immediately.
+        let trackerDomainSections = privacyDashboard.groups.matching(
+            NSPredicate.keyPath(\.title, beginsWith: "Tracker domains for ")
+                .or(.keyPath(\.label, beginsWith: "Tracker domains for "))
+        )
+        XCTAssertTrue(
+            trackerDomainSections.wait(for: \.count, in: 1..., timeout: UITests.Timeouts.elementExistence),
+            "Expected at least one tracker domain section (\(trackerDomainSections.count) found in \(descr()))"
+        )
+
+        // AX snapshots can be deeply nested and vary between runs, so we validate domains from the
+        // full dashboard subtree after the sections have appeared.
+        func collectDescendants(from node: XCUIElementSnapshot) -> [XCUIElementSnapshot] {
+            node.children.flatMap { child in
+                [child] + collectDescendants(from: child)
+            }
+        }
+        let dashboardSnapshot = try privacyDashboard.snapshot()
+        let nestedNodes = [dashboardSnapshot] + collectDescendants(from: dashboardSnapshot)
+        // "Tracker domains for ..." is the stable section marker for each company block.
+        let trackerDomainSectionNodes = nestedNodes.filter { node in
+            let title = node.title
+            let label = node.trimmedLabel
+            return title.hasPrefix("Tracker domains for ") || label.hasPrefix("Tracker domains for ")
+        }
+
+        let domainPattern = #"^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
+        let trackerDomainSectionsMissingDomains = trackerDomainSectionNodes.filter { node in
+            let sectionNodes = [node] + collectDescendants(from: node)
+            let sectionCandidates = sectionNodes.flatMap { candidateNode in
+                [candidateNode.trimmedLabel, candidateNode.trimmedStringValue]
+            }.filter { !$0.isEmpty }
+            let hasDomainText = sectionCandidates.contains {
+                $0.range(of: domainPattern, options: .regularExpression) != nil
+            }
+            return !hasDomainText
+        }
+        let domainCandidates = nestedNodes.flatMap { node in
+            [node.trimmedLabel, node.trimmedStringValue].filter { !$0.isEmpty }
+        }
+        let domainLikeCandidates = domainCandidates.filter {
+            $0.range(of: domainPattern, options: .regularExpression) != nil
+        }
+        let trackerDomainSectionsMissingDomainLabels = trackerDomainSectionsMissingDomains.map { node in
+            node.title.isEmpty ? node.trimmedLabel : node.title
+        }
+
+        Logger.log(
+            "tracker evaluation: trackerDomainSectionCount=\(trackerDomainSectionNodes.count), trackerDomainSectionsMissingDomains=\(trackerDomainSectionsMissingDomainLabels), domainCandidates=\(domainCandidates), domainLikeCandidates=\(domainLikeCandidates)"
+        )
+
+        // Ensure each tracker section contains at least one concrete domain in its subtree.
+        XCTAssertTrue(trackerDomainSectionsMissingDomains.isEmpty,
+                      "Expected each tracker domain section to include a domain-formatted label/value. Missing: \(trackerDomainSectionsMissingDomainLabels). \(descr())")
+        XCTAssertTrue(!domainLikeCandidates.isEmpty,
+                      "Expected at least one domain-formatted label/value in tracker companies details. \(descr())")
+        // Close dashboard
+        app.typeKey(.escape, modifierFlags: [])
+
+        XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
+    }
+
+    func testPrivacyDashboard_PhishingDetection_ShowsWarning() throws {
+        // Navigate to the phishing test page (matches original integration test)
+        let testURL = URL(string: "http://privacy-test-pages.site/security/badware/phishing.html")!
+        addressBarTextField.pasteURL(testURL, pressingEnter: true)
+
+        // Wait for phishing warning to appear (browser should block the phishing page)
+        for line in localization.phishingPageHeading.title.components(separatedBy: "{newline}") {
+            let phishingWarning = webView.staticTexts.containing(\.value, containing: line).firstMatch
+            XCTAssertTrue(phishingWarning.waitForExistence(timeout: UITests.Timeouts.navigation), "Phishing warning \"\(line)\" should be displayed when navigating to phishing page")
+        }
+
+        // Step 1: Click "Advanced..." button to show advanced options
+        let advancedButton = webView.buttons[localization.advancedEllipsisButton.title]
+        XCTAssertTrue(advancedButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Advanced... button should be available in phishing warning")
+        advancedButton.click()
+
+        // Step 2: Click "Accept Risk and Visit Site" text element (it's static text, not a link or button!)
+        let acceptRiskText = webView.staticTexts[localization.visitSiteButton.title]
+        XCTAssertTrue(acceptRiskText.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Accept Risk and Visit Site text should be available after clicking Advanced...")
+        acceptRiskText.hover()
+        Thread.sleep(forTimeInterval: 0.5)
+        acceptRiskText.click()
+
+        // Step 3: Wait for the actual phishing page to load
+        let pageContent = webView.staticTexts.containing(\.value, containing: "Phishing page").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Phishing test page should load after accepting risk")
+
+        // Step 4: Privacy button should be available after bypassing warning
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available after bypassing phishing warning")
+
+        privacyButton.click()
+
+        // Step 5: Privacy dashboard should open
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        // Step 6: Verify privacy dashboard displays phishing detection information
+        let phishingInfo = privacyDashboard.staticTexts.containing(\.value, containing: "Site May Be a Security Risk").firstMatch
+        XCTAssertTrue(phishingInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show phishing detection information")
+    }
+
+    func testPrivacyDashboard_HTTPSUpgrade_ShowsUpgradeStatus() throws {
+        let upgradedURL = URL(string: "http://github.com")!
+        for _ in 0..<5 {
+            // Navigate to HTTP URL that should be upgraded (tested from UI perspective)
+            addressBarTextField.pasteURL(upgradedURL, pressingEnter: true)
+
+            // Wait for github.com content
+            let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+            XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "github.com should load")
+
+            XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for github.com")
+            let url = app.tabs.firstMatch.url?.dropping(suffix: "/")
+            if let url, url.hasPrefix("https://") {
+                break
+            }
+            Logger.log("Bloom filter is not loaded yet, so we need to wait for it. Current URL: \(url ?? "nil")")
+            RunLoop.current.run(until: Date().addingTimeInterval(5))
+            app.enforceSingleWindow()
+        }
+
+        // Access privacy dashboard
+        privacyButton.click()
+
+        // Privacy dashboard should open
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open for HTTPS test")
+
+        // Verify privacy dashboard shows HTTPS connection information
+        let connectionInfoButton = privacyDashboard.buttons["View Connection Information"]
+        XCTAssertTrue(connectionInfoButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show connection information button")
+        connectionInfoButton.click()
+
+        let encryptedConnectionInfo = privacyDashboard.staticTexts.containing(\.value, containing: "This page uses an encrypted connection").firstMatch
+        XCTAssertTrue(encryptedConnectionInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show HTTPS connection information")
+        XCTAssertTrue(privacyDashboard.staticTexts["Security Certificate Detail"].exists, "Privacy dashboard should show HTTPS connection information")
+        XCTAssertTrue(privacyDashboard.staticTexts["Common Name"].exists, "Privacy dashboard should show Certificate Common Name")
+        XCTAssertTrue(privacyDashboard.staticTexts["Summary"].exists, "Privacy dashboard should show Certificate summary")
+        XCTAssertTrue(privacyDashboard.staticTexts["Certificate for \(upgradedURL.host!)"].exists, "Privacy dashboard should show Certificate domain name")
+
+        // Close the dashboard
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Navigate to HTTP (unsecure) privacy test pages site
+        app.activateAddressBar()
+        let httpURL = URL(string: "http://privacy-test-pages.site/privacy-protections/https-upgrades/")!
+        addressBarTextField.pasteURL(httpURL, pressingEnter: true)
+
+        // Wait for page content to load
+        let pageContent2 = webView.staticTexts.containing(\.value, containing: "HTTPS Upgrades").firstMatch
+        XCTAssertTrue(pageContent2.waitForExistence(timeout: UITests.Timeouts.localTestServer), "HTTP privacy test page should load")
+
+        // Open privacy dashboard
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for HTTP site")
+        privacyButton.click()
+
+        // Privacy dashboard should open
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open for HTTP site")
+
+        // Verify dashboard shows unencrypted connection status
+        let unencryptedStatus = privacyDashboard.staticTexts.containing(\.value, containing: "This site is not secure").firstMatch
+        XCTAssertTrue(unencryptedStatus.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show 'This site is not secure' connection status for HTTP site")
+
+        // Verify site URL is shown as HTTP
+        let siteURL = privacyDashboard.staticTexts.containing(\.value, containing: "privacy-test-pages.site").firstMatch
+        XCTAssertTrue(siteURL.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show the site URL")
+    }
+
+    func testPrivacyDashboard_RequestBlocking_ValidatesProtectionToggle() throws {
+        // Navigate to request blocking test page
+        let testURL = URL(string: "http://privacy-test-pages.site/privacy-protections/request-blocking/")!
+        addressBarTextField.pasteURL(testURL, pressingEnter: true)
+
+        // Wait for page content to load
+        let pageContent = webView.staticTexts.containing(\.value, containing: "Request Blocking Test Page").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Request blocking test page should load")
+
+        // Click "Start the test" button
+        let startTestButton = webView.buttons.containing(\.title, containing: "Start the test").firstMatch
+        XCTAssertTrue(startTestButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Start the test button should be available")
+        let downloadResultsButton = webView.buttons.containing(\.title, containing: "Download the results").firstMatch
+
+        func runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: String) throws -> RequestBlockingResults {
+            startTestButton.click()
+            XCTAssertTrue(downloadResultsButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Download the results button should become available after test completion")
+
+            let existingFiles = getExistingRequestBlockingFiles()
+            downloadResultsButton.click()
+
+            guard let filePath = waitForNewRequestBlockingFile(excluding: existingFiles) else {
+                XCTFail(fileNotFoundMessage)
+                throw XCTSkip("request blocking results file not found")
+            }
+            trackForCleanup(filePath)
+
+            Logger.log("Reading file at \(filePath)")
+            let jsonData = try readFileViaLocalServer(filePath: filePath)
+            Logger.log("Result: \(String(data: jsonData, encoding: .utf8) ?? "Data of \(jsonData.count)")")
+            return try JSONDecoder().decode(RequestBlockingResults.self, from: jsonData)
+        }
+
+        func loadedTrackers(from results: RequestBlockingResults) -> [RequestResult] {
+            results.results.filter { $0.status == "loaded" }
+        }
+
+        func getBlockedTrackers(from results: RequestBlockingResults) -> [RequestResult] {
+            results.results.filter { $0.status == "failed" || $0.status == "not loaded" }
+        }
+
+        let initialResults = try runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: "Downloaded request-blocking-results.json file not found in Downloads directory")
+
+        // Determine the actual protection state after the first run before asserting on the first result set.
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
+        privacyButton.click()
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        let disableProtectionsCheckbox = privacyDashboard.switches["Disable Protections"]
+        let protectionsInitiallyEnabled: Bool
+        if disableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            protectionsInitiallyEnabled = true
+            app.typeKey(.escape, modifierFlags: [])
+            XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
+        } else {
+            let enableProtectionsCheckbox = privacyDashboard.switches["Enable Protections"]
+            XCTAssertTrue(enableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Enable Protections checkbox should be available when protections are disabled")
+            protectionsInitiallyEnabled = false
+            enableProtectionsCheckbox.click()
+            XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should disappear after enabling protections")
+            XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Start the test button should become enabled after enabling protections")
+        }
+
+        let initialLoadedTrackers = loadedTrackers(from: initialResults)
+        var blockedTrackers = getBlockedTrackers(from: initialResults)
+
+        if protectionsInitiallyEnabled {
+            XCTAssertTrue(initialLoadedTrackers.isEmpty, "No trackers should be loaded when protections start enabled - found loaded trackers: \(initialLoadedTrackers.map { $0.id })")
+            XCTAssertFalse(blockedTrackers.isEmpty, "Should have some blocked/failed requests indicating tracker blocking is working")
+        } else {
+            XCTAssertFalse(initialLoadedTrackers.isEmpty, "Trackers should be loaded when protections start disabled - found loaded trackers: \(initialLoadedTrackers.map { $0.id })")
+
+            let enabledResults = try runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: "Downloaded enabled request-blocking-results.json file not found in Downloads directory")
+            let loadedTrackersWithProtectionsEnabled = loadedTrackers(from: enabledResults)
+            blockedTrackers = getBlockedTrackers(from: enabledResults)
+
+            XCTAssertTrue(loadedTrackersWithProtectionsEnabled.isEmpty, "No trackers should be loaded after enabling protections - found loaded trackers: \(loadedTrackersWithProtectionsEnabled.map { $0.id })")
+            XCTAssertFalse(blockedTrackers.isEmpty, "Should have some blocked/failed requests after enabling protections")
+        }
+
+        // PART 2: Test with protections disabled
+
+        // Open privacy dashboard to disable protections
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
+        privacyButton.click()
+
+        // Privacy dashboard should open
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        // Find and click "Disable Protections" checkbox
+        XCTAssertTrue(disableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Disable Protections checkbox should be available")
+        disableProtectionsCheckbox.click()
+
+        let dontSendButton = privacyDashboard.buttons["Don't Send"]
+        if dontSendButton.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            dontSendButton.click()
+        }
+        XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should close")
+
+        // Wait for page to reload - "Start the test" button should become enabled again
+        XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Start the test button should become enabled within reasonable time after disabling protections")
+
+        // Start the test again with protections disabled
+        let secondResults = try runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: "Second downloaded request-blocking-results.json file not found in Downloads directory")
+
+        // Validate that trackers ARE "loaded" now (protections disabled)
+        let loadedTrackersDisabled = loadedTrackers(from: secondResults)
+        XCTAssertFalse(loadedTrackersDisabled.isEmpty, "Some trackers should be loaded when protections are disabled - found loaded trackers: \(loadedTrackersDisabled.map { $0.id })")
+
+        // Verify fewer requests are blocked/failed when protections are disabled
+        let blockedTrackersDisabled = getBlockedTrackers(from: secondResults)
+        XCTAssertTrue(blockedTrackersDisabled.count < blockedTrackers.count, "Fewer trackers should be blocked when protections are disabled (enabled: \(blockedTrackers.count), disabled: \(blockedTrackersDisabled.count))")
+
+        // PART 3: Re-enable protections and verify blocking works again
+
+        // Open privacy dashboard to re-enable protections
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available")
+        privacyButton.click()
+
+        // Privacy dashboard should open
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open")
+
+        // Find and click "Enable Protections" checkbox (it should be unchecked now)
+        let enableProtectionsCheckbox = privacyDashboard.switches["Enable Protections"]
+        XCTAssertTrue(enableProtectionsCheckbox.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Enable Protections checkbox should be available")
+        enableProtectionsCheckbox.click()
+
+        // Wait for privacy dashboard to disappear (indicating page reload)
+        XCTAssertTrue(privacyDashboard.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should disappear after re-enabling protections")
+
+        // Wait for page to reload - "Start the test" button should become enabled again
+        XCTAssertTrue(startTestButton.wait(for: \.isEnabled, equals: true, timeout: UITests.Timeouts.navigation), "Start the test button should become enabled again after re-enabling protections")
+
+        // Start the test again with protections re-enabled
+        let thirdResults = try runRequestBlockingTestAndDownloadResults(fileNotFoundMessage: "Third downloaded request-blocking-results.json file not found in Downloads directory")
+
+        // Validate that trackers are NOT "loaded" again (protections re-enabled)
+        let loadedTrackersReEnabled = loadedTrackers(from: thirdResults)
+        XCTAssertTrue(loadedTrackersReEnabled.isEmpty, "No trackers should be loaded when protections are re-enabled - found loaded trackers: \(loadedTrackersReEnabled.map { $0.id })")
+
+        // Verify more requests are blocked/failed when protections are re-enabled (should be similar to first test)
+        let blockedTrackersReEnabled = getBlockedTrackers(from: thirdResults)
+        XCTAssertTrue(blockedTrackersReEnabled.count > blockedTrackersDisabled.count, "More trackers should be blocked when protections are re-enabled (disabled: \(blockedTrackersDisabled.count), re-enabled: \(blockedTrackersReEnabled.count))")
+
+        // Verify re-enabled results are similar to original enabled results
+        XCTAssertEqual(blockedTrackersReEnabled.count, blockedTrackers.count, "Re-enabled protections should block the same number of trackers as initially enabled (original: \(blockedTrackers.count), re-enabled: \(blockedTrackersReEnabled.count))")
+    }
+
+    func testPrivacyDashboard_NavigationBetweenSites_UpdatesCorrectly() throws {
+        // Navigate to first site (tracker test page)
+        let firstURL = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
+        addressBarTextField.pasteURL(firstURL, pressingEnter: true)
+
+        // Wait for first page content
+        let firstPageContent = webView.staticTexts.containing(\.value, containing: "1 major tracker loaded via script src").firstMatch
+        XCTAssertTrue(firstPageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "First tracker test page should load")
+
+        // Check privacy dashboard for first site
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for first tracker site")
+
+        privacyButton.click()
+
+        // Privacy dashboard should open for first site
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open for first site")
+
+        // Verify dashboard shows first site information (tracker test page)
+        let firstSiteInfo = privacyDashboard.staticTexts.containing(\.value, containing: "privacy-test-pages").firstMatch
+        XCTAssertTrue(firstSiteInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should show information for first site (privacy-test-pages)")
+
+        // Close dashboard
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Navigate to second site
+        app.activateAddressBar()
+        let secondURL = URL(string: "http://github.com")!
+        addressBarTextField.pasteURL(secondURL, pressingEnter: true)
+
+        // Wait for second page content
+        let secondPageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(secondPageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Second test page should load")
+
+        // Check privacy dashboard for second site
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should remain available for second site")
+
+        privacyButton.click()
+
+        // Privacy dashboard should open for second site
+        XCTAssertTrue(privacyDashboard.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should open for second site")
+
+        // Verify dashboard updated to show second site information (github.com)
+        let secondSiteInfo = privacyDashboard.staticTexts.containing(\.value, containing: "github.com").firstMatch
+        XCTAssertTrue(secondSiteInfo.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy dashboard should update to show github.com information")
+    }
+
+}

@@ -1,0 +1,107 @@
+//
+//  AttributedMetricFeatureFlag.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import PrivacyConfig
+
+/// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
+/// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
+public enum AttributedMetricFeatureFlag: String {
+    case attributedMetrics // general kill switch
+
+    // SubFeatures
+    case emitAllMetrics // we don't emit any metric, but we still collect
+    case retention // Kill Switch
+    case canEmitRetention // we don't emit metric, but we still collect
+    case searchDaysAvg // Kill Switch
+    case canEmitSearchDaysAvg // we don't emit metric, but we still collect
+    case searchCountAvg // Kill Switch
+    case canEmitSearchCountAvg // we don't emit metric, but we still collect
+    case adClickCountAvg // Kill Switch
+    case canEmitAdClickCountAvg // we don't emit metric, but we still collect
+    case aiUsageAvg // Kill Switch
+    case canEmitAIUsageAvg // we don't emit metric, but we still collect
+    case subscriptionRetention // Kill Switch
+    case canEmitSubscriptionRetention // we don't emit metric, but we still collect
+    case syncDevices // Kill Switch
+    case canEmitSyncDevices // we don't emit metric, but we still collect
+}
+
+extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
+
+    public var defaultValue: FeatureFlagDefaultValue {
+        switch self {
+        case .attributedMetrics:
+            return .enabled
+        case .emitAllMetrics, .retention, .canEmitRetention,
+             .searchDaysAvg, .canEmitSearchDaysAvg, .searchCountAvg, .canEmitSearchCountAvg,
+             .adClickCountAvg, .canEmitAdClickCountAvg, .aiUsageAvg, .canEmitAIUsageAvg,
+             .subscriptionRetention, .canEmitSubscriptionRetention, .syncDevices, .canEmitSyncDevices:
+            return .disabled
+        }
+    }
+
+    public var supportsLocalOverriding: Bool {
+        switch self {
+        case .attributedMetrics, .emitAllMetrics, .retention, .canEmitRetention,
+             .searchDaysAvg, .canEmitSearchDaysAvg, .searchCountAvg, .canEmitSearchCountAvg,
+             .adClickCountAvg, .canEmitAdClickCountAvg, .aiUsageAvg, .canEmitAIUsageAvg,
+             .subscriptionRetention, .canEmitSubscriptionRetention, .syncDevices, .canEmitSyncDevices:
+            return true
+        }
+    }
+
+    public var source: FeatureFlagSource {
+        switch self {
+        case .attributedMetrics:
+            return .remoteReleasable(AttributedMetricsSubfeature.featureEnabled)
+        case .emitAllMetrics:
+            return .remoteReleasable(AttributedMetricsSubfeature.emitAllMetrics)
+        case .retention:
+            return .remoteReleasable(AttributedMetricsSubfeature.retention)
+        case .canEmitRetention:
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitRetention)
+        case .searchDaysAvg:
+            return .remoteReleasable(AttributedMetricsSubfeature.searchDaysAvg)
+        case .canEmitSearchDaysAvg:
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitSearchDaysAvg)
+        case .searchCountAvg:
+            return .remoteReleasable(AttributedMetricsSubfeature.searchCountAvg)
+        case .canEmitSearchCountAvg:
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitSearchCountAvg)
+        case .adClickCountAvg:
+            return .remoteReleasable(AttributedMetricsSubfeature.adClickCountAvg)
+        case .canEmitAdClickCountAvg:
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitAdClickCountAvg)
+        case .aiUsageAvg:
+            return .remoteReleasable(AttributedMetricsSubfeature.aiUsageAvg)
+        case .canEmitAIUsageAvg:
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitAIUsageAvg)
+        case .subscriptionRetention:
+            return .remoteReleasable(AttributedMetricsSubfeature.subscriptionRetention)
+        case .canEmitSubscriptionRetention:
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitSubscriptionRetention)
+        case .syncDevices:
+            return .remoteReleasable(AttributedMetricsSubfeature.syncDevices)
+        case .canEmitSyncDevices:
+            return .remoteReleasable(AttributedMetricsSubfeature.canEmitSyncDevices)
+        }
+    }
+
+    public var cohortType: (any FeatureFlagCohortDescribing.Type)? { nil }
+}

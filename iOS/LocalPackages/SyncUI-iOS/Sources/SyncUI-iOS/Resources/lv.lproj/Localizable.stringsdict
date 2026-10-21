@@ -38,5 +38,23 @@
 			<string>Your password for %2$@ can't sync because one of its fields exceeds the character limit.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Jūsu kredītkarte %2$@ un vēl 1 karte nevar sinhronizēties, jo daži no to laukiem pārsniedz rakstzīmju ierobežojumu.</string>
+			<key>other</key>
+			<string>Jūsu kredītkarte %2$@ un vēl %1$d kartes nevar sinhronizēt, jo daži to lauki pārsniedz rakstzīmju limitu.</string>
+			<key>zero</key>
+			<string>Jūsu kredītkarte %2$@ nevar sinhronizēties, jo viens no tās laukiem pārsniedz rakstzīmju limitu.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

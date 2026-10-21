@@ -23,7 +23,8 @@ public protocol BrokerProfileJobProviding {
     func createJobs(with jobType: JobType,
                     withPriorityDate priorityDate: Date?,
                     showWebView: Bool,
-                    errorDelegate: BrokerProfileJobErrorDelegate,
+                    statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
+                    isAuthenticatedUser: Bool,
                     jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob]
 }
 
@@ -34,10 +35,12 @@ public final class BrokerProfileJobProvider: BrokerProfileJobProviding {
     public func createJobs(with jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
-                           errorDelegate: BrokerProfileJobErrorDelegate,
+                           statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
+                           isAuthenticatedUser: Bool,
                            jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
 
-        let brokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
+        let brokerProfileQueryData = try jobDependencies.database
+            .fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: isAuthenticatedUser)
         var jobs: [BrokerProfileJob] = []
         var visitedDataBrokerIDs: Set<Int64> = []
 
@@ -49,7 +52,7 @@ public final class BrokerProfileJobProvider: BrokerProfileJobProviding {
                                            jobType: jobType,
                                            priorityDate: priorityDate,
                                            showWebView: showWebView,
-                                           errorDelegate: errorDelegate,
+                                           statusReportingDelegate: statusReportingDelegate,
                                            jobDependencies: jobDependencies)
                 jobs.append(job)
                 visitedDataBrokerIDs.insert(dataBrokerID)

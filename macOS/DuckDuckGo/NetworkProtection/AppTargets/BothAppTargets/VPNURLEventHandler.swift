@@ -16,31 +16,42 @@
 //  limitations under the License.
 //
 
-import Foundation
-import PixelKit
-import VPNAppLauncher
+import AppKitExtensions
 
-#if !APPSTORE
+import AppKit
+import Foundation
 import LetsMove
-#endif
+import PixelKit
+import Subscription
+import VPNAppLauncher
 
 @MainActor
 final class VPNURLEventHandler {
 
-    private let windowControllerManager: WindowControllersManager
+    private let windowControllersManager: WindowControllersManager
 
-    init(windowControllerManager: WindowControllersManager? = nil) {
-        self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
+    init(windowControllersManager: WindowControllersManager? = nil) {
+        self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
     }
 
     /// Handles VPN event URLs
     ///
     func handle(_ url: URL) async {
-        switch url {
+        // Strip query items before matching against command URLs so commands that carry
+        // parameters (e.g. showSubscription's `origin`) still match by path.
+        let strippedURL: URL = {
+            guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+                return url
+            }
+            components.queryItems = nil
+            return components.url ?? url
+        }()
+
+        switch strippedURL {
         case VPNAppLaunchCommand.manageExcludedApps.launchURL:
-            windowControllerManager.showVPNAppExclusions()
+            windowControllersManager.showVPNAppExclusions()
         case VPNAppLaunchCommand.manageExcludedDomains.launchURL:
-            windowControllerManager.showVPNDomainExclusions()
+            windowControllersManager.showVPNDomainExclusions()
         case VPNAppLaunchCommand.showStatus.launchURL:
             await showStatus()
         case VPNAppLaunchCommand.showSettings.launchURL:
@@ -51,63 +62,82 @@ final class VPNURLEventHandler {
             showMainWindow()
         case VPNAppLaunchCommand.showVPNLocations.launchURL:
             showLocations()
-        case VPNAppLaunchCommand.showPrivacyPro.launchURL:
-            showPrivacyPro()
-#if !APPSTORE && !DEBUG
+        case VPNAppLaunchCommand.showSubscription(origin: nil).launchURL:
+            let origin = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first(where: { $0.name == VPNAppLaunchCommand.showSubscriptionOriginQueryItem })?
+                .value
+            showSubscription(origin: origin)
         case VPNAppLaunchCommand.moveAppToApplications.launchURL:
             moveAppToApplicationsFolder()
-#endif
         default:
             return
         }
     }
 
     func reloadTab(showingDomain domain: String) {
-        windowControllerManager.selectedTab?.reload()
+        windowControllersManager.selectedTab?.reload()
     }
 
     func showStatus() async {
-        await windowControllerManager.showNetworkProtectionStatus()
+        await windowControllersManager.showNetworkProtectionStatus()
     }
 
     func showPreferences() {
-        windowControllerManager.showPreferencesTab(withSelectedPane: .vpn)
+        windowControllersManager.showPreferencesTab(withSelectedPane: .vpn)
     }
 
     func showShareFeedback() {
-        windowControllerManager.showShareFeedbackModal(source: .vpn)
+        windowControllersManager.showShareFeedbackModal(source: .vpn)
+    }
+
+    func copySupportInfo() async -> Bool {
+        let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionManager)
+        let metadata = await collector.collectMetadata()
+
+        guard let supportInfo = metadata.toPrettyPrintedJSON() else {
+            assertionFailure("Failed to encode VPN support info")
+            return false
+        }
+
+        NSPasteboard.general.copy(supportInfo)
+        return true
     }
 
     func showMainWindow() {
-        windowControllerManager.showMainWindow()
+        windowControllersManager.showMainWindow()
     }
 
     func showLocations() {
-        windowControllerManager.showPreferencesTab(withSelectedPane: .vpn)
-        windowControllerManager.showLocationPickerSheet()
+        windowControllersManager.showPreferencesTab(withSelectedPane: .vpn)
+        windowControllersManager.showLocationPickerSheet()
     }
 
-    func showPrivacyPro() {
-        let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .purchase)
-        windowControllerManager.showTab(with: .subscription(url))
+    func showSubscription(origin: String?) {
+        let fallback = Application.appDelegate.subscriptionManager.url(for: .purchase)
+        let url = origin
+            .flatMap { SubscriptionURL.purchaseURLComponentsWithOrigin($0)?.url }
+            ?? fallback
 
-        PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
+        windowControllersManager.showTab(with: .subscription(url))
+        PixelKit.fire(SubscriptionPixel.subscriptionOfferScreenImpression(origin: origin))
     }
 
     func showVPNAppExclusions() {
-        windowControllerManager.showPreferencesTab(withSelectedPane: .vpn)
-        windowControllerManager.showVPNAppExclusions()
+        windowControllersManager.showPreferencesTab(withSelectedPane: .vpn)
+        windowControllersManager.showVPNAppExclusions()
     }
 
     func showVPNDomainExclusions() {
-        windowControllerManager.showPreferencesTab(withSelectedPane: .vpn)
-        windowControllerManager.showVPNDomainExclusions()
+        windowControllersManager.showPreferencesTab(withSelectedPane: .vpn)
+        windowControllersManager.showVPNDomainExclusions()
     }
 
-#if !APPSTORE && !DEBUG
     func moveAppToApplicationsFolder() {
+        let buildType = StandardApplicationBuildType()
+        guard !buildType.isAppStoreBuild && !buildType.isDebugBuild else { return }
+
         // this should be run after NSApplication.shared is set
-        PFMoveToApplicationsFolderIfNecessary(false)
+        PFMoveToApplicationsFolderIfNecessary(/*allowAlertSilencing:*/ false)
     }
-#endif
 }

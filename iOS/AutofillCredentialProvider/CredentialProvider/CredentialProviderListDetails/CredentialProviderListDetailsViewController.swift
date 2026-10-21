@@ -21,6 +21,7 @@ import UIKit
 import SwiftUI
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Combine
 import Core
 

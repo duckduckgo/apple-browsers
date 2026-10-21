@@ -25,7 +25,7 @@ struct TitledButtonAction {
 }
 
 final class BannerMessageViewController: NSHostingController<BannerView> {
-    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+    private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
     let viewModel: BannerViewModel
 
     init(message: String,
@@ -35,12 +35,11 @@ final class BannerMessageViewController: NSHostingController<BannerView> {
          closeAction: @escaping () -> Void) {
         self.viewModel = .init(message: message,
                                image: image,
-                               backgroundColor: visualStyle.colorsProvider.bannerBackgroundColor,
                                primaryAction: primaryAction,
                                secondaryAction: secondaryAction,
                                closeAction: closeAction)
 
-        super.init(rootView: BannerView(viewModel: viewModel))
+        super.init(rootView: BannerView(viewModel: viewModel, themeManager: themeManager))
     }
 
     required init?(coder: NSCoder) {
@@ -55,17 +54,13 @@ final class BannerViewModel: ObservableObject {
     @Published var secondaryAction: TitledButtonAction?
     @Published var closeAction: () -> Void
 
-    let backgroundColor: NSColor
-
     public init(message: String,
                 image: NSImage,
-                backgroundColor: NSColor,
                 primaryAction: TitledButtonAction,
                 secondaryAction: TitledButtonAction?,
                 closeAction: @escaping () -> Void) {
         self.message = message
         self.image = image
-        self.backgroundColor = backgroundColor
         self.primaryAction = primaryAction
         self.secondaryAction = secondaryAction
         self.closeAction = closeAction
@@ -74,6 +69,11 @@ final class BannerViewModel: ObservableObject {
 
 struct BannerView: View {
     @ObservedObject public var viewModel: BannerViewModel
+    @ObservedObject public var themeManager: ThemeManager
+
+    private var colorsProvider: ColorsProviding {
+        themeManager.theme.colorsProvider
+    }
 
     var body: some View {
         VStack {
@@ -87,7 +87,7 @@ struct BannerView: View {
 
                 Spacer()
 
-                HoverButton(image: .closeLarge, cornerRadius: 6) {
+                HoverButton(image: NSImage(resource: .closeLarge), cornerRadius: 6) {
                     viewModel.closeAction()
                 }
                 .padding(.trailing, 10)
@@ -99,10 +99,10 @@ struct BannerView: View {
             Divider()
                 .frame(height: 1)
                 .frame(maxWidth: .infinity)
-                .background(Color.bannerViewDivider.opacity(0.09))
+                .background(Color(.bannerViewDivider).opacity(0.09))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(Color(viewModel.backgroundColor))
+        .background(Color(colorsProvider.bannerBackgroundColor))
     }
 
     private var mainActionButtons: some View {
@@ -112,7 +112,7 @@ struct BannerView: View {
             } label: {
                 Text(viewModel.primaryAction.title)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
 
             if let secondaryAction = viewModel.secondaryAction {
                 Button {
@@ -120,7 +120,7 @@ struct BannerView: View {
                 } label: {
                     Text(secondaryAction.title)
                 }
-                .buttonStyle(DismissActionButtonStyle())
+                .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             }
         }
     }

@@ -41,9 +41,16 @@ final class BookmarksOutlineView: NSOutlineView {
     private var highlightedRowView: RoundedSelectionRowView?
     private var highlightedCellView: BookmarkOutlineCellView?
 
+    private var themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    private var palette: ThemeColors {
+        themeManager.theme.palette
+    }
+
     private var bookmarksDataSource: BookmarksOutlineViewDataSource? {
         dataSource as? BookmarksOutlineViewDataSource
     }
+
+    var allowsDisclosureButtonHighlight = true
 
     @PublishedAfter var highlightedRow: Int? {
         didSet {
@@ -52,7 +59,13 @@ final class BookmarksOutlineView: NSOutlineView {
             }
             highlightedRowView?.highlight = false
             highlightedCellView?.highlight = false
-            guard let row = highlightedRow, row < numberOfRows else { return }
+
+            refreshDisclosureButtonTint(disclosureButton: highlightedRowView?.disclosureButton, highlighted: false)
+
+            guard let row = highlightedRow, row < numberOfRows else {
+                return
+            }
+
             if case .keyDown = NSApp.currentEvent?.type {
                 scrollRowToVisible(row)
             }
@@ -60,24 +73,35 @@ final class BookmarksOutlineView: NSOutlineView {
             let item = item(atRow: row) as? BookmarkNode
             let rowView = rowView(atRow: row, makeIfNecessary: false) as? RoundedSelectionRowView
             rowView?.highlight = item?.canBeHighlighted ?? false
-            highlightedRowView = rowView
 
             let cellView = self.view(atColumn: 0, row: row, makeIfNecessary: false) as? BookmarkOutlineCellView
             cellView?.highlight = item?.canBeHighlighted ?? false
+
+            refreshDisclosureButtonTint(disclosureButton: rowView?.disclosureButton, highlighted: item?.canBeHighlighted ?? false)
+
+            highlightedRowView = rowView
             highlightedCellView = cellView
         }
     }
 
-    /// popover displaying this Bookmarks Menu
-    private var popover: NSPopover? {
-        window?.contentViewController?.nextResponder as? NSPopover
+    private func refreshDisclosureButtonTint(disclosureButton: NSButton?, highlighted: Bool) {
+        disclosureButton?.contentTintColor = allowsDisclosureButtonHighlight && highlighted ? palette.accentContentPrimary : palette.iconsPrimary
+    }
+
+    /// popover (`BookmarkListPopover` or `BookmarksBarMenuCustomPopover`) displaying this Bookmarks Menu
+    private var popoverHost: NSResponder? {
+        let next = window?.contentViewController?.nextResponder
+        if next is NSPopover || next is any BookmarksBarMenuPopoverPresenting {
+            return next
+        }
+        return nil
     }
 
     /// return parent level Bookmarks Menu Outline View if this Bookmarks Menu is displayed as its submenu
     private var parentMenuOutlineView: Self? {
         if let window, // popover window
            let windowParent = window.parent, // parent popover window
-           type(of: windowParent) == type(of: window) /* does window type match _NSPopoverWindow? */,
+           type(of: windowParent) == type(of: window) /* does window type match BookmarksBarMenuWindow? */,
            let scrollView = windowParent.contentView?.subviews.first(where: { $0 is NSScrollView }) as? NSScrollView,
            let outlineView = scrollView.documentView as? Self {
             return outlineView
@@ -86,7 +110,7 @@ final class BookmarksOutlineView: NSOutlineView {
     }
 
     private var isInPopover: Bool {
-        popover != nil
+        popoverHost != nil
     }
     private var isInKeyPopover: Bool {
         guard highlightedRow != nil else { return false }
@@ -177,7 +201,13 @@ final class BookmarksOutlineView: NSOutlineView {
 
         scrollView.addTrackingArea(trackingArea)
 
-        NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: window?.contentViewController?.nextResponder)
+        // `object: nil` matches any NSPopover.didCloseNotification poster. We can't pin
+        // it to our enclosing popover here because BookmarksBarMenuCustomPopover wires
+        // `contentViewController?.nextResponder = self` *after* assigning the VC to its
+        // window — by the time this fires, the responder chain still points at the
+        // window, not the popover. `updateIsInKeyPopoverState()` is idempotent, so
+        // matching all senders is fine.
+        NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: nil)
     }
 
     override func didAdd(_ rowView: NSTableRowView, forRow row: Int) {
@@ -229,7 +259,7 @@ final class BookmarksOutlineView: NSOutlineView {
         // don‘t reset highlight when mouse is exiting to a child popover
         guard let window, !(window.childWindows?.isEmpty ?? true),
               let mouseWindow = NSApp.window(withWindowNumber: windowNumber),
-              type(of: mouseWindow) == type(of: window) /* _NSPopoverWindow */ else {
+              type(of: mouseWindow) == type(of: window) /* BookmarksBarMenuWindow */ else {
             highlightedRow = nil
             return
         }
@@ -324,7 +354,7 @@ final class BookmarksOutlineView: NSOutlineView {
     private func onLeftArrowPress(_ event: NSEvent) {
         if parentMenuOutlineView != nil {
             // when we are in a submenu close the submenu on Left
-            popover?.close()
+            (popoverHost as? any BookmarksBarMenuPopoverPresenting)?.close()
 
         } else if let highlightedRow,
                   let item = self.item(atRow: highlightedRow),
@@ -415,7 +445,7 @@ final class BookmarksOutlineView: NSOutlineView {
     }
 
     override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
-        if event?.type == .rightMouseDown {
+        if event?.isContextClick ?? false {
             // always allow context menu on a cell
             return true
         }

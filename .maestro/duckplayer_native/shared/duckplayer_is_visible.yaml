@@ -1,0 +1,16 @@
+# duckplayer_is_visible.yaml
+
+appId: com.duckduckgo.mobile.ios
+---
+
+# Load constants
+- runFlow:
+    file: constants.yaml
+
+# Validate Duck Player is Visible
+- assertVisible: ${output.duckPlayerLabel}
+- assertVisible:
+    id: ${output.closeButtonId}
+- assertVisible: ${output.duckPlayerSettingsId}
+- assertVisible:
+    id: ${output.chevronUpId}

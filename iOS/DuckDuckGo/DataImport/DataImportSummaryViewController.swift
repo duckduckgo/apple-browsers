@@ -23,15 +23,40 @@ import SwiftUI
 import BrowserServicesKit
 import Core
 import DDGSync
+import PixelKit
 
 final class DataImportSummaryViewController: UIViewController {
 
     private var viewModel: DataImportSummaryViewModel
     private let importScreen: DataImportViewModel.ImportScreen
+    private let importHubPixelContext: DataImportHubPixelContext?
+    private let onCompletion: () -> Void
+    private let onSegueToSync: (String?) -> Void
+    private let onContinueToSafariImport: (() -> Void)?
 
-    init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing) {
-        self.viewModel = DataImportSummaryViewModel(summary: summary, importScreen: importScreen, syncService: syncService)
+    init(summary: DataImportSummary,
+         importScreen: DataImportViewModel.ImportScreen,
+         syncService: DDGSyncing,
+         sessionImportedDataTypes: Set<DataImport.DataType> = [],
+         isSafariImportFlow: Bool = false,
+         importHubPixelContext: DataImportHubPixelContext? = nil,
+         onSegueToSync: @escaping (String?) -> Void,
+         onCompletion: @escaping () -> Void,
+         onContinueToSafariImport: (() -> Void)? = nil) {
+        self.viewModel = DataImportSummaryViewModel(
+            summary: summary,
+            importScreen: importScreen,
+            syncService: syncService,
+            sessionImportedDataTypes: sessionImportedDataTypes,
+            isSafariImportFlow: isSafariImportFlow,
+            importHubPixelContext: importHubPixelContext
+        )
         self.importScreen = importScreen
+        self.importHubPixelContext = importHubPixelContext
+
+        self.onCompletion = onCompletion
+        self.onSegueToSync = onSegueToSync
+        self.onContinueToSafariImport = onContinueToSafariImport
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -44,7 +69,13 @@ final class DataImportSummaryViewController: UIViewController {
         super.viewDidLoad()
 
         setupView()
-        Pixel.fire(pixel: .importResultDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        if let importHubPixelContext {
+            var parameters = importHubPixelContext.parameters
+            parameters[PixelParameters.count] = "\(viewModel.importedDataTypesCount)"
+            PixelKit.fire(Pixel.Event.importHubResultDisplayed, options: .parameters(parameters))
+        } else {
+            PixelKit.fire(Pixel.Event.importResultDisplayed, options: .parameters([PixelParameters.source: importScreen.rawValue]))
+        }
     }
 
     private func setupView() {
@@ -60,23 +91,45 @@ final class DataImportSummaryViewController: UIViewController {
 
 extension DataImportSummaryViewController: DataImportSummaryViewModelDelegate {
 
-    func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel) {
-        guard let navigationController = presentingViewController as? UINavigationController else { return }
-
-        if let parent = navigationController.topViewController as? AutofillLoginListViewController {
-            dismiss(animated: true) {
-                parent.segueToSync()
-            }
-        } else if let parent = navigationController.topViewController as? BookmarksViewController {
-            dismiss(animated: true) {
-                parent.segueToSync()
+    func dataImportSummaryViewModelComplete(_ viewModel: DataImportSummaryViewModel) {
+        if let navigationController = presentingViewController as? UINavigationController, navigationController.children.first is DataImportViewController {
+            onCompletion()
+        } else {
+            dismiss(animated: true) { [weak self] in
+                self?.onCompletion()
             }
         }
     }
 
+    func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel, source: String?) {
+        guard let navigationController = presentingViewController as? UINavigationController else {
+            onSegueToSync(source)
+            return
+        }
 
-    func dataImportSummaryViewModelComplete(_ viewModel: DataImportSummaryViewModel) {
-        dismiss(animated: true)
+        // Try to find a parent controller of the expected types
+        let parent = navigationController.topViewController as? (UIViewController & DataImportSyncSegueing)
+            ?? navigationController.viewControllers.first(where: { $0 is DataImportSyncSegueing }) as? (UIViewController & DataImportSyncSegueing)
+        
+        if let parent = parent {
+            dismiss(animated: true) {
+                parent.segueToSync(source: source)
+            }
+        } else {
+            onSegueToSync(source)
+        }
     }
 
+    func dataImportSummaryViewModelDidRequestContinueImportFromSafari(_ viewModel: DataImportSummaryViewModel) {
+        dismiss(animated: true) { [weak self] in
+            self?.onContinueToSafariImport?()
+        }
+    }
 }
+
+private protocol DataImportSyncSegueing {
+    func segueToSync(source: String?)
+}
+
+extension AutofillLoginListViewController: DataImportSyncSegueing {}
+extension BookmarksViewController: DataImportSyncSegueing {}

@@ -1,0 +1,3198 @@
+//
+//  SyncDialogControllerTests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Bookmarks
+import Combine
+import Foundation
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
+@testable import SyncUI_macOS
+import XCTest
+@testable import BrowserServicesKit
+@testable import DDGSync
+@testable import DuckDuckGo_Privacy_Browser
+import FeatureFlags_macOS
+
+private final class MockUserAuthenticator: UserAuthenticating {
+    var stubAuthenticateUser = DeviceAuthenticationResult.success
+    var stubbedAuthenticationResults: [DeviceAuthenticationResult] = []
+    private(set) var authenticateUserCallCount = 0
+    var onAuthenticateUser: (() -> Void)?
+    var stubIsAuthenticationPromptNeeded = true
+
+    func authenticateUser(reason: DuckDuckGo_Privacy_Browser.DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {
+        nextResult()
+    }
+    func isAuthenticationPromptNeeded(reason: DeviceAuthenticator.AuthenticationReason) -> Bool {
+        stubIsAuthenticationPromptNeeded
+    }
+    func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
+        result(nextResult())
+    }
+
+    private func nextResult() -> DeviceAuthenticationResult {
+        authenticateUserCallCount += 1
+        onAuthenticateUser?()
+        guard !stubbedAuthenticationResults.isEmpty else {
+            return stubAuthenticateUser
+        }
+        return stubbedAuthenticationResults.removeFirst()
+    }
+}
+
+@MainActor
+private final class StubCloseSetupConfirmation {
+    var answer: Bool
+    private(set) var presentationCount = 0
+
+    init(answer: Bool) {
+        self.answer = answer
+    }
+
+    func present() -> Bool {
+        presentationCount += 1
+        return answer
+    }
+}
+
+private final class MockDeviceSyncCoordinationDelegate: DeviceSyncCoordinationDelegate {
+    var didEndFlowCalled: (() -> Void)?
+
+    func didEndFlow() {
+        didEndFlowCalled?()
+    }
+}
+
+@MainActor
+final class SyncDialogControllerTests: XCTestCase {
+
+    private var scheduler: CapturingScheduler!
+    private var managementDialogModel: ManagementDialogModel!
+    private var authenticator: MockUserAuthenticator!
+    private var ddgSyncing: MockDDGSyncing!
+    private var pausedStateManager: MockSyncPausedStateManaging!
+    private var connectionController: MockSyncConnectionControlling!
+    private var featureFlagger: MockSyncFeatureFlagger!
+    private var pixelKitMock: PixelKitMock!
+    private var mockKeyValueStore: MockKeyValueStore!
+    private var syncDialogController: SyncDialogController!
+    private var deviceNameProviderCallCount = 0
+    var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
+    lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!.defaultCredentialRecoveryKey()
+    var cancellables: Set<AnyCancellable>!
+
+    override func setUp() {
+        super.setUp()
+        cancellables = []
+        scheduler = CapturingScheduler()
+        managementDialogModel = ManagementDialogModel()
+        ddgSyncing = MockDDGSyncing(authState: .inactive, scheduler: scheduler, isSyncInProgress: false)
+        pausedStateManager = MockSyncPausedStateManaging()
+        featureFlagger = MockSyncFeatureFlagger()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSeamlessAccountSwitching.rawValue] = true
+        connectionController = MockSyncConnectionControlling()
+        authenticator = MockUserAuthenticator()
+        pixelKitMock = PixelKitMock()
+        mockKeyValueStore = MockKeyValueStore()
+        deviceNameProviderCallCount = 0
+
+        syncDialogController = SyncDialogController(
+            syncService: ddgSyncing,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: authenticator,
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                self?.connectionController ?? MockSyncConnectionControlling()
+            },
+            featureFlagger: featureFlagger,
+            pixelFiring: pixelKitMock,
+            keyValueStore: mockKeyValueStore,
+            deviceNameProvider: { [weak self] in
+                self?.deviceNameProviderCallCount += 1
+                return "Test Mac"
+            }
+        )
+    }
+
+    override func tearDown() {
+        ddgSyncing = nil
+        syncDialogController = nil
+        pausedStateManager = nil
+        cancellables = nil
+        connectionController = nil
+        featureFlagger = nil
+        managementDialogModel = nil
+        scheduler = nil
+        authenticator = nil
+        pixelKitMock = nil
+        mockKeyValueStore = nil
+        super.tearDown()
+    }
+
+    func testInitializationDoesNotResolveDeviceName() {
+        XCTAssertNil(managementDialogModel.thisDeviceName)
+        XCTAssertEqual(deviceNameProviderCallCount, 0)
+    }
+
+    func testSyncSetupFlowVersionFollowsLocalCapabilities() {
+        for (v2Enabled, v21Enabled, expected) in [
+            (false, false, "v1"), (false, true, "v1"),
+            (true, false, "v2"), (true, true, "v2.1")
+        ] {
+            featureFlagger.isFeatureOn[FeatureFlag.syncCanUseV2ConnectFlow.rawValue] = v2Enabled
+            featureFlagger.isFeatureOn[FeatureFlag.syncCanUseExchangeV2Point1.rawValue] = v21Enabled
+            XCTAssertEqual(syncDialogController.syncSetupFlowVersion, expected)
+        }
+    }
+
+    func testJoinReportPixelHasCountAndDailyFrequencyAndNegotiatedDimensions() {
+        for didSucceed in [true, false] {
+            let report = PairingV2JoinReport(hostHasAccount: false, hostKind: .thirdParty,
+                                            joinerHasAccount: true, joinerKind: .ddg,
+                                            protocolVersion: "2.1", didSucceed: didSucceed)
+            syncDialogController.controllerDidSendPairingV2JoinReport(report)
+
+            let call = pixelKitMock.actualFireCalls.last
+            XCTAssertEqual(call?.pixel.name, "sync_setup_joiner_recovery_code_done_\(didSucceed ? "success" : "failed")_mac")
+            XCTAssertEqual(call?.frequency, .dailyAndCount)
+            XCTAssertEqual(call?.pixel.parameters, [
+                "host_has_account": "false", "host_kind": "3party",
+                "joiner_has_account": "true", "joiner_kind": "ddg", "protocol_version": "2.1"
+            ])
+        }
+    }
+
+    func testSyncSetupEndedFailedRelayEventIncludesPairingFailureContext() {
+        let context = PairingV2FailureContext(stage: .scannerSendHello, kind: .unavailable)
+        let event = SyncSetupPixelKitEvent.syncSetupEndedFailed(.exchange,
+                                                                flowVersion: "v2",
+                                                                peerKind: nil,
+                                                                myRole: "joiner",
+                                                                reason: "relay_channel_failure",
+                                                                timeoutStage: nil,
+                                                                pairingV2FailureContext: context)
+
+        XCTAssertEqual(event.parameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureStage], "scanner_send_hello")
+        XCTAssertEqual(event.parameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureKind], "unavailable")
+    }
+
+    func testSyncSetupEndedFailedGenerationEventOmitsPairingFailureKind() {
+        let context = PairingV2FailureContext(stage: .presenterGenerateCode, kind: nil)
+        let event = SyncSetupPixelKitEvent.syncSetupEndedFailed(.exchange,
+                                                                flowVersion: "v2",
+                                                                peerKind: nil,
+                                                                myRole: "host",
+                                                                reason: "unexpected_failure",
+                                                                timeoutStage: nil,
+                                                                pairingV2FailureContext: context)
+
+        XCTAssertEqual(event.parameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureStage], "presenter_generate_code")
+        XCTAssertNil(event.parameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureKind])
+    }
+
+    func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {
+        await syncDialogController.recoverDataPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .recoverSyncedData)
+    }
+
+    func testSyncWithServerPressed_showsSyncAnotherDevicePrompt() async {
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelled_showsAuthenticationCancelledDialog() async {
+        authenticator.stubAuthenticateUser = .failure
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        XCTAssertFalse(didEndFlowCalled)
+    }
+
+    func testSyncWithServerPressed_whenNoAuthAvailable_stillShowsUnableToAuthenticateError() async {
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelled_isShownAtMostTwiceThenEndsFlow() async {
+        authenticator.stubAuthenticateUser = .failure
+
+        for _ in 0..<2 {
+            managementDialogModel.currentDialog = nil
+            await syncDialogController.syncWithServerPressed()
+            XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        }
+
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        managementDialogModel.currentDialog = nil
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertNotEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        XCTAssertTrue(didEndFlowCalled)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelled_doesNotRetryAuthenticationUntilPromptClosed() async {
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_dismissesPromptBeforeRetryingAuthentication() async {
+        authenticator.stubAuthenticateUser = .failure
+        await syncDialogController.syncWithServerPressed()
+        var dialogWhenRetrying: ManagementDialogKind?
+        authenticator.onAuthenticateUser = { [managementDialogModel] in
+            dialogWhenRetrying = managementDialogModel?.currentDialog
+        }
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertNil(dialogWhenRetrying)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelledFirstTime_promptOffersRetry() async {
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertTrue(managementDialogModel.authenticationCancelledPromptOffersRetry)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelledSecondTime_promptDoesNotOfferRetry() async {
+        authenticator.stubAuthenticateUser = .failure
+        await syncDialogController.syncWithServerPressed()
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        XCTAssertFalse(managementDialogModel.authenticationCancelledPromptOffersRetry)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_retriesAuthenticationOnce() async {
+        authenticator.stubAuthenticateUser = .failure
+        await syncDialogController.syncWithServerPressed()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 2)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_whenRetrySucceeds_continuesFlow() async {
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncWithServerPressed()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_whenRetryDenied_endsFlowWithoutShowingPromptAgain() async {
+        authenticator.stubAuthenticateUser = .failure
+        await syncDialogController.syncWithServerPressed()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertEqual(mockKeyValueStore.object(forKey: "sync.authentication-cancelled-prompt.presented-count") as? Int, 1)
+        let fireCount = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "sync_settings_authentication_cancelled_prompt_shown_mac" }.count
+        XCTAssertEqual(fireCount, 1)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_whenSyncWithAnotherDeviceFlowAndRetrySucceeds_continuesFlow() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        ddgSyncing.account = nil
+        connectionController.startConnectModeStub = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        Task {
+            await syncDialogController.authenticationCancelledPromptClosePressed()
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertEqual(codes.displayCode, "test_code")
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_onSecondPromptPresentation_doesNotRetryAuthentication() async {
+        authenticator.stubAuthenticateUser = .failure
+        await syncDialogController.syncWithServerPressed()
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+        await syncDialogController.syncWithServerPressed()
+        let callCountBeforeClose = authenticator.authenticateUserCallCount
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, callCountBeforeClose)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_whenPromptLimitReached_doesNotRetryAuthentication() async {
+        authenticator.stubAuthenticateUser = .failure
+        mockKeyValueStore.set(2, forKey: "sync.authentication-cancelled-prompt.presented-count")
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelled_persistsPresentationCount() async {
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(mockKeyValueStore.object(forKey: "sync.authentication-cancelled-prompt.presented-count") as? Int, 1)
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationCancelled_firesShownPixelOncePerPresentationUpToCap() async {
+        authenticator.stubAuthenticateUser = .failure
+
+        for _ in 0..<3 {
+            managementDialogModel.currentDialog = nil
+            await syncDialogController.syncWithServerPressed()
+        }
+
+        let fireCount = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "sync_settings_authentication_cancelled_prompt_shown_mac" }.count
+        XCTAssertEqual(fireCount, 2)
+    }
+
+    func testSyncWithAnotherDevicePressed_whenAuthenticationCancelled_showsAuthenticationCancelledDialog() async {
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+    }
+
+    private func enableImprovedPairingFlow() {
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = true
+    }
+
+    func testSyncWithServerPressed_whenImprovedPairingFlowEnabled_showsPromptWithoutAuthenticating() async {
+        enableImprovedPairingFlow()
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 0)
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    func testSyncWithServerPressed_whenImprovedPairingFlowDisabled_authenticatesBeforeShowingPrompt() async {
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+        XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferred_authenticatesThenCreatesAccount() async {
+        enableImprovedPairingFlow()
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        await syncDialogController.syncWithServerPressed()
+        var createAccountCallCountWhenAuthenticating: Int?
+        var createAccountCallCount = 0
+        ddgSyncing.createAccountCallback = { _, _ in createAccountCallCount += 1 }
+        authenticator.onAuthenticateUser = { createAccountCallCountWhenAuthenticating = createAccountCallCount }
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+        XCTAssertEqual(createAccountCallCountWhenAuthenticating, 0)
+        XCTAssertEqual(createAccountCallCount, 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferred_setsAuthenticatingWhileAuthenticating() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        var isAuthenticatingDuringAuthentication: Bool?
+        authenticator.onAuthenticateUser = { [managementDialogModel] in
+            isAuthenticatingDuringAuthentication = managementDialogModel?.isAuthenticating
+        }
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertEqual(isAuthenticatingDuringAuthentication, true)
+        XCTAssertFalse(managementDialogModel.isAuthenticating)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferredAndCancelled_showsAuthenticationCancelledDialogWithoutCreatingAccount() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubAuthenticateUser = .failure
+        var createAccountCalled = false
+        ddgSyncing.createAccountCallback = { _, _ in createAccountCalled = true }
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertFalse(createAccountCalled)
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        XCTAssertTrue(managementDialogModel.authenticationCancelledPromptOffersRetry)
+        XCTAssertFalse(managementDialogModel.isAuthenticating)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferredAndRetrySucceeds_createsAccount() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        let accountCreated = expectation(description: "Account created after retry")
+        ddgSyncing.createAccountCallback = { _, _ in accountCreated.fulfill() }
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        await fulfillment(of: [accountCreated], timeout: 5)
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 2)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferredAndRetrySucceeds_returnsToPromptWhileConnecting() async {
+        enableImprovedPairingFlow()
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        var dialogWhileCreatingAccount: ManagementDialogKind?
+        var isConnectingThisDeviceOnlyWhileCreatingAccount: Bool?
+        let accountCreated = expectation(description: "Account created after retry")
+        ddgSyncing.createAccountCallback = { [managementDialogModel] _, _ in
+            dialogWhileCreatingAccount = managementDialogModel?.currentDialog
+            isConnectingThisDeviceOnlyWhileCreatingAccount = managementDialogModel?.isConnectingThisDeviceOnly
+            accountCreated.fulfill()
+        }
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        await fulfillment(of: [accountCreated], timeout: 5)
+        XCTAssertEqual(dialogWhileCreatingAccount, .syncAnotherDevicePrompt)
+        XCTAssertEqual(isConnectingThisDeviceOnlyWhileCreatingAccount, true)
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAuthenticationDeferredAndRetrySucceeds_returnsToPromptWhileConnecting() async {
+        enableImprovedPairingFlow()
+        ddgSyncing.account = nil
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        var isConnectingAnotherDeviceWhenPromptReturned: Bool?
+        managementDialogModel.$currentDialog
+            .dropFirst()
+            .filter { $0 == .syncAnotherDevicePrompt }
+            .sink { [managementDialogModel] _ in
+                isConnectingAnotherDeviceWhenPromptReturned = managementDialogModel?.isConnectingAnotherDevice
+            }
+            .store(in: &cancellables)
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertEqual(isConnectingAnotherDeviceWhenPromptReturned, true)
+    }
+
+    func testSyncAnotherDevicePromptDidAppear_whenReturningAfterRetry_doesNotFirePromptShownPixelAgain() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        syncDialogController.syncAnotherDevicePromptDidAppear()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        syncDialogController.syncAnotherDevicePromptDidAppear()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_another_device_prompt_shown_mac").count, 1)
+    }
+
+    func testSyncAnotherDevicePromptDidAppear_inNextFlowAfterReturningAfterRetry_firesPromptShownPixel() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+        managementDialogModel.endFlow()
+
+        await syncDialogController.syncWithServerPressed()
+        syncDialogController.syncAnotherDevicePromptDidAppear()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_another_device_prompt_shown_mac").count, 1)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferredAndNoAuthAvailable_showsUnableToAuthenticateError() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+        var createAccountCalled = false
+        ddgSyncing.createAccountCallback = { _, _ in createAccountCalled = true }
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertFalse(createAccountCalled)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whileAuthenticating_isNoOp() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        managementDialogModel.isAuthenticating = true
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 0)
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAuthenticationDeferred_authenticatesThenShowsCode() async throws {
+        enableImprovedPairingFlow()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        ddgSyncing.account = nil
+        connectionController.startConnectModeStub = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        await syncDialogController.syncWithServerPressed()
+
+        Task {
+            await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertEqual(codes.displayCode, "test_code")
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAuthenticationDeferredAndCancelled_showsAuthenticationCancelledDialogWithoutConnecting() async {
+        enableImprovedPairingFlow()
+        ddgSyncing.account = nil
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        XCTAssertFalse(managementDialogModel.isConnectingAnotherDevice)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferredAndCancelledWithPromptLimitReached_clearsPromptAndEndsFlow() async {
+        enableImprovedPairingFlow()
+        mockKeyValueStore.set(2, forKey: "sync.authentication-cancelled-prompt.presented-count")
+        await syncDialogController.syncWithServerPressed()
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(didEndFlowCalled)
+    }
+
+    func testSyncWithAnotherDevicePressed_afterDeferredAuthenticationCancelledWithPromptLimitReached_doesNotShowAnotherDevicePrompt() async {
+        enableImprovedPairingFlow()
+        mockKeyValueStore.set(2, forKey: "sync.authentication-cancelled-prompt.presented-count")
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubAuthenticateUser = .failure
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+        var dialogDuringAuthentication: ManagementDialogKind?
+        authenticator.onAuthenticateUser = { [managementDialogModel] in
+            dialogDuringAuthentication = managementDialogModel?.currentDialog
+        }
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertNil(dialogDuringAuthentication)
+        XCTAssertNotEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAuthenticationDeferredAndRetrySucceeds_showsCode() async throws {
+        enableImprovedPairingFlow()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        ddgSyncing.account = nil
+        connectionController.startConnectModeStub = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+
+        Task {
+            await syncDialogController.authenticationCancelledPromptClosePressed()
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertEqual(codes.displayCode, "test_code")
+    }
+
+    func testPromptAction_afterDeferredAuthenticationSucceeded_doesNotAuthenticateAgain() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        ddgSyncing.createAccountError = SyncError.failedToLoadAccount
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+        managementDialogModel.syncErrorMessage = nil
+        ddgSyncing.createAccountError = nil
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+    }
+
+    func testSyncWithServerPressed_afterDeferredFlowEnded_defersAuthenticationAgain() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+        managementDialogModel.endFlow()
+        ddgSyncing.account = nil
+
+        await syncDialogController.syncWithServerPressed()
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 2)
+    }
+
+    func testSyncWithAnotherDevicePressed_afterDeferredFlow_stillAuthenticatesUpFront() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        managementDialogModel.endFlow()
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+    }
+
+    func testRecoverDataPressed_whenImprovedPairingFlowEnabled_showsRecoverDialogWithoutAuthenticating() async {
+        enableImprovedPairingFlow()
+
+        await syncDialogController.recoverDataPressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 0)
+        XCTAssertEqual(managementDialogModel.currentDialog, .recoverSyncedData)
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    func testRecoverDataPressed_whenImprovedPairingFlowDisabled_authenticatesBeforeShowingRecoverDialog() async {
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+
+        await syncDialogController.recoverDataPressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, .recoverSyncedData)
+        XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    func testEnterRecoveryCodePressed_whenAuthenticationDeferred_authenticatesThenShowsRecoveryCode() async throws {
+        enableImprovedPairingFlow()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        connectionController.startConnectModeStub = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        await syncDialogController.recoverDataPressed()
+
+        Task {
+            await syncDialogController.enterRecoveryCodePressed()
+        }
+
+        let code = try await waitForEnterRecoveryCodeDialog()
+
+        XCTAssertEqual(code, "test_code")
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+    }
+
+    func testEnterRecoveryCodePressed_whenAuthenticationDeferredAndCancelled_showsAuthenticationCancelledDialog() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.recoverDataPressed()
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.enterRecoveryCodePressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAuthenticationCancelled)
+        XCTAssertNil(syncDialogController.codeForDisplayOrPasting)
+    }
+
+    func testEnterRecoveryCodePressed_whenAuthenticationDeferredAndRetrySucceeds_showsRecoveryCode() async throws {
+        enableImprovedPairingFlow()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        connectionController.startConnectModeStub = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        await syncDialogController.recoverDataPressed()
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.enterRecoveryCodePressed()
+
+        Task {
+            await syncDialogController.authenticationCancelledPromptClosePressed()
+        }
+
+        let code = try await waitForEnterRecoveryCodeDialog()
+
+        XCTAssertEqual(code, "test_code")
+    }
+
+    func testEnterRecoveryCodePressed_whileAuthenticating_isNoOp() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.recoverDataPressed()
+        managementDialogModel.isAuthenticating = true
+
+        await syncDialogController.enterRecoveryCodePressed()
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 0)
+    }
+
+    @MainActor
+    func testOnPresentTurnOffSyncConfirmDialogThenTurnOffSyncShown() {
+        syncDialogController.turnOffSyncPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .turnOffSync)
+    }
+
+    @MainActor
+    func testPresentRemoveDevice_showsRemoveDevice() {
+        let device = SyncDevice(kind: .desktop, name: "test", id: "test")
+
+        syncDialogController.presentRemoveDevice(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenAuthenticated_showsDeviceDetails() async {
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenImprovedPairingFlowEnabled_enablesImprovedPairingFlowOnDialogModel() async {
+        enableImprovedPairingFlow()
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenImprovedPairingFlowDisabled_disablesImprovedPairingFlowOnDialogModel() async {
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+        managementDialogModel.isImprovedPairingFlowEnabled = true
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deviceDetails(device))
+        XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    @MainActor
+    func testPresentRemoveDevice_whenImprovedPairingFlowEnabled_enablesImprovedPairingFlowOnDialogModel() {
+        enableImprovedPairingFlow()
+        let device = SyncDevice(kind: .desktop, name: "test", id: "test")
+
+        syncDialogController.presentRemoveDevice(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    @MainActor
+    func testPresentRemoveDevice_whenImprovedPairingFlowDisabled_disablesImprovedPairingFlowOnDialogModel() {
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+        managementDialogModel.isImprovedPairingFlowEnabled = true
+        let device = SyncDevice(kind: .desktop, name: "test", id: "test")
+
+        syncDialogController.presentRemoveDevice(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
+        XCTAssertFalse(managementDialogModel.isImprovedPairingFlowEnabled)
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenAuthenticationCancelled_doesNotShowDeviceDetailsV2AndEndsFlow() async {
+        authenticator.stubAuthenticateUser = .failure
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(didEndFlowCalled)
+    }
+
+    @MainActor
+    func testPresentDeviceDetails_whenNoAuthAvailable_showsUnableToAuthenticateError() async {
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+        let device = SyncDevice(kind: .current, name: "test", id: "test")
+
+        await syncDialogController.presentDeviceDetails(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
+    }
+
+    @MainActor
+    func testPresentRemoveDeviceConfirmationThenRemoveDeviceShown() {
+        let device = SyncDevice(kind: .mobile, name: "test", id: "test")
+
+        syncDialogController.presentRemoveDeviceConfirmation(device)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .removeDevice(device))
+    }
+
+    func testRemoveDeviceConfirmed_forCurrentDevice_turnsSyncOff() async {
+        let device = SyncDevice(kind: .current, name: "This Device", id: "current-id")
+        var disconnectedDeviceId: String?
+        ddgSyncing.disconnectDeviceCallback = { disconnectedDeviceId = $0 }
+        let expectation = expectation(description: "sync turned off")
+        expectation.assertForOverFulfill = false
+        pausedStateManager.spySyncDidTurnOff = { expectation.fulfill() }
+
+        syncDialogController.removeDeviceConfirmed(device)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+        XCTAssertTrue(ddgSyncing.disconnectCalled)
+        XCTAssertNil(disconnectedDeviceId)
+    }
+
+    func testRemoveDeviceConfirmed_forOtherDevice_disconnectsThatDeviceOnly() async {
+        let device = SyncDevice(kind: .desktop, name: "Other Device", id: "other-id")
+        let expectation = expectation(description: "device disconnected")
+        var disconnectedDeviceId: String?
+        ddgSyncing.disconnectDeviceCallback = {
+            disconnectedDeviceId = $0
+            expectation.fulfill()
+        }
+
+        syncDialogController.removeDeviceConfirmed(device)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+        XCTAssertEqual(disconnectedDeviceId, "other-id")
+        XCTAssertFalse(ddgSyncing.disconnectCalled)
+        XCTAssertFalse(pausedStateManager.syncDidTurnOffCalled)
+    }
+
+    func testOnTurnOffSyncThenSyncServiceIsDisconnected() async throws {
+        let expectation = expectation(description: "disconnectCalled")
+        expectation.assertForOverFulfill = false
+        ddgSyncing.spyDisconnectCalled = {
+            expectation.fulfill()
+        }
+        syncDialogController.turnOffSync()
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func test_recoverDevice_routesPastedCodeThroughConnectionControllerWithURLScanning() async {
+        featureFlagger.isFeatureOn[FeatureFlag.canScanUrlBasedSyncSetupBarcodes.rawValue] = true
+        let expectation = expectation(description: "callsConnectionController")
+        connectionController.syncCodeEnteredCalled = { _, _, _ in
+            expectation.fulfill()
+        }
+        syncDialogController.recoveryCodePasted(testRecoveryCode, fromRecoveryScreen: false)
+        await fulfillment(of: [expectation], timeout: 5)
+
+        XCTAssertEqual(connectionController.spySyncCodeEnteredCode, testRecoveryCode)
+        XCTAssertEqual(connectionController.spySyncCodeEnteredCanScanLegacyURLBarcodes, true)
+        XCTAssertEqual(connectionController.spySyncCodeEnteredCodeSource, .pastedCode)
+    }
+
+    func test_controllerDidFindTwoAccountsDuringRecovery_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async throws {
+        // Must have an account to prevent devices being cleared
+        setUpWithSingleDevice(id: "1")
+        var didCallDDGSyncLogin = false
+        ddgSyncing.spyLogin = { [weak self] _, _, _ in
+            guard let self else { return [] }
+            didCallDDGSyncLogin = true
+            XCTAssert(ddgSyncing.disconnectCalled)
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+        }
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.recovery, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: true)
+        XCTAssert(didCallDDGSyncLogin)
+    }
+
+    func test_recoverDevice_accountAlreadyExists_oneDevice_updatesDevicesWithReturnedDevices() async throws {
+        // Must have an account to prevent devices being cleared
+        setUpWithSingleDevice(id: "1")
+
+        let expectation = expectation(description: "devices updated")
+
+        ddgSyncing.stubLogin = [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.recovery, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: true)
+
+        syncDialogController.$devices.sink {
+            if $0.map(\.id) == ["1", "2"] {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        await fulfillment(of: [expectation], timeout: 5)
+
+        XCTAssertEqual(syncDialogController.devices.map(\.id), ["1", "2"])
+    }
+
+    func test_recoverDevice_accountAlreadyExists_oneDevice_presentsRecoveryCode() async throws {
+        setUpWithSingleDevice(id: "1")
+        managementDialogModel.currentDialog = .enterRecoveryCode(stringForQRCode: "")
+
+        ddgSyncing.spyLogin = { _, _, _ in
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+        }
+
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.recovery, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: true)
+
+        guard case .saveRecoveryCode = managementDialogModel.currentDialog else {
+            return XCTFail("Expected saveRecoveryCode, got \(String(describing: managementDialogModel.currentDialog))")
+        }
+    }
+
+    func test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage() async throws {
+        // Must have an account to prevent devices being cleared
+        ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        syncDialogController.devices = [SyncDevice(RegisteredDevice(id: "1", name: "iPhone", type: "iPhone")), SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "iPhone"))]
+
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.recovery, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: true)
+
+        XCTAssert(managementDialogModel.shouldShowErrorMessage)
+        XCTAssert(managementDialogModel.shouldShowSwitchAccountsMessage)
+    }
+
+    func test_controllerDidFindTwoAccountsDuringRecovery_whenTwoOrMoreDevices_switchesWithoutAccountSwitchingMessage() async throws {
+        ddgSyncing.account = SyncAccount(
+            deviceId: "1",
+            deviceName: "",
+            deviceType: "",
+            userId: "",
+            primaryKey: Data(),
+            secretKey: Data(),
+            token: nil,
+            state: .active)
+        syncDialogController.devices = [
+            SyncDevice(RegisteredDevice(id: "1", name: "iPhone", type: "iPhone")),
+            SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "iPhone"))
+        ]
+        ddgSyncing.stubLogin = [
+            RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"),
+            RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")
+        ]
+
+        await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .sharer,
+            shouldPromptBeforeSwitchingAccounts: false)
+
+        XCTAssertTrue(ddgSyncing.loginCalled)
+        XCTAssertFalse(managementDialogModel.shouldShowSwitchAccountsMessage)
+    }
+
+    func testAccountSwitchWithSimplifiedUICompletesAnimationBeforeShowingJoinerSuccess() async {
+        ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "iPhone", deviceType: "iPhone", userId: "starting-user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.authState = .active
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try? await waitForSyncWithAnotherDeviceDialogCodes()
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        ddgSyncing.stubLogin = [RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+        managementDialogModel.currentDialog = .prepareToSync
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
+
+        let didSwitchAccounts = await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.exchange, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: false,
+            shouldDeferEndingFlow: true)
+
+        XCTAssertTrue(didSwitchAccounts)
+        XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        ddgSyncing.account = SyncAccount(deviceId: "2", deviceName: "iPhone", deviceType: "iPhone", userId: "resulting-user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+
+        syncDialogController.controllerDidFinishReportingAccountSwitch(didSucceed: true)
+
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+
+        syncDialogController.preparingToSyncAnimationDidFinish()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+        XCTAssertEqual(syncDialogController.devices.count, 1)
+    }
+
+    func testPairingV2AccountSwitchWithoutDeferredReportShowsCompletionAfterSwitch() async throws {
+        ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "iPhone", deviceType: "iPhone", userId: "starting-user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.authState = .active
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .prepareToSync
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
+        ddgSyncing.spyLogin = { [weak self] _, _, _ in
+            guard let self else { return [] }
+            ddgSyncing.account = SyncAccount(deviceId: "2", deviceName: "iPhone", deviceType: "iPhone", userId: "resulting-user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+            return [RegisteredDevice(id: "2", name: "iPhone", type: "iPhone")]
+        }
+
+        let didSwitchAccounts = await syncDialogController.controllerDidFindTwoAccountsDuringRecovery(
+            testRecoveryKey,
+            setupRole: .receiver(.exchange, .pastedCode),
+            shouldPromptBeforeSwitchingAccounts: false,
+            shouldDeferEndingFlow: false)
+
+        XCTAssertTrue(didSwitchAccounts)
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        syncDialogController.preparingToSyncAnimationDidFinish()
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testV21AccountSwitchReportFailureKeepsPresentedError() {
+        managementDialogModel.currentDialog = .enterRecoveryCode(stringForQRCode: "")
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
+
+        syncDialogController.controllerDidFinishReportingAccountSwitch(didSucceed: false)
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+        XCTAssertNotNil(managementDialogModel.currentDialog)
+    }
+
+    func test_switchAccounts_disconnectsThenLogsInAgain() async throws {
+        let loginCalledExpectation = XCTestExpectation(description: "Login Called Again")
+
+        ddgSyncing.spyLogin = { [weak self] _, _, _ in
+            guard let self else { return [] }
+            // Assert disconnect before returning from login to ensure correct order
+            XCTAssert(ddgSyncing.disconnectCalled)
+            loginCalledExpectation.fulfill()
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+        }
+
+        syncDialogController.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
+
+        await fulfillment(of: [loginCalledExpectation], timeout: 5.0)
+    }
+
+    @MainActor
+    func test_switchAccounts_updatesDevicesWithReturnedDevices() async throws {
+        setUpWithSingleDevice(id: "1")
+
+        ddgSyncing.spyLogin = { _, _, _ in
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
+        }
+
+        let expectation = expectation(description: "received devices")
+        expectation.assertForOverFulfill = false
+
+        syncDialogController.$devices.sink {
+            if $0.map(\.id) == ["1", "2"] {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        Task {
+            syncDialogController.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
+    }
+
+    @MainActor
+    func test_startPollingForRecoveryKey_whenFeatureFlagOff_usesBase64Code() async {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startConnectModeStub = pairingInfo
+
+        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
+
+        await syncDialogController.enterRecoveryCodePressed()
+
+        await fulfillment(of: expectations, timeout: 5)
+    }
+
+    @MainActor
+    func test_startPollingForRecoveryKey_whenFeatureFlagOn_usesURL() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startConnectModeStub = pairingInfo
+
+        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
+
+        await syncDialogController.enterRecoveryCodePressed()
+
+        await fulfillment(of: expectations, timeout: 5)
+    }
+
+    @MainActor
+    func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOff_usesBase64Code() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startExchangeModeStub = pairingInfo
+        ddgSyncing.account = .mock
+
+        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        await fulfillment(of: expectations, timeout: 5)
+    }
+
+    @MainActor
+    func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOn_usesURL() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startExchangeModeStub = pairingInfo
+        ddgSyncing.account = .mock
+
+        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        await fulfillment(of: expectations, timeout: 5)
+    }
+
+    func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
+        let mockAccount = SyncAccount.mock
+        ddgSyncing.account = mockAccount
+
+        Task {
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertTrue(codes.displayCode.isRecoveryKey)
+        XCTAssertTrue(codes.qrCode.isRecoveryKey)
+
+        let codeForDisplayOrPasting = try XCTUnwrap(syncDialogController.codeForDisplayOrPasting)
+        XCTAssertTrue(codeForDisplayOrPasting.isRecoveryKey)
+
+        let stringForQR = try XCTUnwrap(syncDialogController.stringForQR)
+        XCTAssertTrue(stringForQR.isRecoveryKey)
+    }
+
+    func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOn_andUrlBarcodeOn_usesUrlFormat() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        let mockAccount = SyncAccount.mock
+        ddgSyncing.account = mockAccount
+        let expectedExchangeCode = "expected_exchange_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedExchangeCode, deviceName: "")
+        connectionController.startExchangeModeStub = stubbedPairingInfo
+
+        Task {
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertEqual(codes.displayCode, expectedExchangeCode)
+        XCTAssertTrue(codes.qrCode.isDDGURLString)
+
+        let codeForDisplayOrPasting = try XCTUnwrap(syncDialogController.codeForDisplayOrPasting)
+        XCTAssertEqual(codeForDisplayOrPasting, expectedExchangeCode)
+
+        let stringForQR = try XCTUnwrap(syncDialogController.stringForQR)
+        XCTAssertTrue(stringForQR.isDDGURLString)
+    }
+
+    func test_enterRecoveryCodePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        let expectedDisplayCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
+        connectionController.startConnectModeStub = stubbedPairingInfo
+
+        await syncDialogController.enterRecoveryCodePressed()
+
+        let code = try await waitForEnterRecoveryCodeDialog()
+
+        XCTAssertTrue(code.isDDGURLString)
+
+        let codeForDisplayOrPasting = try XCTUnwrap(syncDialogController.codeForDisplayOrPasting)
+        XCTAssertEqual(codeForDisplayOrPasting, expectedDisplayCode)
+
+        let stringForQR = try XCTUnwrap(syncDialogController.stringForQR)
+        XCTAssertTrue(stringForQR.isDDGURLString)
+    }
+
+    func test_enterRecoveryCodePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        let expectedDisplayCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
+        connectionController.startConnectModeStub = stubbedPairingInfo
+
+        await syncDialogController.enterRecoveryCodePressed()
+
+        let code = try await waitForEnterRecoveryCodeDialog()
+
+        XCTAssertEqual(code, expectedDisplayCode)
+        XCTAssertEqual(syncDialogController.codeForDisplayOrPasting, expectedDisplayCode)
+        XCTAssertEqual(syncDialogController.stringForQR, expectedDisplayCode)
+    }
+
+    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        let expectedCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
+        connectionController.startExchangeModeStub = stubbedPairingInfo
+        ddgSyncing.account = .mock
+
+        Task {
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        let dialogQrCode = try XCTUnwrap(codes.qrCode)
+        XCTAssertTrue(dialogQrCode.isDDGURLString)
+
+        XCTAssertEqual(syncDialogController.codeForDisplayOrPasting, expectedCode)
+        let stringForQR = try XCTUnwrap(syncDialogController.stringForQR)
+        XCTAssertTrue(stringForQR.isDDGURLString)
+    }
+
+    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        let expectedCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
+        connectionController.startExchangeModeStub = stubbedPairingInfo
+        ddgSyncing.account = .mock
+
+        Task {
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertEqual(codes.qrCode, expectedCode)
+        XCTAssertEqual(codes.displayCode, expectedCode)
+
+        XCTAssertEqual(syncDialogController.codeForDisplayOrPasting, expectedCode)
+        XCTAssertEqual(syncDialogController.stringForQR, expectedCode)
+    }
+
+    func test_startPollingForRecoveryKey_whenError_showsError() async {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        connectionController.startConnectModeError = SyncError.failedToDecryptValue("")
+
+        let expectation = expectation(description: "shouldShowErrorMessage")
+        expectation.assertForOverFulfill = false
+        managementDialogModel.$shouldShowErrorMessage.sink { [weak self] in
+            if $0 {
+                XCTAssertEqual(self?.managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        await fulfillment(of: [expectation], timeout: 5)
+    }
+
+    @MainActor
+    func test_syncWithAnotherDevicePressed_accountExists_whenError_showsError() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        connectionController.startExchangeModeError = SyncError.failedToDecryptValue("")
+        ddgSyncing.account = .mock
+
+        let expectation = expectation(description: "shouldShowErrorMessage")
+        expectation.assertForOverFulfill = false
+        managementDialogModel.$shouldShowErrorMessage.sink { [weak self] in
+            if $0 {
+                XCTAssertEqual(self?.managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        Task {
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
+    }
+
+    func test_syncWithAnotherDevicePressed_whenPairingV2ExchangePresenterStartFails_firesFailureContextPixel() async {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        ddgSyncing.account = .mock
+        await assertPairingV2PresenterStartFailurePixel(source: .exchange, myRole: "host") { failure in
+            connectionController.startExchangeModeError = failure
+        }
+    }
+
+    func test_syncWithAnotherDevicePressed_whenPairingV2ConnectPresenterStartFails_firesFailureContextPixel() async {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        ddgSyncing.account = nil
+        await assertPairingV2PresenterStartFailurePixel(source: .connect, myRole: "joiner") { failure in
+            connectionController.startConnectModeError = failure
+        }
+    }
+
+    private func assertPairingV2PresenterStartFailurePixel(source: SyncSetupSource,
+                                                           myRole: String,
+                                                           configure: (PairingV2OperationFailure) -> Void) async {
+        let context = PairingV2FailureContext(stage: .presenterOpenOwnChannel, kind: .httpError)
+        let failure = PairingV2OperationFailure(
+            context: context,
+            underlyingError: SyncError.unexpectedStatusCode(500)
+        )
+        configure(failure)
+        let pixelExpectation = expectation(description: "fires Pairing V2 presenter start failure pixel")
+        var firedParameters: [String: String]?
+        PixelKit.setUp(
+            dryRun: false,
+            appVersion: "1.0.0",
+            session: "test",
+            defaultHeaders: [:],
+            defaults: UserDefaults()
+        ) { pixelName, _, parameters, _, _, completion in
+            if pixelName == "sync_setup_ended_failed_mac" {
+                firedParameters = parameters
+                pixelExpectation.fulfill()
+            }
+            completion(true, nil)
+        }
+        defer { PixelKit.tearDown() }
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        await fulfillment(of: [pixelExpectation], timeout: 5)
+
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.reason], SyncSetupFailureReason.relayChannelFailure)
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.source], source.rawValue)
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.myRole], myRole)
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureStage], "presenter_open_own_channel")
+        XCTAssertEqual(firedParameters?[SyncSetupPixelKitEvent.ParameterKey.pairingFailureKind], "http_error")
+    }
+
+    func test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled() async throws {
+        let expectation = expectation(description: "errorHandlerSyncDidTurnOffCalled")
+
+        pausedStateManager.spySyncDidTurnOff = {
+            expectation.fulfill()
+        }
+
+        syncDialogController.turnOffSync()
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func test_WhenAccountRemoved_ErrorHandlerSyncDidTurnOffCalled() async throws {
+        let expectation = expectation(description: "errorHandlerSyncDidTurnOffCalled")
+
+        pausedStateManager.spySyncDidTurnOff = {
+            expectation.fulfill()
+        }
+
+        syncDialogController.deleteAccount()
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    // MARK: - Initialization and Setup
+
+    func testInitialization_setsDelegateOnManagementDialogModel() {
+        XCTAssertTrue(managementDialogModel.delegate === syncDialogController)
+    }
+
+    // MARK: - Device Management
+
+    func testRefreshDevices_whenNoAccount_clearsDevices() {
+        syncDialogController.devices = [SyncDevice(kind: .desktop, name: "Test", id: "test")]
+        ddgSyncing.account = nil
+
+        syncDialogController.refreshDevices()
+
+        XCTAssertEqual(syncDialogController.devices.count, 0)
+    }
+
+    func testRefreshDevices_whenFetchDevicesSucceeds_updatesDevices() async {
+        ddgSyncing.account = SyncAccount(deviceId: "test-id", deviceName: "Test Device", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+
+        let registeredDevices = [
+            RegisteredDevice(id: "test-id", name: "Test Device", type: "desktop"),
+            RegisteredDevice(id: "testDeviceId", name: "Current Device", type: "desktop")
+        ]
+        ddgSyncing.registeredDevices = registeredDevices
+
+        let expectation = expectation(description: "Current device should be first")
+
+        syncDialogController.devicesPublisher.sink { devices in
+            if devices.count == 2 {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.refreshDevices()
+
+        await fulfillment(of: [expectation])
+    }
+
+    func testRefreshDevices_onMapDevices_sortsDevicesWithCurrentFirst() async {
+        let testDeviceId = "current-device"
+        ddgSyncing.account = SyncAccount(deviceId: testDeviceId, deviceName: "Test Device", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+
+        let registeredDevices = [
+            RegisteredDevice(id: "other-device-1", name: "Other Device 1", type: "mobile"),
+            RegisteredDevice(id: testDeviceId, name: "Current Device", type: "desktop"),
+            RegisteredDevice(id: "other-device-2", name: "Other Device 2", type: "mobile")
+        ]
+
+        ddgSyncing.registeredDevices = registeredDevices
+
+        let expectation = expectation(description: "Current device should be first")
+
+        syncDialogController.devicesPublisher.sink { devices in
+            if devices.count == 3 {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.refreshDevices()
+
+        await fulfillment(of: [expectation])
+
+        XCTAssertTrue(syncDialogController.devices.first?.isCurrent == true)
+    }
+
+    // MARK: - Dialog Flow Management
+
+    func testPresentDeleteAccount_whenAuthenticated_presentsDeleteAccountWithDevices() async {
+        let testDevices = [
+            SyncDevice(kind: .current, name: "Work Laptop", id: "current"),
+            SyncDevice(kind: .mobile, name: "Androidz", id: "mobile")
+        ]
+        syncDialogController.devices = testDevices
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deleteAccount(testDevices))
+    }
+
+    func testPresentDeleteAccount_whenAuthenticationCancelled_doesNotPresentDialogAndEndsFlow() async {
+        authenticator.stubAuthenticateUser = .failure
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        var didEndFlowCalled = false
+        coordinationDelegate.didEndFlowCalled = { didEndFlowCalled = true }
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        syncDialogController.devices = [SyncDevice(kind: .desktop, name: "Test", id: "test")]
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(didEndFlowCalled)
+    }
+
+    func testPresentDeleteAccount_whenNoAuthAvailable_showsUnableToAuthenticateError() async {
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+        syncDialogController.devices = [SyncDevice(kind: .desktop, name: "Test", id: "test")]
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowEnabledWithOtherDevices_presentsTurnOffSyncOptionsWithDeleteServerDataOff() async {
+        enableImprovedPairingFlow()
+        let testDevices = [
+            SyncDevice(kind: .current, name: "Work Laptop", id: "current"),
+            SyncDevice(kind: .mobile, name: "Androidz", id: "mobile")
+        ]
+        syncDialogController.devices = testDevices
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog,
+                       .turnOffSyncOptions(thisDevice: testDevices[0], devices: testDevices, deletesServerDataByDefault: false))
+        XCTAssertTrue(managementDialogModel.isImprovedPairingFlowEnabled)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_turn_off_sheet_shown_mac"])
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowEnabledWithOnlyThisDevice_presentsTurnOffSyncOptionsWithDeleteServerDataOn() async {
+        enableImprovedPairingFlow()
+        let testDevices = [SyncDevice(kind: .current, name: "Work Laptop", id: "current")]
+        syncDialogController.devices = testDevices
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog,
+                       .turnOffSyncOptions(thisDevice: testDevices[0], devices: testDevices, deletesServerDataByDefault: true))
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowEnabledAndDevicesNotLoaded_usesDeviceNameAndKeepsDeleteServerDataOff() async {
+        enableImprovedPairingFlow()
+        syncDialogController.devices = []
+
+        await syncDialogController.presentDeleteAccount()
+
+        guard case .turnOffSyncOptions(let thisDevice, let devices, let deletesServerDataByDefault) = managementDialogModel.currentDialog else {
+            return XCTFail("Expected turnOffSyncOptions dialog")
+        }
+        XCTAssertEqual(thisDevice.name, "Test Mac")
+        XCTAssertTrue(thisDevice.isCurrent)
+        XCTAssertEqual(devices, [])
+        XCTAssertFalse(deletesServerDataByDefault)
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowEnabledAndAuthenticationCancelled_doesNotPresentDialogOrFirePixel() async {
+        enableImprovedPairingFlow()
+        authenticator.stubAuthenticateUser = .failure
+        syncDialogController.devices = [SyncDevice(kind: .current, name: "Work Laptop", id: "current")]
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name == "sync_turn_off_sheet_shown_mac" })
+    }
+
+    func testPresentDeleteAccount_whenImprovedPairingFlowDisabled_presentsDeleteAccount() async {
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+        let testDevices = [SyncDevice(kind: .current, name: "Work Laptop", id: "current")]
+        syncDialogController.devices = testDevices
+
+        await syncDialogController.presentDeleteAccount()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .deleteAccount(testDevices))
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name == "sync_turn_off_sheet_shown_mac" })
+    }
+
+    func testTurnOffSyncRemoveDeviceSelected_firesOptionPixelWithoutTurningOffSync() {
+        syncDialogController.turnOffSyncRemoveDeviceSelected()
+
+        XCTAssertFalse(ddgSyncing.disconnectCalled)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_turn_off_option_selected_mac"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters?["option"], "this_device")
+    }
+
+    func testTurnOffSyncDeleteServerDataSelected_firesOptionPixelWithoutDeletingAccount() {
+        var didDeleteAccount = false
+        ddgSyncing.deleteAccountCallback = { didDeleteAccount = true }
+
+        syncDialogController.turnOffSyncDeleteServerDataSelected()
+
+        XCTAssertFalse(didDeleteAccount)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_turn_off_option_selected_mac"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters?["option"], "all_devices_and_server_data")
+    }
+
+    func testTurnOffSyncDeleteServerDataConfirmed_firesConfirmedPixelAndDeletesAccount() async {
+        let expectation = expectation(description: "account deleted")
+        ddgSyncing.deleteAccountCallback = { expectation.fulfill() }
+
+        syncDialogController.turnOffSyncDeleteServerDataConfirmed()
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == "sync_delete_server_data_confirmation_confirmed_mac" })
+    }
+
+    func testTurnOffSyncDeleteServerDataCancelled_firesDismissedPixelWithoutDeletingAccount() {
+        var didDeleteAccount = false
+        ddgSyncing.deleteAccountCallback = { didDeleteAccount = true }
+
+        syncDialogController.turnOffSyncDeleteServerDataCancelled()
+
+        XCTAssertFalse(didDeleteAccount)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["sync_delete_server_data_confirmation_dismissed_mac"])
+    }
+
+    // MARK: - Authentication Flows
+
+    func testSyncWithAnotherDevicePressed_whenAuthenticationFails_setsErrorMessage() async {
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
+    }
+
+    func testSyncWithAnotherDevicePressed_whenNoAuthAvailable_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(authenticationResults: [.noAuthAvailable]) {
+            await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+        }
+    }
+
+    func testSyncWithServerPressed_whenNoAuthAvailable_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(authenticationResults: [.noAuthAvailable]) {
+            await syncDialogController.syncWithServerPressed()
+        }
+    }
+
+    func testRecoverDataPressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        await assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow {
+            await syncDialogController.recoverDataPressed()
+        }
+    }
+
+    func testSaveRecoveryPDF_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate() async {
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        ddgSyncing.account = .mock
+        for authenticationResult in [
+            DeviceAuthenticationResult.failure,
+            DeviceAuthenticationResult.noAuthAvailable,
+        ] {
+            authenticator.stubAuthenticateUser = authenticationResult
+            let expectation = XCTestExpectation(description: "Did call didEndFlow")
+            coordinationDelegate.didEndFlowCalled = {
+                expectation.fulfill()
+            }
+            syncDialogController.saveRecoveryPDF(requiresAuthentication: true)
+            await fulfillment(of: [expectation])
+        }
+    }
+
+    func assertWhenAuthenticationDoesNotSucceed_callsDidEndFlow(
+        authenticationResults: [DeviceAuthenticationResult] = [.failure, .noAuthAvailable],
+        file: StaticString = #file,
+        line: UInt = #line,
+        functionUnderTest: () async -> Void
+    ) async {
+        let coordinationDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = coordinationDelegate
+        for authenticationResult in authenticationResults {
+            authenticator.stubAuthenticateUser = authenticationResult
+            var didEndFlowCalled = false
+            coordinationDelegate.didEndFlowCalled = {
+                didEndFlowCalled = true
+            }
+            await functionUnderTest()
+
+            XCTAssertTrue(didEndFlowCalled, file: file, line: line)
+        }
+    }
+
+    func testSyncWithServerPressed_whenAuthenticationFails_setsErrorMessage() async {
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
+    }
+
+    func testRecoverDataPressed_whenAuthenticationFails_setsErrorMessage() async {
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+        syncDialogController = SyncDialogController(
+            syncService: ddgSyncing,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: authenticator,
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                guard let self else { return MockSyncConnectionControlling() }
+                return connectionController
+            },
+            featureFlagger: featureFlagger
+        )
+
+        await syncDialogController.recoverDataPressed()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .empty)
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToAuthenticateOnDevice)
+    }
+
+    // MARK: - Account Creation and Management
+
+    func testSyncThisDeviceOnlyFromPrompt_createsAccount() async {
+        let expectation = expectation(description: "Create account callback called")
+        ddgSyncing.createAccountCallback = { _, _ in
+            expectation.fulfill()
+        }
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        await fulfillment(of: [expectation], timeout: 5)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenSucceeds_firesSignupPixelAndShowsRecoveryCode() async {
+        managementDialogModel.currentDialog = .syncAnotherDevicePrompt
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains { $0.pixel.name == "m_mac_sync_signup_direct" })
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+        XCTAssertFalse(managementDialogModel.isConnectingThisDeviceOnly)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whileConnecting_setsConnectingFlag() async {
+        ddgSyncing.createAccountCallback = { [weak self] _, _ in
+            XCTAssertEqual(self?.managementDialogModel.isConnectingThisDeviceOnly, true)
+        }
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertFalse(managementDialogModel.isConnectingThisDeviceOnly)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAccountCreationFails_setsErrorMessageAndResetsConnectingFlag() async {
+        managementDialogModel.currentDialog = .syncAnotherDevicePrompt
+        ddgSyncing.createAccountError = SyncError.failedToLoadAccount
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToSyncToServer)
+        XCTAssertFalse(managementDialogModel.isConnectingThisDeviceOnly)
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncAnotherDevicePrompt)
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == "sync_signup_error"
+        })
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenNoAccount_showsSyncWithAnotherDeviceDialog() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        ddgSyncing.account = nil
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startConnectModeStub = pairingInfo
+
+        Task {
+            await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertEqual(codes.displayCode, "test_code")
+        XCTAssertEqual(codes.qrCode, "test_code")
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAccountExists_startsExchangeAndShowsDialog() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        ddgSyncing.account = .mock
+        let pairingInfo = PairingInfo(base64Code: "exchange_code", deviceName: "test_device")
+        connectionController.startExchangeModeStub = pairingInfo
+
+        Task {
+            await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertEqual(codes.displayCode, "exchange_code")
+        XCTAssertEqual(codes.qrCode, "exchange_code")
+    }
+
+    func testSyncAnotherDevicePromptDidAppear_firesPromptShownPixel() {
+        syncDialogController.syncAnotherDevicePromptDidAppear()
+
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == "sync_settings_another_device_prompt_shown_mac"
+        })
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_firesOptionTappedPixelWithThisDeviceOnly() async {
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == "sync_settings_another_device_prompt_option_tapped_mac"
+            && $0.pixel.parameters?["option"] == "this_device_only"
+        })
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAlreadyConnecting_doesNotCreateAccountAgain() async {
+        managementDialogModel.isConnectingThisDeviceOnly = true
+        var createAccountCalled = false
+        ddgSyncing.createAccountCallback = { _, _ in createAccountCalled = true }
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertFalse(createAccountCalled)
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAlreadyConnecting_isNoOp() async {
+        managementDialogModel.isConnectingThisDeviceOnly = true
+
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == "sync_settings_another_device_prompt_option_tapped_mac"
+        })
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_firesOptionTappedPixelWithSyncAnotherDevice() async {
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+
+        XCTAssertTrue(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == "sync_settings_another_device_prompt_option_tapped_mac"
+            && $0.pixel.parameters?["option"] == "sync_another_device"
+        })
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_doesNotRequireAuthentication() async throws {
+        // The prompt is only shown after authentication has already succeeded, so pressing
+        // "Sync With Another Device" must not trigger another authentication prompt.
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+        ddgSyncing.account = nil
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startConnectModeStub = pairingInfo
+
+        Task {
+            await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        }
+
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
+
+        XCTAssertEqual(codes.displayCode, "test_code")
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenNoAccount_setsConnectingAnotherDeviceFlag() async {
+        ddgSyncing.account = nil
+        connectionController.startConnectModeStub = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+
+        XCTAssertTrue(managementDialogModel.isConnectingAnotherDevice)
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAccountExists_setsConnectingAnotherDeviceFlag() async {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        ddgSyncing.account = .mock
+        connectionController.startExchangeModeStub = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+
+        XCTAssertTrue(managementDialogModel.isConnectingAnotherDevice)
+    }
+
+    func testUpdateDeviceName_callsUpdateMethod() async {
+        let expectation = expectation(description: "Create account callback called")
+
+        ddgSyncing.updateDeviceNameCallback = { _ in
+            expectation.fulfill()
+        }
+
+        syncDialogController.updateDeviceName("New Name")
+
+        await fulfillment(of: [expectation], timeout: 5)
+    }
+
+    func testUpdateDeviceName_handlesErrorsGracefully() async {
+        let expectation = expectation(description: "Update device errored")
+
+        managementDialogModel.$syncErrorMessage.sink {
+            if $0 != nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        ddgSyncing.updateDeviceNameError = SyncError.failedToLoadAccount
+        syncDialogController.updateDeviceName("New Name")
+
+        await fulfillment(of: [expectation], timeout: 5)
+    }
+
+    func testRemoveDevice_whenSucceeds_endsFlow() async {
+        let device = SyncDevice(kind: .desktop, name: "Test Device", id: "test-id")
+
+        let expectation = expectation(description: "remove device")
+        ddgSyncing.disconnectDeviceCallback = { _ in
+            expectation.fulfill()
+        }
+
+        syncDialogController.removeDevice(device)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testRemoveDevice_whenSucceeds_refreshesDevices() async {
+        ddgSyncing.account = .mock
+        let device = SyncDevice(kind: .desktop, name: "Test Device", id: "test-id")
+
+        let expectation = expectation(description: "remove device")
+        ddgSyncing.fetchDevicesCallback = {
+            expectation.fulfill()
+        }
+
+        syncDialogController.removeDevice(device)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testRemoveDevice_whenFails_handlesErrorsGracefully() async {
+        let device = SyncDevice(kind: .desktop, name: "Test Device", id: "test-id")
+        let expectation = expectation(description: "Remove device errored")
+
+        managementDialogModel.$syncErrorMessage.sink {
+            if $0 != nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        ddgSyncing.disconnectDeviceError = SyncError.failedToLoadAccount
+        syncDialogController.removeDevice(device)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    // MARK: - Connection Controller Delegate Methods
+
+    func testCancelledPairingConfirmationDoesNotPresentDialogOrEndSetup() async {
+        managementDialogModel.currentDialog = .prepareToSync
+        let confirmationTask = Task { @MainActor in
+            await syncDialogController.controllerShouldAllowPairingV2PeerToJoin(peerName: "iPhone", peerKind: .ddg)
+        }
+        confirmationTask.cancel()
+        let confirmed = await confirmationTask.value
+
+        XCTAssertFalse(confirmed)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_whenNewHostWaitsForDevices_presentsRecoveryCode() async throws {
+        let localDeviceId = "local-mac"
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        ddgSyncing.account = nil
+        ddgSyncing.authState = .inactive
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        let expectation = expectation(description: "recovery-code success dialog presented")
+
+        managementDialogModel.$currentDialog
+            .filter { $0 == .saveRecoveryCode(self.testRecoveryCode) }
+            .prefix(1)
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+        syncDialogController.devices = [
+            SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId),
+            SyncDevice(kind: .mobile, name: "Test Device", id: "joiner-id")
+        ]
+
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_whenNewHostHasNoDeviceChange_staysOnConnectingScreen() async throws {
+        let localDeviceId = "local-mac"
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        ddgSyncing.account = nil
+        ddgSyncing.authState = .inactive
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        let successPresented = expectation(description: "recovery-code success dialog presented")
+        successPresented.isInverted = true
+
+        managementDialogModel.$currentDialog
+            .filter { $0 == .saveRecoveryCode(self.testRecoveryCode) }
+            .prefix(1)
+            .sink { _ in successPresented.fulfill() }
+            .store(in: &cancellables)
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+        syncDialogController.devices = [SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId)]
+
+        await fulfillment(of: [successPresented], timeout: 0.3)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_forNewHostAfterUnknownOutcome_presentsRecoveryCode() async throws {
+        managementDialogModel.currentDialog = .waitForOtherDevice
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .waitForOtherDevice
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
+        XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+        XCTAssertEqual(managementDialogModel.thisDeviceName, "Test Mac")
+        XCTAssertEqual(deviceNameProviderCallCount, 1)
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_whenExistingHostWaitsForDevices_thenShowsMinimalSuccess() async throws {
+        let localDeviceId = "local-mac"
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.authState = .active
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .prepareToSync
+        syncDialogController.devices = [SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId)]
+        let expectation = expectation(description: "Existing-host success dialog presented")
+
+        managementDialogModel.$currentDialog
+            .filter { $0 == .pairingSuccess }
+            .prefix(1)
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+
+        syncDialogController.devices = [
+            SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId),
+            SyncDevice(kind: .mobile, name: "Test Device", id: "test-id")
+        ]
+
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_refreshesDevicesUntilJoinerRegisters() async {
+        let localDeviceId = "local-mac"
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        syncDialogController.devices = [SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId)]
+        ddgSyncing.registeredDevices = [
+            RegisteredDevice(id: localDeviceId, name: "Test Mac", type: "desktop"),
+            RegisteredDevice(id: "joiner-id", name: "Test iPhone", type: "mobile")
+        ]
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+
+        let devicesFetched = expectation(description: "Device list refreshed")
+        let successPresented = expectation(description: "Recovery-code success dialog presented")
+        ddgSyncing.fetchDevicesCallback = { devicesFetched.fulfill() }
+        managementDialogModel.$currentDialog
+            .filter { $0 == .saveRecoveryCode(self.testRecoveryCode) }
+            .prefix(1)
+            .sink { _ in successPresented.fulfill() }
+            .store(in: &cancellables)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+
+        await fulfillment(of: [devicesFetched, successPresented], timeout: 6)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testEndingFlowWhileWaitingForDevicesCancelsRefreshTimer() async {
+        let localDeviceId = "local-mac"
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.account = SyncAccount(deviceId: localDeviceId, deviceName: "Test Mac", deviceType: "desktop", userId: "user", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        syncDialogController.devices = [SyncDevice(kind: .current, name: "Test Mac", id: localDeviceId)]
+        ddgSyncing.registeredDevices = [RegisteredDevice(id: localDeviceId, name: "Test Mac", type: "desktop")]
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        var fetchCount = 0
+        let firstFetch = expectation(description: "Initial device refresh")
+        let unexpectedFetch = expectation(description: "No refresh after flow ends")
+        unexpectedFetch.isInverted = true
+        ddgSyncing.fetchDevicesCallback = {
+            fetchCount += 1
+            if fetchCount == 1 {
+                firstFetch.fulfill()
+            } else {
+                unexpectedFetch.fulfill()
+            }
+        }
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
+        await fulfillment(of: [firstFetch], timeout: 5)
+
+        managementDialogModel.endFlow()
+        XCTAssertNil(managementDialogModel.currentDialog)
+        ddgSyncing.registeredDevices.append(RegisteredDevice(id: "joiner-id", name: "Test iPhone", type: "mobile"))
+        let unexpectedSuccess = expectation(description: "No success dialog after flow ends")
+        unexpectedSuccess.isInverted = true
+        managementDialogModel.$currentDialog
+            .filter { $0 == .saveRecoveryCode(self.testRecoveryCode) }
+            .sink { _ in unexpectedSuccess.fulfill() }
+            .store(in: &cancellables)
+
+        await fulfillment(of: [unexpectedFetch, unexpectedSuccess], timeout: 3.5)
+        XCTAssertEqual(fetchCount, 1)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testControllerDidFinishTransmittingRecoveryKey_forExistingHostAfterUnknownOutcome_presentsPairingSuccess() async throws {
+        managementDialogModel.currentDialog = .waitForOtherDevice
+        ddgSyncing.account = SyncAccount.mock
+        ddgSyncing.authState = .active
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .waitForOtherDevice
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
+    }
+
+    func testNativeHostCompletionPlaysAnimationBeforeShowingSuccess() async throws {
+        managementDialogModel.currentDialog = .prepareToSync
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
+        ddgSyncing.account = nil
+        ddgSyncing.authState = .inactive
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .prepareToSync
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        ddgSyncing.account = SyncAccount(deviceId: "local", deviceName: "Test Mac", deviceType: "desktop", userId: "new",
+                                         primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.authState = .active
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+
+        syncDialogController.preparingToSyncAnimationDidFinish()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenWaiting_preservesConnectingDialog() {
+        managementDialogModel.currentDialog = .prepareToSync
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenUnknown_presentsWaitForOtherDeviceDialog() {
+        managementDialogModel.currentDialog = .prepareToSync
+        managementDialogModel.isPreparingToSyncAnimationPaused = true
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenCodeArrives_restoresConnectingDialog() {
+        managementDialogModel.currentDialog = .waitForOtherDevice
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.waiting)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_afterTransmitting_keepsHostOnConnectingUntilUnknown() async {
+        await syncDialogController.controllerWillBeginTransmittingRecoveryKey()
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.waiting)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
+        XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
+    }
+
+    func testControllerDidUpdatePairingV2JoinStatus_whenFlowEnded_doesNotReopenDialog() {
+        managementDialogModel.currentDialog = nil
+
+        syncDialogController.controllerDidUpdatePairingV2JoinStatus(.unknown)
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testControllerWillBeginTransmittingRecoveryKey_presentsPrepareDialog() async {
+        await syncDialogController.controllerWillBeginTransmittingRecoveryKey()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+    }
+
+    func testControllerWillBeginTransmittingRecoveryKey_doesNotReplaceWaitForOtherDevice() async {
+        managementDialogModel.currentDialog = .waitForOtherDevice
+
+        await syncDialogController.controllerWillBeginTransmittingRecoveryKey()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .waitForOtherDevice)
+    }
+
+    func testControllerDidReceiveRecoveryKey_presentsPrepareDialog() {
+        syncDialogController.controllerDidReceiveRecoveryKey()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+    }
+
+    func testControllerDidRecognizeCode_presentsPrepareDialog() async {
+        await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .pastedCode, codeVersion: .v1)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+    }
+
+    func testControllerDidRecognizeV2PairingCode_pausesConnectingAnimationBeforeConfirmation() async {
+        await syncDialogController.controllerDidRecognizeCode(setupSource: .exchange, codeSource: .qrCode, codeVersion: .v2)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
+
+        syncDialogController.didEndFlow()
+
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+    }
+
+    func testThirdPartyV2HostConfirmationPausesAnimationUntilPairingCompletes() async {
+        let confirmationPresented = expectation(description: "pairing confirmation presented")
+        var resolveConfirmation: ((Bool) -> Void)?
+        makeControllerWithPairingV2Confirmation { _ in
+            confirmationPresented.fulfill()
+            return await withCheckedContinuation { continuation in
+                resolveConfirmation = { continuation.resume(returning: $0) }
+            }
+        }
+        ddgSyncing.account = SyncAccount.mock
+        ddgSyncing.authState = .active
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try? await waitForSyncWithAnotherDeviceDialogCodes()
+        let initialDialog = ManagementDialogKind.syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+        managementDialogModel.currentDialog = initialDialog
+
+        let confirmationTask = Task {
+            await syncDialogController.controllerShouldAllowPairingV2PeerToJoin(peerName: "Phone", peerKind: .thirdParty)
+        }
+        await fulfillment(of: [confirmationPresented], timeout: 1)
+
+        XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
+        XCTAssertEqual(managementDialogModel.currentDialog, initialDialog)
+
+        resolveConfirmation?(true)
+        let didConfirm = await confirmationTask.value
+        XCTAssertTrue(didConfirm)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertTrue(managementDialogModel.isPreparingToSyncAnimationPaused)
+
+        syncDialogController.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+
+        syncDialogController.preparingToSyncAnimationDidFinish()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
+
+        syncDialogController.syncSuccessDonePressed()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testThirdPartyV2HostDecliningConfirmationEndsFlow() async {
+        makeControllerWithPairingV2Confirmation { _ in false }
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+
+        let didConfirm = await syncDialogController.controllerShouldAllowPairingV2PeerToJoin(peerName: "Phone", peerKind: .thirdParty)
+
+        XCTAssertFalse(didConfirm)
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertFalse(managementDialogModel.isPreparingToSyncAnimationPaused)
+    }
+
+    func testControllerDidCreateSyncAccount_doesNotPresentSuccessBeforeConnectionCompletes() {
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+    }
+
+    func testControllerDidCompleteAccountConnection_forNewHost_presentsRecoveryCodeAfterConnectionCompletes() async throws {
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        ddgSyncing.account = nil
+        ddgSyncing.authState = .inactive
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.account = SyncAccount(deviceId: "local", deviceName: "Test Mac", deviceType: "desktop", userId: "new",
+                                         primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.authState = .active
+
+        syncDialogController.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
+        XCTAssertEqual(managementDialogModel.currentDialog, .prepareToSync)
+
+        syncDialogController.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: false, setupSource: .connect, codeSource: .pastedCode)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+    }
+
+    func testControllerDidCompleteAccountConnection_forExistingHost_showsMinimalSuccess() async throws {
+        managementDialogModel.currentDialog = .prepareToSync
+        ddgSyncing.account = SyncAccount.mock
+        ddgSyncing.authState = .addingNewDevice
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        managementDialogModel.currentDialog = .prepareToSync
+
+        syncDialogController.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: true, setupSource: .connect, codeSource: .pastedCode)
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .pairingSuccess)
+    }
+
+    func testLoginKeepsSameAccountThenShowsShortSuccess() async throws {
+        ddgSyncing.account = SyncAccount(deviceId: "local", deviceName: "Test Mac", deviceType: "desktop", userId: "same",
+                                         primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.authState = .active
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+        _ = try await waitForSyncWithAnotherDeviceDialogCodes()
+        let successPresented = expectation(description: "short success dialog presented")
+        managementDialogModel.$currentDialog
+            .filter { $0 == .pairingSuccess }
+            .prefix(1)
+            .sink { _ in successPresented.fulfill() }
+            .store(in: &cancellables)
+
+        syncDialogController.controllerDidCompleteLogin(
+            registeredDevices: [RegisteredDevice(id: "local", name: "Test Mac", type: "desktop")],
+            isRecovery: false,
+            setupRole: .receiver(.exchange, .qrCode)
+        )
+
+        await fulfillment(of: [successPresented], timeout: 2)
+    }
+
+    func testControllerDidCompletePairingWithAlreadyConnectedAccount_presentsAlreadyPairedError() {
+        syncDialogController.controllerDidCompletePairingWithAlreadyConnectedAccount(setupRole: .receiver(.exchange, .pastedCode))
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .alreadyPairedWithAccount)
+    }
+
+    func testControllerDidCompleteLogin_updatesDevicesAndPresentsRecoveryDialog() async {
+        ddgSyncing.account = SyncAccount.mock
+
+        let registeredDevices = [RegisteredDevice(id: "test", name: "Test Device", type: "desktop")]
+
+        let expectation = expectation(description: "devices updated")
+
+        syncDialogController.devicesPublisher.sink { devices in
+            if devices.count == 1 {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.controllerDidCompleteLogin(registeredDevices: registeredDevices, isRecovery: false, setupRole: .sharer)
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testControllerDidError_unableToRecognizeCode_setsCorrectErrorMessage() async {
+        await syncDialogController.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToRecognizeCode)
+    }
+
+    func testControllerDidError_updateRequired_setsTitleOnlyErrorMessage() async {
+        await syncDialogController.controllerDidError(.updateRequired, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .updateRequired)
+        XCTAssertNil(managementDialogModel.syncErrorMessage?.errorDescription)
+    }
+
+    func testControllerDidError_connectionErrors_setsCorrectErrorMessage() async {
+        await syncDialogController.controllerDidError(.failedToLogIn, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+    }
+
+    func testManagementDialogErrorDescription_whenDetailMatchesTypeDescription_doesNotDuplicateDescription() {
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .thirdPartyAccountAlreadyUpgraded)
+
+        let dialog = ManagementDialog(model: managementDialogModel)
+
+        guard let expectedDescription = SyncErrorType.thirdPartyAccountAlreadyUpgraded.description else {
+            XCTFail("Expected non-empty description for thirdPartyAccountAlreadyUpgraded")
+            return
+        }
+
+        XCTAssertEqual(dialog.errorDescription, expectedDescription)
+    }
+
+    func testManagementDialogErrorDescription_whenDetailDiffersFromTypeDescription_preservesDetail() {
+        let detail = "The request timed out."
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: detail)
+
+        let dialog = ManagementDialog(model: managementDialogModel)
+
+        guard let expectedDescription = SyncErrorType.unableToSyncToOtherDevice.description else {
+            XCTFail("Expected non-empty description for unableToSyncToOtherDevice")
+            return
+        }
+
+        XCTAssertEqual(dialog.errorDescription, "\(expectedDescription)\n\(detail)")
+    }
+
+    func testManagementDialogErrorDescription_whenTypeDescriptionIsNil_returnsEmptyString() {
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .updateRequired)
+
+        let dialog = ManagementDialog(model: managementDialogModel)
+
+        XCTAssertEqual(dialog.errorTitle, SyncErrorType.updateRequired.title)
+        XCTAssertEqual(dialog.buttonTitle, SyncErrorType.updateRequired.buttonTitle)
+        XCTAssertEqual(dialog.errorDescription, "")
+    }
+
+    func testControllerDidError_pollingTimeout_presentsUnableToSyncWithDeviceError() async {
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+
+        await syncDialogController.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: .sharer)
+
+        XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+    }
+
+    func testDidEndFlow_notifiesDelegate() async {
+        let mockDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = mockDelegate
+
+        let expectation = expectation(description: "delegate called")
+        mockDelegate.didEndFlowCalled = {
+            expectation.fulfill()
+        }
+
+        syncDialogController.didEndFlow()
+
+        await fulfillment(of: [expectation], timeout: 5.0)
+    }
+
+    func testDidEndFlow_cancelsConnectionController_beforeNotifyingDelegate() async {
+        let mockDelegate = MockDeviceSyncCoordinationDelegate()
+        syncDialogController.coordinationDelegate = mockDelegate
+        var didCallDidEndFlow = false
+
+        let didEndFlowCalled = expectation(description: "didEndFlowCalled called")
+        mockDelegate.didEndFlowCalled = {
+            didCallDidEndFlow = true
+            didEndFlowCalled.fulfill()
+        }
+
+        let cancelCalled = expectation(description: "cancelCalled called")
+        connectionController.cancelCalled = {
+            XCTAssertFalse(didCallDidEndFlow)
+            cancelCalled.fulfill()
+        }
+
+        syncDialogController.didEndFlow()
+
+        await fulfillment(of: [cancelCalled, didEndFlowCalled], timeout: 5.0)
+    }
+
+    // MARK: - Closing the setup flow
+
+    func testCancellingPairing_whenUserConfirms_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        makeControllerWithCloseSetupConfirmation(confirmation)
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 1)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testCancellingPairing_whenUserDeclines_keepsTheDialogOpen() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        makeControllerWithCloseSetupConfirmation(confirmation)
+        let dialog = ManagementDialogKind.syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+        managementDialogModel.currentDialog = dialog
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 1)
+        XCTAssertEqual(managementDialogModel.currentDialog, dialog)
+    }
+
+    func testCancellingADialogOutsideSetup_endsTheFlowWithoutConfirming() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        makeControllerWithCloseSetupConfirmation(confirmation)
+        managementDialogModel.currentDialog = .removeDevice(SyncDevice(kind: .current, name: "Mac", id: "1"))
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 0)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testCancellingPairing_whenUserDeclinesThenConfirms_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        makeControllerWithCloseSetupConfirmation(confirmation)
+        let dialog = ManagementDialogKind.syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+        managementDialogModel.currentDialog = dialog
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+        XCTAssertEqual(managementDialogModel.currentDialog, dialog)
+
+        confirmation.answer = true
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(confirmation.presentationCount, 2)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    // MARK: - Sync this device fallback
+
+    private func presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: StubCloseSetupConfirmation) {
+        enableImprovedPairingFlow()
+        makeControllerWithCloseSetupConfirmation(confirmation)
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+    }
+
+    func testCancellingPairing_whenImprovedPairingFlowEnabledAndSyncOff_showsSyncThisDeviceFallback() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        var didCancelConnection = false
+        connectionController.cancelCalled = { didCancelConnection = true }
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncThisDeviceFallback)
+        XCTAssertTrue(didCancelConnection)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_shown_mac").count, 1)
+    }
+
+    func testCancellingPairing_whenImprovedPairingFlowEnabledAndSyncOn_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        setUpWithSingleDevice(id: "1")
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_shown_mac").isEmpty)
+    }
+
+    func testCancellingPairing_whenImprovedPairingFlowDisabled_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        featureFlagger.isFeatureOn[FeatureFlag.syncImprovedPairingFlow.rawValue] = false
+        makeControllerWithCloseSetupConfirmation(confirmation)
+        managementDialogModel.currentDialog = .syncWithAnotherDevice(codeForDisplayOrPasting: testRecoveryCode, stringForQRCode: testRecoveryCode)
+        ddgSyncing.account = nil
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_shown_mac").isEmpty)
+    }
+
+    func testCancellingPairing_whenImprovedPairingFlowEnabledAndUserDeclines_keepsTheDialogOpen() async {
+        let confirmation = StubCloseSetupConfirmation(answer: false)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        let dialog = managementDialogModel.currentDialog
+        ddgSyncing.account = nil
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, dialog)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_shown_mac").isEmpty)
+    }
+
+    func testSyncThisDeviceFromFallback_createsAccountAndShowsRecoveryCodeWithoutAuthenticating() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        await managementDialogModel.cancelPressedWithConfirmation()
+        var createAccountCallCount = 0
+        var wasConnectingWhileCreatingAccount = false
+        ddgSyncing.createAccountCallback = { [managementDialogModel] _, _ in
+            createAccountCallCount += 1
+            wasConnectingWhileCreatingAccount = managementDialogModel?.isConnectingThisDeviceOnly ?? false
+        }
+
+        await syncDialogController.syncThisDeviceFromFallback()
+
+        XCTAssertEqual(createAccountCallCount, 1)
+        XCTAssertTrue(wasConnectingWhileCreatingAccount)
+        XCTAssertFalse(managementDialogModel.isConnectingThisDeviceOnly)
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 0)
+        XCTAssertEqual(managementDialogModel.currentDialog, .saveRecoveryCode(testRecoveryCode))
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_sync_tapped_mac").count, 1)
+    }
+
+    func testSyncThisDeviceFromFallback_whileConnecting_isNoOp() async {
+        managementDialogModel.isConnectingThisDeviceOnly = true
+        var createAccountCallCount = 0
+        ddgSyncing.createAccountCallback = { _, _ in createAccountCallCount += 1 }
+
+        await syncDialogController.syncThisDeviceFromFallback()
+
+        XCTAssertEqual(createAccountCallCount, 0)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_sync_tapped_mac").isEmpty)
+    }
+
+    func testCancellingSyncThisDeviceFallback_endsTheFlow() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        managementDialogModel.cancelPressed()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testCancellingPairing_whenFallbackNotOffered_firesSetupEndedAbandoned() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        setUpWithSingleDevice(id: "1")
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        let abandonedCalls = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "sync_setup_ended_abandoned_mac" }
+        XCTAssertEqual(abandonedCalls.count, 1)
+        XCTAssertEqual(abandonedCalls.first?.pixel.parameters?["reason"], "scanning_cancelled")
+    }
+
+    func testCancellingPairing_whenSyncThisDeviceFallbackShown_doesNotFireSetupEndedAbandonedYet() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        XCTAssertEqual(managementDialogModel.currentDialog, .syncThisDeviceFallback)
+        XCTAssertTrue(firedPixelNames(matching: "sync_setup_ended_abandoned_mac").isEmpty)
+    }
+
+    func testCancellingSyncThisDeviceFallback_firesCancelTappedAndSetupEndedAbandoned() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        managementDialogModel.cancelPressed()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_cancel_tapped_mac").count, 1)
+        let abandonedCalls = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "sync_setup_ended_abandoned_mac" }
+        XCTAssertEqual(abandonedCalls.count, 1)
+        XCTAssertEqual(abandonedCalls.first?.pixel.parameters?["reason"], "scanning_cancelled")
+        XCTAssertTrue(firedPixelNames(matching: "sync_setup_ended_successful_mac").isEmpty)
+    }
+
+    func testSyncThisDeviceFromFallback_firesSetupEndedSuccessfulWithFallbackSourceAndNoAbandoned() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        ddgSyncing.recoveryCodeOverride = testRecoveryCode
+        await managementDialogModel.cancelPressedWithConfirmation()
+
+        await syncDialogController.syncThisDeviceFromFallback()
+        managementDialogModel.endFlow()
+
+        let successfulCalls = pixelKitMock.actualFireCalls.filter { $0.pixel.name == "sync_setup_ended_successful_mac" }
+        XCTAssertEqual(successfulCalls.count, 1)
+        XCTAssertEqual(successfulCalls.first?.pixel.parameters?["source"], "fallback")
+        XCTAssertTrue(firedPixelNames(matching: "sync_setup_ended_abandoned_mac").isEmpty)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_sync_this_device_fallback_cancel_tapped_mac").isEmpty)
+    }
+
+    func testSyncThisDeviceFromFallback_whenAccountCreationFails_firesSetupEndedAbandonedWhenFlowEnds() async {
+        let confirmation = StubCloseSetupConfirmation(answer: true)
+        presentSyncWithAnotherDeviceWithImprovedPairingFlow(confirmation: confirmation)
+        ddgSyncing.account = nil
+        await managementDialogModel.cancelPressedWithConfirmation()
+        ddgSyncing.createAccountError = SyncError.failedToLoadAccount
+
+        await syncDialogController.syncThisDeviceFromFallback()
+
+        XCTAssertTrue(firedPixelNames(matching: "sync_setup_ended_abandoned_mac").isEmpty)
+        managementDialogModel.endFlow()
+        XCTAssertEqual(firedPixelNames(matching: "sync_setup_ended_abandoned_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_setup_ended_successful_mac").isEmpty)
+    }
+
+    // MARK: - Setup authentication result pixel
+
+    func testSyncWithAnotherDevicePressed_whenNotSynced_firesAuthenticationResultWithSettingsNotSynced() async {
+        ddgSyncing.account = nil
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "succeeded", "source": "settings_not_synced"]])
+    }
+
+    func testSyncWithAnotherDevicePressed_whenSynced_firesAuthenticationResultWithSettingsSynced() async {
+        setUpWithSingleDevice(id: "1")
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "succeeded", "source": "settings_synced"]])
+    }
+
+    func testSyncWithAnotherDevicePressed_whenAuthenticationFails_firesAuthenticationResultFailed() async {
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "failed", "source": "settings_not_synced"]])
+    }
+
+    func testSyncWithAnotherDevicePressed_whenNoAuthenticationAvailable_firesAuthenticationResultUnconfigured() async {
+        authenticator.stubAuthenticateUser = .noAuthAvailable
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "unconfigured", "source": "settings_not_synced"]])
+    }
+
+    func testSyncWithAnotherDevicePressed_whenRecentAuthenticationReused_doesNotFireAuthenticationResult() async {
+        authenticator.stubIsAuthenticationPromptNeeded = false
+
+        await syncDialogController.syncWithAnotherDevicePressed(source: nil)
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+        XCTAssertTrue(firedAuthenticationResults().isEmpty)
+    }
+
+    func testSyncWithServerPressed_whenImprovedPairingFlowDisabled_firesAuthenticationResultWithSettingsNotSynced() async {
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "succeeded", "source": "settings_not_synced"]])
+    }
+
+    func testSyncWithServerPressed_whenImprovedPairingFlowEnabled_doesNotFireAuthenticationResultUntilAnOptionIsChosen() async {
+        enableImprovedPairingFlow()
+
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertTrue(firedAuthenticationResults().isEmpty)
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenAuthenticationDeferred_firesAuthenticationResultWithThisDevice() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "succeeded", "source": "this_device"]])
+    }
+
+    func testSyncThisDeviceOnlyFromPrompt_whenDeferredAuthenticationCancelled_firesAuthenticationResultFailed() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.syncThisDeviceOnlyFromPrompt()
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "failed", "source": "this_device"]])
+    }
+
+    func testSyncWithAnotherDeviceFromPrompt_whenAuthenticationDeferred_firesAuthenticationResultWithSettingsNotSynced() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.syncWithServerPressed()
+
+        await syncDialogController.syncWithAnotherDeviceFromPrompt()
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "succeeded", "source": "settings_not_synced"]])
+    }
+
+    func testRecoverDataPressed_whenImprovedPairingFlowDisabled_firesAuthenticationResultWithRecover() async {
+        await syncDialogController.recoverDataPressed()
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "succeeded", "source": "recover"]])
+    }
+
+    func testEnterRecoveryCodePressed_whenAuthenticationDeferred_firesAuthenticationResultWithRecover() async {
+        enableImprovedPairingFlow()
+        await syncDialogController.recoverDataPressed()
+        XCTAssertTrue(firedAuthenticationResults().isEmpty)
+
+        await syncDialogController.enterRecoveryCodePressed()
+
+        XCTAssertEqual(firedAuthenticationResults(), [["result": "succeeded", "source": "recover"]])
+    }
+
+    func testPresentDeviceDetails_doesNotFireAuthenticationResult() async {
+        setUpWithSingleDevice(id: "1")
+
+        await syncDialogController.presentDeviceDetails(SyncDevice(RegisteredDevice(id: "1", name: "iPhone", type: "iPhone")))
+
+        XCTAssertEqual(authenticator.authenticateUserCallCount, 1)
+        XCTAssertTrue(firedAuthenticationResults().isEmpty)
+    }
+
+    // MARK: - Helper Methods
+
+    private func makeControllerWithCloseSetupConfirmation(_ confirmation: StubCloseSetupConfirmation) {
+        syncDialogController = SyncDialogController(
+            syncService: ddgSyncing,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: authenticator,
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                self?.connectionController ?? MockSyncConnectionControlling()
+            },
+            featureFlagger: featureFlagger,
+            pixelFiring: pixelKitMock,
+            keyValueStore: mockKeyValueStore,
+            confirmCloseSetup: { _ in await confirmation.present() }
+        )
+    }
+
+    private func makeControllerWithPairingV2Confirmation(_ confirmation: @escaping @MainActor (String) async -> Bool) {
+        syncDialogController = SyncDialogController(
+            syncService: ddgSyncing,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: authenticator,
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                self?.connectionController ?? MockSyncConnectionControlling()
+            },
+            featureFlagger: featureFlagger,
+            pixelFiring: pixelKitMock,
+            keyValueStore: mockKeyValueStore,
+            confirmPairingV2Setup: confirmation
+        )
+    }
+
+    private func setUpWithSingleDevice(id: String) {
+        ddgSyncing.account = SyncAccount(deviceId: id, deviceName: "iPhone", deviceType: "iPhone", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
+        ddgSyncing.registeredDevices = [RegisteredDevice(id: id, name: "iPhone", type: "iPhone")]
+        syncDialogController.devices = [SyncDevice(RegisteredDevice(id: id, name: "iPhone", type: "iPhone"))]
+    }
+
+    private func expectationsFor(codeForDisplayOrPasting: String, stringForQR: String) -> [XCTestExpectation] {
+        let codeForDisplayExpectation = expectation(description: "codeForDisplayOrPasting")
+        let stringForQRExpectation = expectation(description: "stringForQR")
+
+        codeForDisplayExpectation.assertForOverFulfill = false
+        stringForQRExpectation.assertForOverFulfill = false
+
+        syncDialogController.$codeForDisplayOrPasting.sink {
+            if $0 == codeForDisplayOrPasting {
+                codeForDisplayExpectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.$stringForQR.sink {
+            if $0 == stringForQR {
+                stringForQRExpectation.fulfill()
+            }
+        }.store(in: &cancellables)
+        return [codeForDisplayExpectation, stringForQRExpectation]
+    }
+
+    private struct SyncDialogCodes: Equatable {
+        let displayCode: String
+        let qrCode: String
+    }
+
+    enum TestError: Error {
+        case nilValue
+    }
+
+    @MainActor
+    private func waitForSyncWithAnotherDeviceDialogCodes() async throws -> SyncDialogCodes {
+        let expectation = expectation(description: "waitForSyncWithAnotherDeviceDialogCodes")
+        expectation.assertForOverFulfill = false
+        var codes: SyncDialogCodes?
+        managementDialogModel.$currentDialog
+            .sink { dialog in
+                if case .syncWithAnotherDevice(let displayCode, let qrCode) = dialog {
+                    codes = SyncDialogCodes(displayCode: displayCode, qrCode: qrCode)
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+
+        await fulfillment(of: [expectation], timeout: 10)
+
+        guard let codes else {
+            throw TestError.nilValue
+        }
+
+        return codes
+    }
+
+    @MainActor
+    private func waitForEnterRecoveryCodeDialog() async throws -> String {
+        let expectation = expectation(description: "waitForEnterRecoveryCodeDialog")
+        expectation.assertForOverFulfill = false
+        var code: String?
+        managementDialogModel.$currentDialog.sink {
+            if case .enterRecoveryCode(let qrCode) = $0 {
+                code = qrCode
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        await fulfillment(of: [expectation], timeout: 10)
+
+        guard let code else {
+            throw TestError.nilValue
+        }
+
+        return code
+    }
+
+    func testSyncWithServerPressed_firesBackUpThisDeviceTappedPixel() async {
+        await syncDialogController.syncWithServerPressed()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_back_up_this_device_tapped_mac").count, 1)
+    }
+
+    func testRecoverDataPressed_firesRecoverSyncedDataTappedPixel() async {
+        await syncDialogController.recoverDataPressed()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_recover_synced_data_tapped_mac").count, 1)
+    }
+
+    func testEnterRecoveryCodePressed_firesRecoveryConfirmedTappedPixel() async {
+        await syncDialogController.enterRecoveryCodePressed()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_recovery_confirmed_tapped_mac").count, 1)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_whenRetryOfferedAndRetrySucceeds_firesRetryTappedAndSucceededPixels() async {
+        authenticator.stubbedAuthenticationResults = [.failure, .success]
+        await syncDialogController.syncWithServerPressed()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_tapped_mac").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_succeeded_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_dismissed_mac").isEmpty)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_whenRetryFails_firesRetryFailedPixel() async {
+        authenticator.stubAuthenticateUser = .failure
+        await syncDialogController.syncWithServerPressed()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_tapped_mac").count, 1)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_failed_mac").count, 1)
+    }
+
+    func testAuthenticationCancelledPromptClosePressed_whenRetryNotOffered_firesDismissedPixel() async {
+        authenticator.stubAuthenticateUser = .failure
+        mockKeyValueStore.set(1, forKey: "sync.authentication-cancelled-prompt.presented-count")
+        await syncDialogController.syncWithServerPressed()
+
+        await syncDialogController.authenticationCancelledPromptClosePressed()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_dismissed_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_authentication_cancelled_prompt_retry_tapped_mac").isEmpty)
+    }
+
+    func testSyncSuccessViewDidAppear_firesSuccessScreenShownPixel() {
+        syncDialogController.syncSuccessViewDidAppear()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_success_screen_shown_mac").count, 1)
+    }
+
+    func testSyncSuccessCopyCodePressed_firesCopyCodeTappedPixel() {
+        syncDialogController.syncSuccessCopyCodePressed(testRecoveryCode)
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_success_screen_copy_code_tapped_mac").count, 1)
+    }
+
+    func testSyncSuccessDonePressed_firesDoneTappedPixelAndEndsFlow() {
+        managementDialogModel.currentDialog = .saveRecoveryCode(testRecoveryCode)
+
+        syncDialogController.syncSuccessDonePressed()
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_success_screen_done_tapped_mac").count, 1)
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testPairingSuccessDonePressedEndsFlow() {
+        managementDialogModel.currentDialog = .pairingSuccess
+
+        syncDialogController.syncSuccessDonePressed()
+
+        XCTAssertNil(managementDialogModel.currentDialog)
+    }
+
+    func testPresentDeviceDetails_forCurrentDevice_firesThisDeviceDetailsShownPixel() async {
+        await syncDialogController.presentDeviceDetails(SyncDevice(kind: .current, name: "test", id: "test"))
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_this_device_details_screen_shown_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_other_device_details_screen_shown_mac").isEmpty)
+    }
+
+    func testPresentDeviceDetails_forOtherDevice_firesOtherDeviceDetailsShownPixel() async {
+        await syncDialogController.presentDeviceDetails(SyncDevice(kind: .mobile, name: "test", id: "test"))
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_other_device_details_screen_shown_mac").count, 1)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_this_device_details_screen_shown_mac").isEmpty)
+    }
+
+    func testPresentDeviceDetails_whenAuthenticationCancelled_doesNotFireDeviceDetailsShownPixel() async {
+        authenticator.stubAuthenticateUser = .failure
+
+        await syncDialogController.presentDeviceDetails(SyncDevice(kind: .current, name: "test", id: "test"))
+
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_this_device_details_screen_shown_mac").isEmpty)
+    }
+
+    func testPresentRemoveDeviceConfirmation_forOtherDevice_firesRemoveDeviceTappedPixel() {
+        syncDialogController.presentRemoveDeviceConfirmation(SyncDevice(kind: .mobile, name: "test", id: "test"))
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_tapped_mac").count, 1)
+    }
+
+    func testRemoveDeviceConfirmed_forOtherDevice_whenSucceeds_firesRemoveDeviceConfirmedPixel() async {
+        let device = SyncDevice(kind: .desktop, name: "Other Device", id: "other-id")
+        managementDialogModel.currentDialog = .removeDevice(device)
+        let expectation = expectation(description: "remove device flow ended")
+        managementDialogModel.$currentDialog.sink {
+            if $0 == nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.removeDeviceConfirmed(device)
+
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_confirmed_mac").count, 1)
+    }
+
+    func testRemoveDeviceConfirmed_forOtherDevice_whenFails_doesNotFireRemoveDeviceConfirmedPixel() async {
+        let expectation = expectation(description: "Remove device errored")
+        managementDialogModel.$syncErrorMessage.sink {
+            if $0 != nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+        ddgSyncing.disconnectDeviceError = SyncError.failedToLoadAccount
+
+        syncDialogController.removeDeviceConfirmed(SyncDevice(kind: .desktop, name: "Other Device", id: "other-id"))
+
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_confirmed_mac").isEmpty)
+    }
+
+    func testRemoveDevice_whenSucceeds_doesNotFireRemoveDeviceConfirmedPixel() async {
+        managementDialogModel.currentDialog = .removeDevice(SyncDevice(kind: .desktop, name: "Other Device", id: "other-id"))
+        let expectation = expectation(description: "remove device flow ended")
+        managementDialogModel.$currentDialog.sink {
+            if $0 == nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.removeDevice(SyncDevice(kind: .desktop, name: "Other Device", id: "other-id"))
+
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_other_device_details_remove_device_confirmed_mac").isEmpty)
+    }
+
+    func testPresentRemoveDeviceConfirmation_forCurrentDevice_firesTurnOffSyncTappedPixel() {
+        syncDialogController.presentRemoveDeviceConfirmation(SyncDevice(kind: .current, name: "test", id: "test"))
+
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_this_device_details_turn_off_sync_tapped_mac").count, 1)
+    }
+
+    func testUpdateDeviceName_whenSucceeds_firesNameUpdatedPixel() async {
+        managementDialogModel.currentDialog = .deviceDetails(SyncDevice(kind: .current, name: "Old Name", id: "test"))
+        let expectation = expectation(description: "device details flow ended")
+        managementDialogModel.$currentDialog.sink {
+            if $0 == nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncDialogController.updateDeviceName("New Name")
+
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertEqual(firedPixelNames(matching: "sync_settings_this_device_details_name_updated_mac").count, 1)
+    }
+
+    func testUpdateDeviceName_whenFails_doesNotFireNameUpdatedPixel() async {
+        let expectation = expectation(description: "Update device errored")
+        managementDialogModel.$syncErrorMessage.sink {
+            if $0 != nil {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+        ddgSyncing.updateDeviceNameError = SyncError.failedToLoadAccount
+
+        syncDialogController.updateDeviceName("New Name")
+
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertTrue(firedPixelNames(matching: "sync_settings_this_device_details_name_updated_mac").isEmpty)
+    }
+
+    private func firedPixelNames(matching name: String) -> [String] {
+        pixelKitMock.actualFireCalls.map(\.pixel.name).filter { $0 == name }
+    }
+
+    private func firedAuthenticationResults() -> [[String: String]] {
+        pixelKitMock.actualFireCalls
+            .filter { $0.pixel.name == "sync_setup_authentication_result_mac" }
+            .compactMap(\.pixel.parameters)
+    }
+}
+
+struct MockRemoteConnecting: RemoteConnecting {
+    var code: String = ""
+
+    func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey? {
+        return nil
+    }
+
+    func stopPolling() {
+    }
+}
+
+private extension SyncCode.RecoveryKey {
+    init(base64Code: String?) throws {
+        let contents = try Data(base64Encoded: try XCTUnwrap(base64Code))
+            .flatMap { try JSONDecoder.snakeCaseKeys.decode(SyncCode.self, from: $0) }
+        self = try XCTUnwrap(contents?.recovery).defaultCredentialRecoveryKey()
+    }
+}
+
+private extension String {
+    var isDDGURLString: Bool {
+        guard let url = URL(string: self) else { return false }
+        return url.isDuckDuckGo
+    }
+
+    var isRecoveryKey: Bool {
+        guard let decoded = try? SyncCode.decodeBase64String(self) else {
+            return false
+        }
+        return decoded.recovery != nil
+    }
+}

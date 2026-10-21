@@ -16,14 +16,16 @@
 //  limitations under the License.
 //
 
-import Foundation
-import os.log
 import Combine
 import Common
+import ConcurrencyExtensions
+import Foundation
+import FoundationExtensions
+import os.log
 import Persistence
 
 public extension Logger {
-    static var config: Logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Configuration") }()
+    static let config: Logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Configuration") }()
 }
 
 open class DefaultConfigurationManager: NSObject {
@@ -70,7 +72,7 @@ open class DefaultConfigurationManager: NSObject {
         NSFileCoordinator.addFilePresenter(self)
     }
 
-    deinit {
+    public func tearDown() {
         NSFileCoordinator.removeFilePresenter(self)
     }
 
@@ -144,8 +146,7 @@ open class DefaultConfigurationManager: NSObject {
     /// **Note:** You must call `start()` on your `ConfigurationManager` instance for this to take effect. It relies on the internal refresh loop of the
     /// `DefaultConfigurationManager` class
     public func tryAgainSoon() {
-        // Set the last update time to in the past so it triggers again sooner
-        lastUpdateTime = Date(timeIntervalSinceNow: Constants.refreshPeriodSeconds - Constants.retryDelaySeconds)
+        lastUpdateTime = Date(timeIntervalSinceNow: Constants.retryDelaySeconds - Constants.refreshPeriodSeconds)
     }
 }
 

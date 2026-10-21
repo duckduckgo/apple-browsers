@@ -1,5 +1,5 @@
 /* The body of the notification when Privacy Pro subscription expired */
-"network.protection.entitlement.expired.notification.body" = "VPN atjungtas dėl pasibaigusios prenumeratos. „DuckDuckGo“ VPN galima naudoti nemokamai, kol veikia beta versija.";
+"network.protection.entitlement.expired.notification.body" = "VPN atjungtas dėl pasibaigusios prenumeratos. Prenumeruokite „DuckDuckGo“, kad iš naujo prisijungtumėte prie VPN.";
 
 /* The body of the notification shown when VPN fails to reconnect */
 "network.protection.failure.notification.body" = "„DuckDuckGo“ VPN nepavyko prisijungti. Bandykite dar kartą vėliau.";
@@ -12,6 +12,12 @@
 
 /* The body of the notification when the VPN is snoozed, with a duration string as parameter (e.g, 30 minutes) */
 "network.protection.snoozed.notification.body" = "VPN pristabdytas %@ laikui";
+
+/* The body of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.body" = "Išjungus šią funkciją, dalis srauto gali aplenkti VPN. Viešuosiuose tinkluose rekomenduojama naudoti griežtą maršruto parinkimą.";
+
+/* The title of the notification reminding the user to turn the VPN Strict routing setting back on */
+"network.protection.strict.routing.reminder.notification.title" = "Griežtas maršruto parinkimas IŠJUNGTAS";
 
 /* The body of the notification shown when VPN reconnects successfully */
 "network.protection.success.notification.body" = "„DuckDuckGo“ VPN įjungtas. Jūsų vieta ir veikla internete yra apsaugota.";

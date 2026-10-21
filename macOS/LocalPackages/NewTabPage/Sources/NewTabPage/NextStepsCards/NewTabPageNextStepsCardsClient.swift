@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Combine
 import UserScriptActionsManager
 import WebKit
@@ -40,6 +41,7 @@ public final class NewTabPageNextStepsCardsClient: NewTabPageUserScriptClient {
         connectWillDisplayCardsPublisher()
 
         model.cardsPublisher
+            .removeDuplicates()
             .sink { [weak self] cardIDs in
                 Task { @MainActor in
                     self?.notifyDataUpdated(cardIDs)
@@ -48,6 +50,7 @@ public final class NewTabPageNextStepsCardsClient: NewTabPageUserScriptClient {
             .store(in: &cancellables)
 
         model.isViewExpandedPublisher
+            .removeDuplicates()
             .sink { [weak self] showAllCards in
                 Task { @MainActor in
                     self?.notifyConfigUpdated(showAllCards)
@@ -56,16 +59,16 @@ public final class NewTabPageNextStepsCardsClient: NewTabPageUserScriptClient {
             .store(in: &cancellables)
 
         willDisplayCardsPublisher
-            .sink { cards in
+            .sink { [weak self] cards in
                 Task { @MainActor in
-                    model.willDisplayCards(cards)
+                    self?.model.willDisplayCards(cards)
                 }
             }
             .store(in: &cancellables)
     }
 
     private func connectWillDisplayCardsPublisher() {
-        let initialCards = Publishers.CombineLatest(getDataSubject, getConfigSubject)
+        let initialCards = Publishers.CombineLatest(getDataSubject, getConfigSubject.removeDuplicates())
             .map { cards, isViewExpanded in
                 isViewExpanded ? cards : Array(cards.prefix(2))
             }
@@ -136,6 +139,7 @@ public final class NewTabPageNextStepsCardsClient: NewTabPageUserScriptClient {
         return nil
     }
 
+    @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
 

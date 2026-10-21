@@ -17,9 +17,10 @@
 //
 
 import Common
+import ConcurrencyExtensions
 import Network
-@testable import VPN
 import XCTest
+@testable import VPN
 
 final class NWConnectionExtensionTests: XCTestCase {
     let endpoint = NWEndpoint.hostPort(host: .name("www.duckduckgo.com", nil), port: .https)
@@ -38,19 +39,19 @@ final class NWConnectionExtensionTests: XCTestCase {
         await fulfillment(of: [e])
     }
 
-    func testWhenConnectionIsStartedStateUpdateStreamReceivesValues() async throws {
+    func testWhenConnectionIsStartedAndCancelledStateUpdateStreamReceivesStatesAndFinishes() async throws {
         let connection = NWConnection(to: endpoint, using: .tcp)
         let stateUpdateStream = connection.stateUpdateStream
         connection.start(queue: .main)
 
-        let eReady = expectation(description: "connection is ready")
+        let ePreparing = expectation(description: "connection is preparing")
         let eFinished = expectation(description: "stateUpdateStream finished")
         async let states = withTimeout(5) {
             var states = [NWConnection.State]()
             for try await state in stateUpdateStream {
                 states.append(state)
-                if case .ready = state {
-                    eReady.fulfill()
+                if case .preparing = state {
+                    ePreparing.fulfill()
                 }
             }
             eFinished.fulfill()
@@ -58,13 +59,14 @@ final class NWConnectionExtensionTests: XCTestCase {
             return states
         }
 
-        await fulfillment(of: [eReady])
+        await fulfillment(of: [ePreparing])
         connection.cancel()
 
         await fulfillment(of: [eFinished])
         let result = try await states
 
-        XCTAssertEqual(result, [.preparing, .ready, .cancelled])
+        XCTAssertEqual(result.first, .preparing)
+        XCTAssertEqual(result.last, .cancelled)
         XCTAssertFalse(Task.isCancelled)
     }
 

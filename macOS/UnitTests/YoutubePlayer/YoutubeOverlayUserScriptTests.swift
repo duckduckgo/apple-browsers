@@ -16,7 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import UserScript
 import WebKit
 import XCTest
@@ -26,18 +27,21 @@ import XCTest
 final class YoutubeOverlayUserScriptTests: XCTestCase {
 
     var youtubeOverlayUserScript: YoutubeOverlayUserScript!
-    var preferences: DuckPlayerPreferences!
     var persistor: DuckPlayerPreferencesPersistorMock!
 
     override func setUp() {
+
         persistor = DuckPlayerPreferencesPersistorMock()
-        preferences = DuckPlayerPreferences(persistor: persistor)
-        youtubeOverlayUserScript = YoutubeOverlayUserScript(duckPlayerPreferences: preferences)
+        let duckPlayer = DuckPlayer(
+            preferencesPersistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            internalUserDecider: MockInternalUserDecider()
+        )
+        youtubeOverlayUserScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
     }
 
     override func tearDown() {
         persistor = nil
-        preferences = nil
         youtubeOverlayUserScript = nil
     }
 

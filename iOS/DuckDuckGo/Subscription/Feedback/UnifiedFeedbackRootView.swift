@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DuckUI
 import VPN
 
 struct UnifiedFeedbackRootView: View {
@@ -63,7 +64,7 @@ struct UnifiedFeedbackRootView: View {
                         EmptyView()
                     case .subscription:
                         UnifiedFeedbackCategoryView(UserText.pproFeedbackFormReportPProProblemTitle,
-                                                    options: PrivacyProFeedbackSubcategory.allCases,
+                                                    options: viewModel.availableSubscriptionSubcategories,
                                                     selection: $viewModel.selectedSubcategory) {
                             IssueDescriptionFormView(viewModel: viewModel,
                                                      placeholder: UserText.pproFeedbackFormReportProblemPlaceholder)
@@ -145,14 +146,14 @@ struct UnifiedFeedbackCategoryView<Category: FeedbackCategoryProviding, Destinat
                                 .foregroundColor(.init(designSystemColor: .textPrimary))
                         }
                         .tag(option.rawValue)
-                        .listRowBackground(Color(designSystemColor: .surface))
+                        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                     }
                 } header: {
                     Text(prompt)
                         .font(.caption)
                 }
             }
-            .listRowBackground(Color(designSystemColor: .surface))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
         .applyInsetGroupedListStyle()
         .navigationTitle(title)
@@ -219,7 +220,7 @@ private struct CompactIssueDescriptionFormView: View {
         } label: {
             Text(UserText.vpnFeedbackFormButtonSubmit)
         }
-        .buttonStyle(UnifiedFeedbackFormButtonStyle())
+        .buttonStyle(DuckUI.PrimaryButtonStyle(disabled: !viewModel.submitButtonEnabled))
         .padding(16)
     }
 }
@@ -241,10 +242,6 @@ private struct IssueDescriptionFormView: View {
             }
     }
 
-    private var textFieldBackgroundColor: Color {
-        Color(singleUseColor: .unifiedFeedbackFieldBackground)
-    }
-
     @ViewBuilder
     private func form() -> some View {
         ScrollView {
@@ -260,25 +257,9 @@ private struct IssueDescriptionFormView: View {
                                                    focusState: $isTextEditorFocused,
                                                    scrollViewProxy: scrollView)
                             .padding(.bottom, 10)
-                        Text(UserText.pproFeedbackFormEmailLabel)
-                            .font(.caption)
-                            .textCase(.uppercase)
-                            .foregroundColor(.secondary)
+                        supportLink()
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 4)
-                        TextField(UserText.pproFeedbackFormEmailPlaceholder, text: $viewModel.userEmail)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .padding(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                            .clipShape(RoundedRectangle(cornerRadius: 8.0, style: .continuous))
-                            .background(
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8.0)
-                                        .stroke(textFieldBackgroundColor, lineWidth: 0.4)
-                                    RoundedRectangle(cornerRadius: 8.0)
-                                        .fill(textFieldBackgroundColor)
-                                }
-                            )
+                            .padding(.bottom, 10)
                         footer()
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
@@ -309,6 +290,7 @@ private struct IssueDescriptionFormView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
+            .tint(Color(designSystemColor: .accentPrimary))
             .environment(\.openURL, OpenURLAction { _ in
                 Task {
                     await viewModel.process(action: .reportFAQClick)
@@ -320,6 +302,21 @@ private struct IssueDescriptionFormView: View {
         Spacer()
             .frame(height: 1)
             .id(1)
+    }
+
+    @ViewBuilder
+    private func supportLink() -> some View {
+        Text(.init(UserText.pproFeedbackFormSupportText))
+            .multilineTextAlignment(.leading)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+            .tint(Color(designSystemColor: .accentPrimary))
+            .environment(\.openURL, OpenURLAction { _ in
+                Task {
+                    await viewModel.process(action: .contactSupportClick)
+                }
+                return .handled
+            })
     }
 
     @ViewBuilder
@@ -349,7 +346,7 @@ private struct IssueDescriptionFormView: View {
         } label: {
             Text(UserText.vpnFeedbackFormButtonSubmit)
         }
-        .buttonStyle(UnifiedFeedbackFormButtonStyle())
+        .buttonStyle(DuckUI.PrimaryButtonStyle(disabled: !viewModel.submitButtonEnabled))
         .padding(16)
     }
 }
@@ -373,11 +370,9 @@ private struct IssueDescriptionTextEditor: View {
                 .textCase(.uppercase)
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 16)
-            TextEditorWithPlaceholder(text: text, placeholder: placeholder)
+            TextEditorWithPlaceholder(text: text, placeholder: placeholder, backgroundColor: editorBackgroundColor)
                 .font(.body)
                 .foregroundColor(.primary)
-                .background(editorBackgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: 8.0, style: .continuous))
                 .frame(height: 100)
                 .fixedSize(horizontal: false, vertical: true)
                 .onChange(of: text.wrappedValue) { value in
@@ -396,33 +391,17 @@ private struct IssueDescriptionTextEditor: View {
     }
 }
 
-private struct UnifiedFeedbackFormButtonStyle: ButtonStyle {
-
-    @Environment(\.isEnabled) private var isEnabled: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundColor(Color.white)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal)
-            .frame(height: 50)
-            .background(Color(designSystemColor: .accent))
-            .cornerRadius(12)
-            .daxButton()
-            .opacity(isEnabled ? 1.0 : 0.4)
-
-    }
-
-}
-
 private struct TextEditorWithPlaceholder: View {
     let text: Binding<String>
     let placeholder: String
+    let backgroundColor: Color
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            TextEditor(text: text)
-                .padding(.horizontal, 12)
+            RoundedRectangle(cornerRadius: 8.0, style: .continuous)
+                .fill(backgroundColor)
+            editor
+                .clipShape(RoundedRectangle(cornerRadius: 8.0, style: .continuous))
             if text.wrappedValue.isEmpty {
                 Text(placeholder)
                     .foregroundColor(.secondary)
@@ -430,6 +409,22 @@ private struct TextEditorWithPlaceholder: View {
                     .padding(.top, 10)
                     .padding(.leading, 16)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var editor: some View {
+        if #available(iOS 16.0, *) {
+            TextEditor(text: text)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .padding(.horizontal, 12)
+        } else {
+            TextEditor(text: text)
+                .padding(.horizontal, 12)
+                .background(Color.clear)
+                .onAppear { UITextView.appearance().backgroundColor = .clear }
+                .onDisappear { UITextView.appearance().backgroundColor = nil }
         }
     }
 }

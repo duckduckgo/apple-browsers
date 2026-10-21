@@ -1,0 +1,2 @@
+# Treat C-S-S code as binary files, not including it in diffs
+SharedPackages/BrowserServicesKit/Sources/ContentScopeScripts/Resources/** -diff

@@ -1,0 +1,53 @@
+# duckai_chrome_shortcut_contextual_sheet_toggle.yaml
+#
+# Scenario 2: On a web page the shortcut's menu offers Ask About Page, which opens the
+# contextual sheet; closing the sheet returns the shortcut to its menu.
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - duckai_chrome_shortcut
+
+---
+
+- runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
+
+# Load a regular web page (not the New Tab Page, not Duck.ai) so the page-context action shows.
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://example.com"
+- pressKey: Enter
+- assertVisible: ".*Example Domain.*"
+
+- assertVisible:
+    id: "Browser.TabsBar.AIChatMenuButton"
+
+# Ask About Page -> the contextual sheet opens.
+- tapOn:
+    id: "Browser.TabsBar.AIChatMenuButton"
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn: "Ask About Page"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "AIChat.ContextualSheet"
+
+# Close the sheet. (While the sheet is presented modally the tabs-bar shortcut is
+# removed from the accessibility hierarchy, so close via the sheet's X button.)
+- tapOn:
+    id: "AIChat.ContextualSheet.CloseButton"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "AIChat.ContextualSheet"
+
+# The shortcut is interactive again and back to offering its menu.
+- assertVisible:
+    id: "Browser.TabsBar.AIChatMenuButton"
+- tapOn:
+    id: "Browser.TabsBar.AIChatMenuButton"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: "Ask About Page"

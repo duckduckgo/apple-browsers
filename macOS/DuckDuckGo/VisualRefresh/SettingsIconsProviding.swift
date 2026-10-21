@@ -26,7 +26,7 @@ protocol SettingsIconsProviding {
     var threatProtectionIcon: NSImage { get }
     var cookiePopUpProtectionIcon: NSImage { get }
     var emailProtectionIcon: NSImage { get }
-    var privacyProIcon: NSImage { get }
+    var subscriptionIcon: NSImage { get }
     var vpnIcon: NSImage { get }
     var personalInformationRemovalIcon: NSImage { get }
     var identityTheftRestorationIcon: NSImage { get }
@@ -37,42 +37,25 @@ protocol SettingsIconsProviding {
     var accessibilityIcon: NSImage { get }
     var dataClearingIcon: NSImage { get }
     var duckPlayerIcon: NSImage { get }
+    var youTubeAdBlockingIcon: NSImage { get }
+    var websitePermissionsIcon: NSImage { get }
     var duckAIIcon: NSImage { get }
+    var aiGeneralIcon: NSImage { get }
+    var paidAIChatIcon: NSImage { get }
     var aboutIcon: NSImage { get }
     var otherPlatformsIcon: NSImage { get }
-}
-
-final class LegacySettingsIconProvider: SettingsIconsProviding {
-    var defaultBrowserIcon: NSImage = .defaultBrowser
-    var privateSearchIcon: NSImage = .privateSearchIcon
-    var webTrackingProtectionIcon: NSImage = .webTrackingProtectionIcon
-    var threatProtectionIcon: NSImage = .radarColor16
-    var cookiePopUpProtectionIcon: NSImage = .cookieProtectionIcon
-    var emailProtectionIcon: NSImage = .emailProtectionIcon
-    var privacyProIcon: NSImage = .privacyPro
-    var vpnIcon: NSImage = .VPN
-    var personalInformationRemovalIcon: NSImage = .personalInformationRemovalMulticolor16
-    var identityTheftRestorationIcon: NSImage = .identityTheftRestorationMulticolor16
-    var generalIcon: NSImage = .generalIcon
-    var syncAndBackupIcon: NSImage = .sync
-    var appearanceIcon: NSImage = .appearance
-    var passwordsAndAutoFillIcon: NSImage = .autofill
-    var accessibilityIcon: NSImage = .accessibility
-    var dataClearingIcon: NSImage = .fireSettings
-    var duckPlayerIcon: NSImage = .duckPlayerSettings
-    var duckAIIcon: NSImage = .aiChatPreferences
-    var aboutIcon: NSImage = .about
-    var otherPlatformsIcon: NSImage = .otherPlatformsPreferences
+    var subscriberOffersIcon: NSImage { get }
 }
 
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
+    var aiGeneralIcon: NSImage = DesignSystemImages.Color.Size16.aiGeneral
     var defaultBrowserIcon: NSImage = DesignSystemImages.Color.Size16.defaultBrowser
     var privateSearchIcon: NSImage = DesignSystemImages.Color.Size16.findSearch
-    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
+    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shield
     var threatProtectionIcon: NSImage = DesignSystemImages.Color.Size16.radar
     var cookiePopUpProtectionIcon: NSImage = DesignSystemImages.Color.Size16.cookie
     var emailProtectionIcon: NSImage = DesignSystemImages.Color.Size16.emailProtection
-    var privacyProIcon: NSImage = DesignSystemImages.Color.Size16.privacyPro
+    var subscriptionIcon: NSImage = DesignSystemImages.Color.Size16.subscription
     var vpnIcon: NSImage = DesignSystemImages.Color.Size16.vpn
     var personalInformationRemovalIcon: NSImage = DesignSystemImages.Color.Size16.identityBlockedPIR
     var identityTheftRestorationIcon: NSImage = DesignSystemImages.Color.Size16.identityTheftRestoration
@@ -83,7 +66,11 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var accessibilityIcon: NSImage = DesignSystemImages.Color.Size16.accessibility
     var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fire
     var duckPlayerIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayer
+    var youTubeAdBlockingIcon: NSImage = DesignSystemImages.Color.Size16.adsBlocked
+    var websitePermissionsIcon: NSImage = DesignSystemImages.Color.Size16.websitePermissions
     var duckAIIcon: NSImage = DesignSystemImages.Color.Size16.aiChat
+    var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo
     var otherPlatformsIcon: NSImage = DesignSystemImages.Color.Size16.downloads
+    var subscriberOffersIcon: NSImage = NSImage(resource: .subscriptionGift)
 }

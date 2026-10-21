@@ -19,102 +19,92 @@
 import XCTest
 
 class StateRestorationTests: UITestCase {
-    private var app: XCUIApplication!
+
     private var firstPageTitle: String!
     private var secondPageTitle: String!
     private var firstURLForBookmarksBar: URL!
     private var secondURLForBookmarksBar: URL!
     private let titleStringLength = 12
     private var addressBarTextField: XCUIElement!
-    private var settingsGeneralButton: XCUIElement!
-    private var openANewWindowPreference: XCUIElement!
-    private var reopenAllWindowsFromLastSessionPreference: XCUIElement!
-
-    override class func setUp() {
-        super.setUp()
-        UITests.firstRun()
-    }
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
+        try super.setUpWithError()
         app = XCUIApplication.setUp()
         firstPageTitle = UITests.randomPageTitle(length: titleStringLength)
         secondPageTitle = UITests.randomPageTitle(length: titleStringLength)
         firstURLForBookmarksBar = UITests.simpleServedPage(titled: firstPageTitle)
         secondURLForBookmarksBar = UITests.simpleServedPage(titled: secondPageTitle)
-        addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
-        openANewWindowPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"]
-        reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]
+        addressBarTextField = app.addressBar
 
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
-        app.typeKey("n", modifierFlags: .command)
+        app.enforceSingleWindow()
+
+        // Disable warn before quit to allow Cmd+Q to quit immediately in tests
+        app.disableWarnBeforeQuitting()
     }
 
     override func tearDownWithError() throws {
+        try super.tearDownWithError()
         app.terminate()
     }
 
     func test_tabStateAtRelaunch_shouldContainTwoSitesVisitedInPreviousSession_whenReopenAllWindowsFromLastSessionIsSet() {
-        addressBarTextField.typeURL(URL(string: "duck://settings")!) // Open settings
-        settingsGeneralButton.click(forDuration: 0.5, thenDragTo: settingsGeneralButton)
-        reopenAllWindowsFromLastSessionPreference.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
-        app.typeKey("n", modifierFlags: .command)
+        // Open settings and enable session restore using helper
+        app.openPreferencesWindow()
+        app.preferencesSetRestorePreviousSession(to: .restoreLastSession)
+        app.closePreferencesWindow()
+        app.enforceSingleWindow()
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(firstURLForBookmarksBar)
+        addressBarTextField.pasteURL(firstURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeURL(secondURLForBookmarksBar)
+        app.openNewTab()
+        addressBarTextField.pasteURL(secondURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        app.typeKey("q", modifierFlags: [.command])
-        app.launch()
+        app.restart()
 
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Second visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "First visited site wasn't found in a webview with the expected title in a reasonable timeframe."
         )
     }
 
     func test_tabStateAtRelaunch_shouldContainNoSitesVisitedInPreviousSession_whenReopenAllWindowsFromLastSessionIsUnset() {
-        addressBarTextField.typeURL(URL(string: "duck://settings")!) // Open settings
-        settingsGeneralButton.click(forDuration: 0.5, thenDragTo: settingsGeneralButton)
-        openANewWindowPreference.clickAfterExistenceTestSucceeds()
-        app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
-        app.typeKey("n", modifierFlags: .command)
+        // Open settings and disable session restore using helper
+        app.openPreferencesWindow()
+        app.preferencesSetRestorePreviousSession(to: .newWindow)
+        app.closePreferencesWindow()
+        app.enforceSingleWindow()
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
         )
-        addressBarTextField.typeURL(firstURLForBookmarksBar)
+        addressBarTextField.pasteURL(firstURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[firstPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
-        app.typeKey("t", modifierFlags: [.command])
-        app.typeURL(secondURLForBookmarksBar)
+        app.openNewTab()
+        addressBarTextField.pasteURL(secondURLForBookmarksBar)
         XCTAssertTrue(
-            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.windows.webViews[secondPageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Site didn't load with the expected title in a reasonable timeframe."
         )
 
-        app.terminate()
-        app.launch()
+        app.restart(forceTerminate: true)
 
         XCTAssertTrue(
             app.windows.webViews[secondPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
@@ -124,7 +114,7 @@ class StateRestorationTests: UITestCase {
             app.windows.webViews[firstPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "First visited site from previous session should not be in any webview."
         )
-        app.typeKey("w", modifierFlags: [.command])
+        app.closeCurrentTab()
         XCTAssertTrue(
             app.windows.webViews[firstPageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "First visited site from previous session should not be in any webview."

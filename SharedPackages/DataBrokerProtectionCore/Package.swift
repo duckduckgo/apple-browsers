@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -24,28 +24,41 @@ let package = Package(
     name: "DataBrokerProtectionCore",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
             name: "DataBrokerProtectionCore",
             targets: ["DataBrokerProtectionCore"]),
+        .library(
+            name: "DataBrokerProtectionDebugServer",
+            targets: ["DataBrokerProtectionDebugServer"]),
         .library(name: "DataBrokerProtectionCoreTestsUtils", targets: ["DataBrokerProtectionCoreTestsUtils"]),
     ],
     dependencies: [
+        .package(path: "../WideEvent"),
+        .package(path: "../Persistence"),
+        .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
-        .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.19"),
-        .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.0"),
+        .package(path: "../Networking"),
+        .package(path: "../DebugServer"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
+        .package(url: "https://github.com/apple/swift-algorithms", exact: "1.2.1"),
+        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
     ],
     targets: [
         .target(
             name: "DataBrokerProtectionCore",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 "ZIPFoundation",
                 .product(name: "Algorithms", package: "swift-algorithms"),
+                "TrackerRadarKit",
             ],
             resources: [.copy("BundleResources")],
             swiftSettings: [
@@ -53,12 +66,23 @@ let package = Package(
             ]
         ),
         .target(
-            name: "DataBrokerProtectionCoreTestsUtils",
+            name: "DataBrokerProtectionDebugServer",
             dependencies: [
                 "DataBrokerProtectionCore",
+                .product(name: "DebugServer", package: "DebugServer"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "DataBrokerProtectionCoreTestsUtils",
+            dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
+                "DataBrokerProtectionCore",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],
             swiftSettings: [
@@ -68,11 +92,16 @@ let package = Package(
         .testTarget(
             name: "DataBrokerProtectionCoreTests",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 "DataBrokerProtectionCore",
                 "DataBrokerProtectionCoreTestsUtils",
                 "BrowserServicesKit",
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "SecureStorageTestsUtils", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],
             resources: [

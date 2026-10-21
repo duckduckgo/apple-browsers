@@ -16,32 +16,67 @@
 //  limitations under the License.
 //
 
+import Common
+import DesignResourcesKit
 import Foundation
 import SwiftUI
+import UIComponents
+
+private struct ButtonMetrics {
+    let fontSize: CGFloat
+    let topPadding: CGFloat
+    let bottomPadding: CGFloat
+    let horizontalPadding: CGFloat
+    let cornerRadius: CGFloat
+
+    static var current: ButtonMetrics {
+        ButtonMetrics(fontSize: 13, topPadding: 2.5, bottomPadding: 3, horizontalPadding: 7.5, cornerRadius: 5)
+    }
+}
 
 public struct StandardButtonStyle: ButtonStyle {
+    public let fontSize: CGFloat
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
+    public let horizontalPadding: CGFloat
+    public let labelColor: Color
+    public let backgroundColor: Color
+    public let backgroundPressedColor: Color
+    public let cornerRadius: CGFloat
 
-    public init(topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
-        self.topPadding = topPadding
-        self.bottomPadding = bottomPadding
+    /// Applies pill shape to the button **ONLY** when Liquid Glass is supported.
+    ///
+    /// Setting this to `true` when Liquid Glass is not supported has no effect
+    /// and falls back to using provided `cornerRadius`.
+    public let pillShape: Bool
+
+    public init(fontSize: CGFloat? = nil, topPadding: CGFloat? = nil, bottomPadding: CGFloat? = nil, horizontalPadding: CGFloat? = nil, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, cornerRadius: CGFloat? = nil, pillShape: Bool = false) {
+        let metrics = ButtonMetrics.current
+        let colors = ButtonStateColors.legacyStandardButtonColors
+
+        self.fontSize = fontSize ?? metrics.fontSize
+        self.topPadding = topPadding ?? metrics.topPadding
+        self.bottomPadding = bottomPadding ?? metrics.bottomPadding
+        self.horizontalPadding = horizontalPadding ?? metrics.horizontalPadding
+        self.labelColor = colors.textColor
+        self.backgroundColor = backgroundColor ?? colors.backgroundColor
+        self.backgroundPressedColor = backgroundPressedColor ?? colors.pressedBackgroundColor
+        self.cornerRadius = cornerRadius ?? metrics.cornerRadius
+        self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-
-        let backgroundColor = configuration.isPressed ? Color(.pwmButtonBackgroundPressed) : Color(.pwmButtonBackground)
-        let labelColor = Color(.pwmButtonLabel)
+        let backgroundColor = configuration.isPressed ? backgroundPressedColor : backgroundColor
 
         configuration.label
-            .font(.system(size: 13))
+            .font(.system(size: fontSize))
             .padding(.top, topPadding)
             .padding(.bottom, bottomPadding)
-            .padding(.horizontal, 7.5)
+            .padding(.horizontal, horizontalPadding)
             .background(backgroundColor)
             .foregroundColor(labelColor)
-            .cornerRadius(5)
-
+            .if(pillShape) { $0.liquidGlassPillShape(fallbackCornerRadius: cornerRadius) }
+            .if(!pillShape) { $0.cornerRadius(cornerRadius) }
     }
 }
 
@@ -51,36 +86,38 @@ public struct DefaultActionButtonStyle: ButtonStyle {
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let shouldBeFixedVertical: Bool
+    public let stateColors: ButtonStateColors
+    public let pillShape: Bool
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true, stateColors: ButtonStateColors = .legacyActionButton, pillShape: Bool = false) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.shouldBeFixedVertical = shouldBeFixedVertical
+        self.stateColors = stateColors
+        self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        ButtonContent(configuration: configuration, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding, shouldBeFixedVertical: shouldBeFixedVertical)
+        ButtonContent(configuration: configuration, stateColors: stateColors, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding, shouldBeFixedVertical: shouldBeFixedVertical, pillShape: pillShape)
     }
 
     struct ButtonContent: View {
         let configuration: Configuration
+        let stateColors: ButtonStateColors
         let enabled: Bool
         let topPadding: CGFloat
         let bottomPadding: CGFloat
         let shouldBeFixedVertical: Bool
+        let pillShape: Bool
         @State private var isHovered: Bool = false
 
         var body: some View {
-            let enabledBackgroundColor = configuration.isPressed
-            ? Color("PrimaryButtonPressed", bundle: Bundle.module)
-                : (isHovered
-                    ? Color("PrimaryButtonHover", bundle: Bundle.module)
-                    : Color("PrimaryButtonRest", bundle: Bundle.module))
+            let backgroundColor = configuration.isPressed
+                ? stateColors.pressedBackgroundColor
+                : (isHovered ? stateColors.hoveredBackgroundColor : stateColors.backgroundColor)
 
-            let disabledBackgroundColor = Color.gray.opacity(0.1)
-            let enabledLabelColor = configuration.isPressed ? Color.white.opacity(0.8) : Color.white
-            let disabledLabelColor = Color.primary.opacity(0.3)
+            let labelColor = configuration.isPressed ? stateColors.pressedTextColor : stateColors.textColor
 
             configuration.label
                 .font(.system(size: 13))
@@ -92,9 +129,11 @@ public struct DefaultActionButtonStyle: ButtonStyle {
                 .padding(.top, topPadding)
                 .padding(.bottom, bottomPadding)
                 .padding(.horizontal, 7.5)
-                .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
-                .foregroundColor(enabled ? enabledLabelColor : disabledLabelColor)
-                .cornerRadius(5)
+                .background(backgroundColor)
+                .foregroundColor(labelColor)
+                .opacity(enabled ? 1 : 0.5)
+                .if(pillShape) { $0.liquidGlassPillShape(fallbackCornerRadius: 5) }
+                .if(!pillShape) { $0.cornerRadius(5) }
                 .onHover { hovering in
                     isHovered = hovering
                 }
@@ -136,19 +175,28 @@ public struct TransparentActionButtonStyle: ButtonStyle {
 
 public struct DismissActionButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) var colorScheme
+    @State private var isHovered: Bool = false
 
+    public let stateColors: ButtonStateColors
     public let textColor: Color
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
+    public let pillShape: Bool
+    public let showsBorder: Bool
 
-    public init(textColor: Color = .primary, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
-        self.textColor = textColor
+    public init(textColor: Color? = nil, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, pillShape: Bool = false, showsBorder: Bool = false, stateColors: ButtonStateColors = .legacyDismissButton) {
+        self.stateColors = stateColors
+        self.textColor = textColor ?? stateColors.textColor
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
+        self.pillShape = pillShape
+        self.showsBorder = showsBorder
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let backgroundColor = configuration.isPressed ? Color(.windowBackgroundColor) : Color(.controlColor)
+        let backgroundColor = configuration.isPressed
+            ? stateColors.pressedBackgroundColor
+            : (isHovered ? stateColors.hoveredBackgroundColor : stateColors.backgroundColor)
         let outerShadowOpacity = colorScheme == .dark ? 0.8 : 0.0
 
         configuration.label
@@ -159,17 +207,39 @@ public struct DismissActionButtonStyle: ButtonStyle {
             .padding(.bottom, bottomPadding)
             .padding(.horizontal, 7.5)
             .background(
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(backgroundColor)
-                    .shadow(color: .black.opacity(0.1), radius: 0.1, x: 0, y: 1)
-                    .shadow(color: .primary.opacity(outerShadowOpacity), radius: 0.1, x: 0, y: -0.6)
+                Group {
+                    if pillShape && AppVersion.isLiquidGlassSupported {
+                        Capsule(style: .continuous)
+                            .fill(backgroundColor)
+                            .shadow(color: .black.opacity(0.1), radius: 0.1, x: 0, y: 1)
+                            .shadow(color: .primary.opacity(outerShadowOpacity), radius: 0.1, x: 0, y: -0.6)
+                    } else {
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill(backgroundColor)
+                            .shadow(color: .black.opacity(0.1), radius: 0.1, x: 0, y: 1)
+                            .shadow(color: .primary.opacity(outerShadowOpacity), radius: 0.1, x: 0, y: -0.6)
+                    }
+                }
             )
-            .overlay(
+            .overlay(makeBorder())
+            .foregroundColor(textColor)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+
+    }
+
+    @ViewBuilder
+    private func makeBorder() -> some View {
+        if showsBorder {
+            if pillShape && AppVersion.isLiquidGlassSupported {
+                Capsule()
+                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
+            } else {
                 RoundedRectangle(cornerRadius: 5)
                     .stroke(Color.black.opacity(0.1), lineWidth: 1)
-            )
-            .foregroundColor(textColor)
-
+            }
+        }
     }
 }
 
@@ -178,16 +248,39 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
     public let enabled: Bool
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
+    public let background: AnyShapeStyle
+    public let pressedBackground: AnyShapeStyle
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
+    /// Applies pill shape to the button **ONLY** when Liquid Glass is supported.
+    ///
+    /// Setting this to `true` when Liquid Glass is not supported has no effect
+    /// and falls back to using a `cornerRadius` of 5.
+    public let pillShape: Bool
+
+    /// Creates a destructive button style backed by solid background colors.
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil, pillShape: Bool = false) {
+        self.init(enabled: enabled,
+                  topPadding: topPadding,
+                  bottomPadding: bottomPadding,
+                  background: backgroundColor ?? Color(.destructiveActionButtonBackground),
+                  pressedBackground: backgroundPressedColor ?? Color(.destructiveActionButtonBackgroundPressed),
+                  pillShape: pillShape)
+    }
+
+    /// Creates a destructive button style backed by any `ShapeStyle`, allowing a gradient
+    /// (or any other shape style) to be used as the background instead of a solid color.
+    public init<Background: ShapeStyle, PressedBackground: ShapeStyle>(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, background: Background, pressedBackground: PressedBackground, pillShape: Bool = false) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
+        self.background = AnyShapeStyle(background)
+        self.pressedBackground = AnyShapeStyle(pressedBackground)
+        self.pillShape = pillShape
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor = configuration.isPressed ? Color(.destructiveActionButtonBackgroundPressed) : Color(.destructiveActionButtonBackground)
-        let disabledBackgroundColor = Color.gray.opacity(0.1)
+        let enabledBackground = configuration.isPressed ? pressedBackground : background
+        let disabledBackground = AnyShapeStyle(Color.gray.opacity(0.1))
         let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
 
         configuration.label
@@ -197,10 +290,67 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
             .padding(.top, topPadding)
             .padding(.bottom, bottomPadding)
             .padding(.horizontal, 7.5)
-            .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
+            .background(enabled ? enabledBackground : disabledBackground)
             .foregroundColor(labelColor)
-            .cornerRadius(5)
+            .if(pillShape) { $0.liquidGlassPillShape(fallbackCornerRadius: 5) }
+            .if(!pillShape) { $0.cornerRadius(5) }
 
+    }
+}
+
+public struct ButtonStateColors {
+    let backgroundColor: Color
+    let textColor: Color
+    let hoveredBackgroundColor: Color
+    let pressedBackgroundColor: Color
+    let pressedTextColor: Color
+
+    public init(backgroundColor: Color, textColor: Color, hoveredBackgroundColor: Color, pressedBackgroundColor: Color, pressedTextColor: Color) {
+        self.backgroundColor = backgroundColor
+        self.textColor = textColor
+        self.hoveredBackgroundColor = hoveredBackgroundColor
+        self.pressedBackgroundColor = pressedBackgroundColor
+        self.pressedTextColor = pressedTextColor
+    }
+
+    public static var themedActionButton: ButtonStateColors {
+        .init(backgroundColor: Color(designSystemColor: .accentPrimary),
+              textColor: Color(designSystemColor: .accentContentPrimary),
+              hoveredBackgroundColor: Color(designSystemColor: .accentSecondary),
+              pressedBackgroundColor: Color(designSystemColor: .accentTertiary),
+              pressedTextColor: Color(designSystemColor: .accentContentTertiary))
+    }
+
+    public static var legacyActionButton: ButtonStateColors {
+        .init(backgroundColor: Color("PrimaryButtonRest", bundle: Bundle.module),
+              textColor: .white,
+              hoveredBackgroundColor: Color("PrimaryButtonHover", bundle: Bundle.module),
+              pressedBackgroundColor: Color("PrimaryButtonPressed", bundle: Bundle.module),
+              pressedTextColor: Color.white.opacity(0.8))
+    }
+
+    public static var legacyStandardButtonColors: ButtonStateColors {
+        .init(backgroundColor: Color(.pwmButtonBackground),
+              textColor: Color(.pwmButtonLabel),
+              hoveredBackgroundColor: Color(.pwmButtonBackground),
+              pressedBackgroundColor: Color(.pwmButtonBackgroundPressed),
+              pressedTextColor: Color(.pwmButtonLabel))
+    }
+
+    public static var themedDismissButton: ButtonStateColors {
+        .init(backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+              textColor: Color(designSystemColor: .textPrimary),
+              hoveredBackgroundColor: Color(designSystemColor: .controlsFillSecondary),
+              pressedBackgroundColor: Color(designSystemColor: .controlsFillTertiary),
+              pressedTextColor: Color(designSystemColor: .textSecondary))
+    }
+
+    public static var legacyDismissButton: ButtonStateColors {
+        .init(backgroundColor: Color(.controlColor),
+              textColor: .primary,
+              hoveredBackgroundColor: Color(.controlColor),
+              pressedBackgroundColor: Color(.windowBackgroundColor),
+              pressedTextColor: .primary)
     }
 }
 

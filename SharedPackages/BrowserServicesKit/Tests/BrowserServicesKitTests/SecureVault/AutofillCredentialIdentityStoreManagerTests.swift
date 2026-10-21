@@ -22,6 +22,7 @@ import Common
 import SecureStorage
 import SecureStorageTestsUtils
 @testable import BrowserServicesKit
+@testable import BrowserServicesKitTestsUtils
 
 final class AutofillCredentialIdentityStoreManagerTests: XCTestCase {
 

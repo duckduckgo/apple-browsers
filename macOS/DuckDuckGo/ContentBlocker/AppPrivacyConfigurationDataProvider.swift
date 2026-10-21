@@ -17,13 +17,18 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 final class AppPrivacyConfigurationDataProvider: EmbeddedDataProvider {
 
     public struct Constants {
-        public static let embeddedDataETag = "\"530ccd35f2284e360cffb10157e8606e\""
-        public static let embeddedDataSHA = "93625ed2b41db21cc37c41b73442ec47730e0ba048299a9dd5cf3f62fb5b3a44"
+        public static let embeddedDataETag = "\"bb2d3a35e27305d6c7bed42d6cd8698b\""
+        public static let embeddedDataSHA = "45c957b3a6bcb2c7139a00ddfbc15666a91ebfe19435a96662c2eb4594342a9f"
+    }
+
+    public enum EnvironmentKeys {
+        /// Used for automated testing to allow overriding Privacy Config with a local file
+        public static let testPrivacyConfigPath = "TEST_PRIVACY_CONFIG_PATH"
     }
 
     var embeddedDataEtag: String {

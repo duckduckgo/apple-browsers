@@ -22,6 +22,8 @@ import Persistence
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
@@ -30,23 +32,28 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockActivityScheduler: MockDataBrokerProtectionBackgroundActivityScheduler!
     private var mockEventsHandler: MockOperationEventsHandler!
     private var mockNotificationService: MockUserNotificationService!
-    private var mockQueueManager: MockBrokerProfileJobQueueManager!
+    private var mockQueueManager: MockJobQueueManager!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
     private var mockIPCServer: MockIPCServer!
-    private var mockSharedPixelsHandler: DataBrokerProtectionCoreTestsUtils.MockPixelHandler!
+    private var mockSharedPixelsHandler: DataBrokerProtectionCoreTestsUtils.MockDataBrokerProtectionPixelsHandler!
     private var mockPixelHandler: MockPixelHandler!
     private var mockDependencies: MockBrokerProfileJobDependencies!
     private var mockProfile: DataBrokerProtectionProfile!
     private var mockAgentStopper: MockAgentStopper!
     private var mockConfigurationManager: MockConfigurationManager!
-    private var mockPrivacyConfigurationManager: DBPPrivacyConfigurationManager!
+    private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     private var mockAuthenticationManager: MockAuthenticationManager!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
+    private var mockEngagementPixelRepository: DataBrokerProtectionCoreTestsUtils.MockDataBrokerProtectionEngagementPixelsRepository!
+    private var mockEventPixelRepository: MockDataBrokerProtectionEventPixelsRepository!
+    private var mockStatsPixelRepository: MockDataBrokerProtectionStatsPixelsRepository!
     private var mockBrokerUpdater: MockBrokerJSONService!
+    private var mockInternalUserDecider: InternalUserDecider!
+    private var mockEmailConfirmationDataService: MockEmailConfirmationDataService!
 
     override func setUpWithError() throws {
 
-        mockSharedPixelsHandler = DataBrokerProtectionCoreTestsUtils.MockPixelHandler()
+        mockSharedPixelsHandler = DataBrokerProtectionCoreTestsUtils.MockDataBrokerProtectionPixelsHandler()
         mockPixelHandler = MockPixelHandler()
         mockActivityScheduler = MockDataBrokerProtectionBackgroundActivityScheduler()
         mockEventsHandler = MockOperationEventsHandler()
@@ -54,14 +61,20 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockAuthenticationManager = MockAuthenticationManager()
         mockAgentStopper = MockAgentStopper()
         mockConfigurationManager = MockConfigurationManager()
-        mockPrivacyConfigurationManager = DBPPrivacyConfigurationManager()
+        let mockInternalUserStore = InternalUserDeciderStoreMock(isInternalUser: false)
+        mockInternalUserDecider = DefaultInternalUserDecider(store: mockInternalUserStore)
+        mockPrivacyConfigurationManager = MockPrivacyConfigurationManager(internalUserDecider: mockInternalUserDecider)
+        mockEngagementPixelRepository = MockDataBrokerProtectionEngagementPixelsRepository()
+        mockEventPixelRepository = MockDataBrokerProtectionEventPixelsRepository()
+        mockStatsPixelRepository = MockDataBrokerProtectionStatsPixelsRepository()
         mockBrokerUpdater = MockBrokerJSONService()
 
         let mockDatabase = MockDatabase()
         let mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockSharedPixelsHandler)
-        mockQueueManager = MockBrokerProfileJobQueueManager(
+        mockQueueManager = MockJobQueueManager(
             jobQueue: MockBrokerProfileJobQueue(),
             jobProvider: MockDataBrokerOperationsCreator(),
+            emailConfirmationJobProvider: MockEmailConfirmationJobProvider(),
             mismatchCalculator: mockMismatchCalculator,
             pixelHandler: mockSharedPixelsHandler)
 
@@ -81,6 +94,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             birthYear: 1992)
 
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
+        mockEmailConfirmationDataService = MockEmailConfirmationDataService()
     }
 
     func testWhenAgentStart_andProfileExists_andUserIsNotFreemium_thenActivityIsScheduled_andScheduledAllOperationsRun() async throws {
@@ -91,9 +105,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -128,6 +146,37 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         XCTAssertTrue(startScheduledScansCalled)
     }
 
+    func testQueueLifecycleForwardsToResourceMonitor() {
+        let resourceMonitor = MockResourceMonitor()
+        sut = DataBrokerProtectionAgentManager(
+            eventsHandler: mockEventsHandler,
+            activityScheduler: mockActivityScheduler,
+            ipcServer: mockIPCServer,
+            queueManager: mockQueueManager,
+            dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
+            jobDependencies: mockDependencies,
+            sharedPixelsHandler: mockSharedPixelsHandler,
+            pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
+            agentStopper: mockAgentStopper,
+            configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            authenticationManager: mockAuthenticationManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
+            resourceMonitor: resourceMonitor
+        )
+
+        sut.queueManagerDidStartOperations(mockQueueManager)
+        sut.queueManagerDidFinishOperations(mockQueueManager)
+
+        XCTAssertEqual(resourceMonitor.startCallCount, 1)
+        XCTAssertEqual(resourceMonitor.stopCallCount, 1)
+    }
+
     func testWhenAgentStart_andProfileExists_andUserIsFreemium_thenActivityIsScheduled_andScheduledScanOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
@@ -136,9 +185,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -186,9 +239,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: agentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -225,9 +282,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -268,9 +329,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -288,7 +353,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         }
 
         // When
-        mockActivityScheduler.triggerDelegateCall()
+        await mockActivityScheduler.triggerDelegateCall()
 
         // Then
         XCTAssertTrue(startScheduledScansCalled)
@@ -302,9 +367,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -321,7 +390,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         }
 
         // When
-        mockActivityScheduler.triggerDelegateCall()
+        await mockActivityScheduler.triggerDelegateCall()
 
         // Then
         XCTAssertTrue(startScheduledScansCalled)
@@ -335,9 +404,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -354,7 +427,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         }
 
         // When
-        sut.profileSaved()
+        await sut.profileSaved()
 
         // Then
         XCTAssertTrue(startImmediateScansCalled)
@@ -368,9 +441,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -387,7 +464,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         }
 
         // When
-        sut.profileSaved()
+        await sut.profileSaved()
 
         // Then
         XCTAssertTrue(startImmediateScansCalled)
@@ -401,9 +478,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -414,7 +495,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockEventsHandler.reset()
 
         // When
-        sut.profileSaved()
+        await sut.profileSaved()
 
         // Then
         XCTAssertTrue(mockEventsHandler.profileSavedFired)
@@ -428,9 +509,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -441,7 +526,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockEventsHandler.reset()
 
         // When
-        sut.profileSaved()
+        await sut.profileSaved()
 
         // Then
         XCTAssertTrue(mockEventsHandler.firstScanCompletedFired)
@@ -455,9 +540,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -469,7 +558,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockQueueManager.startImmediateScanOperationsIfPermittedCompletionError = DataBrokerProtectionJobsErrorCollection(oneTimeError: NSError(domain: "test", code: 10))
 
         // When
-        sut.profileSaved()
+        await sut.profileSaved()
 
         // Then
         XCTAssertFalse(mockEventsHandler.firstScanCompletedFired)
@@ -483,9 +572,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -497,7 +590,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockDataManager.shouldReturnHasMatches = true
 
         // When
-        sut.profileSaved()
+        await sut.profileSaved()
 
         // Then
         XCTAssertTrue(mockEventsHandler.firstScanCompletedAndMatchesFoundFired)
@@ -511,9 +604,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -525,7 +622,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockDataManager.shouldReturnHasMatches = false
 
         // When
-        sut.profileSaved()
+        await sut.profileSaved()
 
         // Then
         XCTAssertFalse(mockEventsHandler.firstScanCompletedAndMatchesFoundFired)
@@ -539,9 +636,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -553,14 +654,17 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockFreemiumDBPUserStateManager.didActivate = false
 
         var startScheduledScansCalled = false
+        let startScheduledScansCalledExpectation = XCTestExpectation(description: "Start scheduled scans called")
         mockQueueManager.startScheduledAllOperationsIfPermittedCalledCompletion = {
             startScheduledScansCalled = true
+            startScheduledScansCalledExpectation.fulfill()
         }
 
         // When
-        sut.appLaunched()
+        await sut.appLaunched()
 
         // Then
+        await fulfillment(of: [startScheduledScansCalledExpectation], timeout: .seconds(5))
         XCTAssertTrue(startScheduledScansCalled)
     }
 
@@ -572,9 +676,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -585,14 +693,17 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockFreemiumDBPUserStateManager.didActivate = true
 
         var startScheduledScansCalled = false
+        let startScheduledScansCalledExpectation = XCTestExpectation(description: "Start scheduled scans called")
         mockQueueManager.startScheduledScanOperationsIfPermittedCalledCompletion = {
             startScheduledScansCalled = true
+            startScheduledScansCalledExpectation.fulfill()
         }
 
         // When
-        sut.appLaunched()
+        await sut.appLaunched()
 
         // Then
+        await fulfillment(of: [startScheduledScansCalledExpectation], timeout: .seconds(5))
         XCTAssertTrue(startScheduledScansCalled)
     }
 
@@ -604,9 +715,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -618,7 +733,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockFreemiumDBPUserStateManager.didActivate = false
 
         // When
-        sut.fireMonitoringPixels()
+        await sut.fireMonitoringPixels()
 
         // Then
         XCTAssertNotNil(mockSharedPixelsHandler.lastFiredEvent)
@@ -632,9 +747,13 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -646,7 +765,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockFreemiumDBPUserStateManager.didActivate = false
 
         // When
-        sut.fireMonitoringPixels()
+        await sut.fireMonitoringPixels()
 
         // Then
         XCTAssertNil(mockSharedPixelsHandler.lastFiredEvent)
@@ -655,12 +774,12 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 }
 
 struct MockConfigurationFetcher: ConfigurationFetching {
-    func fetch(_ configuration: Configuration, isDebug: Bool) async throws {
-        return
+    func fetch(_ configuration: Configuration, isDebug: Bool) async throws -> ConfigurationFetchResult {
+        return .updated
     }
 
-    func fetch(all configurations: [Configuration]) async throws {
-        return
+    func fetch(all configurations: [Configuration]) async throws -> Set<Configuration> {
+        return Set(configurations)
     }
 }
 
@@ -677,11 +796,11 @@ struct MockConfigurationStore: ConfigurationStoring {
         return nil
     }
 
-    mutating func saveData(_ data: Data, for configuration: Configuration) throws {
+    func saveData(_ data: Data, for configuration: Configuration) throws {
         return
     }
 
-    mutating func saveEtag(_ etag: String, for configuration: Configuration) throws {
+    func saveEtag(_ etag: String, for configuration: Configuration) throws {
         return
     }
 
@@ -696,5 +815,52 @@ final class MockConfigurationManager: DefaultConfigurationManager {
                   store: ConfigurationStoring = MockConfigurationStore(),
                   defaults: KeyValueStoring = UserDefaults()) {
         super.init(fetcher: fetcher, store: store, defaults: defaults)
+    }
+}
+
+final class MockEmailConfirmationDataService: EmailConfirmationDataServiceProvider {
+    func getConfirmationLink(from email: String,
+                             numberOfRetries: Int,
+                             pollingInterval: TimeInterval,
+                             attemptId: UUID,
+                             shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
+        URL(string: "https://example.com")!
+    }
+
+    func getEmailAndOptionallySaveToDatabase(dataBrokerId: Int64?,
+                                             dataBrokerURL: String,
+                                             profileQueryId: Int64?,
+                                             extractedProfileId: Int64?,
+                                             attemptId: UUID) async throws -> EmailData {
+        EmailData(pattern: "", emailAddress: "hello@example.com")
+    }
+
+    func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+        EmailData(pattern: "", emailAddress: "hello@example.com")
+    }
+
+    func checkForEmailConfirmationData() async throws {
+    }
+
+    func getEmailData(email: String,
+                      attemptId: UUID,
+                      pollingInterval: TimeInterval,
+                      totalTimeout: TimeInterval,
+                      extract: [String],
+                      shouldRunNextStep: @escaping () -> Bool) async throws -> ExtractedEmailData {
+        [:]
+    }
+}
+
+private final class MockResourceMonitor: ResourceMonitoring {
+    private(set) var startCallCount = 0
+    private(set) var stopCallCount = 0
+
+    func start() {
+        startCallCount += 1
+    }
+
+    func stop() {
+        stopCallCount += 1
     }
 }

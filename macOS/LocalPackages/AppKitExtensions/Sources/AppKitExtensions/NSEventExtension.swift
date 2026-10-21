@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 
 public extension NSEvent {
 
@@ -63,10 +64,23 @@ public extension NSEvent {
         KeyEquivalent(event: self)
     }
 
+    /// Whether the event originates from the mouse (button, drag, movement or scroll).
+    var isMouse: Bool {
+        switch type {
+        case .leftMouseDown, .leftMouseUp,
+             .rightMouseDown, .rightMouseUp,
+             .otherMouseDown, .otherMouseUp,
+             .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
+             .mouseMoved, .mouseEntered, .mouseExited,
+             .scrollWheel: true
+        default: false
+        }
+    }
+
     /// is NSEvent representing right mouse down event or cntrl+mouse down event
-    static func isContextClick(_ event: NSEvent) -> Bool {
-        let isControlClick = event.type == .leftMouseDown && (event.modifierFlags.rawValue & NSEvent.ModifierFlags.control.rawValue != 0)
-        let isRightClick = event.type == .rightMouseDown
+    var isContextClick: Bool {
+        let isControlClick = type == .leftMouseDown && (modifierFlags.rawValue & NSEvent.ModifierFlags.control.rawValue != 0)
+        let isRightClick = type == .rightMouseDown
         return isControlClick || isRightClick
     }
 
@@ -202,22 +216,28 @@ extension NSEvent.KeyEquivalent: ExpressibleByStringLiteral, ExpressibleByUnicod
     }
 
     init?(event: NSEvent) {
-        guard [.keyDown, .keyUp].contains(event.type) else {
-            assertionFailure("wrong type of event \(event)")
-            return nil
-        }
-        guard let characters = event.characters else { return nil }
-        self = [.charCode(characters)]
-        if event.modifierFlags.contains(.command) {
+        // Ignore events that are not key down or key up
+        guard [.keyDown, .keyUp].contains(event.type),
+              let characters = event.charactersIgnoringModifiers, !characters.isEmpty else { return nil }
+        self.init(characters: characters, modifierFlags: event.modifierFlags)
+    }
+
+    public init(characters: String, modifierFlags: NSEvent.ModifierFlags) {
+        self.init(keyEquivalentElement: .charCode(characters), modifierFlags: modifierFlags)
+    }
+
+    public init(keyEquivalentElement: KeyEquivalentElement, modifierFlags: NSEvent.ModifierFlags) {
+        self = [keyEquivalentElement]
+        if modifierFlags.contains(.command) {
             self.insert(.command)
         }
-        if event.modifierFlags.contains(.shift) {
+        if modifierFlags.contains(.shift) {
             self.insert(.shift)
         }
-        if event.modifierFlags.contains(.option) {
+        if modifierFlags.contains(.option) {
             self.insert(.option)
         }
-        if event.modifierFlags.contains(.control) {
+        if modifierFlags.contains(.control) {
             self.insert(.control)
         }
     }

@@ -19,11 +19,12 @@
 import XCTest
 import Common
 @testable import Subscription
+@_spi(Testing) import Networking
 import SubscriptionTestingUtilities
 
 extension SubscriptionManagerTests {
 
-    func testWhenURLIsPrivacyProThenRedirectToSubscriptionBaseURL() throws {
+    func testWhenURLIsSubscriptionThenRedirectToSubscriptionBaseURL() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/pro"))
         let expectedURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
@@ -35,7 +36,7 @@ extension SubscriptionManagerTests {
         XCTAssertEqual(result, expectedURL)
     }
 
-    func testWhenURLIsPrivacyProAndHasOriginQueryParameterThenRedirectToSubscriptionBaseURLAndAppendQueryParameter() throws {
+    func testWhenURLIsSubscriptionAndHasOriginQueryParameterThenRedirectToSubscriptionBaseURLAndAppendQueryParameter() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/pro?origin=test"))
         let expectedURL = subscriptionManager.url(for: .purchase).appending(percentEncodedQueryItem: .init(name: "origin", value: "test"))
@@ -52,13 +53,20 @@ extension SubscriptionManagerTests {
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/pro?origin=test"))
 
         let stagingEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
-
-        let stagingSubscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                                    accountManager: accountManager,
-                                                                    subscriptionEndpointService: subscriptionService,
-                                                                    authEndpointService: authService,
-                                                                    subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                                    subscriptionEnvironment: stagingEnvironment)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
+        let stagingSubscriptionManager = DefaultSubscriptionManager(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: stagingEnvironment,
+            pixelHandler: MockPixelHandler(),
+            tokenRecoveryHandler: {
+                if let overrideTokenResponse = self.overrideTokenResponseInRecoveryHandler {
+                    self.mockOAuthClient.getTokensResponse = overrideTokenResponse
+                }
+            }
+        )
 
         // WHEN
         let result = stagingSubscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: Constants.tld)
@@ -68,7 +76,7 @@ extension SubscriptionManagerTests {
         XCTAssertEqual(result.getParameter(named: "origin"), "test")
     }
 
-    func testWhenURLIsPrivacyProWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomain() throws {
+    func testWhenURLIsSubscriptionWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomain() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://dev1.some-subdomain.duckduckgo.com/pro"))
         let expectedURL = try XCTUnwrap(URL(string: "https://dev1.some-subdomain.duckduckgo.com/subscriptions"))
@@ -80,7 +88,7 @@ extension SubscriptionManagerTests {
         XCTAssertEqual(result, expectedURL)
     }
 
-    func testWhenURLIsPrivacyProWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomainAndPortAndHashFragmentAndParams() throws {
+    func testWhenURLIsSubscriptionWithSubdomainThenRedirectToSubscriptionBaseURLWithSubdomainAndPortAndHashFragmentAndParams() throws {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://dev1.some-subdomain.duckduckgo.com:1234/pro?foo=bar#fragment"))
         let expectedURL = URL(string: "https://dev1.some-subdomain.duckduckgo.com:1234/subscriptions?foo=bar#fragment")!

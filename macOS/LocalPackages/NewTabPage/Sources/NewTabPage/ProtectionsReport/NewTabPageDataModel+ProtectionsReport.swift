@@ -22,12 +22,29 @@ extension NewTabPageDataModel {
 
     struct ProtectionsData: Encodable, Equatable {
         let totalCount: Int64
+        let totalCookiePopUpsBlocked: Int64?
+
+        enum CodingKeys: String, CodingKey {
+            case totalCount, totalCookiePopUpsBlocked
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(totalCount, forKey: .totalCount)
+
+            if let totalCookiePopUpsBlocked {
+                try container.encode(totalCookiePopUpsBlocked, forKey: .totalCookiePopUpsBlocked)
+            } else {
+                try container.encodeNil(forKey: .totalCookiePopUpsBlocked)
+            }
+        }
     }
 
     struct ProtectionsConfig: Codable, Equatable {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion
         let feed: Feed
         let showBurnAnimation: Bool
+        let showProtectionsReportNewLabel: Bool
     }
 
     public enum Feed: String, Codable {

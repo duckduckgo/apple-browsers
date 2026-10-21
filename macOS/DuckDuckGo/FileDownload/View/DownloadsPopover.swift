@@ -17,29 +17,60 @@
 //
 
 import AppKit
+import Combine
 
 final class DownloadsPopover: NSPopover {
 
-    init(fireWindowSession: FireWindowSessionRef?) {
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
+
+    init(fireWindowSession: FireWindowSessionRef?, downloadsPreferences: DownloadsPreferences, downloadListCoordinator: DownloadListCoordinator) {
         super.init()
 
         self.animates = false
         self.behavior = .semitransient
 
-        setupContentController(fireWindowSession: fireWindowSession)
+        setupContentController(
+            fireWindowSession: fireWindowSession,
+            downloadsPreferences: downloadsPreferences,
+            downloadListCoordinator: downloadListCoordinator
+        )
+
+        subscribeToThemeChanges()
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     // swiftlint:disable force_cast
     var viewController: DownloadsViewController { contentViewController as! DownloadsViewController }
     // swiftlint:enable force_cast
 
-    private func setupContentController(fireWindowSession: FireWindowSessionRef?) {
-        let controller = DownloadsViewController(viewModel: DownloadListViewModel(fireWindowSession: fireWindowSession))
+    private func setupContentController(
+        fireWindowSession: FireWindowSessionRef?,
+        downloadsPreferences: DownloadsPreferences,
+        downloadListCoordinator: DownloadListCoordinator
+    ) {
+        let controller = DownloadsViewController(
+            viewModel: DownloadListViewModel(fireWindowSession: fireWindowSession, coordinator: downloadListCoordinator),
+            preferences: downloadsPreferences
+        )
         contentViewController = controller
     }
+}
 
+extension DownloadsPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }

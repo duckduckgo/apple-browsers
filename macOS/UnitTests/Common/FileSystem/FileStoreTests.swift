@@ -17,7 +17,10 @@
 //
 
 import CryptoKit
+import SharedTestUtilities
 import Testing
+import Utilities
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FileStoreTests {

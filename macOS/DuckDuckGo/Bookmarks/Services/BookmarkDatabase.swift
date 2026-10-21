@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import CoreData
+import AppKitExtensions
 import Bookmarks
+import CoreData
+import Foundation
 import Persistence
 
 public final class BookmarkDatabase {

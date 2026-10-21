@@ -17,17 +17,38 @@
 //
 
 #if DEBUG
+import AppKit
 import Common
+import FoundationExtensions
 import Combine
 import Foundation
 import History
+import UserScript
+import WebKit
 
 final class FaviconManagerMock: FaviconManagement {
 
     @Published var isCacheLoaded = true
     var faviconsLoadedPublisher: Published<Bool>.Publisher { $isCacheLoaded }
 
-    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon? {
+    // MARK: - Preview/Test Helpers
+    /// Map of host -> image to be returned by getCachedFavicon(for:host:)
+    var imagesByHost: [String: NSImage] = [:]
+
+    /// Provide a prebuilt image for a host
+    func setImage(_ image: NSImage, forHost host: String) {
+        imagesByHost[host] = image
+    }
+
+    // MARK: - FaviconManagementDebugging test storage
+    var debugMetadata: [FaviconMetadata] = []
+    var debugImagesByIdentifier: [UUID: NSImage] = [:]
+    private(set) var deletedIdentifiers: [Set<UUID>] = []
+    private(set) var deleteAllFaviconsCallCount = 0
+
+    // MARK: - FaviconManagement
+
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, webView: WKWebView?) async -> Favicon? {
         nil
     }
 
@@ -40,21 +61,67 @@ final class FaviconManagerMock: FaviconManagement {
     }
 
     func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
-        return nil
+        guard let host = documentUrl.host, let image = imagesByHost[host] else { return nil }
+        return Favicon(identifier: UUID(), url: documentUrl, image: image, relation: .icon, documentUrl: documentUrl, dateCreated: Date())
+    }
+
+    func resolvedCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) async -> Favicon? {
+        guard let host = documentUrl.host, let image = imagesByHost[host] else { return nil }
+        return Favicon(identifier: UUID(), url: documentUrl, image: image, relation: .icon, documentUrl: documentUrl, dateCreated: Date())
+    }
+
+    func resolvedCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) async -> Favicon? {
+        guard let image = imagesByHost[host] else { return nil }
+        let url = URL(string: "https://\(host)") ?? URL(string: "about:blank")!
+        return Favicon(identifier: UUID(), url: url, image: image, relation: .icon, documentUrl: url, dateCreated: Date())
     }
 
     func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
-        return nil
+        guard let image = imagesByHost[host] else { return nil }
+        let url = URL(string: "https://\(host)") ?? URL(string: "about:blank")!
+        return Favicon(identifier: UUID(), url: url, image: image, relation: .icon, documentUrl: url, dateCreated: Date())
     }
 
     func getCachedFavicon(forDomainOrAnySubdomain host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
+        // Try exact host or eTLD+1 stripping a leading subdomain
+        if let exact = imagesByHost[host] {
+            let url = URL(string: "https://\(host)") ?? URL(string: "about:blank")!
+            return Favicon(identifier: UUID(), url: url, image: exact, relation: .icon, documentUrl: url, dateCreated: Date())
+        }
+        if let base = host.split(separator: ".").suffix(2).joined(separator: ".") as String?, let img = imagesByHost[base] {
+            let url = URL(string: "https://\(base)") ?? URL(string: "about:blank")!
+            return Favicon(identifier: UUID(), url: url, image: img, relation: .icon, documentUrl: url, dateCreated: Date())
+        }
         return nil
     }
 
-    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async -> Result<Void, Error> {
+        return .success(())
     }
 
-    func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: BrowsingHistory, tld: TLD) async {
+    func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: BrowsingHistory, tld: TLD) async -> Result<Void, Error> {
+        return .success(())
+    }
+}
+
+extension FaviconManagerMock: FaviconManagementDebugging {
+
+    func allFaviconsMetadata() async -> [FaviconMetadata] {
+        debugMetadata
+    }
+
+    func faviconImage(withIdentifier identifier: UUID) async -> NSImage? {
+        debugImagesByIdentifier[identifier]
+    }
+
+    func deleteFavicons(withIdentifiers identifiers: Set<UUID>) async {
+        deletedIdentifiers.append(identifiers)
+        debugMetadata.removeAll { identifiers.contains($0.identifier) }
+    }
+
+    func deleteAllFavicons() async {
+        deleteAllFaviconsCallCount += 1
+        debugMetadata.removeAll()
     }
 }
 #endif

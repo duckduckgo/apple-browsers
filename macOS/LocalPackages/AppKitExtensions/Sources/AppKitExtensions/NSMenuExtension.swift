@@ -69,4 +69,71 @@ public extension NSMenu {
         popUp(positioning: nil, at: convertedLocation, in: view)
     }
 
+    /// This API removes / re-adds all items, effectively forcing a relayout cycle
+    ///
+    func forceRelayout() {
+        let currentItems = items
+        removeAllItems()
+
+        for item in currentItems {
+            addItem(item)
+        }
+    }
+
+    /// Aligns the title text of items without an `image` with the title text of items that have one,
+    /// section by section (sections are delimited by separator items).
+    ///
+    /// macOS 26's NSMenu auto-indent for image-less items is inconsistent — works in some menus,
+    /// not in others, even when item images are uniformly sized. For each section that contains at
+    /// least one item with an image, this sets a transparent placeholder image (sized to the largest
+    /// image in that section) on the section's image-less items, which forces AppKit to reserve the
+    /// icon column for them and aligns text. Sections with no icons are left untouched. Idempotent.
+    ///
+    /// This is a workaround for macOS 26 only. On macOS 27, adding placeholder images would
+    /// incorrectly reserve an icon column for items whose images are explicitly hidden. No-op on
+    /// other OS versions.
+    @MainActor
+    func alignItemTextWithIcons(shouldAlignItems: Bool = ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26) {
+        guard shouldAlignItems else { return }
+        var section: [NSMenuItem] = []
+        for item in items {
+            if item.isSeparatorItem {
+                alignTextInSection(section)
+                section.removeAll(keepingCapacity: true)
+            } else {
+                section.append(item)
+            }
+        }
+        alignTextInSection(section)
+    }
+
+    @MainActor
+    private func alignTextInSection(_ section: [NSMenuItem]) {
+        guard let maxSize = section.compactMap({ $0.image?.size }).max(by: { $0.width < $1.width }) else {
+            return
+        }
+        let placeholder = NSImage(size: maxSize)
+        for item in section where item.image == nil && item.view == nil && !item.isHeaderLike {
+            item.image = placeholder
+        }
+    }
+
+    /// Recursively calls ``alignItemTextWithIcons()`` on this menu and every submenu.
+    /// Skips submenus that haven't been populated yet (those should call
+    /// ``alignItemTextWithIcons()`` themselves after building their items).
+    @MainActor
+    func alignItemTextWithIconsRecursively() {
+        alignItemTextWithIcons()
+        for item in items where !item.isSeparatorItem {
+            item.submenu?.alignItemTextWithIconsRecursively()
+        }
+    }
+}
+
+private extension NSMenuItem {
+    /// Disabled items with no action render as section headers (small grey caption above a group).
+    /// They sit flush-left, not in the icon column, so they should be excluded from icon alignment.
+    var isHeaderLike: Bool {
+        !isEnabled && action == nil
+    }
 }

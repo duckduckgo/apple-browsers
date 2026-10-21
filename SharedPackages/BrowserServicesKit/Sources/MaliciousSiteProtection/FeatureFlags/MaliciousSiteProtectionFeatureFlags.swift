@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 public protocol MaliciousSiteProtectionFeatureFlagger {
     /// A Boolean value indicating whether malicious site protection is enabled.

@@ -21,20 +21,19 @@ import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
-    private var sut: PrivacyProSubscriptionAttributionPixelHandler!
+    private var sut: SubscriptionAttributionPixelHandler!
     private var capturedParams: PixelCapturedParameters!
     private var fireRequest: GenericAttributionPixelHandler.FireRequest!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         capturedParams = PixelCapturedParameters()
-        fireRequest = { event, frequency, headers, parameters, error, namePrefix, reservedCharacters, includeAppVersion, onComplete in
+        fireRequest = { event, frequency, headers, parameters, reservedCharacters, includeAppVersion, onComplete in
             self.capturedParams.event = event
             self.capturedParams.frequency = frequency
             self.capturedParams.headers = headers
             self.capturedParams.parameters = parameters
-            self.capturedParams.error = error
-            self.capturedParams.namePrefix = namePrefix
+            self.capturedParams.error = event.error
             self.capturedParams.reservedCharacters = reservedCharacters
             self.capturedParams.includeAppVersion = includeAppVersion
             self.capturedParams.onComplete = onComplete
@@ -50,16 +49,12 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
 
     func testWhenPixelFiresThenNameIsSetToM_Mac_DistributionType_Subscribe() {
         // GIVEN
-        #if APPSTORE
-        let expectedPixelName = "m_mac_store_subscribe"
-        #else
-        let expectedPixelName = "m_mac_direct_subscribe"
-        #endif
+        let expectedPixelName = NSApp.isSandboxed ? "m_mac_store_subscribe" : "m_mac_direct_subscribe"
         let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: .current)
-        sut = PrivacyProSubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertEqual(capturedParams.event?.name, expectedPixelName)
@@ -69,10 +64,10 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
         // GIVEN
         let locale = Locale(identifier: "hu-HU")
         let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: locale)
-        sut = PrivacyProSubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertEqual(capturedParams?.parameters?[GenericAttributionPixelHandler.Parameters.locale], "hu-HU")
@@ -83,11 +78,11 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
         let origin = "app_search"
         let locale = Locale(identifier: "en-US")
         let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: locale)
-        sut = PrivacyProSubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
         sut.origin = origin
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertEqual(capturedParams?.parameters?[GenericAttributionPixelHandler.Parameters.origin], origin)
@@ -99,11 +94,11 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
         let origin: String? = nil
         let locale = Locale(identifier: "en-US")
         let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: locale)
-        sut = PrivacyProSubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
         sut.origin = origin
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertNil(capturedParams?.parameters?[GenericAttributionPixelHandler.Parameters.origin])
@@ -113,13 +108,37 @@ final class SubscriptionAttributionPixelHandlerTests: XCTestCase {
     func testWhenPixelFiresThenAddAppVersionIsTrueAndFrequencyIsStandard() {
         // GIVEN
         let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: .current)
-        sut = PrivacyProSubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
 
         // WHEN
-        sut.fireSuccessfulSubscriptionAttributionPixel()
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
 
         // THEN
         XCTAssertEqual(capturedParams.includeAppVersion, true)
         XCTAssertEqual(capturedParams.frequency, .standard)
+    }
+
+    func testWhenFreeTrialTrueThenFreeTrialParameterIsTrue() {
+        // GIVEN
+        let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: .current)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+
+        // WHEN
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: true)
+
+        // THEN
+        XCTAssertEqual(capturedParams?.parameters?["free_trial"], "true")
+    }
+
+    func testWhenFreeTrialFalseThenFreeTrialParameterIsFalse() {
+        // GIVEN
+        let decoratedPixelHandler = GenericAttributionPixelHandler(fireRequest: fireRequest, locale: .current)
+        sut = SubscriptionAttributionPixelHandler(attributionPixelHandler: decoratedPixelHandler)
+
+        // WHEN
+        sut.fireSuccessfulSubscriptionAttributionPixel(freeTrial: false)
+
+        // THEN
+        XCTAssertEqual(capturedParams?.parameters?["free_trial"], "false")
     }
 }

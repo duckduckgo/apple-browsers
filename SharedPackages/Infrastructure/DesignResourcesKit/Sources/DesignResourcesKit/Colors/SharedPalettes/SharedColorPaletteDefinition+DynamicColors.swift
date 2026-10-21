@@ -1,0 +1,380 @@
+//
+//  SharedColorPaletteDefinition+DynamicColors.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import SwiftUI
+
+#if os(macOS)
+extension SharedColorPaletteDefinition {
+
+    /// Gets dynamic color proxy for a specific semantic color based on the JSON import
+    static func dynamicColor(for designSystemColor: SharedDesignSystemColor) -> DynamicColor {
+
+        switch designSystemColor {
+        /// Accent Colors
+        case .accentContentPrimary:
+            return accentContentPrimary
+        case .accentContentSecondary:
+            return accentContentSecondary
+        case .accentContentTertiary:
+            return accentContentTertiary
+        case .accentFirePrimary:
+            return accentFirePrimary
+        case .accentFireSecondary:
+            return accentFireSecondary
+        case .accentFireTertiary:
+            return accentFireTertiary
+        case .accentFireContentPrimary:
+            return accentFireContentPrimary
+        case .accentFireContentSecondary:
+            return accentFireContentSecondary
+        case .accentFireContentTertiary:
+            return accentFireContentTertiary
+        case .accentFireGlowPrimary:
+            return accentFireGlowPrimary
+        case .accentFireGlowSecondary:
+            return accentFireGlowSecondary
+        case .accentFireTextPrimary:
+            return accentFireTextPrimary
+        case .accentFireTextSecondary:
+            return accentFireTextSecondary
+        case .accentFireTextTertiary:
+            return accentFireTextTertiary
+        case .accentGlowPrimary:
+            return accentGlowPrimary
+        case .accentGlowSecondary:
+            return accentGlowSecondary
+        case .accentPrimary:
+            return accentPrimary
+        case .accentQuaternary:
+            return accentQuaternary
+        case .accentSecondary:
+            return accentSecondary
+        case .accentTertiary:
+            return accentTertiary
+        case .accentTextPrimary:
+            return accentTextPrimary
+        case .accentTextSecondary:
+            return accentTextSecondary
+        case .accentTextTertiary:
+            return accentTextTertiary
+
+        /// Accent Alt Colors
+        case .accentAltContentPrimary:
+            return accentAltContentPrimary
+        case .accentAltContentSecondary:
+            return accentAltContentSecondary
+        case .accentAltContentTertiary:
+            return accentAltContentTertiary
+        case .accentAltGlowPrimary:
+            return accentAltGlowPrimary
+        case .accentAltGlowSecondary:
+            return accentAltGlowSecondary
+        case .accentAltPrimary:
+            return accentAltPrimary
+        case .accentAltSecondary:
+            return accentAltSecondary
+        case .accentAltTertiary:
+            return accentAltTertiary
+        case .accentAltTextPrimary:
+            return accentAltTextPrimary
+        case .accentAltTextSecondary:
+            return accentAltTextSecondary
+        case .accentAltTextTertiary:
+            return accentAltTextTertiary
+
+        /// Alert
+        case .alertGreen:
+            return alertGreen
+        case .alertYellow:
+            return alertYellow
+
+        /// Shield
+        case .shieldPrivacy:
+            return shieldPrivacy
+
+        /// Status
+        case .statusGray:
+            return statusGray
+        case .statusGreen:
+            return statusGreen
+        case .statusRed:
+            return statusRed
+
+        /// VPN
+        /// Feature-scoped colours for the VPN status pill and header animation, resolved inline
+        /// (following the Permission Center pattern) since they don't vary by accent palette. Per the
+        /// Figma spec, backgrounds and foregrounds (text/icon) vary by light/dark mode, each with a
+        /// darker interaction (hover/press) variant.
+        case .vpnGreen:
+            return DynamicColor(lightColor: RebrandingColor.Green.green20, darkColor: RebrandingColor.Green.green70)
+        case .vpnGreenPressed:
+            return DynamicColor(lightColor: RebrandingColor.Green.green30, darkColor: RebrandingColor.Green.green80)
+        case .vpnGreenForeground:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad90, darkColor: RebrandingColor.Lilypad.lilypad10)
+        case .vpnGreenForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad100, darkColor: RebrandingColor.Lilypad.lilypad0)
+        case .vpnYellow:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen30, darkColor: RebrandingColor.Pollen.pollen70)
+        case .vpnYellowPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen40, darkColor: RebrandingColor.Pollen.pollen80)
+        case .vpnYellowForeground:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen80, darkColor: RebrandingColor.Pollen.pollen20)
+        case .vpnYellowForegroundPressed:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
+
+        /// Buttons/Primary
+        case .buttonsPrimaryDefault:
+            return buttonsPrimaryDefault
+        case .buttonsPrimaryPressed:
+            return buttonsPrimaryPressed
+        case .buttonsPrimaryDisabled:
+            return buttonsPrimaryDisabled
+        case .buttonsPrimaryText:
+            return buttonsPrimaryText
+        case .buttonsPrimaryTextDisabled:
+            return buttonsPrimaryTextDisabled
+
+        /// Buttons/SecondaryFill
+        case .buttonsSecondaryFillDefault:
+            return buttonsSecondaryFillDefault
+        case .buttonsSecondaryFillPressed:
+            return buttonsSecondaryFillPressed
+        case .buttonsSecondaryFillDisabled:
+            return buttonsSecondaryFillDisabled
+        case .buttonsSecondaryFillText:
+            return buttonsSecondaryFillText
+        case .buttonsSecondaryFillTextDisabled:
+            return buttonsSecondaryFillTextDisabled
+
+        case .buttonsWhite:
+            return buttonsWhite
+
+        /// Container Colors
+        case .containerFillPrimary:
+            return containerFillPrimary
+        case .containerFillSecondary:
+            return containerFillSecondary
+        case .containerFillTertiary:
+            return containerFillTertiary
+        case .containerBorderPrimary:
+            return containerBorderPrimary
+        case .containerBorderSecondary:
+            return containerBorderSecondary
+        case .containerBorderTertiary:
+            return containerBorderTertiary
+
+        /// Controls Colors
+        case .controlsBorderPrimary:
+            return controlsBorderPrimary
+        case .controlsBorderSecondary:
+            return controlsBorderSecondary
+        case .controlsBorderTertiary:
+            return controlsBorderTertiary
+        case .controlsBorderQuaternary:
+            return controlsBorderQuaternary
+        case .controlsFillPrimary:
+            return controlsFillPrimary
+        case .controlsFillSecondary:
+            return controlsFillSecondary
+        case .controlsFillTertiary:
+            return controlsFillTertiary
+        case .controlsRaisedBackdrop:
+            return controlsRaisedBackdrop
+        case .controlsRaisedFillPrimary:
+            return controlsRaisedFillPrimary
+        case .controlsSubtleFillSecondary:
+            return controlsSubtleFillSecondary
+
+        /// Destructive Colors
+        case .destructiveContentPrimary:
+            return destructiveContentPrimary
+        case .destructiveContentSecondary:
+            return destructiveContentSecondary
+        case .destructiveContentTertiary:
+            return destructiveContentTertiary
+        case .destructiveGlow:
+            return destructiveGlow
+        case .destructivePrimary:
+            return destructivePrimary
+        case .destructiveSecondary:
+            return destructiveSecondary
+        case .destructiveTertiary:
+            return destructiveTertiary
+        case .destructiveTextPrimary:
+            return destructiveTextPrimary
+        case .destructiveTextSecondary:
+            return destructiveTextSecondary
+        case .destructiveTextTertiary:
+            return destructiveTextTertiary
+
+        /// Highlight Colors
+        case .highlightPrimary:
+            return highlightPrimary
+
+        /// Icons Colors
+        case .iconsPrimary:
+            return iconsPrimary
+        case .iconsSecondary:
+            return iconsSecondary
+        case .iconsTertiary:
+            return iconsTertiary
+
+        /// Unified Input
+        case .unifiedInputControlFillPrimary:
+            return unifiedInputControlFillPrimary
+        case .unifiedInputControlFillSecondary:
+            return unifiedInputControlFillSecondary
+        case .unifiedInputControlShadowPrimary:
+            return unifiedInputControlShadowPrimary
+        case .unifiedInputFieldFillPrimary:
+            return unifiedInputFieldFillPrimary
+        case .unifiedInputFieldFillSecondary:
+            return unifiedInputFieldFillSecondary
+        case .unifiedInputFireControlFillPrimary:
+            return unifiedInputFireControlFillPrimary
+        case .unifiedInputFireControlFillSecondary:
+            return unifiedInputFireControlFillSecondary
+        case .unifiedInputFireFieldFillPrimary:
+            return unifiedInputFireFieldFillPrimary
+        case .unifiedInputFireFieldFillSecondary:
+            return unifiedInputFireFieldFillSecondary
+        case .unifiedInputFireIconsPrimary:
+            return unifiedInputFireIconsPrimary
+        case .unifiedInputFireIconsSecondary:
+            return unifiedInputFireIconsSecondary
+        case .unifiedInputFireTextPrimary:
+            return unifiedInputFireTextPrimary
+        case .unifiedInputFireTextSecondary:
+            return unifiedInputFireTextSecondary
+        case .unifiedInputTextPrimary:
+            return unifiedInputTextPrimary
+        case .unifiedInputTextSecondary:
+            return unifiedInputTextSecondary
+
+        /// System
+        case .lines:
+            return lines
+        case .spinnerStart:
+            // Non-specialized, we'll always use the default
+            return LatestColorPalette.spinnerStart
+        case .spinnerFinal:
+            // Non-specialized, we'll always use the default
+            return LatestColorPalette.spinnerFinal
+
+        /// Shadow Colors
+        case .shadowPrimary:
+            return shadowPrimary
+        case .shadowSecondary:
+            return shadowSecondary
+        case .shadowTertiary:
+            return shadowTertiary
+
+        /// Status
+        case .statusWarningContentPrimary:
+            return statusWarningContentPrimary
+        case .statusWarningFillPrimary:
+            return statusWarningFillPrimary
+        case .statusYellowPrimary:
+            return statusYellowPrimary
+        case .statusYellowSecondary:
+            return statusYellowSecondary
+        case .statusYellowTertiary:
+            return statusYellowTertiary
+
+        /// Surface Colors
+        case .surfaceBackdrop:
+            return surfaceBackdrop
+        case .surfaceCanvas:
+            return surfaceCanvas
+        case .surfacePrimary:
+            return surfacePrimary
+        case .surfaceSecondary:
+            return surfaceSecondary
+        case .surfaceTertiary:
+            return surfaceTertiary
+
+        /// Surface Decoration
+        case .surfaceDecorationPrimary:
+            return surfaceDecorationPrimary
+        case .surfaceDecorationSecondary:
+            return surfaceDecorationSecondary
+        case .surfaceDecorationTertiary:
+            return surfaceDecorationTertiary
+
+        /// Text Colors
+        case .textLink:
+            return DynamicColor(lightHex: 0x3969EF, darkHex: 0x7295F6)
+        case .textPrimary:
+            return textPrimary
+        case .textSecondary:
+            return textSecondary
+        case .textSuccess:
+            return DynamicColor(lightColor: .green60, darkColor: .green30)
+        case .textTertiary:
+            return textTertiary
+
+        /// Tone Colors
+        case .toneShadePrimary:
+            return toneShadePrimary
+        case .toneTintPrimary:
+            return toneTintPrimary
+        case .toneTintSecondary:
+            return toneTintSecondary
+
+        /// Permission Center
+        case .permissionCenterBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
+        case .permissionCenterContainerBackground:
+            return DynamicColor(lightColor: Color(0x000000).opacity(0.03), darkColor: Color(0xFFFFFF).opacity(0.06))
+        case .permissionWarningBackground:
+            return DynamicColor(lightColor: Color(0xFFF0C2), darkColor: Color(0xC18010).opacity(0.16))
+        case .permissionReloadButtonBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x857A6E))
+        case .permissionReloadButtonText:
+            return DynamicColor(lightColor: Color(0x333333), darkColor: Color(0xE8E8E8))
+        }
+    }
+
+    static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
+        switch singleUseColor {
+        case .fireModeAccent:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+        case .fireButtonGradientStart:
+            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
+        case .fireButtonGradientEnd:
+            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
+        case .fireButtonPressedGradientStart:
+            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
+        case .fireButtonPressedGradientEnd:
+            return DynamicColor(staticColor: RebrandingColor.Red.red70)
+        case .fireDialogKnobFill:
+            return DynamicColor(staticColor: Color(0xFFFFFF))
+        case .fireDialogTabBackground:
+            return DynamicColor(lightColor: Color(designSystemColor: .controlsFillPrimary), darkColor: Color(designSystemColor: .surfaceCanvas))
+        case .fireDialogTabBackgroundSelected:
+            return DynamicColor(lightColor: Color(designSystemColor: .surfaceTertiary), darkColor: Color(designSystemColor: .surfaceSecondary))
+        case .fireDialogTabShadowPrimary:
+            return DynamicColor(lightColor: Color(designSystemColor: .shadowPrimary), darkColor: .shade(0.06))
+        case .fireDialogTabShadowSecondary:
+            return DynamicColor(lightColor: Color(designSystemColor: .shadowTertiary), darkColor: .shade(0.16))
+        }
+    }
+}
+
+#endif

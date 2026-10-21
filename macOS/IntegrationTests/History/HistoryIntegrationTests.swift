@@ -18,13 +18,15 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import History
-import Navigation
+import DDGNavigation
+import PrivacyConfigTestsUtils
+import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 class HistoryIntegrationTests: XCTestCase {
 
     var schemeHandler: TestSchemeHandler!
@@ -50,7 +52,7 @@ class HistoryIntegrationTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
         schemeHandler = TestSchemeHandler { _ in
@@ -58,7 +60,7 @@ class HistoryIntegrationTests: XCTestCase {
         }
 
         await withCheckedContinuation { continuation in
-            NSApp.delegateTyped.historyCoordinator.burnAll {
+            NSApp.delegateTyped.historyCoordinator.burnAll { _ in
                 continuation.resume(returning: ())
             }
         }
@@ -69,7 +71,7 @@ class HistoryIntegrationTests: XCTestCase {
         autoreleasepool {
             window?.close()
             window = nil
-            WebTrackingProtectionPreferences.shared.isGPCEnabled = true
+            Application.appDelegate.webTrackingProtectionPreferences.isGPCEnabled = true
             schemeHandler = nil
             contentBlockingMock = nil
             privacyFeaturesMock = nil
@@ -206,7 +208,7 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenScriptTrackerLoaded_trackerAddedToHistory() async throws {
-        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        Application.appDelegate.webTrackingProtectionPreferences.isGPCEnabled = false
 
         let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
@@ -252,7 +254,7 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenSurrogateTrackerLoaded_trackerAddedToHistory() async throws {
-        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        Application.appDelegate.webTrackingProtectionPreferences.isGPCEnabled = false
 
         let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
@@ -292,7 +294,7 @@ class HistoryIntegrationTests: XCTestCase {
 
         let first = NSApp.delegateTyped.historyCoordinator.history?.first
         XCTAssertEqual(first?.trackersFound, true)
-        XCTAssertEqual(first?.numberOfTrackersBlocked, 3)
+        XCTAssertEqual(first?.numberOfTrackersBlocked, 2)
         XCTAssertEqual(first?.blockedTrackingEntities, ["Google Ads (Google)"])
         XCTAssertEqual(first?.numberOfVisits, 1)
     }

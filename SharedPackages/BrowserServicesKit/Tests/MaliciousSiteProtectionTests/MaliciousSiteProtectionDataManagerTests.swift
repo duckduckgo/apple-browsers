@@ -332,6 +332,22 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
         await XCTAssertThrowsError(try await dataManager.updateDataSet(with: .filterSet(threatKind: .phishing), changeSet: expectedFiltersChangeSet))
     }
 
+    func testSuccessUpdateOfDataReturnsNumberOfBytesWritten() async throws {
+        // GIVEN
+        fileStore.writeSuccess = true
+        let expectedRevision = 65
+        let expectedHashPrefixes = ["aabb"]
+        let expectedHashPrefixChangeSet = APIClient.ChangeSetResponse(insert: expectedHashPrefixes, delete: [], revision: expectedRevision, replace: true)
+        let expectedData = try JSONEncoder().encode(HashPrefixSet(revision: expectedRevision, items: expectedHashPrefixes))
+        embeddedDataProvider.hashPrefixes = []
+
+        // WHEN
+        let result = try await dataManager.updateDataSet(with: .hashPrefixes(threatKind: .phishing), changeSet: expectedHashPrefixChangeSet)
+
+        // THEN
+        XCTAssertEqual(result, expectedData.count)
+    }
+
 }
 
 class MockMaliciousSiteProtectionFileStore: MaliciousSiteProtection.FileStoring {

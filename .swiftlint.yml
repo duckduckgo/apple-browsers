@@ -37,6 +37,21 @@ custom_rules:
     message: "Classes should be `final` by default, use explicit `internal` or `public` for non-final classes."
     severity: error
 
+  wknserror_webkit_calls:
+    name: "WebKit Web Extension call that throws WKNSError proxies"
+    included: ".*\\.swift"
+    excluded:
+      - ".*/WKWebExtension\\+CopyingErrors\\.swift"
+      - ".*/[A-Za-z]*Tests/.*"
+      - ".*Tests\\.swift"
+    regex: "WKWebExtension(\\.init)?\\((resourceBaseURL|appExtensionBundle):|\\.loadBackgroundContent\\b|[cC]ontroller\\??\\.(load|unload)\\b"
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "WebKit throws WKNSError proxies from this API, which crash on x86_64 when bridged to Swift Error. Use WebExtensionManager in app code, or the wrappers in WKWebExtension+CopyingErrors.swift in the WebExtensions package."
+    severity: error
+
 analyzer_rules: # Rules run by `swiftlint analyze`
   - explicit_self
 
@@ -49,6 +64,8 @@ identifier_name:
 large_tuple:
   warning: 4
   error: 5
+todo:
+  severity: warning
 file_header:
   required_pattern: |
                     \/\/
@@ -69,26 +86,27 @@ file_header:
                     \/\/  limitations under the License\.
                     \/\/
 
-# General Config
+# General Config - Single config for all platforms
 excluded:
-  - SharedPackages/*/Package.swift
-  - SharedPackages/*/.build
-  - SharedPackages/BrowserServicesKit/scripts/
-  - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
-  - SharedPackages/BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift
-  - iOS/DerivedData
-  - iOS/DuckDuckGo/UserText.swift
-  - iOS/fastlane/SnapshotHelper.swift
-  - iOS/LocalPackages/*/Package.swift
-  - iOS/LocalPackages/*/.build
+  # Build artifacts
+  - "**/DerivedData"
+  - "**/.build"
+  - "**/vendor"
+  - "**/.ruby-lsp"
+  - "**/release"
+  
+  # Generated/tooling files
+  - "**/Package.swift"
+  - "**/fastlane/**"
+  - "**/scripts/**"
+  
+  # Third-party/vendored code
+  - "**/Carthage/**"
   - iOS/PacketTunnelProvider/ProxyServer
-  - iOS/scripts
-  - iOS/.ruby-lsp
-  - macOS/DuckDuckGo/Common/Localizables/UserText.swift
-  - macOS/LocalPackages/*/Package.swift
-  - macOS/LocalPackages/*/.build
-  - macOS/scripts
-  - macOS/DerivedData
-  - macOS/release
-  - macOS/.ruby-lsp
-  - macOS/vendor
+  
+  # Copy files
+  - "**/UserText.swift"
+
+  # Specific files to exclude
+  - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
+  - SharedPackages/Infrastructure/SystemFrameworksExtensions/Sources/ConcurrencyExtensions/AsyncStream.swift

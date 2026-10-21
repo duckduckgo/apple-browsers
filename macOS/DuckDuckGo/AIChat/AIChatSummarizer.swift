@@ -51,23 +51,26 @@ protocol AIChatSummarizing {
 final class AIChatSummarizer: AIChatSummarizing {
 
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let aiChatCoordinator: AIChatCoordinating
     private let aiChatTabOpener: AIChatTabOpening
-    private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
+    private let currentPageContextProvider: () -> PageContextProtocol?
+    private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
 
     init(
-        aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-        aiChatSidebarPresenter: AIChatSidebarPresenting,
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+        aiChatCoordinator: AIChatCoordinating,
         aiChatTabOpener: AIChatTabOpening,
-        featureFlagger: FeatureFlagger,
-        pixelFiring: PixelFiring?
+        pixelFiring: PixelFiring?,
+        currentPageContextProvider: @escaping () -> PageContextProtocol?,
+        aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.aiChatCoordinator = aiChatCoordinator
         self.aiChatTabOpener = aiChatTabOpener
-        self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
+        self.currentPageContextProvider = currentPageContextProvider
+        self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
     /// This function performs text summarization for the provided `request`.
@@ -76,28 +79,26 @@ final class AIChatSummarizer: AIChatSummarizing {
     /// summarization will happen either in a tab sidebar or in a new tab.
     @MainActor
     func summarize(_ request: AIChatTextSummarizationRequest) {
-        guard featureFlagger.isFeatureOn(.aiChatTextSummarization) else {
+        guard aiChatMenuConfig.shouldDisplaySummarizationMenuItem else {
             return
         }
 
-        let promptText = """
-            You are an expert summarizer AI. Your purpose is to read the provided text and generate a concise, accurate, and easy-to-understand summary. Summarize the following text in a neutral, encyclopedic tone. The summary should be a single paragraph and should not exceed 50 words. Use the same language as the original text.
-            <text>
-            \(request.text)
-            </text>
-            """
-
-        let prompt = AIChatNativePrompt.queryPrompt(promptText, autoSubmit: true)
+        let prompt = AIChatNativePrompt.summaryPrompt(request.text, url: request.websiteURL, title: request.websiteTitle)
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) && aiChatMenuConfig.openAIChatInSidebar {
-            if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
-                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard)
-            }
-            aiChatSidebarPresenter.presentSidebar(for: prompt)
-        } else {
-            AIChatPromptHandler.shared.setData(prompt)
-            aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
+        if !aiChatCoordinator.isChatPresentedForCurrentTab() {
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSidebarOpened(
+                    source: .summarization,
+                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                    minutesSinceSidebarHidden: aiChatCoordinator.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
+                ),
+                frequency: .dailyAndStandard
+            )
+            aiChatConversationSourceHandler.setData(.contextualSummarize)
         }
+        // The selection is what the user asked about — don't also auto-attach the whole page.
+        currentPageContextProvider()?.suppressAutoPageContextForSelectionAction()
+        aiChatCoordinator.revealChat(for: prompt)
     }
 }

@@ -18,30 +18,270 @@
 
 import XCTest
 import Testing
+import SharedTestUtilities
+import FeatureFlags_macOS
 import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 class ContextualDialogsManagerTests {
     var manager: ContextualDialogsManager!
     var trackerProvider: MockTrackerMessageProvider!
     var stateStorage: MockContextualDialogStateStoring!
+    var subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling!
     let expectation = XCTestExpectation()
 
     init() {
         stateStorage = MockContextualDialogStateStoring()
         trackerProvider = MockTrackerMessageProvider(expectation: expectation)
-        manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider, stateStorage: stateStorage)
+        subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
+        manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                           subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                           stateStorage: stateStorage)
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
     }
 
-    @Test("Default state for contextual onboarding is completed")
+    @available(iOS 16, macOS 13, *)
+    @Test("Non-blocking contextual onboarding starts on NTP or DuckDuckGo and stays dismissed", .timeLimit(.minutes(1)),
+          arguments: ["ntp", "https://duckduckgo.com", "https://www.duckduckgo.com", "https://duckduckgo.com/?q=test"])
+    func testNonBlockingContextualLifecycle(url: String) async {
+        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                       stateStorage: stateStorage,
+                                                       isNonBlocking: { true })
+        treatmentManager.state = .notStarted
+        let newTab = await Tab(content: .newtab)
+        let browsingTab = url == "ntp" ? newTab : await Tab(content: .url(URL(string: url)!, source: .ui))
+        #expect(treatmentManager.dialogTypeForTab(browsingTab) == .tryASearch)
+        #expect(treatmentManager.lastDialogForTab(browsingTab) == .tryASearch)
+
+        treatmentManager.turnOffFeature()
+
+        #expect(treatmentManager.state == .onboardingCompleted)
+        #expect(treatmentManager.lastDialogForTab(browsingTab) == nil)
+        #expect(treatmentManager.dialogTypeForTab(newTab) == nil)
+        treatmentManager.gotItPressed()
+        #expect(treatmentManager.state == .onboardingCompleted)
+        #expect(treatmentManager.lastDialog == nil)
+
+        let restored = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                               subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                               stateStorage: stateStorage,
+                                               isNonBlocking: { true })
+        #expect(restored.dialogTypeForTab(browsingTab) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Other sites retain tracker tips without showing or consuming Try a search", .timeLimit(.minutes(1)),
+          arguments: ["https://example.com", "https://duckduckgo.com.example.com", "https://example.com/?q=test"])
+    func testTreatmentWebsiteDoesNotConsumeSearchPrompt(url: String) async {
+        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                       stateStorage: stateStorage,
+                                                       isNonBlocking: { true })
+        treatmentManager.state = .notStarted
+        let siteTab = await Tab(content: .url(URL(string: url)!, source: .ui))
+        guard case .trackers = treatmentManager.dialogTypeForTab(siteTab) else {
+            Issue.record("Expected the tracker tip on a regular website")
+            return
+        }
+        #expect(!stateStorage.contextualDialogsSeen.contains("tryASearch"))
+        let newTab = await Tab(content: .newtab)
+        #expect(treatmentManager.dialogTypeForTab(newTab) == .tryASearch)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A cached search prompt is not restored on another site in treatment", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testCachedSearchPromptAfterLeavingNewTab(isNonBlocking: Bool) async {
+        let manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                              subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                              stateStorage: stateStorage,
+                                              isNonBlocking: { isNonBlocking })
+        manager.state = .notStarted
+        let schemeHandler = TestSchemeHandler { _ in .ok(.html("test")) }
+        let tab = await Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
+        #expect(manager.dialogTypeForTab(tab) == .tryASearch)
+
+        tab.setContent(.url(URL(string: "https://example.com")!, source: .ui))
+
+        #expect(manager.lastDialogForTab(tab) == (isNonBlocking ? nil : .tryASearch))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The onboarding page neither advances contextual onboarding nor restores a cached dialog", .timeLimit(.minutes(1)))
+    func testOnboardingTabCannotPresentTheSubscriptionFollowUp() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
+                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                       stateStorage: stateStorage,
+                                                       isNonBlocking: { true })
+        treatmentManager.state = .ongoing
+        stateStorage.contextualDialogsSeen = ["highFive"]
+        let tab = await Tab(content: .onboarding)
+
+        #expect(treatmentManager.dialogTypeForTab(tab) == nil)
+        #expect(treatmentManager.state == .ongoing)
+        #expect(stateStorage.contextualDialogsSeen == ["highFive"])
+
+        tab.setContent(.url(URL(string: "https://example.com")!, source: .ui))
+        #expect(treatmentManager.dialogTypeForTab(tab) == .subscriptionUpsell)
+        #expect(treatmentManager.lastDialogForTab(tab) == .subscriptionUpsell)
+
+        tab.setContent(.onboarding)
+        #expect(treatmentManager.lastDialogForTab(tab) == nil)
+        #expect(treatmentManager.dialogTypeForTab(tab) == nil)
+    }
+
+    // MARK: - Subscription Upsell Flow
+
+    @available(iOS 16, macOS 13, *)
+    @Test("High Five enrolls once and navigation advances to the treatment upsell", .timeLimit(.minutes(1)),
+          arguments: [26, 28, 30, 32])
+    func testWhenHighFiveIsShownThenTreatmentEnrollsAndAdvances(contextualDialogsSeenKey: Int) async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let tab = await Tab(content: .newtab)
+
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .highFive)
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .subscriptionUpsell)
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Skipping Fire advances to High Five and enrolls", .timeLimit(.minutes(1)))
+    func testWhenFireIsSkippedThenHighFiveBecomesTheNextRootDialog() {
+        manager.state = .ongoing
+        manager.lastDialog = .tryFireButton
+
+        manager.gotItPressed()
+
+        #expect(manager.lastDialog == .highFive)
+        #expect(stateStorage.contextualDialogsSeen.contains("highFive"))
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Earlier dialogs do not enroll in the experiment", .timeLimit(.minutes(1)),
+          arguments: [ContextualDialogType.searchDone(shouldFollowUp: true), .tryASearch, .tryASite])
+    func testWhenEarlierDialogAdvancesThenExperimentDoesNotEnroll(dialog: ContextualDialogType) {
+        manager.state = .ongoing
+        manager.lastDialog = dialog
+
+        manager.gotItPressed()
+
+        #expect(subscriptionUpsellExperiment.enrollCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Treatment queues the one-shot upsell after High Five", .timeLimit(.minutes(1)))
+    func testWhenTreatmentCompletesHighFiveThenUpsellIsQueued() {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+
+        manager.gotItPressed()
+
+        #expect(manager.lastDialog == .subscriptionUpsell)
+        #expect(manager.state == .ongoing)
+        #expect(stateStorage.contextualDialogsSeen.contains("subscriptionUpsell"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Control and unresolved cohorts complete at High Five", .timeLimit(.minutes(1)))
+    func testWhenNotTreatmentThenHighFiveCompletesOnboarding() {
+        let cohorts: [FeatureFlag.OnboardingSubscriptionUpsellCohort?] = [.control, nil]
+        for cohort in cohorts {
+            stateStorage = MockContextualDialogStateStoring()
+            subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
+            subscriptionUpsellExperiment.cohortStub = cohort
+            manager = ContextualDialogsManager(
+                trackerMessageProvider: trackerProvider,
+                subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                stateStorage: stateStorage)
+            manager.state = .ongoing
+            manager.lastDialog = .highFive
+
+            manager.gotItPressed()
+
+            #expect(manager.state == .onboardingCompleted)
+            #expect(manager.lastDialog == nil)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Completing the upsell completes onboarding", .timeLimit(.minutes(1)))
+    func testWhenUpsellCompletesThenItCannotBeOfferedAgain() async {
+        manager.state = .ongoing
+        manager.lastDialog = .subscriptionUpsell
+
+        manager.gotItPressed()
+
+        let tab = await Tab(content: .newtab)
+        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(manager.state == .onboardingCompleted)
+        #expect(manager.lastDialog == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Navigation away from a shown upsell completes onboarding", .timeLimit(.minutes(1)))
+    func testWhenNavigatingAwayFromUpsellThenOnboardingCompletes() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+        manager.gotItPressed()
+        let otherTab = await Tab(content: .newtab)
+
+        #expect(manager.dialogTypeForTab(otherTab, privacyInfo: nil) == nil)
+        #expect(manager.state == .onboardingCompleted)
+        #expect(manager.lastDialog == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Relaunch after the upsell was queued does not show it again", .timeLimit(.minutes(1)))
+    func testWhenRelaunchingAfterUpsellWasQueuedThenOnboardingCompletes() async {
+        subscriptionUpsellExperiment.cohortStub = .treatment
+        manager.state = .ongoing
+        manager.lastDialog = .highFive
+        manager.gotItPressed()
+
+        let relaunched = ContextualDialogsManager(
+            trackerMessageProvider: trackerProvider,
+            subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+            stateStorage: stateStorage)
+        let tab = await Tab(content: .newtab)
+
+        #expect(relaunched.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(relaunched.state == .onboardingCompleted)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Default state for contextual onboarding is completed", .timeLimit(.minutes(1)))
     func testDefaultStateIsOnboardingCompleted() {
         XCTAssertEqual(manager.state, .onboardingCompleted)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Contextual onboarding completion is published", .timeLimit(.minutes(1)))
+    func testContextualOnboardingCompletedPublisher() {
+        // Given
+        XCTAssertTrue(manager.isContextualOnboardingCompleted)
+
+        // When
+        manager.state = .ongoing
+        XCTAssertFalse(manager.isContextualOnboardingCompleted)
+        manager.state = .onboardingCompleted
+
+        // Then
+        XCTAssertTrue(manager.isContextualOnboardingCompleted)
+    }
+
     // MARK: - NewTab
 
-    @Test("The first time New Tab is shown will show tryASearch dialog")
+    @available(iOS 16, macOS 13, *)
+    @Test("The first time New Tab is shown will show tryASearch dialog", .timeLimit(.minutes(1)))
     func testNewTabInitialShowsTryASearch() async {
         manager.state = .notStarted
         let tab = await Tab(content: .newtab)
@@ -51,7 +291,8 @@ class ContextualDialogsManagerTests {
         XCTAssertEqual(dialog, .tryASearch)
     }
 
-    @Test("New Tab Page show TryASearch dialog when expected", arguments: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31])
+    @available(iOS 16, macOS 13, *)
+    @Test("New Tab Page show TryASearch dialog when expected", .timeLimit(.minutes(1)), arguments: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31])
     func testOnNewTabPageShowsTryASearch2(contextualDialogsSeenKey: Int) async throws {
         manager.state = .notStarted
         let tab = await Tab(content: .newtab)
@@ -60,7 +301,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .tryASearch)
     }
 
-    @Test("New Tab Page show TryASite dialog when expected", arguments: [2, 4, 18, 20])
+    @available(iOS 16, macOS 13, *)
+    @Test("New Tab Page show TryASite dialog when expected", .timeLimit(.minutes(1)), arguments: [2, 4, 18, 20])
     func testOnNewTabPageShowsTryASite(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
@@ -69,7 +311,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .tryASite)
     }
 
-    @Test("New Tab Page show HighFive dialog when expected", arguments: [26, 28, 30, 32])
+    @available(iOS 16, macOS 13, *)
+    @Test("New Tab Page show HighFive dialog when expected", .timeLimit(.minutes(1)), arguments: [26, 28, 30, 32])
     func testOnNewTabPageShowsHighFive(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
@@ -78,7 +321,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .highFive)
     }
 
-    @Test("New Tab Page show no dialog when expected", arguments: [6, 8, 10, 12, 14, 16, 22, 24, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64])
+    @available(iOS 16, macOS 13, *)
+    @Test("New Tab Page show no dialog when expected", .timeLimit(.minutes(1)), arguments: [6, 8, 10, 12, 14, 16, 22, 24, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64])
     func testOnNewTabPageShowsNothing(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
@@ -89,7 +333,8 @@ class ContextualDialogsManagerTests {
 
     // MARK: - On Site Visit
 
-    @Test("Site Visit shows tryASearch dialog when expected", arguments: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31])
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit shows tryASearch dialog when expected", .timeLimit(.minutes(1)), arguments: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31])
     func testOnSiteVisitShowsTryASearch(contextualDialogsSeenKey: Int) async {
         manager.state = .notStarted
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -98,7 +343,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .tryASearch)
     }
 
-    @Test("Site Visit shows highFive dialog when expected", arguments: [26, 28, 30, 32])
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit shows highFive dialog when expected", .timeLimit(.minutes(1)), arguments: [26, 28, 30, 32])
     func testOnSiteVisitShowsHighFive(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -108,7 +354,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .highFive)
     }
 
-    @Test("Site Visit shows tryFireButton dialog when expected", arguments: [10, 12, 14, 16])
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit shows tryFireButton dialog when expected", .timeLimit(.minutes(1)), arguments: [10, 12, 14, 16])
     func testOnSiteVisitShowsTryFireButton(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -118,7 +365,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .tryFireButton)
     }
 
-    @Test("Site Visit shows Trackers dialog (follow up on) when expected", arguments: [2, 4, 6, 8])
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit shows Trackers dialog (follow up on) when expected", .timeLimit(.minutes(1)), arguments: [2, 4, 6, 8])
     func testOnSiteVisitShowsTrackersFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -128,7 +376,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
-    @Test("Site Visit shows Trackers dialog (follow up off) when expected", arguments: [18, 20, 22, 24])
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit shows Trackers dialog (follow up off) when expected", .timeLimit(.minutes(1)), arguments: [18, 20, 22, 24])
     func testOnSiteVisitShowsTrackersNoFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -138,7 +387,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: false))
     }
 
-    @Test("Site Visit does not show tracker dialog (with blocked trackers) twice")
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit does not show tracker dialog (with blocked trackers) twice", .timeLimit(.minutes(1)))
     func testOnSiteVisitIfItHasSeenTrackersBlockedItDoesNotShowItAgain() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -154,7 +404,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog2 != .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
-    @Test("Site Visit does not show tracker dialog (with no blocked trackers) twice")
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit does not show tracker dialog (with no blocked trackers) twice", .timeLimit(.minutes(1)))
     func testOnSiteVisitIfItHasNotSeenTrackersBlockedItDoesNotShowOtherTrackerDialogWithNoTeckersBlocked() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -171,7 +422,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog2 != .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
-    @Test("Site Visit shows tracker dialog (with blocked trackers) even if previously has shown a different tracker dialog")
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit shows tracker dialog (with blocked trackers) even if previously has shown a different tracker dialog", .timeLimit(.minutes(1)))
     func testOnSiteVisitIfItHasNotSeenTrackersBlockedItShowsTrackerDialogAgainIfTrackersBlocked() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -189,7 +441,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog2 == .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
-    @Test("Site Visit shows no dialog when expected", arguments: [33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 64])
+    @available(iOS 16, macOS 13, *)
+    @Test("Site Visit shows no dialog when expected", .timeLimit(.minutes(1)), arguments: [33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 64])
     func testOnSiteVisitShowsNothing(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
@@ -200,7 +453,8 @@ class ContextualDialogsManagerTests {
 
     // MARK: - On Search Combinations
 
-    @Test("Search shows searchDone dialog (follow up on) when expected", arguments: [2, 18])
+    @available(iOS 16, macOS 13, *)
+    @Test("Search shows searchDone dialog (follow up on) when expected", .timeLimit(.minutes(1)), arguments: [2, 18])
     func testOnSearchShowsSearchDoneShouldFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
@@ -209,7 +463,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .searchDone(shouldFollowUp: true))
     }
 
-    @Test("Search shows searchDone dialog (follow up off) when expected", arguments: [6, 10, 14, 22, 26, 30])
+    @available(iOS 16, macOS 13, *)
+    @Test("Search shows searchDone dialog (follow up off) when expected", .timeLimit(.minutes(1)), arguments: [6, 10, 14, 22, 26, 30])
     func testOnSearchShowsSearchDoneShouldNotFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
@@ -218,7 +473,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .searchDone(shouldFollowUp: false))
     }
 
-    @Test("Search shows highFive dialog when expected", arguments: [28, 32])
+    @available(iOS 16, macOS 13, *)
+    @Test("Search shows highFive dialog when expected", .timeLimit(.minutes(1)), arguments: [28, 32])
     func testOnSearchShowsHighFive(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
@@ -227,7 +483,8 @@ class ContextualDialogsManagerTests {
         #expect(dialog == .highFive)
     }
 
-    @Test("Search shows no dialog when expected", arguments: [1, 3, 4, 5, 7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 20, 21, 23, 24, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 64])
+    @available(iOS 16, macOS 13, *)
+    @Test("Search shows no dialog when expected", .timeLimit(.minutes(1)), arguments: [1, 3, 4, 5, 7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 20, 21, 23, 24, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 64])
     func testOnSearchWhenTryASearchNotSeenShowsNothing(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
@@ -325,6 +582,19 @@ class MockTrackerMessageProvider: TrackerMessageProviding {
     func trackersType(privacyInfo: PrivacyInfo?) -> OnboardingTrackersType? {
         // Simulate fetching the tracker type
         return trackerType
+    }
+}
+
+class SpyOnboardingSubscriptionUpsellEnrolling: OnboardingSubscriptionUpsellEnrolling {
+
+    var enrollCallCount = 0
+    var cohortStub: FeatureFlag.OnboardingSubscriptionUpsellCohort?
+
+    var cohort: FeatureFlag.OnboardingSubscriptionUpsellCohort? { cohortStub }
+
+    func enroll() -> FeatureFlag.OnboardingSubscriptionUpsellCohort? {
+        enrollCallCount += 1
+        return cohortStub
     }
 }
 

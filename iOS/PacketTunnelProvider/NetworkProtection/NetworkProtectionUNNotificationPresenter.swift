@@ -27,6 +27,10 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
 
     private let userNotificationCenter: UNUserNotificationCenter
 
+    /// While `true`, skips every authorization request this presenter would make. Cleared via
+    /// `clearAuthorizationSuppression()` once this start's outcome is known.
+    var isAuthorizationRequestSuppressed = false
+
     private var threadIdentifier: String {
         let bundleId = Bundle(for: Self.self).bundleIdentifier ?? "com.duckduckgo.mobile.ios.NetworkExtension"
         return bundleId + ".threadIdentifier"
@@ -45,9 +49,18 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
         requestAlertAuthorization()
     }
 
+    func clearAuthorizationSuppression() {
+        isAuthorizationRequestSuppressed = false
+    }
+
     // MARK: - Notification Utility methods
 
     private func requestAlertAuthorization(completionHandler: ((Bool) -> Void)? = nil) {
+        guard !isAuthorizationRequestSuppressed else {
+            completionHandler?(false)
+            return
+        }
+
         let options: UNAuthorizationOptions = .alert
 
         userNotificationCenter.requestAuthorization(options: options) { authorized, _ in
@@ -55,11 +68,11 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
         }
     }
 
-    private func notificationContent(body: String) -> UNNotificationContent {
+    private func notificationContent(title: String? = nil, body: String) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
 
         content.threadIdentifier = threadIdentifier
-        content.title = UserText.networkProtectionNotificationsTitle
+        content.title = title ?? UserText.networkProtectionNotificationsTitle
         content.body = body
         content.interruptionLevel = .timeSensitive
         content.relevanceScore = 0
@@ -88,6 +101,12 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
         showNotification(.connection, content)
     }
 
+    func showStrictRoutingReminderNotification() {
+        let content = notificationContent(title: UserText.networkProtectionStrictRoutingReminderNotificationTitle,
+                                          body: UserText.networkProtectionStrictRoutingReminderNotificationBody)
+        showNotification(.strictRoutingReminder, content)
+    }
+
     func showReconnectingNotification() {
         let content = notificationContent(body: UserText.networkProtectionConnectionInterruptedNotificationBody)
         showNotification(.connection, content)
@@ -107,6 +126,11 @@ final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotifications
     }
 
     func showSupersededNotification() {
+    }
+
+    func showDebugEventNotification(message: String) {
+        let content = notificationContent(body: message)
+        showNotification(.debugEvent, content)
     }
 
     func showEntitlementNotification() {

@@ -16,8 +16,11 @@
 //  limitations under the License.
 //
 
+import Common
+import FoundationExtensions
 import Foundation
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DispatchQueueExtensionsTests: XCTestCase {

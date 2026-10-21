@@ -26,7 +26,7 @@ import PixelKit
  * [Privacy Triage](https://app.asana.com/0/69071770703008/1208146890364172/f)
  * [Detailed Pixels description](https://app.asana.com/0/1201621708115095/1207983904350396/f)
  */
-enum NewTabBackgroundPixel: PixelKitEventV2 {
+enum NewTabBackgroundPixel: PixelKit.Event {
 
     /**
      * Event Trigger: User selects gradient as custom NTP background.
@@ -166,7 +166,21 @@ enum NewTabBackgroundPixel: PixelKitEventV2 {
         nil
     }
 
-    var error: (any Error)? {
-        nil
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .newTabBackgroundSelectedGradient,
+                .newTabBackgroundSelectedSolidColor,
+                .newTabBackgroundSelectedUserImage,
+                .newTabBackgroundReset,
+                .newTabBackgroundAddedUserImage,
+                .newTabBackgroundDeletedUserImage,
+                .newTabBackgroundInitializeStorageError,
+                .newTabBackgroundAddImageError,
+                .newTabBackgroundThumbnailGenerationError,
+                .newTabBackgroundImageNotFound,
+                .newTabBackgroundThumbnailNotFound:
+            return [.pixelSource]
+        }
     }
+
 }

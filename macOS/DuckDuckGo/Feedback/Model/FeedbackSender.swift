@@ -16,29 +16,41 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Common
+import FoundationExtensions
 import Foundation
 import Networking
 import PixelKit
 import os.log
 
-final class FeedbackSender {
+protocol FeedbackSenderImplementing {
+    func sendFeedback(_ feedback: Feedback, completionHandler: (() -> Void)?)
+    func sendDataImportReport(_ report: DataImportReportModel)
+}
 
-    static let feedbackURL = URL(string: "https://duckduckgo.com/feedback.js")!
+final class FeedbackSender: FeedbackSenderImplementing {
 
-    func sendFeedback(_ feedback: Feedback) {
-#if APPSTORE
-        let appVersion = "\(feedback.appVersion) AppStore"
+    static let feedbackURL = URL.feedbackForm
+
+    func sendFeedback(_ feedback: Feedback, completionHandler: (() -> Void)? = nil) {
+#if DEBUG
+        Logger.general.debug("FeedbackSender: Skipping feedback submission in DEBUG build. Feedback: \(feedback)")
+        completionHandler?()
 #else
-        let appVersion = feedback.appVersion
-#endif
-        let parameters = [
+
+        let appVersion = "\(feedback.appVersion)\(NSApp.isSandboxed ? " AppStore" : "")"
+        var parameters = [
             "type": "app-feedback",
             "comment": feedback.comment,
             "category": feedback.category.asanaId,
             "osversion": feedback.osVersion,
-            "appversion": appVersion
+            "appversion": appVersion,
         ]
+
+        if !feedback.subcategory.isBlank {
+            parameters["subcategory"] = feedback.subcategory
+        }
 
         let configuration = APIRequest.Configuration(url: Self.feedbackURL, method: .post, queryParameters: parameters)
         let request = APIRequest(configuration: configuration, urlSession: URLSession.session())
@@ -47,7 +59,10 @@ final class FeedbackSender {
                 Logger.general.error("FeedbackSender: Failed to submit feedback \(error.localizedDescription)")
                 PixelKit.fire(DebugEvent(GeneralPixel.feedbackReportingFailed, error: error))
             }
+
+            completionHandler?()
         }
+#endif
     }
 
     func sendDataImportReport(_ report: DataImportReportModel) {
@@ -72,7 +87,7 @@ fileprivate extension Feedback.Category {
         switch self {
         case .generalFeedback: "1199184518165814"
         case .designFeedback: "1199214127353569"
-        case .bug: "1199184518165816"
+        case .bug, .firstTimeQuitSurvey: "1199184518165816"
         case .featureRequest: "1199184518165815"
         case .other: "1200574389728916"
         case .usability: "1204135764912065"

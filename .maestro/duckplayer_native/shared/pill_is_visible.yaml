@@ -1,0 +1,18 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+- waitForAnimationToEnd
+
+# Assert Duck Player Welcome Pill or Pill are present
+- runFlow:
+    when:
+      visible: duckPlayerWelcomePill
+    commands:
+      - assertVisible: duckPlayerWelcomePill
+      - assertNotVisible: duckPlayerPill
+- runFlow:
+    when:
+      visible: duckPlayerPill
+    commands:
+      - assertVisible: duckPlayerPill
+      - assertNotVisible: duckPlayerWelcomePill

@@ -19,10 +19,40 @@
 import Foundation
 import AppKit
 import SwiftUI
+import DataBrokerProtection_macOS
 
 extension MainViewController {
 
     static var sheetWindow: NSWindow?
+    static var logMonitorWindowController: NSWindowController?
+
+    @objc public func openLogMonitor(_ sender: NSMenuItem) {
+        if MainViewController.logMonitorWindowController == nil {
+            let viewController = DataBrokerLogMonitorViewController()
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1200, height: 900),
+                                  styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                                  backing: .buffered,
+                                  defer: false)
+            window.contentViewController = viewController
+            window.title = "Log Monitor"
+            window.minSize = NSSize(width: 1000, height: 650)
+            window.center()
+            window.isReleasedWhenClosed = false
+
+            NotificationCenter.default.addObserver(
+                forName: NSWindow.willCloseNotification,
+                object: window,
+                queue: .main
+            ) { _ in
+                MainViewController.logMonitorWindowController = nil
+            }
+
+            MainViewController.logMonitorWindowController = NSWindowController(window: window)
+        }
+
+        MainViewController.logMonitorWindowController?.showWindow(self)
+        MainViewController.logMonitorWindowController?.window?.makeKeyAndOrderFront(self)
+    }
 
     @objc public func exportLogs(_ sender: NSMenuItem) {
 

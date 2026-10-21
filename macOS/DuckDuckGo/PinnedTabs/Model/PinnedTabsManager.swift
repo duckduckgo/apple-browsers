@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 import PixelKit
@@ -26,33 +27,63 @@ import PixelKit
 final class PinnedTabsManager {
 
     private(set) var tabCollection: TabCollection
-    private(set) var tabViewModels = [Tab: TabViewModel]()
+    private(set) var tabViewModels = [TabIdentifier: TabViewModel]()
 
     let didUnpinTabPublisher: AnyPublisher<Int, Never>
 
-    func pin(_ tab: Tab, at index: Int? = nil, firePixel: Bool = true) {
-        if let index = index {
-            tabCollection.insert(tab, at: index)
+    /// Pins a newly created tab when `sourceCollection` is `nil`; otherwise moves the existing tab
+    /// from that collection without reporting a WebKit close/open lifecycle transition.
+    @MainActor
+    @discardableResult
+    func pinTab(_ tab: Tab, from sourceCollection: TabCollection?, at index: Int? = nil, firePixel: Bool = true) -> Bool {
+        let destinationIndex = index ?? tabCollection.tabs.endIndex
+        let didInsert: Bool
+        if let sourceCollection {
+            guard let sourceIndex = sourceCollection.firstIndex(of: tab) else {
+                Logger.pinnedTabs.debug("PinnedTabsManager: unable to find tab in source collection")
+                return false
+            }
+            didInsert = sourceCollection.moveTab(at: sourceIndex, to: tabCollection, at: destinationIndex)
         } else {
-            tabCollection.append(tab: tab)
+            didInsert = tabCollection.insert(tab, at: destinationIndex)
         }
+        guard didInsert else { return false }
 
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userPinnedTab, frequency: .dailyAndStandard)
         }
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
-#endif
+        return true
     }
 
-    func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> Tab? {
+    @MainActor
+    func removePinnedTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> AnyTab? {
         guard let tab = tabCollection.tabs[safe: index] else {
-            Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
+            Logger.pinnedTabs.debug("PinnedTabsManager: unable to remove pinned tab")
             return nil
         }
         guard tabCollection.removeTab(at: index, published: published) else {
+            Logger.pinnedTabs.debug("PinnedTabsManager: unable to remove pinned tab")
+            return nil
+        }
+        didUnpinTabSubject.send(index)
+
+        if firePixel {
+            PixelKit.fire(PinnedTabsPixel.userUnpinnedTab, frequency: .dailyAndStandard)
+        }
+        if #available(macOS 15.4, *), case .loaded(let loadedTab) = tab,
+           let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: loadedTab)
+        }
+        return tab
+    }
+
+    @MainActor
+    func unpinTab(at index: Int, movingTo destinationCollection: TabCollection, at destinationIndex: Int, firePixel: Bool = true) -> AnyTab? {
+        guard let tab = tabCollection.tabs[safe: index],
+              tabCollection.moveTab(at: index, to: destinationCollection, at: destinationIndex) else {
             Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
             return nil
         }
@@ -61,16 +92,24 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userUnpinnedTab, frequency: .dailyAndStandard)
         }
-#if !APPSTORE && WEB_EXTENSIONS_ENABLED
-        if #available(macOS 15.4, *) {
-            WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
+        if #available(macOS 15.4, *), case .loaded(let loadedTab) = tab,
+           let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            webExtensionManager.eventsListener.didChangeTabProperties([.pinned], for: loadedTab)
         }
-#endif
         return tab
     }
 
+    @MainActor
+    func materializeIfNeeded(at index: Int) {
+        guard case .unloaded(let unloaded) = tabCollection.tabs[safe: index] else { return }
+        assertionFailure("Pinned tab should never be suspended")
+        let tab = unloaded.materialize()
+        tabCollection.replaceTab(at: index, with: .loaded(tab), keepHistory: false)
+        tabViewModels[tab.uuid] = TabViewModel(tab: tab)
+    }
+
     func isTabPinned(_ tab: Tab) -> Bool {
-        tabCollection.tabs.contains(tab)
+        tabCollection.contains(tab: tab)
     }
 
     func tabViewModel(at index: Int) -> TabViewModel? {
@@ -80,7 +119,14 @@ final class PinnedTabsManager {
         }
 
         let tab = tabCollection.tabs[index]
-        return tabViewModels[tab]
+        return tabViewModels[tab.uuid]
+    }
+
+    func tabBarViewModel(at index: Int) -> (any TabBarViewModel)? {
+        guard index >= 0, tabCollection.tabs.count > index else {
+            return nil
+        }
+        return tabViewModels[tabCollection.tabs[index].uuid]
     }
 
     func isDomainPinned(_ domain: String) -> Bool {
@@ -91,11 +137,18 @@ final class PinnedTabsManager {
         Set(tabCollection.tabs.compactMap { $0.url?.host })
     }
 
-    func setUp(with collection: TabCollection) {
+    @MainActor
+    func setUp(movingTabsFrom collection: TabCollection) {
         tabCollection.removeAll()
-        for tab in collection.tabs {
-            tabCollection.append(tab: tab)
+        for anyTab in collection.tabs {
+            switch anyTab {
+            case .loaded:
+                tabCollection.append(tab: anyTab)
+            case .unloaded(let unloaded):
+                tabCollection.append(tab: .loaded(unloaded.materialize()))
+            }
         }
+        collection.clearAfterMerge()
     }
 
     init(tabCollection: TabCollection = .init()) {
@@ -112,7 +165,7 @@ final class PinnedTabsManager {
             .asVoid()
             .sink { [weak self] in
                 if NSApp.windows.filter({ $0 is MainWindow }).count == 1 {
-                    self?.tabCollection.tabs.forEach { $0.stopAllMediaAndLoading() }
+                    self?.tabCollection.loadedTabs.forEach { $0.stopAllMediaAndLoading() }
                 }
             }
     }
@@ -127,23 +180,27 @@ final class PinnedTabsManager {
         tabsCancellable = tabCollection.$tabs.sink { [weak self] newTabs in
             guard let self = self else { return }
 
-            let new = Set(newTabs)
-            let old = Set(self.tabViewModels.keys)
+            let newUUIDs = Set(newTabs.map(\.uuid))
+            let oldUUIDs = Set(self.tabViewModels.keys)
 
-            self.removeTabViewModels(old.subtracting(new))
-            self.addTabViewModels(new.subtracting(old))
-        }
-    }
+            let removedUUIDs = oldUUIDs.subtracting(newUUIDs)
+            for uuid in removedUUIDs {
+                self.tabViewModels[uuid] = nil
+            }
 
-    private func removeTabViewModels(_ removed: Set<Tab>) {
-        for tab in removed {
-            tabViewModels[tab] = nil
-        }
-    }
+            let addedUUIDs = newUUIDs.subtracting(oldUUIDs)
+            for tab in newTabs where addedUUIDs.contains(tab.uuid) {
+                if case .loaded(let tab) = tab {
+                    self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
+                }
+            }
 
-    private func addTabViewModels(_ added: Set<Tab>) {
-        for tab in added {
-            tabViewModels[tab] = TabViewModel(tab: tab)
+            // Detect materialization: existing UUID changed from unloaded to loaded
+            for tab in newTabs where !addedUUIDs.contains(tab.uuid) {
+                if case .loaded(let tab) = tab, self.tabViewModels[tab.uuid] == nil {
+                    self.tabViewModels[tab.uuid] = TabViewModel(tab: tab)
+                }
+            }
         }
     }
 }

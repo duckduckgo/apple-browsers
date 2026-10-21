@@ -1,0 +1,37 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - device_info
+
+---
+
+# This test will run on iPad simulator because it has the 'ipad' tag
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# First, verify we're running on iPad by checking browser info
+- assertVisible:
+    id: searchEntry
+- tapOn: 
+    id: searchEntry
+    
+# Get user Agent
+- inputText: "https://useragentstring.com/"
+- pressKey: Enter
+
+# Check screen size
+- assertVisible: "Macintosh"
+
+# Navigate back to search
+- tapOn:
+    id: searchEntry
+
+- pressKey: Backspace
+    
+# Now run a normal search
+- inputText: "remote iOS developer jobs"
+- pressKey: Enter
+
+- assertVisible: ".*" # This will match any visible element

@@ -20,6 +20,7 @@ import AppKit
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import LoginItems
 import VPN
 import NetworkProtectionProxy
@@ -49,7 +50,14 @@ public final class StatusBarMenu: NSObject {
     private let isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never>
     private let userDefaults: UserDefaults
     private let locationFormatter: VPNLocationFormatting
+    private let isStrictRoutingAvailable: Bool
     private let uninstallHandler: UninstallHandler
+    private let onWillShowPopover: (() async -> Void)?
+    private let buttonClickedHandler: (() -> Void)?
+    private let popoverShownHandler: (() -> Void)?
+    private let subscriptionExpiredViewAppearHandler: (() -> Void)?
+    private let subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)?
+    private let subscribeButtonOrigin: String?
 
     // MARK: - NetP Icon publisher
 
@@ -77,7 +85,14 @@ public final class StatusBarMenu: NSObject {
                 isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never>,
                 userDefaults: UserDefaults,
                 locationFormatter: VPNLocationFormatting,
-                uninstallHandler: @escaping UninstallHandler) {
+                isStrictRoutingAvailable: Bool = false,
+                onWillShowPopover: (() async -> Void)? = nil,
+                uninstallHandler: @escaping UninstallHandler,
+                buttonClickedHandler: (() -> Void)? = nil,
+                popoverShownHandler: (() -> Void)? = nil,
+                subscriptionExpiredViewAppearHandler: (() -> Void)? = nil,
+                subscriptionExpiredViewSubscribeButtonClickPixelHandler: (() -> Void)? = nil,
+                subscribeButtonOrigin: String? = nil) {
 
         self.model = model
         let statusItem = statusItem ?? NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -94,7 +109,14 @@ public final class StatusBarMenu: NSObject {
         self.isExtensionUpdateOfferedPublisher = isExtensionUpdateOfferedPublisher
         self.userDefaults = userDefaults
         self.locationFormatter = locationFormatter
+        self.isStrictRoutingAvailable = isStrictRoutingAvailable
         self.uninstallHandler = uninstallHandler
+        self.onWillShowPopover = onWillShowPopover
+        self.buttonClickedHandler = buttonClickedHandler
+        self.popoverShownHandler = popoverShownHandler
+        self.subscriptionExpiredViewAppearHandler = subscriptionExpiredViewAppearHandler
+        self.subscriptionExpiredViewSubscribeButtonClickPixelHandler = subscriptionExpiredViewSubscribeButtonClickPixelHandler
+        self.subscribeButtonOrigin = subscribeButtonOrigin
 
         super.init()
 
@@ -116,8 +138,10 @@ public final class StatusBarMenu: NSObject {
             return
         }
 
+        buttonClickedHandler?()
+
         Task { @MainActor in
-            togglePopover(isOptionKeyPressed: isOptionKeyPressed)
+            await togglePopover(isOptionKeyPressed: isOptionKeyPressed)
         }
     }
 
@@ -133,11 +157,19 @@ public final class StatusBarMenu: NSObject {
     // MARK: - Popover
 
     @MainActor
-    private func togglePopover(isOptionKeyPressed: Bool) {
+    private func togglePopover(isOptionKeyPressed: Bool) async {
         if let popover, popover.isShown {
             popover.close()
             self.popover = nil
         } else {
+            await onWillShowPopover?()
+
+            // Re-check after the suspension: a concurrent invocation may have already shown the popover.
+            // Note: a non-nil but not-shown popover is expected after a `.transient` dismissal, so don't bail in that case.
+            guard popover?.isShown != true else {
+                return
+            }
+
             guard let button = statusItem.button else {
                 return
             }
@@ -176,7 +208,11 @@ public final class StatusBarMenu: NSObject {
                 isMenuBarStatusView: isMenuBarStatusView,
                 userDefaults: userDefaults,
                 locationFormatter: locationFormatter,
-                uninstallHandler: uninstallHandler)
+                isStrictRoutingAvailable: isStrictRoutingAvailable,
+                uninstallHandler: uninstallHandler,
+                subscriptionExpiredViewAppearHandler: subscriptionExpiredViewAppearHandler,
+                subscriptionExpiredViewSubscribeButtonClickPixelHandler: subscriptionExpiredViewSubscribeButtonClickPixelHandler,
+                subscribeButtonOrigin: subscribeButtonOrigin)
 
             popover = NetworkProtectionPopover(
                 statusViewModel: statusViewModel,
@@ -186,6 +222,7 @@ public final class StatusBarMenu: NSObject {
                 debugInformationViewModel: debugInformationViewModel)
             popover?.behavior = .transient
 
+            popoverShownHandler?()
             popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
     }
@@ -205,7 +242,7 @@ public final class StatusBarMenu: NSObject {
         // across all systems.  I'm seeing an issue where the menu looks right for me but not for others testing
         // this, and this seems to fix it:
         // Ref: https://app.asana.com/0/0/1206318017787812/1206336583680668/f
-        let yPosition = statusItem.statusBar!.thickness + 8
+        let yPosition = (statusItem.statusBar?.thickness ?? NSStatusBar.system.thickness) + 8
 
         menu.popUp(positioning: nil,
                    at: NSPoint(x: 0, y: yPosition),

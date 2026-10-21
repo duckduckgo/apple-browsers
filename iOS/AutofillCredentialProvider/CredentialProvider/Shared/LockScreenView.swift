@@ -19,13 +19,15 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct LockScreenView: View {
+
     var body: some View {
         GeometryReader { geometry in
             VStack {
                 Spacer()
-                Image(.autofillLock128X96)
+                Image(rebrandable: "AutofillLock128x96")
                     .position(x: geometry.size.width / 2,
                               y: shouldCenterVerticallyInLandscape(on: geometry) ? geometry.size.height / 2 : geometry.size.height * 0.8)
             }

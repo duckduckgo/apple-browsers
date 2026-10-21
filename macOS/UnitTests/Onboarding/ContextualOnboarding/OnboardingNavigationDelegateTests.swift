@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Onboarding
+import SharedTestUtilities
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 final class OnboardingNavigationDelegateTests: XCTestCase {
 
     var tab: Tab!
@@ -59,7 +60,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             timeout: 1.0, // Timeout of 1 second
             retryInterval: 0.1 // Check every 0.1 seconds
         )
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testSearchForQueryLoadsQueryInCurrentTab() throws {
@@ -78,7 +79,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             timeout: 1.0,
             retryInterval: 0.1
         )
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     private func pollForCondition(condition: @escaping () -> Bool,

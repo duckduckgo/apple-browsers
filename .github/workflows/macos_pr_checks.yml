@@ -10,12 +10,11 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'macOS/**'
+      - 'scripts/translation-pr-checks/**'
   pull_request:
-    paths:
-      - '.github/**'
-      - '.xcode-version'
-      - 'SharedPackages/**'
-      - 'macOS/**'
+    # opened, synchronize, reopened are the default triggering events for a pull request
+    # We're adding ready_for_review to run checks when a draft PR becomes ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
     - cron: '10,40 4,5 * * *'
   workflow_call:
@@ -26,7 +25,10 @@ on:
         type: string
       skip-asana:
         description: "Skip Asana task creation on tests failure"
-        required: false
+        type: boolean
+        default: true
+      skip-release-build:
+        description: "Skip release build"
         type: boolean
         default: true
     secrets:
@@ -38,28 +40,56 @@ on:
         required: true
       ASANA_ACCESS_TOKEN:
         required: true
-      GH_RO_PAT:
+      APPLE_GH_RO_PAT:
+        required: true
+      BITRISE_BUILD_CACHE_AUTH_TOKEN:
+        required: true
+      BITRISE_BUILD_CACHE_WORKSPACE_ID:
         required: true
       MATCH_PASSWORD:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
+      SSH_PRIVATE_KEY_DUCKSANS_FONT:
+        required: true
+
+concurrency:
+  # When this workflow is called by another workflow (e.g. code freeze), `github.workflow` contains the name of the calling workflow,
+  # and the value of `${{ github.workflow }}-${{ github.ref }}` would be the same for PR Checks and UI Tests, which would prevent them
+  # from being run concurrently. We're adding a suffix here to tell PR Checks and UI Tests apart and allow for running the two
+  # side by side in the code freeze workflow.
+  group: ${{ github.workflow }}-${{ github.ref }}-pr-checks
+  cancel-in-progress: true
 
 jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+    with:
+      paths: |
+        .github/**
+        .xcode-version
+        SharedPackages/**
+        macOS/**
+        scripts/translation-pr-checks/**
+
   shellcheck:
 
     name: ShellCheck
 
     runs-on: ubuntu-latest
 
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
     steps:
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.ref_name }}
 
@@ -76,27 +106,30 @@ jobs:
 
     name: Test Shell Scripts
 
-    runs-on: macos-15
+    runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
 
     steps:
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch || github.ref_name }}
 
     - name: Install Bats
-      run: brew install bats-core
+      run: sudo npm install -g bats
 
     - name: Run Bats tests
       run: bats --formatter junit scripts/tests/* > bats-tests.xml
 
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v4
+      uses: mikepenz/action-junit-report@v6
       if: always() # always run even if the previous step fails
       with:
         check_name: "Test Report: Shell Scripts"
@@ -104,6 +137,9 @@ jobs:
 
   tests:
     name: Test
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
 
     strategy:
       fail-fast: false
@@ -126,13 +162,13 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
-          - runs-on: macos-15
+          - runs-on: [image:osx-tahoe-27, general-purpose]
             flavor: Non-Sandbox
-          - runs-on: macos-15-xlarge
+          - runs-on: [image:osx-tahoe-27, m4pro]
             flavor: Sandbox
 
     runs-on: ${{ matrix.runs-on }}
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     env:
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
@@ -143,23 +179,28 @@ jobs:
       pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
-    - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.1
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Check out the code
       if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration-tests
@@ -174,6 +215,8 @@ jobs:
         cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
+      id: sync-signing-first-attempt
+      continue-on-error: true
       env:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -181,6 +224,18 @@ jobs:
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       run: bundle exec fastlane sync_signing_ci
+
+    - name: Retry sync code signing assets
+      if: steps.sync-signing-first-attempt.outcome == 'failure'
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        echo "First attempt to sync code signing assets failed. Retrying..."
+        bundle exec fastlane sync_signing_ci
 
     - name: Set cache key hash
       run: |
@@ -194,7 +249,7 @@ jobs:
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
@@ -204,39 +259,114 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Build and run unit tests
-      id: run-unit-tests
+    - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
+      uses: actions/cache/restore@v5
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-${{ matrix.flavor }}
+        restore-keys: |
+          xcode-compilation-cache-${{ matrix.flavor }}-
+
+    - name: Setup Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+
+    - name: Build for testing
+      id: build-for-testing
+      env:
+        # Under CI, SPM builds packages in release configuration (the CI configuration maps to .release),
+        # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
+        # This forces DEBUG on for the affected packages. Read in SyncUI-macOS/Package.swift
+        # and AppKitExtensions/Package.swift.
+        SPM_FORCE_DEBUG: "1"
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
-        export OS_ACTIVITY_MODE=debug
 
-        set -o pipefail && xcodebuild test \
+        set -o pipefail && xcodebuild build-for-testing \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
           ENABLE_TESTABILITY=true \
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          | tee ${{ matrix.flavor }}-build-for-testing-xcodebuild.log \
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
+          | xcbeautify
+
+    - name: Deactivate Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        mode: deactivate
+
+    - name: Run unit tests
+      id: run-unit-tests
+      env:
+        TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES: "1"
+      run: |
+        export OS_ACTIVITY_MODE=debug
+        mkdir -p DerivedData/Logs/Test
+
+        set -o pipefail && xcodebuild test-without-building \
+          -scheme "${{ matrix.scheme }}" \
+          -derivedDataPath "DerivedData" \
+          -resultBundlePath "DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult" \
+          -configuration "CI" \
+          -skipPackagePluginValidation -skipMacroValidation \
+          -test-timeouts-enabled YES \
+          -default-test-execution-time-allowance 60 \
+          -maximum-test-execution-time-allowance 120 \
           "-skip-testing:${{ matrix.integration-tests-target }}" \
+          -test-iterations 3 \
+          -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-unittests-xcodebuild.log \
-          | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml \
-          || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-unittests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-unittests.xcresult && exit 1; }
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
+          | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-unittests.xml
 
     - name: Run integration tests
       id: run-integration-tests
       run: |
-        set -o pipefail && xcodebuild test \
+        mkdir -p DerivedData/Logs/Test
+
+        set -o pipefail && xcodebuild test-without-building \
           -scheme "${{ matrix.scheme }}" \
           -derivedDataPath "DerivedData" \
+          -resultBundlePath "DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult" \
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
-          ENABLE_TESTABILITY=true \
-          ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
+          -test-timeouts-enabled YES \
+          -default-test-execution-time-allowance 60 \
+          -maximum-test-execution-time-allowance 120 \
           "-only-testing:${{ matrix.integration-tests-target }}" \
+          -test-iterations 3 \
           -retry-tests-on-failure \
           | tee ${{ matrix.flavor }}-integrationtests-xcodebuild.log \
-          | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml \
-          || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-integrationtests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-integrationtests.xcresult && exit 1; }
+          | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
+          | xcbeautify --report junit --report-path . --junit-report-filename ${{ matrix.flavor }}-integrationtests.xml
+
+    - name: Compute Compilation Cache hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-${{ matrix.flavor }}-${{ steps.compilation-cache-hash.outputs.hash }}
 
     - name: Check private API usage
       id: private-api
@@ -264,21 +394,46 @@ jobs:
           fi
         fi
 
+    - name: Process unit test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: macOS
+        junit-path: ${{ matrix.flavor }}-unittests.xml
+        log-path: ${{ matrix.flavor }}-unittests-xcodebuild.log
+        xcresult-glob: DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult
+        title: macOS ${{ matrix.flavor }} Unit Tests
+        test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+    - name: Process integration test results
+      if: always()
+      uses: ./.github/actions/process-test-results
+      with:
+        working-directory: macOS
+        junit-path: ${{ matrix.flavor }}-integrationtests.xml
+        log-path: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
+        xcresult-glob: DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
+        title: macOS ${{ matrix.flavor }} Integration Tests
+        test-outcome: ${{ steps.run-integration-tests.outcome }}
+
     - name: Upload JUnit XML as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always()
       with:
         name: macos-${{ matrix.flavor }}-unittests.xml
-        path: macOS/${{ matrix.flavor }}*.xml
+        path: |
+          macOS/${{ matrix.flavor }}*.xml
+          macOS/${{ matrix.flavor }}*-crash-details.json
         retention-days: 7
 
     - name: Publish unit tests report
-      uses: mikepenz/action-junit-report@v4
+      uses: mikepenz/action-junit-report@v6
       if: always() # always run even if the previous step fails
       with:
         check_name: "Test Report: ${{ matrix.flavor }}"
         report_paths: 'macOS/${{ matrix.flavor }}*.xml'
-        check_retries: true
+        check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
+        job_summary: 'false'
 
     - name: Update Asana with failed unit tests
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
@@ -291,18 +446,24 @@ jobs:
           yq < "$file" -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
-            | xargs -L 1 ./scripts/report-failed-unit-test.sh
+            | xargs -L 1 ${{ github.workspace }}/scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_FAILED_TESTS_SECTION_ID }}
         done
+
+    - name: Set RUNS_ON
+      if: always()
+      run: |
+        echo "RUNS_ON=${{ join(matrix.runs-on, ',') }}" >> $GITHUB_ENV
 
     - name: Report job duration
       if: success() || (always() && steps.run-integration-tests.outcome == 'failure')
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration-tests.outputs.start-timestamp }}
         pixel-name: m_ci_apple_duration_macos_${{ matrix.flavor }}_unit_tests
         pixel-params: |
-          runner: ${{ matrix.runs-on }}
+          runner: ${{ env.RUNS_ON }}
 
     - name: Send Unit Tests Status Pixel
       if: always() && github.ref_name == 'main'
@@ -316,36 +477,64 @@ jobs:
       with:
         pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
 
+    - name: Upload failed build log
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
+      with:
+        name: ${{ matrix.flavor }}-build-for-testing-xcodebuild.log
+        path: macOS/${{ matrix.flavor }}-build-for-testing-xcodebuild.log
+        retention-days: 7
+
     - name: Upload failed unit tests log
-      uses: actions/upload-artifact@v4
-      if: failure()
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests-xcodebuild.log
         path: macOS/${{ matrix.flavor }}-unittests-xcodebuild.log
         retention-days: 7
 
     - name: Upload failed unit tests xcresult
-      uses: actions/upload-artifact@v4
-      if: failure()
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-unittests.xcresult
-        path: macOS/${{ matrix.flavor }}-unittests.xcresult
+        path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult
         retention-days: 7
 
     - name: Upload failed integration tests log
-      uses: actions/upload-artifact@v4
-      if: failure()
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
         path: macOS/${{ matrix.flavor }}-integrationtests-xcodebuild.log
         retention-days: 7
 
     - name: Upload failed integration tests xcresult
-      uses: actions/upload-artifact@v4
-      if: failure()
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
       with:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
-        path: macOS/${{ matrix.flavor }}-integrationtests.xcresult
+        path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
+        retention-days: 7
+
+    - name: Report snapshot failures
+      if: always() && steps.run-unit-tests.outcome == 'failure'
+      uses: ./.github/actions/snapshot-failure-report
+      with:
+        working-directory: macOS
+        xcresult: DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult
+        report-name: macos-${{ matrix.flavor }}-snapshot-failures.html
+        title: macOS ${{ matrix.flavor }} Snapshot Failures
+
+    - name: Upload crash reports
+      uses: actions/upload-artifact@v6
+      if: failure() || cancelled()
+      with:
+        name: ${{ matrix.flavor }}-crash-reports
+        path: |
+          ~/Library/Logs/DiagnosticReports/*.crash
+          ~/Library/Logs/DiagnosticReports/*.ips
+        if-no-files-found: ignore
         retention-days: 7
 
     - name: Fetch latest commit author and PR reviewers
@@ -367,25 +556,39 @@ jobs:
 
     name: Make Release Build
 
+    needs: should-run-checks
+
     # Dependabot doesn't have access to all secrets, so we skip this job
     # workflow_call is used by bump_internal_release and is followed by a proper release job
-    if: github.actor != 'dependabot[bot]' && (github.event_name == 'push' || github.event_name == 'pull_request')
+    if: >
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name == 'push' || github.event_name == 'pull_request') &&
+      inputs.skip-release-build != true &&
+      needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: macos-15
-    timeout-minutes: 30
+    runs-on: [image:osx-tahoe-27, general-purpose]
+    timeout-minutes: 60
     env:
-      RUNS_ON: macos-15 # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
+
+    outputs:
+      changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
 
     steps:
-    - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.1
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
       with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
     - name: Check out the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
+
+    - name: Print macOS version
+      run: sw_vers
 
     - name: Start measuring duration
       id: start-duration-release-build
@@ -400,6 +603,8 @@ jobs:
         cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
+      id: sync-signing-first-attempt-release
+      continue-on-error: true
       env:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -408,26 +613,54 @@ jobs:
         SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       run: bundle exec fastlane sync_signing_dmg_release
 
+    - name: Retry sync code signing assets
+      if: steps.sync-signing-first-attempt-release.outcome == 'failure'
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        echo "First attempt to sync code signing assets failed. Retrying..."
+        bundle exec fastlane sync_signing_dmg_release
+
     - name: Set cache key hash
       run: |
         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
         if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
         else
           echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
         fi
 
     - name: Cache SPM
       if: env.cache_key_hash
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-test-release-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-mac-release-build-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-test-release-${{ matrix.cache-key }}
+          ${{ runner.os }}-mac-release-build-
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+
+    - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
+      uses: actions/cache/restore@v5
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-release
+        restore-keys: |
+          xcode-compilation-cache-release-
+
+    - name: Setup Bitrise Build Cache
+      uses: ./.github/actions/bitrise-build-cache
+      with:
+        enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
+        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Build the app
       run: |
@@ -437,10 +670,31 @@ jobs:
           -derivedDataPath "DerivedData" \
           -configuration "Release" \
           -skipPackagePluginValidation -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           | tee release-xcodebuild.log \
           | xcbeautify
 
+    - name: Compute Compilation Cache hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-release-${{ steps.compilation-cache-hash.outputs.hash }}
+
     - name: Report job duration
+      continue-on-error: true
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -449,36 +703,164 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
+    - name: Check for changed strings files
+      id: changed-strings-files
+      run: |
+        changed_files=$(git diff --name-only HEAD -- ':(glob)**/*.strings' || true)
+        # Preserve newlines in the changed_files output
+        echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+        echo "$changed_files" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
     - name: Upload failed test log
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: failure()
       with:
         name: release-xcodebuild.log
-        path: release-xcodebuild.log
+        path: macOS/release-xcodebuild.log
         retention-days: 7
 
-  verify-autoconsent-bundle:
-    name: 'Verify autoconsent bundle'
+  verify-npm-bundles:
+    name: 'Verify npm bundles (iOS & macOS autoconsent)'
     runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+
+    defaults:
+      run:
+        working-directory: .
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
         with:
-          node-version: 18
+          node-version: 24.14.1
           cache: 'npm'
-          cache-dependency-path: macOS/package-lock.json
-      - name: Build bundle
-        run: |
-          npm ci
-          npm run rebuild-autoconsent
+          cache-dependency-path: |
+            package-lock.json
+            iOS/package-lock.json
+            macOS/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build iOS autoconsent bundle
+        run: npm run rebuild-autoconsent --workspace=iOS
+      - name: Build macOS autoconsent bundle
+        run: npm run rebuild-autoconsent --workspace=macOS
       - name: Verify clean tree
         run: |
           git update-index --refresh
           git diff-index --quiet HEAD --
 
+  translation-check:
+    name: Translated Strings
+
+    runs-on: ubuntu-latest
+
+    needs: [should-run-checks, release-build]
+    # Only run for PRs targeting main, release/*, or hotfix/* branches
+    if: >
+      github.event_name == 'pull_request' &&
+      needs.should-run-checks.outputs.should_run == 'true' &&
+      (github.base_ref == 'main' ||
+       startsWith(github.base_ref, 'release/macos/') ||
+       startsWith(github.base_ref, 'hotfix/macos/'))
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Allows scripts to diff against the base branch
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Verify locale list
+        run: python3 scripts/translation-pr-checks/verify_locale_list.py --platform macOS
+
+      - name: Verify string extraction to strings files
+        env:
+          CHANGED_FILES: ${{ needs.release-build.outputs.changed_files }}
+        run: |
+          # Check if any .strings files were modified during build
+          if [[ -n "$CHANGED_FILES" ]]; then
+            echo "⚠️ Uncommitted changes to .strings files detected after build. Please commit these files:"
+            echo "$CHANGED_FILES"
+            exit 1
+          else
+            echo "✅ No uncommitted changes to .strings files detected after build"
+            exit 0
+          fi
+
+      - name: Verify string extraction to xcstrings files
+        run: python3 scripts/translation-pr-checks/verify_string_extraction.py --platform macOS
+
+      - name: Check translations
+        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform macOS
+
+      - name: Check markdown markers
+        id: marker-check
+        run: |
+          output=$(python3 scripts/translation-pr-checks/check_marker_consistency.py --platform macOS 2>&1) || marker_failed=1
+          echo "$output"
+          if [ "${marker_failed:-0}" = "1" ]; then
+            echo "has_issues=true" >> "$GITHUB_OUTPUT"
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "message<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$output" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR with marker mismatches
+        if: steps.marker-check.outputs.has_issues == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MARKER_MESSAGE: ${{ steps.marker-check.outputs.message }}
+        run: |
+          body=$(printf '## ⚠️ Markdown Marker Mismatches\n\nBold marker (`**`) counts must match the English source. Fix the affected translations at the Smartling source.\n\n```\n%s\n```' "$MARKER_MESSAGE")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$body"
+
+      - name: Fail if marker mismatches
+        if: steps.marker-check.outputs.has_issues == 'true'
+        run: |
+          echo "Markdown marker mismatches detected (see PR comment and output above)."
+          exit 1
+
+      - name: Check for orphaned translations
+        id: orphaned-translations
+        run: |
+          output=$(python3 scripts/translation-pr-checks/check_deleted_string_translations.py --platform macOS 2>&1)
+          echo "$output"
+          if echo "$output" | grep -q "Deleted strings with orphaned translations found"; then
+            echo "has_orphans=true" >> "$GITHUB_OUTPUT"
+            # Escape newlines for GitHub Actions output
+            EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+            echo "message<<$EOF" >> "$GITHUB_OUTPUT"
+            echo "$output" >> "$GITHUB_OUTPUT"
+            echo "$EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on PR with orphaned translations
+        if: steps.orphaned-translations.outputs.has_orphans == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ORPHAN_MESSAGE: ${{ steps.orphaned-translations.outputs.message }}
+        run: |
+          body=$(printf '## ⚠️ Orphaned Translations Detected\n\n%s\n\n> This is an automated warning. The PR will not be blocked.' "$ORPHAN_MESSAGE")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$body"
+
   create-asana-task:
     name: Create Asana Task
-    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
@@ -486,7 +868,7 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Create Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:
@@ -495,11 +877,11 @@ jobs:
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.tests.outputs.commit_author }}
           pr-reviewers: ${{ needs.tests.outputs.pr_reviewers }}
-          github-token: ${{ secrets.GH_RO_PAT }}
+          github-token: ${{ secrets.APPLE_GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
-    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 
@@ -507,11 +889,28 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Close Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
-          github-token: ${{ secrets.GH_RO_PAT }}
+          github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+  # The only job required by branch protection for this workflow.
+  # It always runs and fails if any job it depends on failed or was cancelled, so skipped jobs pass
+  # and a failing should-run-checks blocks the merge instead of skipping the tests unnoticed.
+  # `tests` is a matrix: needs.tests.result is a single result covering every matrix entry.
+  pr-checks-result:
+    name: macOS PR Checks Result
+    needs: [should-run-checks, tests, release-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check whether a required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        working-directory: .
+        run: |
+          echo "Required job results: ${{ join(needs.*.result, ', ') }}"
+          exit 1

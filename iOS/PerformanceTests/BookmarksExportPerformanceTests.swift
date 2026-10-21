@@ -21,7 +21,6 @@ import XCTest
 import Bookmarks
 import Persistence
 import CoreData
-@testable import Core
 @testable import DuckDuckGo
 
 class BookmarksExportPerformanceTests: XCTestCase {
@@ -42,8 +41,8 @@ class BookmarksExportPerformanceTests: XCTestCase {
         
         let html = loadHtmlFile("bookmarks_3k.html")
         
-        let importer = await BookmarksImporter(coreDataStore: db, favoritesDisplayMode: .displayNative(.mobile))
-        _ = await importer.parseAndSave(html: html)
+        let importer = await BookmarksImporter(coreDataStore: db, favoritesDisplayMode: .displayNative(.mobile), htmlContent: html)
+        _ = await importer.parseAndSave()
     }
     
     override func tearDown() {

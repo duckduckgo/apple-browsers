@@ -22,7 +22,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to Settings Page.
  */
-enum SettingsPixel: PixelKitEventV2 {
+enum SettingsPixel: PixelKit.Event {
 
     /**
      * Event Trigger: Settings pane with a specified identifier is opened.
@@ -53,9 +53,9 @@ enum SettingsPixel: PixelKitEventV2 {
     case showFullURLSettingToggled
 
     /**
-     * Event Trigger: Browser theme settings was changed.
+     * Event Trigger: Browser Theme Appearance settings was changed.
      *
-     * > Note: This is a unique pixel.
+     * > Note: This pixel will be fired everytime the setting is changed (non uniqued).
      *
      * > Related links:
      * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210380019277469?focus=true)
@@ -64,7 +64,21 @@ enum SettingsPixel: PixelKitEventV2 {
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      */
-    case themeSettingChanged
+    case themeAppearanceChanged(source: ThemeChangeSource)
+
+    /**
+     * Event Trigger: Browser Theme Name settings was changed.
+     *
+     * > Note: This pixel will be fired everytime the setting is changed (non uniqued).
+     *
+     * > Related links:
+     * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1212520579673409?focus=true)
+     *
+     * Anomaly Investigation:
+     * - Anomaly in this pixel may mean an increase/drop in app use.
+     *
+     */
+    case themeNameChanged(name: ThemeName, source: ThemeChangeSource)
 
     /**
      * Event Trigger: Website zoom setting was changed.
@@ -94,6 +108,9 @@ enum SettingsPixel: PixelKitEventV2 {
      */
     case dataClearingSettingToggled
 
+    case syncAppIconWithThemeTurnedOn
+    case syncAppIconWithThemeTurnedOff
+
     // MARK: -
 
     var name: String {
@@ -113,31 +130,74 @@ enum SettingsPixel: PixelKitEventV2 {
             case .accessibility: return "settings_accessibility_opened"
             case .dataClearing: return "settings_data_clearing_opened"
             case .duckPlayer: return "settings_duckplayer_opened"
+            case .youTubeAdBlocking: return "settings_youtubeadblocking_opened"
+            case .websitePermissions: return "settings_website_permissions_opened"
             case .aiChat:
                 assertionFailure("This pixel is not in use and AIChatPixel.aiChatSettingsDisplayed should be used instead")
                 return "settings_duck_ai_opened"
-            case .privacyPro: return "settings_privacy_pro_opened"
+            case .subscription: return "settings_privacy_pro_opened"
             case .vpn: return "settings_vpn_opened"
             case .personalInformationRemoval: return "settings_pir_opened"
             case .identityTheftRestoration: return "settings_itr_opened"
             case .subscriptionSettings: return "settings_subscription_opened"
             case .about: return "settings_about_opened"
             case .otherPlatforms: return "settings_other_platforms_clicked"
+            case .partnershipsHub:
+                // Never selected as a pane: `PreferencesSidebarModel.selectPane(_:)` opens a tab and
+                // fires `SubscriptionPixel.subscriptionPartnerBenefitsSettings` instead.
+                assertionFailure("Subscriber Offers opens a tab rather than a settings pane")
+                return "settings_subscriber_offers_opened"
             case .paidAIChat:
                 return "settings_paid_ai_chat_opened"
             }
         case .showFullURLSettingToggled: return "settings_full_url_toggled_u"
-        case .themeSettingChanged: return "settings_theme_changed_u"
+        case .themeAppearanceChanged: return "settings_theme_appearance_changed"
+        case .themeNameChanged: return "settings_theme_name_changed"
         case .websiteZoomSettingChanged: return "settings_zoom_changed_u"
         case .dataClearingSettingToggled: return "settings_auto_clear_toggled_u"
+        case .syncAppIconWithThemeTurnedOn: return "settings_sync_app_icon_with_theme_turned_on"
+        case .syncAppIconWithThemeTurnedOff: return "settings_sync_app_icon_with_theme_turned_off"
         }
     }
 
     var parameters: [String: String]? {
-        nil
+        switch self {
+        case .themeAppearanceChanged(let source):
+            return [
+                ParameterKey.themeChangeSource.rawValue: source.rawValue
+            ]
+        case .themeNameChanged(let name, let source):
+            return [
+                PixelKit.Parameters.themeName: name.rawValue,
+                ParameterKey.themeChangeSource.rawValue: source.rawValue
+            ]
+        default:
+            return nil
+        }
     }
 
-    var error: (any Error)? {
-        nil
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .settingsPaneOpened,
+                .showFullURLSettingToggled,
+                .themeAppearanceChanged,
+                .themeNameChanged,
+                .websiteZoomSettingChanged,
+                .dataClearingSettingToggled,
+                .syncAppIconWithThemeTurnedOn,
+                .syncAppIconWithThemeTurnedOff:
+            return [.pixelSource]
+        }
+    }
+
+    // MARK: - Nested Types
+
+    private enum ParameterKey: String {
+        case themeChangeSource
+    }
+
+    enum ThemeChangeSource: String {
+        case settings = "settings"
+        case newTabPage = "new-tab-page"
     }
 }

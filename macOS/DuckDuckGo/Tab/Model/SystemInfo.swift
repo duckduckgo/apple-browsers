@@ -18,8 +18,7 @@
 
 import Foundation
 import Common
-
-#if !APPSTORE
+import FoundationExtensions
 
 final class SystemInfo {
 
@@ -29,7 +28,7 @@ final class SystemInfo {
         return [
            "available_memory": String(availableMemoryPercent),
            "available_diskspace": String(format: "%.2f", availableDiskSpacePercent),
-           "os_version": appVersion.osVersion,
+           "os_version": appVersion.osVersionMajorMinorPatch,
         ]
     }
 
@@ -72,5 +71,3 @@ final class SystemInfo {
     }
 
 }
-
-#endif

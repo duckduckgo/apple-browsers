@@ -25,6 +25,7 @@ struct Feedback {
         case generalFeedback
         case designFeedback
         case bug
+        case firstTimeQuitSurvey // Same as a bug but with another description
         case featureRequest
         case other
         case usability
@@ -35,5 +36,63 @@ struct Feedback {
     let comment: String
     let appVersion: String
     let osVersion: String
+    let subcategory: String
 
+    init(category: Category,
+         comment: String,
+         appVersion: String,
+         osVersion: String,
+         subcategory: String = "") {
+        self.category = category
+        self.comment = comment
+        self.appVersion = appVersion
+        self.osVersion = osVersion
+        self.subcategory = subcategory
+    }
+}
+
+extension Feedback {
+
+    static func from(selectedPillIds: [String],
+                     text: String,
+                     appVersion: String,
+                     category: Feedback.Category,
+                     problemCategory: ProblemCategory?) -> Feedback {
+        let selectedOptionsString = selectedPillIds.joined(separator: ",")
+        let description = text.isEmpty ? category.toString : text
+        var subcategory = ""
+
+        if let problemCategory = problemCategory {
+            subcategory = "\(problemCategory.id),\(selectedOptionsString)"
+        } else {
+            subcategory = "\(selectedOptionsString)"
+        }
+
+        return Feedback(category: category,
+                        comment: description,
+                        appVersion: appVersion,
+                        osVersion: "\(ProcessInfo.processInfo.operatingSystemVersion)",
+                        subcategory: subcategory)
+    }
+}
+
+extension Feedback: CustomStringConvertible {
+    var description: String {
+        return "category: \(category), comment: \(comment), appVersion: \(appVersion), osVersion: \(osVersion), subcategory: \(subcategory)"
+    }
+}
+
+extension Feedback.Category {
+    var toString: String {
+        switch self {
+        case .bug:
+            return "Via Report a Problem Form"
+        case .featureRequest:
+            return "Via Request New Feature Form"
+        case .firstTimeQuitSurvey:
+            return "Via First Quit Time Survey"
+        default:
+            return "other"
+        }
+    }
 }

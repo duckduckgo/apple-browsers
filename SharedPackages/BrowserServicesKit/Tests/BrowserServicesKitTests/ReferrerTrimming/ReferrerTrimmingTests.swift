@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-import os.log
-import WebKit
 import Common
+import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import WebKit
+import XCTest
 @testable import TrackerRadarKit
 @testable import BrowserServicesKit
 
@@ -45,9 +47,9 @@ struct ReferrerTests: Codable {
 class ReferrerTrimmingTests: XCTestCase {
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/referrer-trimming/config_reference.json"
-        static let tds = "Resources/privacy-reference-tests/referrer-trimming/tracker_radar_reference.json"
-        static let tests = "Resources/privacy-reference-tests/referrer-trimming/tests.json"
+        static let config = "Res/privacy-reference-tests/referrer-trimming/config_reference.json"
+        static let tds = "Res/privacy-reference-tests/referrer-trimming/tracker_radar_reference.json"
+        static let tests = "Res/privacy-reference-tests/referrer-trimming/tests.json"
     }
 
     private static let data = JsonTestDataLoader()

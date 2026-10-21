@@ -18,6 +18,7 @@
 
 import Clocks
 import Common
+import ConcurrencyExtensions
 import Foundation
 import Networking
 import XCTest
@@ -27,10 +28,23 @@ import XCTest
 @available(iOS 16, macOS 13, *)
 class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
 
+    // Wrapper to allow strong capture while permitting mutation
+    private class UpdateIntervalProviderWrapper {
+        var provider: UpdateManager.UpdateIntervalProvider
+        init(_ provider: @escaping UpdateManager.UpdateIntervalProvider) {
+            self.provider = provider
+        }
+    }
+
+    var updateIntervalProvider: UpdateManager.UpdateIntervalProvider {
+        get { updateIntervalProviderWrapper.provider }
+        set { updateIntervalProviderWrapper.provider = newValue }
+    }
+
     var updateManager: MaliciousSiteProtection.UpdateManager!
     var dataManager: MockMaliciousSiteProtectionDataManager!
     var apiClient: MockMaliciousSiteProtectionAPIClient!
-    var updateIntervalProvider: UpdateManager.UpdateIntervalProvider!
+    private var updateIntervalProviderWrapper: UpdateIntervalProviderWrapper!
     var updateManagerInfoStore: MockMaliciousSiteProtectionUpdateManagerInfoStore!
     var clock: TestClock<Duration>!
     var willSleep: ((TimeInterval) -> Void)?
@@ -44,6 +58,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         clock = TestClock()
         updateManagerInfoStore = MockMaliciousSiteProtectionUpdateManagerInfoStore()
         mockEventMapping = MockEventMapping()
+        updateIntervalProviderWrapper = UpdateIntervalProviderWrapper { _ in nil }
 
         let clockSleeper = Sleeper(clock: clock)
         let reportingSleeper = Sleeper {
@@ -51,17 +66,25 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
             try await clockSleeper.sleep(for: $0)
         }
 
-        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, sleeper: reportingSleeper, updateInfoStorage: updateManagerInfoStore, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
+        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, sleeper: reportingSleeper, updateInfoStorage: updateManagerInfoStore, updateIntervalProvider: { [wrapper = updateIntervalProviderWrapper] dataType in
+            wrapper?.provider(dataType)
+        }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
     }
 
     override func tearDown() async throws {
+        clock = nil
         updateManager = nil
         updateManagerInfoStore = nil
         dataManager = nil
         apiClient = nil
-        updateIntervalProvider = nil
+        updateIntervalProviderWrapper = nil
         mockEventMapping = nil
         updateTask?.cancel()
+        do {
+            try await updateTask?.value(cancellingTaskOnTimeout: 1)
+        } catch is CancellationError {
+        }
+        updateTask = nil
     }
 
     func testUpdateHashPrefixes() async throws {
@@ -308,29 +331,38 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         isScamProtectionSupported = false
         self.updateIntervalProvider = { _ in 0.9 }
 
-        let eHashPrefixesNotUpdated = expectation(description: "Hash prefixes for scam should not be updated")
-        eHashPrefixesNotUpdated.isInverted = true
-
+        // Data for both hash prefixes and filter set should not be updated when scam protection is disabled
         let c1 = await dataManager.publisher(for: .hashPrefixes(threatKind: .scam))
             .dropFirst()
-            .sink { _ in
-                eHashPrefixesNotUpdated.fulfill()
+            .sink { data in
+                XCTFail("Unexpected hash prefixes update received: \(data)")
             }
-
-        let eFilterSetNotUpdated = expectation(description: "Filter set for scam should not be updated")
-        eFilterSetNotUpdated.isInverted = true
 
         let c2 = await dataManager.publisher(for: .filterSet(threatKind: .scam))
             .dropFirst()
-            .sink { _ in
-                eFilterSetNotUpdated.fulfill()
+            .sink { data in
+                XCTFail("Unexpected filter set update received: \(data)")
             }
 
+        // Set up sleep expectations to synchronize with the mock clock
+        var sleepIndex = 0
+        let sleepExpectations = [
+            XCTestExpectation(description: "Will Sleep 1"),
+            XCTestExpectation(description: "Will Sleep 2"),
+        ]
+        self.willSleep = { _ in
+            DispatchQueue.main.async {
+                sleepExpectations[safe: sleepIndex]?.fulfill()
+                sleepIndex += 1
+            }
+        }
+
         updateTask = updateManager.startPeriodicUpdates()
+        await fulfillment(of: [sleepExpectations[0]], timeout: 1)
 
-        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-
-        await fulfillment(of: [eHashPrefixesNotUpdated, eFilterSetNotUpdated], timeout: 1, enforceOrder: false)
+        // Advance the clock to trigger the next sleep interval
+        await self.clock.advance(by: .seconds(1))
+        await fulfillment(of: [sleepExpectations[1]], timeout: 1)
 
         withExtendedLifetime((c1, c2)) {}
     }
@@ -474,7 +506,10 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
 
         // Cancel the update task
         updateTask!.cancel()
-        await Task.megaYield(count: 10)
+        do {
+            try await updateTask?.value(cancellingTaskOnTimeout: 1)
+        } catch is CancellationError {
+        }
 
         // Reset expectations for further updates
         let c = await dataManager.$store.dropFirst().sink { data in
@@ -572,7 +607,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
 
     func testWhenUpdateDataApiFails_AndInitialLocalDatasetIsEmpty_AndErrorIsNoInternetConnection_ThenSendFailedToFetchDatasetsPixel() async {
         // GIVEN
-        apiClient.loadRequestError = APIRequestV2.Error.urlSession(URLError(.notConnectedToInternet))
+        apiClient.loadRequestError = APIRequestV2Error.urlSession(URLError(.notConnectedToInternet))
         updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
         XCTAssertTrue(mockEventMapping.events.isEmpty)
 
@@ -592,7 +627,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
     func testWhenUpdateDataApiFails_AndInitialLocalDatasetIsNotEmpty_AndErrorIsNoInternetConnection_ThenDoNotSendFailedToFetchDatasetsPixel() async throws {
         // GIVEN
         try await dataManager.store(HashPrefixSet(revision: 3, items: []), for: .hashPrefixes(threatKind: .phishing))
-        apiClient.loadRequestError = APIRequestV2.Error.urlSession(URLError(.notConnectedToInternet))
+        apiClient.loadRequestError = APIRequestV2Error.urlSession(URLError(.notConnectedToInternet))
         updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
         XCTAssertTrue(mockEventMapping.events.isEmpty)
 
@@ -602,5 +637,141 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         // THEN
         XCTAssertTrue(mockEventMapping.events.isEmpty)
     }
+
+    // MARK: - Performance Events
+
+    #if os(iOS)
+    func testWhenUpdateDataForDatasetTypeIsCalled_AndDataTypeIsHashPrefixSet_ThenSendSingleDataSetUpdatePerformanceEvent() async throws {
+        // GIVEN
+        let expectedDataType = DataManager.StoredDataType.Kind.hashPrefixSet
+        let expectedFromRevision = 0
+        let expectedToRevision = 1
+        dataManager = MockMaliciousSiteProtectionDataManager(storeDatasetSuccess: true)
+        await dataManager.updateBytesToReturn(100)
+        updateManager = MaliciousSiteProtection.UpdateManager(
+            apiClient: apiClient,
+            dataManager: dataManager,
+            eventMapping: mockEventMapping,
+            updateInfoStorage: updateManagerInfoStore,
+            updateIntervalProvider: { _ in .minutes(20) },
+            supportedThreatsProvider: { ThreatKind.allCases }
+        )
+        XCTAssertTrue(mockEventMapping.singleDataSetUpdatePerformanceInfos.isEmpty)
+        XCTAssertTrue(mockEventMapping.singleDataSetUpdateDiskUsageInfos.isEmpty)
+
+        // WHEN
+        await updateManager.updateData(datasetType: expectedDataType).value
+
+        // THEN - Should have events for phishing, malware and scam
+        XCTAssertEqual(mockEventMapping.singleDataSetUpdatePerformanceInfos.count, 3)
+        XCTAssertEqual(mockEventMapping.singleDataSetUpdateDiskUsageInfos.count, 3)
+
+        // THEN - Check all performance events
+        for performanceInfo in mockEventMapping.singleDataSetUpdatePerformanceInfos {
+            XCTAssertEqual(performanceInfo.type, expectedDataType)
+            XCTAssertEqual(performanceInfo.fromRevision, expectedFromRevision)
+            XCTAssertEqual(performanceInfo.toRevision, expectedToRevision)
+            XCTAssertEqual(performanceInfo.isFullReplacement, false)
+            XCTAssertEqual(performanceInfo.updateFrequencyMinutes, 20.0)
+            XCTAssertFalse(performanceInfo.performanceBucket.isEmpty)
+        }
+
+        // THEN - Check all disk usage events
+        for diskUsageInfo in mockEventMapping.singleDataSetUpdateDiskUsageInfos {
+            XCTAssertEqual(diskUsageInfo.type, expectedDataType)
+            XCTAssertEqual(diskUsageInfo.toRevision, expectedToRevision)
+            XCTAssertEqual(diskUsageInfo.updateFrequencyMinutes, 20.0)
+            XCTAssertFalse(diskUsageInfo.diskUsageBucket.isEmpty)
+        }
+    }
+
+    func testWhenUpdateDataForDatasetTypeIsCalled_AndDataTypeIsFilterSet_ThenSendSingleDataSetUpdatePerformanceEvent() async throws {
+        // GIVEN
+        let expectedDataType = DataManager.StoredDataType.Kind.filterSet
+        let expectedFromRevision = 0
+        let expectedToRevision = 1
+        dataManager = MockMaliciousSiteProtectionDataManager(storeDatasetSuccess: true)
+        await dataManager.updateBytesToReturn(100)
+        updateManager = MaliciousSiteProtection.UpdateManager(
+            apiClient: apiClient,
+            dataManager: dataManager,
+            eventMapping: mockEventMapping,
+            updateInfoStorage: updateManagerInfoStore,
+            updateIntervalProvider: { _ in .hours(12) },
+            supportedThreatsProvider: { ThreatKind.allCases }
+        )
+        XCTAssertTrue(mockEventMapping.singleDataSetUpdatePerformanceInfos.isEmpty)
+        XCTAssertTrue(mockEventMapping.singleDataSetUpdateDiskUsageInfos.isEmpty)
+
+        // WHEN
+        await updateManager.updateData(datasetType: expectedDataType).value
+
+        // THEN - Should have events for phishing, malware and scam
+        XCTAssertEqual(mockEventMapping.singleDataSetUpdatePerformanceInfos.count, 3)
+        XCTAssertEqual(mockEventMapping.singleDataSetUpdateDiskUsageInfos.count, 3)
+
+        // THEN - Check all performance events
+        for performanceInfo in mockEventMapping.singleDataSetUpdatePerformanceInfos {
+            XCTAssertEqual(performanceInfo.type, expectedDataType)
+            XCTAssertEqual(performanceInfo.fromRevision, expectedFromRevision)
+            XCTAssertEqual(performanceInfo.toRevision, expectedToRevision)
+            XCTAssertEqual(performanceInfo.isFullReplacement, false)
+            XCTAssertEqual(performanceInfo.updateFrequencyMinutes, 720.0)
+            XCTAssertFalse(performanceInfo.performanceBucket.isEmpty)
+        }
+
+        // THEN - Check all disk usage events
+        for diskUsageInfo in mockEventMapping.singleDataSetUpdateDiskUsageInfos {
+            XCTAssertEqual(diskUsageInfo.type, expectedDataType)
+            XCTAssertEqual(diskUsageInfo.toRevision, expectedToRevision)
+            XCTAssertEqual(diskUsageInfo.updateFrequencyMinutes, 720.0)
+            XCTAssertFalse(diskUsageInfo.diskUsageBucket.isEmpty)
+        }
+    }
+
+    func testWhenUpdateDataForDatasetTypeIsCalled_AndDataSetTypeIsHashPrefixSet_ThenSendAggregateDataSetsUpdatePerformanceEvent() async throws {
+        // GIVEN
+        let datasetType: DataManager.StoredDataType.Kind = .hashPrefixSet
+        let expectedBytesWritten = 1024
+        await dataManager.updateBytesToReturn(expectedBytesWritten)
+
+        // WHEN
+        await updateManager.updateData(datasetType: datasetType).value
+
+        // THEN - Check aggregate performance event
+        XCTAssertEqual(mockEventMapping.aggregateDataSetPerformanceInfos.count, 1)
+        XCTAssertEqual(mockEventMapping.aggregateDataSetPerformanceInfos.first?.type, datasetType)
+        XCTAssertEqual(mockEventMapping.aggregateDataSetPerformanceInfos.first?.updateFrequencyMinutes, 0.0)
+        XCTAssertFalse(mockEventMapping.aggregateDataSetPerformanceInfos.first?.performanceBucket.isEmpty ?? true)
+
+        // THEN - Check aggregate disk usage event
+        XCTAssertEqual(mockEventMapping.aggregateDataSetUpdateDiskUsageInfos.count, 1)
+        XCTAssertEqual(mockEventMapping.aggregateDataSetUpdateDiskUsageInfos.first?.type, datasetType)
+        XCTAssertEqual(mockEventMapping.aggregateDataSetUpdateDiskUsageInfos.first?.updateFrequencyMinutes, 0.0)
+        XCTAssertFalse(mockEventMapping.aggregateDataSetUpdateDiskUsageInfos.first?.diskUsageBucket.isEmpty ?? true)
+    }
+
+    func testWhenUpdateDataForDatasetTypeIsCalled_AndDataSetTypeIsFilterSet_ThenSendAggregateDataSetsUpdatePerformanceEvent() async throws {
+        // GIVEN
+        let datasetType: DataManager.StoredDataType.Kind = .filterSet
+        let expectedBytesWritten = 1024
+        await dataManager.updateBytesToReturn(expectedBytesWritten)
+
+        // WHEN
+        await updateManager.updateData(datasetType: datasetType).value
+
+        // THEN - Check aggregate performance event
+        XCTAssertEqual(mockEventMapping.aggregateDataSetPerformanceInfos.count, 1)
+        XCTAssertEqual(mockEventMapping.aggregateDataSetPerformanceInfos.first?.type, datasetType)
+        XCTAssertEqual(mockEventMapping.aggregateDataSetPerformanceInfos.first?.updateFrequencyMinutes, 0.0)
+        XCTAssertFalse(mockEventMapping.aggregateDataSetPerformanceInfos.first?.performanceBucket.isEmpty ?? true)
+
+        // THEN - Check aggregate disk usage event
+        XCTAssertEqual(mockEventMapping.aggregateDataSetUpdateDiskUsageInfos.count, 1)
+        XCTAssertEqual(mockEventMapping.aggregateDataSetUpdateDiskUsageInfos.first?.type, datasetType)
+        XCTAssertEqual(mockEventMapping.aggregateDataSetUpdateDiskUsageInfos.first?.updateFrequencyMinutes, 0.0)
+        XCTAssertFalse(mockEventMapping.aggregateDataSetUpdateDiskUsageInfos.first?.diskUsageBucket.isEmpty ?? true)
+    }
+    #endif
 
 }

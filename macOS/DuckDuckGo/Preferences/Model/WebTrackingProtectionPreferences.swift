@@ -20,6 +20,7 @@ import Foundation
 import AppKit
 import Bookmarks
 import Common
+import FoundationExtensions
 
 protocol WebTrackingProtectionPreferencesPersistor {
     var gpcEnabled: Bool { get set }
@@ -32,9 +33,7 @@ struct WebTrackingProtectionPreferencesUserDefaultsPersistor: WebTrackingProtect
 
 }
 
-final class WebTrackingProtectionPreferences: ObservableObject, PreferencesTabOpening {
-
-    static let shared = WebTrackingProtectionPreferences()
+public final class WebTrackingProtectionPreferences: ObservableObject, PreferencesTabOpening {
 
     @Published
     var isGPCEnabled: Bool {
@@ -43,10 +42,15 @@ final class WebTrackingProtectionPreferences: ObservableObject, PreferencesTabOp
         }
     }
 
-    init(persistor: WebTrackingProtectionPreferencesPersistor = WebTrackingProtectionPreferencesUserDefaultsPersistor()) {
+    init(
+        persistor: WebTrackingProtectionPreferencesPersistor = WebTrackingProtectionPreferencesUserDefaultsPersistor(),
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
         self.persistor = persistor
+        self.windowControllersManager = windowControllersManager
         isGPCEnabled = persistor.gpcEnabled
     }
 
+    let windowControllersManager: WindowControllersManagerProtocol
     private var persistor: WebTrackingProtectionPreferencesPersistor
 }

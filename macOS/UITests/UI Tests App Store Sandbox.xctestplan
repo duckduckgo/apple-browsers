@@ -1,0 +1,49 @@
+{
+  "configurations" : [
+    {
+      "id" : "6E4E0014-A56B-44EE-846C-B6234029EB25",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "-NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints YES"
+      },
+      {
+        "argument" : "-com.apple.CoreData.ConcurrencyDebug 1"
+      }
+    ],
+    "environmentVariableEntries" : [
+      {
+        "key" : "OS_ACTIVITY_DT_MODE",
+        "value" : "YES"
+      },
+      {
+        "key" : "OS_ACTIVITY_MODE",
+        "value" : "debug"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",
+      "identifier" : "3706FA6A293F65D500E42796",
+      "name" : "DuckDuckGo Privacy Browser App Store"
+    }
+  },
+  "testTargets" : [
+    {
+      "selectedTests" : [
+        "AppStoreSandboxUITests"
+      ],
+      "target" : {
+        "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",
+        "identifier" : "7B4CE8D926F02108009134B1",
+        "name" : "UI Tests"
+      }
+    }
+  ],
+  "version" : 1
+}

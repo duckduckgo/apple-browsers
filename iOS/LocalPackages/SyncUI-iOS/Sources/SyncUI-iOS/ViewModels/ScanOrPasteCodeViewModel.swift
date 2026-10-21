@@ -17,11 +17,19 @@
 //  limitations under the License.
 //
 
+import AVFoundation
 import Foundation
+import UIKit
 
 public enum CodeEntrySource: String {
     case qrCode
     case pastedCode
+}
+
+public enum CodeCollectionSource: String {
+    case connect
+    case exchange
+    case recovery
 }
 
 public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
@@ -33,11 +41,15 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     /// Returns true if we were able to use the code. Either way, stop validating.
     func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool
 
-    func codeCollectionCancelled()
+    func codeCollectionCancelled(source: CodeCollectionSource)
     func gotoSettings()
-    func shareCode(_ code: String)
+    func requestCameraPermission(for model: ScanOrPasteCodeViewModel)
+    func shareCode(_ code: String, source: CodeCollectionSource)
 
     func codeEntryScreenShown()
+    func barcodeScreenShown()
+    func scanQRCodeScreenShown()
+    func codeCopied(_ code: String, source: CodeCollectionSource)
 }
 
 public class ScanOrPasteCodeViewModel: ObservableObject {
@@ -57,10 +69,13 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     @Published public var videoPermission: VideoPermission = .unknown
 
     @Published var showCamera = true
+    @Published var isScanningEnabled = true
     @Published var state = State.showScanner
     @Published var manuallyEnteredCode: String?
     @Published var isValidating = false
     @Published var invalidCode = false
+
+    @Published public var isShowingSyncCodeSheet = false
 
     var canSubmitManualCode: Bool {
         manuallyEnteredCode?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
@@ -69,17 +84,80 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     public weak var delegate: ScanOrPasteCodeViewModelDelegate?
 
     var showQRCodeModel: ShowQRCodeViewModel
+    private let source: CodeCollectionSource
+    let isImprovedPairingFlowEnabled: Bool
 
-    public init(codeForDisplayOrPasting: String, qrCodeString: String) {
+    var canPlayIntroAnimation: Bool {
+        !isImprovedPairingFlowEnabled || videoPermission == .authorised
+    }
+
+    var showsScanInstructions: Bool {
+        !isImprovedPairingFlowEnabled || videoPermission != .denied
+    }
+
+    public init(codeForDisplayOrPasting: String,
+                qrCodeString: String,
+                source: CodeCollectionSource,
+                isImprovedPairingFlowEnabled: Bool = false) {
         showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
+        self.source = source
+        self.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
     }
 
     func codeScanned(_ code: String) async -> Bool {
+        guard await MainActor.run(body: { isScanningEnabled }) else { return false }
+        // Pre-emptively trigger haptic as soon as we detect a QR code.
+        // This feels better than deferring until we've determined whether the code is valid.
+        await MainActor.run {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
         return await delegate?.syncCodeEntered(code: code, source: .qrCode) == true
     }
 
     func cameraUnavailable() {
         showCamera = false
+    }
+
+    @MainActor
+    func prepareCameraForIntroIfAuthorized() {
+        guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized else { return }
+        videoPermission = .authorised
+    }
+
+    @MainActor
+    func scanningCanBegin() {
+        isScanningEnabled = true
+    }
+
+    @MainActor
+    func resetScanningGate() {
+        isScanningEnabled = false
+    }
+
+    func introAnimationCompleted() {
+        guard !isImprovedPairingFlowEnabled else { return }
+        delegate?.requestCameraPermission(for: self)
+    }
+
+    func scanTabAppeared() {
+        requestCameraPermissionUpFront()
+    }
+
+    func appWillEnterForeground() {
+        requestCameraPermissionUpFront()
+    }
+
+    private func requestCameraPermissionUpFront() {
+        guard isImprovedPairingFlowEnabled else { return }
+        delegate?.requestCameraPermission(for: self)
+    }
+
+    @MainActor
+    func copyCode() {
+        guard showQRCodeModel.codeForDisplayOrPasting.isEmpty == false else { return }
+        showQRCodeModel.copy()
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        delegate?.codeCopied(showQRCodeModel.codeForDisplayOrPasting, source: source)
     }
 
     @MainActor
@@ -104,11 +182,11 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func cancel() {
-        delegate?.codeCollectionCancelled()
+        delegate?.codeCollectionCancelled(source: source)
     }
 
     func showShareCodeSheet() {
-        delegate?.shareCode(showQRCodeModel.codeForDisplayOrPasting)
+        delegate?.shareCode(showQRCodeModel.codeForDisplayOrPasting, source: source)
     }
 
     func endConnectMode() {

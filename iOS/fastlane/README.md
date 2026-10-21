@@ -47,6 +47,22 @@ Fetches and updates certificates and provisioning profiles for Alpha distributio
 
 Fetches and updates certificates and provisioning profiles for Ad-Hoc distribution
 
+### ios sync_signing_experimental
+
+```sh
+[bundle exec] fastlane ios sync_signing_experimental
+```
+
+Fetches and updates certificates and provisioning profiles for Experimental distribution
+
+### ios sync_signing_experimental_adhoc
+
+```sh
+[bundle exec] fastlane ios sync_signing_experimental_adhoc
+```
+
+Fetches and updates certificates and provisioning profiles for Experimental Ad-Hoc distribution
+
 ### ios adhoc
 
 ```sh
@@ -70,6 +86,14 @@ Makes Ad-Hoc build with a specified name and release bundle ID in a given direct
 ```
 
 Makes Ad-Hoc build for alpha with a specified name and alpha bundle ID in a given directory
+
+### ios experimental_adhoc
+
+```sh
+[bundle exec] fastlane ios experimental_adhoc
+```
+
+Makes Ad-Hoc build for experimental with a specified name and experimental bundle ID in a given directory
 
 ### ios promote_latest_testflight_to_appstore
 
@@ -111,13 +135,45 @@ Makes App Store release build and uploads it to TestFlight
 
 Makes Alpha release build and uploads it to TestFlight
 
-### ios latest_build_number_for_version
+### ios build_alpha
 
 ```sh
-[bundle exec] fastlane ios latest_build_number_for_version
+[bundle exec] fastlane ios build_alpha
 ```
 
-Latest build number for version
+Makes Alpha release build only (without uploading)
+
+### ios upload_alpha
+
+```sh
+[bundle exec] fastlane ios upload_alpha
+```
+
+Uploads pre-built Alpha app to TestFlight
+
+### ios release_experimental
+
+```sh
+[bundle exec] fastlane ios release_experimental
+```
+
+Makes Experimental release build and uploads it to TestFlight
+
+### ios build_experimental
+
+```sh
+[bundle exec] fastlane ios build_experimental
+```
+
+Makes Experimental release build only (without uploading)
+
+### ios upload_experimental
+
+```sh
+[bundle exec] fastlane ios upload_experimental
+```
+
+Uploads pre-built Experimental app to TestFlight
 
 ### ios increment_build_number_for_version
 
@@ -126,6 +182,14 @@ Latest build number for version
 ```
 
 Increment build number based on version in App Store Connect
+
+### ios upload_appstore_version_metadata
+
+```sh
+[bundle exec] fastlane ios upload_appstore_version_metadata
+```
+
+Fetches latest App Store version and uploads metadata to CDN
 
 ----
 

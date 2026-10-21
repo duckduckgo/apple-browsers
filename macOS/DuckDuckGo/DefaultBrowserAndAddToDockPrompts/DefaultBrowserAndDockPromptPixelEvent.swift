@@ -23,7 +23,7 @@ import PixelKit
 /// > Related links:
 /// [Pixel Definition](https://app.asana.com/1/137249556945/project/1206329551987282/task/1210257532277820)
 /// [Pixel Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210341343812872)
-enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
+enum DefaultBrowserAndDockPromptPixelEvent: PixelKit.Event, Hashable {
     private enum ParameterKey {
         static let contentType = "contentType"
         static let numberOfBannersShown = "numberOfBannersShown"
@@ -60,9 +60,11 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
     ///     - type: A hardcoded string with the following possible values (“set-as-default”, “add-to-dock”, “set-as-default-and-add-to-dock") representing the type of prompt.
     case bannerNeverAskAgainButtonClicked(type: DefaultBrowserAndDockPromptType)
 
-    var error: (any Error)? {
-        nil
-    }
+    /// Pixels for inactive user SAD/ATD prompt.
+    /// See definitions in `default-browser-and-dock-prompt-inactive-user.json5`
+    case inactiveUserModalImpression(type: DefaultBrowserAndDockPromptType)
+    case inactiveUserModalConfirmButtonClicked(type: DefaultBrowserAndDockPromptType)
+    case inactiveUserModalDismissed(type: DefaultBrowserAndDockPromptType)
 
     var name: String {
         switch self {
@@ -80,16 +82,26 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
             "m_mac_set-as-default-add-to-dock_banner-cancel-action"
         case .bannerNeverAskAgainButtonClicked:
             "m_mac_set-as-default-add-to-dock_banner-never-ask-again-action"
+        case .inactiveUserModalImpression:
+            "m_mac_set-as-default-add-to-dock_inactive-user_modal-shown"
+        case .inactiveUserModalConfirmButtonClicked:
+            "m_mac_set-as-default-add-to-dock_inactive-user_modal-confirm-action"
+        case .inactiveUserModalDismissed:
+            "m_mac_set-as-default-add-to-dock_inactive-user_modal-cancel-action"
         }
     }
 
     var parameters: [String: String]? {
         switch self {
-        case let .popoverImpression(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
-        case let.popoverConfirmButtonClicked(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
-        case let .popoverCloseButtonClicked(type):
+        case
+            let .popoverImpression(type),
+            let .popoverConfirmButtonClicked(type),
+            let .popoverCloseButtonClicked(type),
+            let .bannerCloseButtonClicked(type),
+            let .bannerNeverAskAgainButtonClicked(type),
+            let .inactiveUserModalImpression(type),
+            let .inactiveUserModalConfirmButtonClicked(type),
+            let .inactiveUserModalDismissed(type):
             [ParameterKey.contentType: type.promptTypeDescription]
         case
             let .bannerImpression(type, numberOfBannersShown),
@@ -98,10 +110,22 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
                 ParameterKey.contentType: type.promptTypeDescription,
                 ParameterKey.numberOfBannersShown: String(numberOfBannersShown)
             ]
-        case let .bannerCloseButtonClicked(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
-        case let .bannerNeverAskAgainButtonClicked(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .popoverImpression,
+                .popoverConfirmButtonClicked,
+                .popoverCloseButtonClicked,
+                .bannerImpression,
+                .bannerConfirmButtonClicked,
+                .bannerCloseButtonClicked,
+                .bannerNeverAskAgainButtonClicked,
+                .inactiveUserModalImpression,
+                .inactiveUserModalConfirmButtonClicked,
+                .inactiveUserModalDismissed:
+            return [.pixelSource]
         }
     }
 }
@@ -112,7 +136,7 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
 /// > Related links:
 /// [Pixel Definition](https://app.asana.com/1/137249556945/project/1206329551987282/task/1210257532277820)
 /// [Pixel Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210341343812872)
-enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEventV2 {
+enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKit.Event {
     /// Trigger Event: The popover seen date fails to save.
     case failedToSavePopoverSeenDate
     /// Trigger Event: The popover seen date fails to retrieve.
@@ -130,9 +154,12 @@ enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEventV2 {
     /// Trigger Event: The permanently dismissed flag fails to retrieve.
     case failedToRetrieveBannerPermanentlyDismissedValue
 
-    var error: (any Error)? {
-        nil
-    }
+    /// Debug pixel events for inactive user SAD/ATD prompt.
+    /// See definitions in `default-browser-and-dock-prompt-inactive-user.json5`
+    case failedToSaveInactiveUserModalShown
+    case failedToRetrieveInactiveUserModalShown
+    case failedToSaveCurrentActivity
+    case failedToRetrieveCurrentActivity
 
     var name: String {
         switch self {
@@ -160,11 +187,37 @@ enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEventV2 {
         /// Event Trigger: Failed to retrieve the permanently dismissed flag value in the KeyValue store.
         case .failedToRetrieveBannerPermanentlyDismissedValue:
             "m_mac_debug_set-as-default-add-to-dock_failed-to-retrieve-banner-permanently-dismissed-value"
+        case .failedToSaveInactiveUserModalShown:
+            "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-modal-shown"
+        case .failedToRetrieveInactiveUserModalShown:
+            "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-retrieve-modal-shown"
+        case .failedToSaveCurrentActivity:
+            "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-save-current-activity"
+        case .failedToRetrieveCurrentActivity:
+            "m_mac_debug_set-as-default-add-to-dock_inactive-user_failed-to-retrieve-current-activity"
         }
     }
 
     var parameters: [String: String]? {
         nil
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .failedToSavePopoverSeenDate,
+                .failedToRetrievePopoverSeenDate,
+                .failedToSaveBannerSeenDate,
+                .failedToRetrieveBannerSeenDate,
+                .failedToSaveNumberOfBannerShown,
+                .failedToRetrieveNumberOfBannerShown,
+                .failedToSaveBannerPermanentlyDismissedValue,
+                .failedToRetrieveBannerPermanentlyDismissedValue,
+                .failedToSaveInactiveUserModalShown,
+                .failedToRetrieveInactiveUserModalShown,
+                .failedToSaveCurrentActivity,
+                .failedToRetrieveCurrentActivity:
+            return [.pixelSource]
+        }
     }
 
 }

@@ -16,16 +16,50 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
+import BrowserServicesKit
 import Combine
+import Foundation
+import FeatureFlags_macOS
+import Persistence
+
+enum StartupWindowType: String, CaseIterable {
+    case window = "window"
+    case fireWindow = "fire-window"
+
+    var displayName: String {
+        switch self {
+        case .window:
+            return UserText.window
+        case .fireWindow:
+            return UserText.fireWindow
+        }
+    }
+
+    /// Returns the corresponding BurnerMode for this window type
+    /// - Returns: The appropriate BurnerMode
+    func toBurnerMode() -> BurnerMode {
+        switch self {
+        case .window:
+            return .regular
+        case .fireWindow:
+            return BurnerMode(isBurner: true)
+        }
+    }
+}
 
 protocol StartupPreferencesPersistor {
     var restorePreviousSession: Bool { get set }
     var launchToCustomHomePage: Bool { get set }
     var customHomePageURL: String { get set }
+    var startupWindowType: StartupWindowType { get set }
 }
 
 struct StartupPreferencesUserDefaultsPersistor: StartupPreferencesPersistor {
+    enum Key: String {
+        case startupWindowType = "startup-window-type"
+    }
+
     @UserDefaultsWrapper(key: .restorePreviousSession, defaultValue: false)
     var restorePreviousSession: Bool
 
@@ -35,17 +69,49 @@ struct StartupPreferencesUserDefaultsPersistor: StartupPreferencesPersistor {
     @UserDefaultsWrapper(key: .customHomePageURL, defaultValue: URL.duckDuckGo.absoluteString)
     var customHomePageURL: String
 
+    var startupWindowType: StartupWindowType {
+        get {
+            do {
+                let value = try keyValueStore.object(forKey: Key.startupWindowType.rawValue) as? String ?? StartupWindowType.window.rawValue
+                return StartupWindowType(rawValue: value) ?? .window
+            } catch {
+                return .window
+            }
+        }
+        set { try? keyValueStore.set(newValue.rawValue, forKey: Key.startupWindowType.rawValue) }
+    }
+
+    /**
+     * Initializes Startup Preferences persistor.
+     *
+     * - Parameters:
+     *   - keyValueStore: An instance of `ThrowingKeyValueStoring` that is supposed to hold all newly added preferences.
+     *   - legacyKeyValueStore: An instance of `KeyValueStoring` (wrapper for `UserDefaults`) that can be used for migrating existing
+     *                          preferences to the new store.
+     *
+     *  `keyValueStore` is an opt-in mechanism, in that all pre-existing properties of the persistor (especially those using `@UserDefaultsWrapper`)
+     *  continue using `legacyKeyValueStore` (a.k.a. `UserDefaults`) and only new properties should use `keyValueStore` by default
+     *  (see `isProtectionsReportVisible`).
+     */
+    init(keyValueStore: ThrowingKeyValueStoring, legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults) {
+        self.keyValueStore = keyValueStore
+        self.legacyKeyValueStore = legacyKeyValueStore
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let legacyKeyValueStore: KeyValueStoring
+
 }
 
-final class StartupPreferences: ObservableObject, PreferencesTabOpening {
+final class StartupPreferences: ObservableObject {
 
-    private let pinningManager: LocalPinningManager
+    private let pinningManager: PinningManager
     private var appearancePreferences: AppearancePreferences
     private var persistor: StartupPreferencesPersistor
     private var pinnedViewsNotificationCancellable: AnyCancellable?
 
-    init(pinningManager: LocalPinningManager = .shared,
-         persistor: StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+    init(pinningManager: PinningManager,
+         persistor: StartupPreferencesPersistor,
          appearancePreferences: AppearancePreferences) {
         self.pinningManager = pinningManager
         self.appearancePreferences = appearancePreferences
@@ -53,6 +119,7 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
         restorePreviousSession = persistor.restorePreviousSession
         launchToCustomHomePage = persistor.launchToCustomHomePage
         customHomePageURL = persistor.customHomePageURL
+        startupWindowType = persistor.startupWindowType
         updateHomeButtonState()
         listenToPinningManagerNotifications()
     }
@@ -81,6 +148,12 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
+    @Published var startupWindowType: StartupWindowType {
+        didSet {
+            persistor.startupWindowType = startupWindowType
+        }
+    }
+
     @Published var homeButtonPosition: HomeButtonPosition = .hidden
 
     var formattedCustomHomePageURL: String {
@@ -98,6 +171,12 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
             friendlyURL = String(friendlyURL[..<index]) + "..."
         }
         return friendlyURL
+    }
+
+    /// Determines the appropriate BurnerMode for new windows based on startup preferences and feature flags
+    /// - Returns: The appropriate BurnerMode for the startup window
+    func startupBurnerMode() -> BurnerMode {
+        return startupWindowType.toBurnerMode()
     }
 
     func isValidURL(_ text: String) -> Bool {

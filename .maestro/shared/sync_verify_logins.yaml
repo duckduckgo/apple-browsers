@@ -8,6 +8,11 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: Passcode field
 - inputText: "0000"
 - pressKey: Enter
+
+- tapOn:
+    id: Button_DismissImportPromo
+    optional: true
+
 - scrollUntilVisible:
     element: Dax Login
 - assertVisible: Dax Login

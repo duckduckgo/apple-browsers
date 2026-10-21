@@ -1,0 +1,10 @@
+# use_firebutton.yaml
+
+appId: com.duckduckgo.mobile.ios
+---
+
+- tapOn:
+    id: "Browser.Toolbar.Button.Fire"
+- tapOn:
+    id: "alert.forget-data.confirm"
+- waitForAnimationToEnd

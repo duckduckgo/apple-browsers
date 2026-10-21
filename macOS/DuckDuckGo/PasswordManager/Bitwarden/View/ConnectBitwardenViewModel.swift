@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BWManagementShared
 import Combine
 import Foundation
 
@@ -85,13 +86,14 @@ final class ConnectBitwardenViewModel: ObservableObject {
     @Published private(set) var viewState: ViewState = .disclaimer
     @Published private(set) var error: Error?
 
-    private let bitwardenManager: BWManagement
+    private let bitwardenManager: BWManagement?
 
     private var bitwardenManagerStatusCancellable: AnyCancellable?
 
-    init(bitwardenManager: BWManagement) {
+    init(bitwardenManager: BWManagement?) {
         self.bitwardenManager = bitwardenManager
-        self.bitwardenManagerStatusCancellable = bitwardenManager.statusPublisher.sink { [weak self] status in
+        let statusPublisher = bitwardenManager?.statusPublisher.eraseToAnyPublisher() ?? Just(BWStatus.disabled).eraseToAnyPublisher()
+        self.bitwardenManagerStatusCancellable = statusPublisher.sink { [weak self] status in
             self?.adjustViewState(status: status)
         }
     }
@@ -137,8 +139,8 @@ final class ConnectBitwardenViewModel: ObservableObject {
             if viewState == .connectedToBitwarden {
                 delegate?.connectBitwardenViewModelDismissedView(self, canceled: false)
             } else if viewState == .connectToBitwarden {
-                bitwardenManager.sendHandshake()
-                bitwardenManager.openBitwarden()
+                bitwardenManager?.sendHandshake()
+                bitwardenManager?.openBitwarden()
             } else if viewState == .disclaimer {
                 viewState = .lookingForBitwarden
             } else if viewState == .accessToContainersNotApproved {
@@ -149,7 +151,7 @@ final class ConnectBitwardenViewModel: ObservableObject {
             delegate?.connectBitwardenViewModelDismissedView(self, canceled: true)
 
         case .openBitwarden:
-            bitwardenManager.openBitwarden()
+            bitwardenManager?.openBitwarden()
 
         case .openBitwardenProductPage:
             NSWorkspace.shared.open(Constants.bitwardenAppStoreURL)

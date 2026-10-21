@@ -88,15 +88,138 @@ final class SubscriptionURLNavigationHandlerTests: XCTestCase {
                 return false
             }
 
-            // Check if it's subscriptionFlow with no redirect components
+            // Check if it's subscriptionFlow with redirect components containing query items
             if case .subscriptionFlow(let components) = deepLinkTarget {
-                return components == nil
+                guard let urlComponents = components,
+                      let queryItems = urlComponents.queryItems else {
+                    XCTFail("URLComponents should contain query items")
+                    return false
+                }
+                // Verify the featurePage=duckai parameter is present in query items
+                let hasFeaturePage = queryItems.contains { $0.name == "featurePage" && $0.value == "duckai" }
+                return hasFeaturePage
             }
             return false
         }
 
         // When
-        handler.navigateToSubscriptionPurchase()
+        handler.navigateToSubscriptionPurchase(origin: nil, featurePage: "duckai")
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testNavigateToSubscriptionPurchaseWithOrigin_PostsCorrectNotificationWithOriginParameter() {
+        // Given
+        let testOrigin = "some_origin"
+        let expectation = expectation(forNotification: .settingsDeepLinkNotification,
+                                      object: nil) { notification in
+            // Verify the notification contains the correct deep link target
+            guard let deepLinkTarget = notification.object as? SettingsViewModel.SettingsDeepLinkSection else {
+                XCTFail("Notification object should be SettingsDeepLinkSection")
+                return false
+            }
+
+            // Check if it's subscriptionFlow with redirect components containing query items
+            if case .subscriptionFlow(let components) = deepLinkTarget {
+                guard let urlComponents = components,
+                      let queryItems = urlComponents.queryItems else {
+                    XCTFail("URLComponents should contain query items")
+                    return false
+                }
+
+                // Verify the origin parameter is present in query items
+                let hasOriginParameter = queryItems.contains { $0.name == "origin" && $0.value == testOrigin }
+                // Verify the featurePage=duckai parameter is present in query items
+                let hasFeaturePage = queryItems.contains { $0.name == "featurePage" && $0.value == "duckai" }
+                return hasOriginParameter && hasFeaturePage
+            }
+            return false
+        }
+
+        // When
+        handler.navigateToSubscriptionPurchase(origin: testOrigin, featurePage: "duckai")
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    // MARK: - navigateToSubscriptionPlans Tests
+
+    func testNavigateToSubscriptionPlans_WithNoParameters_PostsNotificationWithNilComponents() {
+        // Given
+        let expectation = expectation(forNotification: .settingsDeepLinkNotification,
+                                      object: nil) { notification in
+            guard let deepLinkTarget = notification.object as? SettingsViewModel.SettingsDeepLinkSection else {
+                XCTFail("Notification object should be SettingsDeepLinkSection")
+                return false
+            }
+
+            return deepLinkTarget == .subscriptionPlanChangeFlow(redirectURLComponents: nil)
+        }
+
+        // When
+        handler.navigateToSubscriptionPlans(origin: nil, featurePage: nil)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testNavigateToSubscriptionPlans_PostsSubscriptionPlanChangeFlowNotification() {
+        // Given
+        let expectation = expectation(forNotification: .settingsDeepLinkNotification,
+                                      object: nil) { notification in
+            guard let deepLinkTarget = notification.object as? SettingsViewModel.SettingsDeepLinkSection else {
+                XCTFail("Notification object should be SettingsDeepLinkSection")
+                return false
+            }
+
+            // Verify it's subscriptionPlanChangeFlow (not subscriptionFlow)
+            if case .subscriptionPlanChangeFlow(let components) = deepLinkTarget {
+                guard let urlComponents = components,
+                      let queryItems = urlComponents.queryItems else {
+                    XCTFail("URLComponents should contain query items")
+                    return false
+                }
+                let hasFeaturePage = queryItems.contains { $0.name == "featurePage" && $0.value == "duckai" }
+                return hasFeaturePage
+            }
+            return false
+        }
+
+        // When
+        handler.navigateToSubscriptionPlans(origin: nil, featurePage: "duckai")
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testNavigateToSubscriptionPlansWithOrigin_PostsNotificationWithOriginParameter() {
+        // Given
+        let testOrigin = "funnel_duckai_ios"
+        let expectation = expectation(forNotification: .settingsDeepLinkNotification,
+                                      object: nil) { notification in
+            guard let deepLinkTarget = notification.object as? SettingsViewModel.SettingsDeepLinkSection else {
+                XCTFail("Notification object should be SettingsDeepLinkSection")
+                return false
+            }
+
+            if case .subscriptionPlanChangeFlow(let components) = deepLinkTarget {
+                guard let urlComponents = components,
+                      let queryItems = urlComponents.queryItems else {
+                    XCTFail("URLComponents should contain query items")
+                    return false
+                }
+
+                let hasOriginParameter = queryItems.contains { $0.name == "origin" && $0.value == testOrigin }
+                let hasFeaturePage = queryItems.contains { $0.name == "featurePage" && $0.value == "duckai" }
+                return hasOriginParameter && hasFeaturePage
+            }
+            return false
+        }
+
+        // When
+        handler.navigateToSubscriptionPlans(origin: testOrigin, featurePage: "duckai")
 
         // Then
         wait(for: [expectation], timeout: 1.0)

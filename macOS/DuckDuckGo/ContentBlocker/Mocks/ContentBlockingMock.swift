@@ -16,13 +16,16 @@
 //  limitations under the License.
 //
 
+#if DEBUG
+
 import BloomFilterWrapper
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
-
-#if DEBUG
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class ContentBlockingMock: NSObject, ContentBlockingProtocol, AdClickAttributionDependencies {
 
@@ -77,11 +80,11 @@ final class HTTPSUpgradeStoreMock: NSObject, HTTPSUpgradeStore {
         excludedDomains.contains(domain)
     }
 
-    func persistBloomFilter(specification: BrowserServicesKit.HTTPSBloomFilterSpecification, data: Data) throws {
+    func persistBloomFilter(specification: BrowserServicesKit.HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
         fatalError("Not implemented")
     }
 
-    func persistExcludedDomains(_ domains: [String]) throws {
+    func persistExcludedDomains(_ domains: [String]) throws -> Bool {
         fatalError("Not implemented")
     }
 

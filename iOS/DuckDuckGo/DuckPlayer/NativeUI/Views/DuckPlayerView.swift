@@ -20,6 +20,7 @@
 import DesignResourcesKit
 import Foundation
 import SwiftUI
+import UIComponents
 
 struct DuckPlayerView: View {
     @Environment(\.dismiss) var dismiss
@@ -55,7 +56,7 @@ struct DuckPlayerView: View {
         static let grabHandlePadding: CGFloat = 8
         static let videoContainerPadding: CGFloat = 20
         static let welcomeMessageSpacing: CGFloat = 16
-        static let welcomeMessageInternalPadding: CGFloat = 10
+        static let welcomeMessageInternalPadding = EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
         static let welcomeMessageCornerRadius: CGFloat = 12
         static let welcomeMessagePadding: CGFloat = 16
         static let welcomeMessageExternalPadding: CGFloat = 5
@@ -164,6 +165,7 @@ struct DuckPlayerView: View {
                                 .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
                                 .rotationEffect(Angle(degrees: viewModel.controlsVisible ? 180 : 0))
                         }
+                        .accessibilityIdentifier("chevron.up")
                     }
                     .padding(.bottom, LayoutConstants.controlButtonBottomPadding)
                 }
@@ -194,10 +196,11 @@ struct DuckPlayerView: View {
                     Spacer()
                     Toggle(isOn: $autoOpenOnYoutube) {}
                         .labelsHidden()
-                        .tint(.init(designSystemColor: .accent))
+                        .tint(.init(designSystemColor: .accentPrimary))
                         .onChange(of: autoOpenOnYoutube) { newValue in
                             viewModel.autoOpenOnYoutube = newValue
                         }
+                        .accessibilityIdentifier("Open YouTube videos here")
                 }
                 .padding(.horizontal, LayoutConstants.horizontalPadding)
             }
@@ -230,6 +233,7 @@ struct DuckPlayerView: View {
                     }
                     .padding(.horizontal, LayoutConstants.horizontalPadding)
                 }
+                .accessibilityIdentifier("Watch on YouTube")
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
@@ -256,6 +260,7 @@ struct DuckPlayerView: View {
                         .frame(width: LayoutConstants.settingsButtonSize, height: LayoutConstants.settingsButtonSize)
                 }
             }
+            .accessibilityIdentifier("DuckPlayerOpenSettings")
 
             Spacer()
 
@@ -268,6 +273,7 @@ struct DuckPlayerView: View {
                 Text(UserText.duckPlayerFeatureName)
                     .foregroundColor(.white)
                     .font(.headline)
+                    .accessibilityIdentifier("Duck Player")
             }
 
             Spacer()
@@ -281,6 +287,7 @@ struct DuckPlayerView: View {
                         .font(.system(size: 20, weight: .semibold))
                         .frame(width: LayoutConstants.closeButtonSize, height: LayoutConstants.closeButtonSize)
                 })
+                .accessibilityIdentifier("xmark")
         }
         .padding(.horizontal, LayoutConstants.horizontalPadding)
     }
@@ -315,7 +322,7 @@ struct DuckPlayerView: View {
                 Spacer()
                 Toggle(isOn: $autoOpenOnYoutube) {}
                     .labelsHidden()
-                    .tint(.init(designSystemColor: .accent))
+                    .tint(.init(designSystemColor: .accentPrimary))
                     .onChange(of: autoOpenOnYoutube) { newValue in
                         viewModel.autoOpenOnYoutube = newValue
                     }
@@ -338,7 +345,7 @@ struct DuckPlayerView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: LayoutConstants.duckPlayerLogoSize, height: LayoutConstants.duckPlayerLogoSize, alignment: .leading)
-                            .padding(.leading, LayoutConstants.welcomeMessageInternalPadding)
+                            .padding(.leading, LayoutConstants.welcomeMessageInternalPadding.leading)
                     }
 
                   BubbleView(
@@ -346,7 +353,7 @@ struct DuckPlayerView: View {
                       arrowWidth: 25,
                       arrowPositionPercent: 1,
                       fillColor: Constants.uiElementsBackground,
-                      paddingAmount: LayoutConstants.welcomeMessageInternalPadding
+                      contentPadding: LayoutConstants.welcomeMessageInternalPadding
                   ) {
                       bubbleContent
                         .padding(LayoutConstants.welcomeMessageInternalPadding)
@@ -370,6 +377,7 @@ struct DuckPlayerView: View {
                     }
                     .padding(8)
                 }
+                .accessibilityIdentifier("duckPlayerWelcomeCloseButton")
                 .offset(x: 2, y: 4 + LayoutConstants.duckPlayerLogoSize)
                 .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 0)
             }

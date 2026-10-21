@@ -20,30 +20,31 @@ import Foundation
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import PixelKit
+import PrivacyConfig
 import DataBrokerProtectionCore
 
 public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging {
 
     private let lock = NSLock()
 
+    private var _embeddedConfigData: Data?
     var embeddedConfigData: Data {
-        let configString = """
-    {
-            "readme": "https://github.com/duckduckgo/privacy-configuration",
-            "version": 1693838894358,
-            "features": {
-                "brokerProtection": {
-                    "state": "enabled",
-                    "exceptions": [],
-                    "settings": {}
-                }
-            },
-            "unprotectedTemporary": []
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let data = _embeddedConfigData {
+            return data
         }
-    """
-        let data = configString.data(using: .utf8)
-        return data!
+
+        guard let url = Bundle.main.url(forResource: "macos-config", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            fatalError("Could not load macos-config.json from bundle")
+        }
+
+        _embeddedConfigData = data
+        return data
     }
 
     private var _fetchedConfigData: PrivacyConfigurationManager.ConfigurationData?
@@ -73,7 +74,7 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
         updatesSubject.eraseToAnyPublisher()
     }
 
-    public var privacyConfig: BrowserServicesKit.PrivacyConfiguration {
+    public var privacyConfig: PrivacyConfiguration {
         guard let privacyConfigurationData = try? PrivacyConfigurationData(data: currentConfig) else {
             fatalError("Could not retrieve privacy configuration data")
         }
@@ -82,7 +83,7 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
         return privacyConfig
     }
 
-    public var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: InternalUserDeciderStoreMock())
+    public let internalUserDecider: InternalUserDecider
 
     @discardableResult
     public func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
@@ -108,7 +109,9 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
         return result
     }
 
-    public init() {}
+    public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: UserDefaults.config)) {
+        self.internalUserDecider = internalUserDecider
+    }
 }
 
 func privacyConfiguration(withData data: PrivacyConfigurationData,

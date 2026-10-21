@@ -19,6 +19,8 @@
 import SwiftUI
 import SwiftUIExtensions
 import Combine
+import Common
+import FoundationExtensions
 import VPN
 
 extension View {
@@ -51,16 +53,24 @@ public struct NetworkProtectionStatusView: View {
 
             if model.shouldShowSubscriptionExpired {
                 SubscriptionExpiredView {
-                    model.openPrivacyPro()
+                    model.openSubscription()
                 } uninstallButtonHandler: {
                     model.uninstallVPN()
                 }
                 .padding(5)
+                .onAppear {
+                    model.subscriptionExpiredViewDidAppear()
+                }
             } else if let promptActionViewModel = model.promptActionViewModel {
                 PromptActionView(model: promptActionViewModel)
                     .padding(.horizontal, 5)
                     .padding(.top, 5)
                     .transition(.slide)
+            }
+
+            if let environmentWarningViewModel = model.environmentWarningViewModel {
+                Spacer()
+                WarningView(model: environmentWarningViewModel)
             }
 
             Spacer()
@@ -73,7 +83,7 @@ public struct NetworkProtectionStatusView: View {
 
             bottomMenuView()
         }
-        .padding(5)
+        .padding(AppVersion.isLiquidGlassSupported ? 14 : 5)
         .frame(width: 350, alignment: .top)
         .transition(.slide)
     }

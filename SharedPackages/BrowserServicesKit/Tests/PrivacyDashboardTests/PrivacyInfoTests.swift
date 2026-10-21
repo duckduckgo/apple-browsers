@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import BrowserServicesKit
+import PrivacyConfig
 @testable import PrivacyDashboard
 
 final class PrivacyInfoTests: XCTestCase {

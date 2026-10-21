@@ -16,9 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
+import Common
+import FoundationExtensions
 import CryptoKit
+import Foundation
 import PixelKit
+import Utilities
 
 enum EncryptionKeyStoreError: Error, ErrorWithPixelParameters {
     case storageFailed(OSStatus)
@@ -27,30 +30,27 @@ enum EncryptionKeyStoreError: Error, ErrorWithPixelParameters {
     case cannotTransformDataToString(OSStatus)
     case cannotTransfrotmStringToBase64Data(OSStatus)
 
-    var errorParameters: [String: String] {
+    var status: OSStatus {
         switch self {
-        case .storageFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .readFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .deletionFailed(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .cannotTransformDataToString(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
-        case .cannotTransfrotmStringToBase64Data(let status):
-            return [PixelKit.Parameters.keychainErrorCode: "\(status)"]
+        case .storageFailed(let status),
+             .readFailed(let status),
+             .deletionFailed(let status),
+             .cannotTransformDataToString(let status),
+             .cannotTransfrotmStringToBase64Data(let status):
+            return status
         }
+    }
+
+    var errorParameters: [String: String] {
+        [PixelKit.Parameters.keychainErrorCode: "\(status)"]
     }
 }
 
 final class EncryptionKeyStore: EncryptionKeyStoring {
 
     enum Constants {
-#if APPSTORE
-        static let encryptionKeyAccount = "com.duckduckgo.mobile.ios"
-#else
-        static let encryptionKeyAccount = "com.duckduckgo.macos.browser"
-#endif
+        static let encryptionKeyAccountAppStore = "com.duckduckgo.mobile.ios"
+        static let encryptionKeyAccountDMG = "com.duckduckgo.macos.browser"
         static let encryptionKeyService = "DuckDuckGo Privacy Browser Data Encryption Key"
 
         static let encryptionKeyServiceBase64 = "DuckDuckGo Privacy Browser Encryption Key v2"
@@ -66,9 +66,9 @@ final class EncryptionKeyStore: EncryptionKeyStoring {
         ] as [String: Any]
     }
 
-    init(generator: EncryptionKeyGenerating, account: String = Constants.encryptionKeyAccount) {
+    init(generator: EncryptionKeyGenerating, account: String? = nil) {
         self.generator = generator
-        self.account = account
+        self.account = account ?? (AppVersion.isAppStoreBuild ? Constants.encryptionKeyAccountAppStore : Constants.encryptionKeyAccountDMG)
     }
 
     convenience init() {

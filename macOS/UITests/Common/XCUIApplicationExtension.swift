@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import Utilities
 
 // Enum to represent bookmark modes
 enum BookmarkMode {
@@ -24,64 +25,489 @@ enum BookmarkMode {
     case manager
 }
 
+private extension URL {
+    var usesLocalTestServerTimeout: Bool {
+        guard let host else { return false }
+        return port == 8085 && (host == "localhost" || host == "127.0.0.1")
+    }
+}
+
+@objc protocol XCTRunnerAutomationSessionProtocol: AnyObject {
+    @objc(attributesForElement:attributes:error:)
+    func attributes(for element: AXElement, attributes: [String]) throws -> Any
+}
+@objc protocol AXElement: AnyObject {
+}
+
 extension XCUIApplication {
 
-    private enum AccessibilityIdentifiers {
+    enum AccessibilityIdentifiers {
+        static let okButton = "OKButton"
         static let addressBarTextField = "AddressBarViewController.addressBarTextField"
+        static let addressBarPassiveTextField = "AddressBarViewController.passiveTextField"
+        static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"
+        static let searchModeToggleControl = "AddressBarButtonsViewController.searchModeToggleControl"
+        static let preferencesAIChatButton = "PreferencesSidebar.aichatButton"
+        static let aiFeaturesToggle = "Preferences.AIChat.aiFeaturesToggle"
+        static let showInAddressBarToggle = "Preferences.AIChat.showInAddressBarToggle"
+        static let showSearchAndDuckAIToggleToggle = "Preferences.AIChat.showSearchAndDuckAIToggleToggle"
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
+        static let bookmarksBarPopoverShow = "BookmarksBarPopover.show"
+        static let bookmarksBarPopoverHide = "BookmarksBarPopover.hide"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
+        static let backButton = "NavigationBarViewController.BackButton"
+        static let forwardButton = "NavigationBarViewController.ForwardButton"
+        static let reloadButton = "NavigationBarViewController.RefreshOrStopButton"
+        static let downloadsButton = "NavigationBarViewController.downloadsButton"
+        static let optionsButton = "NavigationBarViewController.optionsButton"
+        static let bookmarksBar = "BookmarksBarViewController.bookmarksBarCollectionView"
+        static let mainMenuAddBookmarkMenuItem = "MainMenu.addBookmark"
+        static let mainMenuToggleBookmarksBarMenuItem = "MainMenu.toggleBookmarksBar"
+        static let historyMenu = "History"
+        static let clearAllHistoryMenuItem = "HistoryMenu.clearAllHistory"
+        static let clearAllHistoryAlertClearButton = "ClearAllHistoryAndDataAlert.clearButton"
+        static let reopenLastClosedWindowMenuItem = "HistoryMenu.reopenLastClosedWindow"
+        static let recentlyVisitedMenuItemPrefix = "HistoryMenu.recentlyVisitedMenuItem"
+        static let populateFakeHistory10MenuItem = "HistoryDebugMenu.populate10"
+        static let populateFakeHistory100MenuItem = "HistoryDebugMenu.populate100"
+        static let bookmarksMenu = "Bookmarks"
+        static let mainMenuPinTabMenuItem = "Pin Tab"
+        static let mainMenuUnpinTabMenuItem = "Unpin Tab"
+        static let preferencesMenuItem = "MainMenu.preferencesMenuItem"
+        static let helpMenuItem = "Help"
+        static let releaseNotesMenuItem = "Release Notes"
+
+        static let settingsScrollView = "Settings.ScrollView"
+        static let preferencesSidebarScrollView = "PreferencesSidebar.scrollView"
+        static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
+        static let preferencesDataClearingButton = "PreferencesSidebar.dataClearingButton"
+        static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
+        static let alwaysAskWhereToSaveFilesCheckbox = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
+        static let openPopupOnDownloadCompletionCheckbox = "PreferencesGeneralView.openPopupOnDownloadCompletion"
+        static let warnBeforeQuittingCheckbox = "PreferencesGeneralView.warnBeforeQuitting"
+        static let warnBeforeClosingPinnedTabsCheckbox = "PreferencesGeneralView.warnBeforeClosingPinnedTabs"
+        static let warnBeforeQuitDontShowAgainButton = "WarnBeforeQuitView.dontShowAgainButton"
+        static let addBookmarkAddToFavoritesCheckbox = "bookmark.add.add.to.favorites.button"
+        static let bookmarkDialogAddButton = "BookmarkDialogButtonsView.defaultButton"
+
+        static let addBookmarkFolderDropdown = "bookmark.add.folder.dropdown"
+
+        static let stateRestorePicker = "PreferencesGeneralView.stateRestorePicker"
+        static let reopenAllWindowsFromLastSession = "PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"
+        static let startupTypeOpenANewWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow"
+        static let startupWindowTypeRegularWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
+        static let startupWindowTypeFireWindow = "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
+
+        static let openFireWindowByDefaultCheckbox = "PreferencesDataClearingView.openFireWindowByDefault"
+
+        static let fireDialogTitle = "FireDialogView.title"
+        static let fireDialogSegmentedControl = "FireDialogView.segmentedControl"
+        static let fireDialogDetailsDisclosureButton = "FireDialogView.detailsDisclosureButton"
+        static let fireDialogTabsToggle = "FireDialogView.tabsToggle"
+        static let fireDialogHistoryToggle = "FireDialogView.historyToggle"
+        static let fireDialogCookiesToggle = "FireDialogView.cookiesToggle"
+        static let fireDialogCookiesDetailButton = "FireDialogView.cookiesDetailButton"
+        static let fireDialogManageFireproofButton = "FireDialogView.manageFireproofButton"
+        static let fireDialogIndividualSitesLink = "FireDialogView.individualSitesLink"
+        static let fireDialogSitesOverlayCloseButton = "FireDialogView.sitesOverlayCloseButton"
+        static let fireDialogCancelButton = "FireDialogView.cancelButton"
+        static let fireDialogBurnButton = "FireDialogView.burnButton"
+        static let fireproofDomainsAddButton = "FireproofDomainsViewController.addButton"
+        static let fireproofDomainsAddCurrentButton = "FireproofDomainsViewController.addCurrentButton"
+        static let fireproofDomainsDoneButton = "FireproofDomainsViewController.doneButton"
+        static let fireButton = "TabBarViewController.fireButton"
+        static let fakeFireButton = "FireViewController.fakeFireButton"
+        static let homeButton = "NavigationBarViewController.HomeButton"
+
+        static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
+        static let fireDialogManageFireproofSites = "FireDialogView.moreOptions.manageFireproofSites"
+
+        static let quitMenuItem = "Quit DuckDuckGo"
     }
 
-    static func setUp(environment: [String: String]? = nil, featureFlags: [String: Bool] = ["visualUpdates": true]) -> XCUIApplication {
+    static func setUp(environment: [String: String]? = nil,
+                      featureFlags: [String: Bool] = [:],
+                      arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchEnvironment["UITEST_MODE"] = "1"
+        app.enforceEnglish()
         if let environment {
             app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
-        } else {
-            app.launchEnvironment["UITEST_MODE"] = "1"
         }
         if !featureFlags.isEmpty {
             app.launchEnvironment["FEATURE_FLAGS"] = featureFlags.map { "\($0)=\($1)" }.joined(separator: " ")
+        }
+        if let arguments {
+            app.launchArguments.append(contentsOf: arguments)
+        }
+        if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
+            app.launchArguments += ["-isInternalUser", "true"]
         }
         app.launch()
         return app
     }
 
-    /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.
-    /// - Parameter buttonIdentifier: The button identifier we want to tap from the popover
-    func dismissPopover(buttonIdentifier: String) {
-        let popover = popovers.firstMatch
-        guard popover.exists else {
-            return
-        }
+    /// The tests match English text, so run the app in English whatever the Mac's language is.
+    private func enforceEnglish() {
+        launchArguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+    }
 
-        let button = popover.buttons[buttonIdentifier]
-        guard button.exists else {
-            return
+    /// Terminate the running app and launch it again, preserving environment and arguments from `setUp()`.
+    func restart(forceTerminate: Bool = false) {
+        if forceTerminate {
+            terminate()
+        } else {
+            typeKey("q", modifierFlags: .command)
+            XCTAssertTrue(wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence),
+                          "App should quit on Cmd+Q; disable Warn Before Quitting before calling restart()")
         }
+        launch()
+    }
 
-        button.tap()
+    static let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
+
+    @nonobjc var path: String? {
+        value(forKey: "path") as? String
+    }
+
+    var bundleID: String? {
+        value(forKey: "bundleID") as? String
+    }
+
+    var isSandboxed: Bool {
+        // Naive bundleID-based check
+        bundleID?.starts(with: "com.duckduckgo.mobile.ios") == true
     }
 
     /// Enforces single a single window by:
     ///  1. First, closing all windows
     ///  2. Opening a new window
     func enforceSingleWindow() {
-        typeKey("w", modifierFlags: [.command, .option, .shift])
+        let window = windows.firstMatch
+        while window.exists {
+            let closeButton = window.buttons["_XCUI:CloseWindow"]
+            if closeButton.isHittable {
+                closeButton.click()
+            } else {
+                typeKey("w", modifierFlags: [.command, .option, .shift])
+            }
+            _=window.waitForNonExistence(timeout: UITests.Timeouts.elementExistence)
+        }
         typeKey("n", modifierFlags: .command)
     }
 
     /// Opens a new tab via keyboard shortcut
     func openNewTab() {
-         typeKey("t", modifierFlags: .command)
-     }
+        typeKey("t", modifierFlags: .command)
+    }
+
+    /// Closes current tab via keyboard shortcut
+    func closeCurrentTab() {
+        typeKey("w", modifierFlags: .command)
+    }
+    override func closeTab() throws {
+        closeCurrentTab()
+    }
+
+    /// Pins current tab using the main menu
+    func pinCurrentTab() {
+        menuBarItems["Window"].click()
+        mainMenuPinTabMenuItem.clickAfterExistenceTestSucceeds()
+    }
+
+    /// Unpins current tab using the main menu
+    func unpinCurrentTab() {
+        menuBarItems["Window"].click()
+        mainMenuUnpinTabMenuItem.clickAfterExistenceTestSucceeds()
+    }
+
+    /// Checks if the current tab can be pinned (i.e., is not already pinned)
+    /// - Returns: true if the "Pin Tab" menu item exists (tab is not pinned), false otherwise
+    func currentTabCanBePinned() -> Bool {
+        return mainMenuPinTabMenuItem.exists
+    }
+
+    // MARK: - Warn Before Quit Settings
+
+    /// Enables the "Warn Before Quitting" setting in General preferences
+    func enableWarnBeforeQuitting(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        warnBeforeQuittingCheckbox.toggleCheckboxIfNeeded(to: true, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Disables the "Warn Before Quitting" setting in General preferences
+    func disableWarnBeforeQuitting(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        warnBeforeQuittingCheckbox.toggleCheckboxIfNeeded(to: false, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Enables the "Warn Before Closing Pinned Tabs" setting in General preferences
+    func enableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        let checkbox = warnBeforeClosingPinnedTabsCheckbox
+        scrollIntoViewInPreferences(checkbox)
+        checkbox.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Disables the "Warn Before Closing Pinned Tabs" setting in General preferences
+    func disableWarnBeforeClosingPinnedTabs(closeSettings: Bool = true) {
+        openGeneralPreferences()
+        let checkbox = warnBeforeClosingPinnedTabsCheckbox
+        scrollIntoViewInPreferences(checkbox)
+        checkbox.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: ensureHittable)
+        if closeSettings {
+            typeKey("w", modifierFlags: [.command])
+        }
+    }
+
+    /// Returns the "Warn Before Quitting" checkbox in General preferences
+    var warnBeforeQuittingCheckbox: XCUIElement {
+        preferencesWindow.checkBoxes[AccessibilityIdentifiers.warnBeforeQuittingCheckbox]
+    }
+
+    /// Returns the "Warn Before Closing Pinned Tabs" checkbox in General preferences
+    var warnBeforeClosingPinnedTabsCheckbox: XCUIElement {
+        preferencesWindow.checkBoxes[AccessibilityIdentifiers.warnBeforeClosingPinnedTabsCheckbox]
+    }
+
+    func openGeneralPreferences() {
+        openSettings()
+        preferencesGoToGeneralPane()
+    }
+
+    /// Activate address bar for input
+    /// On new tab pages, the address bar is already activated by default
+    func activateAddressBar() {
+        typeKey("l", modifierFlags: [.command])
+    }
+
+    /// Address bar text field element
+    var addressBar: XCUIElement {
+        windows.firstMatch.textFields[XCUIApplication.AccessibilityIdentifiers.addressBarTextField]
+    }
+
+    /// Activates the address bar if needed and returns its current value
+    /// - Parameter waitingForPageLoad: wait for the page to stop loading before activating the address bar. Use it for pages that
+    ///   take focus when they finish loading. Leave it off in tests that inspect the address bar while a navigation is still in flight.
+    /// - Returns: The current value of the address bar as a string
+    func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true, waitingForPageLoad: Bool = false) -> String? {
+        if shouldActivate {
+            activateAddressBarRetryingIfFocusIsLost(waitingForPageLoad: waitingForPageLoad)
+        }
+        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Address bar should be editable")
+        return addressBar.value as? String
+    }
+
+    /// Focuses the address bar with Cmd+L, optionally once the page has stopped loading, retrying when something else takes the focus back.
+    ///
+    /// A page that autofocuses an input when it finishes loading (e.g. duckduckgo.com) or that handles Cmd+L itself
+    /// leaves the address bar in its passive, non-editable state, so activating it while the page is still loading can lose a race.
+    private func activateAddressBarRetryingIfFocusIsLost(waitingForPageLoad: Bool, attempts: Int = 3) {
+        if waitingForPageLoad {
+            waitForPageToFinishLoading()
+        }
+        let passiveAddressBar = windows.firstMatch.staticTexts[AccessibilityIdentifiers.addressBarPassiveTextField]
+        for _ in 0..<attempts {
+            activateAddressBar()
+            if addressBar.waitForExistence(timeout: 2) { return }
+
+            if passiveAddressBar.exists {
+                passiveAddressBar.click()
+                if addressBar.waitForExistence(timeout: 2) { return }
+            }
+        }
+    }
+
+    /// Waits (best effort) for the Reload/Stop button to go back to "Reload Page", i.e. for the current tab to stop loading.
+    /// A timeout is not a failure, because some pages never finish loading.
+    private func waitForPageToFinishLoading(timeout: TimeInterval = UITests.Timeouts.elementExistence) {
+        let notLoading = NSPredicate(format: "title != %@", "Stop")
+        _ = reloadButton.wait(for: notLoading, timeout: timeout)
+    }
+
+    func navigateToYouTubeVideo(_ videoID: String, file: StaticString = #file, line: UInt = #line) {
+        let url = URL(string: "https://www.youtube.com/watch?v=\(videoID)")!
+        XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Address bar did not appear before navigating to YouTube",
+                      file: file, line: line)
+        addressBar.typeURL(url)
+        let titlePredicate = NSPredicate(format: "label CONTAINS[c] %@", "YouTube")
+        let webView = windows.webViews.matching(titlePredicate).firstMatch
+        XCTAssertTrue(webView.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "YouTube video page did not load",
+                      file: file, line: line)
+    }
+
+    /// Opens a new window
+    func openNewWindow() {
+        typeKey("n", modifierFlags: .command)
+    }
+
+    /// Opens a Fire window via keyboard shortcut (Cmd+Shift+N)
+    func openFireWindow() {
+        typeKey("n", modifierFlags: [.command, .shift])
+    }
+
+    /// Closes the current window via keyboard shortcut (Cmd+Shift+W)
+    func closeWindow() {
+        typeKey("w", modifierFlags: [.command, .shift])
+    }
+
+    /// Closes all windows
+    func closeAllWindows() {
+        typeKey("w", modifierFlags: [.command, .option, .shift])
+    }
+
+    /// Opens downloads
+    func openDownloads() {
+        typeKey("j", modifierFlags: .command)
+    }
+
+    /// Opens Help
+    func openHelp() {
+        helpMenu.click()
+    }
+
+    /// Opens history
+    func openHistory() {
+        typeKey("y", modifierFlags: .command)
+    }
+
+    /// Opens release notes
+    func openReleaseNotes() {
+        let releaseNotesMenu = releaseNotesMenu
+        XCTAssertTrue(
+            releaseNotesMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        )
+
+        releaseNotesMenu.click()
+    }
+
+    func openSite(pageTitle: String) {
+        let url = UITests.simpleServedPage(titled: pageTitle)
+        let addressBar = addressBar
+        XCTAssertTrue(
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The address bar text field didn't become available in a reasonable timeframe."
+        )
+        addressBar.pasteURL(url, pressingEnter: true)
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        XCTAssertTrue(
+            windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.localTestServer),
+            "Visited site didn't load with the expected title in a reasonable timeframe."
+        )
+    }
+
+    var automationSession: XCTRunnerAutomationSessionProtocol? {
+        guard self.value(forKey: "hasAutomationSession") as? Bool == true,
+              let automationSession = self.value(forKey: "automationSession") as? NSObject else { return nil }
+        return unsafeBitCast(automationSession, to: XCTRunnerAutomationSessionProtocol.self)
+    }
+
+    func openURL(_ url: URL, waitForWebViewAccessibilityLabel expectedLabel: String? = nil) {
+        let navigationTimeout = url.usesLocalTestServerTimeout ? UITests.Timeouts.localTestServer : UITests.Timeouts.navigation
+        let addressBar = addressBar
+        XCTAssertTrue(
+            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The address bar text field didn't become available in a reasonable timeframe."
+        )
+        addressBar.pasteURL(url, pressingEnter: true)
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
+        if let expectedLabel {
+            XCTAssertTrue(
+                windows.firstMatch.webViews[expectedLabel].waitForExistence(timeout: navigationTimeout),
+                "Web view with label '\(expectedLabel)' didn't load in a reasonable timeframe."
+            )
+        } else {
+            XCTAssertTrue(
+                windows.firstMatch.webViews.firstMatch.waitForExistence(timeout: navigationTimeout),
+                "Web view didn't load in a reasonable timeframe."
+            )
+        }
+        let tab = windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
+        let progressIndicator = tab.progressIndicators["TabFaviconView.spinner"]
+
+        let naked = (url.nakedString ?? url.absoluteString).droppingWwwPrefix()
+        let scheme = url.navigationalScheme?.separated() ?? ""
+        XCTAssertTrue(
+            tab.wait(for: .keyPath(\.url, in: [
+                scheme + naked,
+                scheme + naked + "/",
+                scheme + "www." + naked,
+                scheme + "www." + naked + "/",
+                url.absoluteString,
+            ]), timeout: navigationTimeout),
+            "Tab did not change URL to \(url.absoluteString) in a reasonable timeframe (current URL: \(tab.url ?? "<nil>"))."
+        )
+        _=progressIndicator.waitForExistence(timeout: 1)
+        XCTAssertTrue(
+            progressIndicator.waitForNonExistence(timeout: navigationTimeout),
+            "Progress did not reach 100% in a reasonable timeframe (current value: \(progressIndicator.value as? Double ??? "<nil>"))."
+        )
+    }
+
+    /// Dismisses the macOS "Allow … to find devices on local networks?" system prompt if it's on
+    /// screen. It's a TCC alert owned by `UserNotificationCenter`, so it floats above our window and
+    /// steals key focus: while it's up the browser window isn't hittable and the next click/wait
+    /// fails at a nondeterministic point — a recurring source of flakiness on the macOS 15+ CI VMs.
+    /// Tapping "Allow" lets the tests-server loopback traffic proceed unchanged.
+    @discardableResult
+    func dismissSystemPermissionPromptIfPresent(allow: Bool = true, logIfNotFound: Bool = true) -> Bool {
+        guard let snapshot = try? self.snapshot() else { return false }
+        func descr() -> String {
+            snapshot.toDictionary(ignoringElementsOfType: [.menu, .menuItem, .menuBar]) ??? "<nil>"
+        }
+        // Check if Notification Center has sheets with buttons
+        var children = snapshot.children
+        var buttonFound = false
+        while let child = children.popLast() {
+            if child.elementType == .button {
+                buttonFound = true
+                break
+            } else if ![.menu, .menuItem, .menuBar].contains(child.elementType) {
+                children.append(contentsOf: child.children)
+            }
+        }
+        guard buttonFound else {
+            if logIfNotFound {
+                Logger.log("🔍 dismissSystemPermissionPromptIfPresent: no button found: \(descr())")
+            }
+            return false
+        }
+
+        let allowLabels = ["Allow", "OK"]
+        let denyLabels = ["Don’t Allow", "Don't Allow", "Deny", "Cancel"]
+
+        let labels = allow ? allowLabels : denyLabels
+
+        for label in labels {
+            let button = self.buttons[label].firstMatch
+            if button.exists {
+                Logger.log("🔍 dismissSystemPermissionPromptIfPresent: \(label)")
+                button.click()
+                return true
+            }
+        }
+
+        Logger.log("🔴 dismissSystemPermissionPromptIfPresent: Could not find \(allow ? "Allow" : "Deny") button in \(descr())")
+        return false
+    }
 
     // MARK: - Bookmarks
 
     /// Reset the bookmarks so we can rely on a single bookmark's existence
     func resetBookmarks() {
         let resetMenuItem = menuItems[AccessibilityIdentifiers.resetBookmarksMenuItem]
-        typeKey("n", modifierFlags: [.command]) // Can't use debug menu without a window
         XCTAssertTrue(
             resetMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Reset bookmarks menu item didn't become available in a reasonable timeframe."
@@ -110,6 +536,7 @@ extension XCUIApplication {
                             bookmarkingViaDialog: Bool,
                             escapingDialog: Bool,
                             folderName: String? = nil) {
+        let navigationTimeout = url.usesLocalTestServerTimeout ? UITests.Timeouts.localTestServer : UITests.Timeouts.navigation
         let addressBarTextField = windows.textFields[AccessibilityIdentifiers.addressBarTextField]
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -117,7 +544,7 @@ extension XCUIApplication {
         )
         addressBarTextField.typeURL(url)
         XCTAssertTrue(
-            windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            windows.webViews[pageTitle].waitForExistence(timeout: navigationTimeout),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
         if bookmarkingViaDialog {
@@ -125,9 +552,9 @@ extension XCUIApplication {
 
             if let folderName = folderName {
                 let folderLocationButton = popUpButtons["bookmark.add.folder.dropdown"]
-                folderLocationButton.tap()
+                folderLocationButton.clickAfterExistenceTestSucceeds()
                 let folderOneLocation = folderLocationButton.menuItems[folderName]
-                folderOneLocation.tap()
+                folderOneLocation.clickAfterExistenceTestSucceeds()
             }
 
             if escapingDialog {
@@ -136,14 +563,18 @@ extension XCUIApplication {
         }
     }
 
-    /// Shows the bookmarks panel shortcut and taps it. If the bookmarks shortcut is visible, it only taps it.
-    func openBookmarksPanel() {
-        let bookmarksPanelShortcutButton = buttons[AccessibilityIdentifiers.bookmarksPanelShortcutButton]
-        if !bookmarksPanelShortcutButton.exists {
-            typeKey("k", modifierFlags: [.command, .shift])
+    func dismissBookmarksBarPopover(shouldDisplayBar: Bool = false, requirePopover: Bool = false) {
+        let targetIdentifier = shouldDisplayBar ? AccessibilityIdentifiers.bookmarksBarPopoverShow : AccessibilityIdentifiers.bookmarksBarPopoverHide
+        let targetButton = buttons[targetIdentifier]
+        let timeout = requirePopover ? UITests.Timeouts.elementExistence : 0.5
+        guard targetButton.waitForExistence(timeout: timeout) else {
+            if requirePopover {
+                XCTFail("Bookmarks Bar Popover didn't show within a reasonable timeframe")
+            }
+            return
         }
 
-        bookmarksPanelShortcutButton.tap()
+        targetButton.tap()
     }
 
     func verifyBookmarkOrder(expectedOrder: [String], mode: BookmarkMode) {
@@ -168,7 +599,7 @@ extension XCUIApplication {
     func coordinatesForContextMenuItem(matching: (XCUIElementSnapshot) -> Bool) throws -> CGRect {
         let contextMenu = windows.firstMatch.children(matching: .menu).firstMatch
         XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
+            contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Context menu did not appear in a reasonable timeframe."
         )
 
@@ -194,7 +625,7 @@ extension XCUIApplication {
     func clickContextMenuItem(matching: (XCUIElementSnapshot) -> Bool) throws {
         let contextMenu = windows.firstMatch.children(matching: .menu).firstMatch
         XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
+            contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Context menu did not appear in a reasonable timeframe."
         )
 
@@ -209,4 +640,528 @@ extension XCUIApplication {
         let coordinate = contextMenu.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
         coordinate.click()
     }
+
+    // MARK: - Preferences
+
+    /// Opens the Preferences window via Cmd+, and waits for it to appear
+    func openPreferencesWindow() {
+        typeKey(",", modifierFlags: [.command])
+        let prefs = preferencesWindow
+        _ = prefs.waitForExistence(timeout: UITests.Timeouts.elementExistence)
+    }
+    func openSettings() {
+        openPreferencesWindow()
+    }
+
+    /// Closes the Preferences window if present
+    func closePreferencesWindow() {
+        let prefs = preferencesWindow
+        if prefs.exists {
+            let close = prefs.buttons[XCUIIdentifierCloseWindow].firstMatch
+            if close.exists { close.click() }
+        }
+    }
+
+    /// Returns the Preferences/Settings window element
+    var preferencesWindow: XCUIElement {
+        windows.containing(\.title, equalTo: "Settings").firstMatch
+    }
+
+    /// Selects the General pane in Preferences
+    func preferencesGoToGeneralPane() {
+        preferencesClickSidebarButton(AccessibilityIdentifiers.preferencesGeneralButton)
+    }
+
+    /// Selects the Data Clearing pane in Preferences
+    func preferencesGoToDataClearingPane() {
+        preferencesClickSidebarButton(AccessibilityIdentifiers.preferencesDataClearingButton)
+    }
+
+    /// Clicks a Settings sidebar item, scrolling the sidebar first if the window is too short to show it
+    private func preferencesClickSidebarButton(_ identifier: String) {
+        let button = preferencesWindow.buttons[identifier]
+        guard button.waitForExistence(timeout: UITests.Timeouts.elementExistence) else { return }
+        scrollIntoViewInPreferencesSidebar(button)
+        button.click()
+    }
+
+    /// Scrolls the Settings sidebar until the item is fully inside the visible area.
+    /// Same approach as `ensureHittable`, which scrolls the Settings content pane.
+    private func scrollIntoViewInPreferencesSidebar(_ element: XCUIElement) {
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.preferencesSidebarScrollView]
+        guard scrollView.exists else { return }
+
+        let padding: CGFloat = 20
+        let distanceBelow = element.frame.maxY - scrollView.frame.maxY + padding
+        let distanceAbove = scrollView.frame.minY - element.frame.minY + padding
+        if distanceBelow > 0 {
+            scrollView.scroll(byDeltaX: 0, deltaY: -distanceBelow)
+        } else if distanceAbove > 0 {
+            scrollView.scroll(byDeltaX: 0, deltaY: distanceAbove)
+        }
+    }
+
+    enum StartupType: String, CaseIterable {
+        case restoreLastSession
+        case newWindow
+        case fireWindow
+    }
+
+    /// Sets startup behavior to reopen all windows from last session (or not)
+    func preferencesSetRestorePreviousSession(to state: StartupType) {
+        let prefs = preferencesWindow
+        preferencesGoToGeneralPane()
+        preferencesSetRestorePreviousSession(to: state, in: prefs)
+    }
+
+    func preferencesSetRestorePreviousSession(to state: StartupType, in prefs: XCUIElement) {
+        if state != .restoreLastSession {
+            let startupTypePicker = prefs.radioGroups[AccessibilityIdentifiers.stateRestorePicker]
+            let startupWindowTypePicker = startupTypePicker.popUpButtons.firstMatch
+            if startupWindowTypePicker.exists {
+                let reopenAllWindowsRadioButton = prefs.radioButtons[AccessibilityIdentifiers.reopenAllWindowsFromLastSession]
+                if reopenAllWindowsRadioButton.isSelected {
+                    // Newer macOS merges the "Open a new" radio button into the window type popup
+                    let openANewRadioButton = startupTypePicker.radioButtons
+                        .matching(NSPredicate(format: "identifier != %@", AccessibilityIdentifiers.reopenAllWindowsFromLastSession))
+                        .firstMatch
+                    let openANewOption = openANewRadioButton.exists ? openANewRadioButton : startupWindowTypePicker
+                    ensureHittable(openANewOption)
+                    // Click the radio circle on the leading edge, not the center, which opens the popup
+                    openANewOption.coordinate(withNormalizedOffset: .zero)
+                        .withOffset(CGVector(dx: 8, dy: openANewOption.frame.height / 2))
+                        .click()
+                    XCTAssertTrue(reopenAllWindowsRadioButton.wait(for: \.isSelected, equals: false, timeout: UITests.Timeouts.elementExistence),
+                                  "\"Open a new\" should be selected instead of \"Reopen all windows from last session\"")
+                }
+
+                startupWindowTypePicker.click()
+                typeKey(state == .fireWindow ? .downArrow : .upArrow, modifierFlags: [])
+                typeKey(.enter, modifierFlags: [])
+                XCTAssertFalse(reopenAllWindowsRadioButton.isSelected, "Startup should not reopen all windows from last session")
+                return
+            }
+        }
+
+        var radioButton: XCUIElement
+        var picker: XCUIElement?
+        var switchKey: XCUIKeyboardKey?
+        switch state {
+        case .restoreLastSession:
+            radioButton = prefs.radioButtons[AccessibilityIdentifiers.reopenAllWindowsFromLastSession]
+        case .fireWindow:
+            radioButton = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeFireWindow]
+            picker = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeRegularWindow]
+            switchKey = .downArrow
+        case .newWindow:
+            radioButton = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeRegularWindow]
+            picker = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeFireWindow]
+            switchKey = .upArrow
+            if !radioButton.exists && !picker!.exists {
+                radioButton = prefs.radioButtons[AccessibilityIdentifiers.startupTypeOpenANewWindow]
+            }
+        }
+
+        if !radioButton.exists, let picker, let switchKey {
+            ensureHittable(picker)
+            if picker.isSelected == false {
+                picker.click()
+            }
+
+            picker.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).click()
+            typeKey(switchKey, modifierFlags: [])
+            typeKey(.enter, modifierFlags: [])
+
+            XCTAssertTrue(radioButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Selected menu item did not appear in reasonable time")
+            XCTAssertTrue(radioButton.isSelected)
+
+        } else if radioButton.isSelected == false {
+            ensureHittable(radioButton)
+            radioButton.click()
+        }
+    }
+
+    func setOpenFireWindowByDefault(enabled: Bool) {
+        let checkbox = checkBoxes[AccessibilityIdentifiers.openFireWindowByDefaultCheckbox]
+        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
+    }
+
+    /// Sets the "Always ask where to save files" toggle to a specific state
+    func setAlwaysAskWhereToSaveFiles(enabled: Bool) {
+        let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.alwaysAskWhereToSaveFilesCheckbox]
+        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
+    }
+
+    /// Sets the Tabs behavior: whether to switch to a new tab when opened (true) or keep in background (false)
+    func setSwitchToNewTabWhenOpened(enabled: Bool) {
+        let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.switchToNewTabWhenOpenedCheckbox]
+        checkbox.toggleCheckboxIfNeeded(to: enabled, validate: true, ensureHittable: self.ensureHittable)
+    }
+
+    /// Sets the "Automatically open the Downloads panel when downloads complete" preference
+    func setOpenDownloadsPopupOnCompletion(enabled: Bool) {
+        let checkbox = preferencesWindow.checkBoxes[AccessibilityIdentifiers.openPopupOnDownloadCompletionCheckbox]
+        checkbox.toggleCheckboxIfNeeded(to: enabled, ensureHittable: self.ensureHittable)
+    }
+
+    /// Scrolls Settings until the element is fully inside the visible area.
+    /// Unlike `ensureHittable`, this also scrolls elements that are hittable but partially clipped at the bottom edge.
+    func scrollIntoViewInPreferences(_ element: XCUIElement) {
+        XCTAssertTrue(element.waitForExistence(timeout: UITests.Timeouts.elementExistence), "\(element) should exist in Preferences")
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView]
+        let scrollDistance = element.frame.maxY - scrollView.frame.maxY + 20
+        if scrollDistance > 0 {
+            scrollView.scroll(byDeltaX: 0, deltaY: -scrollDistance)
+        }
+    }
+
+    func ensureHittable(_ element: XCUIElement) {
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.settingsScrollView]
+
+        if !element.isHittable {
+            // Get the element's frame and scroll view's frame
+            let elementFrame = element.frame
+            let scrollViewFrame = scrollView.frame
+
+            // Calculate how much we need to scroll to make the element visible
+            // Add some padding to ensure the element is fully visible
+            let padding: CGFloat = 20
+            let delta = elementFrame.maxY - scrollViewFrame.maxY + padding
+            // Create a normalized vector for the scroll amount
+            scrollView.scroll(byDeltaX: 0, deltaY: -delta)
+        }
+        XCTAssertTrue(element.exists, "\(element) should exist in Preferences")
+        XCTAssertTrue(element.isHittable, "\(element) should be hittable after scrolling up")
+    }
+
+    func setSaveDialogLocation(to location: URL, in sheet: XCUIElement? = nil) {
+        let saveSheet: XCUIElement
+        if let sheet {
+            saveSheet = sheet
+            XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        } else {
+            saveSheet = getOpenSaveSheet()
+        }
+
+        // Open Go To Folder (Cmd+Shift+G)
+        typeKey("g", modifierFlags: [.command, .shift])
+        // Wait for the Location Chooser to appear
+        let chooseFolderSheet = saveSheet.sheets.firstMatch
+        XCTAssertTrue(chooseFolderSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Select All
+        typeKey("a", modifierFlags: [.command])
+
+        // Enter path
+        typeText(location.path)
+
+        // Wait for the path to appear in the Location Chooser
+        Logger.log("Waiting for cell with \"\(location.path)\"")
+        let standardizedPath = location.standardizedFileURL.path
+        let pathCell = chooseFolderSheet.tables.cells.containing(NSPredicate { element, _ in
+            guard let id = (element as? NSObject)?.value(forKey: #keyPath(XCUIElement.identifier)) as? String,
+                  id.hasPrefix("/"),
+                  URL(fileURLWithPath: id).standardizedFileURL.path == standardizedPath else { return false }
+
+            return true
+        }).firstMatch
+        XCTAssertTrue(pathCell.waitForExistence(timeout: UITests.Timeouts.navigation), "Path cell did not appear in reasonable time")
+
+        // Confirm Location selection
+        typeKey(.return, modifierFlags: [])
+        XCTAssertTrue(chooseFolderSheet.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Location Chooser should disappear")
+    }
+
+    private func getOpenSaveSheet() -> XCUIElement {
+        var saveSheet: XCUIElement!
+        wait(for: NSPredicate { _, _ in
+            let sheet = self.sheets.containing(.button, identifier: AccessibilityIdentifiers.okButton).firstMatch
+            let dialog = self.dialogs.containing(.button, identifier: AccessibilityIdentifiers.okButton).firstMatch
+            if dialog.exists {
+                saveSheet = dialog
+                return true
+            } else if sheet.exists {
+                saveSheet = sheet
+                return true
+            }
+            return false
+        }, timeout: UITests.Timeouts.elementExistence)
+
+        guard let saveSheet else {
+            XCTFail("Save dialog not found")
+            fatalError("Save dialog not found")
+        }
+        return saveSheet
+    }
+
+    func enterSaveDialogFileNameAndConfirm(_ fileName: String, in sheet: XCUIElement? = nil) {
+        let saveSheet: XCUIElement
+        if let sheet {
+            saveSheet = sheet
+            XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        } else {
+            saveSheet = getOpenSaveSheet()
+        }
+
+        // Select All
+        typeKey("a", modifierFlags: [.command])
+        // Enter filename
+        typeText(fileName)
+
+        // Click Save
+        let saveButton = saveSheet.buttons[AccessibilityIdentifiers.okButton].firstMatch
+        XCTAssertTrue(saveButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(saveButton.isHittable)
+        saveButton.click()
+
+        let replaceDialog = sheets.containing(.button, identifier: "Replace").firstMatch
+        if replaceDialog.waitForExistence(timeout: 0.5) {
+            replaceDialog.buttons["Replace"].click()
+        }
+    }
+
+    // MARK: - Downloads Location
+
+    /// Change the downloads directory using the Preferences UI and the system "Go to Folder" panel
+    func setDownloadsLocation(to directoryURL: URL) {
+        let prefs = preferencesWindow
+        let changeButton = prefs.buttons["Change…"].firstMatch
+        ensureHittable(changeButton)
+        changeButton.click()
+
+        self.setSaveDialogLocation(to: directoryURL)
+
+        // Confirm selection
+        typeKey(.return, modifierFlags: [])
+    }
+
+    var mainMenuPinTabMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuPinTabMenuItem]
+    }
+
+    var mainMenuUnpinTabMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuUnpinTabMenuItem]
+    }
+
+    var mainMenuAddBookmarkMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuAddBookmarkMenuItem]
+    }
+
+    var mainMenuToggleBookmarksBarMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.mainMenuToggleBookmarksBarMenuItem]
+    }
+
+    var preferencesMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.preferencesMenuItem]
+    }
+
+    var bookmarksBar: XCUIElement {
+        collectionViews[AccessibilityIdentifiers.bookmarksBar]
+    }
+
+    var backButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.backButton]
+    }
+
+    var forwardButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.forwardButton]
+    }
+
+    var reloadButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.reloadButton]
+    }
+
+    var downloadsButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.downloadsButton]
+    }
+
+    var optionsButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.optionsButton]
+    }
+
+    var fireDialogTitle: XCUIElement {
+        staticTexts[AccessibilityIdentifiers.fireDialogTitle]
+    }
+
+    var fireDialogSegmentedControl: XCUIElement {
+        groups[AccessibilityIdentifiers.fireDialogSegmentedControl]
+    }
+
+    var fireDialogDetailsDisclosureButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogDetailsDisclosureButton]
+    }
+
+    var fireDialogTabsToggle: XCUIElement {
+        checkBoxes[AccessibilityIdentifiers.fireDialogTabsToggle]
+    }
+
+    var fireDialogHistoryToggle: XCUIElement {
+        checkBoxes[AccessibilityIdentifiers.fireDialogHistoryToggle]
+    }
+
+    var fireDialogCookiesToggle: XCUIElement {
+        checkBoxes[AccessibilityIdentifiers.fireDialogCookiesToggle]
+    }
+
+    var fireDialogCookiesDetailButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogCookiesDetailButton]
+    }
+
+    var fireDialogManageFireproofButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogManageFireproofButton]
+    }
+
+    var fireDialogIndividualSitesLink: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogIndividualSitesLink]
+    }
+
+    var fireDialogSitesOverlayCloseButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogSitesOverlayCloseButton]
+    }
+
+    var fireDialogCancelButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogCancelButton]
+    }
+
+    var fireDialogBurnButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireDialogBurnButton]
+    }
+
+    var fireDialogMoreOptionsMenuButton: XCUIElement {
+        menuButtons[AccessibilityIdentifiers.fireDialogMoreOptionsMenuButton]
+    }
+
+    var fireDialogManageFireproofSitesMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.fireDialogManageFireproofSites]
+    }
+
+    var fireproofDomainsAddButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireproofDomainsAddButton]
+    }
+
+    var fireproofDomainsAddCurrentButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireproofDomainsAddCurrentButton]
+    }
+
+    var fireproofDomainsDoneButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireproofDomainsDoneButton]
+    }
+
+    var fireButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fireButton].firstMatch
+    }
+
+    var fakeFireButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fakeFireButton]
+    }
+
+    var helpMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.helpMenuItem]
+    }
+
+    var historyMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.historyMenu]
+    }
+
+    var clearAllHistoryMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.clearAllHistoryMenuItem]
+    }
+
+    var clearAllHistoryAlertClearButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.clearAllHistoryAlertClearButton]
+    }
+
+    var reopenLastClosedWindowMenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.reopenLastClosedWindowMenuItem]
+    }
+
+    func recentlyVisitedMenuItem(at index: Int) -> XCUIElement {
+        menuItems["\(AccessibilityIdentifiers.recentlyVisitedMenuItemPrefix).\(index)"]
+    }
+
+    var populateFakeHistory10MenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.populateFakeHistory10MenuItem]
+    }
+
+    var populateFakeHistory100MenuItem: XCUIElement {
+        menuItems[AccessibilityIdentifiers.populateFakeHistory100MenuItem]
+    }
+
+    var releaseNotesMenu: XCUIElement {
+        menuBars.menus.menuItems[AccessibilityIdentifiers.releaseNotesMenuItem]
+    }
+
+    var bookmarksMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.bookmarksMenu]
+    }
+
+    var preferencesGeneralButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.preferencesGeneralButton]
+    }
+
+    var bookmarksDialogAddToFavoritesCheckbox: XCUIElement {
+        checkBoxes[XCUIApplication.AccessibilityIdentifiers.addBookmarkAddToFavoritesCheckbox]
+    }
+
+    var addBookmarkAlertAddButton: XCUIElement {
+        buttons[XCUIApplication.AccessibilityIdentifiers.bookmarkDialogAddButton]
+    }
+
+    var bookmarkDialogBookmarkFolderDropdown: XCUIElement {
+        popUpButtons[XCUIApplication.AccessibilityIdentifiers.addBookmarkFolderDropdown]
+    }
+
+    var debugMenu: XCUIElement {
+        menuBarItems[Utilities.AccessibilityIdentifiers.debugMenu]
+    }
+
+    var homeButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.homeButton]
+    }
+
+    /// Shows the home button in the toolbar (right of reload button)
+    /// Opens the View menu and selects "Show Right of the Reload Button"
+    func showHomeButtonInToolbar() {
+        let viewMenu = menuBars.menuBarItems["View"]
+        XCTAssertTrue(
+            viewMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "View menu item didn't become available in a reasonable timeframe."
+        )
+        viewMenu.click()
+
+        let menuItem = menuItems["Show Right of the Reload Button"].firstMatch
+        XCTAssertTrue(
+            menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Show Right of the Reload Button menu item didn't become available in a reasonable timeframe."
+        )
+        menuItem.click()
+    }
+
+    /// Sends a key down event with the specified key code
+    func keyDown(keyCode: Int) {
+        UITestCase.$keyEventOverride.withValue((keyCode: keyCode, phase: 0)) {
+            self.typeKey("_", modifierFlags: [])
+        }
+    }
+
+    /// Sends a key up event with the specified key code
+    func keyUp(keyCode: Int) {
+        UITestCase.$keyEventOverride.withValue((keyCode: keyCode, phase: 1)) {
+            self.typeKey("_", modifierFlags: [])
+        }
+    }
+
+    // MARK: - Promos
+
+    var promoQueueMenu: XCUIElement {
+        debugMenu.menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoQueueDebugMenu]
+    }
+
+    func resetPromo(withID promoID: String) {
+        promoQueueMenu
+            .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoMenuItem(promoID)]
+            .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.undismissClearItem]
+            .clickAfterExistenceTestSucceeds()
+    }
+
 }

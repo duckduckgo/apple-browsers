@@ -18,10 +18,11 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import DuckPlayer
 import Foundation
-import Navigation
+import DDGNavigation
 import PixelKit
 import WebKit
 
@@ -37,14 +38,14 @@ final class DuckPlayerTabExtension {
     private var cancellables = Set<AnyCancellable>()
     private var youtubePlayerCancellables = Set<AnyCancellable>()
     private var shouldOpenInNewTab: Bool  {
-        preferences.isOpenInNewTabSettingsAvailable &&
-        preferences.duckPlayerOpenInNewTab &&
-        preferences.duckPlayerMode != .disabled
+        duckPlayer.preferences.isOpenInNewTabSettingsAvailable &&
+        duckPlayer.preferences.duckPlayerOpenInNewTab &&
+        duckPlayer.preferences.duckPlayerMode != .disabled
     }
     private var shouldOpenDuckPlayerDirectly: Bool {
-        preferences.duckPlayerMode == .enabled
+        duckPlayer.preferences.duckPlayerMode == .enabled
     }
-    private let preferences: DuckPlayerPreferences
+    private let tabsPreferences: TabsPreferences
 
     private weak var webView: WKWebView? {
         didSet {
@@ -66,12 +67,12 @@ final class DuckPlayerTabExtension {
          isBurner: Bool,
          scriptsPublisher: some Publisher<some YoutubeScriptsProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
-         preferences: DuckPlayerPreferences = .shared,
+         tabsPreferences: TabsPreferences,
          onboardingDecider: DuckPlayerOnboardingDecider,
          duckPlayerOverlayPixels: DuckPlayerOverlayPixelFiring = DuckPlayerOverlayUsagePixels()) {
         self.duckPlayer = duckPlayer
         self.isBurner = isBurner
-        self.preferences = preferences
+        self.tabsPreferences = tabsPreferences
         self.onboardingDecider = onboardingDecider
         self.duckPlayerOverlayUsagePixels = duckPlayerOverlayPixels
 
@@ -115,6 +116,7 @@ final class DuckPlayerTabExtension {
         if let hostname = url?.host, let script = youtubeOverlayScript {
             if script.messageOriginPolicy.isAllowed(hostname) {
                 duckPlayer.$mode
+                        .removeDuplicates()
                         .dropFirst()
                         .receive(on: DispatchQueue.main)
                         .sink { [weak self] playerMode in
@@ -130,6 +132,7 @@ final class DuckPlayerTabExtension {
             youtubePlayerScript?.isEnabled = true
 
             duckPlayer.$mode
+                .removeDuplicates()
                 .dropFirst()
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] playerMode in
@@ -169,7 +172,7 @@ final class DuckPlayerTabExtension {
     }
 
     private func setupPlayerModeObserver() {
-        duckPlayerModeCancellable = preferences.$duckPlayerMode
+        duckPlayerModeCancellable = duckPlayer.preferences.$duckPlayerMode
             .sink { [weak self] mode in
                 self?.duckPlayerOverlayUsagePixels.duckPlayerMode = mode
         }
@@ -186,7 +189,7 @@ extension DuckPlayerTabExtension: YoutubeOverlayUserScriptDelegate {
         }
 
         let linkOpenBehavior = LinkOpenBehavior(event: NSApp.currentEvent,
-                                                switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                                                switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
                                                 canOpenLinkInCurrentTab: !(shouldOpenInNewTab || webView.window is PopUpWindow),
                                                 shouldSelectNewTab: true) // select new tab by default; ⌘-click modifies the selection state
         switch linkOpenBehavior {
@@ -207,9 +210,9 @@ extension DuckPlayerTabExtension: YoutubeOverlayUserScriptDelegate {
 
 }
 
-extension DuckPlayerTabExtension: NewWindowPolicyDecisionMaker {
+extension DuckPlayerTabExtension: NewWindowPolicyDecisionMaking {
 
-    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision? {
+    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NewWindowPolicyDecision? {
         // if a link was clicked inside duckplayer (like a recommendation)
         // and has target=_blank - then we want to prevent a new tab
         // opening, and just load it inside the current one instead
@@ -314,7 +317,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
 
         // “Watch in YouTube” selected
         if let videoID = navigationAction.url.youtubeVideoID {
-            if didUserSelectWatchInYoutubeFromDuckPlayer(navigationAction, preferences: preferences, videoID: videoID) {
+            if didUserSelectWatchInYoutubeFromDuckPlayer(navigationAction, preferences: duckPlayer.preferences, videoID: videoID) {
             duckPlayer.setNextVideoToOpenOnYoutube()
                 PixelKit.fire(GeneralPixel.duckPlayerWatchOnYoutube)
                 return .next
@@ -441,9 +444,9 @@ extension DuckPlayerTabExtension: NavigationResponder {
             return
         }
         if navigation.url.isDuckPlayer {
-            let setting = preferences.duckPlayerMode == .enabled ? "always" : "default"
-            let newTabSettings = preferences.duckPlayerOpenInNewTab ? "true" : "false"
-            let autoplay = preferences.duckPlayerAutoplay ? "true" : "false"
+            let setting = duckPlayer.preferences.duckPlayerMode == .enabled ? "always" : "default"
+            let newTabSettings = duckPlayer.preferences.duckPlayerOpenInNewTab ? "true" : "false"
+            let autoplay = duckPlayer.preferences.duckPlayerAutoplay ? "true" : "false"
 
             let params = ["setting": setting,
                           "newtab": newTabSettings,
@@ -463,7 +466,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
 
 }
 
-protocol DuckPlayerExtensionProtocol: AnyObject, NavigationResponder, NewWindowPolicyDecisionMaker {
+protocol DuckPlayerExtensionProtocol: AnyObject, NavigationResponder, NewWindowPolicyDecisionMaking {
 }
 
 extension DuckPlayerTabExtension: DuckPlayerExtensionProtocol, TabExtension {

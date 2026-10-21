@@ -29,12 +29,12 @@ extension UIView {
         static let visibleDuration: TimeInterval = 3.0
     }
 
-    func showDownloadCompletionToast(for fileName: String, onButtonTapped: @escaping () -> Void) {
+    public func showDownloadCompletionToast(for fileName: String, onButtonTapped: @escaping () -> Void) {
         let message = createDownloadCompletionMessage(for: fileName)
         displayToast(with: message, buttonTitle: UserText.downloadToastShow, onButtonTapped: onButtonTapped)
     }
 
-    func showDownloadFailedToast() {
+    public func showDownloadFailedToast() {
         var message = AttributedString(UserText.downloadFailed)
         message.foregroundColor = .white
         displayToast(with: message, buttonTitle: "", onButtonTapped: nil)

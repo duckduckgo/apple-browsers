@@ -1,5 +1,29 @@
-/* No comment provided by engineer. */
-"A device password is required to use Sync & Backup." = "Sync & Backup -ominaisuuden käyttäminen edellyttää laitteen salasanaa.";
+/* Auto-Restore Ready Sheet - Description */
+"auto.restore.ready.description" = "Jatka Sync & Backup -istuntoa, niin voit palauttaa kirjanmerkit, salasanat ja muut tiedot, tai jatka uudella määrityksellä.";
+
+/* Auto-Restore Ready Sheet - Restore Button */
+"auto.restore.ready.restore.button" = "Jatka Sync & Backup -istuntoa";
+
+/* Auto-Restore Ready Sheet - Scan Code Link */
+"auto.restore.ready.scan.code.link" = "Jatka asennusta";
+
+/* Auto-Restore Ready Sheet - Title */
+"auto.restore.ready.title" = "Edellinen Sync & Backup -istuntosi on valmis.";
+
+/* Auto-Restore Screen - Description */
+"auto.restore.screen.description" = "Jos asennat DuckDuckGo-sovelluksen uudelleen, kysymme, haluatko palauttaa laitteen tiedot.";
+
+/* Auto-Restore Screen - Title */
+"auto.restore.screen.title" = "Palauta sovelluksen uudelleenasennuksen yhteydessä";
+
+/* Auto-Restore Settings Row - Label */
+"auto.restore.settings.row.label" = "Palauta sovelluksen uudelleenasennuksen yhteydessä";
+
+/* Auto-Restore Settings Row - Off */
+"auto.restore.settings.row.off" = "Pois";
+
+/* Auto-Restore Settings Row - On */
+"auto.restore.settings.row.on" = "Päällä";
 
 /* Standard Buttons - Back Button */
 "back.button" = "Takaisin";
@@ -22,29 +46,11 @@
 /* Camera View - Permission Required */
 "camera.permission.required" = "Kameran käyttölupa tarvitaan";
 
-/* Camera View - Point Camera Indication */
-"camera.point.camera.indication" = "Synkronoi osoittamalla kameralla QR-koodia";
-
 /* No comment provided by engineer. */
 "Cancel" = "Peruuta";
 
 /* Standard Buttons - Cancel Button */
 "cancel.button" = "Peruuta";
-
-/* Connect With Server Sheet - Button */
-"connect.with.server.sheet.button" = "Ota käyttöön synkronointi ja varmuuskopiointi";
-
-/* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Tämä luo salatun varmuuskopion kirjanmerkeistäsi ja salasanoistasi DuckDuckGon suojatulle palvelimelle. Voit synkronoida varmuuskopion muiden laitteittesi kanssa.";
-
-/* Connect With Server Sheet - Description Part 2 */
-"connect.with.server.sheet.description.part2" = "Salausavain tallennetaan vain laitteellesi. DuckDuckGo ei pääse siihen käsiksi.";
-
-/* Connect With Server Sheet - Footer */
-"connect.with.server.sheet.footer" = "Voit synkronoiden muiden laitteittesi kanssa myöhemmin.";
-
-/* Connect With Server Sheet - Title */
-"connect.with.server.sheet.title" = "Synkronoi ja varmuuskopioi tämä laite";
 
 /* Standard Buttons - Copy Button */
 "copy.button" = "Kopioi";
@@ -53,28 +59,19 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Joitakin kirjautumisia ei synkronoida, koska tiettyjen kenttien sisältö on liian pitkä.";
+"credentials.invalid.objects.present.title" = "Joitakin salasanoja ei synkronoida, koska tiettyjen kenttien sisältö on liian pitkä.";
 
-/* Delete Server Data - Button */
-"delete.server.data" = "Sammuta ja poista palvelimen tiedot...";
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Joitakin luottokortteja ei synkronoida, koska tiettyjen kenttien sisältö on liian pitkä.";
 
 /* No comment provided by engineer. */
 "Dev environment" = "Dev-ympäristö";
 
-/* Device SyncedSheet Button to go get DuckDuckGo on other devices */
-"device.synced.sheet.button.get.other.devices" = "Hanki DuckDuckGo toiselle laitteelle";
-
-/* Device SyncedSheet - Title */
-"device.synced.sheet.title" = "Tietosi on synkronoitu!";
-
 /* Standard Buttons - Done Button */
 "done.button" = "Valmis";
-
-/* Edit Device View - Header */
-"edit.device.header" = "Laitteen nimi";
-
-/* Edit Device View - Title */
-"edit.device.title" = "Muokkaa kohdetta %@";
 
 /* Fetch Favicons Onboarding - Button Title */
 "fetch.favicons.onboarding.button.title" = "Pidä kirjanmerkkikuvakkeet ajan tasalla";
@@ -85,44 +82,11 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Puuttuvatko kuvakkeet latauksesta?";
 
-/* Options - Fetch Favicons Description */
-"fetch.favicons.option.caption" = "Lataa synkronoitujen kirjanmerkkien kuvakkeet automaattisesti. Kuvakkeiden lataukset näkyvät verkossasi.";
-
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Automaattisesti ladattavat kuvakkeet";
-
-/* No comment provided by engineer. */
-"Go to Settings" = "Siirry kohtaan Asetukset";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Säilytä kehitys";
 
-/* Manually Enter Code View - Instruction with sync menu path and view text code menu item inserted */
-"manually.enter.code.instruction.attributed" = "Siirry kohtaan %1$@ ja valitse %2$@ DuckDuckGo-sovelluksessa toisella synkronoidulla laitteella. Liitä koodi tähän synkronoidaksesi tämän laitteen.";
-
-/* Manually Enter Code View - Title */
-"manually.enter.code.title" = "Syötä koodi manuaalisesti";
-
-/* Manually Enter Code View - Validating Code Action */
-"manually.enter.code.validating.code.action" = "Vahvistuskoodi";
-
-/* Manually Enter Code View - Validating Code Failed Action */
-"manually.enter.code.validating.code.failed.action" = "Virheellinen koodi.";
-
-/* Standard Buttons - Next Button */
-"next.button" = "Seuraava";
-
 /* Standard Buttons - Not Now Button */
 "not.now.button" = "Ei nyt";
-
-/* Options - Section Header */
-"options.section.header" = "Valinnat";
-
-/* Section header for other syncing options */
-"other.options.section.header" = "Muut vaihtoehdot";
-
-/* Standard Buttons - Paste Button */
-"paste.button" = "Liitä";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Hallitse kirjanmerkkejä";
@@ -130,26 +94,26 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Hallitse salasanoja…";
 
-/* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Kirjanmerkkejä ja salasanoja valmistellaan synkronointiin. Tähän menee vain pieni hetki.";
-
-/* Preparing To Sync Sheet - Footer */
-"preparing.to.sync.sheet.footer" = "Yhdistetään…";
-
-/* Preparing To Sync Sheet - Title */
-"preparing.to.sync.sheet.title" = "Synkronoinnin ja varmuuskopioinnin määrittäminen";
-
-/* Link label for recovering synced data */
-"recover.synced.data.link" = "Palauta synkronoidut tiedot";
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Hallitse luottokortteja…";
 
 /* Recover Synced Data Sheet - Button */
-"recover.synced.data.sheet.button" = "Aloita";
+"recover.synced.data.sheet.button" = "Palauta synkronoidut tiedot";
 
 /* Recover Synced Data Sheet - Description */
-"recover.synced.data.sheet.description" = "Jos haluat palauttaa synkronoidut tietosi, tarvitset palautuskoodin, jonka tallensit ottaessasi synkronoinnin käyttöön. Koodi on voitu tallentaa PDF-tiedostona laitteelle, jolla määritit synkronoinnin.";
+"recover.synced.data.sheet.description" = "Tarvitset palautuskoodin, jonka sait Sync & Backupin käyttöönotossa. Olet ehkä tallentanut sen PDF-tiedostona käyttämällesi laitteelle.";
 
 /* Recover Synced Data Sheet - Title */
 "recover.synced.data.sheet.title" = "Palauta synkronoidut tiedot";
+
+/* Recovering Data Sheet - Description */
+"recovering.data.description" = "Yhdistetään uudelleen kirjanmerkkien, tallennettujen kirjautumistietojen ja muiden laitteiden synkronointia varten.";
+
+/* Recovering Data Sheet - Status */
+"recovering.data.status" = "Yhdistetään...";
+
+/* Recovering Data Sheet - Title */
+"recovering.data.title" = "Tietojen palauttaminen";
 
 /* Remove Device View - Button */
 "remove.device.button" = "Poista laite";
@@ -160,83 +124,8 @@
 /* Remove Device View - Title */
 "remove.device.title" = "Poistetaanko laite?";
 
-/* Save Recovery Code Sheet - Copy Code Toast */
-"save.recovery.code.code.copied.button" = "Palautuskoodi kopioitu leikepöydälle";
-
-/* Save Recovery Code Sheet - Copy Code Button */
-"save.recovery.code.copy.code.button" = "Kopioi koodi";
-
-/* Save Recovery Code Sheet - Save as PDF Button */
-"save.recovery.code.save.as.pdf.button" = "Tallenna PDF-tiedostona";
-
-/* Save Recovery Code Sheet - Description */
-"save.recovery.code.sheet.description" = "Jos menetät pääsyn laitteillesi, tarvitset tämän koodin palauttaaksesi synkronoidut tiedot.";
-
-/* Save Recovery Code Sheet - Footer */
-"save.recovery.code.sheet.footer" = "Kuka tahansa, jolla on hallussaan tämä koodi, pääsee käsiksi synkronoituihin tietoihisi, joten säilytä koodio turvallisessa paikassa.";
-
-/* Save Recovery Code Sheet - Title */
-"save.recovery.code.sheet.title" = "Tallenna palautuskoodi";
-
-/* Save RecoveryPDF - Button */
-"save.recovery.pdf.button" = "Tallenna palautuksen PDF-tiedosto";
-
-/* Save RecoveryPDF - Footer */
-"save.recovery.pdf.footer" = "Jos kadotat laitteesi, tarvitset tämän palautuskoodin palauttaaksesi synkronoidut tiedot.";
-
-/* Scan Or Enter Code To Recover Synced Data View - Enter Code Link */
-"scan.code.to.recover.synced.data.enter.code.link" = "Kirjoita tekstikoodi manuaalisesti";
-
-/* Scan Or Enter Code To Recover Synced Data View - Explanation */
-"scan.code.to.recover.synced.data.explanation" = "Skannaa palautuksen PDF-tiedostossa tai muussa synkronoidussa laitteessa oleva QR-koodi, niin voit palauttaa tietosi.";
-
-/* Scan Or Enter Code To Recover Synced Data View - Footer */
-"scan.code.to.recover.synced.data.footer" = "Etkö voi skannata?";
-
-/* Scan Or Enter Code To Recover Synced Data View - Title */
-"scan.code.to.recover.synced.data.title" = "Palauta synkronoidut tiedot";
-
-/* Scan or See Code View - Footer */
-"scan.or.see.code.footer" = "Etkö voi skannata?";
-
-/* Scan or See Code View - Instruction */
-"scan.or.see.code.instruction" = "Siirry kohtaan Asetukset › Synkronointi ja varmuuskopiointi DuckDuckGo-selaimessa muulla laitteella ja valitse ”Synkronoi toisen laitteen kanssa.”";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.instruction.attributed" = "Siirry kohtaan %@ DuckDuckGo-selaimessa muulla laitteella ja valitse ”Synkronoi toisen laitteen kanssa.”";
-
-/* Scan or See Code View - Manually Enter Code Link */
-"scan.or.see.code.manually.enter.code.link" = "Syötä koodi manuaalisesti";
-
-/* Scan or See Code View - Instruction with syncMenuPath */
-"scan.or.see.code.other.device.instruction.attributed" = "Avaa DuckDuckGo-sovellus toisella laitteellasi ja siirry kohteeseen %@.";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.instructions.body" = "Skannaa tämä koodi toisella laitteella synkronoidaksesi.";
-
-/* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.instructions.title" = "Mobile-to-Mobile?";
-
-/* Scan or See Code View - Scan Code Instructions Body */
-"scan.or.see.code.scan.code.qr.instructions.body" = "Avaa DuckDuckGo toisella laitteellasi ja skannaa tämä koodi synkronoidaksesi.";
-
-/* Scan or See Code View - Share Code Link */
-"scan.or.see.code.share.code.link" = "Jaa tekstikoodi";
-
-/* Scan or See Code View - Title */
-"scan.or.see.code.title" = "Skannaa QR-koodi";
-
-/* No comment provided by engineer. */
-"Secure Your Device to Use Sync & Backup" = "Suojaa laitteesi käyttääksesi Sync & Backup -ominaisuutta";
-
 /* No comment provided by engineer. */
 "Switch to Production" = "Siirry tuotantoon";
-
-/* Link label for syncing and backing up the device */
-"sync.and.backup.this.device.link" = "Synkronoi ja varmuuskopioi tämä laite";
-
-/* Button to get DuckDuckGo on other devices */
-"sync.get.other.devices" = "Hanki DuckDuckGo toiselle laitteelle";
 
 /* Button title to share link for downloading DuckDuckGo on other devices */
 "sync.get.other.devices.card.button.title" = "Jaa latauslinkki";
@@ -251,10 +140,271 @@
 "sync.get.other.devices.screen.title" = "Hanki DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Asenna DuckDuckGo-selain laitteisiisi ja synkronoi kirjanmerkkisi ja salasanasi turvallisesti:";
+"sync.get.other.devices.share.link.message" = "Asenna DuckDuckGo-selain laitteisiisi ja synkronoi kirjanmerkkisi ja automaattisen täytön tietosi turvallisesti:";
 
-/* Sync Menu Path */
-"sync.menu.path" = "Asetukset > Synkronointi ja varmuuskopiointi > Synkronoi toisen laitteen kanssa";
+/* Sync passcode required alert - button */
+"sync.passcode.required.alert.go.to.settings.button" = "Siirry kohtaan Asetukset";
+
+/* Sync passcode required alert - message */
+"sync.passcode.required.alert.message" = "Sync & Backup -ominaisuuden käyttäminen edellyttää laitteen salasanaa.";
+
+/* Sync passcode required alert - title */
+"sync.passcode.required.alert.title" = "Suojaa laitteesi käyttääksesi Sync & Backup -ominaisuutta";
+
+/* Sync Settings - Recovery section header */
+"sync.settings.recovery.section.header" = "Palautus";
+
+/* Body on the sync-setup prompt explaining the sync-another-device option */
+"sync.simplified.another.device.v2.body" = "Autamme sinua synkronoimaan laitteesi.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v2.title" = "Synkronoi tämä laite lähellä olevan tietokoneen kanssa.";
+
+/* Body on the sync-setup prompt explaining that the user can sync this device only and pair another device later */
+"sync.simplified.another.device.v3.body" = "Eikö sinulla ole toista laitetta juuri nyt? Synkronoi vain tämä laite ja synkronoi toisen laitteen kanssa myöhemmin.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v3.title" = "Onko sinulla toinen laite lähellä? Synkronoi laitteesi.";
+
+/* Caption displayed on 'auto-download bookmarks icons' toggle. */
+"sync.simplified.bookmarks.section.fetch-favicons.caption" = "Lataa kuvakkeet verkkosivustoista, jotka olet merkinnyt kirjanmerkkeihin. Kuvakelataukset näkyvät verkostollesi.";
+
+/* Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks */
+"sync.simplified.bookmarks.section.fetch-favicons.title" = "Lataa kirjanmerkkikuvakkeet";
+
+/* Bookmarks section header in sync settings */
+"sync.simplified.bookmarks.section.header" = "Kirjanmerkit";
+
+/* Caption displayed on 'unify favorites' toggle. */
+"sync.simplified.bookmarks.section.unified-favorites.caption" = "Käytä samoja suosikkikirjanmerkkejä mobiililaitteessa ja tietokoneella.";
+
+/* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
+"sync.simplified.bookmarks.section.unified-favorites.title" = "Jaa suosikit eri laitteilla";
+
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Tarkista toinen laitteesi.";
+
+/* Title shown on the connecting screen while Sync & Backup is being set up on this device */
+"sync.simplified.connecting.v2.title" = "Sync & Backup on päästä päähän salattu kaikissa laitteissasi.";
+
+/* Sync settings 'Copy Recovery Code' button */
+"sync.simplified.copy.recovery.code.button" = "Kopioi palautuskoodi";
+
+/* Alert button that confirms turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.action" = "Poista pysyvästi";
+
+/* Title of the alert confirming turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.title" = "Tätä toimintoa ei voi kumota.";
+
+/* Sync settings action button title to turn off sync and delete server data */
+"sync.simplified.delete.sync.data.button" = "Poista synkronointi käytöstä ja poista palvelintiedot";
+
+/* Description on the device-added success screen explaining what the recovery code is for */
+"sync.simplified.device.added.v2.description" = "Käytä tätä koodia tietojesi palauttamiseen, jos menetät pääsyn laitteisiisi. Pidä se tallessa.";
+
+/* Fallback subject used in the device-added success title when the current device's name is unavailable. Substituted as %@ in simplifiedDeviceAddedTitle. */
+"sync.simplified.device.added.v2.fallback.device.name" = "Tämä laite";
+
+/* Title on the success screen shown after a device joins Sync & Backup. %@ is the name of the current device that was just added. */
+"sync.simplified.device.added.v2.title" = "%@ on lisätty Sync & Backupiin.";
+
+/* Sync settings 'Download Recovery Code' button */
+"sync.simplified.download.recovery.code.button" = "Lataa palautuskoodi";
+
+/* Section header above the get-desktop-browser option in sync setup */
+"sync.simplified.download.section.header" = "Lataa";
+
+/* Button to download the recovery code on the recover-your-data screen */
+"sync.simplified.download.your.recovery.code.button" = "Lataa palautuskoodisi";
+
+/* Description shown when Sync & Backup is enabled (when AI chat sync is available) */
+"sync.simplified.enabled.header.message" = "Kirjanmerkkisi, automaattisen täytön tietosi ja Duck.ai-keskustelusi synkronoidaan ja varmuuskopioidaan päästä päähän -salauksella.";
+
+/* Description shown when Sync & Backup is enabled */
+"sync.simplified.enabled.header.message.basic" = "Kirjanmerkkejäsi ja automaattisen täytön tietojasi synkronoidaan päästä päähän -salauksella.";
+
+/* Sync & Backup screen title shown when Sync is enabled */
+"sync.simplified.enabled.header.title" = "DuckDuckGo synkronoidaan";
+
+/* Label above the example sync code placeholder on the enter-code tab */
+"sync.simplified.enter.code.example.label" = "Esimerkkikoodi:";
+
+/* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.enter.code.open.app" = "Avaa toinen %@";
+
+/* Button to paste the sync code on the enter-code tab */
+"sync.simplified.enter.code.paste.button" = "Liitä synkronointikoodi";
+
+/* Second part of the enter-code instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.enter.code.steps" = "Siirry kohtaan **Sync & Backup** › **Synkronoi toisen laitteen kanssa** › **Kopioi tekstikoodi**.";
+
+/* Title on the enter-code tab of the scan screen */
+"sync.simplified.enter.code.title" = "Lisää synkronointikoodi";
+
+/* Row label to get the DuckDuckGo desktop browser */
+"sync.simplified.get.our.desktop.browser.title" = "Hanki työpöytäselaimemme";
+
+/* Sync setup row label to recover synced data using an existing recovery code */
+"sync.simplified.have.recovery.code.button" = "Minulla on palautuskoodi";
+
+/* Description of the Sync & Backup feature */
+"sync.simplified.header.message.basic.v2" = "Synkronoi automaattisen täytön tiedot ja kirjanmerkit päästä päähän -salauksella DuckDuckGo-sovellustesi välillä.";
+
+/* Description of the Sync & Backup feature (when AI chat sync is available) */
+"sync.simplified.header.message.v2" = "Synkronoi ja varmuuskopioi automaattisen täytön tiedot, kirjanmerkit ja Duck.ai-keskustelut päästä päähän -salauksella DuckDuckGo-sovellustesi välillä.";
+
+/* Sync & Backup screen title */
+"sync.simplified.header.title" = "Pidä DuckDuckGo synkronoituna";
+
+/* Footer caption shown under the Remove Device button on the manage device screen */
+"sync.simplified.manage.device.remove.footer" = "Tämä laite ei enää pääse käsiksi synkronoituihin tietoihisi, jos poistat sen.";
+
+/* Footer caption shown under the Remove Device button on the manage device screen. Parameter is the device name */
+"sync.simplified.manage.device.remove.footer.named" = "\"%@\" ei enää pääse synkronoituihin tietoihisi muilla laitteilla.";
+
+/* Status label shown under a device name on the manage device screen when the device is synced */
+"sync.simplified.manage.device.status.synced" = "Synkronoitu";
+
+/* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
+"sync.simplified.manage.device.turn.off.footer" = "Tämä laite ei enää pääse käsiksi synkronoituihin tietoihisi, jos tämä poistetaan käytöstä.";
+
+/* Footer caption shown under the Sync This Device toggle on the manage this device screen. Parameter is the device name */
+"sync.simplified.manage.device.turn.off.footer.named" = "\"%@\" ei enää pääse synkronoituihin tietoihisi muilla laitteilla, jos tämä poistetaan käytöstä.";
+
+/* My Devices section header shown when Sync & Backup is enabled */
+"sync.simplified.my.devices.section.header" = "Omat laitteet";
+
+/* Section header above the recovery-code option in sync setup */
+"sync.simplified.recover.synced.data.section.header" = "Palauta synkronoidut tiedot";
+
+/* Title shown on the connecting screen while a device's synced data is being recovered */
+"sync.simplified.recovering.data.v2.title" = "Tietojen palauttaminen";
+
+/* Label above the recovery code on the recover-your-data screen */
+"sync.simplified.recovery.code.label" = "Palautuskoodi";
+
+/* Description on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.description" = "Salattu päästä päähän kaikissa laitteissasi.";
+
+/* Title on the success screen shown after synced data has been recovered on this device */
+"sync.simplified.recovery.complete.v2.title" = "Sync & Backup käytössä";
+
+/* Sync settings data recovery section footer. %@ is replaced with the URL. */
+"sync.simplified.recovery.section.footer" = "Käytä tätä koodia tietojesi palauttamiseen, jos menetät pääsyn tähän laitteeseen. Sync & Backup -tietoja ei voida palauttaa 18 kuukauden toimettomuuden jälkeen. [Lue lisää](%@)";
+
+/* Confirmation alert button to remove a device from Sync & Backup */
+"sync.simplified.remove.device.confirm.action" = "Poista";
+
+/* Confirmation alert message when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.message" = "\"%@\" ei enää pääse synkronoituihin tietoihisi. Kirjanmerkit, automaattisen täytön tiedot ja Duck.ai-keskustelut säilyvät laitteissasi.";
+
+/* Confirmation alert title when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.title" = "Poistetaanko %@ Sync & Backupista?";
+
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
+"sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo-sovellus";
+
+/* Status text when connecting devices to sync */
+"sync.simplified.scan-or-view-code.connecting.status" = "Yhdistetään…";
+
+/* Message of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.message" = "Palaa tähän laitteeseen koodin liittämisen jälkeen.";
+
+/* Title of the reminder shown after the user copies the sync code. */
+"sync.simplified.scan-or-view-code.copy-confirmation.title" = "Liitä koodi toiselle laitteellesi";
+
+/* Status text while verifying a pasted sync code */
+"sync.simplified.scan-or-view-code.paste.code.verifying" = "Koodin tarkistaminen";
+
+/* Title of button to share a sync code */
+"sync.simplified.scan-or-view-code.share" = "Jaa koodi";
+
+/* Button on the scan-QR tab that opens the app's iOS Settings so the user can allow camera access */
+"sync.simplified.scan.v2.camera.denied.button" = "Muuta käyttöoikeuksia";
+
+/* Message on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.message" = "Kameran käyttöoikeudet tarvitaan, jos haluat synkronoida QR-koodin skannauksen.";
+
+/* Title on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.title" = "DuckDuckGo tarvitsee kamerasi käyttöoikeuden.";
+
+/* Close button in the scan screen navigation bar */
+"sync.simplified.scan.v2.close.button" = "Sulje";
+
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
+"sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo-työpöytäsovellus";
+
+/* Button on the scan-QR intro animation card that dismisses the card and reveals the camera scanner */
+"sync.simplified.scan.v2.qr.got.it.button" = "Selvä";
+
+/* Heading overlaid on the camera on the scan-QR tab */
+"sync.simplified.scan.v2.qr.heading" = "Skannaa QR-koodi synkronoidaksesi.";
+
+/* Scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. **...** marks the parts shown in the primary text color. \\n is a line break. */
+"sync.simplified.scan.v2.qr.instruction" = "Siirry sovelluksessa %@\nkohtaan **Sync & Backup** › **Synkronoi toisen laitteen kanssa**";
+
+/* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.scan.v2.qr.open.app" = "Avaa %@";
+
+/* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
+"sync.simplified.scan.v2.qr.ready.button" = "Olen valmis skannaamaan";
+
+/* Second part of the scan-QR instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.scan.v2.qr.steps" = "ja siirry kohtaan **Sync & Backup** › **Synkronoi toisen laitteen kanssa**";
+
+/* Segmented control tab title for entering a code */
+"sync.simplified.scan.v2.tab.enter.code" = "Lisää koodi";
+
+/* Segmented control tab title for scanning a QR code */
+"sync.simplified.scan.v2.tab.scan.qr" = "Skannaa QR-koodi";
+
+/* Status label shown next to the title when Sync & Backup is disabled */
+"sync.simplified.status.off" = "Pois päältä";
+
+/* Status label shown next to the title when Sync & Backup is enabled */
+"sync.simplified.status.on" = "Päällä";
+
+/* Button to copy the text sync code on the sync-code sheet */
+"sync.simplified.sync.code.copy.button" = "Kopioi tekstikoodi";
+
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "Avaa toisessa laitteessa %@";
+
+/* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
+"sync.simplified.sync.code.sheet.scan" = "Siirry kohtaan **Sync & Backup** › **Synkronoi toisen laitteen kanssa** ja skannaa tämä koodi:";
+
+/* Navigation title of the sheet that shows this device's sync QR code */
+"sync.simplified.sync.code.sheet.title" = "Skannaa tai kopioi koodi";
+
+/* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
+"sync.simplified.this.device.only" = "Synkronoi vain tämä laite";
+
+/* Sync & Backup enabled / disabled toggle title, referring to the current device */
+"sync.simplified.toggle.title.this.device" = "Synkronoi tämä laite";
+
+/* Button on the turn off Sync & Backup sheet that turns off sync and deletes the server data */
+"sync.simplified.turn.off.sheet.delete.button" = "Poista käytöstä ja poista palvelintiedot";
+
+/* Message of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.delete.message" = "Kaikkien Sync & Backup -toimintoa käyttävien laitteiden yhteys katkaistaan ja synkronoidut tietosi poistetaan palvelimelta.";
+
+/* Toggle label on the turn off Sync & Backup sheet to also delete the synced data from the server */
+"sync.simplified.turn.off.sheet.delete.toggle" = "Poistetaanko myös palvelimen tiedot?";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is off */
+"sync.simplified.turn.off.sheet.delete.toggle.off.footer" = "Poista Sync & Backup -toiminto käytöstä, poista kaikki synkronoidut tiedot palvelimelta ja poista palautuskoodisi käytöstä.";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is on */
+"sync.simplified.turn.off.sheet.delete.toggle.on.footer" = "Poistaa Sync & Backup -toiminnon käytöstä ja poistaa synkronoidut tietosi palvelimelta.";
+
+/* Title of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.title" = "Poistetaanko Sync & Backup käytöstä?";
+
+/* Sync settings action button title that opens the options to turn off Sync & Backup */
+"sync.simplified.turn.off.sync.button" = "Poista Sync & Backup käytöstä";
+
+/* Sync With Another Device sync setup button label */
+"sync.simplified.with.another.device.button" = "Synkronoi toisen laitteen kanssa";
 
 /* Sync & Backup Title */
 "sync.title" = "Synkronoi ja varmuuskopioi";
@@ -268,41 +418,8 @@
 /* Title of the warning message */
 "sync.warning.sync.unavailable" = "Synkronointi ja varmuuskopiointi ei ole käytettävissä";
 
-/* Button label for syncing with another device */
-"sync.with.another.device.button" = "Synkronoi toisen laitteen kanssa";
-
-/* Footer message for syncing with another device */
-"sync.with.another.device.footer" = "Tietosi on salattu päästä päähän, eikä DuckDuckGolla ole hallussaan salausavainta.";
-
-/* Message for syncing with another device */
-"sync.with.another.device.message" = "Synkronoi kirjanmerkit ja salasanat turvallisesti laitteittesi välillä.";
-
-/* Title for syncing with another device */
-"sync.with.another.device.title" = "Aloita synkronointi";
-
-/* Synced Devices - Section Header */
-"synced.devices.section.header" = "Synkronoidut laitteet";
-
-/* Synced Devices - Sync with Another Device Label */
-"synced.devices.sync.with.another.device.label" = "Synkronoi toisen laitteen kanssa";
-
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Tämä laite";
-
-/* Turn Sync Off - Button */
-"turn.sync.off" = "Poista synkronointi ja varmuuskopiointi käytöstä...";
-
-/* Turn Sync Off - Section Header */
-"turn.sync.off.section.header" = "Synkronointi käytössä";
-
-/* Options - Unify Favorites Instruction */
-"unified.favorites.instruction" = "Käytä samoja suosikkikirjanmerkkejä kaikilla laitteillasi. Jätä pois, jos haluat pitää mobiili- ja työpöytäsuosikit erillään.";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Yhdistä suosikit eri laitteilla";
-
-/* View Text Code menu item */
-"view.text.code.menu.item" = "Näytä tekstikoodi";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Käytät Sync Development -ympäristöä";

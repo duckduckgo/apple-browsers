@@ -20,6 +20,8 @@ import Combine
 @testable import DuckDuckGo_Privacy_Browser
 import Foundation
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SwiftUI
 import XCTest
 
@@ -29,17 +31,21 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
     var storageLocation: URL!
     var appearancePreferences: AppearancePreferences!
     var userBackgroundImagesManager: CapturingUserBackgroundImagesManager!
-    var sendPixelEvents: [PixelKitEvent] = []
+    var sendPixelEvents: [PixelKit.Event] = []
     var openFilePanel: () -> URL? = { return "file:///sample.jpg".url! }
     var openFilePanelCallCount = 0
     var showImageFailedAlertCallCount = 0
     var imageURL: URL?
 
+    @MainActor
     override func setUp() async throws {
         sendPixelEvents = []
 
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock(),
+                                      privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                      featureFlagger: MockFeatureFlagger(),
+                                      aiChatMenuConfig: MockAIChatConfig())
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
 
         UserDefaultsWrapper<Any>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.homePageLastPickedCustomColor.rawValue)
@@ -52,11 +58,11 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
                 self?.openFilePanelCallCount += 1
                 return self?.openFilePanel()
             },
-            showAddImageFailedAlert: { [weak self] in self?.showImageFailedAlertCallCount += 1 },
-            visualStyle: VisualStyle.legacy
+            showAddImageFailedAlert: { [weak self] in self?.showImageFailedAlertCallCount += 1 }
         )
     }
 
+    @MainActor
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: storageLocation)
         appearancePreferences = nil

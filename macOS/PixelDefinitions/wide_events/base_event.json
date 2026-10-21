@@ -1,0 +1,75 @@
+{
+    "meta": {
+        "version": {
+            "description": "Version of the base_event schema. During processing this is combined with the two-octet version of each event schema to form the full schema version in the form of <base_version>.<event_major_version>.<event_minor_version>",
+            "value": 1
+        }
+    },
+    "app": {
+        "name": {
+            "type": "string",
+            "description": "The name of the app sending the event, taken from CFBundleName. Varies across build configurations and the target (main app, VPN agent, PIR agent, network extension). Extend this enum when adding wide events fired from other macOS targets.",
+            "enum": [
+                "DuckDuckGo",
+                "DuckDuckGo Alpha",
+                "DuckDuckGo Review",
+                "DuckDuckGo App Store",
+                "DuckDuckGo VPN",
+                "DuckDuckGo VPN Alpha",
+                "DuckDuckGo VPN Review",
+                "DuckDuckGo VPN App Store",
+                "DuckDuckGo Personal Information Removal",
+                "DuckDuckGo Personal Information Removal App Store",
+                "NetworkProtectionAppExtension",
+                "com.duckduckgo.macos.vpn.network-extension",
+                "com.duckduckgo.macos.vpn.network-extension.debug",
+                "com.duckduckgo.macos.vpn.network-extension.review",
+                "com.duckduckgo.macos.vpn.network-extension.alpha",
+                "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+            ]
+        },
+        "version": {
+            "type": "string",
+            "description": "The version of the application",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+    },
+    "global": {
+        "platform": {
+            "type": "string",
+            "description": "The platform the app is running on",
+            "enum": ["macOS"]
+        },
+        "type": {
+            "type": "string",
+            "description": "The type of application",
+            "enum": ["app"]
+        },
+        "sample_rate": {
+            "type": "number",
+            "description": "Sample rate for this event",
+            "minimum": 0,
+            "maximum": 1
+        },
+        "is_first_daily_occurrence": {
+            "type": "boolean",
+            "description": "Whether this is the first occurrence of this event today. Only included when true."
+        }
+    },
+    "feature": {
+        "name": {
+            "type": "string",
+            "description": "The feature name for this event"
+        },
+        "status": {
+            "type": "string",
+            "description": "The overall status of the operation"
+        }
+    },
+    "context": {
+        "name": {
+            "type": "string",
+            "description": "Context name for the event"
+        }
+    }
+}

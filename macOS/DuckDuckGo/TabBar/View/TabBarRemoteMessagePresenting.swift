@@ -34,10 +34,15 @@ import Combine
 protocol TabBarRemoteMessagePresenting: AnyObject {
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel { get }
     var rightSideStackView: NSStackView! { get }
+    var fireButton: MouseOverAnimationButton! { get }
+    var duckAISplitButtonContainer: NSView? { get }
     var tabBarRemoteMessagePopover: NSPopover? { get set }
     var tabBarRemoteMessagePopoverHoverTimer: Timer? { get set }
     var feedbackBarButtonHostingController: NSHostingController<TabBarRemoteMessageView>? { get set }
     var tabBarRemoteMessageCancellable: AnyCancellable? { get set }
+    var foregroundBrowserWindowObserver: ForegroundBrowserWindowObserver? { get set }
+    var foregroundBrowserWindowCancellable: AnyCancellable? { get set }
+    var tabBarRemoteMessageImpressionTracker: TabBarRemoteMessageImpressionTracker { get }
 }
 
 extension TabBarRemoteMessagePresenting {
@@ -51,15 +56,40 @@ extension TabBarRemoteMessagePresenting {
         tabBarRemoteMessageCancellable = tabBarRemoteMessageViewModel.$remoteMessage
             .sink(receiveValue: { tabBarRemoteMessage in
                 if let tabBarRemoteMessage = tabBarRemoteMessage {
-                    if self.feedbackBarButtonHostingController == nil {
+                    if self.feedbackBarButtonHostingController?.rootView.model.id != tabBarRemoteMessage.id {
+                        self.dismissTabBarRemoteMessagePopover()
+                        self.tabBarRemoteMessagePopover = nil
+                        self.removeFeedbackButton()
                         self.showTabBarRemoteMessage(tabBarRemoteMessage)
                     }
                 } else {
+                    self.tabBarRemoteMessageImpressionTracker.update(isEligible: false, messageID: nil)
+                    self.dismissTabBarRemoteMessagePopover()
+                    self.tabBarRemoteMessagePopover = nil
                     if self.feedbackBarButtonHostingController != nil {
                         self.removeFeedbackButton()
                     }
                 }
+                self.reconcileTabBarRemoteMessageImpression()
             })
+    }
+
+    func reconcileTabBarRemoteMessageImpression() {
+        tabBarRemoteMessageImpressionTracker.update(
+            isEligible: isTabBarRemoteMessageEligibleForImpression,
+            messageID: feedbackBarButtonHostingController?.rootView.model.id
+        )
+    }
+
+    var isTabBarRemoteMessageEligibleForImpression: Bool {
+        guard let hostingController = feedbackBarButtonHostingController,
+              let window = hostingController.view.window,
+              let foregroundBrowserWindowObserver,
+              window === rightSideStackView.window,
+              rightSideStackView.arrangedSubviews.contains(hostingController.view),
+              hostingController.view.superview != nil,
+              !hostingController.view.isHiddenOrHasHiddenAncestor else { return false }
+        return foregroundBrowserWindowObserver.isEligible
     }
 
     /// Displays the tab bar remote message in the UI.
@@ -71,6 +101,7 @@ extension TabBarRemoteMessagePresenting {
     /// - Parameter tabBarRemotMessage: The remote message to be displayed.
     private func showTabBarRemoteMessage(_ tabBarRemotMessage: TabBarRemoteMessage) {
         let feedbackButtonView = TabBarRemoteMessageView(
+            themeManager: NSApp.delegateTyped.themeManager,
             model: tabBarRemotMessage,
             onClose: { [weak self] in
                 guard let self = self else { return }
@@ -81,8 +112,9 @@ extension TabBarRemoteMessagePresenting {
             onTap: { [weak self] surveyURL in
                 guard let self = self else { return }
 
+                let refreshedSurveyURL = self.tabBarRemoteMessageViewModel.refreshSurveyURL(surveyURL)
                 DispatchQueue.main.async {
-                    Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(surveyURL, source: .appOpenUrl))
+                    Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(refreshedSurveyURL, source: .appOpenUrl))
                 }
                 self.tabBarRemoteMessageViewModel.onSurveyOpened()
                 self.removeFeedbackButton()
@@ -94,10 +126,6 @@ extension TabBarRemoteMessagePresenting {
             onHoverEnd: { [weak self] in
                 guard let self = self else { return }
                 self.dismissTabBarRemoteMessagePopover()
-            },
-            onAppear: { [weak self] in
-                guard let self = self else { return }
-                self.tabBarRemoteMessageViewModel.markTabBarRemoteMessageAsShown()
             }
         )
         feedbackBarButtonHostingController = NSHostingController(rootView: feedbackButtonView)
@@ -105,13 +133,24 @@ extension TabBarRemoteMessagePresenting {
 
         feedbackBarButtonHostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        // Insert the hosting controller's view into the stack view just before the fire button
-        let index = max(0, rightSideStackView.arrangedSubviews.count - 1)
+        // Insert before the fire button group (Duck.ai split button + fire button)
+        let anchorView: NSView? = duckAISplitButtonContainer ?? fireButton
+        let index = anchorView.flatMap { rightSideStackView.arrangedSubviews.firstIndex(of: $0) }
+            ?? max(0, rightSideStackView.arrangedSubviews.count - 1)
         rightSideStackView.insertArrangedSubview(feedbackBarButtonHostingController.view, at: index)
+
+        // Match the custom spacing used between Duck.ai and fire button
+        if let duckAISplitButtonContainer {
+            let customSpacing = rightSideStackView.customSpacing(after: duckAISplitButtonContainer)
+            if customSpacing > 0 {
+                rightSideStackView.setCustomSpacing(customSpacing, after: feedbackBarButtonHostingController.view)
+            }
+        }
 
         NSLayoutConstraint.activate([
             feedbackBarButtonHostingController.view.centerYAnchor.constraint(equalTo: rightSideStackView.centerYAnchor)
         ])
+        reconcileTabBarRemoteMessageImpression()
     }
 
     /// Starts a timer to show the tab bar remote message popover after a delay.
@@ -182,6 +221,7 @@ extension TabBarRemoteMessagePresenting {
     private func removeFeedbackButton() {
         guard let hostingController = feedbackBarButtonHostingController else { return }
 
+        dismissTabBarRemoteMessagePopover()
         rightSideStackView.removeArrangedSubview(hostingController.view)
         hostingController.view.removeFromSuperview()
         hostingController.removeFromParent()

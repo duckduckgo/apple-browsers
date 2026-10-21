@@ -1,0 +1,224 @@
+//
+//  InstalledWebExtensionStoreTests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+@_spi(Testing) import Persistence
+@testable import WebExtensions
+
+@available(macOS 15.4, iOS 18.4, *)
+final class InstalledWebExtensionStoreTests: XCTestCase {
+
+    var inMemoryStore: InMemoryKeyValueStore!
+    var storage: (any KeyedStoring<InstalledWebExtensionSettings>)!
+    var store: InstalledWebExtensionStore!
+
+    override func setUp() {
+        super.setUp()
+        inMemoryStore = InMemoryKeyValueStore()
+        storage = inMemoryStore.keyedStoring()
+        store = InstalledWebExtensionStore(storage: storage)
+    }
+
+    override func tearDown() {
+        inMemoryStore = nil
+        storage = nil
+        store = nil
+        super.tearDown()
+    }
+
+    // MARK: - Test Helpers
+
+    private func makeExtension(uniqueIdentifier: String = "test-extension",
+                               filename: String = "extension.zip",
+                               name: String? = "Test Extension",
+                               version: String? = "1.0.0") -> InstalledWebExtension {
+        InstalledWebExtension(uniqueIdentifier: uniqueIdentifier,
+                           filename: filename,
+                           name: name,
+                           version: version)
+    }
+
+    // MARK: - Add Tests
+
+    func testWhenExtensionIsAdded_ThenInstalledWebExtensionsContainsIt() {
+        let ext = makeExtension()
+
+        store.add(ext)
+
+        XCTAssertTrue(store.installedExtensions.contains(ext))
+    }
+
+    func testWhenExtensionIsAdded_ThenStorageIsUpdated() {
+        let ext = makeExtension()
+
+        store.add(ext)
+
+        XCTAssertEqual(storage.extensions, [ext])
+    }
+
+    func testWhenMultipleExtensionsAreAdded_ThenAllAreStored() {
+        let ext1 = makeExtension(uniqueIdentifier: "ext1")
+        let ext2 = makeExtension(uniqueIdentifier: "ext2")
+
+        store.add(ext1)
+        store.add(ext2)
+
+        XCTAssertEqual(store.installedExtensions.count, 2)
+        XCTAssertTrue(store.installedExtensions.contains(ext1))
+        XCTAssertTrue(store.installedExtensions.contains(ext2))
+    }
+
+    // MARK: - Remove Tests
+
+    func testStoreIdentityFindsBothUpdateVersionsAndSurvivesOldVersionRemoval() {
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "test-extension")
+        let old = InstalledWebExtension(uniqueIdentifier: "old", filename: "old.zip", name: nil, version: "1.0", storeIdentity: identity)
+        let replacement = InstalledWebExtension(uniqueIdentifier: "new", filename: "new.zip", name: nil, version: "2.0", storeIdentity: identity)
+        let other = InstalledWebExtension(uniqueIdentifier: "other", filename: "other.zip", name: nil, version: "1.0",
+                                           storeIdentity: .init(store: .chromeWebStore, id: "other-extension"))
+        store.add(old)
+        store.add(replacement)
+        store.add(other)
+        store.add(makeExtension(uniqueIdentifier: "manual"))
+
+        XCTAssertEqual(store.installedExtensions(withStoreIdentity: identity), [old, replacement])
+        store.remove(uniqueIdentifier: old.uniqueIdentifier)
+
+        let restored = InstalledWebExtensionStore(storage: storage)
+        XCTAssertEqual(restored.installedExtensions(withStoreIdentity: identity), [replacement])
+    }
+
+    func testWhenExtensionIsRemoved_ThenInstalledWebExtensionsDoesNotContainIt() {
+        let ext = makeExtension()
+        storage.extensions = [ext]
+
+        store.remove(uniqueIdentifier: ext.uniqueIdentifier)
+
+        XCTAssertFalse(store.installedExtensions.contains(ext))
+    }
+
+    func testWhenExtensionIsRemoved_ThenStorageIsUpdated() {
+        let ext = makeExtension()
+        storage.extensions = [ext]
+
+        store.remove(uniqueIdentifier: ext.uniqueIdentifier)
+
+        XCTAssertEqual(storage.extensions, [])
+    }
+
+    func testWhenOneExtensionIsRemoved_ThenOtherExtensionsRemain() {
+        let ext1 = makeExtension(uniqueIdentifier: "ext1")
+        let ext2 = makeExtension(uniqueIdentifier: "ext2")
+        storage.extensions = [ext1, ext2]
+
+        store.remove(uniqueIdentifier: ext1.uniqueIdentifier)
+
+        XCTAssertEqual(store.installedExtensions, [ext2])
+    }
+
+    // MARK: - InstalledWebExtensions Property Tests
+
+    func testThatInstalledWebExtensionsReturnsEmptyArrayWhenStorageIsEmpty() {
+        storage.extensions = nil
+
+        XCTAssertEqual(store.installedExtensions, [])
+    }
+
+    func testThatInstalledWebExtensionsReturnsStoredExtensionsFromStorage() {
+        let extensions = [makeExtension(uniqueIdentifier: "ext1"), makeExtension(uniqueIdentifier: "ext2")]
+        storage.extensions = extensions
+
+        XCTAssertEqual(store.installedExtensions, extensions)
+    }
+
+    // MARK: - Lookup Tests
+
+    func testThatInstalledWebExtensionWithUniqueIdentifierReturnsMatchingExtension() {
+        let ext1 = makeExtension(uniqueIdentifier: "ext1")
+        let ext2 = makeExtension(uniqueIdentifier: "ext2")
+        storage.extensions = [ext1, ext2]
+
+        let result = store.installedExtension(withUniqueIdentifier: "ext2")
+
+        XCTAssertEqual(result, ext2)
+    }
+
+    func testThatInstalledWebExtensionWithUniqueIdentifierReturnsNilWhenNotFound() {
+        let ext = makeExtension(uniqueIdentifier: "ext1")
+        storage.extensions = [ext]
+
+        let result = store.installedExtension(withUniqueIdentifier: "non-existent")
+
+        XCTAssertNil(result)
+    }
+
+    // MARK: - Custom Storage Tests
+
+    func testThatInitWithCustomStorageUsesProvidedStorage() {
+        let customInMemoryStore = InMemoryKeyValueStore()
+        let customStorage: any KeyedStoring<InstalledWebExtensionSettings> = customInMemoryStore.keyedStoring()
+        let ext = makeExtension()
+        customStorage.extensions = [ext]
+
+        let customStore = InstalledWebExtensionStore(storage: customStorage)
+
+        XCTAssertEqual(customStore.installedExtensions, [ext])
+    }
+
+    // MARK: - Update Tests
+
+    func testWhenExtensionIsUpdated_ThenStoredRecordIsReplaced() {
+        let ext = makeExtension()
+        storage.extensions = [ext, makeExtension(uniqueIdentifier: "other")]
+        var disabled = ext
+        disabled.isDisabled = true
+
+        store.update(disabled)
+
+        XCTAssertEqual(InstalledWebExtensionStore(storage: storage).installedExtensions, [disabled, makeExtension(uniqueIdentifier: "other")])
+    }
+
+    func testWhenUnknownExtensionIsUpdated_ThenStorageIsUnchanged() {
+        let ext = makeExtension()
+        storage.extensions = [ext]
+
+        store.update(makeExtension(uniqueIdentifier: "unknown"))
+
+        XCTAssertEqual(storage.extensions, [ext])
+    }
+
+    // MARK: - Decoding Tests
+
+    func testWhenRecordWithoutDisabledStateIsDecoded_ThenExtensionIsLoaded() throws {
+        let json = #"{"uniqueIdentifier":"test-extension","filename":"extension.zip","name":"Test Extension","version":"1.0.0"}"#
+
+        let ext = try JSONDecoder().decode(InstalledWebExtension.self, from: Data(json.utf8))
+
+        XCTAssertEqual(ext, makeExtension())
+        XCTAssertFalse(ext.isDisabled)
+    }
+
+    func testWhenDisabledRecordIsEncoded_ThenDecodedRecordIsDisabled() throws {
+        var ext = makeExtension()
+        ext.isDisabled = true
+
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(ext))
+
+        XCTAssertEqual(decoded, ext)
+    }
+}

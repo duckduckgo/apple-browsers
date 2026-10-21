@@ -16,17 +16,16 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-import Combine
 import class Persistence.CoreDataDatabase
-@testable import History
+import Combine
 import Common
 import CoreData
+import Foundation
+import XCTest
+
+@testable @preconcurrency import History
 
 final class HistoryStoreTests: XCTestCase {
-
-    private var cancellables = Set<AnyCancellable>()
 
     private var context: NSManagedObjectContext!
     private var historyStore: HistoryStore!
@@ -36,7 +35,7 @@ final class HistoryStoreTests: XCTestCase {
         super.setUp()
         let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory")!
         location = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let database = CoreDataDatabase(name: className, containerLocation: location, model: model)
+        let database = CoreDataDatabase(name: NSStringFromClass(type(of: self)), containerLocation: location, model: model)
         database.loadStore { _, error in
             if let e = error {
                 XCTFail("Could not load store: \(e.localizedDescription)")
@@ -50,11 +49,10 @@ final class HistoryStoreTests: XCTestCase {
         try FileManager.default.removeItem(at: location)
         context = nil
         historyStore = nil
-        cancellables.removeAll()
         try super.tearDownWithError()
     }
 
-    func testWhenHistoryEntryIsSavedMultipleTimes_ThenTheNewestValueMustBeLoadedFromStore() {
+    func testWhenHistoryEntryIsSavedMultipleTimes_ThenTheNewestValueMustBeLoadedFromStore() async throws {
         let historyEntry = HistoryEntry(identifier: UUID(),
                                         url: URL.duckDuckGo,
                                         title: "Test",
@@ -62,20 +60,21 @@ final class HistoryStoreTests: XCTestCase {
                                         lastVisit: Date(),
                                         visits: [])
         let firstSavingExpectation = self.expectation(description: "Saving")
-        save(entry: historyEntry, expectation: firstSavingExpectation)
+        try await save(entry: historyEntry, expectation: firstSavingExpectation)
 
         let newTitle = "New Title"
         historyEntry.title = newTitle
         let secondSavingExpectation = self.expectation(description: "Saving")
-        save(entry: historyEntry, expectation: secondSavingExpectation)
+        try await save(entry: historyEntry, expectation: secondSavingExpectation)
+        await fulfillment(of: [firstSavingExpectation, secondSavingExpectation], timeout: 2)
 
-        cleanOldAndWait(cleanUntil: Date(timeIntervalSince1970: 0)) { history in
+        try await cleanOldAndWait(cleanUntil: Date(timeIntervalSince1970: 0)) { history in
             XCTAssertEqual(history.count, 1)
             XCTAssertEqual(history.first!.title, newTitle)
         }
     }
 
-    func testWhenCleanOldIsCalled_ThenOlderEntriesThanDateAreCleaned() {
+    func testWhenCleanOldIsCalled_ThenOlderEntriesThanDateAreCleaned() async throws {
         let toBeKeptIdentifier = UUID()
         let newHistoryEntry = HistoryEntry(identifier: toBeKeptIdentifier,
                                            url: URL(string: "wikipedia.org")!,
@@ -84,7 +83,7 @@ final class HistoryStoreTests: XCTestCase {
                                            lastVisit: Date(),
                                            visits: [])
         let savingExpectation = self.expectation(description: "Saving")
-        save(entry: newHistoryEntry, expectation: savingExpectation)
+        try await save(entry: newHistoryEntry, expectation: savingExpectation)
 
         var toBeDeleted: [HistoryEntry] = []
         for i in 0..<150 {
@@ -98,21 +97,22 @@ final class HistoryStoreTests: XCTestCase {
                                                     lastVisit: visitDate,
                                                     visits: [visit])
             visit.historyEntry = toRemoveHistoryEntry
-            save(entry: toRemoveHistoryEntry)
+            try await save(entry: toRemoveHistoryEntry)
             toBeDeleted.append(toRemoveHistoryEntry)
         }
 
-        cleanOldAndWait(cleanUntil: .weekAgo) { history in
+        await fulfillment(of: [savingExpectation], timeout: 2)
+        try await cleanOldAndWait(cleanUntil: .weekAgo) { history in
             XCTAssertEqual(history.count, 1)
             XCTAssertEqual(history.first!.identifier, toBeKeptIdentifier)
         }
     }
 
-    func testWhenRemoveEntriesIsCalled_ThenEntriesMustBeCleaned() {
+    func testWhenRemoveEntriesIsCalled_ThenEntriesMustBeCleaned() async throws {
         let visitDate = Date(timeIntervalSince1970: 1234)
         let visit = Visit(date: visitDate)
         let firstSavingExpectation = self.expectation(description: "Saving")
-        let toBeKept = saveNewHistoryEntry(including: [visit], lastVisit: visitDate, expectation: firstSavingExpectation)
+        let toBeKept = try await saveNewHistoryEntry(including: [visit], lastVisit: visitDate, expectation: firstSavingExpectation)
 
         var toBeDeleted: [HistoryEntry] = []
         for _ in 0..<150 {
@@ -126,11 +126,12 @@ final class HistoryStoreTests: XCTestCase {
                                                     lastVisit: visitDate,
                                                     visits: [visit])
             visit.historyEntry = toRemoveHistoryEntry
-            save(entry: toRemoveHistoryEntry)
+            try await save(entry: toRemoveHistoryEntry)
             toBeDeleted.append(toRemoveHistoryEntry)
         }
 
-        removeEntriesAndWait(toBeDeleted)
+        try await removeEntriesAndWait(toBeDeleted)
+        await fulfillment(of: [firstSavingExpectation], timeout: 2)
 
         context.performAndWait {
             let request = BrowsingHistoryEntryManagedObject.fetchRequest()
@@ -144,38 +145,30 @@ final class HistoryStoreTests: XCTestCase {
         }
     }
 
-    func removeEntriesAndWait(_ entries: [HistoryEntry], file: StaticString = #file, line: UInt = #line) {
-        let loadingExpectation = self.expectation(description: "Loading")
-        historyStore.removeEntries(entries)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                switch completion {
-                case .finished:
-                    loadingExpectation.fulfill()
-                case .failure(let error):
-                    XCTFail("Loading of history failed - \(error.localizedDescription)", file: file, line: line)
-                }
-            } receiveValue: {}
-            .store(in: &cancellables)
-
-        waitForExpectations(timeout: 1, handler: nil)
+    func removeEntriesAndWait(_ entries: [HistoryEntry], file: StaticString = #file, line: UInt = #line) async throws {
+        do {
+            try await historyStore.removeEntries(entries)
+        } catch {
+            XCTFail("Loading of history failed - \(error.localizedDescription)", file: file, line: line)
+            throw error
+        }
     }
 
-    func testWhenRemoveEntriesIsCalled_visitsCascadeDelete() {
+    func testWhenRemoveEntriesIsCalled_visitsCascadeDelete() async throws {
         var toBeDeleted = [Visit]()
         for j in 0..<10 {
             let visitDate = Date(timeIntervalSince1970: Double(j))
             let visit = Visit(date: visitDate)
             toBeDeleted.append(visit)
         }
-        let history = saveNewHistoryEntry(including: toBeDeleted, lastVisit: toBeDeleted.last!.date)
+        let history = try await saveNewHistoryEntry(including: toBeDeleted, lastVisit: toBeDeleted.last!.date)
 
-        removeEntriesAndWait([history])
+        try await removeEntriesAndWait([history])
 
-        context.performAndWait {
+        context.performAndWait { [unowned context] in
             let request = PageVisitManagedObject.fetchRequest()
             do {
-                let results = try context.fetch(request)
+                let results = try context!.fetch(request)
                 XCTAssertEqual(results.count, 0)
             } catch {
                 XCTFail(error.localizedDescription)
@@ -183,17 +176,16 @@ final class HistoryStoreTests: XCTestCase {
         }
     }
 
-    func testWhenRemoveVisitsIsCalled_ThenVisitsMustBeCleaned() {
+    func testWhenRemoveVisitsIsCalled_ThenVisitsMustBeCleaned() async throws {
         let visitDate = Date(timeIntervalSince1970: 1234)
         let toBeKept = Visit(date: visitDate)
         let firstSavingExpectation = self.expectation(description: "Saving")
-        let toBeKeptsHistory = saveNewHistoryEntry(including: [toBeKept], lastVisit: visitDate, expectation: firstSavingExpectation)
+        let toBeKeptsHistory = try await saveNewHistoryEntry(including: [toBeKept], lastVisit: visitDate, expectation: firstSavingExpectation)
 
         var toBeDeleted: [Visit] = []
         var historiesToPreventFromDeallocation = [HistoryEntry]()
-        let addVisitsToEntry = { [weak self] (visits: [Visit]) in
-            guard let self = self else { return }
-            let history = self.saveNewHistoryEntry(including: visits, lastVisit: visits.last!.date)
+        func addVisitsToEntry(_ visits: [Visit]) async throws {
+            let history = try await saveNewHistoryEntry(including: visits, lastVisit: visits.last!.date)
             historiesToPreventFromDeallocation.append(history)
         }
 
@@ -205,30 +197,21 @@ final class HistoryStoreTests: XCTestCase {
                 visits.append(visit)
                 toBeDeleted.append(visit)
             }
-            addVisitsToEntry(visits)
+            try await addVisitsToEntry(visits)
         }
 
-        let loadingExpectation = self.expectation(description: "Loading")
-        withExtendedLifetime(historiesToPreventFromDeallocation) { _ in
-            historyStore.removeVisits(toBeDeleted)
-                .receive(on: DispatchQueue.main)
-                .sink { completion in
-                    switch completion {
-                    case .finished:
-                        loadingExpectation.fulfill()
-                    case .failure(let error):
-                        XCTFail("Loading of history failed - \(error.localizedDescription)")
-                    }
-                } receiveValue: {}
-                .store(in: &cancellables)
-
-            waitForExpectations(timeout: 1, handler: nil)
+        do {
+            try await historyStore.removeVisits(toBeDeleted)
+        } catch {
+            XCTFail("Loading of history failed - \(error.localizedDescription)")
         }
+        withExtendedLifetime(historiesToPreventFromDeallocation) { _ in }
+        await fulfillment(of: [firstSavingExpectation], timeout: 2)
 
-        context.performAndWait {
+        context.performAndWait { [unowned context] in
             let request = PageVisitManagedObject.fetchRequest()
             do {
-                let results = try context.fetch(request)
+                let results = try context!.fetch(request)
                 XCTAssertEqual(results.first?.historyEntry?.identifier, toBeKeptsHistory.identifier)
                 XCTAssertEqual(results.first?.date, toBeKept.date)
                 XCTAssertEqual(results.count, 1)
@@ -238,7 +221,7 @@ final class HistoryStoreTests: XCTestCase {
         }
     }
 
-    func testWhenCleanOldIsCalled_ThenFollowingSaveShouldSucceed() {
+    func testWhenCleanOldIsCalled_ThenFollowingSaveShouldSucceed() async throws {
         let oldVisitDate = Date(timeIntervalSince1970: 0)
         let newVisitDate = Date(timeIntervalSince1970: 12345)
 
@@ -246,27 +229,27 @@ final class HistoryStoreTests: XCTestCase {
         let newVisit = Visit(date: newVisitDate)
 
         let firstSavingExpectation = self.expectation(description: "Saving")
-        saveNewHistoryEntry(including: [oldVisit, newVisit],
-                            lastVisit: newVisitDate,
-                            expectation: firstSavingExpectation)
+        _ = try await saveNewHistoryEntry(including: [oldVisit, newVisit],
+                                         lastVisit: newVisitDate,
+                                         expectation: firstSavingExpectation)
 
-        cleanOldAndWait(cleanUntil: Date(timeIntervalSince1970: 1)) { history in
+        try await cleanOldAndWait(cleanUntil: Date(timeIntervalSince1970: 1)) { history in
             XCTAssertEqual(history.count, 1)
             for entry in history {
                 XCTAssertEqual(entry.visits.count, 1)
             }
         }
 
-        let secondSavingExpectation = self.expectation(description: "Saving")
         // This should not fail, but apparently internal version of objects is broken after BatchDelete request causing merge failure.
-        saveNewHistoryEntry(including: [oldVisit, newVisit],
-                            lastVisit: newVisitDate,
-                            expectation: secondSavingExpectation)
+        let secondSavingExpectation = self.expectation(description: "Saving")
+        _ = try await saveNewHistoryEntry(including: [oldVisit, newVisit],
+                                         lastVisit: newVisitDate,
+                                         expectation: secondSavingExpectation)
 
-        waitForExpectations(timeout: 2, handler: nil)
+        await fulfillment(of: [firstSavingExpectation, secondSavingExpectation], timeout: 2)
     }
 
-    func testWhenRemoveVisitsIsCalled_ThenFollowingSaveShouldSucceed() {
+    func testWhenRemoveVisitsIsCalled_ThenFollowingSaveShouldSucceed() async throws {
         let oldVisitDate = Date(timeIntervalSince1970: 0)
         let newVisitDate = Date(timeIntervalSince1970: 12345)
 
@@ -274,36 +257,26 @@ final class HistoryStoreTests: XCTestCase {
         let newVisit = Visit(date: newVisitDate)
 
         let firstSavingExpectation = self.expectation(description: "Saving")
-        let history = saveNewHistoryEntry(including: [oldVisit, newVisit],
-                                          lastVisit: newVisitDate,
-                                          expectation: firstSavingExpectation)
+        let history = try await saveNewHistoryEntry(including: [oldVisit, newVisit],
+                                                    lastVisit: newVisitDate,
+                                                    expectation: firstSavingExpectation)
 
-        withExtendedLifetime(history) { [weak self] _ in
-            guard let self = self else { return }
-            let loadingExpectation = self.expectation(description: "Loading")
-            self.historyStore.removeVisits([oldVisit])
-                .receive(on: DispatchQueue.main)
-                .sink { completion in
-                    switch completion {
-                    case .finished:
-                        loadingExpectation.fulfill()
-                    case .failure(let error):
-                        XCTFail("Loading of history failed - \(error.localizedDescription)")
-                    }
-                } receiveValue: { _ in }
-                .store(in: &cancellables)
-            waitForExpectations(timeout: 2, handler: nil)
+        do {
+            try await historyStore.removeVisits([oldVisit])
+        } catch {
+            XCTFail("Loading of history failed - \(error.localizedDescription)")
         }
+        withExtendedLifetime(history) { _ in }
 
         let secondSavingExpectation = self.expectation(description: "Saving")
-        saveNewHistoryEntry(including: [oldVisit, newVisit],
-                            lastVisit: newVisitDate,
-                            expectation: secondSavingExpectation)
+        try await saveNewHistoryEntry(including: [oldVisit, newVisit],
+                                      lastVisit: newVisitDate,
+                                      expectation: secondSavingExpectation)
 
-        waitForExpectations(timeout: 2, handler: nil)
+        await fulfillment(of: [firstSavingExpectation, secondSavingExpectation], timeout: 2)
     }
 
-    func testWhenRemoveEntriesIsCalled_ThenFollowingSaveShouldSucceed() {
+    func testWhenRemoveEntriesIsCalled_ThenFollowingSaveShouldSucceed() async throws {
         let oldVisitDate = Date(timeIntervalSince1970: 0)
         let newVisitDate = Date(timeIntervalSince1970: 12345)
 
@@ -311,39 +284,85 @@ final class HistoryStoreTests: XCTestCase {
         let newVisit = Visit(date: newVisitDate)
 
         let firstSavingExpectation = self.expectation(description: "Saving")
-        let historyEntry = saveNewHistoryEntry(including: [oldVisit, newVisit],
-                                               lastVisit: newVisitDate,
-                                               expectation: firstSavingExpectation)
+        let historyEntry = try await saveNewHistoryEntry(including: [oldVisit, newVisit],
+                                                         lastVisit: newVisitDate,
+                                                         expectation: firstSavingExpectation)
 
-        removeEntriesAndWait([historyEntry])
+        try await removeEntriesAndWait([historyEntry])
 
         let secondSavingExpectation = self.expectation(description: "Saving")
-        saveNewHistoryEntry(including: [oldVisit, newVisit],
-                            lastVisit: newVisitDate,
-                            expectation: secondSavingExpectation)
+        try await saveNewHistoryEntry(including: [oldVisit, newVisit],
+                                      lastVisit: newVisitDate,
+                                      expectation: secondSavingExpectation)
 
-        waitForExpectations(timeout: 2, handler: nil)
+        await fulfillment(of: [firstSavingExpectation, secondSavingExpectation], timeout: 2)
     }
 
-    private func cleanOldAndWait(cleanUntil date: Date, assertion: @escaping (BrowsingHistory) -> Void, file: StaticString = #file, line: UInt = #line) {
-        let loadingExpectation = self.expectation(description: "Loading")
-        historyStore.cleanOld(until: date)
-            .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    loadingExpectation.fulfill()
-                case .failure(let error):
-                    XCTFail("Loading of history failed - \(error.localizedDescription)", file: file, line: line)
-                }
-            }, receiveValue: assertion)
-            .store(in: &cancellables)
+    // MARK: - Tab History Integration Tests
 
-        waitForExpectations(timeout: 2, handler: nil)
+    func testWhenVisitIsSavedWithTabID_ThenTabHistoryRecordIsCreated() async throws {
+        let tabID = "test-tab-for-visit"
+        let visitDate = Date()
+        let visit = Visit(date: visitDate, tabID: tabID)
+
+        let historyEntry = try await saveNewHistoryEntry(including: [visit], lastVisit: visitDate)
+
+        let tabHistoryRecords = fetchAllTabHistory()
+        XCTAssertEqual(tabHistoryRecords.count, 1)
+        XCTAssertEqual(tabHistoryRecords.first?.tabID, tabID)
+        XCTAssertEqual(tabHistoryRecords.first?.url, historyEntry.url)
+        XCTAssertNotNil(tabHistoryRecords.first?.visit, "Tab history should be linked to visit")
+    }
+
+    func testWhenVisitIsSavedWithoutTabID_ThenNoTabHistoryRecordIsCreated() async throws {
+        let visitDate = Date()
+        let visit = Visit(date: visitDate)
+
+        _ = try await saveNewHistoryEntry(including: [visit], lastVisit: visitDate)
+
+        let tabHistoryRecords = fetchAllTabHistory()
+        XCTAssertEqual(tabHistoryRecords.count, 0)
+    }
+
+    func testWhenHistoryEntryIsDeleted_ThenLinkedTabHistoryPersists() async throws {
+        let tabID = "persist-tab-123"
+        let visitDate = Date()
+        let visit = Visit(date: visitDate, tabID: tabID)
+
+        let historyEntry = try await saveNewHistoryEntry(including: [visit], lastVisit: visitDate)
+
+        XCTAssertEqual(fetchAllTabHistory().count, 1)
+
+        try await removeEntriesAndWait([historyEntry])
+
+        // TabHistory should persist due to Nullify delete rule (orphaned)
+        let tabHistoryRecords = fetchAllTabHistory()
+        XCTAssertEqual(tabHistoryRecords.count, 1)
+        XCTAssertEqual(tabHistoryRecords.first?.tabID, tabID)
+        XCTAssertNil(tabHistoryRecords.first?.visit, "Visit relationship should be nullified")
+    }
+
+    private func fetchAllTabHistory() -> [TabHistoryManagedObject] {
+        var results: [TabHistoryManagedObject] = []
+        context.performAndWait {
+            let request = TabHistoryManagedObject.fetchRequest()
+            results = (try? context.fetch(request)) ?? []
+        }
+        return results
+    }
+
+    private func cleanOldAndWait(cleanUntil date: Date, assertion: @escaping (BrowsingHistory) -> Void, file: StaticString = #file, line: UInt = #line) async throws {
+        do {
+            let history = try await historyStore.cleanOld(until: date)
+            assertion(history)
+        } catch {
+            XCTFail("Loading of history failed - \(error.localizedDescription)", file: file, line: line)
+            throw error
+        }
     }
 
     @discardableResult
-    private func saveNewHistoryEntry(including visits: [Visit], lastVisit: Date, expectation: XCTestExpectation? = nil, file: StaticString = #file, line: UInt = #line) -> HistoryEntry {
+    private func saveNewHistoryEntry(including visits: [Visit], lastVisit: Date, expectation: XCTestExpectation? = nil, file: StaticString = #file, line: UInt = #line) async throws -> HistoryEntry {
         let historyEntry = HistoryEntry(identifier: UUID(),
                                         url: URL.duckDuckGo,
                                         title: nil,
@@ -353,22 +372,18 @@ final class HistoryStoreTests: XCTestCase {
         for visit in visits {
             visit.historyEntry = historyEntry
         }
-        save(entry: historyEntry, expectation: expectation, file: file, line: line)
+        try await save(entry: historyEntry, expectation: expectation, file: file, line: line)
         return historyEntry
     }
 
-    private func save(entry: HistoryEntry, expectation: XCTestExpectation? = nil, file: StaticString = #file, line: UInt = #line) {
-        historyStore.save(entry: entry)
-            .receive(on: DispatchQueue.main)
-            .sink { completion in
-                switch completion {
-                case .finished:
-                    expectation?.fulfill()
-                case .failure(let error):
-                    XCTFail("Saving of history entry failed - \(error.localizedDescription)", file: file, line: line)
-                }
-            } receiveValue: { _ in }
-            .store(in: &cancellables)
+    private func save(entry: HistoryEntry, expectation: XCTestExpectation? = nil, file: StaticString = #file, line: UInt = #line) async throws {
+        do {
+            _ = try await historyStore.save(entry: entry)
+            expectation?.fulfill()
+        } catch {
+            XCTFail("Saving of history entry failed - \(error.localizedDescription)", file: file, line: line)
+            throw error
+        }
     }
 }
 

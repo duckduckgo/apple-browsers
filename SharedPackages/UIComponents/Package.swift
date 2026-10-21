@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -24,7 +24,7 @@ let package = Package(
     name: "UIComponents",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
@@ -32,13 +32,15 @@ let package = Package(
             targets: ["UIComponents"]),
     ],
     dependencies: [
-        .package(path: "../DesignResourcesKit")
+        .package(path: "../Infrastructure/DesignResourcesKit"),
+        .package(path: "../Infrastructure/DesignResourcesKitIcons")
     ],
     targets: [
         .target(
             name: "UIComponents",
             dependencies: [
                 "DesignResourcesKit",
+                "DesignResourcesKitIcons",
             ],
             resources: [
                 .process("Resources/Assets.xcassets")

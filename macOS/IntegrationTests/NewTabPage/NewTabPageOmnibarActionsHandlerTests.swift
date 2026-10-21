@@ -1,0 +1,266 @@
+//
+//  NewTabPageOmnibarActionsHandlerTests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+@testable import DuckDuckGo_Privacy_Browser
+import NewTabPage
+import AIChat
+import Common
+import FoundationExtensions
+import Combine
+import PrivacyConfig
+
+final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
+
+    private var handler: NewTabPageOmnibarActionsHandler!
+    private var promptHandler: AIChatPromptHandler!
+    private var windowControllersManager: WindowControllersManager!
+    private var tabsPreferences: TabsPreferences!
+    private var tab: Tab!
+    private var window: NSWindow!
+    private var termsUserDefaults: UserDefaults!
+    private var featureFlagger: MockFeatureFlagger!
+
+    private var firedPixels: [String] = []
+
+    @MainActor
+    override func setUp() {
+        autoreleasepool {
+            firedPixels = []
+            featureFlagger = MockFeatureFlagger(featuresStub: ["aiChatNativeTermsOfService": true])
+            termsUserDefaults = UserDefaults(suiteName: String(describing: Self.self))
+            termsUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
+            promptHandler = AIChatPromptHandler.shared
+            windowControllersManager = Application.appDelegate.windowControllersManager
+            tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: windowControllersManager)
+            handler = NewTabPageOmnibarActionsHandler(
+                promptHandler: promptHandler,
+                windowControllersManager: windowControllersManager,
+                tabsPreferences: tabsPreferences,
+                historyCoordinator: Application.appDelegate.historyCoordinator,
+                aiChatDeleter: AIChatDeleter(historyCleaner: HistoryCleaner(
+                    featureFlagger: Application.appDelegate.featureFlagger,
+                    privacyConfig: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                    nativeStorageHandler: Application.appDelegate.duckAiNativeStorageHandler,
+                    featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: Application.appDelegate.featureFlagger)
+                )),
+                termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
+                    featureFlagger: featureFlagger,
+                    store: DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults, notificationCenter: NotificationCenter())
+                ),
+                isShiftPressed: { false },
+                isCommandPressed: { false },
+                firePixel: { [weak self] event in self?.firedPixels.append(event.name) }
+            )
+            tab = Tab(content: .none)
+            window = WindowsManager.openNewWindow(with: tab)!
+        }
+    }
+
+    override func tearDown() {
+        autoreleasepool {
+            firedPixels = []
+            promptHandler = nil
+            windowControllersManager = nil
+            tabsPreferences = nil
+            termsUserDefaults.removePersistentDomain(forName: String(describing: Self.self))
+            termsUserDefaults = nil
+            featureFlagger = nil
+            handler = nil
+            tab = nil
+            window?.close()
+            window = nil
+        }
+    }
+
+    @MainActor
+    func testWhenSubmitSearchOnSameTab_ThenSearchURLOpens() {
+        let target: NewTabPageDataModel.OpenTarget = .sameTab
+
+        handler.submitSearch("duckduckgo", target: target)
+
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.activeTab?.url?.absoluteString, "https://duckduckgo.com/?q=duckduckgo")
+    }
+
+    @MainActor
+    func testWhenSubmitSearchOnNewTab_ThenNewTabOpensWithSearchURL() {
+        let target: NewTabPageDataModel.OpenTarget = .newTab
+
+        handler.submitSearch("duckduckgo", target: target)
+
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.absoluteString, "https://duckduckgo.com/?q=duckduckgo")
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
+    }
+
+    @MainActor
+    func testWhenSubmitSearchContainsURL_ThenTabNavigatesDirectlyURL() {
+        let target: NewTabPageDataModel.OpenTarget = .sameTab
+
+        handler.submitSearch("wikipedia.org", target: target)
+
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.absoluteString, "http://wikipedia.org")
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatOnSameTab_ThenAIChatOpens() {
+        let target: NewTabPageDataModel.OpenTarget = .sameTab
+
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
+
+        XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 1)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatOnNewTab_ThenNewTabOpensWithAIChat() {
+        let target: NewTabPageDataModel.OpenTarget = .newTab
+
+        handler.submitChat("duckduckgo", target: target, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: false)
+
+        XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithReasoningEffort_ThenPromptUsesTypedReasoningEffort() {
+        handler.submitChat("duckduckgo",
+                           target: .sameTab,
+                           modelId: "gpt-5.2",
+                           images: nil,
+                           mode: nil,
+                           toolChoice: nil,
+                           reasoningEffort: "low",
+                           pageContexts: nil,
+                           files: nil,
+                           aiTermsAccepted: false)
+
+        let prompt = promptHandler.consumeData()
+        let expectedPrompt = AIChatNativePrompt.queryPrompt("duckduckgo",
+                                                           autoSubmit: true,
+                                                           modelId: "gpt-5.2",
+                                                           reasoningEffort: .low).withTermsAccepted(false)
+        XCTAssertEqual(prompt, expectedPrompt)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithAttachments_ThenPromptCarriesPageContextsAndFiles() {
+        let context = NewTabPageDataModel.OmnibarPageContext(tabId: "tab-1", title: "Apple", url: "https://apple.com", favicon: NewTabPageDataModel.OmnibarTabFavicon(src: "data:image/png;base64,AAAA"), content: "## Apple", truncated: false, fullContentLength: 8)
+        let file = NewTabPageDataModel.OmnibarPromptFile(data: "base64", fileName: "doc.pdf", mimeType: "application/pdf")
+
+        handler.submitChat("compare",
+                           target: .sameTab,
+                           modelId: nil,
+                           images: nil,
+                           mode: nil,
+                           toolChoice: nil,
+                           reasoningEffort: nil,
+                           pageContexts: [context],
+                           files: [file],
+                           aiTermsAccepted: false)
+
+        let prompt = promptHandler.consumeData()
+        guard case .multiple(let contexts) = prompt?.pageContext else {
+            return XCTFail("Expected multiple page contexts on the prompt")
+        }
+        XCTAssertEqual(contexts.count, 1)
+        XCTAssertEqual(contexts.first?.tabId, "tab-1")
+        XCTAssertEqual(contexts.first?.content, "## Apple")
+        XCTAssertEqual(contexts.first?.favicon.first?.href, "data:image/png;base64,AAAA")
+
+        guard case .query(let query) = prompt?.tool else {
+            return XCTFail("Expected a query prompt")
+        }
+        XCTAssertEqual(query.files?.first?.fileName, "doc.pdf")
+        XCTAssertEqual(query.files?.first?.mimeType, "application/pdf")
+    }
+
+    // MARK: - Terms of Service
+
+    @MainActor
+    func testWhenSubmitAIChatAcceptingTerms_ThenPromptCarriesTermsAcceptedAndAcceptanceIsRecorded() {
+        submitChat(aiTermsAccepted: true)
+
+        XCTAssertEqual(promptHandler.consumeData()?.termsAccepted, true)
+        XCTAssertTrue(termsStore.hasAccepted)
+    }
+
+    @MainActor
+    func testWhenSubmitAIChatWithoutAcceptingTerms_ThenPromptIsNotMarkedAsSentWithAsk() {
+        submitChat(aiTermsAccepted: false)
+
+        XCTAssertEqual(promptHandler.consumeData()?.termsAccepted, false)
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    @MainActor
+    /// The bridge drops the marker while the feature is off, so only the record matters here.
+    func testWhenSubmitAIChatAcceptingTermsWithFeatureOff_ThenNothingIsAccepted() {
+        featureFlagger.featuresStub = ["aiChatNativeTermsOfService": false]
+
+        submitChat(aiTermsAccepted: true)
+
+        XCTAssertFalse(termsStore.hasAccepted)
+    }
+
+    @MainActor
+    private func submitChat(aiTermsAccepted: Bool) {
+        handler.submitChat("duckduckgo", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContexts: nil, files: nil, aiTermsAccepted: aiTermsAccepted)
+    }
+
+    private var termsStore: DuckAiTermsOfServiceStore {
+        DuckAiTermsOfServiceStore(keyValueStore: termsUserDefaults)
+    }
+
+    // MARK: - openAiChat pixels
+
+    @MainActor
+    func testOpenAiChatPinnedMouseFiresCorrectPixel() {
+        handler.openAiChat("chat-1", isPinned: true, trigger: .mouse, target: .sameTab)
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_pinned_mouse"])
+    }
+
+    @MainActor
+    func testOpenAiChatPinnedKeyboardFiresCorrectPixel() {
+        handler.openAiChat("chat-1", isPinned: true, trigger: .keyboard, target: .sameTab)
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_pinned_keyboard"])
+    }
+
+    @MainActor
+    func testOpenAiChatUnpinnedMouseFiresCorrectPixel() {
+        handler.openAiChat("chat-1", isPinned: false, trigger: .mouse, target: .sameTab)
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_mouse"])
+    }
+
+    @MainActor
+    func testOpenAiChatUnpinnedKeyboardFiresCorrectPixel() {
+        handler.openAiChat("chat-1", isPinned: false, trigger: .keyboard, target: .sameTab)
+        XCTAssertEqual(firedPixels, ["new-tab-page_aichat_recent_chat_selected_keyboard"])
+    }
+
+    // MARK: - viewAllAiChats
+
+    @MainActor
+    func testViewAllAiChats_opensNewAIChatTab() {
+        handler.viewAllAiChats(target: .newTab)
+
+        XCTAssert(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.last?.url?.isDuckAIURL ?? false)
+        XCTAssertEqual(windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.tabs.count, 2)
+    }
+
+ }

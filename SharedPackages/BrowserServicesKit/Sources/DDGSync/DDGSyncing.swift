@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import DDGSyncCrypto
 import Foundation
@@ -77,6 +76,11 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     var account: SyncAccount? { get }
 
     /**
+     Recovery code for the currently logged in sync account.
+     */
+    var recoveryCode: String? { get }
+
+    /**
      Used to trigger Sync by the client app.
 
      Sync is not started directly, but instead its schedule is handled internally based on input events.
@@ -104,6 +108,19 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
      Initializes Sync object, loads account info and prepares internal state.
      */
     func initializeIfNeeded()
+
+    /**
+     Enables Sync using a preserved account when Sync is currently inactive.
+     */
+    func enableSyncFromPreservedAccount() async throws
+
+    /**
+     Removes an inactive preserved Sync account.
+
+     This does not send logout/delete requests to Sync servers and is intended as a fallback
+     when a remote disconnect attempt fails.
+     */
+    func removePreservedSyncAccount() throws
 
     /**
      Creates an account.
@@ -154,6 +171,60 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws
 
     /**
+     Creates a scoped recovery code for a third-party client pairing flow.
+     */
+    func prepareThirdPartyRecoveryCode(purpose: String) async throws -> String
+
+    /**
+     Upgrades a third-party account recovery code into a default DDG Sync account.
+     */
+    func upgradeThirdPartyAccountToDefaultCredential(_ recoveryCode: String, deviceName: String, deviceType: String) async throws -> [RegisteredDevice]
+
+    /**
+     Rescopes the Main Token into given scope to allow data access for models/endpoints associated with that scope.
+     */
+    func mainTokenRescope(to scope: String) async throws -> String?
+
+    /**
+     Deletes AI Chat data up to the provided timestamp.
+
+     - Parameter until: Date (UTC) up to which server should delete AI Chats.
+     */
+    func deleteAIChats(until: Date) async throws
+
+    /**
+     Deletes multiple AI Chats by their IDs in a single request.
+
+     - Parameter chatIds: An array of unique identifiers for the chats to delete.
+     */
+    func deleteAIChats(chatIds: [String]) async throws
+
+    /**
+     Submits per-chat attribute updates (currently only `pinned`) to the AI chat sync patch
+     endpoint so other signed-in devices pick up the change.
+
+     - Parameter updates: An array of attribute changes, one per chat.
+     */
+    func patchAIChats(updates: [AIChatUpdate]) async throws
+
+    /**
+     Persists whether AI Chat History is enabled in the AI Chat frontend.
+
+     This value is intended for client apps to gate AI Chat server-side deletion behavior when mirroring local clears.
+     */
+    func setAIChatHistoryEnabled(_ enabled: Bool)
+
+    /**
+     Returns whether AI Chat History is enabled in the AI Chat frontend.
+     */
+    var isAIChatHistoryEnabled: Bool { get }
+
+    /**
+     Registers additional operations to be executed as part of a scheduled sync run.
+     */
+    func setCustomOperations(_ operations: [any SyncCustomOperation])
+
+    /**
      Disconnect this client from the sync service. Removes all local info, but leaves in places bookmarks, etc.
      */
     func disconnect() async throws
@@ -179,11 +250,82 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
      Deletes this account, but does not affect locally stored data.
      */
     func deleteAccount() async throws
+
+    /**
+     Batch encrypt given values with Sync master key.
+     */
+    func encryptAndBase64Encode(_ values: [String]) throws -> [String]
+
+    /**
+     Batch decrypt given values with Sync master key.
+     */
+    func base64DecodeAndDecrypt(_ values: [String]) throws -> [String]
+
+    /**
+     Batch encrypt given values with Sync master key.
+     
+     Input values are Base64URL (unpadded) encoded plaintext bytes.
+     Output values are Base64URL (unpadded) encoded ciphertext bytes.
+     
+     Encryption is performed using `ddgSyncEncrypt` from the Sync Crypto (`DDGSyncCrypto`) library.
+     */
+    func encryptAndBase64URLEncode(_ values: [String]) throws -> [String]
+
+    /**
+     Batch decrypt given values with Sync master key.
+     
+     Input values are Base64URL (unpadded) encoded ciphertext bytes.
+     Output values are Base64URL (unpadded) encoded plaintext bytes.
+     
+     Decryption is performed using `ddgSyncDecrypt` from the Sync Crypto (`DDGSyncCrypto`) library.
+    */
+    func base64URLDecodeAndDecrypt(_ values: [String]) throws -> [String]
 }
 
 public protocol DDGSyncingDebuggingSupport {
     var serverEnvironment: ServerEnvironment { get }
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment)
+    /// Creates or fetches the account_info key and returns its wrapper count.
+    func ensureAccountInfoKeyForDebug() async throws -> Int
+    /// Refreshes the account_info key and returns metadata from a subsequent cache-first reload.
+    func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int)
+    /// Fetches devices through the production mapping path and includes the source used for each displayed device.
+    func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo]
+    func isDeviceInfoMigrationCompleteForDebug() throws -> Bool
+    func resetDeviceInfoMigrationForDebug()
+}
+
+public extension DDGSyncingDebuggingSupport {
+    func ensureAccountInfoKeyForDebug() async throws -> Int {
+        throw SyncError.accountNotFound
+    }
+
+    func validateAccountInfoKeyForDebug() async throws -> (refreshedKeyID: String, reloadedKeyID: String, keySizeInBits: Int) {
+        throw SyncError.accountNotFound
+    }
+
+    func fetchDevicesForDebug() async throws -> [RegisteredDeviceDebugInfo] {
+        throw SyncError.accountNotFound
+    }
+
+    func isDeviceInfoMigrationCompleteForDebug() throws -> Bool {
+        throw SyncError.accountNotFound
+    }
+
+    func resetDeviceInfoMigrationForDebug() {}
+}
+
+public struct RegisteredDeviceDebugInfo: Sendable {
+
+    public enum Source: String, Sendable {
+        case deviceInfo = "device_info"
+        case legacy
+        case placeholder
+    }
+
+    public let device: RegisteredDevice
+    public let source: Source
+    public let deviceInfoIssue: String?
 }
 
 public enum ServerEnvironment: LosslessStringConvertible {
@@ -232,6 +374,20 @@ public protocol Crypting {
      * (or can't be retrieved from keychain).
      */
     func fetchSecretKey() throws -> Data
+
+    /**
+     * Encrypts `value` using provided `secretKey`.
+     *
+     * Throws an error if value cannot be encrypted.
+     */
+    func encrypt(_ value: String, using secretKey: Data) throws -> Data
+
+    /**
+     * Decrypts `value` using provided `secretKey`.
+     *
+     * Throws an error when decryption fails.
+     */
+    func decrypt(_ value: Data, using secretKey: Data) throws -> String
 
     /**
      * Encrypts `value` using provided `secretKey` and encodes it using Base64 encoding.

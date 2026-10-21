@@ -1,0 +1,99 @@
+//
+//  MacOSEventHubPixelFiring.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Common
+import EventHub
+import Foundation
+import os.log
+import PixelExperimentKit
+import PixelKit
+
+/// The macOS platform marker EventHub appends itself, rather than letting PixelKit derive one.
+private let macOSSuffix = "_macos"
+
+/// The PixelKit event shape shared by both EventHub pixel paths on macOS — telemetry and the failure
+/// events below. Deliberately *not* wrapped in `DebugEvent` for the failure path: PixelKit rewrites an
+/// unprefixed `DebugEvent` to `m_mac_debug_<name>`, which would undo the naming these pixels need.
+private struct EventHubPixelKitEvent: PixelKit.Event {
+    let name: String
+    let parameters: [String: String]?
+    let standardParameters: [PixelKitStandardParameter]? = nil
+    /// Declared explicitly rather than left to `PixelKit.Event`'s reflection-based default, which would
+    /// find nothing on a struct whose error is not an associated value.
+    let error: NSError?
+
+    /// These names already carry the `_macos` platform suffix. Without this PixelKit would prepend
+    /// `m_mac_` to any macOS name lacking that prefix, doubling the platform marker and diverging
+    /// from the names declared in `event_hub.json5`.
+    let namePrefix: PixelKitNamePrefix = .none
+}
+
+/// Fires EventHub-originated pixels through PixelKit, appending the macOS platform suffix per the
+/// Tech Design's platform-suffix split (`EventHub` itself fires the bare governed config name).
+struct MacOSEventHubPixelFiring: EventHubPixelFiring {
+
+    func enqueueFirePixel(named name: String, parameters: [String: String]) {
+        let pixelName = name + macOSSuffix
+        Logger.eventHub.info("PixelKit fire: \(pixelName, privacy: .public) \(parameters, privacy: .private)")
+        PixelKit.fire(EventHubPixelKitEvent(name: pixelName, parameters: parameters, error: nil))
+    }
+}
+
+/// Reports EventHub's own failures (`EventHubDebugEvent`) as PixelKit error pixels, under the same naming
+/// rules as the telemetry above — `EventHubDebugEvent.pixelName` supplies the shared base name, to which
+/// this appends the same `_macos` marker.
+final class MacOSEventHubDebugEventMapping: EventMapping<EventHubDebugEvent> {
+
+    init() {
+        super.init { event, error, _, _ in
+            let pixelName = event.pixelName + macOSSuffix
+            Logger.eventHub.error("PixelKit fire: \(pixelName, privacy: .public) \(event.pixelParameters, privacy: .private)")
+            // `.dailyAndCount`, unlike the telemetry path: these fire from failures that repeat on every
+            // attempt — a store that cannot write fails again at each flush — so the daily pixel bounds
+            // how many users are affected while the count keeps the rate visible.
+            PixelKit.fire(EventHubPixelKitEvent(name: pixelName,
+                                                parameters: event.pixelParameters,
+                                                error: error.map { $0 as NSError }),
+                          frequency: .dailyAndCount)
+        }
+    }
+
+    override init(mapping: @escaping EventMapping<EventHubDebugEvent>.Mapping) {
+        fatalError("Use init()")
+    }
+}
+
+/// Hands EventHub's experiment-metric conversion requests to the Native Apps experiment framework.
+///
+/// Lives beside the pixel-firing conformance rather than in the EventHub package: the package must not
+/// depend on `PixelExperimentKit`, whose product is already linked by this app target and whose
+/// products cannot be linked twice without breaking this project's test-target link graph.
+///
+/// Everything the framework owns happens past this call — enrollment and cohort resolution, conversion
+/// window containment, threshold accumulation, repeat suppression and the pixel itself. A request for
+/// an experiment the user is not enrolled in is a no-op there, which is why the hub does not filter.
+struct MacOSEventHubConversionReporting: EventHubConversionReporting {
+
+    func reportConversion(experiment: String, metric: String, windowDays: ClosedRange<Int>, threshold: Int) {
+        Logger.eventHub.info("experiment metric conversion: \(experiment, privacy: .public)/\(metric, privacy: .public) window \(windowDays.lowerBound, privacy: .public)-\(windowDays.upperBound, privacy: .public) threshold \(threshold, privacy: .public)")
+        PixelKit.fireExperimentPixelIfThresholdReached(for: experiment,
+                                                       metric: metric,
+                                                       conversionWindowDays: windowDays,
+                                                       threshold: threshold)
+    }
+}

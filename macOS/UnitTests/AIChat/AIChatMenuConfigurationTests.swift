@@ -15,35 +15,65 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-import XCTest
-import Combine
+
 import AIChat
+import Combine
+import FeatureFlags_macOS
+import PrivacyConfig
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 class AIChatMenuConfigurationTests: XCTestCase {
     var configuration: AIChatMenuConfiguration!
     var mockStorage: MockAIChatPreferencesStorage!
     var remoteSettings: MockRemoteAISettings!
+    var featureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
         mockStorage = MockAIChatPreferencesStorage()
         remoteSettings = MockRemoteAISettings()
-        configuration = AIChatMenuConfiguration(storage: mockStorage, remoteSettings: remoteSettings)
+        featureFlagger = MockFeatureFlagger()
+        configuration = AIChatMenuConfiguration(storage: mockStorage, remoteSettings: remoteSettings, featureFlagger: featureFlagger)
     }
 
     override func tearDown() {
         configuration = nil
         mockStorage = nil
         remoteSettings = nil
+        featureFlagger = nil
         super.tearDown()
     }
 
+    func testShouldDisplayNewTabPageShortcut() {
+        mockStorage.showShortcutOnNewTabPage = true
+        let result = configuration.shouldDisplayNewTabPageShortcut
+
+        XCTAssertTrue(result, "New Tab Page shortcut should be displayed when enabled.")
+    }
+
+    func testNewTabPageValuesChangedPublisher() {
+        let expectation = self.expectation(description: "Values changed publisher should emit a value.")
+
+        let cancellable = configuration.valuesChangedPublisher.sink {
+            expectation.fulfill()
+        }
+
+        mockStorage.updateNewTabPageShortcutDisplay(to: true)
+
+        waitForExpectations(timeout: 1) { error in
+            XCTAssertNil(error, "Values changed publisher did not emit a value in time.")
+        }
+        cancellable.cancel()
+    }
+
     func testShouldDisplayApplicationMenuShortcut() {
-        mockStorage.showShortcutInApplicationMenu = true
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
+        featureFlagger.featuresStub["aiChatMainMenuShortcut"] = true
         let result = configuration.shouldDisplayApplicationMenuShortcut
 
-        XCTAssertTrue(result, "Application menu shortcut should be displayed when enabled.")
+        XCTAssertTrue(result, "Application menu shortcut should be displayed when AI Chat is enabled.")
     }
 
     func testShouldDisplayAddressBarShortcut() {
@@ -98,6 +128,21 @@ class AIChatMenuConfigurationTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testShouldAutomaticallySendPageContextPublisherValuesChangedPublisher() {
+        let expectation = self.expectation(description: "Values changed publisher should emit a value.")
+
+        let cancellable = configuration.valuesChangedPublisher.sink { value in
+            expectation.fulfill()
+        }
+
+        mockStorage.updateShouldAutomaticallySendPageContextPublisher(to: true)
+
+        waitForExpectations(timeout: 1) { error in
+            XCTAssertNil(error, "Values changed publisher did not emit a value in time.")
+        }
+        cancellable.cancel()
+    }
+
     func testShouldNotDisplayAddressBarShortcutWhenDisabled() {
         mockStorage.showShortcutInAddressBar = false
         let result = configuration.shouldDisplayAddressBarShortcut
@@ -106,17 +151,21 @@ class AIChatMenuConfigurationTests: XCTestCase {
     }
 
     func testReset() {
+        mockStorage.showShortcutOnNewTabPage = true
         mockStorage.showShortcutInApplicationMenu = true
         mockStorage.showShortcutInAddressBar = true
         mockStorage.openAIChatInSidebar = true
         mockStorage.didDisplayAIChatAddressBarOnboarding = true
+        mockStorage.shouldAutomaticallySendPageContext = true
 
         mockStorage.reset()
 
+        XCTAssertFalse(mockStorage.showShortcutOnNewTabPage, "New Tab Page shortcut should be reset to false.")
         XCTAssertFalse(mockStorage.showShortcutInApplicationMenu, "Application menu shortcut should be reset to false.")
         XCTAssertFalse(mockStorage.showShortcutInAddressBar, "Address bar shortcut should be reset to false.")
         XCTAssertFalse(mockStorage.openAIChatInSidebar, "Open AI Chat in sidebar should be reset to false.")
         XCTAssertFalse(mockStorage.didDisplayAIChatAddressBarOnboarding, "Address bar onboarding popover should be reset to false.")
+        XCTAssertFalse(mockStorage.shouldAutomaticallySendPageContext, "Page Context should be reset to false.")
     }
 
     func testShouldDisplayAddressBarShortcutWhenRemoteFlagAndStorageAreTrue() {
@@ -129,25 +178,91 @@ class AIChatMenuConfigurationTests: XCTestCase {
     }
 
     func testShouldDisplayApplicationMenuShortcutWhenRemoteFlagAndStorageAreTrue() {
-        remoteSettings.isApplicationMenuShortcutEnabled = true
-        mockStorage.showShortcutInApplicationMenu = true
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
+        featureFlagger.featuresStub["aiChatMainMenuShortcut"] = true
 
         let result = configuration.shouldDisplayApplicationMenuShortcut
 
-        XCTAssertTrue(result, "Application menu shortcut should be displayed when both remote flag and storage are true.")
+        XCTAssertTrue(result, "Application menu shortcut should be displayed when AI Chat is enabled remotely and locally.")
     }
 
-    func testOpenAIChatInSidebarPublisherWhenStorageAreTrue() {
+    func testShouldDisplayNewTabPageShortcutWhenStorageIsTrue() {
+        mockStorage.showShortcutOnNewTabPage = true
+
+        let result = configuration.shouldDisplayNewTabPageShortcut
+
+        XCTAssertTrue(result, "New Tab Page shortcut should be displayed when storage is true.")
+    }
+
+    func testShouldOpenAIChatInSidebarPublisherWhenStorageIsTrue() {
         mockStorage.openAIChatInSidebar = true
 
-        let result = configuration.openAIChatInSidebar
+        let result = configuration.shouldOpenAIChatInSidebar
 
         XCTAssertTrue(result, "Open AI Chat in sidebar should be displayed when storage is true.")
+    }
+
+    func testIsPageContextPublisherPublisherWhenFeatureFlagAndStorageAreTrue() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true]
+        mockStorage.shouldAutomaticallySendPageContext = true
+
+        let result = configuration.shouldAutomaticallySendPageContext
+
+        XCTAssertTrue(result, "Automatic Page Context should be enabled when storage is true.")
+    }
+
+    func testIsPageContextPublisherPublisherWhenFeatureFlagIsFalseAndStorageIsTrue() {
+        featureFlagger.featuresStub = [:]
+        mockStorage.shouldAutomaticallySendPageContext = true
+
+        let result = configuration.shouldAutomaticallySendPageContext
+
+        XCTAssertFalse(result, "Automatic Page Context should be disabled when storage is true and feature flag is disabled.")
+    }
+
+    func testIsPageContextPublisherPublisherWhenFeatureFlagIsTrueAndStorageIsFalse() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true]
+        mockStorage.shouldAutomaticallySendPageContext = false
+
+        let result = configuration.shouldAutomaticallySendPageContext
+
+        XCTAssertFalse(result, "Automatic Page Context should be disabled when storage is false and feature flag is enabled.")
+    }
+
+    func testShouldDisplayTranslationMenuItemWhenApplicationMenuShortcutIsEnabled() {
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
+
+        let result = configuration.shouldDisplayTranslationMenuItem
+
+        XCTAssertTrue(result, "Translation menu item should be displayed when AI Chat is enabled.")
+    }
+
+    func testShouldNotDisplayTranslationMenuItemWhenApplicationMenuShortcutIsDisabled() {
+        remoteSettings.isAIChatEnabled = false
+        mockStorage.isAIFeaturesEnabled = false
+
+        let result = configuration.shouldDisplayTranslationMenuItem
+
+        XCTAssertFalse(result, "Translation menu item should not be displayed when AI Chat is disabled.")
     }
 }
 
 class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
+    var isAIFeaturesEnabled: Bool = true {
+        didSet {
+            isAIFeaturesEnabledSubject.send(isAIFeaturesEnabled)
+        }
+    }
+
     var didDisplayAIChatAddressBarOnboarding: Bool = false
+
+    var showShortcutOnNewTabPage: Bool = false {
+        didSet {
+            showShortcutOnNewTabPageSubject.send(showShortcutOnNewTabPage)
+        }
+    }
 
     var showShortcutInApplicationMenu: Bool = false {
         didSet {
@@ -161,15 +276,50 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
+    var showShortcutInAddressBarWhenTyping: Bool = false {
+        didSet {
+            showShortcutInAddressBarWhenTypingSubject.send(showShortcutInAddressBarWhenTyping)
+        }
+    }
+
     var openAIChatInSidebar: Bool = false {
         didSet {
             openAIChatInSidebarSubject.send(openAIChatInSidebar)
         }
     }
 
+    var shouldAutomaticallySendPageContext: Bool = false {
+        didSet {
+            shouldAutomaticallySendPageContextSubject.send(shouldAutomaticallySendPageContext)
+        }
+    }
+
+    var showSearchAndDuckAIToggle: Bool = true {
+        didSet {
+            showSearchAndDuckAIToggleSubject.send(showSearchAndDuckAIToggle)
+        }
+    }
+
+    var userDidSeeToggleOnboarding: Bool = false
+    var lastUsedSidebarWidth: Double?
+    var hasAcceptedTermsAndConditions: Bool = false
+
+    private var isAIFeaturesEnabledSubject = PassthroughSubject<Bool, Never>()
+    private var showShortcutOnNewTabPageSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInAddressBarSubject = PassthroughSubject<Bool, Never>()
+    private var showShortcutInAddressBarWhenTypingSubject = PassthroughSubject<Bool, Never>()
     private var openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
+    private var shouldAutomaticallySendPageContextSubject = PassthroughSubject<Bool, Never>()
+    private var showSearchAndDuckAIToggleSubject = PassthroughSubject<Bool, Never>()
+
+    var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
+        isAIFeaturesEnabledSubject.eraseToAnyPublisher()
+    }
+
+    var showShortcutOnNewTabPagePublisher: AnyPublisher<Bool, Never> {
+        showShortcutOnNewTabPageSubject.eraseToAnyPublisher()
+    }
 
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
         showShortcutInApplicationMenuSubject.eraseToAnyPublisher()
@@ -179,15 +329,39 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         showShortcutInAddressBarSubject.eraseToAnyPublisher()
     }
 
+    var showShortcutInAddressBarWhenTypingPublisher: AnyPublisher<Bool, Never> {
+        showShortcutInAddressBarWhenTypingSubject.eraseToAnyPublisher()
+    }
+
     var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {
         openAIChatInSidebarSubject.eraseToAnyPublisher()
     }
 
+    var shouldAutomaticallySendPageContextPublisher: AnyPublisher<Bool, Never> {
+        shouldAutomaticallySendPageContextSubject.eraseToAnyPublisher()
+    }
+
+    var showSearchAndDuckAITogglePublisher: AnyPublisher<Bool, Never> {
+        showSearchAndDuckAIToggleSubject.eraseToAnyPublisher()
+    }
+
     func reset() {
+        isAIFeaturesEnabled = true
+        showShortcutOnNewTabPage = false
         showShortcutInApplicationMenu = false
         showShortcutInAddressBar = false
+        showShortcutInAddressBarWhenTyping = false
         didDisplayAIChatAddressBarOnboarding = false
         openAIChatInSidebar = false
+        shouldAutomaticallySendPageContext = false
+        showSearchAndDuckAIToggle = true
+        userDidSeeToggleOnboarding = false
+        lastUsedSidebarWidth = nil
+        hasAcceptedTermsAndConditions = false
+    }
+
+    func updateNewTabPageShortcutDisplay(to value: Bool) {
+        showShortcutOnNewTabPage = value
     }
 
     func updateApplicationMenuShortcutDisplay(to value: Bool) {
@@ -200,6 +374,10 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
 
     func updateOpenAIChatInSidebarPublisher(to value: Bool) {
         openAIChatInSidebar = value
+    }
+
+    func updateShouldAutomaticallySendPageContextPublisher(to value: Bool) {
+        shouldAutomaticallySendPageContext = value
     }
 }
 

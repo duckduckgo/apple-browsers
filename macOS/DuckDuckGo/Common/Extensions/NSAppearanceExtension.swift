@@ -19,7 +19,10 @@
 import Cocoa
 
 extension NSAppearance {
-    static func withAppAppearance(_ closure: () -> Void) {
-        NSApp.effectiveAppearance.performAsCurrentDrawingAppearance(closure)
+
+    /// Indicates what's the current ThemeAppearance
+    ///
+    var effectiveThemeAppearance: ThemeAppearance {
+        bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light
     }
 }

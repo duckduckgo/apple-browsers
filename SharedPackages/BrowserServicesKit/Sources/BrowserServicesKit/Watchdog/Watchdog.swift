@@ -16,112 +16,263 @@
 //  limitations under the License.
 //
 
+import Combine
+import Common
+import FoundationExtensions
 import Foundation
 import os.log
 
-/// A watchdog that monitors the main thread for hangs and crashes the app to generate stack traces
-public final class Watchdog {
-    private let monitor: WatchdogMonitor
-    private let timeout: TimeInterval
-    private let checkInterval: TimeInterval
-    private let killAppFunction: (TimeInterval) -> Void
-    private static var logger = { Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection") }()
+// MARK: - Settings
 
-    private var monitoringTask: Task<Void, Never>?
+public struct WatchdogSettings {
+    let checkInterval: TimeInterval
+    let minimumHangDuration: TimeInterval
+    let maximumHangDuration: TimeInterval
+    let requiredRecoveryHeartbeats: Int
+    let timeoutRepeatCooldown: TimeInterval
 
-    @MainActor
+    public static let `default` = WatchdogSettings(checkInterval: 0.5, minimumHangDuration: 2.0, maximumHangDuration: 5.0, requiredRecoveryHeartbeats: 4, timeoutRepeatCooldown: 60.0)
+}
+
+// MARK: - A watchdog that monitors the main thread for hangs. Hangs of at least one second will be reported via a pixel.
+
+public final class Watchdog: @unchecked Sendable {
+
+    public enum Event {
+        case uiHangNotRecovered(durationSeconds: Int)
+        case uiHangRecovered(durationSeconds: Int)
+    }
+
+    // MARK: -  Private Helpers
+    private let logger = Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection")
+    private let watchdogQueue = DispatchQueue(label: "com.duckduckgo.watchdog.monitor", qos: .userInitiated)
+    private var timer: DispatchSourceTimer?
+
+    // MARK: - Settings + Reporting
+    private let eventMapper: EventMapping<Watchdog.Event>?
+    private let settings: WatchdogSettings
+    private var heartbeatWorkItem: DispatchWorkItem?
+
+    // MARK: - State
+    private var timestamps: WatchdogTracker
+    private var detectionState: WatchdogDetectionState
+    private var running: Bool = false
+    private var paused: Bool = false
+
+    // MARK: - Observability / Unit Testing Helpers
+    private let detectionStateSubject = PassthroughSubject<(WatchdogDetectionState), Never>()
+    internal var detectionStatePublisher: AnyPublisher<(WatchdogDetectionState), Never> {
+        detectionStateSubject.eraseToAnyPublisher()
+    }
+
     public var isRunning: Bool {
-        guard let task = monitoringTask else { return false }
-        return !task.isCancelled
+        watchdogQueue.sync {
+            running
+        }
     }
 
-    @MainActor
-    convenience public init(timeout: TimeInterval = 10.0, checkInterval: TimeInterval = 2.0) {
-        self.init(killAppFunction: Self.killApp(afterTimeout:), timeout: timeout, checkInterval: checkInterval)
+    public var isPaused: Bool {
+        watchdogQueue.sync {
+            paused
+        }
     }
 
-    @MainActor
-    init(killAppFunction: @escaping (TimeInterval) -> Void, timeout: TimeInterval = 10.0, checkInterval: TimeInterval = 2.0) {
-        self.timeout = timeout
-        self.checkInterval = checkInterval
-        self.monitor = WatchdogMonitor()
-        self.killAppFunction = killAppFunction
+    /// - Parameters:
+    ///   - settings: Watchdog's constants used to determine state transitions
+    ///   - eventMapper: An event mapper that can map between watchdog events and pixels.
+    ///
+    public init(settings: WatchdogSettings = .default, eventMapper: EventMapping<Watchdog.Event>? = nil) {
+        assert(settings.checkInterval > 0, "checkInterval must be greater than 0")
+        assert(settings.minimumHangDuration >= 0, "minimumHangDuration must be greater than or equal to 0")
+        assert(settings.maximumHangDuration >= 0, "maximumHangDuration must be greater than or equal to 0")
+        assert(settings.minimumHangDuration <= settings.maximumHangDuration, "minimumHangDuration must be less than maximumHangDuration")
+
+        self.eventMapper = eventMapper
+        self.settings = settings
+        self.timestamps = WatchdogTracker()
+        self.detectionState = .responsive
     }
 
     deinit {
-        monitoringTask?.cancel()
-    }
-
-    @MainActor
-    public func start() {
-        // Cancel any existing task
-        monitoringTask?.cancel()
-
-        Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.timeout)s")
-
-        monitoringTask = Task {
-            await startMonitoring()
-        }
-    }
-
-    @MainActor
-    public func stop() {
-        monitoringTask?.cancel()
-        monitoringTask = nil
-
-        Self.logger.info("Watchdog stopped monitoring")
-    }
-
-    private func startMonitoring() async {
-        await monitor.resetHeartbeat()
-
-        while !Task.isCancelled {
-            // Schedule heartbeat update on main thread (key: this might not execute if main thread is hung)
-            Task { @MainActor [weak self] in
-                await self?.monitor.updateHeartbeat()
-            }
-
-            // Sleep for check interval
-            do {
-                let nanoseconds = UInt64(checkInterval * 1_000_000_000)
-                try await Task.sleep(nanoseconds: nanoseconds)
-            } catch {
-                // Task was cancelled
-                break
-            }
-
-            // Check if the heartbeat was actually updated
-            let timeSinceLastCheck = await monitor.timeSinceLastHeartbeat()
-
-            if timeSinceLastCheck > timeout {
-                Self.logger.critical("Main thread hang detected! Last heartbeat: \(timeSinceLastCheck)s ago (timeout: \(self.timeout)s)")
-                killAppFunction(timeout)
-            }
-        }
-    }
-
-    static func killApp(afterTimeout timeout: TimeInterval) {
-        // Log before crashing to help with debugging
-        Self.logger.critical("Watchdog is terminating the app due to main thread hang")
-
-        // Use fatalError to generate crash report with stack trace`
-        fatalError("Main thread hang detected by Watchdog (timeout: \(timeout)s). This crash is intentional to provide debugging information.")
+        timer?.cancel()
     }
 }
 
-/// Actor that manages the heartbeat timestamp in a thread-safe way
-private actor WatchdogMonitor {
-    private var lastHeartbeat = Date()
+// MARK: - State management
 
-    func resetHeartbeat() {
-        lastHeartbeat = Date()
+public extension Watchdog {
+
+    /// Starts the watchdog running.
+    func start() {
+        watchdogQueue.sync {
+            startMonitoring()
+        }
     }
 
-    func updateHeartbeat() {
-        lastHeartbeat = Date()
+    /// Stops the watchdog entirely.
+    func stop() {
+        watchdogQueue.sync {
+            stopMonitoring()
+        }
     }
 
-    func timeSinceLastHeartbeat() -> TimeInterval {
-        Date().timeIntervalSince(lastHeartbeat)
+    /// Pauses the watchdog, if running. Can be resumed with `resume`.
+    func pause() {
+        watchdogQueue.sync {
+            guard running else {
+                return
+            }
+
+            logger.info("Watchdog paused")
+            paused = true
+            stopMonitoring()
+        }
+    }
+
+    /// Resumes the watchdog after being paused. Will only resume if the watchdog was previously running.
+    ///
+    func resume() {
+        watchdogQueue.sync {
+            guard paused else {
+                return
+            }
+
+            logger.info("Watchdog resumed")
+            startMonitoring()
+        }
+    }
+}
+
+// MARK: - State management
+
+private extension Watchdog {
+
+    func startMonitoring() {
+        if running {
+            return
+        }
+
+        cancelTimer()
+
+        timestamps.signalHangRecovered()
+        timestamps.signalHeartbeat()
+
+        detectionState = .responsive
+        paused = false
+        running = true
+
+        let timer = DispatchSource.makeTimerSource(queue: watchdogQueue)
+        timer.schedule(deadline: .now() + settings.checkInterval, repeating: settings.checkInterval)
+        timer.setEventHandler { [weak self] in
+            self?.processTimerEvent()
+        }
+
+        self.timer = timer
+        timer.resume()
+
+        logger.info("Watchdog started monitoring main thread with timeout: \(self.settings.maximumHangDuration)s")
+    }
+
+    func stopMonitoring() {
+        guard running else {
+            return
+        }
+
+        cancelTimer()
+        running = false
+
+        logger.info("Watchdog stopped monitoring")
+    }
+
+    func cancelTimer() {
+        timer?.cancel()
+        timer = nil
+    }
+}
+
+// MARK: - Timer Management
+
+private extension Watchdog {
+
+    func processTimerEvent() {
+        if paused || !running {
+            return
+        }
+
+        enqueueHeartbeatSignal()
+        performHangDetection()
+    }
+
+    func enqueueHeartbeatSignal() {
+        let work = DispatchWorkItem { [weak self] in
+            self?.timestamps.signalHeartbeat()
+        }
+
+        heartbeatWorkItem?.cancel()
+        heartbeatWorkItem = work
+        DispatchQueue.main.async(execute: work)
+    }
+
+    func performHangDetection() {
+        let secondsSinceLastHeartbeat = timestamps.secondsSinceLastHeartbeat
+        let secondsSinceHangStarted = timestamps.secondsSinceHangStarted
+
+        let nextState = WatchdogDetectionState.nextState(currentState: detectionState, settings: settings, secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, secondsSinceHangStarted: secondsSinceHangStarted)
+        if nextState == detectionState {
+            return
+        }
+
+        processActions(for: nextState, secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, secondsSinceHangStarted: secondsSinceHangStarted)
+        detectionState = nextState
+        detectionStateSubject.send(nextState)
+    }
+}
+
+// MARK: - State Machine
+
+private extension Watchdog {
+
+    func processActions(for heartbeatState: WatchdogDetectionState, secondsSinceLastHeartbeat: TimeInterval, secondsSinceHangStarted: TimeInterval) {
+        switch heartbeatState {
+        case .hanging:
+            logger.info("Main thread hang detected! Last heartbeat [\(secondsSinceLastHeartbeat)s] ago")
+            timestamps.signalHangDetectedIfNeeded(secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, checkInterval: settings.checkInterval)
+
+        case .timeout:
+            if let elapsed = timestamps.secondsSinceLastTimeoutFire, elapsed < settings.timeoutRepeatCooldown {
+                logger.info("Main thread Timeout Reached: Within Cooldown Period")
+                return
+            }
+
+            logger.info("Main thread Timeout Reached. Last heartbeat [\(secondsSinceLastHeartbeat)s] ago")
+            fireHangEvent(Watchdog.Event.uiHangNotRecovered, secondsSinceHangStarted: secondsSinceHangStarted)
+            timestamps.signalTimeoutFired()
+
+        case .responsive:
+            logger.info("Main thread hang ended after Hanging for [\(secondsSinceHangStarted)] seconds")
+            timestamps.signalHangRecovered()
+
+        case .recovery(let reason, let count):
+            logger.info("Heartbeat [\(count)] detected after \(reason.rawValue)! - Last heartbeat [\(secondsSinceLastHeartbeat)s] ago")
+
+        case .recovered(let reason):
+            logger.info("Main thread recovered after \(reason.rawValue) for [\(secondsSinceHangStarted)] seconds")
+
+            if reason == .hanging {
+                fireHangEvent(Watchdog.Event.uiHangRecovered, secondsSinceHangStarted: secondsSinceHangStarted)
+            }
+        }
+    }
+}
+
+// MARK: Event Reporting
+
+private extension Watchdog {
+
+    func fireHangEvent(_ eventFactory: (Int) -> Watchdog.Event, secondsSinceHangStarted: TimeInterval) {
+        let nearestSecond = Int(secondsSinceHangStarted.rounded())
+        let reportedSecond = max(Int(settings.minimumHangDuration), min(nearestSecond, Int(settings.maximumHangDuration)))
+
+        eventMapper?.fire(eventFactory(reportedSecond))
     }
 }

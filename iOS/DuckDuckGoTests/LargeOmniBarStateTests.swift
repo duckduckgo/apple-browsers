@@ -17,7 +17,10 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import Foundation
+@_spi(Testing) import Persistence
+import UIKit
 import XCTest
 @testable import Core
 @testable import DuckDuckGo
@@ -33,7 +36,8 @@ class LargeOmniBarStateTests: XCTestCase {
                                                                isAIChatBrowsingMenubarShortcutFeatureEnabled: true,
                                                                isAIChatAddressBarShortcutFeatureEnabled: true,
                                                                isAIChatVoiceSearchUserSettingsEnabled: true,
-                                                               isAIChatTabSwitcherUserSettingsEnabled: true)
+                                                               isAIChatTabSwitcherUserSettingsEnabled: true,
+                                                               isAIChatSearchInputUserSettingsEnabled: true)
 
     override func setUp() {
         super.setUp()
@@ -44,20 +48,25 @@ class LargeOmniBarStateTests: XCTestCase {
         mockFeatureFlagger = nil
         super.tearDown()
     }
+    
+    func testWhenBrowsingStateThenIsBrowsingIsTrue() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
 
-    func testWhenLargeEditingAndVisualUpdatesThenDontShowSearchLoupe() {
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.visualUpdates])
+        XCTAssertTrue(LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertTrue(LargeOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertTrue(LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(LargeOmniBarState.HomeTextEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(SmallOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
 
-        let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
-        XCTAssertFalse(testee.showSearchLoupe)
     }
 
-    func testWhenLargeEditingAndNotVisualUpdatesThenShowSearchLoupe() {
+    func testWhenLargeEditingThenShowSearchLoupe() {
         let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertFalse(testee.showSearchLoupe)
 
         let testee2 = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
-        XCTAssertTrue(testee2.showSearchLoupe)
+        XCTAssertFalse(testee2.showSearchLoupe)
     }
 
     func testWhenInHomeEmptyEditingStateWithoutVoiceSearchThenCorrectButtonsAreShown() {
@@ -73,7 +82,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
@@ -93,7 +102,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
-        XCTAssertTrue(testee.showAccessoryButton)
+        XCTAssertTrue(testee.showAIChatButton)
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
@@ -113,7 +122,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
-        XCTAssertTrue(testee.showAccessoryButton)
+        XCTAssertTrue(testee.showAIChatButton)
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
@@ -133,7 +142,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
@@ -193,7 +202,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenInHomeTextEditingStateWithVoiceSearchThenCorrectButtonsAreShown() {
@@ -213,7 +222,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
     func testWhenEnteringHomeTextEditingStateThenTextIsNotCleared() {
         let testee = LargeOmniBarState.HomeTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
@@ -262,12 +271,13 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
+        XCTAssertFalse(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenInHomeNonEditingStateWithoutVoiceSearchThenCorrectButtonsAreShown() {
@@ -282,17 +292,45 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
+        XCTAssertFalse(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenEnteringHomeNonEditingStateThenTextIsCleared() {
         let testee = LargeOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertTrue(testee.clearTextOnStart)
+    }
+
+    func testWhenCustomizeNTPIconsIsEnabledAndButtonDoesNotRequireWebPageThenHomeNonEditingStateShowsCustomizableButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let mobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(), isPad: false)
+        var customizationState = mobileCustomization.state
+        customizationState.currentAddressBarButton = .home
+        mobileCustomization.persist(customizationState)
+        let testee = LargeOmniBarState.HomeNonEditingState(
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                featureFlagger: mockFeatureFlagger,
+                                                mobileCustomization: mobileCustomization),
+            isLoading: false)
+
+        XCTAssertTrue(testee.showCustomizableButton)
+    }
+
+    func testWhenCustomizeNTPIconsIsEnabledAndButtonRequiresWebPageThenHomeNonEditingStateHidesCustomizableButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.customizeNTPIcons]
+        let mobileCustomization = MobileCustomization(keyValueStore: MockThrowingKeyValueStore(), isPad: false)
+        let testee = LargeOmniBarState.HomeNonEditingState(
+            dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                featureFlagger: mockFeatureFlagger,
+                                                mobileCustomization: mobileCustomization),
+            isLoading: false)
+
+        XCTAssertFalse(testee.showCustomizableButton)
     }
 
     func testWhenInHomeNonEditingStateThenEditingStartedTransitionsToEmptyEditingState() {
@@ -342,7 +380,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenInBrowserEmptyEditingStateWithVoiceSearchThenCorrectButtonsAreShown() {
@@ -362,7 +400,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenInBrowserEmptyEditingStateWithVoiceSearchWithAIChatThenCorrectButtonsAreShown() {
@@ -382,7 +420,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertTrue(testee.showAccessoryButton)
+        XCTAssertTrue(testee.showAIChatButton)
     }
 
     func testWhenEnteringBrowserEmptyEditingStateThenTextIsCleared() {
@@ -437,7 +475,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenInBrowsingTextEditingStateWithoutVoiceSearchThenCorrectButtonsAreShown() {
@@ -448,7 +486,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showMenu)
         XCTAssertFalse(testee.showSettings)
         XCTAssertFalse(testee.showCancel)
-        XCTAssertTrue(testee.showSearchLoupe)
+        XCTAssertFalse(testee.showSearchLoupe)
         XCTAssertFalse(testee.showVoiceSearch)
         XCTAssertFalse(testee.showAbort)
         XCTAssertFalse(testee.showRefresh)
@@ -457,7 +495,7 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
     }
 
     func testWhenEnteringBrowsingTextEditingStateThenTextIsMaintained() {
@@ -506,13 +544,23 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showSearchLoupe)
         XCTAssertFalse(testee.showAbort)
         XCTAssertTrue(testee.showRefresh)
-        XCTAssertTrue(testee.showShare)
+        XCTAssertTrue(testee.showCustomizableButton)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)
         XCTAssertTrue(testee.showForwardButton)
         XCTAssertTrue(testee.showBookmarksButton)
-        XCTAssertFalse(testee.showAccessoryButton)
+        XCTAssertFalse(testee.showAIChatButton)
+    }
+    
+    func testWhenInBrowsingNonEditingStateThenRefreshButtonIsHiddenIfNotEnabled() {
+        let mockAppSettings = AppSettingsMock()
+        mockAppSettings.currentRefreshButtonPosition = .menu
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: mockAppSettings)
+        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.showRefresh)
     }
 
     func testWhenEnteringBrowsingNonEditingStateThenTextIsMaintained() {
@@ -548,5 +596,195 @@ class LargeOmniBarStateTests: XCTestCase {
     func testWhenInBrowsingNonEditingStateThenBrowsingStoppedTransitionsToHomeNonEditingState() {
         let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
         XCTAssertEqual(testee.onBrowsingStoppedState.name, LargeOmniBarState.HomeNonEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false).name)
+    }
+
+    func testWhenIPadThenAIChatButtonAndModeToggleAreShown() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 aiChatSettings: mockAIChatSettingsEnabled)
+        let testee = LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.showAIChatButton)
+        XCTAssertTrue(testee.showAIChatModeToggle)
+    }
+
+    func testWhenIPhoneThenShowAIChatModeToggleIsFalse() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .phone
+
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 aiChatSettings: mockAIChatSettingsEnabled)
+        let testee = LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.showAIChatButton)
+        XCTAssertFalse(testee.showAIChatModeToggle)
+    }
+
+    func testWhenAIChatButtonHiddenThenShowAIChatModeToggleIsFalse() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.showAIChatButton)
+        XCTAssertFalse(testee.showAIChatModeToggle)
+    }
+
+    func testWhenAIChatSearchInputSettingDisabledThenAIChatButtonIsShownAndModeToggleIsHidden() {
+        UIDevice.swizzleCurrent()
+        defer { UIDevice.unswizzleCurrent() }
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: true,
+                                                        isAIChatAddressBarUserSettingsEnabled: true,
+                                                        isAIChatSearchInputUserSettingsEnabled: false)
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 aiChatSettings: aiChatSettings)
+        let testee = LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.showAIChatButton)
+        XCTAssertFalse(testee.showAIChatModeToggle)
+    }
+
+    func testWhenLargeWidthAndRefreshEnabledThenShowRefreshOutsideAddressBarIsTrue() {
+        let appSettings = AppSettingsMock()
+        appSettings.currentRefreshButtonPosition = .addressBar
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper,
+                                                 featureFlagger: mockFeatureFlagger,
+                                                 appSettings: appSettings)
+        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.showRefreshOutsideAddressBar)
+    }
+
+    // MARK: - AI Chat Mode State Tests
+
+    func testWhenInAIChatModeStateThenAIChatButtonIsAlwaysHidden() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+
+        XCTAssertFalse(testee.showAIChatButton)
+        XCTAssertTrue(testee.showRefresh)
+        XCTAssertTrue(testee.showCustomizableButton)
+    }
+
+    func testWhenInAIChatModeStateThenCorrectButtonsAreShown() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+
+        XCTAssertTrue(testee.hasLargeWidth)
+        XCTAssertTrue(testee.showBackButton)
+        XCTAssertTrue(testee.showForwardButton)
+        XCTAssertTrue(testee.showBookmarksButton)
+        XCTAssertFalse(testee.showAIChatButton)
+        XCTAssertTrue(testee.showPrivacyIcon)
+        XCTAssertTrue(testee.showBackground)
+        XCTAssertFalse(testee.showClear)
+        XCTAssertTrue(testee.showMenu)
+        XCTAssertFalse(testee.showSettings)
+        XCTAssertFalse(testee.showCancel)
+        XCTAssertFalse(testee.showSearchLoupe)
+        XCTAssertFalse(testee.showVoiceSearch)
+        XCTAssertFalse(testee.showAbort)
+        XCTAssertTrue(testee.showRefresh)
+        XCTAssertTrue(testee.showCustomizableButton)
+        XCTAssertFalse(testee.showDismiss)
+        XCTAssertFalse(testee.allowsTrackersAnimation)
+        XCTAssertTrue(testee.isBrowsing)
+    }
+
+    func testWhenInAIChatModeStateAndLoadingThenShowsAbortNotRefresh() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: true)
+
+        XCTAssertTrue(testee.showAbort)
+        XCTAssertFalse(testee.showRefresh)
+    }
+
+    func testWhenInAIChatModeStateAndRefreshDisabledThenRefreshIsHidden() {
+        let appSettings = AppSettingsMock()
+        appSettings.currentRefreshButtonPosition = .menu
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger, appSettings: appSettings)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+
+        XCTAssertFalse(testee.showAbort)
+        XCTAssertFalse(testee.showRefresh)
+    }
+
+    func testWhenInAIChatModeStateThenTextIsNotCleared() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertFalse(testee.clearTextOnStart)
+    }
+
+    func testWhenEditingStartsFromAIChatModeThenTransitionsToBrowsingTextEditingState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertEqual(testee.onEditingStartedState.name, LargeOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: false).name)
+    }
+
+    func testWhenEditingStopsFromAIChatModeThenMaintainsState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.onEditingStoppedState is LargeOmniBarState.AIChatModeState)
+    }
+
+    func testWhenTextIsClearedFromAIChatModeThenTransitionsToBrowsingEmptyEditingState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertEqual(testee.onTextClearedState.name, LargeOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false).name)
+    }
+
+    func testWhenTextIsEnteredFromAIChatModeThenTransitionsToBrowsingTextEditingState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertEqual(testee.onTextEnteredState.name, LargeOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: false).name)
+    }
+
+    func testWhenBrowsingStartsFromAIChatModeThenTransitionsToBrowsingNonEditingState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.onBrowsingStartedState is LargeOmniBarState.BrowsingNonEditingState)
+    }
+
+    func testWhenBrowsingStopsFromAIChatModeThenTransitionsToHomeNonEditingState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertEqual(testee.onBrowsingStoppedState.name, LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false).name)
+    }
+
+    func testWhenEnteringPhoneStateFromAIChatModeThenTransitionsToSmallAIChatTabModeState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.onEnterPhoneState is SmallOmniBarState.AIChatTabModeState)
+    }
+
+    func testWhenEnteringAIChatFromAIChatModeThenMaintainsState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.onEnterAIChatState is LargeOmniBarState.AIChatModeState)
+    }
+
+    func testWhenEnteringAIChatFromBrowsingNonEditingStateThenTransitionsToAIChatModeState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.onEnterAIChatState is LargeOmniBarState.AIChatModeState)
+    }
+
+    func testWhenEnteringAIChatFromHomeNonEditingStateThenTransitionsToAIChatModeState() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.onEnterAIChatState is LargeOmniBarState.AIChatModeState)
+    }
+
+    func testWhenInAIChatModeStateThenIsBrowsingIsTrue() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        let testee = LargeOmniBarState.AIChatModeState(dependencies: dependencies, isLoading: false)
+        XCTAssertTrue(testee.isBrowsing)
     }
 }

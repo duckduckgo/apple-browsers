@@ -1,0 +1,32 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+- scrollUntilVisible:
+    element: Passwords & Autofill
+- tapOn: Passwords & Autofill
+- tapOn: Credit Cards
+
+- assertVisible: Add Card
+- tapOn: Add Card
+
+- tapOn:
+    id: Field_CardNumber
+    index: 1
+- inputText: 378282246310005
+
+- tapOn:
+    id: Field_SecurityCode
+- inputText: 123
+
+- tapOn:
+    id: Field_CardName
+- inputText: Maestro Test
+
+- tapOn:
+    id: Field_CardNickname
+- inputText: Maestro Test Card
+
+- tapOn: Save
+- tapOn: Passwords & Autofill
+- tapOn: Settings
+- tapOn: Done

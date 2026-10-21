@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import DesignResourcesKitIcons
 
 @objc protocol BookmarkTableCellViewDelegate: AnyObject {
 
@@ -27,15 +28,15 @@ import Foundation
 
 final class BookmarkTableCellView: NSTableCellView {
 
-    private lazy var faviconImageView = NSImageView(image: .bookmark)
+    private lazy var faviconImageView = NSImageView(image: NSImage(resource: .bookmark))
 
     private lazy var titleLabel = NSTextField(string: "Bookmark")
     private lazy var bookmarkURLLabel = NSTextField(string: "URL")
-    private lazy var accessoryImageView = NSImageView(image: .forward)
+    private lazy var accessoryImageView = NSImageView(image: NSImage(resource: .forward))
 
     private lazy var containerView = NSView()
 
-    private lazy var menuButton = NSButton(title: "", image: .settings, target: self, action: #selector(cellMenuButtonClicked))
+    private lazy var menuButton = NSButton(title: "", image: NSImage(resource: .settings), target: self, action: #selector(cellMenuButtonClicked))
 
     @objc func cellMenuButtonClicked(_ sender: NSButton) {
         delegate?.bookmarkTableCellViewRequestedMenu(sender, cell: self)
@@ -50,7 +51,11 @@ final class BookmarkTableCellView: NSTableCellView {
         }
     }
 
-    private var visualStyle: VisualStyleProviding
+    private var theme: ThemeStyleProviding
+    private var palette: ThemeColors {
+        theme.palette
+    }
+
     private var entity: BaseBookmarkEntity?
     private var trackingArea: NSTrackingArea?
     private var mouseInside: Bool = false {
@@ -68,11 +73,14 @@ final class BookmarkTableCellView: NSTableCellView {
             }
 
             updateTitleLabelValue()
+
+            /// Update Colors is required since the color may change, depending on the `mouseInside` state
+            updateColors()
         }
     }
 
-    init(identifier: NSUserInterfaceItemIdentifier, entity: BaseBookmarkEntity? = nil, visualStyle: VisualStyleProviding) {
-        self.visualStyle = visualStyle
+    init(identifier: NSUserInterfaceItemIdentifier, entity: BaseBookmarkEntity? = nil, theme: ThemeStyleProviding) {
+        self.theme = theme
         super.init(frame: NSRect(x: 0, y: 0, width: 462, height: 84))
         self.identifier = identifier
 
@@ -104,7 +112,7 @@ final class BookmarkTableCellView: NSTableCellView {
         containerView.addSubview(menuButton)
         containerView.addSubview(accessoryImageView)
 
-        faviconImageView.contentTintColor = .suggestionIcon
+        faviconImageView.contentTintColor = NSColor(resource: .suggestionIcon)
         faviconImageView.wantsLayer = true
         faviconImageView.layer?.cornerRadius = 2.0
         faviconImageView.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
@@ -127,7 +135,7 @@ final class BookmarkTableCellView: NSTableCellView {
 
         accessoryImageView.translatesAutoresizingMaskIntoConstraints = false
 
-        menuButton.contentTintColor = .button
+        menuButton.contentTintColor = NSColor(resource: .button)
         menuButton.translatesAutoresizingMaskIntoConstraints = false
         menuButton.isBordered = false
         menuButton.isHidden = true
@@ -211,14 +219,14 @@ final class BookmarkTableCellView: NSTableCellView {
     func update(from bookmark: Bookmark) {
         self.entity = bookmark
 
-        faviconImageView.image = bookmark.favicon(.small) ?? visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkColorIcon
+        faviconImageView.image = bookmark.favicon(.small) ?? theme.iconsProvider.bookmarksIconsProvider.bookmarkColorIcon
 
         faviconImageView.setAccessibilityIdentifier("BookmarkTableCellView.favIconImageView")
         if bookmark.isFavorite {
             accessoryImageView.isHidden = false
         }
 
-        accessoryImageView.image = bookmark.isFavorite ? .favoriteFilledBorder : nil
+        accessoryImageView.image = bookmark.isFavorite ? DesignSystemImages.Color.Size16.favorite : nil
         accessoryImageView.setAccessibilityIdentifier("BookmarkTableCellView.accessoryImageView")
         accessoryImageView.setAccessibilityValue(bookmark.isFavorite ? "Favorited" : "Unfavorited")
         titleLabel.stringValue = bookmark.title
@@ -226,11 +234,18 @@ final class BookmarkTableCellView: NSTableCellView {
         tertiaryTitleLabelValue = bookmark.url
     }
 
+    /// Upgrades the displayed favicon in place once it becomes available, without touching the rest of the
+    /// cell. Never falls back to the placeholder icon, so a transient cache miss doesn't blank a real favicon.
+    func refreshDisplayedFavicon() {
+        guard let bookmark = entity as? Bookmark, let favicon = bookmark.favicon(.small) else { return }
+        faviconImageView.image = favicon
+    }
+
     func update(from folder: BookmarkFolder) {
         self.entity = folder
 
-        faviconImageView.image = visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkFolderColorIcon
-        accessoryImageView.image = .chevronMediumRight16
+        faviconImageView.image = theme.iconsProvider.bookmarksIconsProvider.bookmarkFolderColorIcon
+        accessoryImageView.image = NSImage(resource: .chevronMediumRight16)
         primaryTitleLabelValue = folder.title
         tertiaryTitleLabelValue = nil
     }
@@ -241,10 +256,13 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private func updateColors() {
-        titleLabel.textColor = isSelected ? .white : .controlTextColor
-        menuButton.contentTintColor = isSelected ? .white : .button
-        faviconImageView.contentTintColor = isSelected ? .white : .suggestionIcon
-        accessoryImageView.contentTintColor = isSelected ? .white : .suggestionIcon
+        let iconTintColor = isSelected ? palette.accentContentPrimary : palette.iconsPrimary
+
+        menuButton.contentTintColor = iconTintColor
+        faviconImageView.contentTintColor = iconTintColor
+        accessoryImageView.contentTintColor = iconTintColor
+
+        titleLabel.textColor = themedTextColor
     }
 
     private func ensureTrackingArea() {
@@ -296,14 +314,10 @@ final class BookmarkTableCellView: NSTableCellView {
     }
 
     private func buildTitleAttributedString(tertiaryValue: String) -> NSAttributedString {
-        let color = isSelected ? NSColor.white : NSColor.labelColor
-
-        let titleAttributes = [NSAttributedString.Key.foregroundColor: color]
+        let titleAttributes = [NSAttributedString.Key.foregroundColor: themedTextColor]
         let titleString = NSMutableAttributedString(string: primaryTitleLabelValue, attributes: titleAttributes)
 
-        let urlColor = isSelected ? NSColor.white.withAlphaComponent(0.6) : NSColor.tertiaryLabelColor
-
-        let urlAttributes = [NSAttributedString.Key.foregroundColor: urlColor]
+        let urlAttributes = [NSAttributedString.Key.foregroundColor: themedURLColor]
         let urlString = NSAttributedString(string: " – \(tertiaryValue)", attributes: urlAttributes)
 
         titleString.append(urlString)
@@ -311,12 +325,19 @@ final class BookmarkTableCellView: NSTableCellView {
         return titleString
     }
 
+    private var themedTextColor: NSColor {
+        isSelected ? palette.accentContentPrimary : palette.textPrimary
+    }
+
+    private var themedURLColor: NSColor {
+        isSelected ? palette.accentContentSecondary : palette.textSecondary
+    }
 }
 
 #if DEBUG
 @available(macOS 14.0, *)
 #Preview {
-    BookmarkTableCellView.PreviewView(cell: BookmarkTableCellView(identifier: .init("id"), entity: Bookmark(id: "1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false), visualStyle: VisualStyle.current))
+    BookmarkTableCellView.PreviewView(cell: BookmarkTableCellView(identifier: .init("id"), entity: Bookmark(id: "1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false), theme: ThemeStyle.buildThemeStyle(themeName: .default)))
 }
 
 extension BookmarkTableCellView {

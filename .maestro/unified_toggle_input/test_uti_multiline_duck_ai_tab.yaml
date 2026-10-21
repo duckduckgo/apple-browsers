@@ -1,0 +1,33 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - iphone
+    - release
+    - unified_toggle_input
+name: test_uti_multiline_duck_ai_tab
+
+---
+
+# Verifies that the Duck.ai tab (toggle disabled, aiChat mode) uses the multi-line
+# UITextView composer — the text area expands to show a long URL rather than clipping.
+
+- runFlow:
+    file: ../shared/open_chat_tab.yaml
+
+# AI toolbar confirms we are in Duck.ai / multi-line mode
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"
+
+# Focus the input and type a long URL
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://en.wikipedia.org/wiki/Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch"
+
+# No Search↔Duck.ai toggle — this is a pure chat tab
+- assertNotVisible:
+    id: "AddressBar.Button.Search"
+- assertNotVisible:
+    id: "AddressBar.Button.DuckAI"
+
+# Multi-line toolbar is still present after typing
+- assertVisible:
+    id: "AIChat.Toolbar.Button.ModelChip"

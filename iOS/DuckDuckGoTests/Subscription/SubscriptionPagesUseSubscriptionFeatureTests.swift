@@ -2,7 +2,7 @@
 //  SubscriptionPagesUseSubscriptionFeatureTests.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,1080 +18,1559 @@
 //
 
 import XCTest
+import WebKit
+@_spi(Testing) import WideEvent
+import PrivacyConfig
+import UserNotifications
 @testable import DuckDuckGo
-@testable import Core
+@testable import Common
+@testable import UserScript
 @testable import Subscription
 import SubscriptionTestingUtilities
-import Common
-import WebKit
-import BrowserServicesKit
-import OHHTTPStubs
-import OHHTTPStubsSwift
-import os.log
-
-@MainActor
-final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
-
-    private struct Constants {
-        static let userDefaultsSuiteName = "SubscriptionPagesUseSubscriptionFeatureTests"
-
-        // Auth V1
-        static let authToken = UUID().uuidString
-        static let accessToken = UUID().uuidString
-
-        // Auth V2
-        static let refreshToken = UUID().uuidString
-
-        static let externalID = UUID().uuidString
-        static let email = "dax@duck.com"
-
-        static let entitlements = [Entitlement(product: .dataBrokerProtection),
-                                   Entitlement(product: .identityTheftRestoration),
-                                   Entitlement(product: .networkProtection)]
-
-        static let mostRecentTransactionJWS = "dGhpcyBpcyBub3QgYSByZWFsIEFw(...)cCBTdG9yZSB0cmFuc2FjdGlvbiBKV1M="
-
-        static let subscriptionOptions = SubscriptionOptions(platform: SubscriptionPlatformName.ios,
-                                                             options: [
-                                                                SubscriptionOption(id: "1",
-                                                                                   cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly")),
-                                                                SubscriptionOption(id: "2",
-                                                                                   cost: SubscriptionOptionCost(displayPrice: "99 USD", recurrence: "yearly"))
-                                                             ],
-                                                             features: [
-                                                                SubscriptionFeature(name: .networkProtection),
-                                                                SubscriptionFeature(name: .dataBrokerProtection),
-                                                                SubscriptionFeature(name: .identityTheftRestoration)
-                                                             ])
-
-        static let validateTokenResponse = ValidateTokenResponse(account: ValidateTokenResponse.Account(email: Constants.email,
-                                                                                                        entitlements: Constants.entitlements,
-                                                                                                        externalID: Constants.externalID))
-
-        static let mockParams: [String: String] = [:]
-        static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
-
-        static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
-    }
-
-    var userDefaults: UserDefaults!
-
-    var accountStorage: AccountKeychainStorageMock!
-    var accessTokenStorage: SubscriptionTokenKeychainStorageMock!
-    var entitlementsCache: UserDefaultsCache<[Entitlement]>!
-
-    var subscriptionService: SubscriptionEndpointServiceMock!
-    var authService: AuthEndpointServiceMock!
-
-    var storePurchaseManager: StorePurchaseManagerMock!
-    var subscriptionEnvironment: SubscriptionEnvironment!
-
-    var subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock!
-
-    var appStorePurchaseFlow: AppStorePurchaseFlow!
-    var appStoreRestoreFlow: AppStoreRestoreFlow!
-    var appStoreAccountManagementFlow: AppStoreAccountManagementFlow!
-
-    var accountManager: AccountManager!
-    var subscriptionManager: SubscriptionManager!
-    var subscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock.enabled
-
-    var feature: (any SubscriptionPagesUseSubscriptionFeature)!
-    var featureAuthV2: (any SubscriptionPagesUseSubscriptionFeature)!
-
-    var pixelsFired: [String] = []
-
-    // V2
-    var subscriptionManagerV2: SubscriptionManagerMockV2!
-    var purchaseFlow: AppStorePurchaseFlowMockV2!
-    var restoreFlow: AppStoreRestoreFlowMockV2!
-
-    override func setUpWithError() throws {
-        throw XCTSkip("Potentially flaky")
-        // Pixels
-        Pixel.isDryRun = false
-        stub(condition: isHost("improving.duckduckgo.com")) { request -> HTTPStubsResponse in
-            if let path = request.url?.path {
-                let pixelName = path.dropping(prefix: "/t/")
-                    .dropping(suffix: "_ios_phone")
-                    .dropping(suffix: "_ios_tablet")
-                Task { @MainActor in
-                    self.pixelsFired.append(pixelName)
-                }
-            }
-
-            return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
-        }
-
-        // Reset all daily pixel storage
-        [Pixel.storage, DailyPixel.storage, UniquePixel.storage].forEach { storage in
-            storage.dictionaryRepresentation().keys.forEach(storage.removeObject(forKey:))
-        }
-
-        // Auth V1 mocks
-        subscriptionService = SubscriptionEndpointServiceMock()
-        authService = AuthEndpointServiceMock()
-
-        storePurchaseManager = StorePurchaseManagerMock()
-        subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
-                                                           purchasePlatform: .appStore)
-        accountStorage = AccountKeychainStorageMock()
-        accessTokenStorage = SubscriptionTokenKeychainStorageMock()
-
-        userDefaults = UserDefaults(suiteName: Constants.userDefaultsSuiteName)!
-        userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)
-
-        entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: userDefaults,
-                                                             key: UserDefaultsCacheKey.subscriptionEntitlements,
-                                                             settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
-
-        subscriptionFeatureMappingCache = SubscriptionFeatureMappingCacheMock()
-
-        // Real AccountManager
-        accountManager = DefaultAccountManager(storage: accountStorage,
-                                               accessTokenStorage: accessTokenStorage,
-                                               entitlementsCache: entitlementsCache,
-                                               subscriptionEndpointService: subscriptionService,
-                                               authEndpointService: authService)
-
-        // Real Flows
-        appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
-                                                         storePurchaseManager: storePurchaseManager,
-                                                         subscriptionEndpointService: subscriptionService,
-                                                         authEndpointService: authService)
-
-        appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionEndpointService: subscriptionService,
-                                                           storePurchaseManager: storePurchaseManager,
-                                                           accountManager: accountManager,
-                                                           appStoreRestoreFlow: appStoreRestoreFlow,
-                                                           authEndpointService: authService)
-
-        appStoreAccountManagementFlow = DefaultAppStoreAccountManagementFlow(authEndpointService: authService,
-                                                                             storePurchaseManager: storePurchaseManager,
-                                                                             accountManager: accountManager)
-        // Real SubscriptionManager
-        subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                         accountManager: accountManager,
-                                                         subscriptionEndpointService: subscriptionService,
-                                                         authEndpointService: authService,
-                                                         subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                         subscriptionEnvironment: subscriptionEnvironment)
-
-        feature = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                 subscriptionAttributionOrigin: nil,
-                                                                 appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                 appStoreAccountManagementFlow: appStoreAccountManagementFlow)
-
-        // Auth V2 mocks
-        subscriptionManagerV2 = SubscriptionManagerMockV2()
-        purchaseFlow = AppStorePurchaseFlowMockV2()
-        restoreFlow = AppStoreRestoreFlowMockV2()
-        featureAuthV2 = DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
-                                                                         subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                         subscriptionAttributionOrigin: nil,
-                                                                         appStorePurchaseFlow: purchaseFlow,
-                                                                         appStoreRestoreFlow: restoreFlow)
-
-    }
-
-    override func tearDownWithError() throws {
-        Pixel.isDryRun = true
-        pixelsFired.removeAll()
-        HTTPStubs.removeAllStubs()
-
-        subscriptionService = nil
-        authService = nil
-        storePurchaseManager = nil
-        subscriptionEnvironment = nil
-
-        userDefaults = nil
-
-        accountStorage = nil
-        accessTokenStorage = nil
-
-        entitlementsCache?.reset()
-        entitlementsCache = nil
-
-        accountManager = nil
-
-        // Real Flows
-        appStorePurchaseFlow = nil
-        appStoreRestoreFlow = nil
-        appStoreAccountManagementFlow = nil
-
-        subscriptionManager = nil
-
-        feature = nil
-        featureAuthV2 = nil
-    }
-
-    // MARK: - Tests for getSubscription
-
-    func testGetSubscriptionSuccessRefreshingAuthToken() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        let newAuthToken = UUID().uuidString
-
-        authService.validateTokenResult = .failure(Constants.invalidTokenError)
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-        authService.storeLoginResult = .success(StoreLoginResponse(authToken: newAuthToken,
-                                                                   email: Constants.email,
-                                                                   externalID: Constants.externalID,
-                                                                   id: 1, status: "authenticated"))
-
-        // When
-        let result = await feature.getSubscription(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let resultDictionary = try XCTUnwrap(result as? [String: String])
-
-        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeatureConstants.token], newAuthToken)
-        XCTAssertEqual(accountManager.authToken, newAuthToken)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testGetSubscriptionSuccessWithoutRefreshingAuthToken() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        authService.validateTokenResult = .success(Constants.validateTokenResponse)
-
-        // When
-        let result = await feature.getSubscription(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let resultDictionary = try XCTUnwrap(result as? [String: String])
-
-        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeatureConstants.token], Constants.authToken)
-        XCTAssertEqual(accountManager.authToken, Constants.authToken)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testGetSubscriptionSuccessErrorWhenUnauthenticated() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        authService.validateTokenResult = .failure(Constants.invalidTokenError)
-        storePurchaseManager.mostRecentTransactionResult = nil
-
-        // When
-        let result = await feature.getSubscription(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let resultDictionary = try XCTUnwrap(result as? [String: String])
-
-        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeatureConstants.token], SubscriptionPagesUseSubscriptionFeatureConstants.empty)
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    // MARK: - Tests for getSubscriptionOptions
-
-    func testGetSubscriptionOptionsSuccess() async throws {
-        // Given
-        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
-
-        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testGetSubscriptionOptionsReturnsEmptyOptionsWhenNoSubscriptionOptions() async throws {
-        // Given
-        storePurchaseManager.subscriptionOptionsResult = nil
-
-        // When
-        let result = await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
-        XCTAssertEqual(subscriptionOptionsResult, SubscriptionOptions.empty)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .failedToGetSubscriptionOptions)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testGetSubscriptionOptionsReturnsEmptyOptionsWhenPurchaseNotAllowed() async throws {
-        // Given
-        let subscriptionFeatureAvailabilityWithoutPurchaseAllowed = SubscriptionFeatureAvailabilityMock(
-            isSubscriptionPurchaseAllowed: false
-        )
-        
-        feature = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailabilityWithoutPurchaseAllowed,
-                                                                 subscriptionAttributionOrigin: nil,
-                                                                 appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                 appStoreAccountManagementFlow: appStoreAccountManagementFlow)
-
-        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
-        XCTAssertEqual(subscriptionOptionsResult, SubscriptionOptions.empty)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    // MARK: - Tests for subscriptionSelected
-
-    func testSubscriptionSelectedSuccessWhenPurchasingFirstTime() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        storePurchaseManager.mostRecentTransactionResult = nil
-
-        authService.createAccountResult = .success(CreateAccountResponse(authToken: Constants.authToken,
-                                                                         externalID: Constants.externalID,
-                                                                         status: "created"))
-        authService.getAccessTokenResult = .success(AccessTokenResponse(accessToken: Constants.accessToken))
-        authService.validateTokenResult = .success(Constants.validateTokenResponse)
-        storePurchaseManager.purchaseSubscriptionResult = .success(Constants.mostRecentTransactionJWS)
-        subscriptionService.confirmPurchaseResult = .success(ConfirmPurchaseResponse(email: Constants.email,
-                                                                                     entitlements: Constants.entitlements,
-                                                                                     subscription: SubscriptionMockFactory.appleSubscription))
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c",
-                                           Pixel.Event.privacyProPurchaseSuccess.name + "_d",
-                                           Pixel.Event.privacyProPurchaseSuccess.name + "_c",
-                                           Pixel.Event.privacyProSubscriptionActivated.name,
-                                           Pixel.Event.privacyProSuccessfulSubscriptionAttribution.name])
-    }
-
-    func testSubscriptionSelectedSuccessWhenRepurchasingForExpiredAppleSubscription() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        XCTAssertTrue(accountManager.isUserAuthenticated)
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredSubscription)
-
-        authService.storeLoginResult = .success(StoreLoginResponse(authToken: Constants.authToken,
-                                                                   email: Constants.email,
-                                                                   externalID: Constants.externalID,
-                                                                   id: 1,
-                                                                   status: "authenticated"))
-        authService.getAccessTokenResult = .success(AccessTokenResponse(accessToken: Constants.accessToken))
-        authService.validateTokenResult = .success(Constants.validateTokenResponse)
-        storePurchaseManager.purchaseSubscriptionResult = .success(Constants.mostRecentTransactionJWS)
-        subscriptionService.confirmPurchaseResult = .success(ConfirmPurchaseResponse(email: Constants.email,
-                                                                                     entitlements: Constants.entitlements,
-                                                                                     subscription: SubscriptionMockFactory.appleSubscription))
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertFalse(authService.createAccountCalled)
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c",
-                                           Pixel.Event.privacyProPurchaseSuccess.name + "_d",
-                                           Pixel.Event.privacyProPurchaseSuccess.name + "_c",
-                                           Pixel.Event.privacyProSubscriptionActivated.name,
-                                           Pixel.Event.privacyProSuccessfulSubscriptionAttribution.name])
-    }
-
-    func testSubscriptionSelectedSuccessWhenRepurchasingForExpiredStripeSubscription() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        XCTAssertTrue(accountManager.isUserAuthenticated)
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .success(Constants.mostRecentTransactionJWS)
-        subscriptionService.confirmPurchaseResult = .success(ConfirmPurchaseResponse(email: Constants.email,
-                                                                                     entitlements: Constants.entitlements,
-                                                                                     subscription: SubscriptionMockFactory.appleSubscription))
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertFalse(authService.createAccountCalled)
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c",
-                                           Pixel.Event.privacyProPurchaseSuccess.name + "_d",
-                                           Pixel.Event.privacyProPurchaseSuccess.name + "_c",
-                                           Pixel.Event.privacyProSubscriptionActivated.name,
-                                           Pixel.Event.privacyProSuccessfulSubscriptionAttribution.name])
-    }
-
-    func testSubscriptionSelectedErrorWhenPurchasingWhenHavingActiveSubscription() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = true
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertFalse(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .activeSubscriptionAlreadyPresent)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c",
-                                           Pixel.Event.privacyProRestoreAfterPurchaseAttempt.name])
-    }
-
-    func testSubscriptionSelectedErrorWhenPurchasingWhenUnauthenticatedAndHavingActiveSubscriptionOnAppleID() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = true
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertFalse(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .activeSubscriptionAlreadyPresent)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c",
-                                           Pixel.Event.privacyProRestoreAfterPurchaseAttempt.name])
-    }
-
-    func testSubscriptionSelectedErrorWhenUnauthenticatedAndAccountCreationFails() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        storePurchaseManager.mostRecentTransactionResult = nil
-
-        authService.createAccountResult = .failure(Constants.invalidTokenError)
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertFalse(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .accountCreationFailed)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c"])
-    }
-
-    func testSubscriptionSelectedErrorWhenPurchaseCancelledByUser() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseCancelledByUser)
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .cancelledByUser)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c"])
-    }
-
-    func testSubscriptionSelectedErrorWhenProductNotFound() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.productNotFound)
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .purchaseFailed)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c"])
-    }
-
-    func testSubscriptionSelectedErrorWhenExternalIDIsNotValidUUID() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.externalIDisNotAValidUUID)
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .purchaseFailed)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c"])
-    }
-
-    func testSubscriptionSelectedErrorWhenPurchaseFailed() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseFailed)
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .purchaseFailed)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c"])
-    }
-
-    func testSubscriptionSelectedErrorWhenTransactionCannotBeVerified() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.transactionCannotBeVerified)
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .purchaseFailed)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c"])
-    }
-
-    func testSubscriptionSelectedErrorWhenTransactionPendingAuthentication() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.transactionPendingAuthentication)
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .purchaseFailed)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c"])
-    }
-
-    func testSubscriptionSelectedErrorDueToUnknownPurchaseError() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        storePurchaseManager.hasActiveSubscriptionResult = false
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
-        storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.unknownError)
-
-        // When
-        let subscriptionSelectedParams = ["id": "some-subscription-id"]
-        let result = await feature.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertTrue(storePurchaseManager.purchaseSubscriptionCalled)
-
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .purchaseFailed)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
-                                           Pixel.Event.privacyProPurchaseAttempt.name + "_c"])
-    }
-
-    // MARK: - Tests for setSubscription
-
-    func testSetSubscriptionSuccess() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        authService.getAccessTokenResult = .success(.init(accessToken: Constants.accessToken))
-        authService.validateTokenResult = .success(Constants.validateTokenResponse)
-
-        let onSetSubscriptionCalled = expectation(description: "onSetSubscription")
-        feature.onSetSubscription = {
-            onSetSubscriptionCalled.fulfill()
-        }
-
-        // When
-        let setSubscriptionParams = ["token": Constants.authToken]
-        let result = await feature.setSubscription(params: setSubscriptionParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertEqual(accountManager.authToken, Constants.authToken)
-        XCTAssertEqual(accountManager.accessToken, Constants.accessToken)
-        XCTAssertEqual(accountManager.email, Constants.email)
-        XCTAssertEqual(accountManager.externalID, Constants.externalID)
-
-        await fulfillment(of: [onSetSubscriptionCalled], timeout: 0.5)
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testSetSubscriptionErrorWhenFailedToExchangeToken() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        authService.getAccessTokenResult = .failure(Constants.invalidTokenError)
-
-        let onSetSubscriptionCalled = expectation(description: "onSetSubscription")
-        onSetSubscriptionCalled.isInverted = true
-        feature.onSetSubscription = {
-            onSetSubscriptionCalled.fulfill()
-        }
-
-        // When
-        let setSubscriptionParams = ["token": Constants.authToken]
-        let result = await feature.setSubscription(params: setSubscriptionParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertNil(accountManager.authToken)
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        await fulfillment(of: [onSetSubscriptionCalled], timeout: 0.5)
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .failedToSetSubscription)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testSetSubscriptionErrorWhenFailedToFetchAccountDetails() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        authService.getAccessTokenResult = .success(.init(accessToken: Constants.accessToken))
-        authService.validateTokenResult = .failure(Constants.invalidTokenError)
-
-        let onSetSubscriptionCalled = expectation(description: "onSetSubscription")
-        onSetSubscriptionCalled.isInverted = true
-        feature.onSetSubscription = {
-            onSetSubscriptionCalled.fulfill()
-        }
-
-        // When
-        let setSubscriptionParams = ["token": Constants.authToken]
-        let result = await feature.setSubscription(params: setSubscriptionParams, original: Constants.mockScriptMessage)
-
-        // Then
-        XCTAssertNil(accountManager.authToken)
-        XCTAssertFalse(accountManager.isUserAuthenticated)
-
-        await fulfillment(of: [onSetSubscriptionCalled], timeout: 0.5)
-        XCTAssertNil(result)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .failedToSetSubscription)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    // MARK: - Tests for activateSubscription
-
-    func testActivateSubscriptionTokenSuccess() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        let onActivateSubscriptionCalled = expectation(description: "onActivateSubscription")
-        feature.onActivateSubscription = {
-            onActivateSubscriptionCalled.fulfill()
-        }
-
-        // When
-        let result = await feature.activateSubscription(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        await fulfillment(of: [onActivateSubscriptionCalled], timeout: 0.5)
-        XCTAssertNil(result)
-
-        await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProRestorePurchaseOfferPageEntry.name])
-    }
-
-    // MARK: - Tests for featureSelected
-
-    func testFeatureSelectedSuccess() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        let onFeatureSelectedCalled = expectation(description: "onFeatureSelected")
-        feature.onFeatureSelected = { selection in
-            onFeatureSelectedCalled.fulfill()
-            XCTAssertEqual(selection, .identityTheftRestoration)
-        }
-
-        // When
-        let featureSelectionParams = ["productFeature": Entitlement.ProductName.identityTheftRestoration.rawValue]
-        let result = await feature.featureSelected(params: featureSelectionParams, original: Constants.mockScriptMessage)
-
-        // Then
-        await fulfillment(of: [onFeatureSelectedCalled], timeout: 0.5)
-        XCTAssertNil(result)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    // MARK: - Tests for backToSettings
-
-    func testBackToSettingsSuccess() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-        accountStorage.email = nil
-
-        XCTAssertNil(accountManager.email)
-
-        let onBackToSettingsCalled = expectation(description: "onBackToSettings")
-        feature.onBackToSettings = {
-            onBackToSettingsCalled.fulfill()
-        }
-
-        authService.validateTokenResult = .success(Constants.validateTokenResponse)
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
-
-        // When
-        let result = await feature.backToSettings(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        await fulfillment(of: [onBackToSettingsCalled], timeout: 0.5)
-
-        XCTAssertEqual(accountManager.email, Constants.email)
-        XCTAssertNil(result)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testBackToSettingsErrorOnFetchingAccountDetails() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        let onBackToSettingsCalled = expectation(description: "onBackToSettings")
-        onBackToSettingsCalled.isInverted = true
-        feature.onBackToSettings = {
-            onBackToSettingsCalled.fulfill()
-        }
-
-        authService.validateTokenResult = .failure(Constants.invalidTokenError)
-
-        // When
-        let result = await feature.backToSettings(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        await fulfillment(of: [onBackToSettingsCalled], timeout: 0.5)
-
-        XCTAssertEqual(feature.transactionError, .generalError)
-        XCTAssertNil(result)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    // MARK: - Tests for getAccessToken
-    func testGetAccessTokenSuccess() async throws {
-        // Given
-        ensureUserAuthenticatedState()
-
-        // When
-        let result = try await feature.getAccessToken(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let resultDictionary = try XCTUnwrap(result as? [String: String])
-        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeatureConstants.token], Constants.accessToken)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testGetAccessTokenEmptyOnMissingToken() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-        XCTAssertNil(accountManager.accessToken)
-
-        // When
-        let result = try await feature.getAccessToken(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let resultDictionary = try XCTUnwrap(result as? [String: String])
-        XCTAssertEqual(resultDictionary, [String: String]())
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    // MARK: - Tests for restoreAccountFromAppStorePurchase
-
-    func testRestoreAccountFromAppStorePurchaseSuccess() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-        authService.storeLoginResult = .success(StoreLoginResponse(authToken: Constants.authToken,
-                                                                   email: Constants.email,
-                                                                   externalID: Constants.externalID,
-                                                                   id: 1, status: "authenticated"))
-        authService.getAccessTokenResult = .success(AccessTokenResponse(accessToken: Constants.accessToken))
-        authService.validateTokenResult = .success(Constants.validateTokenResponse)
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
-
-        // When
-        try await feature.restoreAccountFromAppStorePurchase()
-
-        // Then
-        XCTAssertTrue(accountManager.isUserAuthenticated)
-
-        XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, nil)
-
-        await XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testRestoreAccountFromAppStorePurchaseErrorDueToExpiredSubscription() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-        authService.storeLoginResult = .success(StoreLoginResponse(authToken: Constants.authToken,
-                                                                   email: Constants.email,
-                                                                   externalID: Constants.externalID,
-                                                                   id: 1, status: "authenticated"))
-        authService.getAccessTokenResult = .success(AccessTokenResponse(accessToken: Constants.accessToken))
-        authService.validateTokenResult = .success(Constants.validateTokenResponse)
-        subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredSubscription)
-
-
-        do {
-            // When
-            try await feature.restoreAccountFromAppStorePurchase()
-            XCTFail("Unexpected success")
-        } catch let error {
-            // Then
-            guard let error = error as? UseSubscriptionError else {
-                XCTFail("Unexpected error type")
-                return
-            }
-
-            XCTAssertEqual(error, .restoreFailedDueToExpiredSubscription)
-            XCTAssertFalse(accountManager.isUserAuthenticated)
-
-            XCTAssertEqual(feature.transactionStatus, .idle)
-            XCTAssertEqual(feature.transactionError, nil)
-
-            await XCTAssertPrivacyPixelsFired([])
-        }
-    }
-
-    func testRestoreAccountFromAppStorePurchaseErrorDueToNoTransaction() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        storePurchaseManager.mostRecentTransactionResult = nil
-
-        do {
-            // When
-            try await feature.restoreAccountFromAppStorePurchase()
-            XCTFail("Unexpected success")
-        } catch let error {
-            // Then
-            guard let error = error as? UseSubscriptionError else {
-                XCTFail("Unexpected error type")
-                return
-            }
-
-            XCTAssertEqual(error, .restoreFailedDueToNoSubscription)
-            XCTAssertFalse(accountManager.isUserAuthenticated)
-
-            XCTAssertEqual(feature.transactionStatus, .idle)
-            XCTAssertEqual(feature.transactionError, nil)
-
-            await XCTAssertPrivacyPixelsFired([])
-        }
-    }
-
-    func testRestoreAccountFromAppStorePurchaseErrorDueToOtherError() async throws {
-        // Given
-        ensureUserUnauthenticatedState()
-
-        storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
-        authService.storeLoginResult = .failure(Constants.invalidTokenError)
-
-        do {
-            // When
-            try await feature.restoreAccountFromAppStorePurchase()
-            XCTFail("Unexpected success")
-        } catch let error {
-            // Then
-            guard let error = error as? UseSubscriptionError else {
-                XCTFail("Unexpected error type")
-                return
-            }
-
-            XCTAssertEqual(error, .otherRestoreError)
-            XCTAssertFalse(accountManager.isUserAuthenticated)
-
-            XCTAssertEqual(feature.transactionStatus, .idle)
-            XCTAssertEqual(feature.transactionError, nil)
-
-            await XCTAssertPrivacyPixelsFired([])
-        }
+@_spi(Testing) import Networking
+import BrowserServicesKitTestsUtils
+
+private struct SubscriptionExperimentAttributionProviderStub: SubscriptionExperimentAttributionProviding {
+    func attribution(from selection: DefaultSubscriptionPagesUseSubscriptionFeature.SubscriptionSelection) -> PurchaseExperimentAttribution? {
+        nil
     }
 }
 
-extension SubscriptionPagesUseSubscriptionFeatureTests {
+final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
+    
+    var sut: DefaultSubscriptionPagesUseSubscriptionFeature!
+    var mockSubscriptionManager: SubscriptionManagerMock!
+    var mockStripePurchaseFlow: StripePurchaseFlowMock!
+    var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
+    var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
+    var mockNotificationCenter: NotificationCenter!
+    var mockWideEvent: WideEventMock!
+    var mockInternalUserDecider: PrivacyConfig.MockInternalUserDecider!
+    var mockTierEventReporter: MockSubscriptionTierEventReporter!
+    var mockRequestValidator: ScriptRequestValidatorMock!
 
-    func ensureUserAuthenticatedState() {
-        accountStorage.authToken = Constants.authToken
-        accountStorage.email = Constants.email
-        accountStorage.externalID = Constants.externalID
-        accessTokenStorage.accessToken = Constants.accessToken
+    @MainActor
+    override func setUp() {
+        super.setUp()
+
+        mockSubscriptionManager = SubscriptionManagerMock()
+        mockStripePurchaseFlow = StripePurchaseFlowMock(prepareSubscriptionPurchaseResult: .success((purchaseUpdate: .completed, accountCreationDuration: nil)))
+        mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
+        mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
+        mockNotificationCenter = NotificationCenter()
+        mockWideEvent = WideEventMock()
+        mockInternalUserDecider = PrivacyConfig.MockInternalUserDecider(isInternalUser: true)
+        mockTierEventReporter = MockSubscriptionTierEventReporter()
+        mockRequestValidator = ScriptRequestValidatorMock()
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: mockAppStorePurchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+
+        sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: "",
+            appStorePurchaseFlow: mockAppStorePurchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            tierEventReporter: mockTierEventReporter,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub())
     }
 
-    func ensureUserUnauthenticatedState() {
-        try? accessTokenStorage.removeAccessToken()
-        try? accountStorage.clearAuthenticationState()
+    override func tearDown() {
+        sut = nil
+        mockSubscriptionManager = nil
+        mockStripePurchaseFlow = nil
+        mockAppStorePurchaseFlow = nil
+        mockSubscriptionFeatureAvailability = nil
+        mockNotificationCenter = nil
+        mockWideEvent = nil
+        mockTierEventReporter = nil
+        mockRequestValidator = nil
+        super.tearDown()
+    }
+    
+    func testGetFeatureConfig_WhenPaidAIChatEnabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        guard let featureValue = result as? GetFeatureConfigurationResponse else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+        
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.usePaidDuckAi)
+    }
+    
+    func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        guard let featureValue = result as? GetFeatureConfigurationResponse else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertFalse(featureValue.usePaidDuckAi)
+    }
+    
+    func testGetFeatureConfig_WhenStripeSupported_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        guard let featureValue = result as? GetFeatureConfigurationResponse else {
+            XCTFail("Expected GetFeatureConfigurationResponse type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
     }
 
-    public func XCTAssertPrivacyPixelsFired(_ pixels: [String], file: StaticString = #file, line: UInt = #line) async {
-        try? await Task.sleep(seconds: 0.1)
+    func testGetFeatureConfig_WhenStripeNotSupported_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = false
 
-        let pixelsFired = Set(pixelsFired)
-        let expectedPixels = Set(pixels)
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
 
-        // Assert expected pixels were fired
-        XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired),
-                      "Expected Privacy Pro pixels were not fired: \(expectedPixels.subtracting(pixelsFired))",
-                      file: file,
-                      line: line)
+        // Then
+        guard let featureValue = result as? GetFeatureConfigurationResponse else {
+            XCTFail("Expected GetFeatureConfigurationResponse type")
+            return
+        }
 
-        // Assert no other Privacy Pro pixels were fired except the expected
-        let privacyProPixelPrefix = "m_privacy-pro"
-        let otherPixels = pixelsFired.subtracting(expectedPixels)
-        let otherPrivacyProPixels = otherPixels.filter { $0.hasPrefix(privacyProPixelPrefix) }
-        XCTAssertTrue(otherPrivacyProPixels.isEmpty,
-                      "Unexpected Privacy Pro pixels fired: \(otherPrivacyProPixels)",
-                      file: file,
-                      line: line)
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
+    }
+
+    func testGetFeatureConfig_WhenBothFeaturesEnabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        guard let featureValue = result as? GetFeatureConfigurationResponse else {
+            XCTFail("Expected GetFeatureConfigurationResponse type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.usePaidDuckAi)
+        XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
+        XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
+    }
+
+    func testGetFeatureConfig_WhenBothFeaturesDisabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
+        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = false
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        guard let featureValue = result as? GetFeatureConfigurationResponse else {
+            XCTFail("Expected GetFeatureConfigurationResponse type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertFalse(featureValue.usePaidDuckAi)
+        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
+    }
+
+    // MARK: - GetSubscriptionTierOptions Tests
+
+    func testGetSubscriptionTierOptions_WhenProTierEnabled_PassesTrueToIncludeProTier() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = true
+        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
+        
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: [
+                        SubscriptionOption(id: "1",
+                                           cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
+                                           offer: nil)
+                    ]
+                )
+            ]
+        )
+        
+        mockSubscriptionManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+
+        // When
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        XCTAssertEqual(mockSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier when Pro tier is enabled")
+        
+        guard let tierOptions = result as? SubscriptionTierOptions else {
+            XCTFail("Expected SubscriptionTierOptions type")
+            return
+        }
+
+        XCTAssertEqual(tierOptions.platform, .ios)
+        XCTAssertEqual(tierOptions.products.count, 1)
+        XCTAssertEqual(tierOptions.products[0].tier, .plus)
+        XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should have purchase options when purchase is allowed")
+    }
+
+    func testGetSubscriptionTierOptions_WhenProTierDisabled_PassesFalseToIncludeProTier() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = false
+        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
+        
+        let tierOptionsWithPurchase = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: [
+                        SubscriptionOption(id: "1",
+                                           cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
+                                           offer: nil)
+                    ]
+                )
+            ]
+        )
+        
+        mockSubscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
+
+        // When
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        XCTAssertEqual(mockSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, false, "Should pass false to includeProTier when Pro tier is disabled")
+        
+        guard let tierOptions = result as? SubscriptionTierOptions else {
+            XCTFail("Expected SubscriptionTierOptions type")
+            return
+        }
+
+        XCTAssertEqual(tierOptions.platform, .ios)
+        XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should still have purchase options when purchase is allowed")
+    }
+
+    func testGetSubscriptionTierOptions_WhenPurchaseNotAllowed_StripsPurchaseOptions() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = true
+        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = false
+        
+        let tierOptionsWithPurchase = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: [
+                        SubscriptionOption(id: "1",
+                                           cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
+                                           offer: nil)
+                    ]
+                )
+            ]
+        )
+        
+        mockSubscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
+
+        // When
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        XCTAssertEqual(mockSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should still pass Pro tier flag correctly")
+        
+        guard let tierOptions = result as? SubscriptionTierOptions else {
+            XCTFail("Expected SubscriptionTierOptions type")
+            return
+        }
+
+        XCTAssertEqual(tierOptions.platform, .ios)
+        XCTAssertTrue(tierOptions.products[0].options.isEmpty, "Should strip purchase options when purchase is not allowed")
+    }
+
+    func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
+        // Given
+        mockSubscriptionManager.subscriptionTierOptionsResult = .failure(StoreError.tieredProductsNoProductsAvailable)
+
+        // When
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        guard let tierOptions = result as? SubscriptionTierOptions else {
+            XCTFail("Expected SubscriptionTierOptions type")
+            return
+        }
+
+        XCTAssertEqual(tierOptions.platform, .ios)
+        XCTAssertTrue(tierOptions.products.isEmpty, "Should return empty tier options when none are available")
+    }
+
+    // MARK: - Tier Options Pixel Tests
+
+    func testGetSubscriptionTierOptions_AlwaysFiresRequestedPixel() async throws {
+        // Given
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        mockSubscriptionManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.requestedCalled, "Should fire requested pixel")
+    }
+
+    func testGetSubscriptionTierOptions_OnSuccess_FiresSuccessPixel() async throws {
+        // Given
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        mockSubscriptionManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.successCalled, "Should fire success pixel")
+        XCTAssertFalse(mockTierEventReporter.failureCalled, "Should not fire failure pixel on success")
+    }
+
+    func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
+        // Given
+        mockSubscriptionManager.subscriptionTierOptionsResult = .failure(StoreError.tieredProductsNoProductsAvailable)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.failureCalled, "Should fire failure pixel")
+        XCTAssertNotNil(mockTierEventReporter.failureError, "Should include error in failure pixel")
+        XCTAssertFalse(mockTierEventReporter.successCalled, "Should not fire success pixel on failure")
+    }
+
+    func testGetSubscriptionTierOptions_WithProTierPresent_FiresUnexpectedProTierPixel() async throws {
+        // Given
+        let tierOptionsWithProTier = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                ),
+                SubscriptionTier(
+                    tier: .pro,
+                    features: [TierFeature(product: .networkProtection, name: .pro)],
+                    options: []
+                )
+            ]
+        )
+        mockSubscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithProTier)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.unexpectedProTierCalled, "Should fire unexpected pro tier pixel")
+    }
+
+    func testGetSubscriptionTierOptions_WithoutProTier_DoesNotFireUnexpectedProTierPixel() async throws {
+        // Given
+        let tierOptionsWithoutProTier = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        mockSubscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithoutProTier)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
+
+        // Then
+        XCTAssertFalse(mockTierEventReporter.unexpectedProTierCalled, "Should not fire unexpected pro tier pixel")
+    }
+
+    @MainActor
+    func testAppStoreSuccess_EmitsWidePixelWithContextAndDurations() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        let storeManager = StorePurchaseManagerMock()
+        storeManager.isEligibleForFreeTrialResult = true
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
+        XCTAssertEqual(started.purchasePlatform, .appStore)
+        XCTAssertEqual(started.subscriptionIdentifier, "yearly")
+        XCTAssertEqual(started.freeTrialEligible, true)
+        XCTAssertEqual(started.entryPoint, .settings)
+
+        let updated = try XCTUnwrap(mockWideEvent.updates.last as? SubscriptionPurchaseWideEventData)
+        XCTAssertNotNil(updated.activateAccountDuration?.start)
+        XCTAssertNotNil(updated.activateAccountDuration?.end)
+
+        let completion = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertTrue(completion.0 is SubscriptionPurchaseWideEventData)
+        XCTAssertEqual(completion.1, .success(reason: nil))
+    }
+
+    func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appSettings.rawValue),
+            .settings)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.onboarding.rawValue),
+            .onboarding)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.existingUserPromo.rawValue),
+            .appPromotion)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.newTabMenu.rawValue),
+            .newTabPage)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.duckAISettings.rawValue),
+            .duckAI)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.toolbarVPN.rawValue),
+            .vpn)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: nil), .web)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
+    }
+
+    @MainActor
+    func testAppStoreCancelled_EmitsWideEventCancelled() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_onboarding_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
+
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let completion = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertEqual(completion.1, .cancelled)
+    }
+
+    @MainActor
+    func testOriginPrecedence_UsesAttributionOriginOverURL() async throws {
+        let urlOrigin = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: urlOrigin)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        _ = await sut.subscriptionSelected(params: ["id": "monthly"], original: message)
+
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
+        XCTAssertEqual(started.entryPoint, .settings)
+    }
+
+    // MARK: - SubscriptionChangeSelected Tests
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenTierChangeSucceeds_SetsIdleStatus() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .success("mock-transaction-jws")
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertNil(sut.transactionError)
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+        XCTAssertEqual(purchaseFlow.changeTierSubscriptionIdentifier, "yearly-pro")
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenUserCancels_SetsCancelledError() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .failure(.cancelledByUser)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .cancelledByUser)
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenPurchaseFails_SetsPurchaseFailedError() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .failure(.purchaseFailed(NSError(domain: "test", code: 0)))
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .purchaseFailed)
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenCompletionFails_SetsMissingEntitlementsError() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .success("mock-transaction-jws")
+        purchaseFlow.completeSubscriptionPurchaseResult = .failure(.missingEntitlements)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .missingEntitlements)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenInvalidParams_ReturnsNilWithoutCallingFlow() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMock()
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        // Invalid params - missing "id"
+        let params: [String: Any] = ["change": "upgrade"]
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        let result = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertFalse(purchaseFlow.changeTierCalled)
+        XCTAssertEqual(sut.transactionStatus, .idle)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_CallsChangeTierWithCorrectIdentifier() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .failure(.cancelledByUser)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        let params: [String: Any] = ["id": "monthly-plus", "change": "downgrade"]
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+        XCTAssertEqual(purchaseFlow.changeTierSubscriptionIdentifier, "monthly-plus")
+    }
+    
+    // MARK: - Pending Transaction Tests
+    
+    @MainActor
+    func testSubscriptionSelected_WhenTransactionPendingAuthentication_CallsMarkPurchasePending() async throws {
+        // Given
+        let mockPendingTransactionHandler = MockPendingTransactionHandler()
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.transactionPendingAuthentication)
+        
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: mockPendingTransactionHandler
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: "",
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: mockPendingTransactionHandler,
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+        
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+        
+        // When
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+        
+        // Then
+        XCTAssertTrue(mockPendingTransactionHandler.markPurchasePendingCalled, "markPurchasePending should be called when transaction is pending authentication")
+    }
+
+    // MARK: - Plan Change Wide Event Tests
+
+    @MainActor
+    func testTierChangeSuccess_EmitsWideEventSuccess() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
+
+        // Set up existing subscription
+        let existingSubscription = DuckDuckGoSubscription(
+            productId: "ddg.privacy.plus.monthly.renews.us",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(existingSubscription)
+
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .success("jws-token")
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.monthly.renews.us", "change": "upgrade"], original: message)
+
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(started.purchasePlatform, .appStore)
+        XCTAssertEqual(started.fromPlan, "ddg.privacy.plus.monthly.renews.us")
+        XCTAssertEqual(started.toPlan, "ddg.privacy.pro.monthly.renews.us")
+        XCTAssertEqual(started.changeType, .upgrade)
+
+        let completion = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertTrue(completion.0 is SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(completion.1, .success(reason: nil))
+
+        XCTAssertTrue(purchaseFlow.changeTierCalled)
+        XCTAssertEqual(purchaseFlow.changeTierSubscriptionIdentifier, "ddg.privacy.pro.monthly.renews.us")
+    }
+
+    @MainActor
+    func testTierChangeCancelled_EmitsWideEventCancelled() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
+
+        // Set up existing subscription
+        let existingSubscription = DuckDuckGoSubscription(
+            productId: "ddg.privacy.plus.monthly.renews.us",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(existingSubscription)
+
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .failure(.cancelledByUser)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.monthly.renews.us", "change": "upgrade"], original: message)
+
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+
+        let completion = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertTrue(completion.0 is SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(completion.1, .cancelled)
+    }
+
+    @MainActor
+    func testTierChangeFailure_EmitsWideEventFailure() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
+
+        // Set up existing subscription
+        let existingSubscription = DuckDuckGoSubscription(
+            productId: "ddg.privacy.pro.yearly.renews.us",
+            name: "Pro Yearly",
+            billingPeriod: .yearly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(365 * 24 * 60 * 60),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .pro,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(existingSubscription)
+
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .failure(.purchaseFailed(NSError(domain: "Test", code: -1)))
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.plus.yearly.renews.us", "change": "downgrade"], original: message)
+
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(started.changeType, .downgrade)
+
+        let completion = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertTrue(completion.0 is SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(completion.1, .failure)
+    }
+
+    @MainActor
+    func testTierChangeWithNilChangeType_EmitsWideEventWithNilChangeType() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
+
+        // Set up existing subscription
+        let existingSubscription = DuckDuckGoSubscription(
+            productId: "ddg.privacy.pro.monthly.renews.us",
+            name: "Pro Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .apple,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .pro,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(existingSubscription)
+
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .success("jws-token")
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        // No "change" parameter provided
+        _ = await sut.subscriptionChangeSelected(params: ["id": "ddg.privacy.pro.yearly.renews.us"], original: message)
+
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPlanChangeWideEventData)
+        XCTAssertNil(started.changeType)
+        XCTAssertEqual(started.fromPlan, "ddg.privacy.pro.monthly.renews.us")
+        XCTAssertEqual(started.toPlan, "ddg.privacy.pro.yearly.renews.us")
+    }
+
+    // MARK: - Routing by effectivePlatform
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenEffectivePlatformIsStripe_DoesNotCallPerformTierChange_StartsStripeWideEvent() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
+
+        let stripeSubscription = DuckDuckGoSubscription(
+            productId: "stripe-plus-monthly",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(stripeSubscription)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        let broker = UserScriptMessageBroker(context: "test", requiresRunInPageContentWorld: true)
+        sut.with(broker: broker)
+
+        mockAppStorePurchaseFlow.changeTierCalled = false
+
+        _ = await sut.subscriptionChangeSelected(params: ["id": "stripe-yearly-pro", "change": "upgrade"], original: message)
+
+        XCTAssertFalse(mockAppStorePurchaseFlow.changeTierCalled, "Stripe path must not call performTierChange")
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(started.purchasePlatform, .stripe)
+        XCTAssertEqual(started.fromPlan, "stripe-plus-monthly")
+        XCTAssertEqual(started.toPlan, "stripe-yearly-pro")
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenEffectivePlatformIsStripe_AndGetTokenFails_SetsErrorAndCompletesWideEventWithFailure() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
+
+        let stripeSubscription = DuckDuckGoSubscription(
+            productId: "stripe-plus-monthly",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(stripeSubscription)
+        mockSubscriptionManager.resultTokenContainer = nil
+
+        let broker = UserScriptMessageBroker(context: "test", requiresRunInPageContentWorld: true)
+        sut.with(broker: broker)
+
+        _ = await sut.subscriptionChangeSelected(params: ["id": "stripe-yearly-pro", "change": "upgrade"], original: message)
+
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .otherRestoreError)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let completion = try XCTUnwrap(mockWideEvent.completions.first)
+        XCTAssertTrue(completion.0 is SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(completion.1, .failure)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenEffectivePlatformIsGoogle_SetsErrorAndDoesNotCallPerformTierChange() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
+
+        let googleSubscription = DuckDuckGoSubscription(
+            productId: "google-plus-monthly",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .google,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(googleSubscription)
+
+        mockAppStorePurchaseFlow.changeTierCalled = false
+
+        _ = await sut.subscriptionChangeSelected(params: ["id": "yearly-pro", "change": "upgrade"], original: message)
+
+        XCTAssertFalse(mockAppStorePurchaseFlow.changeTierCalled, "Google platform must not call performTierChange")
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .otherRestoreError)
+    }
+
+    @MainActor
+    func testSubscriptionChangeSelected_WhenEffectivePlatformIsUnknown_SetsErrorAndDoesNotCallPerformTierChange() async throws {
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "", webView: webView)
+
+        let unknownSubscription = DuckDuckGoSubscription(
+            productId: "unknown-plus-monthly",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .unknown,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        mockSubscriptionManager.resultSubscription = .success(unknownSubscription)
+
+        mockAppStorePurchaseFlow.changeTierCalled = false
+
+        _ = await sut.subscriptionChangeSelected(params: ["id": "yearly-pro", "change": "upgrade"], original: message)
+
+        XCTAssertFalse(mockAppStorePurchaseFlow.changeTierCalled, "Unknown platform must not call performTierChange")
+        XCTAssertEqual(sut.transactionStatus, .idle)
+        XCTAssertEqual(sut.transactionError, .otherRestoreError)
+    }
+
+    // MARK: - Notification permission & expiration reminder
+
+    private func makeFeature(notificationCenter: MockUNUserNotificationCenter,
+                             scheduler: SubscriptionExpirationReminderSchedulerMock? = nil,
+                             appStorePurchaseFlow: AppStorePurchaseFlowMock? = nil,
+                             isExpirationReminderFeatureEnabled: @escaping () -> Bool = { true }) -> DefaultSubscriptionPagesUseSubscriptionFeature {
+        let purchaseFlow = appStorePurchaseFlow ?? mockAppStorePurchaseFlow!
+        let executer = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        return DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: "",
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            tierEventReporter: mockTierEventReporter,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: executer,
+            requestValidator: mockRequestValidator,
+            userNotificationCenter: notificationCenter,
+            expirationReminderScheduler: scheduler,
+            isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+    }
+
+    func testGetUserSettings_WhenAuthorized_ReturnsGranted() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .authorized
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertEqual(result.notificationsPermission, .granted)
+    }
+
+    func testGetUserSettings_WhenProvisional_ReturnsDenied() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .provisional
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        // .provisional has no programmatic upgrade path — only Settings can raise it to .authorized.
+        // Bucketing it with .denied gives FE a clear "needs Settings change" signal.
+        XCTAssertEqual(result.notificationsPermission, .denied)
+    }
+
+    func testGetUserSettings_WhenDenied_ReturnsDenied() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .denied
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertEqual(result.notificationsPermission, .denied)
+    }
+
+    func testGetUserSettings_WhenNotDetermined_ReturnsNotDetermined() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .notDetermined
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertEqual(result.notificationsPermission, .notDetermined)
+    }
+
+    func testRequestNotificationsPermission_WhenPreviouslyDenied_ReturnsFalseWithoutPrompting() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .denied
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertFalse(result.granted)
+        XCTAssertFalse(center.didRequestAuthorization,
+                       "iOS must not invoke requestAuthorization when status is .denied — the OS would not surface a prompt")
+    }
+
+    func testRequestNotificationsPermission_WhenAuthorized_ReturnsTrueWithoutPrompting() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .authorized
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertTrue(result.granted)
+        XCTAssertFalse(center.didRequestAuthorization)
+    }
+
+    func testRequestNotificationsPermission_WhenNotDeterminedAndUserAllows_PromptsAndReturnsTrue() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .notDetermined
+        center.requestAuthorizationResult = true
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertTrue(result.granted)
+        XCTAssertTrue(center.didRequestAuthorization)
+    }
+
+    func testRequestNotificationsPermission_WhenNotDeterminedAndUserDenies_PromptsAndReturnsFalse() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .notDetermined
+        center.requestAuthorizationResult = false
+        let sut = makeFeature(notificationCenter: center)
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertFalse(result.granted)
+        XCTAssertTrue(center.didRequestAuthorization)
+    }
+
+    func testRequestNotificationsPermission_WhenFeatureFlagOff_ReturnsFalseWithoutPrompting() async throws {
+        let center = MockUNUserNotificationCenter()
+        center.authorizationStatus = .notDetermined
+        let sut = makeFeature(notificationCenter: center, isExpirationReminderFeatureEnabled: { false })
+
+        let response = await sut.requestNotificationsPermission(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse)
+
+        XCTAssertFalse(result.granted)
+        XCTAssertFalse(center.didRequestAuthorization,
+                       "Prompt must not fire when the experiment flag is off — the user would be granting permission for nothing")
+    }
+
+    @MainActor
+    func testSubscriptionSelected_WhenScheduleNotificationProvidedAndPurchaseSucceeds_CallsSchedulerWithDays() async throws {
+        let center = MockUNUserNotificationCenter()
+        let scheduler = SubscriptionExpirationReminderSchedulerMock()
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let sut = makeFeature(notificationCenter: center, scheduler: scheduler, appStorePurchaseFlow: purchaseFlow)
+
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        let params: [String: Any] = [
+            "id": "yearly",
+            "scheduleNotification": ["daysBeforeCancel": 7]
+        ]
+        _ = await sut.subscriptionSelected(params: params, original: message)
+
+        XCTAssertEqual(scheduler.scheduledDaysBeforeCancel, [7],
+                       "Scheduler must be invoked once with the daysBeforeCancel value from the payload")
+    }
+
+    @MainActor
+    func testSubscriptionSelected_WhenScheduleNotificationOmitted_DoesNotCallScheduler() async throws {
+        let center = MockUNUserNotificationCenter()
+        let scheduler = SubscriptionExpirationReminderSchedulerMock()
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .success((transactionJWS: "jws", accountCreationDuration: nil))
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let sut = makeFeature(notificationCenter: center, scheduler: scheduler, appStorePurchaseFlow: purchaseFlow)
+
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
+
+        XCTAssertTrue(scheduler.scheduledDaysBeforeCancel.isEmpty,
+                      "Scheduler must not be invoked when scheduleNotification is absent from the payload")
+    }
+
+    @MainActor
+    func testSubscriptionSelected_WhenScheduleNotificationProvidedButPurchaseFails_DoesNotCallScheduler() async throws {
+        let center = MockUNUserNotificationCenter()
+        let scheduler = SubscriptionExpirationReminderSchedulerMock()
+
+        let storeManager = StorePurchaseManagerMock()
+        mockSubscriptionManager.resultStorePurchaseManager = storeManager
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+
+        let sut = makeFeature(notificationCenter: center, scheduler: scheduler, appStorePurchaseFlow: purchaseFlow)
+
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+
+        let params: [String: Any] = [
+            "id": "yearly",
+            "scheduleNotification": ["daysBeforeCancel": 7]
+        ]
+        _ = await sut.subscriptionSelected(params: params, original: message)
+
+        XCTAssertTrue(scheduler.scheduledDaysBeforeCancel.isEmpty,
+                      "Scheduler must not be invoked when the purchase did not complete successfully")
+    }
+
+    // MARK: - Bridge result payloads
+    //
+    // These tests pin the JSON shape of the `result` payloads our handlers produce.
+    // The broker's envelope wrapping (context / featureName / id) is covered by
+    // `UserScriptMessagingTests.testDelegateRespondsWithResult` in BrowserServicesKit.
+    // Renaming a key here is a breaking change to the FE↔Native contract.
+
+    func testUserSettingsResponse_encodesGranted() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse(notificationsPermission: .granted)
+        XCTAssertEqual(try jsonString(response), "{\"notificationsPermission\":\"granted\"}")
+    }
+
+    func testUserSettingsResponse_encodesDenied() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse(notificationsPermission: .denied)
+        XCTAssertEqual(try jsonString(response), "{\"notificationsPermission\":\"denied\"}")
+    }
+
+    func testUserSettingsResponse_encodesNotDetermined() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse(notificationsPermission: .notDetermined)
+        XCTAssertEqual(try jsonString(response), "{\"notificationsPermission\":\"notDetermined\"}")
+    }
+
+    func testNotificationsPermissionResponse_encodesGrantedTrue() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse(granted: true)
+        XCTAssertEqual(try jsonString(response), "{\"granted\":true}")
+    }
+
+    func testNotificationsPermissionResponse_encodesGrantedFalse() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionResponse(granted: false)
+        XCTAssertEqual(try jsonString(response), "{\"granted\":false}")
+    }
+
+    func testScheduleNotificationPreference_decodesFromExpectedShape() throws {
+        let raw = "{\"daysBeforeCancel\":7}"
+        let preference = try JSONDecoder().decode(DefaultSubscriptionPagesUseSubscriptionFeature.ScheduleNotificationPreference.self,
+                                                  from: Data(raw.utf8))
+        XCTAssertEqual(preference.daysBeforeCancel, 7)
+    }
+
+    private func jsonString<T: Encodable>(_ value: T) throws -> String {
+        let data = try JSONEncoder().encode(value)
+        return try XCTUnwrap(String(data: data, encoding: .utf8))
+    }
+}
+
+final class MockURLWebView: WKWebView {
+    private let mockedURL: URL
+    init(url: URL) {
+        self.mockedURL = url
+        super.init(frame: .zero, configuration: WKWebViewConfiguration())
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override var url: URL? { mockedURL }
+}
+
+final class MockPendingTransactionHandler: PendingTransactionHandling {
+    var markPurchasePendingCalled = false
+    var handleSubscriptionActivatedCalled = false
+    var handlePendingTransactionApprovedCalled = false
+    
+    func markPurchasePending() {
+        markPurchasePendingCalled = true
+    }
+    
+    func handleSubscriptionActivated() {
+        handleSubscriptionActivatedCalled = true
+    }
+    
+    func handlePendingTransactionApproved() {
+        handlePendingTransactionApprovedCalled = true
+    }
+}
+
+
+final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
+    var requestedCalled = false
+    var successCalled = false
+    var failureCalled = false
+    var failureError: Error?
+    var unexpectedProTierCalled = false
+
+    func reportTierOptionsRequested() {
+        requestedCalled = true
+    }
+
+    func reportTierOptionsSuccess() {
+        successCalled = true
+    }
+
+    func reportTierOptionsFailure(error: Error) {
+        failureCalled = true
+        failureError = error
+    }
+
+    func reportTierOptionsUnexpectedProTier() {
+        unexpectedProTierCalled = true
     }
 }

@@ -21,7 +21,7 @@ import Foundation
 
 final class UserText {
 
-    static let credentialProviderActivatedTitle = NSLocalizedString("credential.provider.activated.title", value: "Autofill Passwords activated!", comment: "The title of the screen confirming DuckDuckGo can now be used for autofilling passwords")
+    static let credentialProviderActivatedTitle = NSLocalizedString("credential.provider.activated.title", value: "Autofill passwords activated!", comment: "The title of the screen confirming DuckDuckGo can now be used for autofilling passwords")
 
     static let credentialProviderActivatedButton = NSLocalizedString("credential.provider.activated.button", value: "Open DuckDuckGo", comment: "Title of button to launch the DuckDuckGo app")
 

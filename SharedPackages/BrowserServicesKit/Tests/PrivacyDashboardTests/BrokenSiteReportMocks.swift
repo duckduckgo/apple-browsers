@@ -39,7 +39,6 @@ struct BrokenSiteReportMocks {
                          protectionsState: true,
                          reportFlow: .appMenu,
                          siteType: .desktop,
-                         atb: "test",
                          model: "test",
                          errors: nil,
                          httpStatusCodes: nil,
@@ -51,7 +50,9 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
-                         isPirEnabled: nil)
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         pageLoadTiming: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
                          category: "test",
@@ -77,7 +78,10 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
-                         isPirEnabled: nil)
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         lastTabSuspension: nil,
+                         pageLoadTiming: nil)
 #endif
     }
 
@@ -99,7 +103,6 @@ struct BrokenSiteReportMocks {
                          protectionsState: true,
                          reportFlow: .appMenu,
                          siteType: .desktop,
-                         atb: "test",
                          model: "test",
                          errors: nil,
                          httpStatusCodes: nil,
@@ -111,7 +114,9 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
-                         isPirEnabled: nil)
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         pageLoadTiming: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://somethingelse.zz")!,
                          category: "test",
@@ -137,7 +142,10 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
-                         isPirEnabled: nil)
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         lastTabSuspension: nil,
+                         pageLoadTiming: nil)
 #endif
     }
 
@@ -159,7 +167,6 @@ struct BrokenSiteReportMocks {
                          protectionsState: true,
                          reportFlow: .appMenu,
                          siteType: .desktop,
-                         atb: "test",
                          model: "test",
                          errors: nil,
                          httpStatusCodes: nil,
@@ -171,7 +178,9 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
-                         isPirEnabled: nil)
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         pageLoadTiming: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://www.subdomain.example.com/some/pathname?t=param#aaa")!,
                          category: "test",
@@ -197,7 +206,146 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: "experiment1:control,experiment2:treatment",
-                         isPirEnabled: nil)
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         lastTabSuspension: nil,
+                         pageLoadTiming: nil)
+#endif
+    }
+
+    static var reportWithWebExtensions: BrokenSiteReport {
+#if os(iOS)
+        BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
+                         category: "test",
+                         description: "test",
+                         osVersion: "test",
+                         manufacturer: "Apple",
+                         upgradedHttps: true,
+                         tdsETag: "test",
+                         configVersion: "123456789",
+                         blockedTrackerDomains: [],
+                         installedSurrogates: [],
+                         isGPCEnabled: true,
+                         ampURL: "test",
+                         urlParametersRemoved: true,
+                         protectionsState: true,
+                         reportFlow: .appMenu,
+                         siteType: .desktop,
+                         model: "test",
+                         errors: nil,
+                         httpStatusCodes: nil,
+                         openerContext: nil,
+                         vpnOn: false,
+                         jsPerformance: nil,
+                         userRefreshCount: 0,
+                         variant: "",
+                         cookieConsentInfo: nil,
+                         debugFlags: "",
+                         privacyExperiments: "",
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         loadedWebExtensions: "embedded,adBlocking",
+                         adBlockingExtensionScriptletsVersion: "2.0.0")
+#else
+        BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
+                         category: "test",
+                         description: "test",
+                         osVersion: "test",
+                         manufacturer: "Apple",
+                         upgradedHttps: true,
+                         tdsETag: "test",
+                         configVersion: "123456789",
+                         blockedTrackerDomains: [],
+                         installedSurrogates: [],
+                         isGPCEnabled: true,
+                         ampURL: "test",
+                         urlParametersRemoved: true,
+                         protectionsState: true,
+                         reportFlow: .appMenu,
+                         errors: nil,
+                         httpStatusCodes: nil,
+                         openerContext: nil,
+                         vpnOn: false,
+                         jsPerformance: nil,
+                         userRefreshCount: 0,
+                         cookieConsentInfo: nil,
+                         debugFlags: "",
+                         privacyExperiments: "",
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         lastTabSuspension: nil,
+                         pageLoadTiming: nil,
+                         loadedWebExtensions: "embedded,adBlocking",
+                         adBlockingExtensionScriptletsVersion: "2.0.0")
+#endif
+    }
+
+    static let decodedBreakageData = """
+            {"webDetection":[{"detectorId":"adwalls.generic_en","detected":true}],"detectorData":{"botDetection":{"detected":false,"type":"botDetection","results":[]}}}
+            """
+    static var reportWithBreakageData: BrokenSiteReport {
+#if os(iOS)
+        BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
+                         category: "test",
+                         description: "test",
+                         osVersion: "test",
+                         manufacturer: "Apple",
+                         upgradedHttps: true,
+                         tdsETag: "test",
+                         configVersion: "123456789",
+                         blockedTrackerDomains: [],
+                         installedSurrogates: [],
+                         isGPCEnabled: true,
+                         ampURL: "test",
+                         urlParametersRemoved: true,
+                         protectionsState: true,
+                         reportFlow: .appMenu,
+                         siteType: .desktop,
+                         model: "test",
+                         errors: nil,
+                         httpStatusCodes: nil,
+                         openerContext: nil,
+                         vpnOn: false,
+                         jsPerformance: nil,
+                         userRefreshCount: 0,
+                         variant: "",
+                         cookieConsentInfo: nil,
+                         debugFlags: "",
+                         privacyExperiments: "",
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         pageLoadTiming: nil,
+                         breakageData: decodedBreakageData)
+#else
+        BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
+                         category: "test",
+                         description: "test",
+                         osVersion: "test",
+                         manufacturer: "Apple",
+                         upgradedHttps: true,
+                         tdsETag: "test",
+                         configVersion: "123456789",
+                         blockedTrackerDomains: [],
+                         installedSurrogates: [],
+                         isGPCEnabled: true,
+                         ampURL: "test",
+                         urlParametersRemoved: true,
+                         protectionsState: true,
+                         reportFlow: .appMenu,
+                         errors: nil,
+                         httpStatusCodes: nil,
+                         openerContext: nil,
+                         vpnOn: false,
+                         jsPerformance: nil,
+                         userRefreshCount: 0,
+                         cookieConsentInfo: nil,
+                         debugFlags: "",
+                         privacyExperiments: "",
+                         isPirEnabled: nil,
+                         isForceDarkModeEnabled: nil,
+                         lastTabSuspension: nil,
+                         pageLoadTiming: nil,
+                         breakageData: decodedBreakageData)
 #endif
     }
 }

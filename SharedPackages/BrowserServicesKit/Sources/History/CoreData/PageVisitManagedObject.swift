@@ -32,6 +32,7 @@ extension PageVisitManagedObject {
 
     @NSManaged public var date: Date?
     @NSManaged public var historyEntry: BrowsingHistoryEntryManagedObject?
+    @NSManaged public var tabHistory: TabHistoryManagedObject?
 
 }
 

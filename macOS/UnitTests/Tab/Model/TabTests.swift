@@ -17,14 +17,17 @@
 //
 
 import Combine
-import Navigation
+import FeatureFlags_macOS
+import DDGNavigation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import SharedTestUtilities
+import WebKit
 import XCTest
-import BrowserServicesKit
 
 @testable import DuckDuckGo_Privacy_Browser
 
 // swiftlint:disable opening_brace
-@available(macOS 12.0, *)
 final class TabTests: XCTestCase {
 
     struct URLs {
@@ -49,7 +52,7 @@ final class TabTests: XCTestCase {
         contentBlockingMock = ContentBlockingMock()
         privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+        privacyConfiguration.isFeatureEnabledCheck = { _, _ in
             return false
         }
 
@@ -76,6 +79,22 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(tab.content, .url(.duckDuckGo, source: .link))
     }
 
+    @MainActor func testSpecialTabsCanBePinned() {
+        let tabs: [Tab.Content] = [
+            .subscription(.aboutDuckDuckGo),
+            .identityTheftRestoration(.aboutDuckDuckGo),
+            .dataBrokerProtection(.subscribed),
+            .anyHistoryPane,
+            .settings(pane: .general),
+            .newtab,
+            .bookmarks
+        ]
+
+        for tab in tabs {
+            XCTAssertTrue(tab.canBePinned)
+        }
+    }
+
     // MARK: - Equality
 
     @MainActor func testWhenTabsAreIdenticalThenTheyAreEqual() {
@@ -100,7 +119,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = false
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider)
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertFalse(tab.canKillWebContentProcess)
@@ -110,7 +129,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider)
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertFalse(tab.canKillWebContentProcess)
@@ -120,7 +139,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugging])
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider, featuresStub: [FeatureFlag.tabCrashDebugging.rawValue: true])
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertTrue(tab.canKillWebContentProcess)
@@ -132,7 +151,7 @@ final class TabTests: XCTestCase {
         tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         tab.url = .duckDuckGo
         let webViewMock = WebViewMock()
-        let frameInfo = WKFrameInfoMock(webView: webViewMock, securityOrigin: WKSecurityOriginMock.new(url: .duckDuckGo), request: URLRequest(url: .duckDuckGo), isMainFrame: true)
+        let frameInfo = WKFrameInfo.mock(for: webViewMock, isMain: true, securityOrigin: WKSecurityOriginMock.new(url: .duckDuckGo), request: URLRequest(url: .duckDuckGo))
         tab.webView(webViewMock, runJavaScriptAlertPanelWithMessage: "Alert", initiatedByFrame: frameInfo) { }
         XCTAssertNotNil(tab.userInteractionDialog)
         tab.url = .duckDuckGoMorePrivacyInfo
@@ -229,14 +248,42 @@ final class TabTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSameDocumentNavigationOccursThenSameDocumentNavigationPublisherEmits() {
+        schemeHandler.middleware = [{ _ in
+            .ok(.html("<html><body>test</body></html>"))
+        }]
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
+
+        // Wait for the initial full-page navigation to finish before triggering pushState.
+        let eDidFinish = expectation(description: "initial navigation finished")
+        let finishCancellable = tab.webViewDidFinishNavigationPublisher.sink {
+            eDidFinish.fulfill()
+        }
+        tab.setContent(.url(urls.url, source: .link))
+        wait(for: [eDidFinish], timeout: 5)
+        finishCancellable.cancel()
+
+        // A same-document navigation (history.pushState) must emit on the dedicated publisher,
+        // since webViewDidFinishNavigationPublisher filters these out.
+        let eSameDocument = expectation(description: "same-document navigation published")
+        tab.webViewDidPerformSameDocumentNavigationPublisher.sink {
+            eSameDocument.fulfill()
+        }.store(in: &cancellables)
+
+        tab.webView.evaluateJavaScript("history.pushState({}, '', '/pushed')")
+
+        wait(for: [eSameDocument], timeout: 5)
+    }
+
+    @MainActor
     func testWhenGoingBackInvalidatingBackItem_BackForwardButtonsDoNotBlink() throws {
         var didFinishExpectations = [String: XCTestExpectation]()
         var eDidRedirect: XCTestExpectation!
         let extensionsBuilder = TestTabExtensionsBuilder(load: []) { [urls, unowned self] builder in { _, _ in
             builder.add {
                 TestsClosureNavigationResponderTabExtension(.init { [unowned self] navigationAction, _ in
-                    if navigationAction.url == urls.url2 {
-                        return .redirectInvalidatingBackItemIfNeeded(navigationAction) { navigator in
+                    if navigationAction.url == urls.url2, let mainFrameTarget = navigationAction.mainFrameTarget {
+                        return .redirect(mainFrameTarget) { navigator in
                             eDidRedirect.fulfill()
                             didFinishExpectations[urls.url3.absoluteString] = self.expectation(description: "didFinish \(urls.url3.absoluteString)")
                             navigator.load(URLRequest(url: urls.url3))
@@ -263,7 +310,7 @@ final class TabTests: XCTestCase {
             return .ok(.html(""))
         }]
 
-        // initial page
+        // initial page: http://testhost.com/
         didFinishExpectations[urls.url.absoluteString] = expectation(description: "didFinish \(urls.url.absoluteString)")
         tab.setContent(.url(urls.url, source: .link))
         waitForExpectations(timeout: 5)
@@ -291,6 +338,7 @@ final class TabTests: XCTestCase {
 
         eDidRedirect = expectation(description: "did redirect")
 
+        // navigate to https://localhost/1
         tab.setContent(.url(urls.url1, source: .link))
         waitForExpectations(timeout: 5)
         // "didFinish \(urls.url3.absoluteString)" expectation is set in redirect handler above
@@ -299,6 +347,7 @@ final class TabTests: XCTestCase {
         XCTAssertTrue(tab.canGoBack)
         XCTAssertFalse(tab.canGoForward)
         XCTAssertEqual(tab.webView.url, urls.url3)
+        XCTAssertEqual(tab.webView.backForwardList.currentItem?.url, urls.url3)
         XCTAssertEqual(tab.backHistoryItems.map(\.url), [urls.url])
         XCTAssertEqual(tab.forwardHistoryItems, [])
 
@@ -312,8 +361,8 @@ final class TabTests: XCTestCase {
         let extensionsBuilder = TestTabExtensionsBuilder(load: []) { [urls] builder in { _, _ in
             builder.add {
                 TestsClosureNavigationResponderTabExtension(.init { navigationAction, _ in
-                    if navigationAction.url == urls.url2 {
-                        return .redirectInvalidatingBackItemIfNeeded(navigationAction) { navigator in
+                    if navigationAction.url == urls.url2, let mainFrameTarget = navigationAction.mainFrameTarget {
+                        return .redirect(mainFrameTarget) { navigator in
                             eDidRedirect.fulfill()
                             navigator.load(URLRequest(url: urls.url3))
                         }
@@ -354,15 +403,11 @@ final class TabTests: XCTestCase {
         eDidFinish = expectation(description: "didFinish 2")
 
         // back/forward buttons state shouldn‘t change during the redirect
-        let eCanGoBack = expectation(description: "initial canGoBack: true")
         let c1 = tab.$canGoBack.sink { canGoBack in
             XCTAssertTrue(canGoBack)
-            eCanGoBack.fulfill()
         }
-        let eCanGoForward = expectation(description: "initial canGoForward")
         let c2 = tab.$canGoForward.sink { canGoForward in
             XCTAssertFalse(canGoForward)
-            eCanGoForward.fulfill()
         }
 
         eDidRedirect = expectation(description: "did redirect")
@@ -411,6 +456,61 @@ final class TabTests: XCTestCase {
         tab = Tab(content: .url(.empty, source: .ui), webViewConfiguration: schemeHandler.webViewConfiguration(), burnerMode: BurnerMode(isBurner: true))
 
         XCTAssertFalse(tab.webView.configuration.preferences[.mediaSessionEnabled])
+    }
+
+    // MARK: - canReportBrokenSite
+
+    @MainActor func testCanReportBrokenSiteIsTrueForURLContent() {
+        tab = Tab(content: .url(.duckDuckGo, source: .ui))
+        XCTAssertTrue(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForHistoryContent() {
+        tab = Tab(content: .history(pane: nil))
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForSettingsContent() {
+        tab = Tab(content: .settings(pane: nil))
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForBookmarksContent() {
+        tab = Tab(content: .bookmarks)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForNewtabContent() {
+        tab = Tab(content: .newtab)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsFalseForReleaseNotesContent() {
+        tab = Tab(content: .releaseNotes)
+        XCTAssertFalse(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testCanReportBrokenSiteIsTrueForAIChatContent() {
+        tab = Tab(content: .aiChat(.duckDuckGo))
+        XCTAssertTrue(tab.canReportBrokenSite)
+    }
+
+    @MainActor func testWhenTheOpenDuckAIURLIsSetAgainWithAnotherSourceThenNothingChanges() {
+        let url = URL(string: "https://duck.ai/chat")!
+        tab = Tab(content: .aiChat(url))
+
+        tab.setContent(.aiChat(url, source: .userEntered("duck.ai")))
+
+        XCTAssertEqual(tab.content, .aiChat(url))
+    }
+
+    @MainActor func testWhenAnotherDuckAIURLIsSetThenItsSourceIsKept() {
+        tab = Tab(content: .aiChat(URL(string: "https://duck.ai/chat")!))
+        let otherURL = URL(string: "https://duck.ai/chat?chatID=abc")!
+
+        tab.setContent(.aiChat(otherURL, source: .bookmark(isFavorite: false)))
+
+        XCTAssertEqual(tab.content, .aiChat(otherURL, source: .bookmark(isFavorite: false)))
     }
 
 }

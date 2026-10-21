@@ -1314,6 +1314,10 @@ extension MainViewController {
         performZoomIn(entryPoint: .forMainMenuBarZoomAction)
     }
 
+    @objc func toggleReaderMode(_ sender: Any) {
+        getActiveTabAndIndex()?.tab.readerMode?.toggle()
+    }
+
     func performZoomIn(entryPoint: WebViewZoomEntryPoint) {
         activeTabViewModel?.zoomIn(entryPoint: entryPoint)
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.openZoomPopover(source: .menu)
@@ -1988,6 +1992,11 @@ extension MainViewController: NSMenuItemValidation {
         case #selector(MainViewController.actualSize(_:)):
             return getActiveTabAndIndex()?.tab.webView.canZoomToActualSize == true ||
             getActiveTabAndIndex()?.tab.webView.canResetMagnification == true
+
+        case #selector(MainViewController.toggleReaderMode(_:)):
+            let state = getActiveTabAndIndex()?.tab.readerMode?.state ?? .unavailable
+            menuItem.title = state.isActive ? UserText.readerModeHide : UserText.readerModeShow
+            return state != .unavailable
 
         // Bookmarks
         case #selector(MainViewController.bookmarkThisPage(_:)),

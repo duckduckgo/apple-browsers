@@ -128,6 +128,7 @@ final class MainMenu: NSMenu {
         .withImage(DesignSystemImages.Glyphs.Size12.zoomIn)
     let zoomOutMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomOut, action: #selector(MainViewController.zoomOut), keyEquivalent: "-")
         .withImage(DesignSystemImages.Glyphs.Size12.zoomOut)
+    let toggleReaderModeMenuItem = NSMenuItem(title: UserText.readerModeShow, action: #selector(MainViewController.toggleReaderMode), keyEquivalent: [.command, .shift, "r"])
 
     // MARK: History
     @MainActor
@@ -500,6 +501,7 @@ final class MainMenu: NSMenu {
             zoomInMenuItem
             zoomOutMenuItem
             actualSizeMenuItem
+            toggleReaderModeMenuItem
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuDeveloper) {
@@ -657,6 +659,7 @@ final class MainMenu: NSMenu {
         updateWebExtensionsMenuItem()
         updateAlwaysShowFirstTimeQuitSurvey()
         updateDuckAIChromeButtonMenuItems()
+        toggleReaderModeMenuItem.isHidden = !featureFlagger.isFeatureOn(.readerMode)
 
         alignItemTextWithIconsRecursively()
     }

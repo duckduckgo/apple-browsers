@@ -26,7 +26,7 @@ final class AppleTabOrganizer: TabOrganizing {
     static let maxPromptCharacters = 10_000
 
     private static let topicInstructions = """
-    You sort a person's open browser tabs into at most 5 broad topics. \
+    You sort a person's open browser tabs into at most 7 broad topics. \
     Tabs about the same trip, project or purchase share one topic. \
     Give every tab in the list exactly one label.
     """
@@ -46,8 +46,9 @@ final class AppleTabOrganizer: TabOrganizing {
         switch request {
         case .groupByTopic:
             let session = LanguageModelSession(instructions: Self.topicInstructions)
-            let response = try await session.respond(to: "Tabs:\n\(tabList)", generating: GeneratedTopicResponse.self).content
-            return TabOrganizerProposalBuilder.proposal(from: response.contract, tabs: tabs)
+            let response = try await session.respond(to: "Tabs:\n\(tabList)", generating: GeneratedTopicResponse.self).content.contract
+            let leftovers = try await labelsForSkippedTabs(tabs, after: response)
+            return TabOrganizerProposalBuilder.proposal(from: TopicResponse(labels: response.labels + leftovers), tabs: tabs)
         case .instruction(let text):
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
@@ -61,6 +62,29 @@ final class AppleTabOrganizer: TabOrganizing {
     Each suggestion is an action plus a broad category of tabs, like news, streaming, shopping, travel or work. \
     Never name a single site or brand. Use a different category for each suggestion.
     """
+
+    /// The model often stops before the end of a long list. Skipped tabs get a second, shorter pass
+    /// that reuses the topics from the first one.
+    private func labelsForSkippedTabs(_ tabs: [TabSnapshot], after response: TopicResponse) async throws -> [TopicResponse.Label] {
+        let labelled = Set(response.labels.map(\.tabNumber))
+        let skipped = tabs.indices.map { $0 + 1 }.filter { !labelled.contains($0) }
+        let topics = Array(Set(response.labels.map(\.topic))).sorted()
+        guard !skipped.isEmpty, !topics.isEmpty else { return [] }
+
+        let list = skipped.map { number in
+            let tab = tabs[number - 1]
+            return "\(number). \(tab.title) — \(tab.host)\(tab.path)"
+        }.joined(separator: "\n")
+        let prompt = """
+        Existing topics: \(topics.joined(separator: ", "))
+
+        Give each of these tabs one topic. Reuse an existing topic when it fits, otherwise name a new broad topic.
+        Tabs:
+        \(list)
+        """
+        let session = LanguageModelSession(instructions: Self.topicInstructions)
+        return try await session.respond(to: prompt, generating: GeneratedTopicResponse.self).content.contract.labels
+    }
 
     /// Commands tailored to the open tabs, shown as one-click suggestions.
     func suggestions(for tabs: [TabSnapshot]) async throws -> [String] {

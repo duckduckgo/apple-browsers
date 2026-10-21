@@ -22,7 +22,7 @@ import Foundation
 /// merges topics that differ only in case, and collects whatever the model left out.
 enum TabOrganizerProposalBuilder {
 
-    static let maxTopicGroups = 6
+    static let maxTopicGroups = 8
     static let otherGroupName = "Other"
     static let everythingElseGroupName = "Everything else"
 

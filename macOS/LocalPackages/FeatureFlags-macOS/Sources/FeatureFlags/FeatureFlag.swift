@@ -131,7 +131,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
     case cpmNetworkProcessRecovery
     /// Failsafe for keeping the embedded CPM origin stable across context reloads.
-    /// https://app.asana.com/1/137249556945/task/1219231427593373
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
     case cpmStableBaseURL
 
     /// Remotely activated Web Extension background Web View graveyard treatment.

@@ -51,6 +51,10 @@ struct PastedTextSheetRules: Equatable {
 
     var opensWithKeyboard: Bool { mode != .viewOnly }
 
+    func hasUnsavedEdits(_ text: String) -> Bool {
+        mode != .viewOnly && text != original.content
+    }
+
     func outcome(savingText text: String) -> PastedTextSheetOutcome {
         text == original.content ? .unchanged : .saved(AIChatPastedText(content: text))
     }
@@ -63,12 +67,18 @@ struct PastedTextSheetView: View {
     private let rules: PastedTextSheetRules
     private let onSave: (String) -> Void
     private let onCancel: () -> Void
+    let onUnsavedEditsChanged: (Bool) -> Void
 
-    init(pastedText: AIChatPastedText, mode: PastedTextSheetMode, onSave: @escaping (String) -> Void, onCancel: @escaping () -> Void) {
+    init(pastedText: AIChatPastedText,
+         mode: PastedTextSheetMode,
+         onSave: @escaping (String) -> Void,
+         onCancel: @escaping () -> Void,
+         onUnsavedEditsChanged: @escaping (Bool) -> Void = { _ in }) {
         _text = State(initialValue: pastedText.content)
         rules = PastedTextSheetRules(original: pastedText, mode: mode)
         self.onSave = onSave
         self.onCancel = onCancel
+        self.onUnsavedEditsChanged = onUnsavedEditsChanged
     }
 
     private var isViewOnly: Bool { rules.mode == .viewOnly }
@@ -98,6 +108,7 @@ struct PastedTextSheetView: View {
             }
             .padding(16)
             .onAppear { isTextFocused = rules.opensWithKeyboard }
+            .onChange(of: text) { onUnsavedEditsChanged(rules.hasUnsavedEdits($0)) }
             .navigationTitle(UserText.aiChatPastedTextSheetTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -173,7 +184,9 @@ enum PastedTextSheetPresenter {
             },
             onCancel: {
                 weakController?.dismiss(animated: true)
-            }
+            },
+            // A tap outside the form sheet or a swipe down would otherwise drop the edits without asking.
+            onUnsavedEditsChanged: { weakController?.isModalInPresentation = $0 }
         )
         let controller = PastedTextSheetHostingController(rootView: view, completion: completion)
         controller.modalPresentationStyle = .formSheet

@@ -741,8 +741,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: trigger))
         await unloadGuard.awaitSettled(context(for: identifier))
 
+        let previousContext = context(for: identifier)
+        let previousErrors = previousContext?.errors ?? []
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
+            if let previousContext {
+                cpmBaseURLPolicy.prepareForBackgroundFailureReload(of: previousContext, errors: previousErrors)
+            }
             cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         } catch {

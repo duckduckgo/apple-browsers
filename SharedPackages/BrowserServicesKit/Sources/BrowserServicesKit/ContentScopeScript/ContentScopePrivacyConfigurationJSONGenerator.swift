@@ -35,7 +35,8 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
     /// needs to exclude more can extend this rather than restate it and drift.
     public static let defaultExcludedFeatures = [
         PrivacyConfigurationData.CodingKeys.trackerAllowlist.rawValue,
-        PrivacyFeature.autoconsent.rawValue
+        PrivacyFeature.autoconsent.rawValue,
+        PrivacyFeature.eventHub.rawValue
     ]
 
     public init(featureFlagger: FeatureFlagger,

@@ -56,6 +56,21 @@ final class AppleTabOrganizer: TabOrganizing {
         }
     }
 
+    private static let suggestionInstructions = """
+    You suggest short commands a person could give to tidy their open browser tabs. \
+    Each command starts with Close, Move, Keep or Find and names a topic or site that appears in the tabs.
+    """
+
+    /// Commands tailored to the open tabs, shown as one-click suggestions.
+    func suggestions(for tabs: [TabSnapshot]) async throws -> [String] {
+        guard !tabs.isEmpty, case .available = SystemLanguageModel.default.availability else { return [] }
+        let session = LanguageModelSession(instructions: Self.suggestionInstructions)
+        let response = try await session.respond(to: "Tabs:\n\(Self.tabList(for: tabs))", generating: GeneratedSuggestions.self).content
+        return response.commands
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters)) }
+            .filter { !$0.isEmpty }
+    }
+
     /// One line per tab: "3. Title — host/path [pageType]: excerpt". Excerpts shrink until the list fits.
     static func tabList(for tabs: [TabSnapshot]) -> String {
         func lines(excerptLimit: Int) -> String {
@@ -93,6 +108,13 @@ enum GeneratedTabAction {
         case .moveToNewWindow: return .moveToNewWindow
         }
     }
+}
+
+@available(macOS 26.0, *)
+@Generable
+struct GeneratedSuggestions {
+    @Guide(description: "Short commands of 2 to 5 words, each about different tabs, for example 'Close shopping tabs'", .count(4))
+    var commands: [String]
 }
 
 @available(macOS 26.0, *)

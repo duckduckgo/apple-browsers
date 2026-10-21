@@ -31,7 +31,7 @@ enum TabOrganizerPopover {
         let popover = NSPopover()
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: TabOrganizerView(viewModel: viewModel))
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: button.isFlipped ? .maxY : .minY)
         current = popover
     }
 }
@@ -49,12 +49,14 @@ final class TabOrganizerViewModel: ObservableObject {
     }
 
     static let pageContentExcerptLength = 600
-    static let suggestions = ["Close shopping tabs", "Keep only news", "Move streaming to a new window"]
+    static let defaultSuggestions = ["Close shopping tabs", "Keep only news", "Find tabs about travel"]
 
     @Published private(set) var tabs: [TabSnapshot]
     @Published private(set) var state: State = .idle
     @Published private(set) var groups: [ProposedGroup] = []
     @Published private(set) var selectedTabIDs: Set<String> = []
+    @Published private(set) var suggestions = TabOrganizerViewModel.defaultSuggestions
+    @Published private(set) var isLoadingSuggestions = false
     @Published var instruction = ""
     @Published var readsPageContent = false
 
@@ -67,6 +69,20 @@ final class TabOrganizerViewModel: ObservableObject {
         tabs = TabSnapshotProvider.snapshots(in: tabCollectionViewModel)
         let allTabs = (tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []) + tabCollectionViewModel.tabCollection.tabs
         favicons = Dictionary(allTabs.compactMap { tab in tab.favicon.map { (tab.uuid, $0) } }, uniquingKeysWith: { first, _ in first })
+        loadSuggestions()
+    }
+
+    private func loadSuggestions() {
+        guard #available(macOS 26.0, *) else { return }
+        isLoadingSuggestions = true
+        Task { [weak self, tabs] in
+            let generated = (try? await AppleTabOrganizer().suggestions(for: tabs)) ?? []
+            guard let self else { return }
+            if !generated.isEmpty {
+                suggestions = generated
+            }
+            isLoadingSuggestions = false
+        }
     }
 
     func tab(withID id: String) -> TabSnapshot? {
@@ -245,11 +261,16 @@ struct TabOrganizerView: View {
                 .disabled(isLoading || viewModel.instruction.isEmpty)
             }
 
-            HStack(spacing: 6) {
-                ForEach(TabOrganizerViewModel.suggestions, id: \.self) { suggestion in
-                    Button(suggestion) { viewModel.useSuggestion(suggestion) }
-                        .controlSize(.small)
-                        .disabled(isLoading)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    if viewModel.isLoadingSuggestions {
+                        ProgressView().controlSize(.small)
+                    }
+                    ForEach(viewModel.suggestions, id: \.self) { suggestion in
+                        Button(suggestion) { viewModel.useSuggestion(suggestion) }
+                            .controlSize(.small)
+                            .disabled(isLoading)
+                    }
                 }
             }
 

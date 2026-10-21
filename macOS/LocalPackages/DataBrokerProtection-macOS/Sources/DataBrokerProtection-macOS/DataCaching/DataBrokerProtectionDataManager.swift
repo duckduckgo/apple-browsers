@@ -228,6 +228,8 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
     public func seedDemoFixture(_ fixture: PIRDemoFixture) throws {
         try fixture.seed(into: database)
         communicator.invalidateCache()
+        // The dashboard reads the profile from this cache; leaving it empty sends the dashboard to onboarding.
+        try prepareProfileCache()
     }
 #endif
 

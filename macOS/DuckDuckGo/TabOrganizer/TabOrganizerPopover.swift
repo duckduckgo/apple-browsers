@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor
 enum TabOrganizerPopover {
@@ -208,6 +209,22 @@ final class TabOrganizerViewModel: ObservableObject {
         }
     }
 
+    func switchToTab(_ tabID: String) {
+        guard let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) else { return }
+        tabCollectionViewModel.select(at: index)
+    }
+
+    /// Drag and drop between groups. Empty groups stay so a tab can be dragged back.
+    func moveTab(_ tabID: String, toGroupWithID groupID: UUID) {
+        guard groups.contains(where: { $0.id == groupID }), groups.contains(where: { $0.tabIDs.contains(tabID) }) else { return }
+        for index in groups.indices {
+            groups[index].tabIDs.removeAll { $0 == tabID }
+        }
+        if let index = groups.firstIndex(where: { $0.id == groupID }) {
+            groups[index].tabIDs.append(tabID)
+        }
+    }
+
     func setAction(_ action: TabGroupAction, for group: ProposedGroup) {
         guard let index = groups.firstIndex(where: { $0.id == group.id }) else { return }
         groups[index].action = action
@@ -260,6 +277,7 @@ struct TabOrganizerView: View {
     static let size = NSSize(width: 440, height: 560)
 
     @ObservedObject var viewModel: TabOrganizerViewModel
+    @State private var dropTargetGroupID: UUID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -344,6 +362,7 @@ struct TabOrganizerView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(viewModel.tabs, id: \.id) { tab in
                         TabOrganizerRow(tab: tab, favicon: viewModel.favicons[tab.id])
+                            .onTapGesture { viewModel.switchToTab(tab.id) }
                     }
                 }
             }
@@ -377,22 +396,53 @@ struct TabOrganizerView: View {
                     Text("No matching tabs").foregroundColor(.secondary).padding(.bottom, 4)
                 }
                 ForEach(viewModel.groups) { group in
-                    groupHeader(group)
-                    ForEach(group.tabIDs, id: \.self) { tabID in
-                        if let tab = viewModel.tab(withID: tabID) {
-                            HStack(spacing: 6) {
-                                Toggle("", isOn: Binding(get: { viewModel.isSelected(tabID) },
-                                                         set: { _ in viewModel.toggleTab(tabID) }))
-                                    .toggleStyle(.checkbox)
-                                    .labelsHidden()
-                                TabOrganizerRow(tab: tab, favicon: viewModel.favicons[tab.id])
+                    VStack(alignment: .leading, spacing: 4) {
+                        groupHeader(group)
+                        ForEach(group.tabIDs, id: \.self) { tabID in
+                            if let tab = viewModel.tab(withID: tabID) {
+                                HStack(spacing: 6) {
+                                    Toggle("", isOn: Binding(get: { viewModel.isSelected(tabID) },
+                                                             set: { _ in viewModel.toggleTab(tabID) }))
+                                        .toggleStyle(.checkbox)
+                                        .labelsHidden()
+                                    TabOrganizerRow(tab: tab, favicon: viewModel.favicons[tab.id])
+                                        .onTapGesture { viewModel.switchToTab(tabID) }
+                                }
+                                .padding(.leading, 20)
+                                .onDrag { NSItemProvider(object: tabID as NSString) }
                             }
-                            .padding(.leading, 20)
                         }
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.bottom, 4)
+                    .background(RoundedRectangle(cornerRadius: 6)
+                        .fill(dropTargetGroupID == group.id ? Color.accentColor.opacity(0.12) : Color.clear))
+                    .onDrop(of: [UTType.plainText], isTargeted: dropTargetBinding(for: group.id)) { providers in
+                        drop(providers, on: group.id)
                     }
                 }
             }
         }
+    }
+
+    private func dropTargetBinding(for groupID: UUID) -> Binding<Bool> {
+        Binding(get: { dropTargetGroupID == groupID },
+                set: { isTargeted in
+                    if isTargeted {
+                        dropTargetGroupID = groupID
+                    } else if dropTargetGroupID == groupID {
+                        dropTargetGroupID = nil
+                    }
+                })
+    }
+
+    private func drop(_ providers: [NSItemProvider], on groupID: UUID) -> Bool {
+        guard let provider = providers.first else { return false }
+        _ = provider.loadObject(ofClass: NSString.self) { object, _ in
+            guard let tabID = object as? String else { return }
+            DispatchQueue.main.async { viewModel.moveTab(tabID, toGroupWithID: groupID) }
+        }
+        return true
     }
 
     private func groupHeader(_ group: ProposedGroup) -> some View {
@@ -459,5 +509,7 @@ struct TabOrganizerRow: View {
             }
         }
         .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .help("Switch to this tab")
     }
 }

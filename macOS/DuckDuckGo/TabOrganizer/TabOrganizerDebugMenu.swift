@@ -41,6 +41,7 @@ final class TabOrganizerDebugMenu: NSMenu {
 
     /// A fixed mix of topics, plus duplicates and an empty tab, so every rehearsal starts the same.
     static let demoURLs = [
+        "https://unsplash.com/s/photos/dachshund",
         "https://www.japan-guide.com/e/e2158.html",
         "https://www.jrailpass.com/",
         "https://www.japan-guide.com/e/e3013.html",

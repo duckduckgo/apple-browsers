@@ -32,6 +32,9 @@ jobs:
   validate_input_conditions:
 
     name: Validate Input Conditions
+
+    # Avoid automation pushes (GHA_ELEVATED_PERMISSIONS_TOKEN) triggering another bump
+    if: github.event_name != 'push' || github.actor != 'daxmobile'
     runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 10
 
@@ -107,6 +110,8 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v6
         with:
+          # Elevated permissions token is needed to push to the release branch, which is protected by a ruleset
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ needs.validate_input_conditions.outputs.release-branch }}
           submodules: recursive

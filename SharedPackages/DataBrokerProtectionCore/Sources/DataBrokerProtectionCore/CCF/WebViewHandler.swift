@@ -64,6 +64,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var expectedManagedChallengeURL: URL?
     private var resumeAfterManagedNavigation = false
     private var automaticPreviewActivity = "Opening the broker website"
+    private var embeddedChallengeTask: Task<Void, Never>?
     private let previewBrokerName: String?
 #endif
     private var urlObservation: NSKeyValueObservation?
@@ -210,6 +211,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 
     public func finish() {
 #if os(macOS) && DEBUG
+        embeddedChallengeTask?.cancel()
+        embeddedChallengeTask = nil
         manualDeadline?.cancel()
         manualDeadline = nil
         manualControl.invalidateAutomation()
@@ -270,6 +273,15 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
 #if os(macOS) && DEBUG
     func takeManualControl() async throws -> Bool {
         guard manualControl.canTakeControl, let webView else { return false }
+        if !manualControl.isPaused {
+            guard try await pauseAutomation() else { return false }
+        }
+        openManualControlWindow(for: webView)
+        return true
+    }
+
+    private func pauseAutomation() async throws -> Bool {
+        guard let webView else { return false }
         let preservingAutomation = !manualControl.isManagedChallenge
         manualControl.pause(preservingAutomation: preservingAutomation)
         userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(true, preservingAutomation: preservingAutomation)
@@ -286,6 +298,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         guard manualControl.isPaused, self.webView === webView else { return false }
         PIRLivePreview.shared.manualControlChanged?(livePreviewOperationID, true)
         PIRLivePreview.shared.updateActivity("Paused for your assistance", operationID: livePreviewOperationID)
+        return true
+    }
+
+    private func openManualControlWindow(for webView: WKWebView) {
+        manualControl.isUserControlling = true
         let content = NSView()
         let guidance = NSTextField(labelWithString: manualControl.instruction)
         guidance.font = .systemFont(ofSize: 14, weight: .medium)
@@ -329,11 +346,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             guard let self, self.manualControl.isPaused else { return }
             await self.manualControl.cancel?()
         }
-        return true
     }
 
     @objc private func resumeManualControl() {
-        guard manualControl.isPaused, manualResumeButton?.isEnabled == true else { return }
+        // Without a window there is no button: an embedded challenge that cleared before the user opened the page.
+        guard manualControl.isPaused, manualResumeButton?.isEnabled != false else { return }
         manualResumeButton?.isEnabled = false
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -363,12 +380,16 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 self.manualResumeButton?.isEnabled = true
                 return
             }
-            webView.removeFromSuperview()
-            webView.translatesAutoresizingMaskIntoConstraints = true
-            webView.frame = CGRect(x: 0, y: 0, width: 1024, height: 1024)
-            self.window?.orderOut(nil)
-            self.window?.contentView = nil
-            self.window = nil
+            if self.manualControl.isUserControlling {
+                webView.removeFromSuperview()
+                webView.translatesAutoresizingMaskIntoConstraints = true
+                webView.frame = CGRect(x: 0, y: 0, width: 1024, height: 1024)
+                self.window?.orderOut(nil)
+                self.window?.contentView = nil
+                self.window = nil
+            }
+            self.manualGuidance = nil
+            self.manualResumeButton = nil
             self.manualDeadline?.cancel()
             self.manualDeadline = nil
             self.resumeAfterManagedNavigation = false
@@ -430,6 +451,55 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     public func updateLivePreviewActivity(for actionType: ActionType, stepType: StepType?) {
         automaticPreviewActivity = actionType.livePreviewActivity(for: stepType)
         PIRLivePreview.shared.updateActivity(automaticPreviewActivity, operationID: livePreviewOperationID)
+    }
+
+    func updateLivePreviewTarget(for action: Action?, profileQuery: ProfileQuery, email: String? = nil) {
+        PIRLivePreview.shared.updateTarget(for: action, profileQuery: profileQuery, email: email, operationID: livePreviewOperationID)
+        watchForEmbeddedChallenge(during: action)
+    }
+
+    private static let turnstileTokenField = "cf-turnstile-response"
+
+    /// Brokers such as PeopleFinders wait for a Turnstile token in their own form. Turnstile often clears by
+    /// itself; when it does not, pause before the wait times out, hand the page to the user, and resume once solved.
+    private func watchForEmbeddedChallenge(during action: Action?) {
+        embeddedChallengeTask?.cancel()
+        embeddedChallengeTask = nil
+        guard let action, action.actionType == .expectation, let json = action.json,
+              String(bytes: json, encoding: .utf8)?.contains(Self.turnstileTokenField) == true else { return }
+        embeddedChallengeTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: 4_000_000_000) } catch { return }
+            guard let self, !(await self.isTurnstileSolved()), !self.manualControl.isPaused else { return }
+            // Pause so the wait cannot time out, then let the preview ask for help; the user opens the page.
+            self.manualControl.isEmbeddedChallenge = true
+            guard (try? await self.pauseAutomation()) == true else {
+                self.manualControl.isEmbeddedChallenge = false
+                return
+            }
+            PIRLivePreview.shared.updateActivity("Help needed: complete the security check", operationID: self.livePreviewOperationID)
+            PIRLivePreview.shared.showTarget(.turnstileWidget, operationID: self.livePreviewOperationID)
+            while !Task.isCancelled, self.manualControl.isPaused {
+                if await self.isTurnstileSolved() {
+                    self.resumeManualControl()
+                    return
+                }
+                do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return }
+            }
+        }
+    }
+
+    private func isTurnstileSolved() async -> Bool {
+        let script = "return Array.from(document.querySelectorAll(\"input[name='\(Self.turnstileTokenField)']\")).some(input => input.value !== '')"
+        let solved = try? await webView?.callAsyncJavaScript(script, contentWorld: .defaultClient) as? Bool
+        return solved == true
+    }
+
+    func updateLivePreviewChecklist(_ actionsHandler: ActionsHandler, profileQuery: ProfileQuery) {
+        let checklist = PIRLivePreviewChecklist(stepType: actionsHandler.stepType, actions: actionsHandler.livePreviewActions,
+                                                currentIndex: actionsHandler.livePreviewCurrentIndex,
+                                                brokerName: previewBrokerName ?? "the broker", profileQuery: profileQuery,
+                                                isConfirmation: actionsHandler.isEmailConfirmationContinuation)
+        PIRLivePreview.shared.updateChecklist(checklist, operationID: livePreviewOperationID)
     }
 #endif
 
@@ -664,6 +734,11 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 #if os(macOS)
         updateAddressBar(with: webView.url)
         #if DEBUG
+        if manualControl.isPaused, manualControl.isManagedChallenge, didReachManagedChallengeDestination {
+            // The cleared challenge landed on the broker page, so hand back without waiting for the user.
+            resumeManualControl()
+            return
+        }
         guard !isAwaitingManagedChallengeDestination, !manualControl.isPaused else { return }
         if resumeAfterManagedNavigation {
             resumeAfterManagedNavigation = false

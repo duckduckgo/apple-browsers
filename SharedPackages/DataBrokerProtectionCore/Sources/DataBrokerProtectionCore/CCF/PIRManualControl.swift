@@ -32,18 +32,25 @@ final class PIRManualControl {
             }
         }
     }
+    /// A Turnstile widget inside the broker's own form, which a person has to solve.
+    var isEmbeddedChallenge = false
+    /// The page is in the take-control window, as opposed to paused and waiting for the user to open it.
+    var isUserControlling = false
     private(set) var preservesAutomation = false
     var action: Action?
     var resume: (() async -> Void)?
     var cancel: (() async -> Void)?
     let budget = PIRManualControlContext.budget
 
-    var canTakeControl: Bool { !isPaused && action != nil }
+    var canTakeControl: Bool { action != nil && (!isPaused || (isEmbeddedChallenge && !isUserControlling)) }
 
     var instruction: String {
-        isManagedChallenge ? "Complete Cloudflare's security check on this page."
-            : "Automation is paused. Use this page, then choose Resume automatically."
+        if isManagedChallenge { return "Complete Cloudflare's security check on this page." }
+        if isEmbeddedChallenge { return "Complete the security check in the form. We\u{2019}ll continue automatically." }
+        return "Automation is paused. Use this page, then choose Resume automatically."
     }
+
+    var needsAssistance: Bool { isManagedChallenge || isEmbeddedChallenge }
 
     func allows(_ epoch: UUID) -> Bool { !isPaused && !isManagedChallenge && self.epoch == epoch }
 
@@ -67,6 +74,8 @@ final class PIRManualControl {
     }
 
     func endPause() {
+        isEmbeddedChallenge = false
+        isUserControlling = false
         isPaused = false
         budget?.isPaused = false
     }

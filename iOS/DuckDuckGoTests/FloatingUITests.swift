@@ -96,6 +96,47 @@ final class FloatingUIFeatureFlagTests: XCTestCase {
     }
 }
 
+final class StatusBackgroundScrollEdgeTests: XCTestCase {
+
+    func testScrollEdgeRegionDrawsNoContentAndDoesNotInterceptTouches() throws {
+        let background = MainViewFactory.StatusBackgroundView(effect: nil)
+        background.frame = CGRect(x: 0, y: 0, width: 402, height: 62)
+        background.addScrollEdgeRegion()
+        let region = try XCTUnwrap(background.contentView.subviews.first as? UIImageView)
+        let image = try XCTUnwrap(region.image?.cgImage)
+        var pixels = [UInt8](repeating: 255, count: image.width * image.height * 4)
+        try pixels.withUnsafeMutableBytes { bytes in
+            let context = try XCTUnwrap(CGContext(data: bytes.baseAddress,
+                                                 width: image.width,
+                                                 height: image.height,
+                                                 bitsPerComponent: 8,
+                                                 bytesPerRow: image.width * 4,
+                                                 space: CGColorSpaceCreateDeviceRGB(),
+                                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        }
+
+        XCTAssertTrue(stride(from: 3, to: pixels.count, by: 4).allSatisfy { pixels[$0] == 0 })
+        XCTAssertNil(region.hitTest(CGPoint(x: 200, y: 30), with: nil))
+        XCTAssertFalse(region.isAccessibilityElement)
+        XCTAssertFalse(region.isHidden)
+        XCTAssertEqual(region.alpha, 1)
+    }
+
+    func testScrollEdgeRegionFollowsStatusBackgroundBounds() throws {
+        let background = MainViewFactory.StatusBackgroundView(effect: nil)
+        background.addScrollEdgeRegion()
+        let region = try XCTUnwrap(background.contentView.subviews.first)
+
+        for size in [CGSize(width: 402, height: 62), CGSize(width: 874, height: 0), CGSize(width: 402, height: 62)] {
+            background.frame.size = size
+            background.layoutIfNeeded()
+            XCTAssertEqual(region.frame, background.contentView.bounds)
+        }
+    }
+}
+
 final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPhoneThenFloatingUIIsEnabled() {

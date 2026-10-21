@@ -5531,7 +5531,8 @@ extension MainViewController: BrowserChromeDelegate {
         if isWindowControlsRowEnabled {
             tabsBarController?.setCurrentTabSelectionAlpha(hidden ? 0 : 1)
         }
-        viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
+        let keepsStatusBackgroundVisible = isFloatingUIEnabled && viewCoordinator.addressBarPosition.isBottom
+        viewCoordinator.statusBackground.alpha = hidden && !keepsStatusBackgroundVisible ? 0 : 1
         updateFloatingDomainCapsuleVisibility(for: hidden ? 0 : 1)
     }
 
@@ -6490,7 +6491,7 @@ extension MainViewController: OmniBarDelegate {
         // The scroll-edge chrome must track the currently visible scroll view. On the NTP (or any
         // tab without a web view) there's no scroll view to track, so we leave the interactions
         // detached rather than pointing them at a dismissed tab's scroll view.
-        guard let scrollView = currentTab?.webView?.scrollView else { return }
+        guard newTabPageViewController == nil, let scrollView = currentTab?.webView?.scrollView else { return }
 
         func attach(to view: UIView, onEdge edge: UIRectEdge) {
             let interaction = UIScrollEdgeElementContainerInteraction()
@@ -6506,6 +6507,9 @@ extension MainViewController: OmniBarDelegate {
             // The split bottom pill is slid by a container transform. A scroll-edge interaction
             // on it makes UIGlassEffect move independently of the icons.
         } else {
+            if currentTab?.isAITab == false {
+                attach(to: viewCoordinator.statusBackground, onEdge: .top)
+            }
             attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)
             // The toolbar is already pinned to the concentric layout guides. A scroll-edge
             // interaction would apply a second, larger device-concentric inset.

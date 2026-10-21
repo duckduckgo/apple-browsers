@@ -82,6 +82,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let oneHeading = "Floating UI Test Page One"
         static let twoHeading = "Floating UI Test Page Two"
         static let longHeading = "Floating UI Long Page"
+        static let scrollEdgeHeading = "Floating UI Scroll Edge"
         static let edgeHeading = "Floating UI Edge Controls"
         static let slowHeading = "Floating UI Slow Page"
         static let swipeOneHeading = "Floating UI Swipe Page One"
@@ -305,6 +306,23 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertConfiguredBarPosition()
+    }
+
+    func verifyStatusBarScrollEdgeInBothBarPositions() {
+        for position in [FloatingUIBarPosition.top, .bottom] {
+            openPage(path: "/scroll-edge", heading: Page.scrollEdgeHeading)
+            if position == .bottom {
+                moveAddressBar(to: position)
+            }
+            collapseChrome()
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "scroll-edge-\(position.rawValue)"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+            domainCapsule.tap()
+            XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+            assertBarPosition(position)
+        }
     }
 
     func verifyFloatingContentInsets() {
@@ -807,6 +825,9 @@ class FloatingUIXCUITestCase: XCTestCase {
         server["/long-page"] = { _ in
             .ok(.html(Self.longPageHTML))
         }
+        server["/scroll-edge"] = { _ in
+            .ok(.html(Self.scrollEdgeHTML))
+        }
         server["/edge-controls"] = { _ in
             .ok(.html(Self.edgeControlsHTML))
         }
@@ -850,6 +871,26 @@ class FloatingUIXCUITestCase: XCTestCase {
     <html lang="en">
       <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page Two</title></head>
       <body><h1>\(Page.twoHeading)</h1><a href="/page-one">Previous page</a></body>
+    </html>
+    """
+
+    private static let scrollEdgeHTML = """
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <title>Scroll Edge</title>
+        <style>
+          body { margin: 0; color: #111; background: white; font: 24px/1.3 -apple-system; }
+          h1 { font-size: 28px; padding: 16px; }
+          p { margin: 0; padding: 12px 6px; border-bottom: 1px solid #aaa; }
+          p:nth-child(even) { background: #ffe282; }
+        </style>
+      </head>
+      <body>
+        <h1>\(Page.scrollEdgeHeading)</h1>
+        \((1...80).map { "<p>Line \($0): Content scrolling behind the status bar.</p>" }.joined())
+      </body>
     </html>
     """
 
@@ -970,6 +1011,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
     func testRuntimeAddressBarRelocation() { verifyRuntimeAddressBarRelocation() }
     func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
+    func testStatusBarScrollEdgeInBothBarPositions() { verifyStatusBarScrollEdgeInBothBarPositions() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }

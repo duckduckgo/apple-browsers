@@ -19,8 +19,8 @@ on:
         description: "Import into the working tree only: no commit, push or pull request"
         type: boolean
         default: false
-      ignore_existing_pr:
-        description: "Import even if a translations pull request for this version already exists"
+      reimport:
+        description: "Import again even if a translations pull request for this version already exists (updates it if it's still open)"
         type: boolean
         default: false
       simulate_wednesday:
@@ -153,12 +153,12 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
           DRY_RUN: ${{ inputs.dry_run || false }}
-          IGNORE_EXISTING_PR: ${{ inputs.ignore_existing_pr || false }}
+          REIMPORT: ${{ inputs.reimport || false }}
           GH_TOKEN: ${{ github.token }}
         run: |
           args=("$PLATFORM" --release-branch "$RELEASE_BRANCH")
           [ "$DRY_RUN" != "true" ] || args+=(--dry-run)
-          [ "$IGNORE_EXISTING_PR" != "true" ] || args+=(--ignore-existing-pr)
+          [ "$REIMPORT" != "true" ] || args+=(--reimport)
           ./scripts/smartling/smartling_release_import.sh "${args[@]}"
 
       - name: Open ${{ matrix.platform }} release translations task

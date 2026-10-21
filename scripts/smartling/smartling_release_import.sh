@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-	echo "Usage: $0 <iOS|macOS> --release-branch <release/ios/x.y.z|release/macos/x.y.z> [--dry-run] [--ignore-existing-pr]" >&2
+	echo "Usage: $0 <iOS|macOS> --release-branch <release/ios/x.y.z|release/macos/x.y.z> [--dry-run] [--reimport]" >&2
 	exit 1
 }
 
@@ -11,13 +11,13 @@ shift || true
 
 RELEASE_BRANCH=""
 DRY_RUN="false"
-IGNORE_EXISTING_PR="false"
+REIMPORT="false"
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--release-branch) RELEASE_BRANCH="${2:-}"; shift 2 ;;
 		--dry-run) DRY_RUN="true"; shift ;;
-		--ignore-existing-pr) IGNORE_EXISTING_PR="true"; shift ;;
+		--reimport) REIMPORT="true"; shift ;;
 		*) usage ;;
 	esac
 done
@@ -106,7 +106,7 @@ echo "Release branch: $RELEASE_BRANCH"
 echo "Smartling files: ${FILE_URIS[*]}"
 
 OPEN_PR_URL=""
-if [ "$IGNORE_EXISTING_PR" = "true" ]; then
+if [ "$REIMPORT" = "true" ]; then
 	OPEN_PR_URL="$(gh pr list --head "$IMPORT_BRANCH" --state open --limit 1 --json url --jq '.[].url')"
 else
 	existing_pr="$(gh pr list --head "$IMPORT_BRANCH" --state all --limit 1 --json state,url --jq '.[] | "\(.state) \(.url)"')"

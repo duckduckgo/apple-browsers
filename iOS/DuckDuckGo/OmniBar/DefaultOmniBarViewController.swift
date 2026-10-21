@@ -45,6 +45,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let promptLimits = AIChatPromptLimits.current
     private var promptLengthGate: UTIPromptLengthGate?
     private var promptOverLimit: AIChatPromptLength?
+    private var pastedTextToEdit: UUID?
     private var isPastedTextEnabled: Bool { dependencies.featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) }
 
     override var isExpandedPhone: Bool {
@@ -203,6 +204,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             }
             omniDelegate?.onOmniBarFooterLinkTapped(url)
         }
+        omniBarView.onFooterPrimaryTapped = { [weak self] in self?.handleFooterPrimaryTap($0) }
         omniBarView.onFooterVisibilityChanged = { [weak self] ids in
             guard let self else { return }
             if ids.contains(.termsConsent) { inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible() }
@@ -793,9 +795,10 @@ extension DefaultOmniBarViewController {
                 }
             ),
             outputs: .init(
-                onOverLimitChanged: { [weak self] overLimit in
-                    guard let self, promptOverLimit != overLimit else { return }
+                onOverLimitChanged: { [weak self] overLimit, pastedTextToEdit in
+                    guard let self, promptOverLimit != overLimit || self.pastedTextToEdit != pastedTextToEdit else { return }
                     promptOverLimit = overLimit
+                    self.pastedTextToEdit = pastedTextToEdit
                     refreshFooterMessage(animated: true)
                 },
                 onPromptOverLimitChanged: { [weak self] isOverLimit in
@@ -868,6 +871,11 @@ extension DefaultOmniBarViewController {
         attachmentPrivacyPixelFiring?.fire(AttachmentPrivacyPixel(action: action, kind: kind, surface: .addressBar), frequency: .dailyAndCount)
     }
 
+    private func handleFooterPrimaryTap(_ id: UTIFooterItem.ID) {
+        guard id == .promptTooLong, let pastedTextToEdit else { return }
+        attachmentController?.presentPastedTextSheet(id: pastedTextToEdit)
+    }
+
     private func refreshFooterMessage(animated: Bool) {
         applyFooterMessages(animated: animated)
         omniDelegate?.onOmniBarExpandedContentSizeChanged()
@@ -887,7 +895,8 @@ extension DefaultOmniBarViewController {
             messages.append(.init(id: .modelSwitch, message: UTIFooterMessageMapper().message(for: notice)))
         }
         if let promptOverLimit {
-            messages.append(.init(id: .promptTooLong, message: UTIFooterMessageMapper().promptTooLongMessage(count: promptOverLimit.count, limit: promptOverLimit.limit)))
+            messages.append(.init(id: .promptTooLong, message: UTIFooterMessageMapper().promptTooLongMessage(count: promptOverLimit.count, limit: promptOverLimit.limit,
+                                                                                                       containsPastedText: pastedTextToEdit != nil)))
         }
         omniBarView.setFooterMessages(UTIFooterItem.visible(from: messages, isEditing: false), animated: animated)
         omniBarView.termsOfServiceSendButton = isTermsOfServiceInEffect ? sendButton : nil

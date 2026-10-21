@@ -539,6 +539,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var onSelectedToolClearTapped: (() -> Void)?
     var onCreateImageModelSwitchNoticeDismissed: (() -> Void)?
     var onFooterLinkTapped: ((UTIFooterItem.ID, URL) -> Void)?
+    var onFooterPrimaryTapped: ((UTIFooterItem.ID) -> Void)?
     var onFooterVisibilityChanged: (([UTIFooterItem.ID]) -> Void)?
 
     private var canShowToolPicker: Bool {
@@ -2058,6 +2059,7 @@ extension DefaultOmniBarView {
                 self?.onCreateImageModelSwitchNoticeDismissed?()
             }
             row.onLinkTap = { [weak self] url in self?.onFooterLinkTapped?(item.id, url) }
+            row.onPrimaryTap = { [weak self] in self?.onFooterPrimaryTapped?(item.id) }
             if footerCard.arrangedSubviews.firstIndex(of: row) != index {
                 footerCard.removeArrangedSubview(row)
                 footerCard.insertArrangedSubview(row, at: index)

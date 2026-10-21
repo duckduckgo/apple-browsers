@@ -61,7 +61,8 @@
     const parentWindow = globalThis.parent;
     const documentOrigin = globalThis.origin;
     // Like WebKit, only a sandbox that makes the origin opaque blocks geolocation.
-    // Sandbox flags are inherited, so documents nested in such a frame are opaque too.
+    // hasNetworkOrigin already rejects an opaque origin, so this flag never changes
+    // the verdict by itself. It reports the same fact to native code, which needs it.
     const isSandboxed = documentOrigin === "null";
 
     const sourceOrigin = (element, childOrigin) => {
@@ -83,16 +84,17 @@
     const allowAttributeAllowsGeolocation = (element, childOrigin) => {
         const directives = (apply(getAttribute, element, ["allow"]) ?? "").split(";");
         for (const directive of directives) {
+            // Like WebKit, the feature name is a case-sensitive prefix and the first
+            // directive for it wins.
             const value = directive.trim();
-            const name = value.split(/[\t\n\f\r :]/, 1)[0];
-            if (name !== "geolocation") {
+            if (!value.startsWith("geolocation")) {
                 continue;
             }
-            // WebKit also accepts the legacy colon separator after a feature name.
-            const allowlist = value.slice(name.length).replace(/^:/, "").trim();
+            const allowlist = value.slice("geolocation".length).trim();
             if (!allowlist) {
                 return sourceOrigin(element, childOrigin) === childOrigin;
             }
+            // Like WebKit, the first * or 'none' decides.
             let allowed = false;
             for (const token of allowlist.split(/[\t\n\f\r ]+/)) {
                 const keyword = token.toLowerCase();

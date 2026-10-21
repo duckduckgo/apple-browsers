@@ -262,6 +262,61 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.permissionQueryCount, 1)
     }
 
+    func testSameOriginIframeAllowAttributeIsParsedLikeWebKitWithoutPolicyAPI() async throws {
+        // The frame's origin includes the server's port, so the host page fills in {origin}
+        // before the frame loads.
+        let rows: [(allow: String?, allowed: Bool)] = [
+            (nil, true),
+            ("geolocation", true),
+            ("geolocation *", true),
+            ("geolocation 'self'", true),
+            ("geolocation 'SELF'", true),
+            ("geolocation 'src'", true),
+            ("geolocation {origin}", true),
+            ("geolocation http://other.example", false),
+            ("geolocation 'none'", false),
+            ("geolocation 'none' *", false),
+            ("geolocation * 'none'", true),
+            ("geolocation 'none' 'self'", false),
+            ("geolocation:'self'", false),
+            ("camera 'none'; geolocation 'self'", true),
+            ("geolocation 'none'; geolocation *", false),
+            ("Geolocation 'none'", true)
+        ]
+        let fillInOrigin = """
+        </iframe><script>
+            const frame = document.getElementById("test-frame");
+            if (frame.hasAttribute("allow")) {
+                frame.setAttribute("allow", frame.getAttribute("allow").replace("{origin}", location.origin));
+            }
+        </script>
+        """
+
+        for row in rows {
+            let message = "allow: \(row.allow ?? "nil")"
+            let delegate = WebKitTestGeolocationDelegate()
+            let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+            script.activationHandler = { _ in true }
+            let harness = makeHarness(script: script, precedingScript: unavailablePolicyScript)
+            let server = try await WebKitLoopbackHTTPServer.start(
+                html: frameHostHTML(source: "/frame", allow: row.allow).replacingOccurrences(of: "</iframe>", with: fillInOrigin),
+                frameHTML: frameExerciseHTML
+            )
+            defer { server.stop() }
+
+            try await harness.load(try XCTUnwrap(server.url))
+            let state = try await frameResult(in: harness.webView, message: message)
+
+            if row.allowed {
+                assertAllowed(state, message)
+            } else {
+                assertDenied(state, message)
+            }
+            XCTAssertEqual(delegate.positionRequestCount, row.allowed ? 1 : 0, message)
+            XCTAssertEqual(delegate.permissionQueryCount, row.allowed ? 1 : 0, message)
+        }
+    }
+
     func testPolicyDeniedIframeFailsClosed() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
@@ -865,19 +920,19 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         """)
     }
 
-    private func assertAllowed(_ state: [String: Any], file: StaticString = #filePath, line: UInt = #line) {
+    private func assertAllowed(_ state: [String: Any], _ message: String = "", file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertEqual(state["permissionState"] as? String, GeolocationPermissionState.granted.rawValue,
-                       "Page state: \(state)", file: file, line: line)
-        XCTAssertEqual(state["requestStatus"] as? String, "success", "Page state: \(state)", file: file, line: line)
-        XCTAssertEqual(state["latitude"] as? Double, 37.3317, file: file, line: line)
+                       "\(message) Page state: \(state)", file: file, line: line)
+        XCTAssertEqual(state["requestStatus"] as? String, "success", "\(message) Page state: \(state)", file: file, line: line)
+        XCTAssertEqual(state["latitude"] as? Double, 37.3317, message, file: file, line: line)
     }
 
-    private func assertDenied(_ state: [String: Any], file: StaticString = #filePath, line: UInt = #line) {
+    private func assertDenied(_ state: [String: Any], _ message: String = "", file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertEqual(state["permissionState"] as? String, GeolocationPermissionState.denied.rawValue,
-                       "Page state: \(state)", file: file, line: line)
-        XCTAssertEqual(state["requestStatus"] as? String, "error", "Page state: \(state)", file: file, line: line)
+                       "\(message) Page state: \(state)", file: file, line: line)
+        XCTAssertEqual(state["requestStatus"] as? String, "error", "\(message) Page state: \(state)", file: file, line: line)
         XCTAssertEqual(state["errorCode"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue,
-                       "Page state: \(state)", file: file, line: line)
+                       "\(message) Page state: \(state)", file: file, line: line)
     }
 
     private func frameHostHTML(source: String, allow: String? = "geolocation", sandbox: String? = nil) -> String {
@@ -899,12 +954,15 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
     }
 
     /// Waits for the frame's result and checks that policy checks posted nothing to the embedding page.
-    private func frameResult(in webView: WKWebView, file: StaticString = #filePath, line: UInt = #line) async throws -> [String: Any] {
+    private func frameResult(in webView: WKWebView,
+                             message: String = "",
+                             file: StaticString = #filePath,
+                             line: UInt = #line) async throws -> [String: Any] {
         try await waitUntil(in: webView, expression: "window.frameResult !== undefined")
         let state = try await javaScriptDictionary(in: webView, body: """
         return { ...window.frameResult, unexpectedMessageCount: window.unexpectedMessageCount ?? 0 };
         """)
-        XCTAssertEqual(state["unexpectedMessageCount"] as? Int, 0, "Policy checks must not post messages to the embedding page",
+        XCTAssertEqual(state["unexpectedMessageCount"] as? Int, 0, "\(message) Policy checks must not post messages to the embedding page",
                        file: file, line: line)
         return state
     }

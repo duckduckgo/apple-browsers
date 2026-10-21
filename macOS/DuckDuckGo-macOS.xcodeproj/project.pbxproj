@@ -2012,6 +2012,7 @@
 		567A23CF2C80CF4B0010F66C /* ErrorPageTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BA1E7C2BAB290E001CF69F /* ErrorPageTabExtensionTests.swift */; };
 		99FE0B059D0794C443A1D4A2 /* PageSignalsTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC48CA230AE5690BB3892146 /* PageSignalsTabExtensionTests.swift */; };
 		8F59E2BCFB94734091AD0CD8 /* ReaderModeTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74C3686DCAE2691E55AA88AF /* ReaderModeTabExtensionTests.swift */; };
+		C8E9747A35BE37CC7F34DFD5 /* ReaderModeViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C032D1AAC0146403A244A30 /* ReaderModeViewControllerTests.swift */; };
 		567A23D42C81E2180010F66C /* ContextualDaxDialogsFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23D32C81E2180010F66C /* ContextualDaxDialogsFactory.swift */; };
 		567A23D52C81E2180010F66C /* ContextualDaxDialogsFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23D32C81E2180010F66C /* ContextualDaxDialogsFactory.swift */; };
 		567A23D72C8871290010F66C /* OnboardingFireButtonDialogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23D62C8871290010F66C /* OnboardingFireButtonDialogViewModel.swift */; };
@@ -2073,6 +2074,7 @@
 		56BA1E802BAB2E43001CF69F /* ErrorPageTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BA1E7C2BAB290E001CF69F /* ErrorPageTabExtensionTests.swift */; };
 		9A506409C1007AAF322D43F3 /* PageSignalsTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC48CA230AE5690BB3892146 /* PageSignalsTabExtensionTests.swift */; };
 		5B6B94D82E275998BD6DC4CA /* ReaderModeTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74C3686DCAE2691E55AA88AF /* ReaderModeTabExtensionTests.swift */; };
+		1181DF3BFFF3B19BCA0F7F94 /* ReaderModeViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C032D1AAC0146403A244A30 /* ReaderModeViewControllerTests.swift */; };
 		56BC8F012D312B320046059D /* ConfigurationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BC8F002D312B320046059D /* ConfigurationManagerTests.swift */; };
 		56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BC8F002D312B320046059D /* ConfigurationManagerTests.swift */; };
 		56BFB4D42ED60E29008A380E /* SubscriptionPageFeatureFlagAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BFB4D32ED60E29008A380E /* SubscriptionPageFeatureFlagAdapterTests.swift */; };
@@ -2159,8 +2161,10 @@
 		7B0C7F1B2EDF1D1800A338FD /* WebNotificationClickHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0C7F192EDF1D0800A338FD /* WebNotificationClickHandlerTests.swift */; };
 		7B0C7F1C2EDF1D1800A338FD /* WebNotificationClickHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0C7F192EDF1D0800A338FD /* WebNotificationClickHandlerTests.swift */; };
 		7B11B3042EF304B6005F0687 /* AutomationServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11B3012EF304B6005F0687 /* AutomationServer.swift */; };
+		3D4F3E6B5DD94E88BF148D68 /* ReaderModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F7014D11F6F9658C1C2204 /* ReaderModeViewController.swift */; };
 		7B11B3052EF304B6005F0687 /* LaunchOptionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11B3022EF304B6005F0687 /* LaunchOptionsHandler.swift */; };
 		7B11B3062EF304B6005F0687 /* AutomationServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11B3012EF304B6005F0687 /* AutomationServer.swift */; };
+		AAAF8C8D18C89C619B02288A /* ReaderModeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F7014D11F6F9658C1C2204 /* ReaderModeViewController.swift */; };
 		7B11B3072EF304B6005F0687 /* LaunchOptionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B11B3022EF304B6005F0687 /* LaunchOptionsHandler.swift */; };
 		7B11B3082EF304B6005F0687 /* AutomationServer in Frameworks */ = {isa = PBXBuildFile; productRef = 7B11B3092EF304B6005F0687 /* AutomationServer */; };
 		7B11B30A2EF304B6005F0687 /* AutomationServer in Frameworks */ = {isa = PBXBuildFile; productRef = 7B11B30B2EF304B6005F0687 /* AutomationServer */; };
@@ -6099,6 +6103,7 @@
 		56BA1E7C2BAB290E001CF69F /* ErrorPageTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorPageTabExtensionTests.swift; sourceTree = "<group>"; };
 		AC48CA230AE5690BB3892146 /* PageSignalsTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageSignalsTabExtensionTests.swift; sourceTree = "<group>"; };
 		74C3686DCAE2691E55AA88AF /* ReaderModeTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderModeTabExtensionTests.swift; sourceTree = "<group>"; };
+		1C032D1AAC0146403A244A30 /* ReaderModeViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderModeViewControllerTests.swift; sourceTree = "<group>"; };
 		56BC8F002D312B320046059D /* ConfigurationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationManagerTests.swift; sourceTree = "<group>"; };
 		56BFB4D32ED60E29008A380E /* SubscriptionPageFeatureFlagAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPageFeatureFlagAdapterTests.swift; sourceTree = "<group>"; };
 		56BFE2092ED5D89F003B007D /* SubscriptionPageFeatureFlagAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPageFeatureFlagAdapter.swift; sourceTree = "<group>"; };
@@ -6152,6 +6157,7 @@
 		7B0C7F162EDF187000A338FD /* WebNotificationClickHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebNotificationClickHandler.swift; sourceTree = "<group>"; };
 		7B0C7F192EDF1D0800A338FD /* WebNotificationClickHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebNotificationClickHandlerTests.swift; sourceTree = "<group>"; };
 		7B11B3012EF304B6005F0687 /* AutomationServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationServer.swift; sourceTree = "<group>"; };
+		A9F7014D11F6F9658C1C2204 /* ReaderModeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderModeViewController.swift; sourceTree = "<group>"; };
 		7B11B3022EF304B6005F0687 /* LaunchOptionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchOptionsHandler.swift; sourceTree = "<group>"; };
 		7B122A882DE46FED00B84F63 /* AppStoreInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = AppStoreInfo.plist; sourceTree = "<group>"; };
 		7B122A8B2DE4701800B84F63 /* NetPAppStoreInfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = NetPAppStoreInfoPlist.xcstrings; sourceTree = "<group>"; };
@@ -10355,6 +10361,14 @@
 			path = UserNotifications;
 			sourceTree = "<group>";
 		};
+		5E3D7A1C9B2F4E6A8C0D1F23 /* ReaderMode */ = {
+			isa = PBXGroup;
+			children = (
+				A9F7014D11F6F9658C1C2204 /* ReaderModeViewController.swift */,
+			);
+			path = ReaderMode;
+			sourceTree = "<group>";
+		};
 		7B11B3032EF304B6005F0687 /* Automation */ = {
 			isa = PBXGroup;
 			children = (
@@ -11576,6 +11590,7 @@
 			isa = PBXGroup;
 			children = (
 				7B11B3032EF304B6005F0687 /* Automation */,
+				5E3D7A1C9B2F4E6A8C0D1F23 /* ReaderMode */,
 				31521ABE2CC0139C00248E6F /* AIChat */,
 				ED7478162E845958008628A1 /* AppHealth */,
 				AA4D700525545EDE00C3411E /* Application */,
@@ -13167,6 +13182,7 @@
 				56BA1E7C2BAB290E001CF69F /* ErrorPageTabExtensionTests.swift */,
 				AC48CA230AE5690BB3892146 /* PageSignalsTabExtensionTests.swift */,
 				74C3686DCAE2691E55AA88AF /* ReaderModeTabExtensionTests.swift */,
+				1C032D1AAC0146403A244A30 /* ReaderModeViewControllerTests.swift */,
 				1D1C36E529FB019C001FA40C /* HistoryTabExtensionTests.swift */,
 				5C18B7C9F1752FFCED03EF3D /* AIChatTabExtensionTests.swift */,
 				84C1007D2ECC75350083AB11 /* MockWKNavigationAction.swift */,
@@ -16986,6 +17002,7 @@
 				3706FC16293F65D500E42796 /* PasswordManagementLoginModel.swift in Sources */,
 				3706FC17293F65D500E42796 /* TabViewModel.swift in Sources */,
 				7B11B3062EF304B6005F0687 /* AutomationServer.swift in Sources */,
+				AAAF8C8D18C89C619B02288A /* ReaderModeViewController.swift in Sources */,
 				7B11B3072EF304B6005F0687 /* LaunchOptionsHandler.swift in Sources */,
 				3706FC18293F65D500E42796 /* TabDragAndDropManager.swift in Sources */,
 				1D532BE52EDC3E6D00D219FA /* PermissionCenterViewModel.swift in Sources */,
@@ -17611,6 +17628,7 @@
 				567A23CF2C80CF4B0010F66C /* ErrorPageTabExtensionTests.swift in Sources */,
 				99FE0B059D0794C443A1D4A2 /* PageSignalsTabExtensionTests.swift in Sources */,
 				8F59E2BCFB94734091AD0CD8 /* ReaderModeTabExtensionTests.swift in Sources */,
+				C8E9747A35BE37CC7F34DFD5 /* ReaderModeViewControllerTests.swift in Sources */,
 				37D046A22C7DA9A200AEAA50 /* UserBackgroundImagesManagerTests.swift in Sources */,
 				1D8C2FEB2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */,
 				1DD0DBBF2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */,
@@ -19323,6 +19341,7 @@
 				37EE55EA2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */,
 				CCF40A682ED7432800CBF271 /* UserChurnService.swift in Sources */,
 				7B11B3042EF304B6005F0687 /* AutomationServer.swift in Sources */,
+				3D4F3E6B5DD94E88BF148D68 /* ReaderModeViewController.swift in Sources */,
 				7B11B3052EF304B6005F0687 /* LaunchOptionsHandler.swift in Sources */,
 				37EE55EB2D5F197300D53C7C /* BadgeNotificationContainerView.swift in Sources */,
 				37EE55EC2D5F197300D53C7C /* BadgeNotificationContentView.swift in Sources */,
@@ -20189,6 +20208,7 @@
 				56BA1E802BAB2E43001CF69F /* ErrorPageTabExtensionTests.swift in Sources */,
 				9A506409C1007AAF322D43F3 /* PageSignalsTabExtensionTests.swift in Sources */,
 				5B6B94D82E275998BD6DC4CA /* ReaderModeTabExtensionTests.swift in Sources */,
+				1181DF3BFFF3B19BCA0F7F94 /* ReaderModeViewControllerTests.swift in Sources */,
 				9FCB946B2DE05AC800BC662B /* MockTimer.swift in Sources */,
 				EEC3BD262E5897300093F638 /* SyncDialogControllerTests.swift in Sources */,
 				567A23DB2C8894CD0010F66C /* ContextualDaxDialogsFactoryTests.swift in Sources */,

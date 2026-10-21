@@ -33,6 +33,7 @@ import Onboarding
 import os.log
 import PixelKit
 import PrivacyConfig
+import ReaderMode
 import Subscription
 import SwiftUI
 import UserScript
@@ -85,6 +86,7 @@ final class BrowserTabViewController: NSViewController {
     private weak var webViewContainer: NSView?
     @Published private var webViewSnapshot: NSView?
     private var containerStackView: NSStackView
+    private var readerModeViewController: ReaderModeViewController?
     private var cookiePopupOptInHostingController: NSHostingController<CookiePopupProtectionOptInView>?
     private var cookiePopupOptInBackdrop: WindowDimmingBlockingView?
 
@@ -540,6 +542,7 @@ final class BrowserTabViewController: NSViewController {
                 subscribeToTabContent(of: selectedTabViewModel)
                 subscribeToHoveredLink(of: selectedTabViewModel)
                 subscribeToUserDialogs(of: selectedTabViewModel)
+                subscribeToReaderMode(of: selectedTabViewModel)
 
                 // changing tab is considered equivalent to dismissing the dialog
                 wasContextualOnboardingDialogDismissed = true
@@ -547,6 +550,45 @@ final class BrowserTabViewController: NSViewController {
                 adjustFirstResponder(force: true)
             }
             .store(in: &cancellables)
+    }
+
+    private func subscribeToReaderMode(of tabViewModel: TabViewModel?) {
+        guard let tab = tabViewModel?.tab, let readerMode = tab.readerMode else {
+            showReaderMode(nil, for: nil)
+            return
+        }
+        readerMode.statePublisher
+            .sink { [weak self, weak tab] state in
+                guard case .active(let article) = state else {
+                    self?.showReaderMode(nil, for: nil)
+                    return
+                }
+                self?.showReaderMode(article, for: tab)
+            }
+            .store(in: &tabViewModelCancellables)
+    }
+
+    private func showReaderMode(_ article: ReaderArticle?, for tab: Tab?) {
+        readerModeViewController?.removeCompletely()
+        readerModeViewController = nil
+
+        guard let article, let tab else { return }
+        let readerModeViewController = ReaderModeViewController(article: article) { [weak tab] url in
+            tab?.readerMode?.exit()
+            tab?.setUrl(url, source: .link)
+        }
+        addChild(readerModeViewController)
+        let readerView = readerModeViewController.view
+        readerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(readerView, positioned: .below, relativeTo: hoverLabelContainer)
+        NSLayoutConstraint.activate([
+            readerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            readerView.topAnchor.constraint(equalTo: view.topAnchor),
+            readerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            readerView.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor),
+        ])
+        self.readerModeViewController = readerModeViewController
+        view.window?.makeFirstResponder(readerView)
     }
 
     private func subscribeToTabs() {

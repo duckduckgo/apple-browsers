@@ -82,7 +82,7 @@ struct DataImportView: ModalView {
             switch model.screen {
             case .sourceAndDataTypesPicker:
                 ImportSourcePickerView(
-                    availableSources: model.availableImportSources,
+                    availableSources: model.visibleImportSources,
                     selectedSource: model.importSource,
                     selectedImportTypes: Array(model.selectedDataTypes),
                     selectableImportTypes: Array(model.selectableImportTypes),

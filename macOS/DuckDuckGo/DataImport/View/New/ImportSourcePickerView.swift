@@ -27,6 +27,7 @@ import UIComponents
 struct ImportSourcePickerView: View {
     @StateObject private var viewModel: ImportSourcePickerViewModel
 
+    let availableSources: [DataImport.Source]
     let selectedImportTypes: [DataImport.DataType]
     let selectableImportTypes: [DataImport.DataType]
 
@@ -42,6 +43,7 @@ struct ImportSourcePickerView: View {
          onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
          onSyncSelected: @escaping () -> Void,
          onExpandedStateChanged: @escaping (Bool) -> Void) {
+        self.availableSources = availableSources
         self.selectedImportTypes = selectedImportTypes
         self.selectableImportTypes = selectableImportTypes
         self.onExpandedStateChanged = onExpandedStateChanged
@@ -83,6 +85,9 @@ struct ImportSourcePickerView: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
+        .onChange(of: availableSources) { newValue in
+            viewModel.updateAvailableImportSources(newValue)
+        }
         .onChange(of: selectableImportTypes) { newValue in
             viewModel.updateSelectableImportTypes(newValue)
         }

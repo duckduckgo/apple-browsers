@@ -124,6 +124,9 @@ struct DataImportViewModel {
     /// Lets `update(with:)` tell user intent apart from a selection that's
     /// just a side-effect of the current source's supported types.
     var hasUserModifiedDataTypeSelection: Bool = false
+    /// Data types the user explicitly turned off, kept across source switches.
+    /// Types a source doesn't support are not in here, so they never hide other sources.
+    private(set) var deselectedDataTypes: Set<DataType> = []
     var isPickerExpanded: Bool = false
 
     enum DataTypeSelection: Equatable {
@@ -229,6 +232,7 @@ struct DataImportViewModel {
          summary: [DataTypeImportResult] = [],
          selectedDataTypes: Set<DataType>? = nil,
          hasUserModifiedDataTypeSelection: Bool = false,
+         deselectedDataTypes: Set<DataType> = [],
          isPickerExpanded: Bool = false,
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
          syncFeatureVisibility: SyncFeatureVisibility = .hide,
@@ -294,6 +298,7 @@ struct DataImportViewModel {
             availableTypes: availableImportTypes
         )
         self.hasUserModifiedDataTypeSelection = hasUserModifiedDataTypeSelection
+        self.deselectedDataTypes = deselectedDataTypes
 
         self.summary = summary
         self.isPickerExpanded = isPickerExpanded
@@ -958,6 +963,7 @@ extension DataImportViewModel {
         self = .init(importSource: importSource,
                      selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
                      hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
+                     deselectedDataTypes: deselectedDataTypes,
                      isPickerExpanded: self.isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,
@@ -978,8 +984,21 @@ extension DataImportViewModel {
         hasUserModifiedDataTypeSelection = true
         if selected {
             selectedDataTypes.insert(dataType)
+            deselectedDataTypes.remove(dataType)
         } else {
             selectedDataTypes.remove(dataType)
+            deselectedDataTypes.insert(dataType)
+        }
+    }
+
+    /// Import sources shown in the picker: hides a source once the user turned off every data type it supports.
+    /// The selected source always stays visible.
+    var visibleImportSources: [Source] {
+        guard featureFlagger.isFeatureOn(.dataImportSourceFilter) else {
+            return availableImportSources
+        }
+        return availableImportSources.filter { source in
+            source == importSource || !source.supportedDataTypes.isSubset(of: deselectedDataTypes)
         }
     }
 
@@ -1006,6 +1025,7 @@ extension DataImportViewModel {
         self = .init(importSource: importSource,
                      selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
                      hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
+                     deselectedDataTypes: deselectedDataTypes,
                      isPickerExpanded: isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,

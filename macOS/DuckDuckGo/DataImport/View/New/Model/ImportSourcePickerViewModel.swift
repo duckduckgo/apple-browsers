@@ -149,6 +149,11 @@ final class ImportSourcePickerViewModel: ObservableObject {
         updateImportTypeItems()
     }
 
+    func updateAvailableImportSources(_ newAvailableImportSources: [DataImport.Source]) {
+        availableImportSources = newAvailableImportSources
+        ensurePickerExpandedIfNeeded()
+    }
+
     func updateSelectedImportTypes(_ newSelectedImportTypes: [DataImport.DataType]) {
         selectedImportTypes = newSelectedImportTypes
         updateImportTypeItems()

@@ -490,6 +490,66 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(model.selectedDataTypes, [.bookmarks, .passwords])
     }
 
+    // MARK: - Source Filter Tests
+
+    @MainActor
+    func testVisibleImportSources_userTurnsOffPasswords_hidesPasswordOnlySources() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
+
+        model.setDataType(.passwords, selected: false)
+
+        XCTAssertEqual(model.visibleImportSources, [.chrome, .tor, .fileImport])
+    }
+
+    @MainActor
+    func testVisibleImportSources_userTurnsPasswordsBackOn_showsPasswordOnlySourcesAgain() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
+        model.setDataType(.passwords, selected: false)
+
+        model.setDataType(.passwords, selected: true)
+
+        XCTAssertEqual(model.visibleImportSources, sourceFilterSources)
+    }
+
+    @MainActor
+    func testVisibleImportSources_sourceNarrowsSelectionByItself_hidesNothing() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
+
+        model.update(with: .onePassword8)
+
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+        XCTAssertEqual(model.visibleImportSources, model.availableImportSources)
+    }
+
+    @MainActor
+    func testVisibleImportSources_userNarrowingSurvivesSourceSwitch() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
+        model.setDataType(.passwords, selected: false)
+
+        model.update(with: .firefox)
+
+        XCTAssertTrue(model.availableImportSources.contains(.bitwarden))
+        XCTAssertEqual(model.visibleImportSources, model.availableImportSources.filter { $0.supportedDataTypes != [.passwords] })
+    }
+
+    @MainActor
+    func testVisibleImportSources_keepsSelectedSourceWhoseTypesAreAllTurnedOff() {
+        model = sourceFilterModel(importSource: .bitwarden, deselectedDataTypes: [.passwords], isFilterOn: true)
+
+        let visibleSources = model.visibleImportSources
+
+        XCTAssertEqual(visibleSources, [.chrome, .tor, .fileImport, .bitwarden])
+    }
+
+    @MainActor
+    func testVisibleImportSources_filterFlagOff_showsAllSources() {
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: false)
+
+        model.setDataType(.passwords, selected: false)
+
+        XCTAssertEqual(model.visibleImportSources, sourceFilterSources)
+    }
+
     // MARK: - Button State Tests
 
     @MainActor
@@ -2736,6 +2796,31 @@ final class DataImportViewModelTests: XCTestCase {
             dataImporterFactory: dataImporterFactory ?? { _, _, _, _ in ImporterMock(importTask: self.importTask) },
             requestPrimaryPasswordCallback: requestPrimaryPasswordCallback ?? { _ in nil },
             openPanelCallback: { self.openPanelCallback!($0) },
+            directoryAccessAvailability: .mockUnavailable()
+        )
+    }
+
+    private var sourceFilterSources: [Source] {
+        [.chrome, .tor, .fileImport, .onePassword8, .bitwarden]
+    }
+
+    private func sourceFilterModel(
+        importSource: Source,
+        deselectedDataTypes: Set<DataType> = [],
+        isFilterOn: Bool
+    ) -> DataImportViewModel {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = isFilterOn
+        return DataImportViewModel(
+            importSource: importSource,
+            availableImportSources: sourceFilterSources,
+            deselectedDataTypes: deselectedDataTypes,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
+                return .init(browser: browser, profiles: [defaultProfile])
+            },
+            featureFlagger: featureFlagger,
             directoryAccessAvailability: .mockUnavailable()
         )
     }

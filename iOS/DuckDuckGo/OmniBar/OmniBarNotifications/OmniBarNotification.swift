@@ -46,19 +46,11 @@ struct OmniBarNotification: View {
         }
     }
 
-    @ViewBuilder
     private var background: some View {
-        if DesignSystemRebrand.isAppRebranded() {
-            Capsule()
-                .foregroundColor(Constants.Colors.background)
-                .offset(x: textOffset)
-                .clipShape(Capsule())
-        } else {
-            RoundedRectangle(cornerRadius: Constants.Radius.background)
-                .foregroundColor(Constants.Colors.background)
-                .offset(x: textOffset)
-                .clipShape(RoundedRectangle(cornerRadius: Constants.Radius.background))
-        }
+        Capsule()
+            .foregroundColor(Constants.Colors.background)
+            .offset(x: textOffset)
+            .clipShape(Capsule())
     }
     
     @ViewBuilder
@@ -174,10 +166,6 @@ private enum Constants {
         static let cancel = CGSize(width: 13, height: 13)
         static let rowHeight: CGFloat = 76
         static let staticIcon = CGSize(width: 24, height: 24)
-    }
-
-    enum Radius {
-        static let background: CGFloat = 12
     }
 }
 

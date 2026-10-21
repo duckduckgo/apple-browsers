@@ -836,6 +836,8 @@ struct UserText {
     static let aiChatScreenshotAttachmentName = NotLocalizedString("aichat.attachments.screenshot-name", value: "Screenshot", comment: "Name of an image attachment captured with Add Screenshot")
     static let aiChatPastedImageAttachmentName = NotLocalizedString("aichat.attachments.pasted-image-name", value: "Pasted Image", comment: "Name of an image attachment pasted into the Duck.ai prompt")
     static let aiChatScreenshotCaptureFailed = NotLocalizedString("aichat.attachments.screenshot-failed", value: "Couldn't capture screenshot", comment: "Error shown under the Duck.ai prompt when a screenshot capture fails")
+    static let aiChatScreenshotPickerSelectWindow = NotLocalizedString("aichat.screenshot.picker.select-window", value: "Select Window", comment: "Title of the Duck.ai screenshot picker while it shows open windows")
+    static let aiChatScreenshotPickerSelectDisplay = NotLocalizedString("aichat.screenshot.picker.select-display", value: "Select Display", comment: "Title of the Duck.ai screenshot picker while it shows displays")
     static let aiChatScreenshotPickerWindowsTab = NotLocalizedString("aichat.screenshot.picker.windows-tab", value: "Windows", comment: "Tab in the Duck.ai screenshot picker showing open windows")
     static let aiChatScreenshotPickerDisplaysTab = NotLocalizedString("aichat.screenshot.picker.displays-tab", value: "Displays", comment: "Tab in the Duck.ai screenshot picker showing displays")
     static let aiChatScreenshotPickerNoWindows = NotLocalizedString("aichat.screenshot.picker.no-windows", value: "No windows to capture", comment: "Shown in the Duck.ai screenshot picker when no window can be captured")

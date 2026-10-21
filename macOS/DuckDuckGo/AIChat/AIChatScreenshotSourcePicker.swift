@@ -18,12 +18,12 @@
 
 import AIChat
 import AppKit
+import DesignResourcesKitIcons
 import os.log
 import ScreenCaptureKit
 import SwiftUI
 
-/// Select Window or Display through our own picker, laid out like Windows'. Listing windows needs
-/// Screen Recording.
+/// Select Window or Display through our own picker. Listing windows needs Screen Recording.
 @MainActor
 final class AIChatScreenshotSourcePicker: NSObject, NSWindowDelegate {
 
@@ -168,7 +168,7 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
         case failed
     }
 
-    /// Twice the 200 pt tile, for Retina.
+    /// About twice the tile, for Retina.
     static let thumbnailMaxPixels: CGFloat = 400
     /// ponytail: polls, since macOS has no live thumbnails and no notice when another app's window changes;
     /// a shorter interval costs a capture of every tile each time.
@@ -317,56 +317,74 @@ final class AIChatScreenshotSourcePickerModel: ObservableObject {
     }
 }
 
-/// Modelled on the Windows picker: tabs, a grid of thumbnails, Capture and Cancel.
+/// A native-looking sheet: a sidebar for windows and displays, a grid of thumbnails, Capture and Cancel.
 struct AIChatScreenshotSourcePickerView: View {
 
-    static let tileSize = CGSize(width: 200, height: 125)
-    /// What fits in the 720 pt panel; arrow keys move up and down by it.
+    static let thumbnailHeight: CGFloat = 128
+    /// Arrow keys move up and down by it.
     static let columnCount = 3
 
     @ObservedObject var model: AIChatScreenshotSourcePickerModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(UserText.aiChatScreenshotSelectWindowOrDisplay)
-                .font(.title2.weight(.semibold))
-                .padding(.bottom, 16)
-
-            HStack(spacing: 20) {
-                tabButton(.window, title: UserText.aiChatScreenshotPickerWindowsTab)
-                tabButton(.screen, title: UserText.aiChatScreenshotPickerDisplaysTab)
-            }
+        HStack(spacing: 0) {
+            sidebar
             Divider()
+            VStack(alignment: .leading, spacing: 0) {
+                Text(model.tab == .window ? UserText.aiChatScreenshotPickerSelectWindow : UserText.aiChatScreenshotPickerSelectDisplay)
+                    .font(.title.weight(.bold))
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 8)
+                    .frame(maxWidth: .infinity, minHeight: 64, alignment: .bottomLeading)
 
-            grid
-                .frame(height: 360)
+                grid
+                    // Two rows of tiles.
+                    .frame(height: 362)
 
-            Divider()
-            HStack {
-                Spacer()
-                Button(UserText.cancel) { model.cancel() }
-                    .keyboardShortcut(.cancelAction)
-                Button(UserText.aiChatScreenshotPickerCapture) { model.share() }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(model.selected == nil)
+                Divider()
+                HStack(spacing: 10) {
+                    Spacer()
+                    Button(UserText.cancel) { model.cancel() }
+                        .keyboardShortcut(.cancelAction)
+                    Button(UserText.aiChatScreenshotPickerCapture) { model.share() }
+                        .keyboardShortcut(.defaultAction)
+                        .disabled(model.selected == nil)
+                }
+                .padding(.horizontal, 20)
+                .frame(height: 64)
             }
-            .padding(.top, 16)
+            .background(Color(nsColor: .controlBackgroundColor))
         }
-        .padding(20)
-        .frame(width: 720)
+        .frame(width: 800)
     }
 
-    private func tabButton(_ tab: AIChatScreenshotSourcePickerModel.Tab, title: String) -> some View {
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            sidebarItem(.window, title: UserText.aiChatScreenshotPickerWindowsTab, icon: DesignSystemImages.Glyphs.Size16.window)
+            sidebarItem(.screen, title: UserText.aiChatScreenshotPickerDisplaysTab, icon: DesignSystemImages.Glyphs.Size16.deviceDesktop)
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 32)
+        .padding(.horizontal, 10)
+        .frame(width: 160)
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private func sidebarItem(_ tab: AIChatScreenshotSourcePickerModel.Tab, title: String, icon: NSImage) -> some View {
         let isSelected = model.tab == tab
         return Button {
             model.tab = tab
         } label: {
-            Text(title)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundColor(isSelected ? .primary : .secondary)
-                .padding(.bottom, 8)
-                .overlay(Rectangle().fill(isSelected ? Color.accentColor : Color.clear).frame(height: 2), alignment: .bottom)
-                .contentShape(Rectangle())
+            HStack(spacing: 6) {
+                Image(nsImage: icon)
+                Text(title)
+                    .fontWeight(isSelected ? .semibold : .regular)
+            }
+            .foregroundColor(.primary)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 5).fill(isSelected ? Color(nsColor: .quaternaryLabelColor) : .clear))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -384,13 +402,13 @@ struct AIChatScreenshotSourcePickerView: View {
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16, alignment: .topLeading), count: Self.columnCount),
-                              alignment: .leading,
-                              spacing: 16) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16, alignment: .top), count: Self.columnCount),
+                              spacing: 12) {
                         ForEach(model.sources) { source in
                             tile(for: source)
                         }
                     }
+                    .padding(.horizontal, 24)
                     .padding(.vertical, 16)
                 }
                 // Keeps the tile chosen with the arrow keys in view.
@@ -404,33 +422,26 @@ struct AIChatScreenshotSourcePickerView: View {
 
     private func tile(for source: AIChatScreenshotSource) -> some View {
         let isSelected = model.selectedID == source.id
-        return VStack(alignment: .leading, spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(nsColor: .quaternaryLabelColor))
-                if let thumbnail = model.thumbnails[source.id] {
-                    if let thumbnail {
-                        Image(decorative: thumbnail, scale: 1)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .padding(6)
-                    }
-                } else {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-            }
-            .frame(width: Self.tileSize.width, height: Self.tileSize.height)
-            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 3))
-
+        let shape = RoundedRectangle(cornerRadius: 8)
+        return VStack(spacing: 0) {
+            // Fills the tile and crops the overflow, centered.
+            Color.clear
+                .frame(height: Self.thumbnailHeight)
+                .overlay(thumbnail(for: source))
+                .clipped()
+            Divider()
             HStack(spacing: 6) {
                 icon(for: source)
                 Text(source.title)
                     .lineLimit(1)
             }
-            .frame(width: Self.tileSize.width, alignment: .leading)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
         }
-        .contentShape(Rectangle())
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(isSelected ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isSelected ? 3 : 1))
+        .contentShape(shape)
         .help(source.subtitle.map { "\($0) — \(source.title)" } ?? source.title)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(source.subtitle.map { "\($0), \(source.title)" } ?? source.title)
@@ -443,14 +454,29 @@ struct AIChatScreenshotSourcePickerView: View {
     }
 
     @ViewBuilder
+    private func thumbnail(for source: AIChatScreenshotSource) -> some View {
+        if let thumbnail = model.thumbnails[source.id] {
+            if let thumbnail {
+                Image(decorative: thumbnail, scale: 1)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            }
+        } else {
+            ProgressView()
+                .controlSize(.small)
+        }
+    }
+
+    @ViewBuilder
     private func icon(for source: AIChatScreenshotSource) -> some View {
         if let icon = source.icon {
             Image(nsImage: icon)
                 .resizable()
-                .frame(width: 16, height: 16)
+                .frame(width: 14, height: 14)
         } else {
-            Image(systemName: "display")
-                .frame(width: 16, height: 16)
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.deviceDesktop)
+                .resizable()
+                .frame(width: 14, height: 14)
         }
     }
 }

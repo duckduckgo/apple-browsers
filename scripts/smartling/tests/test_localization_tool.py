@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+import contextlib
 import importlib.util
+import io
 import sys
+import tempfile
 import unittest
 from decimal import Decimal
 from pathlib import Path
@@ -28,6 +31,7 @@ class FakeSmartlingClient:
                  estimate_status='COMPLETED',
                  cancellation_state='COMPLETED',
                  job_status='CANCELLED'):
+        self.creds = LOCALIZATION_TOOL.Credentials('user', 'secret', 'project-123')
         self.report = report or {}
         self.pending_jobs = pending_jobs or []
         self.named_jobs = named_jobs or []
@@ -89,16 +93,23 @@ class FakeSmartlingClient:
 
 class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
 
+    def setUp(self):
+        export_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(export_dir.cleanup)
+        self.export_file = Path(export_dir.name) / 'en.xliff'
+        self.export_file.write_text('<xliff/>', encoding='utf-8')
+
     async def run_submit(self, client):
-        return await LOCALIZATION_TOOL.run_submit(
-            client=client,
-            files=[Path('en.xliff')],
-            job_name='Nightly iOS - 2026-08-04',
-            pending_job_prefix='Nightly iOS - ',
-            file_uri_prefix='main',
-            auto_authorize_max_usd=Decimal('500.00'),
-            sleep=no_sleep
-        )
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return await LOCALIZATION_TOOL.run_submit(
+                client=client,
+                files=[self.export_file],
+                job_name='Nightly iOS - 2026-08-04',
+                pending_job_prefix='Nightly iOS - ',
+                file_uri_prefix='main',
+                auto_authorize_max_usd=Decimal('500.00'),
+                sleep=no_sleep
+            )
 
     async def testWhenNoStringsNeedTranslationThenJobIsDeleted(self):
         client = FakeSmartlingClient(report={
@@ -109,6 +120,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         result = await self.run_submit(client)
 
         self.assertEqual(result.outcome, 'no_new_strings')
+        self.assertEqual(result.job_id, 'job-123')
         self.assertEqual(client.deleted_jobs, ['job-123'])
         self.assertEqual(client.authorized_jobs, [])
         self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])

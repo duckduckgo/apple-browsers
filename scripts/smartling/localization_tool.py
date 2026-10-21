@@ -12,6 +12,9 @@ import json
 import asyncio
 import argparse
 import subprocess
+import time
+import traceback
+from contextlib import contextmanager
 from pathlib import Path
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
@@ -43,6 +46,7 @@ class SubmitResult:
     total_strings: int = 0
     max_usd: str = ""
     reason: str = ""
+    failed: bool = False
 
     def as_dict(self) -> Dict:
         return {
@@ -286,28 +290,79 @@ class SmartlingClient:
 # CLI Commands
 # ============================================================================
 
+def log(message: str):
+    """Print a progress line for CI logs."""
+    print(f"[smartling] {message}", flush=True)
+
+
+def annotate(level: str, message: str):
+    """Show a notice, warning or error at the top of a GitHub Actions run."""
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        escaped = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+        print(f"::{level}::{escaped}", flush=True)
+
+
+@contextmanager
+def log_group(title: str):
+    """Fold the lines logged inside into one collapsible group on GitHub Actions."""
+    in_actions = os.environ.get('GITHUB_ACTIONS') == 'true'
+    if in_actions:
+        print(f"::group::{title}", flush=True)
+    else:
+        log(f"⏳ {title}")
+    try:
+        yield
+    finally:
+        if in_actions:
+            print("::endgroup::", flush=True)
+
+
+def job_url(client: SmartlingClient, job_id: str) -> str:
+    """Smartling dashboard link for a job."""
+    project_id = client.creds.project_id
+    return f"https://dashboard.smartling.com/app/projects/{project_id}/account-jobs/{project_id}:{job_id}"
+
+
+async def poll_status(get_status, terminal: set, sleep, interval: int, attempts: int = 60) -> str:
+    """Poll until get_status returns a terminal status, logging each change."""
+    started = time.monotonic()
+    last_status = None
+    for _ in range(attempts):
+        status = await get_status()
+        if status != last_status:
+            log(f"Status: {status} ({int(time.monotonic() - started)}s)")
+            last_status = status
+        if status in terminal:
+            return status
+        await sleep(interval)
+    return last_status
+
+
 async def wait_for_batch(client: SmartlingClient, batch_id: str, sleep=asyncio.sleep):
     """Wait for Smartling to finish ingesting a batch."""
-    for _ in range(60):
-        status = await client.get_batch_status(batch_id)
-        if status == 'COMPLETED':
-            return
-        if status in {'FAILED', 'COMPLETED_WITH_ERRORS', 'CANCELED', 'CANCELLED'}:
-            raise RuntimeError(f"Smartling batch processing ended with status {status}")
-        await sleep(5)
-    raise RuntimeError("Smartling batch processing timed out")
+    failed = {'FAILED', 'COMPLETED_WITH_ERRORS', 'CANCELED', 'CANCELLED'}
+    with log_group(f"Waiting for Smartling to process batch {batch_id}"):
+        status = await poll_status(
+            lambda: client.get_batch_status(batch_id), {'COMPLETED'} | failed, sleep, 5
+        )
+    if status in failed:
+        raise RuntimeError(f"Smartling batch processing ended with status {status}")
+    if status != 'COMPLETED':
+        raise RuntimeError("Smartling batch processing timed out")
 
 
 async def wait_for_estimate(client: SmartlingClient, report_id: str, sleep=asyncio.sleep) -> Dict:
     """Wait for a Smartling cost estimate."""
-    for _ in range(60):
-        status = await client.get_estimate_status(report_id)
-        if status == 'COMPLETED':
-            return await client.get_estimate_report(report_id)
-        if status in {'FAILED', 'TIMEOUT', 'NOT_FOUND'}:
-            raise RuntimeError(f"Smartling estimate ended with status {status}")
-        await sleep(5)
-    raise RuntimeError("Smartling cost estimate timed out")
+    failed = {'FAILED', 'TIMEOUT', 'NOT_FOUND'}
+    with log_group(f"Waiting for cost estimate {report_id}"):
+        status = await poll_status(
+            lambda: client.get_estimate_status(report_id), {'COMPLETED'} | failed, sleep, 5
+        )
+    if status in failed:
+        raise RuntimeError(f"Smartling estimate ended with status {status}")
+    if status != 'COMPLETED':
+        raise RuntimeError("Smartling cost estimate timed out")
+    return await client.get_estimate_report(report_id)
 
 
 async def wait_for_job_cancellation(client: SmartlingClient,
@@ -375,6 +430,7 @@ async def run_submit(client: SmartlingClient,
         )
         if pending_job:
             job_id = pending_job.get('translationJobUid') or pending_job.get('jobUid', '')
+            log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
             return SubmitResult(
                 outcome='review_required',
                 job_id=job_id,
@@ -388,6 +444,7 @@ async def run_submit(client: SmartlingClient,
             None
         )
         if existing_job:
+            log(f"⏭️ A job named '{job_name}' already exists")
             return SubmitResult(
                 outcome='skipped_existing_job',
                 job_id=existing_job.get('translationJobUid') or existing_job.get('jobUid', ''),
@@ -395,29 +452,39 @@ async def run_submit(client: SmartlingClient,
                 reason=f"A job named '{job_name}' already exists"
             )
 
+        log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+
         locales = await client.get_project_locales()
         job_id = await client.create_job(
             job_name,
             locales,
             "Created by localization automation"
         )
+        log(f"✅ Created job '{job_name}' ({job_id}) for {len(locales)} locales: {job_url(client, job_id)}")
         file_uris = [f"{file_uri_prefix}/{file_path.name}" for file_path in files]
         batch_id = await client.create_batch(job_id, file_uris)
         for file_path, file_uri in zip(files, file_uris):
             await client.upload_to_batch(batch_id, file_path, file_uri, locales)
+            log(f"📤 Uploaded {file_uri} ({file_path.stat().st_size // 1024} KB)")
         await wait_for_batch(client, batch_id, sleep)
 
         report_id = await client.generate_cost_estimate(job_id)
         report = await wait_for_estimate(client, report_id, sleep)
         total_strings, max_usd = parse_estimate(report)
+        log(
+            f"💵 Estimate: {total_strings} strings, max ${format(max_usd, 'f')} USD "
+            f"(authorized automatically up to ${format(auto_authorize_max_usd, 'f')})"
+        )
 
         if total_strings == 0:
             process_id = await client.cancel_job(job_id)
             await wait_for_job_cancellation(client, job_id, process_id, sleep)
             await client.delete_job(job_id)
-            return SubmitResult(outcome='no_new_strings')
+            log(f"🗑️ Nothing to translate, cancelled and deleted job {job_id}")
+            return SubmitResult(outcome='no_new_strings', job_id=job_id, job_name=job_name)
         if max_usd <= auto_authorize_max_usd:
             await client.authorize_job(job_id)
+            log("✅ Authorized")
             return SubmitResult(
                 outcome='authorized',
                 job_id=job_id,
@@ -425,6 +492,7 @@ async def run_submit(client: SmartlingClient,
                 total_strings=total_strings,
                 max_usd=format(max_usd, 'f')
             )
+        log("✋ Over the limit, leaving the job for review")
         return SubmitResult(
             outcome='review_required',
             job_id=job_id,
@@ -434,11 +502,14 @@ async def run_submit(client: SmartlingClient,
             reason=f"Maximum USD estimate exceeds {format(auto_authorize_max_usd, 'f')}"
         )
     except Exception as error:  # pylint: disable=broad-except
+        log(f"❌ {error}")
+        traceback.print_exc()
         return SubmitResult(
             outcome='review_required',
             job_id=job_id,
             job_name=job_name if job_id else "",
-            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500],
+            failed=True
         )
 
 
@@ -518,6 +589,7 @@ async def submit_command(args):
             raise RuntimeError(f"Missing export files: {', '.join(missing_files)}")
 
         auto_authorize_max_usd = Decimal(args.auto_authorize_max_usd)
+        log(f"Submitting {len(files)} files as '{args.job_name}' under {args.file_uri_prefix}/")
         async with SmartlingClient(get_credentials(args)) as client:
             result = await run_submit(
                 client,
@@ -528,10 +600,23 @@ async def submit_command(args):
                 auto_authorize_max_usd
             )
     except Exception as error:  # pylint: disable=broad-except
+        log(f"❌ {error}")
+        traceback.print_exc()
         result = SubmitResult(
             outcome='review_required',
-            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500],
+            failed=True
         )
+
+    summary = f"{result.job_name or args.job_name}: {result.outcome}"
+    if result.reason:
+        summary += f" ({result.reason})"
+    if result.failed:
+        annotate('error', summary)
+    elif result.outcome == 'review_required':
+        annotate('warning', summary)
+    else:
+        annotate('notice', summary)
 
     result_path = Path(args.result_file)
     result_path.write_text(json.dumps(result.as_dict()), encoding='utf-8')

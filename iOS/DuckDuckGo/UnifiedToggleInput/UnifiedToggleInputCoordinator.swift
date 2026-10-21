@@ -2336,7 +2336,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
             hasPageContext: hasAttachedPageContext(userScript: userScript),
             toolsSelected: !(tools?.isEmpty ?? true),
-            attachmentsSelected: viewController.currentAttachments.contains { $0.pastedText == nil }
+            attachmentsSelected: viewController.currentAttachments.hasAttachmentsSelected
         )
 
         let attachments = UnifiedToggleInputAttachmentEncoder.encode(viewController.currentAttachments,

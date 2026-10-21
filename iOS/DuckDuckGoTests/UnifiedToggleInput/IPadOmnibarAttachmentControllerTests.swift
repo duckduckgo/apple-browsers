@@ -944,6 +944,8 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         XCTAssertFalse(delegate.wasOnOmniQuerySubmittedCalled)
         XCTAssertEqual(delegate.promptQuery, "https://example.com/path")
         XCTAssertEqual(delegate.promptControlValues?.selectedAttachments.textPasted?.map(\.content), [pasted])
+        let controlValues = try XCTUnwrap(delegate.promptControlValues)
+        XCTAssertFalse(DuckAIPromptFlowStart(controlValues: controlValues, tools: nil).attachmentsSelected, "A paste is prompt text")
     }
 
     func testURLShapedPromptWithImageSubmitsToDuckAIWithImage() throws {
@@ -960,6 +962,8 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         XCTAssertTrue(delegate.wasOnPromptSubmittedCalled)
         XCTAssertFalse(delegate.wasOnOmniQuerySubmittedCalled)
         XCTAssertEqual(delegate.promptControlValues?.selectedAttachments.images?.count, 1)
+        let controlValues = try XCTUnwrap(delegate.promptControlValues)
+        XCTAssertTrue(DuckAIPromptFlowStart(controlValues: controlValues, tools: nil).attachmentsSelected)
     }
 
     // MARK: - Sheet

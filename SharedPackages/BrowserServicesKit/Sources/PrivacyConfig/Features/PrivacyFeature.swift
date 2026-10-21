@@ -1046,4 +1046,6 @@ public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature
     case bitwarden
     case onePassword
     case lastPass
+    case iCloudPasswords
+    case darkReader
 }

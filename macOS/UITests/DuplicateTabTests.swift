@@ -139,11 +139,14 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
         // The test-mode inactivity threshold is five seconds, as in TabSuspensionTests.
         Thread.sleep(forTimeInterval: 6)
         app.debugMenu.click()
-        app.searchFields["Search debug menu..."].typeText("Simulate Memory Pressure")
+        let searchField = app.searchFields["Search debug menu..."]
+        XCTAssertTrue(searchField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Debug menu search field must appear")
+        searchField.typeText("Simulate Memory Pressure")
         app.menuItems["Simulate Memory Pressure (Critical)"].clickAfterExistenceTestSucceeds()
         let source = app.tabs.element(boundBy: 0)
         source.rightClick()
-        XCTAssertTrue(app.menuItems["isSuspended: true"].exists, "The source must actually be suspended")
+        XCTAssertTrue(app.menuItems["isSuspended: true"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "The source must actually be suspended")
         app.typeKey(.escape, modifierFlags: [])
 
         duplicateFromContextMenu(source)

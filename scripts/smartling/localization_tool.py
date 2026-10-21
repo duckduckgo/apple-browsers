@@ -35,8 +35,8 @@ class Credentials:
 
 
 @dataclass
-class NightlyResult:
-    """Machine-readable result for nightly automation."""
+class SubmitResult:
+    """Machine-readable result for automated job submission."""
     outcome: str
     job_id: str = ""
     total_strings: int = 0
@@ -127,7 +127,7 @@ class SmartlingClient:
         return data['response']['data']
 
     async def list_jobs(self, job_name: str, statuses: List[str]) -> List[Dict]:
-        """List jobs matching a name and statuses."""
+        """List jobs whose name contains job_name, in any of the statuses (all when empty)."""
         params = [('jobName', job_name), ('limit', '100')]
         params.extend(('translationJobStatus', status) for status in statuses)
         data = await self._request(
@@ -290,8 +290,8 @@ async def wait_for_batch(client: SmartlingClient, batch_id: str, sleep=asyncio.s
         status = await client.get_batch_status(batch_id)
         if status == 'COMPLETED':
             return
-        if status == 'FAILED':
-            raise RuntimeError("Smartling batch processing failed")
+        if status in {'FAILED', 'COMPLETED_WITH_ERRORS', 'CANCELED', 'CANCELLED'}:
+            raise RuntimeError(f"Smartling batch processing ended with status {status}")
         await sleep(5)
     raise RuntimeError("Smartling batch processing timed out")
 
@@ -350,13 +350,14 @@ def parse_estimate(report: Dict) -> tuple[int, Decimal]:
     return total_strings, max(usd_prices)
 
 
-async def run_nightly(client: SmartlingClient,
-                      files: List[Path],
-                      job_name: str,
-                      job_prefix: str,
-                      threshold: Decimal,
-                      sleep=asyncio.sleep) -> NightlyResult:
-    """Run nightly Smartling policy with an authenticated client."""
+async def run_submit(client: SmartlingClient,
+                     files: List[Path],
+                     job_name: str,
+                     job_prefix: str,
+                     file_uri_prefix: str,
+                     threshold: Decimal,
+                     sleep=asyncio.sleep) -> SubmitResult:
+    """Submit files to a new job and authorize it if the estimate is within the threshold."""
     job_id = ""
     try:
         pending_jobs = await client.list_jobs(
@@ -372,19 +373,31 @@ async def run_nightly(client: SmartlingClient,
         )
         if pending_job:
             job_id = pending_job.get('translationJobUid') or pending_job.get('jobUid', '')
-            return NightlyResult(
-                outcome='skipped_active_job',
+            return SubmitResult(
+                outcome='review_required',
                 job_id=job_id,
-                reason='A nightly job is already awaiting authorization'
+                reason=f"'{pending_job['jobName']}' is still awaiting authorization, so no new job was created"
+            )
+
+        existing_jobs = await client.list_jobs(job_name, [])
+        existing_job = next(
+            (job for job in existing_jobs if job.get('jobName') == job_name),
+            None
+        )
+        if existing_job:
+            return SubmitResult(
+                outcome='skipped_existing_job',
+                job_id=existing_job.get('translationJobUid') or existing_job.get('jobUid', ''),
+                reason=f"A job named '{job_name}' already exists"
             )
 
         locales = await client.get_project_locales()
         job_id = await client.create_job(
             job_name,
             locales,
-            "Created by nightly localization automation"
+            "Created by localization automation"
         )
-        file_uris = [f"main/{file_path.name}" for file_path in files]
+        file_uris = [f"{file_uri_prefix}/{file_path.name}" for file_path in files]
         batch_id = await client.create_batch(job_id, file_uris)
         for file_path, file_uri in zip(files, file_uris):
             await client.upload_to_batch(batch_id, file_path, file_uri, locales)
@@ -398,16 +411,16 @@ async def run_nightly(client: SmartlingClient,
             process_id = await client.cancel_job(job_id)
             await wait_for_job_cancellation(client, job_id, process_id, sleep)
             await client.delete_job(job_id)
-            return NightlyResult(outcome='no_content')
+            return SubmitResult(outcome='no_content')
         if max_usd <= threshold:
             await client.authorize_job(job_id)
-            return NightlyResult(
+            return SubmitResult(
                 outcome='authorized',
                 job_id=job_id,
                 total_strings=total_strings,
                 max_usd=format(max_usd, 'f')
             )
-        return NightlyResult(
+        return SubmitResult(
             outcome='review_required',
             job_id=job_id,
             total_strings=total_strings,
@@ -415,7 +428,7 @@ async def run_nightly(client: SmartlingClient,
             reason=f"Maximum USD estimate exceeds {format(threshold, 'f')}"
         )
     except Exception as error:  # pylint: disable=broad-except
-        return NightlyResult(
+        return SubmitResult(
             outcome='review_required',
             job_id=job_id,
             reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
@@ -489,8 +502,8 @@ async def upload_command(args):
         print(f"\n🎉 Upload complete! Job ID: {job_id}")
 
 
-async def nightly_command(args):
-    """Create and conditionally authorize a nightly translation job."""
+async def submit_command(args):
+    """Create a translation job and authorize it if the estimate is within the threshold."""
     try:
         files = [Path(file_path) for file_path in args.files]
         missing_files = [str(file_path) for file_path in files if not file_path.exists()]
@@ -499,22 +512,23 @@ async def nightly_command(args):
 
         threshold = Decimal(args.threshold)
         async with SmartlingClient(get_credentials(args)) as client:
-            result = await run_nightly(
+            result = await run_submit(
                 client,
                 files,
                 args.job_name,
                 args.job_prefix,
+                args.file_uri_prefix,
                 threshold
             )
     except Exception as error:  # pylint: disable=broad-except
-        result = NightlyResult(
+        result = SubmitResult(
             outcome='review_required',
             reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
         )
 
     result_path = Path(args.result_file)
     result_path.write_text(json.dumps(result.as_dict()), encoding='utf-8')
-    print(f"NIGHTLY_OUTCOME={result.outcome}")
+    print(f"OUTCOME={result.outcome}")
     print(f"JOB_ID={result.job_id}")
     print(f"TOTAL_STRINGS={result.total_strings}")
     print(f"MAX_USD={result.max_usd}")
@@ -628,13 +642,17 @@ def main():
     upload_parser.add_argument('--job-name', required=True)
     upload_parser.add_argument('--files', nargs='+', required=True)
 
-    # Nightly
-    nightly_parser = subparsers.add_parser('nightly')
-    nightly_parser.add_argument('--job-name', required=True)
-    nightly_parser.add_argument('--job-prefix', required=True)
-    nightly_parser.add_argument('--files', nargs='+', required=True)
-    nightly_parser.add_argument('--threshold', default='500.00')
-    nightly_parser.add_argument('--result-file', default='nightly_result.json')
+    # Submit
+    submit_parser = subparsers.add_parser('submit')
+    submit_parser.add_argument('--job-name', required=True)
+    submit_parser.add_argument('--job-prefix', required=True,
+                               help='Skip submission while a job with this name prefix awaits authorization')
+    submit_parser.add_argument('--file-uri-prefix', required=True,
+                               help='Smartling file URIs become <prefix>/<file name>, e.g. main or release/ios/7.200.0')
+    submit_parser.add_argument('--files', nargs='+', required=True)
+    submit_parser.add_argument('--threshold', default='500.00',
+                               help='Authorize the job when its maximum USD estimate is at most this amount')
+    submit_parser.add_argument('--result-file', default='submit_result.json')
 
     # Status
     status_parser = subparsers.add_parser('status')
@@ -659,7 +677,7 @@ def main():
     # Run command
     commands = {
         'upload': upload_command,
-        'nightly': nightly_command,
+        'submit': submit_command,
         'status': status_command,
         'approve': approve_command,
         'download': download_command,

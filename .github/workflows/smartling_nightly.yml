@@ -1,8 +1,8 @@
 name: Smartling - Nightly Jobs
 
+# Manual only for now. A follow-up adds `schedule:` (every day, weekends included);
+# the `github.event_name == 'schedule'` checks below already treat scheduled runs as writes.
 on:
-  schedule:
-    - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
       platform:
@@ -14,9 +14,13 @@ on:
           - iOS
           - macOS
       perform_writes:
-        description: "Create and authorize Smartling jobs"
+        description: "Create Smartling jobs, authorizing them if the cost estimate is within budget"
         type: boolean
         default: false
+      threshold:
+        description: "Maximum USD estimate to authorize automatically (0 never authorizes)"
+        type: string
+        default: "500.00"
 
 permissions:
   contents: read
@@ -24,6 +28,10 @@ permissions:
 concurrency:
   group: smartling-nightly
   cancel-in-progress: false
+
+env:
+  PERFORM_WRITES: ${{ github.event_name == 'schedule' || inputs.perform_writes }}
+  THRESHOLD: ${{ inputs.threshold || '500.00' }}
 
 jobs:
   smartling:
@@ -48,7 +56,7 @@ jobs:
 
       - name: Validate Smartling write branch
         id: write_branch_check
-        if: github.event_name == 'workflow_dispatch' && inputs.perform_writes
+        if: env.PERFORM_WRITES == 'true'
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
@@ -56,6 +64,33 @@ jobs:
             echo "Smartling writes are only allowed from ${DEFAULT_BRANCH}." >&2
             exit 1
           fi
+
+      - name: Resolve platform configuration
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          case "$PLATFORM" in
+            iOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}"
+              } >> "$GITHUB_ENV"
+              ;;
+            macOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Unknown platform: $PLATFORM" >&2
+              exit 1
+              ;;
+          esac
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
@@ -79,65 +114,40 @@ jobs:
           ./${{ matrix.platform }}/scripts/loc_export.sh | xcbeautify
 
       - name: Manual dry run
-        if: github.event_name == 'workflow_dispatch' && !inputs.perform_writes
+        if: env.PERFORM_WRITES != 'true'
         run: echo "Export completed. Smartling writes were disabled."
 
-      - name: Create and evaluate iOS Smartling job
-        id: nightly_ios
-        if: (github.event_name == 'schedule' || inputs.perform_writes) && matrix.platform == 'iOS'
+      - name: Create and evaluate ${{ matrix.platform }} Smartling job
+        id: submit
+        if: env.PERFORM_WRITES == 'true'
         env:
-          SMARTLING_USER_ID: ${{ secrets.IOS_SMARTLING_USER_ID }}
-          SMARTLING_USER_SECRET: ${{ secrets.IOS_SMARTLING_USER_SECRET }}
-          SMARTLING_PROJECT_ID: ${{ vars.IOS_SMARTLING_PROJECT_ID }}
-        run: ./scripts/smartling/smartling_nightly.sh "${{ matrix.platform }}" "500.00"
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          ./scripts/smartling/smartling_submit.sh "$PLATFORM" \
+            --job-name "Nightly $PLATFORM - $(date -u +%Y-%m-%d)" \
+            --job-prefix "Nightly $PLATFORM - " \
+            --file-uri-prefix main \
+            --threshold "$THRESHOLD"
 
-      - name: Create and evaluate macOS Smartling job
-        id: nightly_macos
-        if: (github.event_name == 'schedule' || inputs.perform_writes) && matrix.platform == 'macOS'
-        env:
-          SMARTLING_USER_ID: ${{ secrets.MACOS_SMARTLING_USER_ID }}
-          SMARTLING_USER_SECRET: ${{ secrets.MACOS_SMARTLING_USER_SECRET }}
-          SMARTLING_PROJECT_ID: ${{ vars.MACOS_SMARTLING_PROJECT_ID }}
-        run: ./scripts/smartling/smartling_nightly.sh "${{ matrix.platform }}" "500.00"
-
-      - name: Create iOS estimate review task
+      # TODO: Assign the task to this week's maintenance DRI once we know where to look them up.
+      # Until then it lands unassigned in the platform's app project.
+      - name: Create ${{ matrix.platform }} estimate review task
         if: >-
-          always() && (github.event_name == 'schedule' || inputs.perform_writes) &&
-          steps.write_branch_check.outcome != 'failure' && matrix.platform == 'iOS' &&
-          (failure() || steps.nightly_ios.outputs.outcome == 'review_required')
+          always() && env.PERFORM_WRITES == 'true' &&
+          steps.write_branch_check.outcome != 'failure' &&
+          (failure() || steps.submit.outputs.outcome == 'review_required')
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: create-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-project: ${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}
-          asana-task-name: Smartling nightly job needs review - iOS - ${{ steps.nightly_ios.outputs.job_id || github.sha }}
+          asana-project: ${{ env.ASANA_PROJECT_ID }}
+          asana-task-name: Smartling nightly job needs review - ${{ matrix.platform }} - ${{ steps.submit.outputs.job_id || github.sha }}
           asana-task-description: >-
-            The iOS nightly Smartling job could not be automatically authorized.
-            Job: https://dashboard.smartling.com/app/projects/${{ vars.IOS_SMARTLING_PROJECT_ID }}/account-jobs/${{ vars.IOS_SMARTLING_PROJECT_ID }}:${{ steps.nightly_ios.outputs.job_id }}
-            Maximum USD estimate: ${{ steps.nightly_ios.outputs.max_usd || 'unavailable' }}.
-            Untranslated strings: ${{ steps.nightly_ios.outputs.total_strings }}.
-            Reason: ${{ steps.nightly_ios.outputs.reason || 'Localization export or nightly orchestration failed' }}.
-            Threshold: $500.00.
-            Commit: ${{ github.sha }}.
-            Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-      - name: Create macOS estimate review task
-        if: >-
-          always() && (github.event_name == 'schedule' || inputs.perform_writes) &&
-          steps.write_branch_check.outcome != 'failure' && matrix.platform == 'macOS' &&
-          (failure() || steps.nightly_macos.outputs.outcome == 'review_required')
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
-        with:
-          action: create-asana-task
-          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
-          asana-task-name: Smartling nightly job needs review - macOS - ${{ steps.nightly_macos.outputs.job_id || github.sha }}
-          asana-task-description: >-
-            The macOS nightly Smartling job could not be automatically authorized.
-            Job: https://dashboard.smartling.com/app/projects/${{ vars.MACOS_SMARTLING_PROJECT_ID }}/account-jobs/${{ vars.MACOS_SMARTLING_PROJECT_ID }}:${{ steps.nightly_macos.outputs.job_id }}
-            Maximum USD estimate: ${{ steps.nightly_macos.outputs.max_usd || 'unavailable' }}.
-            Untranslated strings: ${{ steps.nightly_macos.outputs.total_strings }}.
-            Reason: ${{ steps.nightly_macos.outputs.reason || 'Localization export or nightly orchestration failed' }}.
-            Threshold: $500.00.
+            The ${{ matrix.platform }} nightly Smartling job could not be automatically authorized.
+            Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}.
+            Maximum USD estimate: ${{ steps.submit.outputs.max_usd || 'unavailable' }}.
+            Untranslated strings: ${{ steps.submit.outputs.total_strings || 'unavailable' }}.
+            Reason: ${{ steps.submit.outputs.reason || 'Localization export or Smartling submission failed' }}.
+            Threshold: $${{ env.THRESHOLD }}.
             Commit: ${{ github.sha }}.
             Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

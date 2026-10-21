@@ -2206,6 +2206,112 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
     }
 }
 
+@MainActor
+final class WebViewPreviewSnapshotCapturerTests: XCTestCase {
+
+    private let webView = FakeSnapshottingWebView()
+    private var snapshots: [(afterScreenUpdates: Bool, completion: (UIImage?) -> Void)] { webView.snapshots }
+    private var results: [(UIImage?, WebContentHealthPixel.SnapshotResult)] = []
+
+    func testWhenFirstSnapshotAnswersThenItIsUsedWithoutSecondSnapshot() {
+        let image = UIImage()
+        capture(waitForScreenUpdates: true)
+        snapshots[0].completion(image)
+        waitPastTimeouts()
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [true])
+        XCTAssertEqual(results.count, 1)
+        XCTAssertIdentical(results[0].0, image)
+        XCTAssertEqual(results[0].1, .success)
+    }
+
+    func testWhenFirstSnapshotTimesOutThenSnapshotWithoutWaitingIsUsedAndLateFirstAnswerIgnored() {
+        let image = UIImage()
+        capture(waitForScreenUpdates: true)
+        waitUntil { self.snapshots.count == 2 }
+        snapshots[0].completion(UIImage()) // Late, so ignored.
+        snapshots[1].completion(image)
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [true, false])
+        XCTAssertEqual(results.count, 1)
+        XCTAssertIdentical(results[0].0, image)
+        XCTAssertEqual(results[0].1, .retryImage)
+    }
+
+    func testWhenSnapshotWithoutWaitingAnswersWithoutImageThenResultSaysSo() {
+        capture(waitForScreenUpdates: true)
+        waitUntil { self.snapshots.count == 2 }
+        snapshots[1].completion(nil)
+
+        XCTAssertEqual(results.map(\.1), [.retryNoImage])
+    }
+
+    func testWhenBothSnapshotsTimeOutThenCompletionRunsOnceWithoutImage() {
+        capture(waitForScreenUpdates: true)
+        waitUntil { !self.results.isEmpty }
+        waitPastTimeouts()
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertNil(results[0].0)
+        XCTAssertEqual(results[0].1, .retryTimeout)
+    }
+
+    func testWhenNotWaitingForScreenUpdatesThenOnlyTheSnapshotThatDoesNotWaitIsTaken() {
+        capture(waitForScreenUpdates: false)
+        snapshots[0].completion(UIImage())
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [false])
+        XCTAssertEqual(results.map(\.1), [.retryImage])
+    }
+
+    func testWhenFirstSnapshotNeverAnswersThenItsPendingCallbackDoesNotKeepTheWebViewAlive() {
+        var webView: FakeSnapshottingWebView? = FakeSnapshottingWebView()
+        weak var releasedWebView = webView
+        WebViewPreviewSnapshotCapturer().capture(webView: webView!,
+                                                 rect: CGRect(x: 0, y: 0, width: 100, height: 100),
+                                                 timeout: 60,
+                                                 waitForScreenUpdates: true) { _, _ in }
+        // The fake keeps the callback, as WebKit does for a frozen page that never answers.
+        webView = nil
+
+        XCTAssertNil(releasedWebView)
+    }
+
+    private func capture(waitForScreenUpdates: Bool) {
+        WebViewPreviewSnapshotCapturer().capture(webView: webView,
+                                                 rect: CGRect(x: 0, y: 0, width: 100, height: 100),
+                                                 timeout: 0.05,
+                                                 waitForScreenUpdates: waitForScreenUpdates) { [weak self] image, result in
+            self?.results.append((image, result))
+        }
+    }
+
+    private func waitUntil(_ condition: @escaping () -> Bool) {
+        let deadline = Date().addingTimeInterval(5)
+        while !condition() && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
+        XCTAssertTrue(condition())
+    }
+
+    private func waitPastTimeouts() {
+        RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+    }
+}
+
+/// Records each snapshot request and answers only when the test calls its completion.
+@MainActor
+private final class FakeSnapshottingWebView: WebViewSnapshotting {
+
+    let window: UIWindow? = nil
+    private(set) var snapshots: [(afterScreenUpdates: Bool, completion: (UIImage?) -> Void)] = []
+
+    func takeSnapshot(with snapshotConfiguration: WKSnapshotConfiguration?,
+                      completionHandler: @escaping @MainActor @Sendable (UIImage?, (any Error)?) -> Void) {
+        snapshots.append((snapshotConfiguration?.afterScreenUpdates ?? true, { completionHandler($0, nil) }))
+    }
+}
+
 final class BrowserKeyboardLayoutTests: XCTestCase {
 
     func testHardwareKeyboardAccessoryUsesLayoutGuideWhenNotificationReportsNoKeyboard() {

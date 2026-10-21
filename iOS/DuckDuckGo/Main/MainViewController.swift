@@ -1304,7 +1304,8 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.swipeOverlayView = overlay
     }
 
-    func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
+    /// `reportingSnapshotTimeout`: see `TabViewController.preparePreview`.
+    func updatePreviewForCurrentTab(reportingSnapshotTimeout: Bool = false, completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
         // Returning by swipe also needs chrome and screen geometry when the NTP was left
         // through the tab switcher, which otherwise only saves a content-sized thumbnail.
@@ -1323,8 +1324,9 @@ class MainViewController: UIViewController {
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
-            currentTab.preparePreview(completion: { image in
-                if let image {
+            // A snapshot that never answers (a frozen page) must not keep a closed tab alive.
+            currentTab.preparePreview(reportTimeout: reportingSnapshotTimeout, completion: { [weak currentTab] image in
+                if let image, let currentTab {
                     self.previewsSource.update(preview: image,
                                                forTab: currentTab.tabModel)
                 }
@@ -8654,7 +8656,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         // Don't clear `openedAfterIdle` on switcher open — the after-idle session
         // ends on actual tab transition (see `transitionTo`), not on peeking.
         hideNotificationBarIfBrokenSitePromptShown()
-        updatePreviewForCurrentTab {
+        updatePreviewForCurrentTab(reportingSnapshotTimeout: true) {
             ViewHighlighter.hideAll()
             Task { @MainActor in
                 await self.segueToTabSwitcher()

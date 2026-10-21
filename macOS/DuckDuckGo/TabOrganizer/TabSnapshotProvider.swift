@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import AppKit
 import Foundation
 
 /// Same tab rules as `ListOpenTabsBrowserTool`: pinned and normal tabs with a URL, never Duck.ai itself.

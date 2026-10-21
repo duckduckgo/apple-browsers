@@ -84,8 +84,9 @@ final class DockCustomizer: DockCustomization {
         static let wasNotificationShownToUser = "was-dock-notification.show-to-users"
     }
 
+    // TEMPORARY: forces the App Store Add to Dock flow in DMG builds for design review. Revert before merging.
     var supportsAddingToDock: Bool {
-        !applicationBuildType.isAppStoreBuild
+        false
     }
 
     private let applicationBuildType: ApplicationBuildType

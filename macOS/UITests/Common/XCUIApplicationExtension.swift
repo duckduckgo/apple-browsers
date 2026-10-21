@@ -43,6 +43,7 @@ extension XCUIApplication {
 
     enum AccessibilityIdentifiers {
         static let okButton = "OKButton"
+        static let tabPreviewWindow = "TabPreviewWindowController.window"
         static let addressBarTextField = "AddressBarViewController.addressBarTextField"
         static let addressBarPassiveTextField = "AddressBarViewController.passiveTextField"
         static let aiChatButton = "AddressBarButtonsViewController.aiChatButton"

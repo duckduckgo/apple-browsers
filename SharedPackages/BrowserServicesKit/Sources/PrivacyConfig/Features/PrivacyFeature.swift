@@ -894,7 +894,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219531810004073
     case cpmNetworkProcessRecovery
     /// Failsafe for keeping the embedded CPM origin stable across context reloads.
-    /// https://app.asana.com/1/137249556945/task/1219231427593373
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
     case cpmStableBaseURL
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment

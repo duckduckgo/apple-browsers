@@ -87,7 +87,7 @@ extension XCUIApplication {
 
     func dismissAddressBarEditing(file: StaticString = #filePath, line: UInt = #line) {
         let menuButton = buttons["Browser.Toolbar.Button.Menu"]
-        if menuButton.isHittable {
+        if menuButton.isHittable && !keyboards.firstMatch.exists {
             return
         }
 

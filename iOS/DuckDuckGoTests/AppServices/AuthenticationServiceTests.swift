@@ -20,6 +20,7 @@
 import Foundation
 import UIKit
 import Testing
+import XCTest
 @testable import DuckDuckGo
 
 final class MockPrivacyStore: PrivacyStore {
@@ -31,6 +32,7 @@ final class MockPrivacyStore: PrivacyStore {
 final class MockAuthenticator: Authenticating {
 
     var authenticateCalled = false
+    var authenticateCallCount = 0
     var isAuthenticationAvailable = true
     var authenticationSucceeds = true
 
@@ -40,6 +42,7 @@ final class MockAuthenticator: Authenticating {
     
     func authenticate(reason: String) async -> Bool {
         authenticateCalled = true
+        authenticateCallCount += 1
         return authenticationSucceeds
     }
 
@@ -123,6 +126,35 @@ final class AuthenticationServiceTests {
         await authenticationService.authenticate()
 
         #expect(authenticationService.hasCompletedAuthentication == expectedCompletion)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Authentication can retry after an unsuccessful attempt", .timeLimit(.minutes(1)))
+    func authenticationCanRetryAfterUnsuccessfulAttempt() async {
+        mockAuthenticator.authenticationSucceeds = false
+
+        await authenticationService.authenticate()
+
+        #expect(!authenticationService.hasCompletedAuthentication)
+        #expect(mockAuthenticator.authenticateCallCount == 1)
+        #expect(mockOverlayWindowManager.removeAnyOverlayCallCount == 1)
+        guard let authenticationViewController = mockOverlayWindowManager.lastDisplayedViewController as? AuthenticationViewController else {
+            Issue.record("Authentication screen was not displayed after an unsuccessful attempt.")
+            return
+        }
+
+        let overlayRemoved = XCTestExpectation(description: "Authentication overlay removed after retry")
+        mockOverlayWindowManager.onRemoveAnyOverlay = { overlayRemoved.fulfill() }
+        mockAuthenticator.authenticationSucceeds = true
+
+        authenticationViewController.onTap(self)
+
+        let result = await XCTWaiter.fulfillment(of: [overlayRemoved], timeout: 5)
+        #expect(result == .completed)
+        #expect(mockAuthenticator.authenticateCallCount == 2)
+        #expect(authenticationService.hasCompletedAuthentication)
+        #expect(mockOverlayWindowManager.removeAnyOverlayCallCount == 2)
     }
 
     @Test("suspend() when authentication enabled should display blank snapshot window")

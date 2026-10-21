@@ -203,6 +203,87 @@ final class CPMStableBaseURLIntegrationTests: CPMAppIntegrationTestCase {
         return nil
     }
 
+    // Research-only characterization: a healthy probe is a negative reproduction result.
+    // No startup delay, migration hold or fabricated monitor callback is introduced.
+    func testP3ResearchPersistentCacheReload() async throws {
+        try await exerciseP3Research(loadFromDisk: false)
+    }
+
+    func testP3ResearchPersistentCacheDiskLoad() async throws {
+        try await exerciseP3Research(loadFromDisk: true)
+    }
+
+    private func exerciseP3Research(loadFromDisk: Bool) async throws {
+        executionTimeAllowance = 3600
+        let environment = ProcessInfo.processInfo.environment
+        let entries = Int(environment["CPM_APP_INTEGRATION_P3_CACHE_ENTRIES"] ?? "") ?? 20000
+        let iterations = Int(environment["CPM_APP_INTEGRATION_P3_RELOADS"] ?? "") ?? 3
+        let harness = try XCTUnwrap(self.harness)
+        // The diagnostics observer joins WebKit's real background load. Do not add a second
+        // unbounded await here: error 6 can arrive without completing that callback (P2).
+        print("CPM P3 RESEARCH starting owned context")
+        try await harness.start(awaitBackgroundLoad: false)
+        try await harness.waitForBackgroundReady()
+        print("CPM P3 RESEARCH initial background ready")
+        let tab = try XCTUnwrap(harness.openWindow().first)
+        // Record cold-window startup separately; the cache experiment starts from a verified
+        // healthy navigation and never counts an initial-load race as P3.
+        _ = try await harness.navigate(tab, label: "research-cold-window-control")
+        try requireHealthyResearchControl(try await harness.navigate(tab, label: "research-baseline"))
+        XCTAssertEqual(tab.webView.configuration.websiteDataStore.identifier, harness.dataStore.identifier)
+        print("CPM P3 RESEARCH filling persistent cache entries=\(entries)")
+        try requireHealthyResearchControl(try await harness.navigate(tab, label: "fill?n=\(entries)", timeout: 1800))
+        try await harness.waitForCacheReads(in: tab, entries: entries)
+        let hasDiskCache = await withCheckedContinuation { continuation in
+            harness.dataStore.fetchDataRecords(ofTypes: [WKWebsiteDataTypeDiskCache]) { records in
+                continuation.resume(returning: !records.isEmpty)
+            }
+        }
+        XCTAssertTrue(hasDiskCache)
+        harness.note(["researchDiskCacheVerified": hasDiskCache])
+        guard hasDiskCache else {
+            throw NSError(domain: "CPMResearchPrecondition", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Owned persistent store has no disk-cache data"])
+        }
+        print("CPM P3 RESEARCH persistent cache reads completed")
+        for iteration in 0..<iterations {
+            let previous = try XCTUnwrap(harness.context)
+            let began = Date()
+            if loadFromDisk {
+                // Preserve the populated website store. Reparse the installation from disk through
+                // the real manager, rather than clearing the cache under investigation.
+                harness.manager.unloadAllExtensions()
+                await harness.manager.loadInstalledExtensions()
+            } else {
+                try await harness.manager.reloadExtension(identifier: previous.uniqueIdentifier)
+            }
+            let loaded = try XCTUnwrap(harness.context)
+            let viewAtReturn = CPMAppWebKit.background(loaded) != nil
+            let probe = try await harness.navigate(tab, label: "research-\(loadFromDisk ? "disk" : "reload")-\(iteration)")
+            let p3 = probe.failures.contains { snapshot in
+                let events = (snapshot["bg_events"] ?? "").split(separator: ">").map(String.init)
+                return snapshot["context_loaded"] == "true" && snapshot["bg_view_alive"] == "false"
+                    && events.contains("load") && !events.contains("view")
+            }
+            harness.note(["research": true, "diskLoad": loadFromDisk, "iteration": iteration,
+                          "cacheEntriesRequested": entries, "originBefore": previous.baseURL.absoluteString,
+                          "originAfter": loaded.baseURL.absoluteString, "backgroundAtLoadReturn": viewAtReturn,
+                          "reloadToProbeSeconds": Date().timeIntervalSince(began), "p3NoBackgroundFailure": p3,
+                          "probeResponded": probe.responded, "pageReceivedInitResponse": probe.pageReceivedInitResponse])
+            print("CPM P3 RESEARCH iteration=\(iteration) disk=\(loadFromDisk) p3=\(p3) responded=\(probe.responded)")
+            try await harness.waitForBackgroundReady()
+            try requireHealthyResearchControl(try await harness.navigate(tab, label: "research-readiness-control-\(iteration)"))
+        }
+    }
+
+    private func requireHealthyResearchControl(_ probe: CPMAppIntegrationHarness.Probe) throws {
+        assertHealthy(probe)
+        guard probe.responded, probe.pageReceivedInitResponse, probe.failures.isEmpty else {
+            throw NSError(domain: "CPMResearchPrecondition", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "Unhealthy control before further measurements: \(probe.label)"])
+        }
+    }
+
     func testBackgroundProcessCrashStillRecovers() async throws {
         let harness = try await start()
         let tab = try XCTUnwrap(harness.openWindow().first)

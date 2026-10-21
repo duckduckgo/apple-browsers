@@ -107,7 +107,7 @@ final class CPMAppIntegrationHarness {
         """
     }
 
-    func start(mainEnabled: Bool = true, embeddedEnabled: Bool = true) async throws {
+    func start(mainEnabled: Bool = true, embeddedEnabled: Bool = true, awaitBackgroundLoad: Bool = true) async throws {
         guard app.windowControllersManager.mainWindowControllers.isEmpty, app.pinnedTabsManager.isEmpty else {
             throw XCTSkip("CPM tests require an empty Integration Tests host; existing windows/pins are preserved")
         }
@@ -135,7 +135,13 @@ final class CPMAppIntegrationHarness {
             await app.webExtensionLifecycleCoordinator?.loadAndSync().value
             if embeddedEnabled {
                 try await wait("embedded context", timeout: 20) { self.app.webExtensionManager?.isAutoconsentExtensionLoaded == true }
-                await manager.loadEmbeddedExtensionBackgroundContent()
+                if awaitBackgroundLoad {
+                    await manager.loadEmbeddedExtensionBackgroundContent()
+                } else {
+                    // Request the real load without retaining a suspended async task. The research
+                    // caller separately checks the diagnostics observer's bounded readiness result.
+                    context?.loadBackgroundContent { _ in }
+                }
             }
         }
     }
@@ -202,7 +208,7 @@ final class CPMAppIntegrationHarness {
     }
 
     func waitForCacheReads(in tab: Tab, entries: Int) async throws {
-        let deadline = Date().addingTimeInterval(180)
+        let deadline = Date().addingTimeInterval(1800)
         while Date() < deadline {
             let title = try await evaluate("document.title", in: tab.webView) ?? ""
             let completed = try await evaluate("document.documentElement.getAttribute('data-cpm-cache-completed')", in: tab.webView)

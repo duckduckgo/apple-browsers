@@ -228,7 +228,16 @@ final class CPMAppExtensionStorage: WebExtensionStorageProviding {
         """#
         try (delay + storageProbe + "\n" + backgroundSource).write(to: background, atomically: true, encoding: .utf8)
         let contentSource = try String(contentsOf: content, encoding: .utf8)
-        try (CPMAppIntegrationBridge.content + "\n" + contentSource).write(to: content, atomically: true, encoding: .utf8)
+        let initResponseCase = "case \"initResp\":"
+        guard contentSource.components(separatedBy: initResponseCase).count == 2 else {
+            throw NSError(domain: "CPMResearchInstrumentation", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "Expected exactly one production initResp handler"])
+        }
+        let observedContent = contentSource.replacingOccurrences(
+            of: initResponseCase,
+            with: initResponseCase + "\n globalThis.__cpmAppInitResponseObserved?.();"
+        )
+        try (CPMAppIntegrationBridge.content + "\n" + observedContent).write(to: content, atomically: true, encoding: .utf8)
         print("CPM APP INSTRUMENTED \(folder.path)")
         return folder
     }

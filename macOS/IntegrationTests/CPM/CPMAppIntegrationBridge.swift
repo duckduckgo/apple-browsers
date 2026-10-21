@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// Observes delivery to the production content listener without synthesizing a response.
+/// Marks entry into the production initResp handler without wrapping WebKit's runtime event API.
 enum CPMAppIntegrationBridge {
     static let content = #"""
     (() => {
@@ -43,14 +43,7 @@ enum CPMAppIntegrationBridge {
             const input = JSON.parse(document.documentElement.getAttribute('data-cpm-app-storage-input'));
             runtime.sendMessage({ cpmAppStorage: input }).then(result => mark('storage-result', JSON.stringify(result)));
         });
-        const event = runtime.onMessage;
-        const add = event.addListener.bind(event);
-        const wrapped = listener => add((message, ...rest) => {
-            if (message?.type === 'initResp') mark('initresp');
-            return listener(message, ...rest);
-        });
-        try { event.addListener = wrapped; } catch (_) {}
-        if (event.addListener !== wrapped) Object.defineProperty(event, 'addListener', { value: wrapped, configurable: true });
+        globalThis.__cpmAppInitResponseObserved = () => mark('initresp');
     })();
     """#
 }

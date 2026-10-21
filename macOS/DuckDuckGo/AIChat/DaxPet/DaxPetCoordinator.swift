@@ -125,6 +125,7 @@ final class DaxPetCoordinator: NSObject {
         window.orderFrontRegardless()
         startTrackingPointer()
         model.sayHello()
+        Task { [weak model] in await model?.prepareLineVariations() }
     }
 
     private func dismiss() {

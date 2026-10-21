@@ -27,6 +27,8 @@ import PDFKit
 protocol DaxPetIntelligence {
     /// A few short questions the user might ask Duck.ai about what they dropped on Dax.
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String]
+    /// Other ways for Dax to say `line`, meaning the same.
+    func variations(of line: String) async -> [String]
 }
 
 enum DaxPetIntelligenceFactory {
@@ -43,6 +45,7 @@ enum DaxPetIntelligenceFactory {
 
 struct DaxPetNoIntelligence: DaxPetIntelligence {
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String] { [] }
+    func variations(of line: String) async -> [String] { [] }
 }
 
 @available(macOS 26, *)
@@ -72,6 +75,25 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
         return response.content.requests
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"“”"))) }
             .filter { !$0.isEmpty }
+    }
+
+    @Generable
+    struct Variations {
+        @Guide(description: "Other ways for Dax to say the same line, each at most eight words", .count(4))
+        var lines: [String]
+    }
+
+    func variations(of line: String) async -> [String] {
+        let session = LanguageModelSession(instructions: """
+            You write lines for Dax, the cheerful DuckDuckGo duck who lives on the user's desktop and passes \
+            their questions to Duck.ai. Given a line Dax says, write other ways for him to say exactly the same \
+            thing, in his voice: playful and warm, now and then with a "Quack!". Never change what the line means. \
+            For example, for "On it!" you might write "Quack, on it!", "Leave it to me!" or "Working on it!". \
+            No emoji. Reply in \(Self.userLanguage).
+            """)
+        guard let response = try? await session.respond(to: "Line: \(line)", generating: Variations.self,
+                                                        options: GenerationOptions(temperature: 0.7)) else { return [] }
+        return response.content.lines
     }
 
     /// The user's language, by its English name, for the model to answer in.

@@ -76,6 +76,8 @@ final class DaxPetViewModel: ObservableObject {
 
     private let submitter: DaxPetPromptSubmitting
     private let intelligence: DaxPetIntelligence
+    /// Rewordings of Dax's lines from the on-device model, by the line they replace.
+    private var lineVariations: [String: [String]] = [:]
     private var speechWork: DispatchWorkItem?
     private var answerTimeoutWork: DispatchWorkItem?
     private var attachmentCapabilities = DaxPetAttachmentCapabilities.unknown
@@ -119,7 +121,7 @@ final class DaxPetViewModel: ObservableObject {
         isComposing = true
         character.mood = .listening
         character.wave()
-        say(UserText.daxPetGreeting)
+        say(line(UserText.daxPetGreeting))
         onNeedsKeyboard?()
         updateLookTarget()
     }
@@ -150,7 +152,7 @@ final class DaxPetViewModel: ObservableObject {
         clearSuggestions()
         character.lookTarget = nil
         character.mood = .thinking
-        say(UserText.daxPetThinking)
+        say(line(UserText.daxPetThinking))
 
         DispatchQueue.main.asyncAfter(deadline: .now() + submissionDelay) { [weak self] in
             guard let self else { return }
@@ -235,7 +237,7 @@ final class DaxPetViewModel: ObservableObject {
         if let rejection {
             say(rejection, for: 5)
         } else if !accepted.isEmpty {
-            say(UserText.daxPetDropQuestion)
+            say(line(UserText.daxPetDropQuestion))
         }
         if !accepted.isEmpty {
             await suggestRequests()
@@ -357,6 +359,33 @@ final class DaxPetViewModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in
             if self?.heartBurst == burst { self?.heartBurst = nil }
         }
+    }
+
+    // MARK: - Lines
+
+    /// The chatter Dax says often enough to want some variety. Lines that tell the user what to do are
+    /// left as written, so their meaning can't drift.
+    static let variedLines: [String] = [UserText.daxPetGreeting, UserText.daxPetThinking, UserText.daxPetDropQuestion]
+
+    /// A bubble holds this much; longer rewordings are thrown away.
+    static let maximumLineLength = 60
+
+    /// Has the on-device model reword Dax's lines in the background, so he doesn't repeat himself.
+    func prepareLineVariations() async {
+        for line in Self.variedLines where lineVariations[line] == nil {
+            let variations = await intelligence.variations(of: line)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"“”"))) }
+                .filter { !$0.isEmpty && $0.count <= Self.maximumLineLength && $0 != line }
+                // A question stays a question.
+                .filter { !line.hasSuffix("?") || $0.hasSuffix("?") }
+            lineVariations[line] = variations
+        }
+    }
+
+    /// `text`, or now and then one of its rewordings.
+    private func line(_ text: String) -> String {
+        guard let variations = lineVariations[text], !variations.isEmpty else { return text }
+        return ([text] + variations).randomElement() ?? text
     }
 
     private func say(_ text: String?, for duration: TimeInterval? = nil) {

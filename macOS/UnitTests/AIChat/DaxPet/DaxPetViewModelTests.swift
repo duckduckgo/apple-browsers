@@ -68,6 +68,11 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
 private final class StubDaxPetIntelligence: DaxPetIntelligence {
     var suggestions: [String] = []
     var onSuggest: (() -> Void)?
+    var variations: [String: [String]] = [:]
+
+    func variations(of line: String) async -> [String] {
+        variations[line] ?? []
+    }
 
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String] {
         onSuggest?()
@@ -444,6 +449,57 @@ final class DaxPetViewModelTests: XCTestCase {
         model.prompt = "T"
 
         XCTAssertTrue(model.suggestions.isEmpty)
+    }
+
+    // MARK: - Varied lines
+
+    func testWhenTheOnDeviceModelRewordsALineThenDaxSaysBothVersions() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.variations[UserText.daxPetGreeting] = ["Hi! What shall we ask?"]
+        await model.prepareLineVariations()
+
+        var said = Set<String>()
+        for _ in 0..<50 {
+            model.startComposing()
+            said.insert(model.speech ?? "")
+            model.endComposing()
+        }
+
+        XCTAssertEqual(said, [UserText.daxPetGreeting, "Hi! What shall we ask?"])
+    }
+
+    func testRewordingsThatAreTooLongBlankOrUnchangedAreThrownAway() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.variations[UserText.daxPetGreeting] = [
+            String(repeating: "Quack ", count: 20), "   ", "\"\"", UserText.daxPetGreeting
+        ]
+        await model.prepareLineVariations()
+
+        for _ in 0..<20 {
+            model.startComposing()
+            XCTAssertEqual(model.speech, UserText.daxPetGreeting)
+            model.endComposing()
+        }
+    }
+
+    func testARewordedQuestionMustStillBeAQuestion() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.variations[UserText.daxPetGreeting] = ["Let's find out!"]
+        await model.prepareLineVariations()
+
+        for _ in 0..<20 {
+            model.startComposing()
+            XCTAssertEqual(model.speech, UserText.daxPetGreeting)
+            model.endComposing()
+        }
+    }
+
+    func testWithoutTheOnDeviceModelDaxSaysHisUsualLines() async {
+        await model.prepareLineVariations()
+
+        model.startComposing()
+
+        XCTAssertEqual(model.speech, UserText.daxPetGreeting)
     }
 
     // MARK: - Debug

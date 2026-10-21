@@ -53,6 +53,84 @@ public enum LocalAIPromptBuilder {
         }
     }
 
+    /// What to send for a request's first answer. A translation goes out in pieces, translated one after
+    /// another, so the first words appear once the model has read one short piece instead of the whole page.
+    /// Everything else is a single prompt.
+    public static func prompts(for request: LocalAIRequest) -> [LocalAIPrompt] {
+        guard request.task == .translate else { return [prompt(for: request)] }
+        let pieces = translationPieces(of: translatableText(of: request.source))
+        guard pieces.count > 1 else { return [prompt(for: request)] }
+        let instructions = prompt(for: request).instructions
+        return pieces.map { piece in
+            LocalAIPrompt(instructions: instructions,
+                          message: "Translate this text into \(request.language).\n\nText:\n\(piece)",
+                          maxTokens: translationTokenBudget(for: .selection([piece])))
+        }
+    }
+
+    /// The first piece is short so the first words come quickly; the rest are longer, so fewer of them.
+    static let firstPieceCharacterLimit = 600
+    static let pieceCharacterLimit = 1_800
+
+    /// Splits at paragraph breaks, then at sentence ends or spaces when a paragraph alone is too long.
+    static func translationPieces(of text: String) -> [String] {
+        var pieces: [String] = []
+        var current = ""
+        var limit = firstPieceCharacterLimit
+
+        func close() {
+            guard !current.isEmpty else { return }
+            pieces.append(current)
+            current = ""
+            limit = pieceCharacterLimit
+        }
+
+        for paragraph in text.components(separatedBy: "\n") where !paragraph.trimmingCharacters(in: .whitespaces).isEmpty {
+            var rest = Substring(paragraph)
+            while !rest.isEmpty {
+                let room = limit - current.count - (current.isEmpty ? 0 : 1)
+                if rest.count <= room {
+                    current += (current.isEmpty ? "" : "\n") + rest
+                    break
+                }
+                if !current.isEmpty {
+                    close()
+                    continue
+                }
+                let cut = splitPoint(in: rest, maxLength: limit)
+                current = String(rest[..<cut]).trimmingCharacters(in: .whitespaces)
+                rest = rest[cut...].drop { $0 == " " }
+                close()
+            }
+        }
+        close()
+        return pieces
+    }
+
+    /// The last sentence end, else the last space, within `maxLength`; a hard cut if there's neither.
+    private static func splitPoint(in text: Substring, maxLength: Int) -> Substring.Index {
+        let window = text.prefix(maxLength)
+        if let sentenceEnd = window.range(of: ". ", options: .backwards) {
+            return sentenceEnd.upperBound
+        }
+        if let space = window.lastIndex(of: " ") {
+            return text.index(after: space)
+        }
+        return window.endIndex
+    }
+
+    /// A translation sent in pieces leaves the chat without the page, so the first follow-up carries it.
+    public static func followUpContext(for request: LocalAIRequest) -> String {
+        "For context, here is what you just translated:\n\n\(body(of: request.source))\n\n"
+    }
+
+    static func translatableText(of source: LocalAISource) -> String {
+        switch source {
+        case .page(let page): page.content
+        case .selection(let texts): texts.joined(separator: "\n\n")
+        }
+    }
+
     static func summarizeLead(for source: LocalAISource) -> String {
         switch source {
         case .page: "Summarize this page."

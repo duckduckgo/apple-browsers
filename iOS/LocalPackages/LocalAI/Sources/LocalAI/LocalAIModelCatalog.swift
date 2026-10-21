@@ -54,7 +54,9 @@ public enum LocalAIModelCatalog {
                                                 approximateBytes: 1_820_000_000, licence: "Llama 3.2",
                                                 extraEOSTokens: ["<|eot_id|>"], minimumPhysicalMemoryGB: 6)
 
-    public static let all: [LocalAIModel] = [qwen35Mini, qwen35, qwen35Large, gemma4E2B, llama32Mini, llama32]
+    /// Gemma 4 E2B is left out: mlx-swift-lm 3.31.3 builds key/value projections for its KV-shared layers
+    /// (15–34), which the checkpoint doesn't have, so loading fails. Newer releases need swift-syntax 602+.
+    public static let all: [LocalAIModel] = [qwen35Mini, qwen35, qwen35Large, llama32Mini, llama32]
 
     public static func model(withID id: String) -> LocalAIModel? {
         all.first { $0.id == id }

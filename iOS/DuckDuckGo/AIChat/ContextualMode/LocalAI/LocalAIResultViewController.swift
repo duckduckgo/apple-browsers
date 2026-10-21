@@ -17,20 +17,20 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKit
 import LocalAI
 import SwiftUI
 import UIKit
 
-/// PoC: streams an on-device answer inside the contextual sheet, in place of the Duck.ai web view.
-final class LocalAIResultViewController: UIHostingController<LocalAIResultView> {
+/// PoC: an on-device chat inside the contextual sheet, laid out like Duck.ai's.
+final class LocalAIResultViewController: UIHostingController<LocalAIConversationView> {
 
-    private let model: LocalAIResultViewModel
+    private let model: LocalAIChatViewModel
 
-    init(request: LocalAIRequest, engine: LocalAIEngine, onContinueInDuckAI: @escaping () -> Void) {
-        model = LocalAIResultViewModel(request: request, engine: engine)
-        super.init(rootView: LocalAIResultView(model: model, onContinueInDuckAI: onContinueInDuckAI))
-        view.backgroundColor = .clear
+    /// `prompt` is the suggestion's text as Duck.ai would show it, e.g. "Translate this page into English."
+    init(prompt: String, request: LocalAIRequest, engine: LocalAIEngine, onContinueInDuckAI: @escaping () -> Void) {
+        model = LocalAIChatViewModel(firstPrompt: prompt, request: request, engine: engine)
+        super.init(rootView: LocalAIConversationView(model: model, onContinueInDuckAI: onContinueInDuckAI))
+        view.backgroundColor = LocalAIChatPalette.background
     }
 
     @available(*, unavailable)
@@ -48,44 +48,68 @@ final class LocalAIResultViewController: UIHostingController<LocalAIResultView> 
     }
 }
 
+struct LocalAIChatTurn: Identifiable, Equatable {
+    let id = UUID()
+    let prompt: String
+    var reply = ""
+    var isStreaming = true
+    /// What the engine is doing before the first words, and since when.
+    var status: LocalAIStatus?
+    var statusSince = Date()
+    var error: String?
+    var stats: String?
+}
+
+/// One on-device conversation. The first turn sends the suggestion with the page or selection; follow-ups
+/// go to the same engine conversation, so the model still has the page.
 @MainActor
-final class LocalAIResultViewModel: ObservableObject {
+final class LocalAIChatViewModel: ObservableObject {
 
-    @Published private(set) var text = ""
-    @Published private(set) var isRunning = false
-    @Published private(set) var errorMessage: String?
-    @Published private(set) var stats: String?
+    @Published private(set) var turns: [LocalAIChatTurn] = []
+    @Published var draft = ""
 
-    let request: LocalAIRequest
-    let engine: LocalAIEngine
+    var isRunning: Bool { turns.last?.isStreaming == true }
+    var canSend: Bool { !isRunning && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    var modelName: String { engine.modelName }
+
+    private let firstPrompt: String
+    private let request: LocalAIRequest
+    private let engine: LocalAIEngine
+    private let conversation: LocalAIConversation
     private var task: Task<Void, Never>?
+    /// Set when the first answer was a translation sent in pieces, which the conversation never saw.
+    private var followUpNeedsContext = false
 
-    init(request: LocalAIRequest, engine: LocalAIEngine) {
+    static let followUpMaxTokens = 1_024
+    /// Prompt tokens read per second, from the last reply that reported it; drives the progress bar.
+    private(set) static var readTokensPerSecond: Double = 400
+
+    init(firstPrompt: String, request: LocalAIRequest, engine: LocalAIEngine) {
+        self.firstPrompt = firstPrompt
         self.request = request
         self.engine = engine
-    }
-
-    var title: String {
-        switch (request.task, request.source) {
-        case (.summarize, .page): "Summary of this page"
-        case (.summarize, .selection): "Summary of this selection"
-        case (.translate, .page): "Translation of this page"
-        case (.translate, .selection): "Translation of this selection"
-        }
+        let prompt = LocalAIPromptBuilder.prompt(for: request)
+        conversation = engine.makeConversation(instructions: prompt.instructions)
     }
 
     func start() {
-        guard task == nil else { return }
-        isRunning = true
-        task = Task { [weak self] in
-            guard let self else { return }
-            let (record, error) = await LocalAIRunner.run(self.request, engine: self.engine) { [weak self] chunk in
-                self?.text += chunk
-            }
-            self.isRunning = false
-            self.errorMessage = error?.localizedDescription
-            self.stats = Self.describe(record)
+        guard turns.isEmpty else { return }
+        if LocalAIPromptBuilder.prompts(for: request).count > 1 {
+            followUpNeedsContext = true
+            translateInPieces()
+            return
         }
+        let prompt = LocalAIPromptBuilder.prompt(for: request)
+        send(shown: firstPrompt, message: prompt.message, maxTokens: prompt.maxTokens)
+    }
+
+    func sendDraft() {
+        guard canSend else { return }
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        draft = ""
+        let message = followUpNeedsContext ? LocalAIPromptBuilder.followUpContext(for: request) + text : text
+        followUpNeedsContext = false
+        send(shown: text, message: message, maxTokens: Self.followUpMaxTokens)
     }
 
     func stop() {
@@ -96,86 +120,68 @@ final class LocalAIResultViewModel: ObservableObject {
         task?.cancel()
     }
 
+    private func send(shown: String, message: String, maxTokens: Int) {
+        turns.append(LocalAIChatTurn(prompt: shown))
+        let index = turns.count - 1
+        let events = conversation.send(message, maxTokens: maxTokens)
+        task = Task { [weak self] in
+            guard let self else { return }
+            let (record, error) = await LocalAIRunner.measure(events, request: self.request, engine: self.engine,
+                                                              onStatus: { [weak self] in self?.setStatus($0, at: index) }) { [weak self] chunk in
+                self?.append(chunk, at: index)
+            }
+            self.finish(at: index, record: record, error: error)
+        }
+    }
+
+    private func translateInPieces() {
+        turns.append(LocalAIChatTurn(prompt: firstPrompt))
+        task = Task { [weak self] in
+            guard let self else { return }
+            let (record, error) = await LocalAIRunner.runAsShown(self.request, engine: self.engine,
+                                                                 onStatus: { [weak self] in self?.setStatus($0, at: 0) }) { [weak self] chunk in
+                self?.append(chunk, at: 0)
+            }
+            self.finish(at: 0, record: record, error: error)
+        }
+    }
+
+    private func setStatus(_ status: LocalAIStatus, at index: Int) {
+        guard turns[index].reply.isEmpty else { return }
+        turns[index].status = status
+        turns[index].statusSince = Date()
+    }
+
+    private func append(_ chunk: String, at index: Int) {
+        turns[index].status = nil
+        turns[index].reply += chunk
+    }
+
+    private func finish(at index: Int, record: LocalAIRunRecord, error: Error?) {
+        turns[index].status = nil
+        turns[index].isStreaming = false
+        turns[index].error = error?.localizedDescription
+        turns[index].stats = Self.describe(record)
+        if let tokens = record.promptTokens, let seconds = record.promptTime, seconds > 0, tokens > 50 {
+            Self.readTokensPerSecond = Double(tokens) / seconds
+        }
+    }
+
     private static func describe(_ record: LocalAIRunRecord) -> String {
-        var parts: [String] = []
+        var parts = ["On device"]
+        if let load = record.loadTime {
+            parts.append(String(format: "load %.1fs", load))
+        }
+        if let prompt = record.promptTime, let tokens = record.promptTokens {
+            parts.append(String(format: "read %d tokens in %.1fs", tokens, prompt))
+        }
         if let firstToken = record.timeToFirstToken {
-            parts.append(String(format: "first token %.1fs", firstToken))
+            parts.append(String(format: "first word %.1fs", firstToken))
         }
         if let rate = record.tokensPerSecond {
             parts.append(String(format: "%.0f tok/s", rate))
         }
-        parts.append(String(format: "total %.1fs", record.totalTime))
         parts.append(ByteCountFormatter.string(fromByteCount: record.peakFootprintBytes, countStyle: .memory) + " peak")
-        parts.append("thermal \(record.thermalStateAtEnd)")
         return parts.joined(separator: " · ")
-    }
-}
-
-struct LocalAIResultView: View {
-
-    @ObservedObject var model: LocalAIResultViewModel
-    let onContinueInDuckAI: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    if model.text.isEmpty && model.isRunning {
-                        SwiftUI.ProgressView()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    Text(Self.markdown(model.text))
-                        .font(.body)
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if let errorMessage = model.errorMessage {
-                        Text(errorMessage)
-                            .font(.callout)
-                            .foregroundColor(Color(designSystemColor: .destructivePrimary))
-                    }
-                    if let stats = model.stats {
-                        Text(stats)
-                            .font(.caption.monospacedDigit())
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                    }
-                }
-            }
-            actions
-        }
-        .padding(16)
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(model.title)
-                .font(.headline)
-                .accessibilityIdentifier("LocalAI.Result")
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-            Label("On device · \(model.engine.modelName)", systemImage: "iphone")
-                .font(.caption)
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-        }
-    }
-
-    private var actions: some View {
-        HStack(spacing: 12) {
-            if model.isRunning {
-                Button("Stop", action: model.stop)
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("LocalAI.Stop")
-            }
-            Spacer()
-            Button("Continue in Duck.ai", action: onContinueInDuckAI)
-                .buttonStyle(.borderedProminent)
-                .accessibilityIdentifier("LocalAI.ContinueInDuckAI")
-        }
-    }
-
-    /// Keeps line breaks so bullets and paragraphs survive; block-level Markdown isn't rendered.
-    private static func markdown(_ text: String) -> AttributedString {
-        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
     }
 }

@@ -39,18 +39,36 @@ public struct LocalAIGenerationInfo: Codable, Equatable, Sendable {
     public let generatedTokens: Int
     public let promptTime: TimeInterval?
     public let generateTime: TimeInterval?
+    /// Time spent waiting for the model to load before this reply could start, if it wasn't loaded yet.
+    public let loadTime: TimeInterval?
 
-    public init(promptTokens: Int?, generatedTokens: Int, promptTime: TimeInterval?, generateTime: TimeInterval?) {
+    public init(promptTokens: Int?, generatedTokens: Int, promptTime: TimeInterval?, generateTime: TimeInterval?, loadTime: TimeInterval? = nil) {
         self.promptTokens = promptTokens
         self.generatedTokens = generatedTokens
         self.promptTime = promptTime
         self.generateTime = generateTime
+        self.loadTime = loadTime
     }
 }
 
+/// What an engine is doing before its first words, so the UI can say so instead of showing dots.
+public enum LocalAIStatus: Equatable, Sendable {
+    case loadingModel
+    /// About to read `estimatedTokens` of input (the prefill) before it can write.
+    case readingInput(estimatedTokens: Int)
+}
+
 public enum LocalAIEvent: Sendable {
+    case status(LocalAIStatus)
     case text(String)
     case finished(LocalAIGenerationInfo?)
+}
+
+public extension LocalAIStatus {
+    /// Roughly three and a half characters per token for the languages we test; only used for progress.
+    static func reading(_ message: String) -> LocalAIStatus {
+        .readingInput(estimatedTokens: max(1, Int(Double(message.count) / 3.5)))
+    }
 }
 
 public enum LocalAIEngineError: LocalizedError, Equatable {
@@ -83,9 +101,26 @@ public protocol LocalAIEngine: AnyObject {
     @MainActor var unavailableReason: String? { get }
     /// Model identity for reports, e.g. the Hugging Face id.
     @MainActor var modelName: String { get }
-    func generate(_ prompt: LocalAIPrompt) -> AsyncThrowingStream<LocalAIEvent, Error>
+    /// A chat that keeps its history (and the model's cache) between messages.
+    func makeConversation(instructions: String) -> LocalAIConversation
+    /// Starts loading (and warming up) the model in the background, so the first reply doesn't wait for it.
+    func preload()
     /// Frees the model's memory. The next generation loads it again.
     func unload()
+}
+
+public protocol LocalAIConversation: AnyObject {
+    /// Sends the next user message. One at a time: wait for a stream to end before sending again.
+    func send(_ message: String, maxTokens: Int) -> AsyncThrowingStream<LocalAIEvent, Error>
+}
+
+public extension LocalAIEngine {
+    func preload() {}
+
+    /// A one-off generation: a fresh conversation with a single message.
+    func generate(_ prompt: LocalAIPrompt) -> AsyncThrowingStream<LocalAIEvent, Error> {
+        makeConversation(instructions: prompt.instructions).send(prompt.message, maxTokens: prompt.maxTokens)
+    }
 }
 
 /// Streams canned text so the sheet UI can be exercised without a model, e.g. on the simulator.
@@ -103,13 +138,43 @@ public final class StubLocalAIEngine: LocalAIEngine {
         self.firstTokenDelay = firstTokenDelay
     }
 
-    public func generate(_ prompt: LocalAIPrompt) -> AsyncThrowingStream<LocalAIEvent, Error> {
-        let words = Self.cannedResponse(for: prompt).split(separator: " ", omittingEmptySubsequences: false)
+    public func makeConversation(instructions: String) -> LocalAIConversation {
+        StubConversation(tokensPerSecond: tokensPerSecond, firstTokenDelay: firstTokenDelay)
+    }
+
+    public func unload() {}
+
+    static func cannedResponse(to message: String, turn: Int, maxTokens: Int) -> String {
+        """
+        This is a **stub** answer (turn \(turn)), streamed word by word so the chat can be tested without a model.
+
+        - The real engines run on a device: MLX with a downloaded model, or Apple Foundation Models.
+        - You said: \(message.prefix(80).replacingOccurrences(of: "\n", with: " "))
+        - The reply would be capped at \(maxTokens) tokens.
+        """
+    }
+}
+
+private final class StubConversation: LocalAIConversation {
+    private let tokensPerSecond: Double
+    private let firstTokenDelay: TimeInterval
+    private var turn = 0
+
+    init(tokensPerSecond: Double, firstTokenDelay: TimeInterval) {
+        self.tokensPerSecond = tokensPerSecond
+        self.firstTokenDelay = firstTokenDelay
+    }
+
+    func send(_ message: String, maxTokens: Int) -> AsyncThrowingStream<LocalAIEvent, Error> {
+        turn += 1
+        let words = StubLocalAIEngine.cannedResponse(to: message, turn: turn, maxTokens: maxTokens)
+            .split(separator: " ", omittingEmptySubsequences: false)
         let delay = UInt64(1_000_000_000 / tokensPerSecond)
         let firstDelay = UInt64(firstTokenDelay * 1_000_000_000)
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
+                    continuation.yield(.status(.reading(message)))
                     try await Task.sleep(nanoseconds: firstDelay)
                     for (index, word) in words.enumerated() {
                         try Task.checkCancellation()
@@ -124,17 +189,5 @@ public final class StubLocalAIEngine: LocalAIEngine {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
-    }
-
-    public func unload() {}
-
-    static func cannedResponse(for prompt: LocalAIPrompt) -> String {
-        """
-        This is a **stub** answer, streamed word by word so the result screen can be tested without a model.
-
-        - The real engines run on a device: MLX with a downloaded model, or Apple Foundation Models.
-        - The prompt asked: \(prompt.message.prefix(80).replacingOccurrences(of: "\n", with: " "))…
-        - The reply would be capped at \(prompt.maxTokens) tokens.
-        """
     }
 }

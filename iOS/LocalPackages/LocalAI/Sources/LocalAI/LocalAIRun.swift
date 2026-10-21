@@ -35,6 +35,9 @@ public struct LocalAIRunRecord: Codable, Sendable {
     public var totalTime: TimeInterval
     public var generatedTokens: Int?
     public var promptTokens: Int?
+    /// Reading the input (prefill), and waiting for the model to load first, when the engine reports them.
+    public var promptTime: TimeInterval?
+    public var loadTime: TimeInterval?
     /// Decode rate: generated tokens over the time after the first token.
     public var tokensPerSecond: Double?
     public var peakFootprintBytes: Int64
@@ -114,10 +117,67 @@ public enum LocalAIRunner {
     @MainActor
     public static func run(_ request: LocalAIRequest, engine: LocalAIEngine, caseID: String? = nil, run: Int = 1,
                            onText: (String) -> Void = { _ in }) async -> (record: LocalAIRunRecord, error: Error?) {
+        await measure(engine.generate(LocalAIPromptBuilder.prompt(for: request)), request: request, engine: engine,
+                      caseID: caseID, run: run, onText: onText)
+    }
+
+    /// Like `run`, but a translation goes out in pieces (see `LocalAIPromptBuilder.prompts(for:)`), the way the
+    /// chat sends it. The record covers all pieces; its first-token and reading times are the first piece's.
+    @MainActor
+    public static func runAsShown(_ request: LocalAIRequest, engine: LocalAIEngine, caseID: String? = nil, run: Int = 1,
+                                  onStatus: (LocalAIStatus) -> Void = { _ in },
+                                  onText: (String) -> Void = { _ in }) async -> (record: LocalAIRunRecord, error: Error?) {
+        let start = Date()
+        var combined: LocalAIRunRecord?
+        var output = ""
+        for (index, prompt) in LocalAIPromptBuilder.prompts(for: request).enumerated() {
+            if index > 0 {
+                output += "\n\n"
+                onText("\n\n")
+            }
+            let (record, error) = await measure(engine.generate(prompt), request: request, engine: engine, caseID: caseID, run: run,
+                                                onStatus: index == 0 ? onStatus : { _ in }) { chunk in
+                output += chunk
+                onText(chunk)
+            }
+            if var first = combined {
+                first.generatedTokens = (first.generatedTokens ?? 0) + (record.generatedTokens ?? 0)
+                first.peakFootprintBytes = max(first.peakFootprintBytes, record.peakFootprintBytes)
+                first.thermalStateAtEnd = record.thermalStateAtEnd
+                combined = first
+            } else {
+                combined = record
+            }
+            if error != nil || record.outcome != "ok" {
+                combined?.outcome = record.outcome
+                return finish(combined!, output: output, start: start, error: error)
+            }
+        }
+        return finish(combined!, output: output, start: start, error: nil)
+    }
+
+    @MainActor
+    private static func finish(_ record: LocalAIRunRecord, output: String, start: Date, error: Error?) -> (record: LocalAIRunRecord, error: Error?) {
+        var record = record
+        record.output = output
+        record.totalTime = Date().timeIntervalSince(start)
+        if let firstToken = record.timeToFirstToken, let tokens = record.generatedTokens, record.totalTime > firstToken, tokens > 1 {
+            record.tokensPerSecond = Double(tokens - 1) / (record.totalTime - firstToken)
+        }
+        return (record, error)
+    }
+
+    /// Consumes `events` (one reply, e.g. a turn of a conversation) and measures it like `run`.
+    @MainActor
+    public static func measure(_ events: AsyncThrowingStream<LocalAIEvent, Error>, request: LocalAIRequest, engine: LocalAIEngine,
+                               caseID: String? = nil, run: Int = 1,
+                               onStatus: (LocalAIStatus) -> Void = { _ in },
+                               onText: (String) -> Void = { _ in }) async -> (record: LocalAIRunRecord, error: Error?) {
         let target: LocalAITarget = if case .page = request.source { .page } else { .selection }
         var record = LocalAIRunRecord(caseID: caseID, run: run, engine: engine.kind, model: engine.modelName,
                                       task: request.task, target: target, inputCharacters: request.source.characterCount,
                                       timeToFirstToken: nil, totalTime: 0, generatedTokens: nil, promptTokens: nil,
+                                      promptTime: nil, loadTime: nil,
                                       tokensPerSecond: nil, peakFootprintBytes: LocalAIDeviceMetrics.physicalFootprint(),
                                       minimumAvailableMemoryBytes: LocalAIDeviceMetrics.availableMemory(),
                                       thermalStateAtStart: LocalAIDeviceMetrics.thermalState, thermalStateAtEnd: "",
@@ -129,8 +189,10 @@ public enum LocalAIRunner {
         defer { LocalAIInterruptedRunTracker.setInProgress(false) }
 
         do {
-            for try await event in engine.generate(LocalAIPromptBuilder.prompt(for: request)) {
+            for try await event in events {
                 switch event {
+                case .status(let status):
+                    onStatus(status)
                 case .text(let text):
                     if record.timeToFirstToken == nil {
                         record.timeToFirstToken = Date().timeIntervalSince(start)
@@ -142,6 +204,8 @@ public enum LocalAIRunner {
                 case .finished(let info):
                     record.generatedTokens = info?.generatedTokens
                     record.promptTokens = info?.promptTokens
+                    record.promptTime = info?.promptTime
+                    record.loadTime = info?.loadTime
                 }
             }
             if Task.isCancelled {

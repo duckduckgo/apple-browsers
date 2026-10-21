@@ -32,6 +32,14 @@ public final class MLXLocalAIEngine: LocalAIEngine {
 
     private let store: LocalAIModelStore
     private let holder: ModelHolder
+    private let settings = MLXGenerationSettings()
+
+    /// How many prompt tokens MLX processes per step while reading the input. Larger steps read a page
+    /// faster at the cost of a bigger transient buffer; MLX's default is 512.
+    public var prefillStepSize: Int {
+        get { settings.prefillStepSize }
+        set { settings.prefillStepSize = newValue }
+    }
 
     /// MLX keeps freed GPU buffers for reuse; uncapped, that cache grows towards the app's memory limit.
     public init(store: LocalAIModelStore, cacheLimitBytes: Int = 20 * 1024 * 1024) {
@@ -49,24 +57,65 @@ public final class MLXLocalAIEngine: LocalAIEngine {
         #endif
     }
 
-    public func generate(_ prompt: LocalAIPrompt) -> AsyncThrowingStream<LocalAIEvent, Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
+    public func makeConversation(instructions: String) -> LocalAIConversation {
+        MLXConversation(store: store, holder: holder, settings: settings, instructions: instructions)
+    }
+
+    public func preload() {
+        Task { [store, holder] in
+            guard let (model, directory) = await MainActor.run(body: { () -> (LocalAIModel, URL)? in
+                let model = store.selectedModel
+                return store.directory(for: model).map { (model, $0) }
+            }) else { return }
+            _ = try? await holder.container(for: model, at: directory)
+        }
+    }
+
+    public func unload() {
+        Task { await holder.unload() }
+    }
+}
+
+/// One `ChatSession` for the whole chat, so follow-ups reuse the history and its cache instead of
+/// re-reading the page each turn. Created on the first message, once the model is loaded.
+private final class MLXConversation: LocalAIConversation {
+
+    private let store: LocalAIModelStore
+    private let holder: ModelHolder
+    private let settings: MLXGenerationSettings
+    private let instructions: String
+    private var session: ChatSession?
+
+    init(store: LocalAIModelStore, holder: ModelHolder, settings: MLXGenerationSettings, instructions: String) {
+        self.store = store
+        self.holder = holder
+        self.settings = settings
+        self.instructions = instructions
+    }
+
+    /// The last reply's generation. A new message waits for it, so two generations never share the session.
+    private var previousReply: Task<Void, Never>?
+
+    /// Stopping never cancels MLX: cancelling while it reads the input (which it can't interrupt) leaves the
+    /// session's cache half-written, and the next message then runs on it. Instead the reply is dropped at
+    /// the next word, which ends MLX's generation cleanly with the cache intact for follow-ups.
+    func send(_ message: String, maxTokens: Int) -> AsyncThrowingStream<LocalAIEvent, Error> {
+        let stop = StopFlag()
+        let previous = previousReply
+        let stream = AsyncThrowingStream<LocalAIEvent, Error> { continuation in
+            let reply = Task {
+                await previous?.value
                 do {
-                    let (model, directory) = try await MainActor.run { () throws -> (LocalAIModel, URL) in
-                        let model = self.store.selectedModel
-                        guard let directory = self.store.directory(for: model) else { throw LocalAIEngineError.modelNotDownloaded }
-                        return (model, directory)
+                    if await !self.isReady() {
+                        continuation.yield(.status(.loadingModel))
                     }
-                    let container = try await self.holder.container(for: model, at: directory)
-                    let session = ChatSession(
-                        container,
-                        instructions: prompt.instructions,
-                        generateParameters: GenerateParameters(maxTokens: prompt.maxTokens, temperature: 0.3),
-                        additionalContext: ["enable_thinking": false]
-                    )
+                    let (session, loadTime) = try await self.chatSession()
+                    continuation.yield(.status(.reading(message)))
+                    session.generateParameters.maxTokens = maxTokens
+                    session.generateParameters.prefillStepSize = self.settings.prefillStepSize
                     var info: LocalAIGenerationInfo?
-                    for try await generation in session.streamDetails(to: prompt.message, images: [], videos: []) {
+                    for try await generation in session.streamDetails(to: message, images: [], videos: []) {
+                        if stop.isSet { break }
                         switch generation {
                         case .chunk(let text):
                             continuation.yield(.text(text))
@@ -74,7 +123,8 @@ public final class MLXLocalAIEngine: LocalAIEngine {
                             info = LocalAIGenerationInfo(promptTokens: completion.promptTokenCount,
                                                          generatedTokens: completion.generationTokenCount,
                                                          promptTime: completion.promptTime,
-                                                         generateTime: completion.generateTime)
+                                                         generateTime: completion.generateTime,
+                                                         loadTime: loadTime)
                         default:
                             break
                         }
@@ -85,45 +135,113 @@ public final class MLXLocalAIEngine: LocalAIEngine {
                     continuation.finish(throwing: error)
                 }
             }
-            continuation.onTermination = { _ in task.cancel() }
+            self.previousReply = reply
+            continuation.onTermination = { _ in stop.set() }
         }
+        return stream
     }
 
-    public func unload() {
-        Task { await holder.unload() }
+    private func isReady() async -> Bool {
+        guard session == nil else { return true }
+        let modelID = await MainActor.run { store.selectedModel.id }
+        return await holder.isLoaded(modelID: modelID)
+    }
+
+    /// The session, and how long this call waited for the model when it had to load (or finish loading) it.
+    private func chatSession() async throws -> (ChatSession, TimeInterval?) {
+        if let session {
+            return (session, nil)
+        }
+        let (model, directory) = try await MainActor.run { () throws -> (LocalAIModel, URL) in
+            let model = self.store.selectedModel
+            guard let directory = self.store.directory(for: model) else { throw LocalAIEngineError.modelNotDownloaded }
+            return (model, directory)
+        }
+        let loadStart = Date()
+        let (container, wasLoaded) = try await holder.container(for: model, at: directory)
+        let loadTime = wasLoaded ? nil : Date().timeIntervalSince(loadStart)
+        let session = ChatSession(container,
+                                  instructions: instructions,
+                                  generateParameters: GenerateParameters(temperature: 0.3),
+                                  additionalContext: ["enable_thinking": false])
+        self.session = session
+        return (session, loadTime)
     }
 }
 
-/// Owns the loaded model so loads and unloads never overlap.
+private final class StopFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = false
+
+    var isSet: Bool { lock.withLock { value } }
+
+    func set() { lock.withLock { value = true } }
+}
+
+final class MLXGenerationSettings: @unchecked Sendable {
+    var prefillStepSize = 512
+}
+
+/// Owns the loaded model. A load in progress is shared, so a preload and the first message don't load twice.
 private actor ModelHolder {
 
     private let cacheLimitBytes: Int
     private var container: ModelContainer?
     private var modelID: String?
+    private var loading: (modelID: String, task: Task<ModelContainer, Error>)?
 
     init(cacheLimitBytes: Int) {
         self.cacheLimitBytes = cacheLimitBytes
     }
 
-    func container(for model: LocalAIModel, at directory: URL) async throws -> ModelContainer {
+    /// The model, loading and warming it up first if needed. `wasLoaded` is true when it was ready already.
+    func container(for model: LocalAIModel, at directory: URL) async throws -> (container: ModelContainer, wasLoaded: Bool) {
         if let container, modelID == model.id {
-            return container
+            return (container, true)
+        }
+        if let loading, loading.modelID == model.id {
+            return (try await loading.task.value, false)
         }
         unload()
         Memory.cacheLimit = cacheLimitBytes
-        let configuration = ModelConfiguration(directory: directory, extraEOSTokens: model.extraEOSTokens)
-        let loaded = try await LLMModelFactory.shared.loadContainer(from: LocalOnlyDownloader(),
-                                                                    using: TransformersTokenizerLoader(),
-                                                                    configuration: configuration)
-        container = loaded
-        modelID = model.id
-        return loaded
+        let task = Task { try await Self.loadAndWarmUp(model, at: directory) }
+        loading = (model.id, task)
+        do {
+            let loaded = try await task.value
+            if loading?.modelID == model.id {
+                container = loaded
+                modelID = model.id
+                loading = nil
+            }
+            return (loaded, false)
+        } catch {
+            if loading?.modelID == model.id { loading = nil }
+            throw error
+        }
+    }
+
+    func isLoaded(modelID: String) -> Bool {
+        container != nil && self.modelID == modelID
     }
 
     func unload() {
+        loading?.task.cancel()
+        loading = nil
         container = nil
         modelID = nil
         Memory.clearCache()
+    }
+
+    /// One throwaway token after loading compiles MLX's GPU kernels, which the first real reply would otherwise pay for.
+    private static func loadAndWarmUp(_ model: LocalAIModel, at directory: URL) async throws -> ModelContainer {
+        let configuration = ModelConfiguration(directory: directory, extraEOSTokens: model.extraEOSTokens)
+        let container = try await LLMModelFactory.shared.loadContainer(from: LocalOnlyDownloader(),
+                                                                       using: TransformersTokenizerLoader(),
+                                                                       configuration: configuration)
+        let warmUp = ChatSession(container, generateParameters: GenerateParameters(maxTokens: 1),
+                                 additionalContext: ["enable_thinking": false])
+        for try await _ in warmUp.streamDetails(to: "Hi", images: [], videos: []) {}
+        return container
     }
 }
 

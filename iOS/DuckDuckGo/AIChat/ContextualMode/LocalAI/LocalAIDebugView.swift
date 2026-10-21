@@ -89,6 +89,16 @@ struct LocalAIDebugView: View {
                                                           set: { service.setEnabled($0, for: suggestion) }))
             }
             Toggle("Keep model loaded after the sheet closes", isOn: $service.keepsModelLoaded)
+            Picker("Page text for summaries", selection: $service.summaryPageCharacterLimit) {
+                ForEach(LocalAIContextualService.summaryPageCharacterLimits, id: \.self) { limit in
+                    Text("\(limit) characters").tag(limit)
+                }
+            }
+            Picker("MLX prefill step", selection: $service.prefillStepSize) {
+                ForEach(LocalAIContextualService.prefillStepSizes, id: \.self) { size in
+                    Text("\(size) tokens").tag(size)
+                }
+            }
             Button("Unload models now", action: service.unloadModels)
         }
     }
@@ -214,7 +224,8 @@ struct LocalAIDebugView: View {
         let request = LocalAIRequest(task: .summarize, source: .selection([sample]), language: LocalAIContextualService.userLanguageName)
         quickTestTask = Task {
             let (record, error) = await LocalAIRunner.run(request, engine: engine) { quickTestOutput += $0 }
-            quickTestOutput += "\n\n" + (error?.localizedDescription ?? String(format: "first token %.2fs, %.0f tok/s, %@ peak",
+            quickTestOutput += "\n\n" + (error?.localizedDescription ?? String(format: "load %.2fs, read %d tokens in %.2fs, first token %.2fs, %.0f tok/s, %@ peak",
+                                                                                    record.loadTime ?? 0, record.promptTokens ?? 0, record.promptTime ?? 0,
                                                                                     record.timeToFirstToken ?? 0, record.tokensPerSecond ?? 0,
                                                                                     ByteCountFormatter.string(fromByteCount: record.peakFootprintBytes, countStyle: .memory)))
             quickTestTask = nil

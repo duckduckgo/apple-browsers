@@ -92,3 +92,44 @@ struct LocalAIBenchmarkSetTests {
         #expect(cases.allSatisfy { $0.request.source.characterCount <= LocalAIBenchmarkSet.pageCharacterLimit })
     }
 }
+
+@Suite("Translating in pieces")
+struct LocalAITranslationPiecesTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A long page becomes a short first piece and longer ones after it, losing no text", .timeLimit(.minutes(1)))
+    func piecesCoverTheWholeText() {
+        let paragraphs = (1...30).map { "Absatz \($0): " + String(repeating: "Wort ", count: 30) }
+        let text = paragraphs.joined(separator: "\n")
+        let pieces = LocalAIPromptBuilder.translationPieces(of: text)
+
+        #expect(pieces.count > 2)
+        #expect(pieces[0].count <= LocalAIPromptBuilder.firstPieceCharacterLimit)
+        #expect(pieces.dropFirst().allSatisfy { $0.count <= LocalAIPromptBuilder.pieceCharacterLimit })
+        #expect(pieces.joined().filter { !$0.isWhitespace } == text.filter { !$0.isWhitespace })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A paragraph longer than a piece is split at a sentence end", .timeLimit(.minutes(1)))
+    func longParagraphSplitsAtSentence() {
+        let sentence = String(repeating: "x", count: 250) + ". "
+        let pieces = LocalAIPromptBuilder.translationPieces(of: String(repeating: sentence, count: 6))
+
+        #expect(pieces.count > 1)
+        #expect(pieces[0].hasSuffix("."))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A short selection and any summary stay a single prompt", .timeLimit(.minutes(1)))
+    func shortInputsStayWhole() {
+        let selection = LocalAIRequest(task: .translate, source: .selection(["Hallo Welt"]), language: "English")
+        let page = LocalAIPage(title: "T", url: "", content: String(repeating: "Satz. ", count: 1_000))
+        let summary = LocalAIRequest(task: .summarize, source: .page(page), language: "English")
+        let translation = LocalAIRequest(task: .translate, source: .page(page), language: "English")
+
+        #expect(LocalAIPromptBuilder.prompts(for: selection) == [LocalAIPromptBuilder.prompt(for: selection)])
+        #expect(LocalAIPromptBuilder.prompts(for: summary).count == 1)
+        #expect(LocalAIPromptBuilder.prompts(for: translation).count > 1)
+        #expect(LocalAIPromptBuilder.prompts(for: translation)[0].message.hasPrefix("Translate this text into English."))
+    }
+}

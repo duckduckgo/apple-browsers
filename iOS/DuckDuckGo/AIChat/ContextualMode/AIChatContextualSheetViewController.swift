@@ -567,6 +567,9 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        if featureFlagger.isFeatureOn(.localAIContextualActions) {
+            localAIService.sheetDidAppear(featureFlagger: featureFlagger)
+        }
         fireSuggestionsViewedPixelIfNeeded(for: sessionState.viewState)
     }
 
@@ -1134,7 +1137,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
 
     private func showLocalAIResult(request: LocalAIRequest, engine: LocalAIEngine, suggestion: ContextualSuggestedPrompt, actsOnSelection: Bool) {
         view.endEditing(true)
-        let resultViewController = LocalAIResultViewController(request: request, engine: engine) { [weak self] in
+        let resultViewController = LocalAIResultViewController(prompt: suggestion.prompt, request: request, engine: engine) { [weak self] in
             self?.continueInDuckAI(suggestion, actsOnSelection: actsOnSelection)
         }
         removeCurrentChildViewController()

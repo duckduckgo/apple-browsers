@@ -37,46 +37,25 @@ public final class FoundationModelsLocalAIEngine: LocalAIEngine {
         }
     }
 
-    public func generate(_ prompt: LocalAIPrompt) -> AsyncThrowingStream<LocalAIEvent, Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    try await Self.checkContextBudget(for: prompt)
-                    let session = LanguageModelSession(instructions: prompt.instructions)
-                    let options = GenerationOptions(maximumResponseTokens: prompt.maxTokens)
-                    var emitted = ""
-                    for try await snapshot in session.streamResponse(to: prompt.message, options: options) {
-                        let content = snapshot.content
-                        if content.hasPrefix(emitted) {
-                            continuation.yield(.text(String(content.dropFirst(emitted.count))))
-                        }
-                        emitted = content
-                    }
-                    continuation.yield(.finished(nil))
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: Self.map(error))
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
+    public func makeConversation(instructions: String) -> LocalAIConversation {
+        FoundationModelsConversation(instructions: instructions)
     }
 
     public func unload() {}
 
     /// iOS 26 shares 4,096 tokens between prompt and reply, so long translations can't fit. Say so up
     /// front instead of failing mid-stream. Counting tokens needs 26.4; earlier, generation decides.
-    private static func checkContextBudget(for prompt: LocalAIPrompt) async throws {
+    static func checkContextBudget(instructions: String, message: String, maxTokens: Int) async throws {
         guard #available(iOS 26.4, macOS 26.4, *) else { return }
         let model = SystemLanguageModel.default
-        let promptTokens = try await model.tokenCount(for: prompt.instructions + "\n" + prompt.message)
-        let needed = promptTokens + prompt.maxTokens
+        let promptTokens = try await model.tokenCount(for: instructions + "\n" + message)
+        let needed = promptTokens + maxTokens
         if needed > model.contextSize {
             throw LocalAIEngineError.contextTooLong(tokens: needed, limit: model.contextSize)
         }
     }
 
-    private static func map(_ error: Error) -> Error {
+    static func map(_ error: Error) -> Error {
         if #available(iOS 27.0, macOS 27.0, *), let error = error as? LanguageModelError {
             switch error {
             case .contextSizeExceeded(let details):
@@ -98,6 +77,45 @@ public final class FoundationModelsLocalAIEngine: LocalAIEngine {
             }
         }
         return error
+    }
+}
+@available(iOS 26.0, macOS 26.0, *)
+private final class FoundationModelsConversation: LocalAIConversation {
+
+    private let instructions: String
+    private lazy var session = LanguageModelSession(instructions: instructions)
+    private var hasSentFirstMessage = false
+
+    init(instructions: String) {
+        self.instructions = instructions
+    }
+
+    func send(_ message: String, maxTokens: Int) -> AsyncThrowingStream<LocalAIEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    // The first message carries the page; later ones are short, and the transcript is the model's to manage.
+                    if !self.hasSentFirstMessage {
+                        try await FoundationModelsLocalAIEngine.checkContextBudget(instructions: self.instructions, message: message, maxTokens: maxTokens)
+                    }
+                    self.hasSentFirstMessage = true
+                    continuation.yield(.status(.reading(message)))
+                    var emitted = ""
+                    for try await snapshot in self.session.streamResponse(to: message, options: GenerationOptions(maximumResponseTokens: maxTokens)) {
+                        let content = snapshot.content
+                        if content.hasPrefix(emitted) {
+                            continuation.yield(.text(String(content.dropFirst(emitted.count))))
+                        }
+                        emitted = content
+                    }
+                    continuation.yield(.finished(nil))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: FoundationModelsLocalAIEngine.map(error))
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
     }
 }
 #endif

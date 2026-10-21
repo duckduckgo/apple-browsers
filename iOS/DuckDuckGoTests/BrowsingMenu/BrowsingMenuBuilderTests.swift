@@ -651,6 +651,7 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
         guard includesBookmarkEntries else { return nil }
         return (.named(Self.bookmarkName), .named("Favorite"))
     }
+    func makeReaderModeEntry() -> BrowsingMenuEntry? { nil }
     func makeFindInPageEntry() -> BrowsingMenuEntry? { includesTabActions ? .named("Find in Page") : nil }
     func makeZoomEntry() -> BrowsingMenuEntry? { includesTabActions ? .named("Zoom") : nil }
     func makeDesktopSiteEntry() -> BrowsingMenuEntry? { includesTabActions ? .named("Desktop Site") : nil }

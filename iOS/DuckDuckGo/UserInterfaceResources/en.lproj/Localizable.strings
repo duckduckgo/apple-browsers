@@ -3985,6 +3985,12 @@ https://duckduckgo.com/mac";
 /* Default native error page title */
 "prompt.web-page-load-error.title" = "DuckDuckGo can’t load this page.";
 
+/* Accessibility label for the close button that returns to the original webpage */
+"reader.mode.close" = "Close Reader";
+
+/* Browsing menu item that opens a distraction-free article view */
+"reader.mode.open" = "Reader Mode";
+
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";
 

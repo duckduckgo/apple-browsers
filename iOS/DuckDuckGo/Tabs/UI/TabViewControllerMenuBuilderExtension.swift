@@ -353,6 +353,10 @@ extension TabViewController {
 
         entries.append(buildDesktopSiteEntry(forLink: link))
 
+        if let entry = buildReaderModeEntry() {
+            entries.append(entry)
+        }
+
         entries.append(buildFindInPageEntry(forLink: link))
                 
         return entries
@@ -460,6 +464,14 @@ extension TabViewController {
             PixelParameters.browsingMode: BrowsingMode.fire.pixelParamValue
         ]))
         delegate?.tabDidRequestNewTab(self)
+    }
+
+    private func buildReaderModeEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
+        guard readerModeController.state.isAvailable else { return nil }
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.news : DesignSystemImages.Glyphs.Size24.news
+        return BrowsingMenuEntry.regular(name: UserText.readerModeOpen, image: image, action: { [weak self] in
+            self?.readerModeController.setActive(true)
+        })
     }
 
     private func buildFindInPageEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
@@ -1183,6 +1195,10 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         buildSitePermissionsEntry(useSmallIcon: false)
     }
     
+    func makeReaderModeEntry() -> BrowsingMenuEntry? {
+        buildReaderModeEntry(useSmallIcon: false)
+    }
+
     func makeFindInPageEntry() -> BrowsingMenuEntry? {
         guard let link = validLink else { return nil }
         return buildFindInPageEntry(forLink: link, useSmallIcon: false)

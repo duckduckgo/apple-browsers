@@ -66,15 +66,20 @@ extension TabViewController: WKWebExtensionTab {
     }
 
     func isReaderModeAvailable(for context: WKWebExtensionContext) -> Bool {
-        return false
+        return readerModeController.state.isAvailable
     }
 
     func isReaderModeActive(for context: WKWebExtensionContext) -> Bool {
-        return false
+        return readerModeController.state.isActive
     }
 
     func setReaderModeActive(_ active: Bool, for context: WKWebExtensionContext) async throws {
-        throw WebExtensionTabError.notSupported
+        if readerModeController.state.isActive == active { return }
+        guard !active || (readerModeController.state.isAvailable && isViewLoaded && view.window != nil && presentedViewController == nil) else {
+            throw WebExtensionTabError.notSupported
+        }
+        readerModeController.setActive(active)
+        guard readerModeController.state.isActive == active else { throw WebExtensionTabError.notSupported }
     }
 
     func isPlayingAudio(for context: WKWebExtensionContext) -> Bool {

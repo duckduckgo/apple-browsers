@@ -343,6 +343,18 @@ class TabViewController: UIViewController {
 
     private(set) var webView: WKWebView!
     private let autofillPromptKeyboardHandler = AutofillPromptKeyboardHandler()
+    private(set) lazy var readerModeController: ReaderModeController = {
+        let controller = ReaderModeController(featureFlagger: featureFlagger)
+        controller.stateDidChange = { [weak self] in
+            self?.updateReaderModeUI()
+            if #available(iOS 18.4, *) {
+                self?.notifyWebExtensionOfPropertyChange([.readerMode])
+            }
+        }
+        return controller
+    }()
+    private var readerModeViewController: ReaderModeViewController?
+
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
                                                                   isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) },
                                                                   eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
@@ -1143,8 +1155,36 @@ class TabViewController: UIViewController {
         }
     }
 
+    private var readerModeContentRuleLists: [WKContentRuleList] {
+        guard privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking),
+              let assets = userContentController.contentBlockingAssets else { return [] }
+        return Array(assets.globalRuleLists.values)
+    }
+
+    private func updateReaderModeUI() {
+        let state = readerModeController.state
+        if case .active(let article) = state, readerModeViewController == nil {
+            guard presentedViewController == nil, viewIfLoaded?.window != nil else {
+                readerModeController.setActive(false)
+                return
+            }
+            let reader = ReaderModeViewController(article: article, contentRuleLists: readerModeContentRuleLists, close: { [weak self] in
+                self?.readerModeController.setActive(false)
+            }, openLink: { [weak self] url in
+                self?.readerModeController.setActive(false)
+                self?.load(url: url)
+            })
+            readerModeViewController = reader
+            present(reader, animated: false)
+        } else if !state.isActive, let reader = readerModeViewController {
+            readerModeViewController = nil
+            reader.dismiss(animated: false)
+        }
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        readerModeController.isVisible = true
         setSitePermissionsGeolocationActive(true)
         
         registerForResignActive()
@@ -1153,6 +1193,7 @@ class TabViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        readerModeController.isVisible = false
         setSitePermissionsGeolocationActive(false)
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
@@ -1573,6 +1614,7 @@ class TabViewController: UIViewController {
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
+        readerModeController.attach(webView: webView)
         pageSignalsMonitor.attach(to: webView)
         sitePermissionsDidAttachWebView(replacingWebView: isReplacingWebView)
         if floatingUIManager.isFloatingUIEnabled {
@@ -1797,6 +1839,7 @@ class TabViewController: UIViewController {
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
 
+        readerModeController.detach()
         pageSignalsMonitor.detach()
         prepareSitePermissionsForDataClearing()
         webView.navigationDelegate = nil
@@ -1891,6 +1934,7 @@ class TabViewController: UIViewController {
     }
     
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
+        readerModeController.urlChanged()
         // Handle DuckPlayer Navigation URL changes
         if let currentURL = newURL ?? webView.url,
            shouldHandleUpdate(previousURL, newURL) {
@@ -2417,6 +2461,8 @@ class TabViewController: UIViewController {
     }
 
     func dismiss() {
+        // The reader is presented full screen over the window, so it must close when another tab takes over.
+        readerModeController.setActive(false)
         setSitePermissionsGeolocationActive(false)
         privacyDashboard?.dismiss(animated: true)
         progressWorker.progressBar = nil
@@ -2711,6 +2757,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        if webView === self.webView { readerModeController.pageChanged() }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
@@ -2919,6 +2966,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView { readerModeController.navigationStarted() }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
                 userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
@@ -2979,6 +3027,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if webView === self.webView { readerModeController.navigationFinished() }
         terminationReloadMonitor.didFinish()
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
@@ -3525,6 +3574,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if webView === self.webView { readerModeController.navigationFinished() }
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
             userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
@@ -4779,6 +4829,7 @@ extension TabViewController: WKUIDelegate {
     }
 
     private func handleWebContentProcessDidTerminate(_ webView: WKWebView, reasonName: String?) {
+        if webView === self.webView { readerModeController.processTerminated() }
         // Before the delegate call below, which can start the next termination reload.
         terminationReloadMonitor.didTerminate()
 

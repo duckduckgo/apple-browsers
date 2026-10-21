@@ -25,6 +25,9 @@ import FoundationExtensions
 
 public struct UserText {
 
+    public static let readerModeOpen = NSLocalizedString("reader.mode.open", value: "Reader Mode", comment: "Browsing menu item that opens a distraction-free article view")
+    public static let readerModeClose = NSLocalizedString("reader.mode.close", value: "Close Reader", comment: "Accessibility label for the close button that returns to the original webpage")
+
     public static let addressBarPositionTop = NSLocalizedString("address.bar.top", value: "Top", comment: "Settings label for top position for the address bar")
     public static let addressBarPositionBottom = NSLocalizedString("address.bar.bottom", value: "Bottom", comment: "Settings label for bottom position for the address bar")
 

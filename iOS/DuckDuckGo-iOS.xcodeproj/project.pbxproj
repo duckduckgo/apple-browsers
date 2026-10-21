@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1CE00000000000000000004 /* ReaderModeControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CE00000000000000000005 /* ReaderModeControllerTests.swift */; };
+		A1CE00000000000000000006 /* ReaderMode in Frameworks */ = {isa = PBXBuildFile; productRef = A1CE00000000000000000002 /* ReaderMode */; };
+		A1CE00000000000000000001 /* ReaderMode in Frameworks */ = {isa = PBXBuildFile; productRef = A1CE00000000000000000002 /* ReaderMode */; };
 		DA7AB4285E04963E4A4C2D8E /* DuckPlayerUserScriptYoutubeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2A1DF241038DD47FD655170 /* DuckPlayerUserScriptYoutubeTests.swift */; };
 		15DB28B6168706B608C79BE9 /* DuckPlayerUserScriptPlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A074F9789E2AC3FF143F3EF /* DuckPlayerUserScriptPlayerTests.swift */; };
 		424457177626FC8693C1C58F /* LongPressBarMenuBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9167B499D9696099F28071C /* LongPressBarMenuBuilderTests.swift */; };
@@ -1283,6 +1286,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1CE00000000000000000005 /* ReaderModeControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderModeControllerTests.swift; sourceTree = "<group>"; };
 		A2A1DF241038DD47FD655170 /* DuckPlayerUserScriptYoutubeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerUserScriptYoutubeTests.swift; sourceTree = "<group>"; };
 		4A074F9789E2AC3FF143F3EF /* DuckPlayerUserScriptPlayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerUserScriptPlayerTests.swift; sourceTree = "<group>"; };
 		E9167B499D9696099F28071C /* LongPressBarMenuBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LongPressBarMenuBuilderTests.swift; sourceTree = "<group>"; };
@@ -2190,6 +2194,7 @@
 			files = (
 				708BA1CBA61D18E2FCEC6043 /* WideEvent in Frameworks */,
 				C14882ED27F211A000D59F0C /* SwiftSoup in Frameworks */,
+				A1CE00000000000000000001 /* ReaderMode in Frameworks */,
 				D61CDA182B7CF78300A0FBB9 /* ZIPFoundation in Frameworks */,
 				FCFC00031F00000000010001 /* DDGError in Frameworks */,
 				A64F1A060000000000000006 /* FeatureFlags-iOS in Frameworks */,
@@ -2246,6 +2251,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1CE00000000000000000006 /* ReaderMode in Frameworks */,
 				D4D81B61DD5ECD8A1B8CD562 /* WideEvent in Frameworks */,
 				A64F1A070000000000000007 /* FeatureFlags-iOS in Frameworks */,
 				B23B8E32A62743D0AD136A57 /* UIComponents in Frameworks */,
@@ -4043,6 +4049,7 @@
 				C84EFBF9259C5F5039CDEFD1 /* TabNavigationDecisionTests.swift */,
 				7A0308270000000000000003 /* TabTerminationErrorPageTests.swift */,
 				9FB46F27AC92CF8DCDFF66EC /* PageSignalsEventMapperTests.swift */,
+				A1CE00000000000000000005 /* ReaderModeControllerTests.swift */,
 				7A0308260000000000000003 /* WebContentHealthPixelTests.swift */,
 				0C0F9A0A007BE54F8EDD5599 /* TabEvictionSettingsTests.swift */,
 				6F1422832D314DC900B6D3DE /* TabInteractionStateDiskSourceTests.swift */,
@@ -4399,6 +4406,7 @@
 			packageProductDependencies = (
 				524F28DF1A4A0B9EAD27884C /* WideEvent */,
 				C14882EC27F211A000D59F0C /* SwiftSoup */,
+				A1CE00000000000000000002 /* ReaderMode */,
 				D61CDA172B7CF78300A0FBB9 /* ZIPFoundation */,
 				FCFC00021F00000000010001 /* DDGError */,
 				A64F1A030000000000000003 /* FeatureFlags-iOS */,
@@ -4470,6 +4478,7 @@
 			);
 			name = UnitTests;
 			packageProductDependencies = (
+				A1CE00000000000000000002 /* ReaderMode */,
 				14E03AB9D3B48B3B39B8F80B /* WideEvent */,
 				A64F1A040000000000000004 /* FeatureFlags-iOS */,
 				B23B8E33A62743D0AD136A57 /* UIComponents */,
@@ -4918,6 +4927,7 @@
 			);
 			mainGroup = 84E341891E2F7EFB00BDBA6F;
 			packageReferences = (
+				A1CE00000000000000000003 /* XCLocalSwiftPackageReference "../SharedPackages/ReaderMode" */,
 				FCFC00011F00000000050001 /* XCLocalSwiftPackageReference "../SharedPackages/URLPredictor" */,
 				FCFC00011F00000000010001 /* XCLocalSwiftPackageReference "../SharedPackages/DDGError" */,
 				FCFC00011F00000000020001 /* XCLocalSwiftPackageReference "../SharedPackages/Common" */,
@@ -5525,6 +5535,7 @@
 				5A73728465C83D08A704739C /* TabNavigationDecisionTests.swift in Sources */,
 				7A0308270000000000000004 /* TabTerminationErrorPageTests.swift in Sources */,
 				D2C56BB9A2AB0D300751349B /* PageSignalsEventMapperTests.swift in Sources */,
+				A1CE00000000000000000004 /* ReaderModeControllerTests.swift in Sources */,
 				7A0308260000000000000004 /* WebContentHealthPixelTests.swift in Sources */,
 				7039E806C1DF0AF3836D6E1A /* TabEvictionSettingsTests.swift in Sources */,
 				987130C4294AAB9F00AB05E0 /* FavoriteListViewModelTests.swift in Sources */,
@@ -8964,6 +8975,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		A1CE00000000000000000003 /* XCLocalSwiftPackageReference "../SharedPackages/ReaderMode" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SharedPackages/ReaderMode;
+		};
 		315E39632F86ABE100D2289D /* XCLocalSwiftPackageReference "../SharedPackages/DebugServer" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../SharedPackages/DebugServer;
@@ -9144,6 +9159,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A1CE00000000000000000002 /* ReaderMode */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1CE00000000000000000003 /* XCLocalSwiftPackageReference "../SharedPackages/ReaderMode" */;
+			productName = ReaderMode;
+		};
 		0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0238E44D29C0FAA100615E30 /* XCRemoteSwiftPackageReference "ios-js-support" */;

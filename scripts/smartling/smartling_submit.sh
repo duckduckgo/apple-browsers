@@ -33,7 +33,7 @@ case "$PLATFORM" in
 	iOS)
 		FILES=(
 			"./iOS/scripts/assets/loc/en.xcloc/Localized Contents/en.xliff"
-			"./iOS/DuckDuckGo/en.lproj/Localizable.stringsdict"
+			"./iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.stringsdict"
 		)
 		;;
 	macOS)

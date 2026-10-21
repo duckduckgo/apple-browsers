@@ -18,11 +18,23 @@
 
 import Foundation
 
-/// A snapshot produced by the local extractor and safe HTML renderer.
-public struct ReaderArticle: Sendable {
+/// An article extracted from a page, with its content reduced to a safe subset of HTML.
+public struct ReaderArticle: Equatable, Sendable {
+    public let url: URL
     public let title: String
     public let author: String?
-    public let sourceURL: URL
-    public let renderedHTML: String
+    public let siteName: String?
+    /// Sanitized article body.
+    public let contentHTML: String
+    public let textLength: Int
 
+    /// Sanitizes `contentHTML`, so no caller can create an article that carries unsafe markup.
+    public init(url: URL, title: String, author: String? = nil, siteName: String?, contentHTML: String, textLength: Int) {
+        self.url = url
+        self.title = title
+        self.author = author
+        self.siteName = siteName
+        self.contentHTML = (try? ReaderDocument.sanitize(contentHTML, title: title, author: author, baseURL: url)) ?? ""
+        self.textLength = textLength
+    }
 }

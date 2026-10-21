@@ -65,21 +65,22 @@ struct ReaderModeExtractorTests {
         <p>Read the <a href="/d"><b>docs</b></a> here</p>
         </body></html>
         """
-        let measurement = Eligibility.Measurement(extractedText: "", pageHTML: html)
+        let measurement = Eligibility.Measurement(extractedText: "", extractedHTML: "", pageHTML: html)
         #expect(measurement.pageTextLength == "Read the docs here".count)
         #expect(measurement.pageLinkTextLength == "docs".count)
     }
 
     @available(macOS 13, *)
-    @Test("Eligibility needs enough text and a page that is not mostly links", .timeLimit(.minutes(1)))
+    @Test("Eligibility needs enough text in several paragraphs and a page that is not mostly links", .timeLimit(.minutes(1)))
     func eligibilityRule() {
-        #expect(Eligibility.isEligible(.init(extractedTextLength: 2000, pageTextLength: 4000, pageLinkTextLength: 800)))
-        #expect(!Eligibility.isEligible(.init(extractedTextLength: 2000, pageTextLength: 4000, pageLinkTextLength: 3000)))
-        #expect(!Eligibility.isEligible(.init(extractedTextLength: Eligibility.minimumTextLength - 1, pageTextLength: 4000, pageLinkTextLength: 0)))
+        #expect(Eligibility.isEligible(.init(extractedTextLength: 2000, extractedParagraphCount: 4, pageTextLength: 4000, pageLinkTextLength: 800)))
+        #expect(!Eligibility.isEligible(.init(extractedTextLength: 2000, extractedParagraphCount: 4, pageTextLength: 4000, pageLinkTextLength: 3000)))
+        #expect(!Eligibility.isEligible(.init(extractedTextLength: Eligibility.minimumTextLength - 1, extractedParagraphCount: 4, pageTextLength: 4000, pageLinkTextLength: 0)))
+        #expect(!Eligibility.isEligible(.init(extractedTextLength: 2000, extractedParagraphCount: 1, pageTextLength: 4000, pageLinkTextLength: 0)))
     }
 
     private func fixture(_ name: String) throws -> String {
-        let url = try #require(Bundle.module.url(forResource: name, withExtension: "html", subdirectory: "Resources"))
+        let url = try #require(Bundle.module.url(forResource: name, withExtension: "html", subdirectory: "Fixtures"))
         return try String(contentsOf: url, encoding: .utf8)
     }
 }

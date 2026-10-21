@@ -31,37 +31,40 @@ struct ReaderModeTests {
         codeBackground: .init(light: .init(red: 0.9, green: 0.9, blue: 0.9, alpha: 1), dark: .init(red: 0.1, green: 0.1, blue: 0.1, alpha: 1)),
         border: .init(light: .init(red: 2, green: -1, blue: .nan, alpha: 0.5), dark: .init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1)))
 
+    private let contentParagraphs = "article p:not(.site):not(.byline)"
+
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func extractsRealArticle() async throws {
-        let article = try #require(await ReaderExtractor().extract(html: fixture("article"), sourceURL: sourceURL, theme: theme))
+    func extractsRealArticle() throws {
+        let article = try #require(ReaderModeExtractor().article(fromHTML: fixture("article"), url: sourceURL))
         #expect(article.title == "A mountain journey")
         #expect(article.author == "Alex Walker")
-        let document = try SwiftSoup.parse(article.renderedHTML)
+        let html = ReaderDocument.html(for: article, theme: theme)
+        let document = try SwiftSoup.parse(html)
         #expect(try document.select(".byline").text() == "Alex Walker")
         #expect(try document.select("p").filter { try $0.text() == "Alex Walker" }.count == 1)
-        #expect(try document.select("article p").first()?.text().hasPrefix("Paragraph 1.") == true)
-        #expect(try SwiftSoup.parse(article.renderedHTML).select("h1").size() == 1)
-        #expect(article.renderedHTML.contains("Paragraph 8"))
-        #expect(article.renderedHTML.contains("https://example.com/mountain.jpg"))
-        #expect(article.renderedHTML.contains("let x = 42"))
-        #expect(article.renderedHTML.contains("<table>"))
+        #expect(try document.select(contentParagraphs).first()?.text().hasPrefix("Paragraph 1.") == true)
+        #expect(try document.select("h1").size() == 1)
+        #expect(html.contains("Paragraph 8"))
+        #expect(html.contains("https://example.com/mountain.jpg"))
+        #expect(html.contains("let x = 42"))
+        #expect(html.contains("<table>"))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func rejectsNonArticleAndOversizedInput() async throws {
-        let extractor = ReaderExtractor()
-        #expect(try await extractor.extract(html: fixture("index"), sourceURL: sourceURL, theme: theme) == nil)
-        #expect(try await extractor.extract(html: String(repeating: "x", count: 1_048_577), sourceURL: sourceURL, theme: theme) == nil)
-        #expect(try await extractor.extract(html: fixture("article"), sourceURL: URL(string: "file:///secret")!, theme: theme) == nil)
+    func rejectsNonArticleAndOversizedInput() throws {
+        let extractor = ReaderModeExtractor()
+        #expect(extractor.article(fromHTML: try fixture("index"), url: sourceURL) == nil)
+        #expect(extractor.article(fromHTML: String(repeating: "x", count: 1_048_577), url: sourceURL) == nil)
+        #expect(extractor.article(fromHTML: try fixture("article"), url: URL(string: "file:///secret")!) == nil)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func sanitizesContentAndEscapesMetadata() throws {
-        let html = try ReaderHTML.render(content: fixture("hostile"), title: "<script>title</script>",
-                                         author: "<img src=x onerror=bad>", sourceURL: sourceURL, theme: theme)
+        let html = ReaderDocument.html(for: article(content: try fixture("hostile"), title: "<script>title</script>",
+                                                    author: "<img src=x onerror=bad>"), theme: theme)
         let document = try SwiftSoup.parse(html)
         #expect(try document.select("script, iframe, form, input, base, [onclick], [onerror], [srcset], [target]").isEmpty())
         #expect(try document.select("meta[http-equiv=refresh]").isEmpty())
@@ -75,7 +78,7 @@ struct ReaderModeTests {
         #expect(try document.title() == "<script>title</script>")
         #expect(html.contains("default-src 'none'"))
         #expect(html.contains("no-referrer"))
-        let distinct = try ReaderHTML.render(content: "<h1>Different heading</h1><p>Text</p>", title: "Title", author: nil, sourceURL: sourceURL, theme: theme)
+        let distinct = ReaderDocument.html(for: article(content: "<h1>Different heading</h1><p>Text</p>"), theme: theme)
         #expect(distinct.contains("Different heading"))
     }
 
@@ -83,21 +86,34 @@ struct ReaderModeTests {
     @Test(.timeLimit(.minutes(1)))
     func preservesArticleParagraphsWhenDeduplicatingByline() throws {
         let content = "<p>Alex Walker followed the trail.</p><p>Alex Walker</p>"
-        let html = try ReaderHTML.render(content: content, title: "Title", author: "Alex Walker", sourceURL: sourceURL, theme: theme)
-        let paragraphs = try SwiftSoup.parse(html).select("article p").map { try $0.text() }
+        let html = ReaderDocument.html(for: article(content: content, author: "Alex Walker"), theme: theme)
+        let paragraphs = try SwiftSoup.parse(html).select(contentParagraphs).map { try $0.text() }
         #expect(paragraphs == ["Alex Walker followed the trail.", "Alex Walker"])
 
-        let withoutAuthor = try ReaderHTML.render(content: "<p>Alex Walker</p>", title: "Title", author: nil, sourceURL: sourceURL, theme: theme)
-        #expect(try SwiftSoup.parse(withoutAuthor).select("article p").text() == "Alex Walker")
+        let withoutAuthor = ReaderDocument.html(for: article(content: "<p>Alex Walker</p>"), theme: theme)
+        #expect(try SwiftSoup.parse(withoutAuthor).select(contentParagraphs).text() == "Alex Walker")
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func rendersThemeColorsAsClampedHex() throws {
-        let html = try ReaderHTML.render(content: "<p>Text</p>", title: "Title", author: nil, sourceURL: sourceURL, theme: theme)
-        #expect(html.contains("background: light-dark(#FFFFFFFF,#000000FF)"))
-        #expect(html.contains("a { color: light-dark(#0000FFFF,#8080FFFF); }"))
-        #expect(html.contains("border: 1px solid light-dark(#FF000080,#808080FF)"))
+    func rendersThemeColorsAsClampedHex() {
+        let html = ReaderDocument.html(for: article(content: "<p>Text</p>"), theme: theme)
+        #expect(html.contains("--background: #FFFFFFFF;"))
+        #expect(html.contains("--link: #8080FFFF;"))
+        #expect(html.contains("--rule: #FF000080;"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func keepsElementIDsForInPageLinks() throws {
+        let html = ReaderDocument.html(for: article(content: "<p><a href=\"#notes\">notes</a></p><h2 id=\"notes\">Notes</h2>"), theme: theme)
+        let document = try SwiftSoup.parse(html)
+        #expect(try document.select("h2#notes").size() == 1)
+        #expect(try document.select("a[href=https://example.com/stories/article#notes]").size() == 1)
+    }
+
+    private func article(content: String, title: String = "Title", author: String? = nil) -> ReaderArticle {
+        ReaderArticle(url: sourceURL, title: title, author: author, siteName: nil, contentHTML: content, textLength: 0)
     }
 
     private func fixture(_ name: String) throws -> String {

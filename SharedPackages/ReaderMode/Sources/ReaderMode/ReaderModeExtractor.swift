@@ -19,45 +19,35 @@
 import Foundation
 import Trafilatura
 
-public struct ReaderArticle: Equatable, Sendable {
-    public let url: URL
-    public let title: String
-    public let siteName: String?
-    public let contentHTML: String
-    public let textLength: Int
-
-    public init(url: URL, title: String, siteName: String?, contentHTML: String, textLength: Int) {
-        self.url = url
-        self.title = title
-        self.siteName = siteName
-        self.contentHTML = contentHTML
-        self.textLength = textLength
-    }
-}
-
 public struct ReaderModeExtractor: Sendable {
 
     public init() {}
 
-    /// Returns `nil` when the page is not eligible for Reader Mode.
+    /// Returns `nil` when the page is not eligible for Reader Mode. Content stays on device.
     public func article(fromHTML html: String, url: URL) -> ReaderArticle? {
+        guard ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
+              html.utf8.count <= Eligibility.maximumInputSize else { return nil }
         var options = defaultOptions()
         options.originalUrl = url.absoluteString
         options.includeImages = true
         options.includeLinks = true
+        options.excludeComments = true
+        options.excludeTables = false
 
         guard let result = try? extract(html: html, options: options) else {
             return nil
         }
-        let measurement = Eligibility.Measurement(extractedText: result.contentText, pageHTML: html)
+        let measurement = Eligibility.Measurement(extractedText: result.contentText, extractedHTML: result.contentHtml, pageHTML: html)
         guard Eligibility.isEligible(measurement) else {
             return nil
         }
 
         let title = result.metadata.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let author = result.metadata.author.trimmingCharacters(in: .whitespacesAndNewlines)
         let siteName = result.metadata.sitename.trimmingCharacters(in: .whitespacesAndNewlines)
         return ReaderArticle(url: url,
                              title: title.isEmpty ? (url.host ?? url.absoluteString) : title,
+                             author: author.isEmpty ? nil : author,
                              siteName: siteName.isEmpty ? nil : siteName,
                              contentHTML: result.contentHtml,
                              textLength: measurement.extractedTextLength)
@@ -70,6 +60,8 @@ public struct ReaderModeExtractor: Sendable {
 enum Eligibility {
 
     static let minimumTextLength = 500
+    static let minimumParagraphCount = 2
+    static let maximumInputSize = 1_048_576
 
     /// Share of the page's visible text that sits inside links.
     /// Measured: Wikipedia article 0.18, swift.org blog post 0.10, Hacker News front page 0.79.
@@ -77,6 +69,7 @@ enum Eligibility {
 
     struct Measurement: Equatable {
         let extractedTextLength: Int
+        let extractedParagraphCount: Int
         let pageTextLength: Int
         let pageLinkTextLength: Int
 
@@ -84,15 +77,18 @@ enum Eligibility {
             pageTextLength == 0 ? 1 : Double(pageLinkTextLength) / Double(pageTextLength)
         }
 
-        init(extractedTextLength: Int, pageTextLength: Int, pageLinkTextLength: Int) {
+        init(extractedTextLength: Int, extractedParagraphCount: Int, pageTextLength: Int, pageLinkTextLength: Int) {
             self.extractedTextLength = extractedTextLength
+            self.extractedParagraphCount = extractedParagraphCount
             self.pageTextLength = pageTextLength
             self.pageLinkTextLength = pageLinkTextLength
         }
 
-        init(extractedText: String, pageHTML: String) {
+        init(extractedText: String, extractedHTML: String, pageHTML: String) {
             let markup = Self.visibleMarkup(of: pageHTML)
             self.init(extractedTextLength: extractedText.count,
+                      extractedParagraphCount: Self.paragraphRegex.numberOfMatches(in: extractedHTML,
+                                                                                   range: NSRange(location: 0, length: (extractedHTML as NSString).length)),
                       pageTextLength: Self.text(of: markup).count,
                       pageLinkTextLength: Self.linkTextLength(in: markup))
         }
@@ -101,6 +97,7 @@ enum Eligibility {
         private static let invisibleRegex = try! NSRegularExpression(pattern: "<(script|style|noscript|template)\\b[\\s\\S]*?</\\1\\s*>|<!--[\\s\\S]*?-->",
                                                                      options: .caseInsensitive)
         private static let anchorRegex = try! NSRegularExpression(pattern: "<a\\b[^>]*>([\\s\\S]*?)</a\\s*>", options: .caseInsensitive)
+        private static let paragraphRegex = try! NSRegularExpression(pattern: "<p[\\s>]", options: .caseInsensitive)
         private static let tagRegex = try! NSRegularExpression(pattern: "<[^>]*>")
         private static let whitespaceRegex = try! NSRegularExpression(pattern: "\\s+")
         // swiftlint:enable force_try
@@ -128,6 +125,8 @@ enum Eligibility {
     }
 
     static func isEligible(_ measurement: Measurement) -> Bool {
-        measurement.extractedTextLength >= minimumTextLength && measurement.pageLinkTextRatio <= maximumPageLinkTextRatio
+        measurement.extractedTextLength >= minimumTextLength
+            && measurement.extractedParagraphCount >= minimumParagraphCount
+            && measurement.pageLinkTextRatio <= maximumPageLinkTextRatio
     }
 }

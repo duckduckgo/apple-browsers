@@ -103,7 +103,7 @@ excluded:
   # Third-party/vendored code
   - "**/Carthage/**"
   - iOS/PacketTunnelProvider/ProxyServer
-  - macOS/LocalPackages/ReaderMode/Sources/Trafilatura
+  - SharedPackages/ReaderMode/Sources/Trafilatura
   
   # Copy files
   - "**/UserText.swift"

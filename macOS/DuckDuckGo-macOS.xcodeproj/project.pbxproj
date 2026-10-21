@@ -5654,7 +5654,7 @@
 		3798580F2D730ED8008773F6 /* HistoryViewDeleteDialogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewDeleteDialogModel.swift; sourceTree = "<group>"; };
 		379858122D730EFA008773F6 /* DefaultHistoryViewDialogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultHistoryViewDialogPresenter.swift; sourceTree = "<group>"; };
 		379D7A422D384E4F00E6E1CC /* HistoryView */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = HistoryView; sourceTree = "<group>"; };
-		B80F4ADA0D84B1B19ECCA777 /* ReaderMode */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = ReaderMode; sourceTree = "<group>"; };
+		B80F4ADA0D84B1B19ECCA777 /* ReaderMode */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = ReaderMode; path = ../SharedPackages/ReaderMode; sourceTree = SOURCE_ROOT; };
 		379DE4BC27EA31AC002CC3DE /* PreferencesAutofillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesAutofillView.swift; sourceTree = "<group>"; };
 		379E4D5F2D4383CE00A901B1 /* NewTabPageCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageCoordinator.swift; sourceTree = "<group>"; };
 		379E65582FE05BE60061949A /* FaviconImageCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconImageCacheTests.swift; sourceTree = "<group>"; };

@@ -72,7 +72,7 @@ final class ReaderModeController {
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          capture: @escaping (WKWebView) async throws -> Snapshot? = ReaderModeController.captureSnapshot,
          extract: @escaping (String, URL) async throws -> ReaderArticle? = { html, url in
-             try await ReaderExtractor.shared.extract(html: html, sourceURL: url, theme: .designSystem)
+             await Task.detached(priority: .userInitiated) { ReaderModeExtractor().article(fromHTML: html, url: url) }.value
          }) {
         self.featureFlagger = featureFlagger
         self.capture = capture

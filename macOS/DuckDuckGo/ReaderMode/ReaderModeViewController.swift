@@ -44,7 +44,7 @@ final class ReaderModeViewController: NSViewController {
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = self
-        webView.loadHTMLString(ReaderDocument.html(for: article), baseURL: article.url)
+        webView.loadHTMLString(ReaderDocument.html(for: article, theme: .designSystem), baseURL: article.url)
         view = webView
     }
 }

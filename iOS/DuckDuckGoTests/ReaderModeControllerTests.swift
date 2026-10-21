@@ -285,7 +285,7 @@ struct ReaderModeControllerTests {
         let paragraph = "<p>This report describes a journey across the mountains and through the forests. The walkers followed a river to a quiet valley and stopped to study the birds and trees along the trail.</p>"
         let paragraphs = (1...8).map { paragraph.replacingOccurrences(of: "This report", with: "Stage \($0). This report") }.joined()
         let html = "<html><head><title>Journey</title></head><body><article>" + paragraphs + "</article></body></html>"
-        return try #require(await ReaderExtractor.shared.extract(html: html, sourceURL: url, theme: .designSystem))
+        return try #require(ReaderModeExtractor().article(fromHTML: html, url: url))
     }
 
     private func settle() async {

@@ -29,7 +29,7 @@ struct ReaderDocumentTests {
     @available(macOS 13, *)
     @Test("Title and site name are HTML-escaped", .timeLimit(.minutes(1)))
     func escapesTitleAndSiteName() {
-        let html = ReaderDocument.html(for: article(title: "<script>alert(1)</script> & \"q\"", siteName: "<b>Site</b>"))
+        let html = ReaderDocument.html(for: article(title: "<script>alert(1)</script> & \"q\"", siteName: "<b>Site</b>"), theme: .designSystem)
 
         #expect(!html.contains("<script>"))
         #expect(!html.contains("<b>Site</b>"))
@@ -40,15 +40,16 @@ struct ReaderDocumentTests {
     @available(macOS 13, *)
     @Test("Document carries a CSP that blocks scripts", .timeLimit(.minutes(1)))
     func containsContentSecurityPolicy() {
-        let html = ReaderDocument.html(for: article())
+        let html = ReaderDocument.html(for: article(), theme: .designSystem)
 
-        #expect(html.contains("<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src * data:; style-src 'unsafe-inline'\">"))
+        #expect(html.contains("<meta http-equiv=\"Content-Security-Policy\" content=\"\(ReaderDocument.contentSecurityPolicy)\">"))
+        #expect(ReaderDocument.contentSecurityPolicy.hasPrefix("default-src 'none';"))
     }
 
     @available(macOS 13, *)
     @Test("Content is embedded and site line is omitted without a site name", .timeLimit(.minutes(1)))
     func embedsContent() {
-        let html = ReaderDocument.html(for: article())
+        let html = ReaderDocument.html(for: article(), theme: .designSystem)
 
         #expect(html.contains("<p>Body</p>"))
         #expect(!html.contains("class=\"site\""))

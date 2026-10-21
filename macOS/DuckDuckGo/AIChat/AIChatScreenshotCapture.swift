@@ -57,7 +57,7 @@ struct AIChatProcessedScreenshot {
 enum AIChatScreenshotCaptureResult {
     case image(AIChatProcessedScreenshot)
     case cancelled
-    /// Screen Recording is off. The caller shows `NSAlert.screenRecordingPermission()`, which asks before macOS does.
+    /// Screen Recording is off. The caller shows `presentPermissionAlert(on:)`, which explains before macOS asks.
     case permissionDenied
     case failed(AIChatScreenshotFailureReason)
 
@@ -121,13 +121,27 @@ enum AIChatScreenshotImageProcessor {
     }
 }
 
-/// Both screenshot modes need Screen Recording. macOS is only asked from our alert's Open System Settings,
-/// so the alert's explanation always comes first.
+/// Both screenshot modes need Screen Recording. macOS is only asked from our alert, so the alert's
+/// explanation always comes first.
 struct AIChatScreenRecordingPermission {
+
+    private static let askedKey = "aichat.screenshot.screen-recording-asked"
 
     var isGranted: () -> Bool = { CGPreflightScreenCaptureAccess() }
     var requestAccess: () -> Void = { _ = CGRequestScreenCaptureAccess() }
     var openURL: (URL) -> Void = { NSWorkspace.shared.open($0) }
+    var keyValueStore: ThrowingKeyValueStoring = UserDefaults.standard
+
+    /// macOS shows its prompt only the first time it's asked and never says whether it has, so we remember asking.
+    var hasAskedMacOS: Bool {
+        (try? keyValueStore.object(forKey: Self.askedKey)) as? Bool == true
+    }
+
+    /// macOS's own prompt, whose Open System Settings takes the user to the pane.
+    func askMacOS() {
+        try? keyValueStore.set(true, forKey: Self.askedKey)
+        requestAccess()
+    }
 
     /// Asks macOS first, so DuckDuckGo is listed in the Screen Recording pane even after it was removed
     /// from it; once the user has decided, asking is a no-op.
@@ -137,10 +151,10 @@ struct AIChatScreenRecordingPermission {
     }
 }
 
-/// Installs held back by Screen Recording: how many hit it, open System Settings from the alert, then capture.
+/// Installs held back by Screen Recording: how many hit it, accept the alert, then capture.
 protocol AIChatScreenshotPermissionInstrumentation {
     func permissionNeeded()
-    func systemSettingsOpened()
+    func permissionAlertAccepted()
     func captureSucceeded()
 }
 
@@ -162,8 +176,8 @@ final class DefaultAIChatScreenshotPermissionInstrumentation: AIChatScreenshotPe
         pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionNeeded, frequency: .uniqueByName)
     }
 
-    func systemSettingsOpened() {
-        pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionSettingsOpened, frequency: .uniqueByName)
+    func permissionAlertAccepted() {
+        pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionAlertAccepted, frequency: .uniqueByName)
     }
 
     /// Only installs that once hit the permission count, so converted over needed is the funnel's conversion.

@@ -438,8 +438,8 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: First Add Screenshot attempt without Screen Recording, on any surface. Once per install
     case aiChatScreenshotPermissionNeeded
 
-    /// Event Trigger: First Open System Settings click in the Screen Recording alert. Once per install
-    case aiChatScreenshotPermissionSettingsOpened
+    /// Event Trigger: First Continue or Open System Settings click in the Screen Recording alert. Once per install
+    case aiChatScreenshotPermissionAlertAccepted
 
     /// Event Trigger: First successful capture on an install that once had no Screen Recording. Once per install
     case aiChatScreenshotPermissionConverted
@@ -879,8 +879,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_ntp_image_attached"
         case .aiChatScreenshotPermissionNeeded:
             return "aichat_screenshot_permission_needed_macos_u"
-        case .aiChatScreenshotPermissionSettingsOpened:
-            return "aichat_screenshot_permission_settings_opened_macos_u"
+        case .aiChatScreenshotPermissionAlertAccepted:
+            return "aichat_screenshot_permission_alert_accepted_macos_u"
         case .aiChatScreenshotPermissionConverted:
             return "aichat_screenshot_permission_converted_macos_u"
         case .aiChatNtpImageRemoved:
@@ -1032,7 +1032,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatAddressBarScreenshotRemoved,
                 .aiChatNtpScreenshotRemoved,
                 .aiChatScreenshotPermissionNeeded,
-                .aiChatScreenshotPermissionSettingsOpened,
+                .aiChatScreenshotPermissionAlertAccepted,
                 .aiChatScreenshotPermissionConverted,
                 .aiChatAddressBarFileAttached,
                 .aiChatAddressBarFileRemoved,
@@ -1347,7 +1347,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNtpScreenshotTaken,
                 .aiChatNtpScreenshotRemoved,
                 .aiChatScreenshotPermissionNeeded,
-                .aiChatScreenshotPermissionSettingsOpened,
+                .aiChatScreenshotPermissionAlertAccepted,
                 .aiChatScreenshotPermissionConverted,
                 .aiChatNtpScreenshotFailed,
                 .aiChatNtpImageAttached,
@@ -1422,7 +1422,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatEntryPoint,
                 .aiChatSettingsState,
                 .aiChatScreenshotPermissionNeeded,
-                .aiChatScreenshotPermissionSettingsOpened,
+                .aiChatScreenshotPermissionAlertAccepted,
                 .aiChatScreenshotPermissionConverted:
             return .none
         default:

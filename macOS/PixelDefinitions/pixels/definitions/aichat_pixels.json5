@@ -558,8 +558,8 @@
         "triggers": ["user_interaction"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "aichat_screenshot_permission_settings_opened_macos_u": {
-        "description": "Fired once per install, the first time the user clicks Open System Settings in the Duck.ai Screen Recording alert",
+    "aichat_screenshot_permission_alert_accepted_macos_u": {
+        "description": "Fired once per install, the first time the user clicks Continue (which shows the macOS Screen Recording prompt) or, once macOS has asked, Open System Settings in the Duck.ai Screen Recording alert",
         "owners": ["jotaemepereira"],
         "triggers": ["user_interaction"],
         "parameters": ["appVersion", "pixelSource", "channel"]

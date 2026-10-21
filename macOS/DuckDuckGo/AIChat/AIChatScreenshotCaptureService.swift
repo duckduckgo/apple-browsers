@@ -38,10 +38,25 @@ final class AIChatScreenshotCaptureService {
         self.instrumentation = instrumentation
     }
 
-    /// What the Screen Recording alert's Open System Settings does, on every surface.
-    func openSystemSettings() {
-        instrumentation.systemSettingsOpened()
-        permission.openSystemSettings()
+    /// Shown for `.permissionDenied`, the same on every surface. macOS shows its own prompt only the first
+    /// time it's asked, so from then on the alert opens System Settings instead.
+    func presentPermissionAlert(on window: NSWindow?) {
+        guard let window, window.attachedSheet == nil else { return }
+        let asksMacOS = !permission.hasAskedMacOS
+        NSAlert.screenRecordingPermission(asksMacOS: asksMacOS).beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK else { return }
+            self?.acceptPermissionAlert(asksMacOS: asksMacOS)
+        }
+    }
+
+    /// The alert's Continue, or Open System Settings once macOS has been asked.
+    func acceptPermissionAlert(asksMacOS: Bool) {
+        instrumentation.permissionAlertAccepted()
+        if asksMacOS {
+            permission.askMacOS()
+        } else {
+            permission.openSystemSettings()
+        }
     }
 
     /// - Parameters:

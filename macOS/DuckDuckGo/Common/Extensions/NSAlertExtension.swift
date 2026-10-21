@@ -45,13 +45,14 @@ extension NSAlert {
         return alert
     }
 
-    /// Shown when a Duck.ai screenshot needs Screen Recording, before macOS is asked.
-    /// `.OK` opens the Screen Recording pane of System Settings.
-    static func screenRecordingPermission() -> NSAlert {
+    /// Shown when a Duck.ai screenshot needs Screen Recording. `.OK` is Continue, which asks macOS, or once
+    /// macOS has been asked, Open System Settings.
+    static func screenRecordingPermission(asksMacOS: Bool) -> NSAlert {
         let alert = NSAlert()
+        alert.icon = NSImage(resource: DesignSystemRebrand.isAppRebranded() ? .duckDuckGoResponseQuestion96 : .daxResponse)
         alert.messageText = UserText.screenRecordingPermissionTitle
-        alert.informativeText = UserText.screenRecordingPermissionMessage
-        alert.addButton(withTitle: UserText.screenRecordingPermissionOpenSettings, response: .OK)
+        alert.informativeText = asksMacOS ? UserText.screenRecordingPermissionMessage : UserText.screenRecordingPermissionSettingsMessage
+        alert.addButton(withTitle: asksMacOS ? UserText.continue : UserText.screenRecordingPermissionOpenSettings, response: .OK)
         alert.addButton(withTitle: UserText.notNow, response: .cancel, keyEquivalent: .escape)
         return alert
     }

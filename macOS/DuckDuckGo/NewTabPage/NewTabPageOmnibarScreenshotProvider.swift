@@ -92,18 +92,10 @@ final class NewTabPageOmnibarScreenshotProvider: NewTabPageOmnibarScreenshotProv
             return .cancelled
         case .permissionDenied:
             // The alert explains, so the capture itself is a cancel and the page shows no error.
-            presentPermissionExplainer(on: webView?.window)
+            captureService.presentPermissionAlert(on: webView?.window)
             return .cancelled
         case .failed:
             return .failed
-        }
-    }
-
-    private func presentPermissionExplainer(on window: NSWindow?) {
-        guard let window, window.attachedSheet == nil else { return }
-        NSAlert.screenRecordingPermission().beginSheetModal(for: window) { [captureService] response in
-            guard response == .OK else { return }
-            captureService.openSystemSettings()
         }
     }
 }

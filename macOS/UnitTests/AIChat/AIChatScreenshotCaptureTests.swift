@@ -136,20 +136,40 @@ struct AIChatScreenshotCaptureTests {
         #expect(events == ["request", URL.screenRecordingSystemSettings.absoluteString])
     }
 
+    @available(macOS 13, *)
+    @Test("Asking macOS is remembered, since macOS prompts only once and never says whether it has", .timeLimit(.minutes(1)))
+    func askingMacOSIsRemembered() {
+        var events: [String] = []
+        let store = InMemoryThrowingKeyValueStore()
+        let permission = AIChatScreenRecordingPermission(isGranted: { false },
+                                                         requestAccess: { events.append("request") },
+                                                         openURL: { _ in events.append("settings") },
+                                                         keyValueStore: store)
+        #expect(!permission.hasAskedMacOS)
+        permission.askMacOS()
+        #expect(events == ["request"])
+        #expect(AIChatScreenRecordingPermission(keyValueStore: store).hasAskedMacOS)
+    }
+
     // MARK: - Permission funnel
 
     @available(macOS 13, *)
-    @Test("A capture without Screen Recording and the alert's Open System Settings report the funnel", .timeLimit(.minutes(1)))
+    @Test("Continue only asks macOS, Open System Settings opens the pane, and both report the funnel", .timeLimit(.minutes(1)))
     @MainActor
-    func deniedCaptureAndSettingsReportTheFunnel() async {
+    func permissionAlertActionsReportTheFunnel() async {
+        var events: [String] = []
         let instrumentation = AIChatScreenshotPermissionInstrumentationSpy()
         let service = AIChatScreenshotCaptureService(permission: AIChatScreenRecordingPermission(isGranted: { false },
-                                                                                                 requestAccess: {},
-                                                                                                 openURL: { _ in }),
+                                                                                                 requestAccess: { events.append("request") },
+                                                                                                 openURL: { _ in events.append("settings") },
+                                                                                                 keyValueStore: InMemoryThrowingKeyValueStore()),
                                                      instrumentation: instrumentation)
         _ = await service.capture(mode: .dragToSelect, excluding: [], returningFocusTo: nil)
-        service.openSystemSettings()
-        #expect(instrumentation.events == ["needed", "settingsOpened"])
+        service.acceptPermissionAlert(asksMacOS: true)
+        #expect(events == ["request"])
+        service.acceptPermissionAlert(asksMacOS: false)
+        #expect(events == ["request", "request", "settings"])
+        #expect(instrumentation.events == ["needed", "alertAccepted", "alertAccepted"])
     }
 
     @available(macOS 13, *)
@@ -163,12 +183,12 @@ struct AIChatScreenshotCaptureTests {
         #expect(pixels.actualFireCalls.isEmpty)
 
         instrumentation.permissionNeeded()
-        instrumentation.systemSettingsOpened()
+        instrumentation.permissionAlertAccepted()
         // macOS relaunches the app after the grant: only the store carries over.
         DefaultAIChatScreenshotPermissionInstrumentation(pixelFiring: pixels, keyValueStore: store).captureSucceeded()
 
         #expect(pixels.actualFireCalls.map(\.pixel.name) == ["aichat_screenshot_permission_needed_macos_u",
-                                                             "aichat_screenshot_permission_settings_opened_macos_u",
+                                                             "aichat_screenshot_permission_alert_accepted_macos_u",
                                                              "aichat_screenshot_permission_converted_macos_u"])
         #expect(pixels.actualFireCalls.allSatisfy { $0.frequency == .uniqueByName })
     }
@@ -200,6 +220,6 @@ final class AIChatScreenshotPermissionInstrumentationSpy: AIChatScreenshotPermis
     private(set) var events: [String] = []
 
     func permissionNeeded() { events.append("needed") }
-    func systemSettingsOpened() { events.append("settingsOpened") }
+    func permissionAlertAccepted() { events.append("alertAccepted") }
     func captureSucceeded() { events.append("converted") }
 }

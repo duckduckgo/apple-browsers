@@ -1,5 +1,5 @@
 {
-  "originHash" : "99729e252683bfadcb94567e666f2d55458d4a0dfa34a4581d892995d034ffe8",
+  "originHash" : "28ef870ef452aef53ee83359062d1410f0514f634d3c1ee369b6b7e5c1c20c60",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -242,15 +242,6 @@
       "state" : {
         "revision" : "6ae7e79e77a4deb03fb5f21a73d701cae4132281",
         "version" : "4.0.0"
-      }
-    },
-    {
-      "identity" : "trafilatura-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nchapman/trafilatura-swift",
-      "state" : {
-        "revision" : "2720048a7b71ea91efcc025fc3f6ed50da6a6d35",
-        "version" : "0.5.0"
       }
     },
     {

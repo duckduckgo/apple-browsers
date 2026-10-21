@@ -367,7 +367,7 @@ struct AIChatScreenshotSourcePickerView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            sidebarItem(.window, title: UserText.aiChatScreenshotPickerWindowsTab, icon: DesignSystemImages.Glyphs.Size16.window)
+            sidebarItem(.window, title: UserText.aiChatScreenshotPickerWindowsTab, icon: DesignSystemImages.Glyphs.Size16.windows)
             sidebarItem(.screen, title: UserText.aiChatScreenshotPickerDisplaysTab, icon: DesignSystemImages.Glyphs.Size16.deviceDesktop)
             Spacer(minLength: 0)
         }

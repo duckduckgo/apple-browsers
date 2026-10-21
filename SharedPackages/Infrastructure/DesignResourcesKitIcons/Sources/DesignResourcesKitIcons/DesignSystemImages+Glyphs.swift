@@ -393,7 +393,6 @@ public extension DesignSystemImages {
             public static var vpnOff: DesignSystemImage { .init(resource: .vpnOff16) }
             public static var wand: DesignSystemImage { .init(resource: .wand16) }
             public static var weather: DesignSystemImage { .init(resource: .weather16) }
-            public static var window: DesignSystemImage { .init(resource: .window16) }
             public static var windowNew: DesignSystemImage { .init(resource: .windowNew16) }
             public static var windows: DesignSystemImage { .init(resource: .windows16) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs16) }

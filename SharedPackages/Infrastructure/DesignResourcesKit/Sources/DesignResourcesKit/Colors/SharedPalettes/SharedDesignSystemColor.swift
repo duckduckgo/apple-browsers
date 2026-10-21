@@ -146,7 +146,6 @@ public enum SharedDesignSystemColor {
     case unifiedInputTextSecondary
 
     // System
-    case lines
     case spinnerStart
     case spinnerFinal
 

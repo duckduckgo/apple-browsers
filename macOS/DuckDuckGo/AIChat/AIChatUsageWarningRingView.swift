@@ -113,7 +113,7 @@ final class AIChatUsageWarningRingView: NSView {
     private func applyColors() {
         // `CGColor` resolves once, so the drawing appearance has to be current when it is read.
         effectiveAppearance.performAsCurrentDrawingAppearance {
-            trackLayer.strokeColor = NSColor(designSystemColor: .lines).cgColor
+            trackLayer.strokeColor = NSColor(designSystemColor: .surfaceDecorationPrimary).cgColor
             progressLayer.strokeColor = NSColor(designSystemColor: Self.progressColor(for: severity)).cgColor
         }
     }

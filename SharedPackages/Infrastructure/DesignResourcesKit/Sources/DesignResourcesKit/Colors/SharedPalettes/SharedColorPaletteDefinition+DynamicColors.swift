@@ -249,8 +249,6 @@ extension SharedColorPaletteDefinition {
             return unifiedInputTextSecondary
 
         /// System
-        case .lines:
-            return lines
         case .spinnerStart:
             // Non-specialized, we'll always use the default
             return LatestColorPalette.spinnerStart

@@ -166,7 +166,6 @@ struct LatestColorPalette: SharedColorPaletteDefinition {
     static let buttonsSecondaryFillPressed = DynamicColor(lightColor: .shade(0.18), darkColor: .tint(0.3))
     static let buttonsSecondaryFillText = DynamicColor(lightColor: .shade(0.84), darkColor: .white)
 
-    static let lines = DynamicColor(lightHex: 0x1F1F1F, lightOpacity: 0.09, darkHex: 0xF9F9F9, darkOpacity: 0.12)
     static let spinnerStart = DynamicColor(lightHex: 0x000000, lightOpacity: 0.42, darkHex: 0xffffff, darkOpacity: 0.6)
     static let spinnerFinal = DynamicColor(lightColor: .green60, darkColor: .green30)
 }

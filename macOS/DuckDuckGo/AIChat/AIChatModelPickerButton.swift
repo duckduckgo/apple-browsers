@@ -129,7 +129,7 @@ final class AIChatModelPickerButton: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         effectiveAppearance.performAsCurrentDrawingAppearance {
-            borderLayer.borderColor = NSColor(designSystemColor: .lines).cgColor
+            borderLayer.borderColor = NSColor(designSystemColor: .surfaceDecorationPrimary).cgColor
         }
         CATransaction.commit()
     }

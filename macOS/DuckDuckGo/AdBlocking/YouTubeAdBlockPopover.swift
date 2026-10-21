@@ -215,7 +215,7 @@ struct YouTubeAdBlockView: View {
                     .cornerRadius(8)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+                            .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
                     )
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
@@ -333,7 +333,7 @@ struct YouTubeAdBlockBreakageReportRowView: View {
                         .cornerRadius(4)
                         .overlay(
                             RoundedRectangle(cornerRadius: 4)
-                                .stroke(Color(designSystemColor: .lines), lineWidth: 0.5)
+                                .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 0.5)
                         )
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -353,7 +353,7 @@ struct YouTubeAdBlockBreakageReportRowView: View {
                 .fill(Color(designSystemColor: .permissionWarningBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color(designSystemColor: .lines), lineWidth: 1)
+                        .strokeBorder(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
                 )
         )
     }
@@ -398,7 +398,7 @@ struct YouTubeAdBlockUnavailableRowView: View {
                 .fill(Color(designSystemColor: .permissionWarningBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color(designSystemColor: .lines), lineWidth: 1)
+                        .strokeBorder(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
                 )
         )
         .accessibilityIdentifier("YouTubeAdBlockPopover.unavailableMessage")

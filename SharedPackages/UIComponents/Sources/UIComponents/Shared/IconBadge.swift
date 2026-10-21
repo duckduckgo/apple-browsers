@@ -43,7 +43,7 @@ public struct IconBadge: View {
             .fill(fillColor)
             .frame(width: diameter, height: diameter)
             .overlay {
-                Circle().stroke(Color(designSystemColor: .lines), lineWidth: borderWidth)
+                Circle().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: borderWidth)
             }
             .overlay {
                 if let icon {

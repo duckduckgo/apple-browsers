@@ -140,7 +140,7 @@ struct PermissionCenterView: View {
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+                        .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
                 )
                 .padding(.horizontal, 16)
                 .padding(.bottom, displaysContentBelowPermissions ? 12 : 16)
@@ -206,7 +206,7 @@ struct ReloadBannerView: View {
                     .cornerRadius(4)
                     .overlay(
                         RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color(designSystemColor: .lines), lineWidth: 0.5)
+                            .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 0.5)
                     )
             }
             .buttonStyle(PlainButtonStyle())
@@ -218,7 +218,7 @@ struct ReloadBannerView: View {
                 .fill(Color(designSystemColor: .permissionWarningBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color(designSystemColor: .lines), lineWidth: 1)
+                        .strokeBorder(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
                 )
         )
     }

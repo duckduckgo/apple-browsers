@@ -991,7 +991,7 @@ final class AIChatUsageWarningActionButton: NSView {
         CATransaction.setDisableActions(true)
         effectiveAppearance.performAsCurrentDrawingAppearance {
             backgroundLayer.backgroundColor = fill.cgColor
-            dividerView.backgroundColor = NSColor(designSystemColor: .lines)
+            dividerView.backgroundColor = NSColor(designSystemColor: .surfaceDecorationPrimary)
             applyTitleStyling()
             iconImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
             chevronImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)

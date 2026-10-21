@@ -108,7 +108,7 @@ final class AIChatSuggestionsView: NSView {
 
     private func updateSeparatorColor() {
         NSAppearance.withAppearance(appearance) {
-            separatorView.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
+            separatorView.layer?.backgroundColor = NSColor(designSystemColor: .surfaceDecorationPrimary).cgColor
         }
     }
 

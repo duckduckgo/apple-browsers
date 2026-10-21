@@ -180,7 +180,7 @@ struct FeatureCardView: View {
         .cornerRadius(LayoutConstants.cornerRadius)
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cornerRadius)
-                .stroke(Color(designSystemColor: .lines), lineWidth: borderWidth)
+                .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: borderWidth)
         )
     }
 

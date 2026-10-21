@@ -75,6 +75,7 @@ class AddressBarTests: XCTestCase {
     static let testHtml = "<html><head><title>Title</title></head><body>test</body></html>"
 
     private var savedPreferences: SavedPreferences!
+    private var savedArgumentDomain: [String: Any]!
 
     @MainActor
     private func navigationFinishedPromiseIfNeeded(for tab: Tab) -> Future<Void, Error>? {
@@ -111,7 +112,8 @@ class AddressBarTests: XCTestCase {
         // tests return debugDescription instead of localizedDescription
         NSError.disableSwizzledDescription = true
 
-        // don‘t depend on the local app settings: the test host app uses the real `UserDefaults.standard`
+        // don‘t depend on the settings left by the test classes run earlier
+        savedArgumentDomain = UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)
         UserDefaults.standard.overrideValuesInArgumentDomain(Self.pinnedUserDefaults)
         savedPreferences = SavedPreferences()
         NSApp.delegateTyped.startupPreferences.customHomePageURL = URL.duckDuckGo.absoluteString
@@ -126,7 +128,7 @@ class AddressBarTests: XCTestCase {
 
     /// AI Chat settings read by the Address Bar directly from `UserDefaults.standard`, pinned to their default values.
     /// The values are set in the volatile argument domain taking precedence over the persistent user defaults,
-    /// so they‘re never written to the user‘s settings.
+    /// so they apply whatever earlier tests have stored and are never persisted.
     private static let pinnedUserDefaults: [String: Any] = [
         "aichat.enabled": true,
         "aichat.showSearchAndDuckAIToggle": true,
@@ -137,11 +139,12 @@ class AddressBarTests: XCTestCase {
     ]
 
     /// The tests type into the Address Bar triggering autocomplete requests (and the connection pre-warming)
-    /// to duckduckgo.com: serve empty suggestions locally and fail any other request leaving the machine.
+    /// to duckduckgo.com: serve empty suggestions locally and fail any other in-process HTTP(S) request leaving the machine.
     /// Web pages are served by `schemeHandler`.
     private func stubNetworkRequests() {
         stub { request in
-            !["localhost", "127.0.0.1", "::1"].contains(request.url?.host ?? "")
+            guard let url = request.url, ["http", "https"].contains(url.scheme) else { return false }
+            return !["localhost", "127.0.0.1", "::1"].contains(url.host ?? "")
         } response: { request in
             Logger.tests.error("Blocked network request: \(request.url?.absoluteString ?? "<nil>", privacy: .public)")
             return HTTPStubsResponse(error: URLError(.notConnectedToInternet))
@@ -177,7 +180,8 @@ class AddressBarTests: XCTestCase {
 
             savedPreferences?.restore()
             savedPreferences = nil
-            UserDefaults.standard.removeValuesFromArgumentDomain(forKeys: Self.pinnedUserDefaults.keys)
+            UserDefaults.standard.replaceArgumentDomain(with: savedArgumentDomain ?? [:])
+            savedArgumentDomain = nil
             (NSApp.delegateTyped.featureFlagger as? MockFeatureFlagger)?.featuresStub[FeatureFlag.addressBarIMEConfirmFix.rawValue] = nil
 
             HTTPStubs.removeAllStubs()
@@ -1376,16 +1380,11 @@ private struct SavedPreferences {
 private extension UserDefaults {
 
     func overrideValuesInArgumentDomain(_ values: [String: Any]) {
-        let argumentDomain = volatileDomain(forName: UserDefaults.argumentDomain)
-        removeVolatileDomain(forName: UserDefaults.argumentDomain)
-        setVolatileDomain(argumentDomain.merging(values) { $1 }, forName: UserDefaults.argumentDomain)
+        replaceArgumentDomain(with: volatileDomain(forName: UserDefaults.argumentDomain).merging(values) { $1 })
     }
 
-    func removeValuesFromArgumentDomain<Keys: Sequence>(forKeys keys: Keys) where Keys.Element == String {
-        var argumentDomain = volatileDomain(forName: UserDefaults.argumentDomain)
-        for key in keys {
-            argumentDomain[key] = nil
-        }
+    func replaceArgumentDomain(with argumentDomain: [String: Any]) {
+        // `setVolatileDomain` doesn‘t replace an existing domain
         removeVolatileDomain(forName: UserDefaults.argumentDomain)
         setVolatileDomain(argumentDomain, forName: UserDefaults.argumentDomain)
     }

@@ -100,9 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fatalError("Could not prepare the integration tests key value stores location: \(error)")
         }
     }
-#endif
 
-#if DEBUG
     let disableCVDisplayLinkLogs: Void = {
         // Disable noisy CVDisplayLink logs
         CFPreferencesSetValue("cv_note" as CFString,

@@ -83,6 +83,8 @@ final class IPadOmnibarAttachmentController {
     /// Runs once per sheet however it closed, so the omnibar can bring the input back.
     var onPastedTextSheetDismissed: (() -> Void)?
 
+    private(set) var isPresentingPastedTextSheet = false
+
     init(store: UTIModelStore, keepsUnavailableAttachmentButtonVisible: Bool = false, pixelFiring: PixelFiring? = PixelKit.shared) {
         self.store = store
         self.keepsUnavailableAttachmentButtonVisible = keepsUnavailableAttachmentButtonVisible
@@ -175,8 +177,10 @@ final class IPadOmnibarAttachmentController {
         let draft = currentDraft
         let limit = pastedTextSheetLimit?(pastedText) ?? 0
         firePastedTextPixel(.sheetOpened)
+        isPresentingPastedTextSheet = true
         PastedTextSheetPresenter.present(pastedText, mode: .editable(limit: limit), from: host) { [weak self] outcome in
             guard let self else { return }
+            isPresentingPastedTextSheet = false
             if case .saved(let edited) = outcome {
                 replacePastedText(id: id, with: edited, in: draft)
             }

@@ -816,6 +816,7 @@ final class IPadOmnibarDraftTests: XCTestCase {
 final class IPadOmnibarPastedTextTests: XCTestCase {
 
     private var window: UIWindow?
+    private let pixels = PixelKitMock()
     private let termsSuiteName = "IPadOmnibarPastedTextTests.terms"
 
     override func setUp() {
@@ -1048,7 +1049,31 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         XCTAssertTrue(view.isSearchAreaExpanded)
     }
 
+    func testReviewingAChipInTheSheetKeepsTheInputOutcomeOpen() throws {
+        let (controller, view) = try makeController()
+        controller.omniDelegate = MockOmniBarDelegate()
+        expand(controller, view)
+        XCTAssertFalse(paste(text(length: 4_100), into: controller, view))
+        let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
+
+        view.attachmentsStripView.onAttachmentTapped?(chipID)
+        let sheet = try XCTUnwrap(controller.presentedViewController as? PastedTextSheetHostingController)
+        controller.setSelectedTextEntryMode(.search)
+        view.setSearchAreaExpanded(false, animated: false)
+        sheet.finish(.unchanged)
+        XCTAssertTrue(inputOutcomes.isEmpty, "Reviewing a chip is not an abandon")
+
+        enter("summarize", in: controller, view)
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertEqual(inputOutcomes.map { $0["outcome"] }, ["prompt_submitted"])
+    }
+
     // MARK: - Helpers
+
+    private var inputOutcomes: [[String: String]] {
+        pixels.actualFireCalls.filter { $0.pixel.name == DuckAiInputOutcomeEvent.pixelName }.compactMap(\.pixel.parameters)
+    }
 
     private func makeController(flags: [FeatureFlag] = [.unifiedToggleInputPastedText]) throws -> (DefaultOmniBarViewController, DefaultOmniBarView) {
         let featureFlagger = MockFeatureFlagger()
@@ -1060,7 +1085,8 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
                 userInterfaceIdiomProvider: DraftIPadIdiomProvider()
             ),
             isFloatingUIEnabled: false,
-            termsOfServiceStore: DuckAiTermsOfServiceStore(keyValueStore: try XCTUnwrap(UserDefaults(suiteName: termsSuiteName)))
+            termsOfServiceStore: DuckAiTermsOfServiceStore(keyValueStore: try XCTUnwrap(UserDefaults(suiteName: termsSuiteName))),
+            inputOutcomePixelFiring: UTIPixelFiring(pixelKit: { [pixels] in pixels })
         )
         controller.loadViewIfNeeded()
         controller.enterPadState()

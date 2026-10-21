@@ -68,7 +68,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: dependencies.featureFlagger),
         store: termsOfServiceStore
     )
-    private let inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(pixelFiring: DuckAiInputOutcomePixelAdapter())
+    private let inputOutcomeMeasurement: DuckAiInputOutcomeMeasurement
 
     private let attachmentPrivacyDisclosureOverride: AttachmentPrivacyDisclosure?
     private let attachmentPrivacyPixelFiring: PixelFiring?
@@ -100,8 +100,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
          isFloatingUIEnabled: Bool,
          termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
          attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure? = nil,
-         attachmentPrivacyPixelFiring: PixelFiring? = PixelKit.shared) {
+         attachmentPrivacyPixelFiring: PixelFiring? = PixelKit.shared,
+         inputOutcomePixelFiring: UTIPixelFiring = .live) {
         self.isFloatingUIEnabled = isFloatingUIEnabled
+        self.inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(pixelFiring: DuckAiInputOutcomePixelAdapter(firing: inputOutcomePixelFiring))
         self.termsOfServiceStore = termsOfServiceStore
         self.attachmentPrivacyDisclosureOverride = attachmentPrivacyDisclosure
         self.attachmentPrivacyPixelFiring = attachmentPrivacyPixelFiring
@@ -896,8 +898,10 @@ extension DefaultOmniBarViewController {
         !(omniBarView.aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// Only Duck.ai mode expands the search area, which is the Duck.ai input.
+    /// Only Duck.ai mode expands the search area, which is the Duck.ai input. The pasted-text sheet collapses the bar
+    /// while it reviews a chip from the same input, so the opening stays as it is until the sheet is gone.
     private func syncInputOutcomeMeasurement() {
+        guard attachmentController?.isPresentingPastedTextSheet != true else { return }
         guard omniBarView.isSearchAreaExpanded, selectedTextEntryMode == .aiChat else {
             inputOutcomeMeasurement.inputClosed()
             return
@@ -925,6 +929,7 @@ extension DefaultOmniBarViewController {
     private func restoreInputAfterPastedTextSheet() {
         expandAIChatAfterAttachmentPicker()
         omniBarView.aiChatTextView.becomeFirstResponder()
+        syncInputOutcomeMeasurement()
     }
 
     /// Converts a long insertion into a chip. Keystrokes fail the cheap length check first.

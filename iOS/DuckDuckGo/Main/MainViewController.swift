@@ -6171,8 +6171,8 @@ extension MainViewController: OmniBarDelegate {
             },
             onMoveAddressBar: { [weak self] in
                 if self?.isFloatingUIEnabled == true {
-                    self?.omniBar.barView.performAfterLongPressMenuDismissal { [weak self] preview in
-                        self?.moveFloatingAddressBar(preview: preview)
+                    self?.omniBar.barView.performAfterLongPressMenuDismissal { [weak self] in
+                        self?.moveFloatingAddressBar()
                     }
                     return
                 }
@@ -6209,12 +6209,25 @@ extension MainViewController: OmniBarDelegate {
         longPressBarMenuBuilder.fireOmniBarMenuOpenPixel()
     }
 
-    private func moveFloatingAddressBar(preview: UIImage?) {
+    private func moveFloatingAddressBar() {
         guard !isAddressBarMoveInProgress else { return }
         isAddressBarMoveInProgress = true
         view.layoutIfNeeded()
         viewCoordinator.navigationBarContainer.backgroundColor = .clear
         omniBar.prepareForMoveTransition()
+
+        if #available(iOS 26.0, *), newTabPageViewController != nil, !UIAccessibility.isReduceMotionEnabled {
+            UIView.animate(springDuration: 0.5, bounce: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                self.toggleAddressBarLocation()
+                self.omniBar.moveTransitionCompleted()
+                self.revealFloatingChromeImmediately()
+                self.decorate()
+                self.view.layoutIfNeeded()
+            } completion: { [weak self] _ in
+                self?.isAddressBarMoveInProgress = false
+            }
+            return
+        }
 
         let snapshot: UIImageView?
         if !UIAccessibility.isReduceMotionEnabled, let window = view.window, !window.bounds.isEmpty {
@@ -6222,20 +6235,12 @@ extension MainViewController: OmniBarDelegate {
             let format = UIGraphicsImageRendererFormat()
             format.scale = window.traitCollection.displayScale
             let image = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
-                if let preview, let field = omniBar.barView.searchContainer {
-                    let isHidden = field.isHidden
-                    field.isHidden = true
-                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
-                    field.isHidden = isHidden
-                    preview.draw(in: field.convert(field.bounds, to: window))
-                } else {
-                    window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
-                }
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
             }
             snapshot = UIImageView(image: image)
             snapshot?.frame = window.bounds
             snapshot?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            snapshot?.isUserInteractionEnabled = true
+            snapshot?.isUserInteractionEnabled = false
             if let snapshot {
                 window.addSubview(snapshot)
             }
@@ -6251,15 +6256,12 @@ extension MainViewController: OmniBarDelegate {
             self.view.layoutIfNeeded()
         }
 
-        guard let snapshot else {
-            isAddressBarMoveInProgress = false
-            return
-        }
-        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut], animations: {
+        isAddressBarMoveInProgress = false
+        guard let snapshot else { return }
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut, .allowUserInteraction], animations: {
             snapshot.alpha = 0
-        }) { [weak self] _ in
+        }) { _ in
             snapshot.removeFromSuperview()
-            self?.isAddressBarMoveInProgress = false
         }
     }
 

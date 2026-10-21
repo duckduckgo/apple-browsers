@@ -906,7 +906,7 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
 
 final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
 
-    func testWhenGlassHostIsTransformedThenPreviewMatchesWindowGeometry() throws {
+    func testWhenGlassHostIsTransformedThenPreviewTargetsOriginalFieldGeometry() throws {
         for isBottom in [false, true] {
             let menu = try makeDisplayedMenu(isBottom: isBottom, hostTransform: CGAffineTransform(scaleX: 0.9, y: 0.9))
             defer { menu.window.isHidden = true }
@@ -914,63 +914,80 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
                                                                           previewForDismissingMenuWithConfiguration: menu.configuration))
             let container = try XCTUnwrap(menu.barView.searchContainer)
             let frame = container.convert(container.bounds, to: menu.window)
-            let image = try XCTUnwrap((preview.view as? UIImageView)?.image)
+            let targetCenter = preview.target.container.convert(preview.target.center, to: menu.window)
 
-            if #available(iOS 27.0, *) {
-                XCTAssertTrue(preview.view.superview === menu.window)
-            } else {
-                XCTAssertNil(preview.view.superview)
-            }
-            XCTAssertTrue(preview.target.container === menu.window)
-            XCTAssertEqual(preview.view.frame.minX, frame.minX, accuracy: 0.001)
-            XCTAssertEqual(preview.view.frame.minY, frame.minY, accuracy: 0.001)
-            XCTAssertEqual(preview.view.frame.width, frame.width, accuracy: 0.001)
-            XCTAssertEqual(preview.view.frame.height, frame.height, accuracy: 0.001)
-            XCTAssertEqual(preview.target.center.x, frame.midX, accuracy: 0.001)
-            XCTAssertEqual(preview.target.center.y, frame.midY, accuracy: 0.001)
-            XCTAssertEqual(preview.view.transform, .identity)
-            XCTAssertEqual(image.scale, menu.window.traitCollection.displayScale)
-            XCTAssertEqual(image.size.width, frame.width, accuracy: 1 / image.scale)
-            XCTAssertEqual(image.size.height, frame.height, accuracy: 1 / image.scale)
+            XCTAssertTrue(preview.view === container)
+            XCTAssertTrue(preview.target.container === container.superview)
+            XCTAssertEqual(targetCenter.x, frame.midX, accuracy: 0.001)
+            XCTAssertEqual(targetCenter.y, frame.midY, accuracy: 0.001)
+            XCTAssertEqual(preview.target.transform, container.transform)
+            XCTAssertEqual(preview.size, container.bounds.size)
         }
     }
 
-    func testWhenMenuDisplaysThenPreviewSourceStaysRenderableWithoutDuplicatingVisibleContent() throws {
+    func testWhenMenuDisplaysThenGlassIsDisabledWithoutHidingTheLiveField() throws {
         for withAnimator in [false, true] {
             let menu = try makeDisplayedMenu(displayAnimator: withAnimator ? MenuDismissAnimator() : nil)
             defer { menu.window.isHidden = true }
             let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
                                                                           previewForDismissingMenuWithConfiguration: menu.configuration))
+            let glass = try XCTUnwrap(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first)
 
-            if #available(iOS 27.0, *) {
-                XCTAssertTrue(preview.view.window === menu.window)
-                XCTAssertEqual(preview.view.alpha, 0)
-            } else {
-                XCTAssertNil(preview.view.superview)
-                XCTAssertEqual(preview.view.alpha, 1)
-            }
+            XCTAssertTrue(preview.view === menu.barView.searchContainer)
             XCTAssertFalse(preview.view.isHidden)
-            XCTAssertTrue(menu.barView.searchContainer.isHidden)
+            XCTAssertEqual(preview.view.alpha, 1)
+            XCTAssertNil(glass.effect)
 
             menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
 
-            XCTAssertNil(preview.view.superview)
-            XCTAssertFalse(menu.barView.searchContainer.isHidden)
+            XCTAssertTrue(preview.view.window === menu.window)
+            XCTAssertFalse(preview.view.isHidden)
+            let restoredGlass = try XCTUnwrap(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+            if #available(iOS 26.0, *) {
+                XCTAssertNotNil(restoredGlass.effect)
+            }
         }
     }
 
-    func testWhenMovingAddressBarThenWaitsForDismissalAndRestoresFieldBeforeMoving() throws {
+    func testWhenAppearanceChangesDuringMenuThenPreviewKeepsLiveContentAndAdaptiveFill() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom)
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let fill = try XCTUnwrap(preview.parameters.backgroundColor)
+            let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+            let darkTraits = UITraitCollection(userInterfaceStyle: .dark)
+            XCTAssertNotEqual(fill.resolvedColor(with: lightTraits), fill.resolvedColor(with: darkTraits))
+
+            menu.window.overrideUserInterfaceStyle = .dark
+            menu.window.layoutIfNeeded()
+            menu.barView.refreshMaterialAppearance()
+
+            XCTAssertTrue(preview.view === menu.barView.searchContainer)
+            XCTAssertEqual(preview.view.traitCollection.userInterfaceStyle, .dark)
+            XCTAssertEqual(menu.barView.searchContainer.backgroundColor, .clear)
+            XCTAssertTrue(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.allSatisfy { $0.effect == nil })
+
+            let dismissal = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                            previewForDismissingMenuWithConfiguration: menu.configuration))
+            XCTAssertTrue(dismissal.view === preview.view)
+            XCTAssertEqual(dismissal.parameters.backgroundColor?.resolvedColor(with: darkTraits), fill.resolvedColor(with: darkTraits))
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
+        }
+    }
+
+    func testWhenMovingAddressBarThenWaitsForDismissalAndRestoresGlassBeforeMoving() throws {
         for actionAfterWillEnd in [false, true] {
             let menu = try makeDisplayedMenu()
             defer { menu.window.isHidden = true }
             let animator = MenuDismissAnimator()
             var moves = 0
-            let move: (UIImage?) -> Void = { preview in
+            let move = {
                 XCTAssertFalse(menu.barView.searchContainer.isHidden)
-                if moves == 0 {
-                    XCTAssertNotNil(preview)
-                } else {
-                    XCTAssertNil(preview)
+                let glass = menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first
+                if #available(iOS 26.0, *) {
+                    XCTAssertNotNil(glass?.effect)
                 }
                 moves += 1
             }
@@ -984,14 +1001,32 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
             }
 
             XCTAssertEqual(moves, 0)
-            XCTAssertTrue(menu.barView.searchContainer.isHidden)
-
+            XCTAssertFalse(menu.barView.searchContainer.isHidden)
             animator.complete()
 
             XCTAssertEqual(moves, 1)
-            XCTAssertFalse(menu.barView.searchContainer.isHidden)
             menu.barView.performAfterLongPressMenuDismissal(move)
             XCTAssertEqual(moves, 2)
+        }
+    }
+
+    func testWhenLandscapeMenuDismissesThenFieldStaysVisibleUntilGlassRestores() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom, windowSize: CGSize(width: 844, height: 390))
+            defer { menu.window.isHidden = true }
+            let field = try XCTUnwrap(menu.barView.searchContainer)
+            let parent = field.superview
+            let animator = MenuDismissAnimator()
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+            XCTAssertFalse(field.isHidden)
+            XCTAssertEqual(field.alpha, 1)
+            XCTAssertTrue(field.superview === parent)
+            animator.complete()
+
+            XCTAssertFalse(field.isHidden)
+            XCTAssertEqual(field.alpha, 1)
+            XCTAssertTrue(field.superview === parent)
         }
     }
 
@@ -1000,7 +1035,7 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
         defer { menu.window.isHidden = true }
         let animator = MenuDismissAnimator()
         var didMove = false
-        menu.barView.performAfterLongPressMenuDismissal { _ in didMove = true }
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
         menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
 
         menu.barView.longPressMenuProvider = nil
@@ -1008,48 +1043,34 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
 
         XCTAssertFalse(didMove)
         XCTAssertFalse(menu.barView.searchContainer.isHidden)
+        let glass = menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first
+        if #available(iOS 26.0, *) {
+            XCTAssertNotNil(glass?.effect)
+        }
     }
 
-    func testWhenAddressBarLeavesWindowThenPreviewIsRemovedAndPendingMoveIsCancelled() throws {
+    func testWhenAddressBarLeavesWindowThenPendingMoveIsCancelled() throws {
         let menu = try makeDisplayedMenu()
         defer { menu.window.isHidden = true }
-        let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
-                                                                      previewForDismissingMenuWithConfiguration: menu.configuration))
         let animator = MenuDismissAnimator()
         var didMove = false
-        menu.barView.performAfterLongPressMenuDismissal { _ in didMove = true }
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
         menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
 
         menu.barView.removeFromSuperview()
         animator.complete()
 
-        XCTAssertNil(preview.view.superview)
         XCTAssertFalse(menu.barView.searchContainer.isHidden)
         XCTAssertFalse(didMove)
-        menu.barView.performAfterLongPressMenuDismissal { XCTAssertNil($0) }
-    }
-
-    func testWhenMoveArrivesAfterMenuDismissalThenRenderedPreviewIsStillAvailable() throws {
-        let menu = try makeDisplayedMenu()
-        defer { menu.window.isHidden = true }
-        menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
-        var preview: UIImage?
-
-        menu.barView.performAfterLongPressMenuDismissal { preview = $0 }
-
-        XCTAssertNotNil(preview)
-        XCTAssertFalse(menu.barView.searchContainer.isHidden)
-        menu.barView.performAfterLongPressMenuDismissal { XCTAssertNil($0) }
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        XCTAssertTrue(didMove)
     }
 
     func testWhenMenuIsNotDisplayedThenMoveRunsImmediately() {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
         var didMove = false
 
-        barView.performAfterLongPressMenuDismissal { preview in
-            XCTAssertNil(preview)
-            didMove = true
-        }
+        barView.performAfterLongPressMenuDismissal { didMove = true }
 
         XCTAssertTrue(didMove)
     }
@@ -1063,11 +1084,12 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
 
     private func makeDisplayedMenu(isBottom: Bool = false,
                                    hostTransform: CGAffineTransform = .identity,
-                                   displayAnimator: UIContextMenuInteractionAnimating? = nil) throws -> DisplayedMenu {
+                                   displayAnimator: UIContextMenuInteractionAnimating? = nil,
+                                   windowSize: CGSize = CGSize(width: 390, height: 800)) throws -> DisplayedMenu {
         let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
         barView.isUsingSmallTopSpacing = isBottom
-        barView.frame = CGRect(x: 0, y: 100, width: 390, height: barView.expectedHeight)
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        barView.frame = CGRect(x: 0, y: 100, width: windowSize.width, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(origin: .zero, size: windowSize))
         let host = UIView(frame: window.bounds.insetBy(dx: 10, dy: 20))
         window.addSubview(host)
         host.addSubview(barView)
@@ -1126,53 +1148,32 @@ final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
             let windowSubviews = window.subviews
 
             let highlight = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
-            if #available(iOS 27.0, *) {
-                XCTAssertTrue(highlight.view.superview === window)
-                XCTAssertEqual(window.subviews, windowSubviews + [highlight.view])
-            } else {
-                XCTAssertNil(highlight.view.superview)
-                XCTAssertEqual(window.subviews, windowSubviews)
-            }
-            XCTAssertEqual(highlight.view.frame, container.convert(container.bounds, to: window))
-            XCTAssertTrue(container.isHidden)
+            XCTAssertTrue(highlight.view === container)
+            XCTAssertEqual(window.subviews, windowSubviews)
+            XCTAssertFalse(container.isHidden)
             barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: nil)
-            XCTAssertTrue(container.isHidden)
-            XCTAssertFalse(highlight.view.isHidden)
-            if #available(iOS 27.0, *) {
-                XCTAssertEqual(highlight.view.alpha, 0)
-            } else {
-                XCTAssertEqual(highlight.view.alpha, 1)
-            }
             let dismissal = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
             XCTAssertTrue(highlight.view === dismissal.view)
-            XCTAssertTrue((highlight.view as? UIImageView)?.image === (dismissal.view as? UIImageView)?.image)
-            barView.contextMenuInteraction(interaction, willEndFor: configuration, animator: nil)
-            XCTAssertFalse(container.isHidden)
-            XCTAssertNil(highlight.view.superview)
-            XCTAssertEqual(window.subviews, windowSubviews)
+            XCTAssertTrue(barView.textField.superview === fieldParent)
+            XCTAssertTrue(container.superview === containerParent)
+            XCTAssertTrue(contentHost.superview === contentParent)
 
             for preview in [highlight, dismissal] {
-                XCTAssertTrue(preview.view is UIImageView)
                 XCTAssertEqual(preview.view.bounds.size, container.bounds.size)
                 XCTAssertGreaterThan(preview.view.bounds.width, barView.textField.bounds.width)
-                XCTAssertEqual(preview.parameters.backgroundColor, .clear)
+                let fill = try XCTUnwrap(preview.parameters.backgroundColor)
+                XCTAssertEqual(fill.resolvedColor(with: barView.traitCollection).cgColor.alpha, 1)
                 let previewBounds = try XCTUnwrap(preview.parameters.visiblePath).bounds
                 XCTAssertEqual(previewBounds.minX, container.bounds.minX, accuracy: 0.001)
                 XCTAssertEqual(previewBounds.minY, container.bounds.minY, accuracy: 0.001)
                 XCTAssertEqual(previewBounds.width, container.bounds.width, accuracy: 0.001)
                 XCTAssertEqual(previewBounds.height, container.bounds.height, accuracy: 0.001)
-                XCTAssertTrue(preview.target.container === window)
-                XCTAssertEqual(preview.target.center,
-                               container.convert(CGPoint(x: container.bounds.midX, y: container.bounds.midY), to: window))
             }
-            XCTAssertTrue(barView.textField.superview === fieldParent)
-            XCTAssertTrue(container.superview === containerParent)
-            XCTAssertTrue(contentHost.superview === contentParent)
 
-            _ = barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration)
-            barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: nil)
-            barView.longPressMenuProvider = nil
+            barView.contextMenuInteraction(interaction, willEndFor: configuration, animator: nil)
             XCTAssertFalse(container.isHidden)
+            XCTAssertEqual(window.subviews, windowSubviews)
+            barView.longPressMenuProvider = nil
             XCTAssertFalse(barView.textField.interactions.contains { $0 === interaction })
         }
     }

@@ -231,6 +231,12 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertGreaterThan(searchField.frame.width, 100)
         XCTAssertTrue(searchField.frame.intersects(app.frame))
 
+        searchField.press(forDuration: 0.8)
+        XCTAssertTrue(app.buttons[barPosition.oppositeMoveAction].waitForExistence(timeout: timeout))
+        dismissMenu(containing: barPosition.oppositeMoveAction)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        assertConfiguredBarPosition()
+
         XCUIDevice.shared.orientation = .portrait
         XCTAssertTrue(waitUntil(timeout: timeout) { self.app.frame.height > self.app.frame.width })
         assertConfiguredBarPosition()
@@ -304,6 +310,13 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertConfiguredBarPosition()
+    }
+
+    func verifyNewTabPageAddressBarRelocation() {
+        moveAddressBar(to: barPosition.opposite)
+        assertChromeButtonsAreUsable()
+        moveAddressBar(to: barPosition)
+        assertChromeButtonsAreUsable()
     }
 
     func verifyFloatingContentInsets() {
@@ -589,6 +602,7 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-ff.floatingUIiOS27", "true",
             "-ff.omniBarLongPressMenu", "true",
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+            "-ff.newTabPageRedesign", "false",
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_GB",
         ]
@@ -970,6 +984,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
     func testRuntimeAddressBarRelocation() { verifyRuntimeAddressBarRelocation() }
     func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
+    func testNewTabPageAddressBarRelocation() { verifyNewTabPageAddressBarRelocation() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }
@@ -1003,6 +1018,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
     func testRuntimeAddressBarRelocation() { verifyRuntimeAddressBarRelocation() }
     func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
+    func testNewTabPageAddressBarRelocation() { verifyNewTabPageAddressBarRelocation() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testCollapsedChromeTransitions() { verifyCollapsedChromeTransitions() }

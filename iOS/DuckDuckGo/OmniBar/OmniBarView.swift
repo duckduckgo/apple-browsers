@@ -130,7 +130,7 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     func revealButtons()
     func setBookmarksPosition(leading: Bool, hidden: Bool)
     func refreshLongPressMenuAvailability()
-    func performAfterLongPressMenuDismissal(_ action: @escaping (UIImage?) -> Void)
+    func performAfterLongPressMenuDismissal(_ action: @escaping () -> Void)
 
     // Fire mode
     func refreshFireMode(fireMode: Bool)
@@ -162,8 +162,8 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 }
 
 extension OmniBarView {
-    func performAfterLongPressMenuDismissal(_ action: @escaping (UIImage?) -> Void) {
-        action(nil)
+    func performAfterLongPressMenuDismissal(_ action: @escaping () -> Void) {
+        action()
     }
 
     /// Size of the visible search field (the glass). Local bounds stay stable while the bar slides,

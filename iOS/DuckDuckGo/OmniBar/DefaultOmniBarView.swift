@@ -738,10 +738,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let floatingGlassContentHostView = FloatingGlassContentHostView()
 
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
-    private var omniBarLongPressPreviewImage: UIImage?
-    private var omniBarLongPressPreviewView: UIImageView?
-    private var omniBarLongPressOriginalIsHidden: Bool?
-    private var omniBarLongPressPendingAction: ((UIImage?) -> Void)?
+    private var isShowingOmniBarLongPressPreview = false
+    private var omniBarLongPressPendingAction: (() -> Void)?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
     private let isFloatingUIEnabled: Bool
     fileprivate var savedBarChromeBackgroundColor: UIColor?
@@ -837,7 +835,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         if window == nil {
             omniBarLongPressPendingAction = nil
             restoreAddressBarAfterLongPressMenu()
-            omniBarLongPressPreviewImage = nil
         }
         reportFooterVisibility()
     }
@@ -885,6 +882,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     func makeGlass() {
+        guard !isShowingOmniBarLongPressPreview else {
+            glassEffect.effect = nil
+            glassEffectConfiguration = nil
+            setFieldBackgroundColor(.clear)
+            return
+        }
         guard isFloatingUIEnabled else {
             makeOpaque()
             return
@@ -1553,7 +1556,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         guard let omniBarLongPressInteraction else { return }
         omniBarLongPressPendingAction = nil
         restoreAddressBarAfterLongPressMenu()
-        omniBarLongPressPreviewImage = nil
         searchAreaView.textField.removeInteraction(omniBarLongPressInteraction)
         self.omniBarLongPressInteraction = nil
     }
@@ -1836,7 +1838,6 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
         guard interaction === omniBarLongPressInteraction,
               let menu = longPressMenuProvider?() else { return nil }
 
-        omniBarLongPressPreviewImage = nil
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             menu
         }
@@ -1858,58 +1859,23 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
               let window,
               !searchAreaContainerView.bounds.isEmpty else { return nil }
 
+        isShowingOmniBarLongPressPreview = true
+        makeGlass()
         window.layoutIfNeeded()
-        let fieldFrame = searchAreaContainerView.convert(searchAreaContainerView.bounds, to: window)
-        let bounds = CGRect(origin: .zero, size: fieldFrame.size)
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = window.traitCollection.displayScale
-        let image = omniBarLongPressPreviewImage ?? {
-            // Capture window; glass needs its backdrop.
-            let windowImage = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
-                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
-            }
-            return UIGraphicsImageRenderer(bounds: bounds, format: format).image { _ in
-                windowImage.draw(at: CGPoint(x: -fieldFrame.minX, y: -fieldFrame.minY))
-            }
-        }()
-        omniBarLongPressPreviewImage = image
-        let snapshot: UIImageView
-        if let preview = omniBarLongPressPreviewView {
-            snapshot = preview
-        } else {
-            snapshot = UIImageView(image: image)
-            snapshot.frame = fieldFrame
-            snapshot.layer.cornerRadius = bounds.height / 2
-            snapshot.clipsToBounds = true
-            snapshot.isUserInteractionEnabled = false
-            if #available(iOS 27.0, *) {
-                // Window source keeps iOS 27 previews sharp.
-                window.addSubview(snapshot)
-            }
-            omniBarLongPressPreviewView = snapshot
-            omniBarLongPressOriginalIsHidden = searchAreaContainerView.isHidden
-            searchAreaContainerView.isHidden = true
-        }
         let parameters = UIPreviewParameters()
-        parameters.backgroundColor = .clear
-        parameters.visiblePath = UIBezierPath(roundedRect: snapshot.bounds, cornerRadius: snapshot.bounds.height / 2)
+        parameters.backgroundColor = fireMode
+            ? UIColor(singleUseColor: .fireModeBackground)
+            : UIColor(designSystemColor: .backgroundTertiary)
+        parameters.visiblePath = UIBezierPath(roundedRect: searchAreaContainerView.bounds,
+                                             cornerRadius: searchAreaContainerView.bounds.height / 2)
 
-        let target = UIPreviewTarget(container: window, center: snapshot.center)
-        return UITargetedPreview(view: snapshot, parameters: parameters, target: target)
+        return UITargetedPreview(view: searchAreaContainerView, parameters: parameters)
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                 willDisplayMenuFor configuration: UIContextMenuConfiguration,
                                 animator: UIContextMenuInteractionAnimating?) {
         onLongPressMenuDisplayed?()
-        guard #available(iOS 27.0, *), interaction === omniBarLongPressInteraction else { return }
-        if let animator {
-            animator.addAnimations { [weak self] in
-                self?.omniBarLongPressPreviewView?.alpha = 0
-            }
-        } else {
-            omniBarLongPressPreviewView?.alpha = 0
-        }
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
@@ -1925,34 +1891,27 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
         }
     }
 
-    func performAfterLongPressMenuDismissal(_ action: @escaping (UIImage?) -> Void) {
-        guard omniBarLongPressOriginalIsHidden != nil else {
-            let preview = omniBarLongPressPreviewImage
-            omniBarLongPressPreviewImage = nil
-            action(preview)
+    func performAfterLongPressMenuDismissal(_ action: @escaping () -> Void) {
+        guard isShowingOmniBarLongPressPreview else {
+            action()
             return
         }
         omniBarLongPressPendingAction = action
     }
 
     private func completeLongPressMenuDismissal() {
-        let preview = omniBarLongPressPreviewImage
         restoreAddressBarAfterLongPressMenu()
         let action = omniBarLongPressPendingAction
         omniBarLongPressPendingAction = nil
         if let action {
-            omniBarLongPressPreviewImage = nil
-            action(preview)
+            action()
         }
     }
 
     private func restoreAddressBarAfterLongPressMenu() {
-        omniBarLongPressPreviewView?.removeFromSuperview()
-        omniBarLongPressPreviewView = nil
-        if let isHidden = omniBarLongPressOriginalIsHidden {
-            searchAreaContainerView.isHidden = isHidden
-        }
-        omniBarLongPressOriginalIsHidden = nil
+        guard isShowingOmniBarLongPressPreview else { return }
+        isShowingOmniBarLongPressPreview = false
+        updateFireModeAppearance()
     }
 }
 

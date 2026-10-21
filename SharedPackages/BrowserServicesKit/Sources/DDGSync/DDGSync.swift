@@ -366,7 +366,7 @@ public class DDGSync: DDGSyncing {
         do {
             let page = try await dependencies.account.fetchAuditLog(for: account, cursor: nil, limit: nil)
             return AuditLogDebugSummary(entryCount: page.entries.count,
-                                        hasAfterCursor: !page.after.isEmpty,
+                                        hasAfterCursor: page.after?.isEmpty == false,
                                         hasBeforeCursor: page.before != nil)
         } catch {
             throw handleUnauthenticatedAndMap(error)

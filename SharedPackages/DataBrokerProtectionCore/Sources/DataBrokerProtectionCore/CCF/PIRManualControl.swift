@@ -42,7 +42,8 @@ final class PIRManualControl {
     var cancel: (() async -> Void)?
     let budget = PIRManualControlContext.budget
 
-    var canTakeControl: Bool { action != nil && (!isPaused || (isEmbeddedChallenge && !isUserControlling)) }
+    /// The user can open the page only when the agent asks for help; every such step resumes on its own.
+    var canTakeControl: Bool { action != nil && needsAssistance && !isUserControlling }
 
     var instruction: String {
         if isManagedChallenge { return "Complete Cloudflare's security check on this page." }

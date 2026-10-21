@@ -235,6 +235,11 @@ struct PIRLivePreviewTargetQuery: Sendable, Equatable {
         actionID: "turnstile-widget", actionType: .expectation,
         selectors: ["//input[@name='cf-turnstile-response']/..", ".cf-turnstile", "iframe[src*='challenges.cloudflare.com']"])
 
+    /// A reCAPTCHA checkbox the user ticks in place of the backend solver.
+    static let recaptchaWidget = PIRLivePreviewTargetQuery(
+        actionID: "recaptcha-widget", actionType: .expectation,
+        selectors: ["#g-recaptcha", ".g-recaptcha", "iframe[src*='recaptcha']"])
+
     /// Gives the cursor time to reach its targets before the broker page changes.
     static func presentationDelay(for action: Action, alreadyWaited: TimeInterval) -> TimeInterval {
         switch action {
@@ -326,6 +331,8 @@ public final class PIRLivePreview {
 
     public var manualControlChanged: ((UUID, Bool) -> Void)?
     public var manualControlStarted: (() -> Void)?
+    /// Where the preview last showed on screen, so the take-control window can open in the same place.
+    public var anchorFrame: CGRect?
     public var automationResumed: (() -> Void)?
 
     public var isManualControlActive: Bool {
@@ -366,10 +373,16 @@ public final class PIRLivePreview {
     const root = (rootSelector && find(rootSelector, document, 1)[0]) || document;
     const width = window.innerWidth || 1, height = window.innerHeight || 1;
     const matches = selectors.flatMap((selector, index) => find(selector, root, limit).map(node => [node, index]));
-    const first = matches.map(([node]) => node).find(node => node.getBoundingClientRect().height > 0);
-    if (first) {
-      const rect = first.getBoundingClientRect();
-      if (rect.top < 0 || rect.bottom > height) first.scrollIntoView({ block: 'center', behavior: 'instant' });
+    // Bring every target into view when they fit together, such as all fields of a form; else center the first.
+    const nodes = matches.map(([node]) => node).filter(node => node.getBoundingClientRect().height > 0);
+    if (nodes.length) {
+      const boxes = nodes.map(node => node.getBoundingClientRect());
+      const top = Math.min(...boxes.map(box => box.top)), bottom = Math.max(...boxes.map(box => box.bottom));
+      if (top < 0 || bottom > height) {
+        if (bottom - top <= height * 0.8) window.scrollBy({ top: (top + bottom - height) / 2, behavior: 'instant' });
+        const first = nodes[0].getBoundingClientRect();
+        if (first.top < 0 || first.bottom > height) nodes[0].scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
     }
     return matches
       .map(([node, index]) => [node.getBoundingClientRect(), index])

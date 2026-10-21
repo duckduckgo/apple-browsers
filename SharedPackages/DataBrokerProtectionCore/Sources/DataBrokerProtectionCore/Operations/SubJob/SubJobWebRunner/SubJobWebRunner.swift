@@ -171,6 +171,15 @@ public extension SubJobWebRunning {
                 await handler.updateLivePreviewChecklist(actionsHandler, profileQuery: context.profileQuery)
             }
         }
+        if executionConfig.userSolvesCaptcha(forBrokerAt: context.dataBroker.url),
+           action is GetCaptchaInfoAction || action is SolveCaptchaAction {
+            // The user solves this broker's captcha; skip the backend solver's two steps.
+            if action is GetCaptchaInfoAction, let handler = webViewHandler as? DataBrokerProtectionWebViewHandler {
+                guard await handler.askUserToSolveCaptcha() else { return }
+            }
+            await executeNextStep()
+            return
+        }
         #endif
 
         stageCalculator.setLastAction(action)

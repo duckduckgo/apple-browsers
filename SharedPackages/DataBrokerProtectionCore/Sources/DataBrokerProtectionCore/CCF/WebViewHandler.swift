@@ -56,7 +56,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     let manualControl = PIRManualControl()
     private var manualDeadline: Task<Void, Never>?
     private var manualGuidance: NSTextField?
-    private var manualResumeButton: NSButton?
+    private var isResumingManualControl = false
     private var manualNavigationURL: URL?
     private var isAwaitingManagedChallengeDestination = false
     private var isManagedChallengeResponse = false
@@ -307,27 +307,20 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         let guidance = NSTextField(labelWithString: manualControl.instruction)
         guidance.font = .systemFont(ofSize: 14, weight: .medium)
         guidance.translatesAutoresizingMaskIntoConstraints = false
-        let resume = NSButton(title: "Resume automatically", target: self, action: #selector(resumeManualControl))
-        resume.bezelStyle = .rounded
-        resume.translatesAutoresizingMaskIntoConstraints = false
         webView.removeFromSuperview()
         webView.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(guidance)
-        content.addSubview(resume)
         content.addSubview(webView)
         NSLayoutConstraint.activate([
             guidance.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 16),
-            guidance.centerYAnchor.constraint(equalTo: resume.centerYAnchor),
-            guidance.trailingAnchor.constraint(lessThanOrEqualTo: resume.leadingAnchor, constant: -12),
-            resume.topAnchor.constraint(equalTo: content.topAnchor, constant: 12),
-            resume.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -16),
-            webView.topAnchor.constraint(equalTo: resume.bottomAnchor, constant: 12),
+            guidance.trailingAnchor.constraint(lessThanOrEqualTo: content.trailingAnchor, constant: -16),
+            guidance.topAnchor.constraint(equalTo: content.topAnchor, constant: 14),
+            webView.topAnchor.constraint(equalTo: guidance.bottomAnchor, constant: 14),
             webView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             webView.bottomAnchor.constraint(equalTo: content.bottomAnchor)
         ])
         manualGuidance = guidance
-        manualResumeButton = resume
         window?.orderOut(nil)
         let manualWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1024, height: 850),
                                     styleMask: [.titled, .resizable], backing: .buffered, defer: false)
@@ -337,8 +330,17 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         manualWindow.contentView = content
         manualWindow.standardWindowButton(.closeButton)?.isEnabled = false
         window = manualWindow
-        manualWindow.center()
         PIRLivePreview.shared.manualControlStarted?()
+        if let anchor = PIRLivePreview.shared.anchorFrame,
+           let screen = NSScreen.screens.first(where: { $0.frame.intersects(anchor) }) {
+            // Open where the preview was, so the page grows out of it rather than jumping to the middle of the screen.
+            let size = manualWindow.frame.size
+            let visible = screen.visibleFrame
+            manualWindow.setFrameOrigin(CGPoint(x: min(max(anchor.maxX - size.width, visible.minX), visible.maxX - size.width),
+                                                y: min(max(anchor.maxY - size.height, visible.minY), visible.maxY - size.height)))
+        } else {
+            manualWindow.center()
+        }
         manualWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         manualDeadline = Task { @MainActor [weak self] in
@@ -349,16 +351,15 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     @objc private func resumeManualControl() {
-        // Without a window there is no button: an embedded challenge that cleared before the user opened the page.
-        guard manualControl.isPaused, manualResumeButton?.isEnabled != false else { return }
-        manualResumeButton?.isEnabled = false
+        guard manualControl.isPaused, !isResumingManualControl else { return }
+        isResumingManualControl = true
         Task { @MainActor [weak self] in
             guard let self else { return }
             let completed = self.verifyManualStep()
             guard self.manualControl.isPaused else { return }
             guard completed else {
                 self.manualGuidance?.stringValue = "Step incomplete. " + self.manualControl.instruction
-                self.manualResumeButton?.isEnabled = true
+                self.isResumingManualControl = false
                 return
             }
             guard let webView = self.webView else { return }
@@ -369,7 +370,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 let _: Any = try await webView.evaluateJavaScript(script, in: nil, in: .defaultClient)
             } catch {
                 self.manualGuidance?.stringValue = "Page check failed. Please try Resume automatically again."
-                self.manualResumeButton?.isEnabled = true
+                self.isResumingManualControl = false
                 return
             }
             guard self.manualControl.isPaused, self.webView === webView else { return }
@@ -377,7 +378,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                   resumeInterruptedAutomation == (self.manualControl.preservesAutomation && !self.manualControl.isManagedChallenge) else {
                 let _: Any? = try? await webView.evaluateJavaScript("globalThis.__pirControl.paused = true", in: nil, in: .defaultClient)
                 self.manualGuidance?.stringValue = "Page changed. " + self.manualControl.instruction
-                self.manualResumeButton?.isEnabled = true
+                self.isResumingManualControl = false
                 return
             }
             if self.manualControl.isUserControlling {
@@ -389,7 +390,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 self.window = nil
             }
             self.manualGuidance = nil
-            self.manualResumeButton = nil
+            self.isResumingManualControl = false
             self.manualDeadline?.cancel()
             self.manualDeadline = nil
             self.resumeAfterManagedNavigation = false
@@ -467,30 +468,43 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         embeddedChallengeTask = nil
         guard let action, action.actionType == .expectation, let json = action.json,
               String(bytes: json, encoding: .utf8)?.contains(Self.turnstileTokenField) == true else { return }
+        let tokenSelector = "input[name='\(Self.turnstileTokenField)']"
         embeddedChallengeTask = Task { @MainActor [weak self] in
             do { try await Task.sleep(nanoseconds: 4_000_000_000) } catch { return }
-            guard let self, !(await self.isTurnstileSolved()), !self.manualControl.isPaused else { return }
-            // Pause so the wait cannot time out, then let the preview ask for help; the user opens the page.
-            self.manualControl.isEmbeddedChallenge = true
-            guard (try? await self.pauseAutomation()) == true else {
-                self.manualControl.isEmbeddedChallenge = false
-                return
-            }
-            PIRLivePreview.shared.updateActivity("Help needed: complete the security check", operationID: self.livePreviewOperationID)
-            PIRLivePreview.shared.showTarget(.turnstileWidget, operationID: self.livePreviewOperationID)
-            while !Task.isCancelled, self.manualControl.isPaused {
-                if await self.isTurnstileSolved() {
-                    self.resumeManualControl()
-                    return
-                }
-                do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return }
-            }
+            guard let self, !(await self.hasToken(matching: tokenSelector)), !self.manualControl.isPaused else { return }
+            _ = await self.askUserToSolve(widget: .turnstileWidget, tokenSelector: tokenSelector)
         }
     }
 
-    private func isTurnstileSolved() async -> Bool {
-        let script = "return Array.from(document.querySelectorAll(\"input[name='\(Self.turnstileTokenField)']\")).some(input => input.value !== '')"
-        let solved = try? await webView?.callAsyncJavaScript(script, contentWorld: .defaultClient) as? Bool
+    /// The demo has the user tick this broker's reCAPTCHA in place of the backend solver.
+    func askUserToSolveCaptcha() async -> Bool {
+        await askUserToSolve(widget: .recaptchaWidget, tokenSelector: "textarea[name='g-recaptcha-response']")
+    }
+
+    /// Pauses so nothing times out, points the preview at the widget and waits for the user to open the page
+    /// with Take Control and solve it. Resumes on its own once the widget's token appears.
+    private func askUserToSolve(widget: PIRLivePreviewTargetQuery, tokenSelector: String) async -> Bool {
+        manualControl.isEmbeddedChallenge = true
+        guard (try? await pauseAutomation()) == true else {
+            manualControl.isEmbeddedChallenge = false
+            return false
+        }
+        PIRLivePreview.shared.updateActivity("Help needed: complete the security check", operationID: livePreviewOperationID)
+        PIRLivePreview.shared.showTarget(widget, operationID: livePreviewOperationID)
+        var didRequestResume = false
+        while !Task.isCancelled, manualControl.isPaused {
+            if !didRequestResume, manualControl.isEmbeddedChallenge, await hasToken(matching: tokenSelector) {
+                didRequestResume = true
+                resumeManualControl()
+            }
+            do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return false }
+        }
+        return !Task.isCancelled && webView != nil
+    }
+
+    private func hasToken(matching selector: String) async -> Bool {
+        let script = "return Array.from(document.querySelectorAll(selector)).some(field => field.value !== '')"
+        let solved = try? await webView?.callAsyncJavaScript(script, arguments: ["selector": selector], contentWorld: .defaultClient) as? Bool
         return solved == true
     }
 

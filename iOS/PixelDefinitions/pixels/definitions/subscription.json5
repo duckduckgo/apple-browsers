@@ -484,14 +484,14 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "subscriptionPageOrigin"]
     },
     "m_privacy-pro_terms-conditions_subscribe_click": {
         "description": "Fired when the user taps the Subscribe CTA on the subscription offer page. Mid-funnel pixel preceding the purchase attempt outcome.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": ["legacy_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "subscriptionPageOrigin"]
     },
 
     "m_subscribe": {

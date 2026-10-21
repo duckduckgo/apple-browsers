@@ -91,42 +91,77 @@ public struct ChatView: View {
     private var transcript: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: DuckAIChatTokens.Spacing.s24) {
-                    ForEach(session.state.messages) { message in
-                        switch message {
-                        case .user(let user):
-                            UserMessageView(message: user)
-                        case .assistant(let assistant):
-                            VStack(alignment: .leading, spacing: DuckAIChatTokens.Spacing.s8) {
-                                AssistantPartsView(parts: assistant.parts, isStreaming: false)
-                                if assistant.id == lastAssistantID, session.state.liveReply == nil {
-                                    ReplyActions(text: plainText(assistant.parts),
-                                                 canRedo: session.state.canRedo,
-                                                 redo: session.redo,
-                                                 continueInWeb: { actions.continueInWeb(session.state.context) })
+                VStack(spacing: 0) {
+                    LazyVStack(alignment: .leading, spacing: 12) {
+                        ForEach(Array(turns.enumerated()), id: \.offset) { index, messages in
+                            VStack(alignment: .leading, spacing: 0) {
+                                ForEach(messages) { message in
+                                    messageView(message)
+                                }
+                                if index == turns.count - 1 {
+                                    currentReply
                                 }
                             }
                         }
-                    }
-                    if let live = session.state.liveReply {
-                        if live.parts.isEmpty {
-                            StatusLine(stage: live.stage, availability: session.state.availability, download: session.download)
-                        } else {
-                            AssistantPartsView(parts: live.parts, isStreaming: true)
+                        if turns.isEmpty {
+                            currentReply
                         }
                     }
-                    if case .error(let error) = session.state.status {
-                        ErrorRow(error: error, canRedo: session.state.canRedo, redo: session.redo)
-                    }
-                    Color.clear.frame(height: 1).id(bottomID)
+                    Color.clear.frame(height: 57).id(bottomID)
                 }
-                .padding(DuckAIChatTokens.Spacing.s16)
+                .padding(.horizontal, 12)
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: session.state) {
                 proxy.scrollTo(bottomID, anchor: .bottom)
             }
         }
+    }
+
+    @ViewBuilder
+    private func messageView(_ message: Message) -> some View {
+        switch message {
+        case .user(let user):
+            UserMessageView(message: user)
+        case .assistant(let assistant):
+            VStack(alignment: .leading, spacing: 0) {
+                AssistantPartsView(parts: assistant.parts, isStreaming: false, modelName: modelName,
+                                   isActive: assistant.id == session.state.messages.last?.id && session.state.liveReply == nil)
+                if assistant.id == lastAssistantID, session.state.liveReply == nil {
+                    ReplyActions(text: plainText(assistant.parts), canRedo: session.state.canRedo, redo: session.redo,
+                                 continueInWeb: { actions.continueInWeb(session.state.context) })
+                        .padding(.horizontal, 12)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var currentReply: some View {
+        if let live = session.state.liveReply {
+            if live.parts.isEmpty {
+                StatusLine(stage: live.stage, availability: session.state.availability, download: session.download)
+            } else {
+                AssistantPartsView(parts: live.parts, isStreaming: true, modelName: modelName, isActive: true)
+            }
+        }
+        if case .error(let error) = session.state.status {
+            ErrorRow(error: error, canRedo: session.state.canRedo, redo: session.redo)
+        }
+    }
+
+    private var turns: [[Message]] {
+        var groups: [[Message]] = []
+        for message in session.state.messages {
+            if case .user = message {
+                groups.append([message])
+            } else if groups.isEmpty {
+                groups.append([message])
+            } else {
+                groups[groups.count - 1].append(message)
+            }
+        }
+        return groups
     }
 
     private var composer: some View {
@@ -174,6 +209,10 @@ public struct ChatView: View {
         draft = ""
     }
 
+    private var modelName: String {
+        session.descriptor.modelName.isEmpty ? session.descriptor.displayName : session.descriptor.modelName
+    }
+
     private var lastAssistantID: MessageID? {
         session.state.messages.last { if case .assistant = $0 { true } else { false } }?.id
     }
@@ -211,16 +250,21 @@ private struct ProgressRow: View {
     let fraction: Double?
 
     var body: some View {
-        HStack(spacing: DuckAIChatTokens.Spacing.s8) {
-            if let fraction {
-                ProgressView(value: fraction).frame(width: 80)
-            } else {
-                ProgressView()
+        VStack(alignment: .leading, spacing: 2) {
+            AssistantHeading(title: "Thinking", isLoading: true)
+            if title != "Thinking" {
+                Text(title)
+                    .font(DuckAIChatTokens.Typography.subtitle.font)
+                    .lineSpacing(DuckAIChatTokens.Typography.subtitle.lineSpacing)
+                    .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
             }
-            Text(title)
-                .font(DuckAIChatTokens.Typography.tableCell.font)
-                .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
+            if let fraction {
+                ProgressView(value: fraction)
+            }
         }
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 12)
         .accessibilityIdentifier("NativeChat.Status")
     }
 }
@@ -252,15 +296,21 @@ private struct ErrorRow: View {
     let redo: () -> Void
 
     var body: some View {
-        HStack(spacing: DuckAIChatTokens.Spacing.s12) {
+        VStack(alignment: .leading, spacing: 2) {
+            AssistantHeading(title: "Something went wrong", isError: true)
             Text(message)
                 .font(DuckAIChatTokens.Typography.body.font)
-                .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
+                .lineSpacing(DuckAIChatTokens.Typography.body.lineSpacing)
+                .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
+                .padding(.bottom, 12)
             if canRedo {
-                Button("Redo", action: redo)
+                ChatIconButton(symbol: "arrow.clockwise", label: "Redo", action: redo)
                     .accessibilityIdentifier("NativeChat.Redo")
+                    .padding(.leading, -8)
             }
         }
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
     }
 
     private var message: String {
@@ -284,35 +334,20 @@ private struct ReplyActions: View {
     let continueInWeb: () -> Void
 
     var body: some View {
-        HStack(spacing: DuckAIChatTokens.Spacing.s16) {
-            Button {
-                copyToPasteboard(text)
-            } label: {
-                Image(systemName: "doc.on.doc")
-            }
-            .accessibilityLabel("Copy")
+        HStack(spacing: 4) {
+            ChatCopyButton(text: text)
             if canRedo {
-                Button(action: redo) {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .accessibilityLabel("Redo")
-                .accessibilityIdentifier("NativeChat.Redo")
+                ChatIconButton(symbol: "arrow.clockwise", label: "Redo", action: redo)
+                    .accessibilityIdentifier("NativeChat.Redo")
             }
-            Spacer()
+            Spacer(minLength: 0)
             Button("Continue in Duck.ai", action: continueInWeb)
-                .font(DuckAIChatTokens.Typography.tableCell.font)
+                .font(DuckAIChatTokens.Typography.subtitle.font)
+                .padding(.horizontal, 8)
+                .frame(minHeight: 36)
+                .buttonStyle(ChatGhostButtonStyle())
                 .accessibilityIdentifier("NativeChat.ContinueInWeb")
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-    }
-
-    private func copyToPasteboard(_ text: String) {
-#if canImport(UIKit)
-        UIPasteboard.general.string = text
-#elseif canImport(AppKit)
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-#endif
+        .padding(.leading, -8)
     }
 }

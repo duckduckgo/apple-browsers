@@ -41,6 +41,11 @@ public enum DuckAIChatTokens {
         public static let codeFrame = adaptive(light: 0x000000, lightAlpha: 0.06, dark: 0x000000, darkAlpha: 0.24)
         public static let decorationSecondary = adaptive(light: 0x000000, lightAlpha: 0.12, dark: 0xFFFFFF, darkAlpha: 0.12)
         public static let controlTertiary = adaptive(light: 0x000000, lightAlpha: 0.12, dark: 0xFFFFFF, darkAlpha: 0.24)
+        public static let controlSecondary = adaptive(light: 0x000000, lightAlpha: 0.09, dark: 0xFFFFFF, darkAlpha: 0.18)
+        public static let modelIconActive = adaptive(light: 0x000000, lightAlpha: 0.84, dark: 0xFFFFFF, darkAlpha: 0.80)
+        public static let modelIconPrevious = adaptive(light: 0x484848, dark: 0xAAAAAA)
+        public static let destructive = adaptive(light: 0xD83544, dark: 0xE44D55)
+        public static let codeLanguage = SwiftUI.Color(red: 136 / 255, green: 136 / 255, blue: 136 / 255)
         public static let listMarker = textTertiary
 
         private static func adaptive(light: UInt32, lightAlpha: CGFloat = 1, dark: UInt32, darkAlpha: CGFloat = 1) -> SwiftUI.Color {
@@ -89,37 +94,65 @@ public enum DuckAIChatTokens {
 
     public enum Typography {
         public static let body = Style(size: 16, lineHeight: 24)
-        public static let h1 = Style(size: 24, lineHeight: 32, weight: .bold)
-        public static let h2 = Style(size: 20, lineHeight: 28, weight: .bold)
-        public static let h3 = Style(size: 16, lineHeight: 24, weight: .bold)
-        public static let tableCell = Style(size: 14, lineHeight: 20)
+        public static let caption = Style(size: 13, lineHeight: 16)
+        public static let modelName = Style(size: 13, lineHeight: 16, weight: .bold)
+        public static let h1 = Style(size: 24, lineHeight: 32, weight: .bold, tracking: -0.3)
+        public static let h2 = Style(size: 22, lineHeight: 28, weight: .bold, tracking: -0.3)
+        public static let h3 = Style(size: 21, lineHeight: 24, weight: .bold, tracking: -0.2)
+        public static let h4 = Style(size: 18, lineHeight: 24, weight: .bold, tracking: -0.1)
+        public static let h5 = Style(size: 16, lineHeight: 24, weight: .bold)
+        public static let tableCell = Style(size: 14, lineHeight: 21)
+        public static let subtitle = Style(size: 14, lineHeight: 20)
+        public static let code = Style(size: 12, lineHeight: 20, monospaced: true)
+        public static let inlineCode = Style(size: 12, lineHeight: 24, monospaced: true)
+        public static let codeLabel = Style(size: 12, lineHeight: 24, monospaced: true)
+
+        public static func heading(_ level: Int) -> Style {
+            switch level {
+            case 1: h1
+            case 2: h2
+            case 3: h3
+            case 4: h4
+            default: h5
+            }
+        }
 
         public struct Style {
             public let size: CGFloat
             public let lineHeight: CGFloat
             public let weight: Font.Weight
+            public let tracking: CGFloat
+            private let monospaced: Bool
 
-            public var font: Font {
+#if canImport(UIKit)
+            private var nativeFont: UIFont {
+                if monospaced { return .monospacedSystemFont(ofSize: size, weight: .regular) }
                 let name = weight == .bold ? "DuckSansProduct-Bold" : "DuckSansProduct-Regular"
-#if canImport(UIKit)
-                let available = UIFont(name: name, size: size) != nil
-#elseif canImport(AppKit)
-                let available = NSFont(name: name, size: size) != nil
-#endif
-                if available {
-                    return .custom(name, size: size, relativeTo: .body)
-                }
-#if canImport(UIKit)
-                return .system(size: UIFontMetrics(forTextStyle: .body).scaledValue(for: size), weight: weight)
-#elseif canImport(AppKit)
-                return .system(size: size, weight: weight)
-#endif
+                return UIFont(name: name, size: size) ?? .systemFont(ofSize: size, weight: weight == .bold ? .bold : .regular)
             }
 
-            fileprivate init(size: CGFloat, lineHeight: CGFloat, weight: Font.Weight = .regular) {
+            public var font: Font { Font(nativeFont) }
+            public var naturalLineHeight: CGFloat { nativeFont.lineHeight }
+#elseif canImport(AppKit)
+            private var nativeFont: NSFont {
+                if monospaced { return .monospacedSystemFont(ofSize: size, weight: .regular) }
+                let name = weight == .bold ? "DuckSansProduct-Bold" : "DuckSansProduct-Regular"
+                return NSFont(name: name, size: size) ?? .systemFont(ofSize: size, weight: weight == .bold ? .bold : .regular)
+            }
+
+            public var font: Font { Font(nativeFont) }
+            public var naturalLineHeight: CGFloat { NSLayoutManager().defaultLineHeight(for: nativeFont) }
+#endif
+
+            public var lineSpacing: CGFloat { lineHeight - naturalLineHeight }
+
+            fileprivate init(size: CGFloat, lineHeight: CGFloat, weight: Font.Weight = .regular,
+                             tracking: CGFloat = 0, monospaced: Bool = false) {
                 self.size = size
                 self.lineHeight = lineHeight
                 self.weight = weight
+                self.tracking = tracking
+                self.monospaced = monospaced
             }
         }
     }

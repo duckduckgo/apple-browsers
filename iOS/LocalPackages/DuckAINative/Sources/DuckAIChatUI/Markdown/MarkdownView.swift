@@ -19,61 +19,95 @@
 
 import SwiftUI
 
-/// Renders a reply's Markdown with the frontend's block spacing. Only the last block changes while streaming.
 struct MarkdownView: View {
     let markdown: String
     let isStreaming: Bool
 
     var body: some View {
         let blocks = MarkdownParser.blocks(from: markdown, isStreaming: isStreaming)
-        VStack(alignment: .leading, spacing: DuckAIChatTokens.Spacing.s8) {
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
-                BlockView(block: block)
-                    .padding(.top, extraTopSpacing(blocks, index))
+                BlockView(block: block, isStreaming: isStreaming && index == blocks.count - 1)
+                    .padding(.top, spacing(before: index, in: blocks))
             }
         }
+        .padding(.top, blocks.first.map(topMargin) ?? 0)
+        .padding(.bottom, blocks.last.map(finalMargin) ?? 0)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The frontend puts 24 pt above a heading that follows body text.
-    private func extraTopSpacing(_ blocks: [MarkdownBlock], _ index: Int) -> CGFloat {
-        guard index > 0, case .heading = blocks[index] else { return 0 }
-        return DuckAIChatTokens.Spacing.s16
+    private func spacing(before index: Int, in blocks: [MarkdownBlock]) -> CGFloat {
+        guard index > 0 else { return 0 }
+        let previous = blocks[index - 1]
+        let current = blocks[index]
+        if case .heading(let level, _) = current {
+            switch previous {
+            case .paragraph, .list: return 40
+            case .heading(let previousLevel, _) where previousLevel + 1 == level: return 24
+            default: break
+            }
+        }
+        return max(bottomMargin(previous), topMargin(current))
+    }
+
+    private func finalMargin(_ block: MarkdownBlock) -> CGFloat {
+        switch block {
+        case .paragraph, .list: 0
+        default: bottomMargin(block)
+        }
+    }
+
+    private func topMargin(_ block: MarkdownBlock) -> CGFloat {
+        switch block {
+        case .blockquote, .table: 16
+        case .thematicBreak: 32
+        default: 0
+        }
+    }
+
+    private func bottomMargin(_ block: MarkdownBlock) -> CGFloat {
+        switch block {
+        case .heading: 12
+        case .blockquote, .table, .codeBlock: 16
+        case .thematicBreak: 32
+        default: 8
+        }
     }
 }
 
 private struct BlockView: View {
     let block: MarkdownBlock
+    var isStreaming = false
 
     var body: some View {
         switch block {
         case .heading(let level, let text):
-            InlineText(text, style: level == 1 ? DuckAIChatTokens.Typography.h1 : level == 2 ? DuckAIChatTokens.Typography.h2 : DuckAIChatTokens.Typography.h3)
+            InlineText(text, style: DuckAIChatTokens.Typography.heading(level), isStreaming: isStreaming)
         case .paragraph(let text):
-            InlineText(text)
+            InlineText(text, isStreaming: isStreaming)
         case .list(let ordered, let start, let items):
-            VStack(alignment: .leading, spacing: DuckAIChatTokens.Spacing.s8) {
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                    HStack(alignment: .firstTextBaseline, spacing: DuckAIChatTokens.Spacing.s8) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(ordered ? "\(start + index)." : "•")
                             .font(DuckAIChatTokens.Typography.body.font)
                             .foregroundStyle(DuckAIChatTokens.Color.listMarker)
-                            .frame(minWidth: DuckAIChatTokens.Spacing.s16, alignment: .trailing)
-                        InlineText(item)
+                            .frame(width: 16, alignment: .trailing)
+                        InlineText(item, isStreaming: isStreaming)
                     }
                 }
             }
-            .padding(.leading, DuckAIChatTokens.Spacing.s8)
+            .padding(.leading, 20)
         case .codeBlock(let language, let code):
             CodeBlockView(language: language, code: code)
         case .blockquote(let blocks):
-            HStack(alignment: .top, spacing: DuckAIChatTokens.Spacing.s16) {
-                Rectangle()
+            HStack(alignment: .top, spacing: 16) {
+                RoundedRectangle(cornerRadius: 4)
                     .fill(DuckAIChatTokens.Color.controlTertiary)
                     .frame(width: 4)
-                VStack(alignment: .leading, spacing: DuckAIChatTokens.Spacing.s8) {
+                VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                        BlockView(block: block)
+                        BlockView(block: block, isStreaming: isStreaming)
                     }
                 }
             }
@@ -84,33 +118,7 @@ private struct BlockView: View {
             Rectangle()
                 .fill(DuckAIChatTokens.Color.decorationSecondary)
                 .frame(height: 1)
-                .padding(.vertical, DuckAIChatTokens.Spacing.s16)
         }
-    }
-}
-
-struct InlineText: View {
-    let source: String
-    let style: DuckAIChatTokens.Typography.Style
-
-    init(_ source: String, style: DuckAIChatTokens.Typography.Style = DuckAIChatTokens.Typography.body) {
-        self.source = source
-        self.style = style
-    }
-
-    var body: some View {
-        Text(attributed)
-            .font(style.font)
-            .lineSpacing(style.lineHeight - style.size)
-            .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-            .tint(DuckAIChatTokens.Color.accent)
-            .fixedSize(horizontal: false, vertical: true)
-            .textSelection(.enabled)
-    }
-
-    private var attributed: AttributedString {
-        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: source, options: options)) ?? AttributedString(source)
     }
 }
 
@@ -120,26 +128,29 @@ private struct CodeBlockView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let language {
-                Text(language)
-                    .font(DuckAIChatTokens.Typography.tableCell.font)
-                    .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-                    .padding(.horizontal, DuckAIChatTokens.Spacing.s12)
-                    .padding(.vertical, DuckAIChatTokens.Spacing.s8)
+            HStack(alignment: .top) {
+                Text(language ?? "")
+                    .font(DuckAIChatTokens.Typography.codeLabel.font)
+                    .lineSpacing(DuckAIChatTokens.Typography.codeLabel.lineSpacing)
+                    .foregroundStyle(DuckAIChatTokens.Color.codeLanguage)
+                Spacer(minLength: 0)
+                ChatCopyButton(text: code, size: 24)
             }
-            ScrollView(.horizontal, showsIndicators: false) {
-                Text(code)
-                    .font(.system(size: 14, design: .monospaced))
-                    .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-                    .textSelection(.enabled)
-                    .padding(DuckAIChatTokens.Spacing.s12)
-            }
-            .background(DuckAIChatTokens.Color.codeBackground,
-                        in: RoundedRectangle(cornerRadius: DuckAIChatTokens.Radius.codeInner))
+            .padding(EdgeInsets(top: 12, leading: 8, bottom: 8, trailing: 12))
+            .frame(minHeight: 44)
+            Text(code)
+                .font(DuckAIChatTokens.Typography.code.font)
+                .lineSpacing(DuckAIChatTokens.Typography.code.lineSpacing)
+                .padding(.vertical, DuckAIChatTokens.Typography.code.lineSpacing / 2)
+                .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(EdgeInsets(top: 8, leading: 16, bottom: 16, trailing: 16))
+                .background(DuckAIChatTokens.Color.codeBackground, in: RoundedRectangle(cornerRadius: 12))
         }
-        .padding(DuckAIChatTokens.Spacing.s4)
-        .background(DuckAIChatTokens.Color.codeFrame,
-                    in: RoundedRectangle(cornerRadius: DuckAIChatTokens.Radius.codeOuter))
+        .padding(EdgeInsets(top: 0, leading: 8, bottom: 8, trailing: 8))
+        .background(DuckAIChatTokens.Color.codeFrame, in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -148,23 +159,39 @@ private struct TableView: View {
     let rows: [[String]]
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            Grid(alignment: .leading, horizontalSpacing: DuckAIChatTokens.Spacing.s16, verticalSpacing: DuckAIChatTokens.Spacing.s8) {
+        ViewThatFits(in: .horizontal) {
+            table
+            ScrollView(.horizontal, showsIndicators: false) {
+                table.fixedSize(horizontal: true, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var table: some View {
+        Grid(alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0) {
+            GridRow {
+                ForEach(Array(header.enumerated()), id: \.offset) { _, cell in
+                    InlineText("**\(cell)**", style: DuckAIChatTokens.Typography.tableCell)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(EdgeInsets(top: 0, leading: 1, bottom: 4, trailing: 16))
+                }
+            }
+            Rectangle().fill(DuckAIChatTokens.Color.textPrimary).frame(height: 1.6).gridCellUnsizedAxes(.horizontal)
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 GridRow {
-                    ForEach(Array(header.enumerated()), id: \.offset) { _, cell in
-                        InlineText("**\(cell)**", style: DuckAIChatTokens.Typography.tableCell)
+                    ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
+                        InlineText(cell, style: DuckAIChatTokens.Typography.tableCell)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(EdgeInsets(top: 8, leading: 1, bottom: 8, trailing: 8))
                     }
                 }
-                Rectangle().fill(DuckAIChatTokens.Color.textPrimary).frame(height: 1.6).gridCellUnsizedAxes(.horizontal)
-                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
-                    GridRow {
-                        ForEach(Array(row.enumerated()), id: \.offset) { _, cell in
-                            InlineText(cell, style: DuckAIChatTokens.Typography.tableCell)
-                        }
-                    }
+                if index < rows.count - 1 {
                     Rectangle().fill(DuckAIChatTokens.Color.decorationSecondary).frame(height: 1).gridCellUnsizedAxes(.horizontal)
                 }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }

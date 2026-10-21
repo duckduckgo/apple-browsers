@@ -52,12 +52,17 @@ tags:
     id: "Settings.AIFeatures.Picker.SearchAndDuckAI"
 - tapOn: "Settings"
 - tapOn: "Done"
+# The address bar shows the switcher while editing on either New Tab Page
+- tapOn:
+    id: "searchEntry"
 - assertVisible:
-    id: "Browser.OmniBar.Button.AIChat"
+    id: "AddressBar.Button.DuckAI"
 - assertNotVisible:
     id: "Browser.OmniBar.Button.ModeToggle.Search"
 - assertNotVisible:
     id: "Browser.OmniBar.Button.ModeToggle.AIChat"
+- tapOn:
+    id: "UnifiedToggleInput.Button.Dismiss"
 
 # Select Search Only — iPhone remains unaffected by iPad-only feature behavior
 - tapOn: "Browsing Menu"

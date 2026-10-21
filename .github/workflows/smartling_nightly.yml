@@ -1,7 +1,8 @@
 name: Smartling - Nightly Jobs
 
 # Manual only for now. A follow-up adds `schedule:` (every day, weekends included);
-# the `github.event_name == 'schedule'` checks below already treat scheduled runs as writes.
+# the platform matrix and the limit below already handle scheduled runs, which have no inputs.
+# To test without authorizing anything, run it with auto_authorize_max_usd set to 0.
 on:
   workflow_dispatch:
     inputs:
@@ -13,10 +14,6 @@ on:
           - both
           - iOS
           - macOS
-      submit_to_smartling:
-        description: "Create Smartling jobs, authorizing them if the cost estimate is within budget"
-        type: boolean
-        default: false
       auto_authorize_max_usd:
         description: "Authorize jobs whose maximum USD estimate is at most this (0 never authorizes)"
         type: string
@@ -30,7 +27,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SUBMIT_TO_SMARTLING: ${{ github.event_name == 'schedule' || inputs.submit_to_smartling }}
   AUTO_AUTHORIZE_MAX_USD: ${{ inputs.auto_authorize_max_usd || '500.00' }}
 
 jobs:
@@ -56,7 +52,6 @@ jobs:
 
       - name: Validate Smartling write branch
         id: write_branch_check
-        if: env.SUBMIT_TO_SMARTLING == 'true'
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
@@ -113,13 +108,8 @@ jobs:
           set -e -o pipefail
           ./${{ matrix.platform }}/scripts/loc_export.sh | xcbeautify
 
-      - name: Manual dry run
-        if: env.SUBMIT_TO_SMARTLING != 'true'
-        run: echo "Export completed. Smartling writes were disabled."
-
       - name: Submit ${{ matrix.platform }} strings to Smartling
         id: submit
-        if: env.SUBMIT_TO_SMARTLING == 'true'
         env:
           PLATFORM: ${{ matrix.platform }}
         run: |
@@ -133,7 +123,7 @@ jobs:
       # Until then it lands unassigned in the platform's app project.
       - name: Open ${{ matrix.platform }} Smartling review task
         if: >-
-          always() && env.SUBMIT_TO_SMARTLING == 'true' &&
+          always() &&
           steps.write_branch_check.outcome != 'failure' &&
           (failure() || steps.submit.outputs.outcome == 'review_required')
         uses: duckduckgo/native-github-asana-sync@v2.5.1

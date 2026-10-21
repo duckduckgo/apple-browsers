@@ -34127,6 +34127,18 @@
         }
       }
     },
+    "duckai.dax-pet.menu.outfit" : {
+      "comment" : "Submenu next to Dax, the DuckDuckGo mascot, for choosing what he wears",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Outfit"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.menu.summarize" : {
       "comment" : "Menu item next to Dax, the DuckDuckGo mascot, that asks Duck.ai to summarize the page open in the browser",
       "extractionState" : "extracted_with_value",
@@ -34147,6 +34159,66 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Open Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.outfit.none" : {
+      "comment" : "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: he wears no outfit",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nothing"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.outfit.party-hat" : {
+      "comment" : "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: a cone-shaped New Year party hat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Party Hat"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.outfit.santa-hat" : {
+      "comment" : "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: a red and white Christmas hat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Santa Hat"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.outfit.seasonal" : {
+      "comment" : "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: he wears a hat for Halloween, December and New Year, and nothing otherwise",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dress for the Season"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.outfit.witch-hat" : {
+      "comment" : "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: a Halloween witch hat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Witch Hat"
           }
         }
       }

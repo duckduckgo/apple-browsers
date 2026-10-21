@@ -34,11 +34,14 @@ struct DaxRig {
         static let wingUp: AnimationFrameTime = 46
     }
 
+    /// Room added above the source canvas, which clips, for a hat to stick out of.
+    static let headroom: CGFloat = 160
+
     /// The part of the canvas Dax ever covers, across every frame, in top-down canvas points.
-    static let bodyRect = CGRect(x: 200, y: 30, width: 790, height: 1080)
+    static let bodyRect = CGRect(x: 200, y: 30 + headroom, width: 790, height: 1080)
 
     /// Midpoint between Dax's eyes at `Frames.idle`, in top-down canvas points.
-    static let eyesCenter = CGPoint(x: 590, y: 300)
+    static let eyesCenter = CGPoint(x: 590, y: 300 + headroom)
 
     static let eyesKeypath = AnimationKeypath(keypath: "Eyes.Transform.Position")
     static let eyesAnchorKeypath = AnimationKeypath(keypath: "Eyes.Transform.Anchor Point")
@@ -59,6 +62,7 @@ struct DaxRig {
     static let backWingShoulder = CGPoint(x: -60, y: -40)
 
     static let hairRotationKeypath = AnimationKeypath(keypath: "Hair.Transform.Rotation")
+    static let hairOpacityKeypath = AnimationKeypath(keypath: "Hair.Transform.Opacity")
 
     /// Each foot is drawn in several layers that lift together.
     static let leftFootLayers = ["Leg-Left", "Foot-Left", "Foot-Left-Stroke", "Foot-Left-Highlight"]
@@ -66,6 +70,7 @@ struct DaxRig {
 
     let animation: LottieAnimation
     let canvasSize: CGSize
+    let outfit: DaxOutfit?
     /// The back wing's resting place in Dax's layer.
     let backWingPosition: CGPoint
     /// Resting positions of the foot layers, by name.
@@ -74,7 +79,7 @@ struct DaxRig {
     private let raisedWingKeyframes: [(frame: CGFloat, value: CGFloat)]
     private let hairKeyframes: [(frame: CGFloat, value: CGFloat)]
 
-    init?(assetName: String = "dax-waving-light", bundle: Bundle = .main) {
+    init?(assetName: String = "dax-waving-light", bundle: Bundle = .main, outfit: DaxOutfit? = nil) {
         guard let data = NSDataAsset(name: assetName, bundle: bundle)?.data,
               let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let assets = root["assets"] as? [[String: Any]],
@@ -86,11 +91,22 @@ struct DaxRig {
             return nil
         }
 
+        // Everything hangs from a null layer that moves it down into the headroom.
+        let headroomIndex = 2000
+        let headroomLayer: [String: Any] = [
+            "ddd": 0, "ind": headroomIndex, "ty": 3, "nm": "Headroom", "sr": 1, "ao": 0, "ip": 0, "op": 1000, "st": 0, "bm": 0,
+            "ks": ["o": ["a": 0, "k": 100], "r": ["a": 0, "k": 0], "p": ["a": 0, "k": [0, Self.headroom, 0]],
+                   "a": ["a": 0, "k": [0, 0, 0]], "s": ["a": 0, "k": [100, 100, 100]]] as [String: Any]
+        ]
         let layers = bodyLayers.map { layer -> [String: Any] in
-            guard (layer["nm"] as? String) == "Wing-Left", layer["parent"] == nil else { return layer }
-            var renamed = layer
-            renamed["nm"] = Self.raisedWingLayer
-            return renamed
+            var layer = layer
+            if (layer["nm"] as? String) == "Wing-Left", layer["parent"] == nil {
+                layer["nm"] = Self.raisedWingLayer
+            }
+            if layer["parent"] == nil {
+                layer["parent"] = headroomIndex
+            }
+            return layer
         }
         func layer(named name: String) -> [String: Any]? {
             layers.first { ($0["nm"] as? String) == name }
@@ -98,8 +114,9 @@ struct DaxRig {
 
         var composition = root
         composition["w"] = anchor.x * 2
-        composition["h"] = anchor.y * 2
-        composition["layers"] = layers
+        composition["h"] = anchor.y * 2 + Self.headroom
+        // Drawn on top of everything, so a hat sits over his head.
+        composition["layers"] = (outfit.map { [$0.layer] } ?? []) + layers + [headroomLayer]
         composition["assets"] = []
         composition["markers"] = []
 
@@ -108,7 +125,8 @@ struct DaxRig {
             return nil
         }
         self.animation = animation
-        self.canvasSize = CGSize(width: anchor.x * 2, height: anchor.y * 2)
+        self.outfit = outfit
+        self.canvasSize = CGSize(width: anchor.x * 2, height: anchor.y * 2 + Self.headroom)
         self.eyesKeyframes = layer(named: "Eyes").map(Self.positionKeyframes(of:)) ?? []
         self.raisedWingKeyframes = layer(named: Self.raisedWingLayer).map { Self.scalarKeyframes(of: "r", in: $0) } ?? []
         self.hairKeyframes = layer(named: "Hair").map { Self.scalarKeyframes(of: "r", in: $0) } ?? []

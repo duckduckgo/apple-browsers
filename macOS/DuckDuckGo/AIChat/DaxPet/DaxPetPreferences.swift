@@ -66,6 +66,7 @@ protocol DaxPetPreferencesPersistor {
     var isEnabled: Bool { get set }
     /// Where Dax stands: the bottom-centre of his window, in screen coordinates.
     var position: CGPoint? { get set }
+    var wardrobe: DaxWardrobe { get set }
 }
 
 struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
@@ -73,6 +74,7 @@ struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
     enum Key: String {
         case isEnabled = "dax-pet.is-enabled"
         case position = "dax-pet.position"
+        case wardrobe = "dax-pet.wardrobe"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -95,5 +97,10 @@ struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
         nonmutating set {
             try? keyValueStore.set(newValue.map { [Double($0.x), Double($0.y)] }, forKey: Key.position.rawValue)
         }
+    }
+
+    var wardrobe: DaxWardrobe {
+        get { DaxWardrobe(rawValue: (try? keyValueStore.object(forKey: Key.wardrobe.rawValue)) as? String) }
+        nonmutating set { try? keyValueStore.set(newValue.rawValue, forKey: Key.wardrobe.rawValue) }
     }
 }

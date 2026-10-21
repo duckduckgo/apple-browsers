@@ -60,6 +60,20 @@ final class DaxCharacterView: NSView {
     /// Flapping for joy.
     var isCelebrating: Bool { flapStartTime != nil }
 
+    /// What he's wearing; changing it swaps his rig for one with the outfit drawn in.
+    var outfit: DaxOutfit? {
+        get { rig?.outfit }
+        set {
+            guard newValue != rig?.outfit, let rig = DaxRig(outfit: newValue), let animationView else { return }
+            let frame = animationView.currentFrame
+            self.rig = rig
+            animationView.animation = rig.animation
+            animationView.currentFrame = frame
+            setUpValueProviders()
+            animationView.forceDisplayUpdate()
+        }
+    }
+
     /// Off for a little walk, and back.
     var isStrolling: Bool { stroll != nil }
     /// A stroll ended, back where he started or wherever it was cut short.
@@ -93,7 +107,7 @@ final class DaxCharacterView: NSView {
     private(set) var isAnticipatingDrop = false
     var onDragEnded: (() -> Void)?
 
-    private let rig: DaxRig?
+    private var rig: DaxRig?
     private let animationView: LottieAnimationView?
     /// Read by the Lottie value-provider blocks on every render.
     private let face = Face()
@@ -158,6 +172,10 @@ final class DaxCharacterView: NSView {
         }
         super.init(frame: NSRect(origin: .zero, size: Self.preferredSize))
         wantsLayer = true
+        // A hat sticks out above the body Dax is sized for.
+        if #available(macOS 14, *) {
+            clipsToBounds = false
+        }
         setUpAnimationView()
         registerForDraggedTypes([.fileURL, .URL, .string])
     }
@@ -430,14 +448,20 @@ final class DaxCharacterView: NSView {
     // MARK: - Setup
 
     private func setUpAnimationView() {
-        guard let rig, let animationView else { return }
+        guard let animationView else { return }
         animationView.contentMode = .scaleToFill
         animationView.loopMode = .playOnce
         animationView.backgroundBehavior = .pauseAndRestore
         animationView.currentFrame = DaxRig.Frames.idle
         addSubview(animationView)
+        setUpValueProviders()
+    }
 
+    private func setUpValueProviders() {
+        guard let rig, let animationView else { return }
         let face = self.face
+        let hairOpacity: CGFloat = rig.outfit?.hidesHair == true ? 0 : 100
+        animationView.setValueProvider(FloatValueProvider(hairOpacity), keypath: DaxRig.hairOpacityKeypath)
         animationView.setValueProvider(FloatValueProvider { frame in
             rig.raisedWingRotation(at: frame) + face.raisedWingTilt
         }, keypath: DaxRig.raisedWingRotationKeypath)

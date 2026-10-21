@@ -114,4 +114,16 @@ final class DaxPetPreferencesTests: XCTestCase {
 
         XCTAssertEqual(persistor.position, CGPoint(x: 120.5, y: 40))
     }
+
+    func testWhenNoOutfitWasChosenThenDaxDressesForTheSeason() {
+        XCTAssertEqual(persistor.wardrobe, .seasonal)
+    }
+
+    func testWhenAnOutfitIsChosenThenItIsReadBack() {
+        persistor.wardrobe = .outfit(.santaHat)
+        XCTAssertEqual(persistor.wardrobe, .outfit(.santaHat))
+
+        persistor.wardrobe = .none
+        XCTAssertEqual(persistor.wardrobe, .none)
+    }
 }

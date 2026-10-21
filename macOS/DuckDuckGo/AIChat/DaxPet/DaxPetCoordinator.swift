@@ -38,18 +38,22 @@ final class DaxPetCoordinator: NSObject {
     private let notificationCenter: NotificationCenter
     private let isBrowserActive: () -> Bool
     private var responseStateCancellable: AnyCancellable?
+    private var dayChangeCancellable: AnyCancellable?
+    private let now: () -> Date
     private var answers = DaxAnswerTracker()
 
     init(preferences: DaxPetPreferences,
          persistor: DaxPetPreferencesPersistor,
          submitter: DaxPetPromptSubmitting,
          notificationCenter: NotificationCenter = .default,
-         isBrowserActive: @escaping () -> Bool = { NSApp.isActive }) {
+         isBrowserActive: @escaping () -> Bool = { NSApp.isActive },
+         now: @escaping () -> Date = Date.init) {
         self.preferences = preferences
         self.persistor = persistor
         self.submitter = submitter
         self.notificationCenter = notificationCenter
         self.isBrowserActive = isBrowserActive
+        self.now = now
     }
 
     func start() {
@@ -97,6 +101,7 @@ final class DaxPetCoordinator: NSObject {
         self.window = window
         self.model = model
         observeAnswers()
+        dressForToday()
 
         let position = initialPosition()
         window.setFrameOrigin(NSPoint(x: (position.x - DaxPetView.Metrics.windowSize.width / 2).rounded(), y: position.y))
@@ -107,6 +112,7 @@ final class DaxPetCoordinator: NSObject {
 
     private func dismiss() {
         responseStateCancellable = nil
+        dayChangeCancellable = nil
         answers = DaxAnswerTracker()
         model?.endComposing()
         window?.orderOut(nil)
@@ -129,11 +135,50 @@ final class DaxPetCoordinator: NSObject {
         menu.addItem(summarize)
         menu.addItem(NSMenuItem(title: UserText.daxPetMenuContinueChat, action: #selector(continueLastChat), keyEquivalent: ""))
         menu.addItem(.separator())
+        menu.addItem(outfitMenuItem())
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: UserText.daxPetOpenDuckAI, action: #selector(openDuckAI), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: UserText.daxPetHide, action: #selector(hide), keyEquivalent: ""))
         menu.items.forEach { $0.target = self }
 
         NSMenu.popUpContextMenu(menu, with: event, for: view)
+    }
+
+    private func outfitMenuItem() -> NSMenuItem {
+        let current = persistor.wardrobe
+        let submenu = NSMenu()
+        func add(_ title: String, _ wardrobe: DaxWardrobe) {
+            let item = NSMenuItem(title: title, action: #selector(chooseOutfit(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = wardrobe.rawValue
+            item.state = wardrobe == current ? .on : .off
+            submenu.addItem(item)
+        }
+        add(UserText.daxPetOutfitSeasonal, .seasonal)
+        submenu.addItem(.separator())
+        DaxOutfit.allCases.forEach { add($0.title, .outfit($0)) }
+        submenu.addItem(.separator())
+        add(UserText.daxPetOutfitNone, .none)
+
+        let item = NSMenuItem(title: UserText.daxPetMenuOutfit, action: nil, keyEquivalent: "")
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func chooseOutfit(_ sender: NSMenuItem) {
+        persistor.wardrobe = DaxWardrobe(rawValue: sender.representedObject as? String)
+        dressForToday()
+        model?.character.hop()
+    }
+
+    /// Puts on what the wardrobe says for today, and again whenever the day changes.
+    private func dressForToday() {
+        model?.character.outfit = persistor.wardrobe.outfit(on: now())
+        if dayChangeCancellable == nil {
+            dayChangeCancellable = notificationCenter.publisher(for: .NSCalendarDayChanged)
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in self?.dressForToday() }
+        }
     }
 
     @objc private func summarizePage() {

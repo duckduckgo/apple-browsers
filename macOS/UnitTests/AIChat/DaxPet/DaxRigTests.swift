@@ -24,7 +24,7 @@ final class DaxRigTests: XCTestCase {
     func testWhenLoadedFromTheOnboardingAnimationThenDaxIsLiftedOutOfItsPrecomp() throws {
         let rig = try XCTUnwrap(DaxRig())
 
-        XCTAssertEqual(rig.canvasSize, CGSize(width: 1170, height: 1222))
+        XCTAssertEqual(rig.canvasSize, CGSize(width: 1170, height: 1222 + DaxRig.headroom))
         XCTAssertEqual(rig.animation.size, rig.canvasSize)
         XCTAssertGreaterThanOrEqual(rig.animation.endFrame, DaxRig.Frames.wave.upperBound)
         XCTAssertTrue(CGRect(origin: .zero, size: rig.canvasSize).contains(DaxRig.bodyRect))

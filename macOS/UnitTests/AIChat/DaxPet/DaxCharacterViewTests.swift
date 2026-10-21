@@ -274,6 +274,21 @@ final class DaxCharacterViewTests: XCTestCase {
         XCTAssertTrue(character.isCelebrating)
     }
 
+    // MARK: - Outfits
+
+    func testWhenDressedThenDaxWearsTheOutfitUntilItComesOff() {
+        XCTAssertNil(character.outfit)
+
+        character.outfit = .witchHat
+        XCTAssertEqual(character.outfit, .witchHat)
+
+        character.outfit = .partyHat
+        XCTAssertEqual(character.outfit, .partyHat)
+
+        character.outfit = nil
+        XCTAssertNil(character.outfit)
+    }
+
     // MARK: - Strolls
 
     func testWhenStrollingThenDaxWalksOutAndComesBackToHisSpot() throws {

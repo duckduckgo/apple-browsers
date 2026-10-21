@@ -77,6 +77,8 @@ struct DaxPetView: View {
                 }
             }
             .frame(width: Metrics.composingWidth, height: Metrics.bubbleAreaHeight, alignment: .bottom)
+            // Over the tip of a hat.
+            .zIndex(1)
 
             DaxCharacterRepresentable(character: model.character)
                 .frame(width: DaxCharacterView.preferredSize.width, height: DaxCharacterView.preferredSize.height)

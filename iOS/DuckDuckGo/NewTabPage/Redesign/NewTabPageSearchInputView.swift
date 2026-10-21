@@ -104,6 +104,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         view.aiChatButton.addTarget(context.coordinator, action: #selector(Coordinator.activateAIChat), for: .touchUpInside)
         view.voiceSearchButton.addTarget(context.coordinator, action: #selector(Coordinator.activateVoiceSearch), for: .touchUpInside)
         view.aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        view.aiChatButton.accessibilityIdentifier = "Browser.OmniBar.Button.AIChat"
         view.voiceSearchButton.accessibilityLabel = UserText.settingsVoiceSearch
         return view
     }

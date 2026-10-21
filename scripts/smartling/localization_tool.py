@@ -394,6 +394,15 @@ def parse_estimate(report: Dict) -> tuple[int, Decimal]:
     if total_strings == 0:
         return 0, Decimal('0')
 
+    # A warning (e.g. a missing rate) means the price may leave out some locales or workflows.
+    warnings = report.get('warnings') or []
+    if warnings:
+        details = '; '.join(
+            warning.get('message', str(warning)) if isinstance(warning, dict) else str(warning)
+            for warning in warnings
+        )
+        raise RuntimeError(f"Smartling estimate may be incomplete: {details}")
+
     usd_prices = []
     for price in report.get('priceInformation') or []:
         if price.get('currencyCode') != 'USD' or price.get('priceMax') is None:
@@ -491,7 +500,7 @@ async def run_submit(client: SmartlingClient,
                 total_strings=0,
                 locales=len(locales)
             )
-        if max_usd <= auto_authorize_max_usd:
+        if auto_authorize_max_usd > 0 and max_usd <= auto_authorize_max_usd:
             await client.authorize_job(job_id)
             log("✅ Authorized")
             return SubmitResult(
@@ -502,7 +511,11 @@ async def run_submit(client: SmartlingClient,
                 locales=len(locales),
                 max_usd=format(max_usd, 'f')
             )
-        log("✋ Over the limit, leaving the job for review")
+        if auto_authorize_max_usd > 0:
+            reason = f"Maximum USD estimate exceeds {format(auto_authorize_max_usd, 'f')}"
+        else:
+            reason = "Automatic authorization is off (limit is 0)"
+        log(f"✋ {reason}, leaving the job for review")
         return SubmitResult(
             outcome='review_required',
             job_id=job_id,
@@ -510,7 +523,7 @@ async def run_submit(client: SmartlingClient,
             total_strings=total_strings,
             locales=len(locales),
             max_usd=format(max_usd, 'f'),
-            reason=f"Maximum USD estimate exceeds {format(auto_authorize_max_usd, 'f')}"
+            reason=reason
         )
     except Exception as error:  # pylint: disable=broad-except
         log(f"❌ {error}")

@@ -99,7 +99,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.export_file = Path(export_dir.name) / 'en.xliff'
         self.export_file.write_text('<xliff/>', encoding='utf-8')
 
-    async def run_submit(self, client):
+    async def run_submit(self, client, auto_authorize_max_usd='500.00'):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             return await LOCALIZATION_TOOL.run_submit(
                 client=client,
@@ -107,7 +107,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
                 job_name='Nightly iOS - 2026-08-04',
                 pending_job_prefix='Nightly iOS - ',
                 file_uri_prefix='main',
-                auto_authorize_max_usd=Decimal('500.00'),
+                auto_authorize_max_usd=Decimal(auto_authorize_max_usd),
                 sleep=no_sleep
             )
 
@@ -169,6 +169,35 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.job_id, 'job-123')
         self.assertEqual(result.max_usd, '500.01')
         self.assertEqual((result.total_strings, result.locales), (10, 1))
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenEstimateHasWarningsThenReviewIsRequired(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 80, 'priceMax': 100},
+            ],
+            'warnings': [{'message': 'No rate found for de-DE'}],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('No rate found for de-DE', result.reason)
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenLimitIsZeroThenZeroPricedJobIsNotAuthorized(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 0, 'priceMax': 0},
+            ],
+        })
+
+        result = await self.run_submit(client, auto_authorize_max_usd='0')
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('limit is 0', result.reason)
         self.assertEqual(client.authorized_jobs, [])
 
     async def testWhenEstimateHasNoUSDPriceThenReviewIsRequired(self):

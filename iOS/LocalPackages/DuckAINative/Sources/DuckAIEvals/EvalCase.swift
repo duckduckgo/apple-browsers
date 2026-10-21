@@ -18,6 +18,7 @@
 //
 
 import DuckAIChatCore
+import DuckAILocalTasks
 import Foundation
 
 /// One fixed input the evals run through every provider. Codable so a set can be stored, shared and replayed.
@@ -65,7 +66,32 @@ public extension EvalCase {
     /// first user message the contextual sheet builds; suggested prompts go through `SuggestedPromptsPrompt`.
     /// Throws for a case missing what its task needs (no page for a page task, no selection for a selection task).
     func turn(conversation: ConversationID, budget: PromptBudget) throws -> ProviderTurn {
-        fatalError("not implemented")
+        if task == .suggestPrompts {
+            guard let page else { throw EvalCaseError.missingInput(caseID: id) }
+            return SuggestedPromptsPrompt.turn(
+                for: PageSnapshot(title: page.title, url: page.url, content: page.content, language: page.language),
+                count: 4, uiLanguageName: languageName ?? "English", conversation: conversation)
+        }
+        let request: ChatRequest
+        switch task {
+        case .translatePage, .translateSelection:
+            request = .translate(into: TargetLanguage(code: "", name: languageName ?? "English"))
+        default:
+            request = .summarize
+        }
+        let context: ChatContext
+        switch task {
+        case .summarizeSelection, .translateSelection:
+            guard let selection else { throw EvalCaseError.missingInput(caseID: id) }
+            context = try ChatContext(page: nil, selections: [Selection(title: page?.title ?? "", url: page?.url, content: selection)],
+                                      opening: .request(request))
+        default:
+            guard let page else { throw EvalCaseError.missingInput(caseID: id) }
+            context = try ChatContext(page: PageContext(title: page.title, url: page.url, content: page.content),
+                                      selections: [], opening: .request(request))
+        }
+        let message = UserMessage(id: MessageID(rawValue: 1), createdAt: Date(), parts: context.contextParts.map(UserPart.context))
+        return try PromptBuilder.turn(conversation: conversation, messages: [.user(message)], budget: budget).get()
     }
 }
 

@@ -44,6 +44,38 @@ public struct EvalRecord: Codable, Equatable, Sendable {
     public let tokensPerSecond: Double?
     public let peakMemoryBytes: Int64?
     public let thermalState: String?
+
+    public init(caseID: String,
+                task: EvalTask,
+                providerID: String,
+                modelName: String,
+                runIndex: Int,
+                outcome: EvalOutcome,
+                error: String?,
+                output: String,
+                estimatedInputTokens: Int,
+                timeToFirstToken: Double?,
+                totalTime: Double,
+                generatedTokens: Int?,
+                tokensPerSecond: Double?,
+                peakMemoryBytes: Int64?,
+                thermalState: String?) {
+        self.caseID = caseID
+        self.task = task
+        self.providerID = providerID
+        self.modelName = modelName
+        self.runIndex = runIndex
+        self.outcome = outcome
+        self.error = error
+        self.output = output
+        self.estimatedInputTokens = estimatedInputTokens
+        self.timeToFirstToken = timeToFirstToken
+        self.totalTime = totalTime
+        self.generatedTokens = generatedTokens
+        self.tokensPerSecond = tokensPerSecond
+        self.peakMemoryBytes = peakMemoryBytes
+        self.thermalState = thermalState
+    }
 }
 
 public struct EvalReport: Codable, Equatable, Sendable {
@@ -51,6 +83,16 @@ public struct EvalReport: Codable, Equatable, Sendable {
     public let osVersion: String
     public let startedAt: Date
     public let records: [EvalRecord]
+
+    public init(device: String,
+                osVersion: String,
+                startedAt: Date,
+                records: [EvalRecord]) {
+        self.device = device
+        self.osVersion = osVersion
+        self.startedAt = startedAt
+        self.records = records
+    }
 }
 
 /// What the runner samples around each run. The app supplies a real one (phys_footprint, thermal state).
@@ -90,6 +132,121 @@ public struct EvalRunner: Sendable {
     /// - `progress` is called after every record with (done, total).
     public func run(_ cases: [EvalCase], runs: Int = 1, device: String, osVersion: String, now: Date = Date(),
                     progress: @Sendable (Int, Int) -> Void = { _, _ in }) async -> EvalReport {
-        fatalError("not implemented")
+        var records: [EvalRecord] = []
+        let runCount = max(0, runs)
+        for evalCase in cases {
+            for runIndex in 0..<runCount {
+                let record = await run(evalCase, runIndex: runIndex)
+                records.append(record)
+                progress(records.count, cases.count * runCount)
+            }
+        }
+        return EvalReport(device: device, osVersion: osVersion, startedAt: now, records: records)
     }
+}
+
+private extension EvalRunner {
+    func run(_ evalCase: EvalCase, runIndex: Int) async -> EvalRecord {
+        let descriptor = provider.descriptor
+        let turn: ProviderTurn
+        do {
+            turn = try evalCase.turn(conversation: ConversationID(), budget: PromptBudget(descriptor))
+        } catch {
+            return EvalRecord(caseID: evalCase.id, task: evalCase.task, providerID: descriptor.id.rawValue,
+                              modelName: descriptor.modelName, runIndex: runIndex, outcome: .failed,
+                              error: String(describing: error), output: "", estimatedInputTokens: 0,
+                              timeToFirstToken: nil, totalTime: 0, generatedTokens: nil, tokensPerSecond: nil,
+                              peakMemoryBytes: nil, thermalState: nil)
+        }
+        metrics.beginRun()
+        let start = ContinuousClock.now
+        let stop = StopSignal()
+        let result = await withCheckedContinuation { continuation in
+            let state = EvalRunState(start: start, continuation: continuation)
+            let timer = Task {
+                do {
+                    try await Task.sleep(for: timeout)
+                    await state.timeOut(stop: stop)
+                } catch {}
+            }
+            Task {
+                do {
+                    for try await event in provider.reply(to: turn, stop: stop) {
+                        await state.receive(event)
+                    }
+                    await state.finish()
+                } catch {
+                    await state.finish(outcome: .failed, error: String(describing: error))
+                }
+                timer.cancel()
+            }
+        }
+        let samples = metrics.endRun()
+        let tokensPerSecond: Double? = result.stats.flatMap { stats in
+            guard let duration = stats.generateTime.map(seconds), duration > 0 else { return nil }
+            return Double(stats.generatedTokens) / duration
+        }
+        return EvalRecord(caseID: evalCase.id, task: evalCase.task, providerID: descriptor.id.rawValue,
+                          modelName: descriptor.modelName, runIndex: runIndex, outcome: result.outcome,
+                          error: result.error, output: result.output, estimatedInputTokens: turn.estimatedInputTokens,
+                          timeToFirstToken: result.timeToFirstToken, totalTime: result.totalTime,
+                          generatedTokens: result.stats?.generatedTokens, tokensPerSecond: tokensPerSecond,
+                          peakMemoryBytes: samples.peakMemoryBytes, thermalState: samples.thermalState)
+    }
+}
+
+private struct EvalRunResult: Sendable {
+    let outcome: EvalOutcome
+    let error: String?
+    let output: String
+    let timeToFirstToken: Double?
+    let totalTime: Double
+    let stats: GenerationStats?
+}
+
+private actor EvalRunState {
+    let start: ContinuousClock.Instant
+    let continuation: CheckedContinuation<EvalRunResult, Never>
+    var output = ""
+    var timeToFirstToken: Double?
+    var stats: GenerationStats?
+    var finished = false
+    var terminalOutcome: EvalOutcome = .completed
+
+    init(start: ContinuousClock.Instant, continuation: CheckedContinuation<EvalRunResult, Never>) {
+        self.start = start
+        self.continuation = continuation
+    }
+
+    func receive(_ event: ProviderEvent) {
+        guard !finished else { return }
+        switch event {
+        case .textDelta(let text):
+            if timeToFirstToken == nil { timeToFirstToken = seconds(start.duration(to: .now)) }
+            output += text
+        case .finished(let stats):
+            self.stats = stats
+        case .refusal:
+            terminalOutcome = .refused
+        default:
+            break
+        }
+    }
+
+    func timeOut(stop: StopSignal) {
+        guard !finished else { return }
+        stop.raise()
+        finish(outcome: .timedOut)
+    }
+
+    func finish(outcome: EvalOutcome? = nil, error: String? = nil) {
+        guard !finished else { return }
+        finished = true
+        continuation.resume(returning: EvalRunResult(outcome: outcome ?? terminalOutcome, error: error, output: output,
+                                                    timeToFirstToken: timeToFirstToken, totalTime: seconds(start.duration(to: .now)), stats: stats))
+    }
+}
+
+private func seconds(_ duration: Duration) -> Double {
+    Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18
 }

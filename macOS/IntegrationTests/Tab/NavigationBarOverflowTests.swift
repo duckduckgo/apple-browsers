@@ -74,13 +74,17 @@ final class NavigationBarOverflowTests: XCTestCase {
 
     @MainActor
     func testWhenToggleIsExpandedAndAllButtonsArePinned_ThenToggleCollapsesAndWindowShrinksToMinimumWidth() throws {
-        // Until the user interacts with it, the Search/Duck.ai toggle shows expanded in an empty address bar
-        let hasInteractedWithToggle = UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
-        UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
-        defer { UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = hasInteractedWithToggle }
+        // Until the user interacts with it, the Search/Duck.ai toggle shows expanded in an empty focused address bar
+        let toggleDefaults = ["aichat.enabled": true, "aichat.showSearchAndDuckAIToggle": true, "aichat.hasInteractedWithSearchDuckAIToggle": false]
+        let originalToggleDefaults = toggleDefaults.keys.map { ($0, UserDefaults.standard.object(forKey: $0)) }
+        toggleDefaults.forEach { UserDefaults.standard.set($0.value, forKey: $0.key) }
+        defer { originalToggleDefaults.forEach { UserDefaults.standard.set($0.1, forKey: $0.0) } }
         openWindow()
         addExtraToolbarButtons()
-        let addressBarButtons = try XCTUnwrap(navigationBar.addressBarViewController?.addressBarButtonsViewController)
+        let addressBar = try XCTUnwrap(navigationBar.addressBarViewController)
+        let addressBarButtons = try XCTUnwrap(addressBar.addressBarButtonsViewController)
+        _ = window.makeFirstResponder(addressBar.addressBarTextField)
+        settleLayout(file: #filePath, line: #line)
         XCTAssertTrue(addressBarButtons.isSearchModeToggleShown, "The Search/Duck.ai toggle isn't shown in the new tab address bar")
         XCTAssertTrue(addressBarButtons.isSearchModeToggleExpanded, "The Search/Duck.ai toggle isn't expanded before the user interacted with it")
 

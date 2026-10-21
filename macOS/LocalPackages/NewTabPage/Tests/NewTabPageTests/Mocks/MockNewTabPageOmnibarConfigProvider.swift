@@ -217,4 +217,13 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
         $requiresAiTermsAcceptance.dropFirst().removeDuplicates().eraseToAnyPublisher()
     }
+
+    var showSuggestedPrompts: Bool = false
+    var suggestedPromptsDismissed: Bool = false
+    var suggestedPromptsSubmitCount: Int = 0
+
+    let suggestedPromptsSubject = PassthroughSubject<Void, Never>()
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> {
+        suggestedPromptsSubject.eraseToAnyPublisher()
+    }
 }

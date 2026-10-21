@@ -79,7 +79,12 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
+        case newTabPageSuggestedPromptsDismissed
+        case newTabPageSuggestedPromptsSubmitCount
     }
+
+    /// The suggested-prompt chips hide for good once this many have been sent. Matches the web.
+    static let maxSubmittedSuggestedPrompts = 5
 
     private enum LegacyKey: String {
         /// Previously-used per-NTP key. Migrated into `AIChatPreferencesPersisting.selectedModelId`
@@ -111,6 +116,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
     private let usageLimitsChangedSubject = PassthroughSubject<Void, Never>()
     private let attachmentPrivacyChangedSubject = PassthroughSubject<Void, Never>()
+    private let suggestedPromptsChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
     private var customizeResponsesChangeObserver: NSObjectProtocol?
@@ -653,6 +659,60 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
+    var showSuggestedPrompts: Bool {
+        featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts)
+            && !suggestedPromptsDismissed
+            && suggestedPromptsSubmitCount < Self.maxSubmittedSuggestedPrompts
+    }
+
+    var suggestedPromptsDismissed: Bool {
+        get {
+            (try? keyValueStore.object(forKey: Key.newTabPageSuggestedPromptsDismissed.rawValue) as? Bool) ?? false
+        }
+        set {
+            do {
+                try keyValueStore.set(newValue, forKey: Key.newTabPageSuggestedPromptsDismissed.rawValue)
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to set suggested prompts dismissed in keyValueStore: \(error.localizedDescription)")
+            }
+            suggestedPromptsChangedSubject.send(())
+        }
+    }
+
+    var suggestedPromptsSubmitCount: Int {
+        get {
+            (try? keyValueStore.object(forKey: Key.newTabPageSuggestedPromptsSubmitCount.rawValue) as? Int) ?? 0
+        }
+        set {
+            do {
+                try keyValueStore.set(newValue, forKey: Key.newTabPageSuggestedPromptsSubmitCount.rawValue)
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to set suggested prompts submit count in keyValueStore: \(error.localizedDescription)")
+            }
+            suggestedPromptsChangedSubject.send(())
+        }
+    }
+
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+            .map { _ in () }
+            .merge(with: suggestedPromptsChangedSubject,
+                   notificationCenter.publisher(for: .newTabPageSuggestedPromptsDidReset).map { _ in () })
+            .eraseToAnyPublisher()
+    }
+
+    /// Debug menu: brings the suggested-prompt chips back by clearing the dismissal and the submit count.
+    /// Static so it can run without a provider; open NTPs pick it up through the notification.
+    static func resetSuggestedPrompts(in keyValueStore: ThrowingKeyValueStoring, notificationCenter: NotificationCenter = .default) {
+        do {
+            try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsDismissed.rawValue)
+            try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsSubmitCount.rawValue)
+        } catch {
+            Logger.newTabPageOmnibar.error("Failed to reset suggested prompts in keyValueStore: \(error.localizedDescription)")
+        }
+        notificationCenter.post(name: .newTabPageSuggestedPromptsDidReset, object: nil)
+    }
+
     var showCustomizePopover: Bool {
         get {
             // We no longer present the tooltip
@@ -727,4 +787,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         try? keyValueStore.removeObject(forKey: legacyKey)
     }
 
+}
+
+extension Notification.Name {
+    static let newTabPageSuggestedPromptsDidReset = Notification.Name("newTabPageSuggestedPromptsDidReset")
 }

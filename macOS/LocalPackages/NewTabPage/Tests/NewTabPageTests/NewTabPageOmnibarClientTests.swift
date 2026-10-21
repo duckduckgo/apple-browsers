@@ -1029,6 +1029,90 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
     }
 
+    // MARK: - Suggested prompts
+
+    @MainActor
+    func testGetConfigIncludesSuggestedPromptsStateFromProvider() async throws {
+        configProvider.showSuggestedPrompts = true
+        configProvider.suggestedPromptsDismissed = false
+        configProvider.suggestedPromptsSubmitCount = 3
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showSuggestedPrompts, true)
+        XCTAssertEqual(config.suggestedPromptsDismissed, false)
+        XCTAssertEqual(config.suggestedPromptsSubmitCount, 3)
+    }
+
+    @MainActor
+    func testWhenSetConfigDismissesSuggestedPromptsThenItIsPersisted() async throws {
+        var newConfig = makeSetConfig()
+        newConfig.suggestedPromptsDismissed = true
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertTrue(configProvider.suggestedPromptsDismissed)
+    }
+
+    /// Another open NTP can echo a config from before the dismissal.
+    @MainActor
+    func testWhenSetConfigEchoesUndismissedSuggestedPromptsThenTheDismissalStays() async throws {
+        configProvider.suggestedPromptsDismissed = true
+        var newConfig = makeSetConfig()
+        newConfig.suggestedPromptsDismissed = false
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertTrue(configProvider.suggestedPromptsDismissed)
+    }
+
+    @MainActor
+    func testWhenSetConfigRaisesSuggestedPromptsSubmitCountThenItIsPersisted() async throws {
+        configProvider.suggestedPromptsSubmitCount = 2
+        var newConfig = makeSetConfig()
+        newConfig.suggestedPromptsSubmitCount = 3
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertEqual(configProvider.suggestedPromptsSubmitCount, 3)
+    }
+
+    @MainActor
+    func testWhenSetConfigEchoesALowerSuggestedPromptsSubmitCountThenItIsIgnored() async throws {
+        configProvider.suggestedPromptsSubmitCount = 4
+        var newConfig = makeSetConfig()
+        newConfig.suggestedPromptsSubmitCount = 1
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertEqual(configProvider.suggestedPromptsSubmitCount, 4)
+    }
+
+    @MainActor
+    func testSubmissionFromASuggestedPromptIsReported() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.suggestedPromptId = "jobapplication"
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+        XCTAssertEqual(handler.suggestedPromptSubmittedIds, ["jobapplication"])
+    }
+
+    @MainActor
+    func testTypedSubmissionIsNotReportedAsASuggestedPrompt() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
+        XCTAssertEqual(handler.suggestedPromptSubmittedIds, [])
+    }
+
+    private func makeSetConfig() -> NewTabPageDataModel.OmnibarConfig {
+        NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: nil, aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
+    }
+
     @MainActor
     func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
         try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)

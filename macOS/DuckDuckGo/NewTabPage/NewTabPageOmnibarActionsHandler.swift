@@ -235,6 +235,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         promptHandler.setData(nativePrompt.withTermsAccepted(aiTermsAccepted))
     }
 
+    /// Fires on top of `promptSubmitted`, so the pair gives the share of NTP prompts sent from the chips.
+    func suggestedPromptSubmitted(promptId: String) {
+        PixelKit.fire(AIChatPixel.aiChatNtpSuggestedPromptSubmitted(promptId: promptId), frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
     /// Converts a web-echoed `OmnibarPageContext` (the shape native originally returned from
     /// `omnibar_getTabContent`) into the `AIChatPageContextData` the Duck.ai native prompt carries.
     /// The base64 favicon `src` round-trips back into a `PageContextFavicon` href.

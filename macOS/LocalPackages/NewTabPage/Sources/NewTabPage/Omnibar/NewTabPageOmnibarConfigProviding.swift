@@ -165,4 +165,17 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// drops it once the user accepts, wherever they accepted.
     var requiresAiTermsAcceptance: Bool { get }
     var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the Duck.ai suggested-prompt chips show: the feature is on, the user hasn't
+    /// dismissed them, and hasn't yet sent the maximum number of them.
+    var showSuggestedPrompts: Bool { get }
+
+    /// Persisted. The web only ever sets it to true.
+    var suggestedPromptsDismissed: Bool { get set }
+
+    /// Persisted count of suggested prompts the user has sent.
+    var suggestedPromptsSubmitCount: Int { get set }
+
+    /// Fires when the flag flips or either persisted value changes, so every open NTP re-reads the config.
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> { get }
 }

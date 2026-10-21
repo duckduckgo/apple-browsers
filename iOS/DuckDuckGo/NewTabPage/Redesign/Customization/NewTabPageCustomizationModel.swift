@@ -47,6 +47,41 @@ final class NewTabPageCustomizationModel: ObservableObject {
         }
     }
 
+    @Published var isProceduralBackgroundEnabled: Bool {
+        didSet {
+            var settings = backgroundStore.settings
+            settings.isProcedural = isProceduralBackgroundEnabled
+            backgroundStore.settings = settings
+        }
+    }
+
+    @Published var backgroundSeedDraft: String
+
+    var isBackgroundSeedValid: Bool { parsedBackgroundSeed != nil }
+
+    private var parsedBackgroundSeed: UInt64? {
+        let text = backgroundSeedDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text.utf8.allSatisfy({ (48 ... 57).contains($0) }) else { return nil }
+        return UInt64(text)
+    }
+
+    private let backgroundStore: NewTabPageBackgroundStore
+    private let makeBackgroundSeed: () -> UInt64
+
+    func applyBackgroundSeed() {
+        guard let seed = parsedBackgroundSeed else { return }
+        backgroundSeedDraft = String(seed)
+        backgroundStore.settings = NewTabPageBackgroundSettings(isProcedural: true, seed: seed)
+        isProceduralBackgroundEnabled = true
+    }
+
+    func randomizeBackgroundSeed() {
+        let currentSeed = backgroundStore.settings.seed
+        let newSeed = makeBackgroundSeed()
+        backgroundSeedDraft = String(newSeed == currentSeed ? newSeed &+ 1 : newSeed)
+        applyBackgroundSeed()
+    }
+
     var onAllSettingsSelected: (() -> Void)?
 
     private let pixelFiring: (any PixelKitFiring)?
@@ -56,7 +91,14 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
     init(persistor: NewTabPageCustomizationPersisting = NewTabPageCustomizationStore(),
          keyboardSettings: KeyboardSettings = KeyboardSettings(),
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         backgroundStore: NewTabPageBackgroundStore = NewTabPageBackgroundStore(),
+         makeBackgroundSeed: @escaping () -> UInt64 = { UInt64.random(in: .min ... .max) }) {
+        self.backgroundStore = backgroundStore
+        self.makeBackgroundSeed = makeBackgroundSeed
+        let backgroundSettings = backgroundStore.settings
+        isProceduralBackgroundEnabled = backgroundSettings.isProcedural
+        backgroundSeedDraft = String(backgroundSettings.seed)
         self.pixelFiring = pixelFiring
         self.persistor = persistor
         self.keyboardSettings = keyboardSettings

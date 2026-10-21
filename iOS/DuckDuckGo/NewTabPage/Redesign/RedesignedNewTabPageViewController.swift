@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
@@ -64,7 +65,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         var isGeometryValid = true
     }
 
-    private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
+    private let backgroundImageView = NewTabPageBackgroundView()
+    private var backgroundSubscription: AnyCancellable?
 
     private let contentContainerView: UIView = {
         let view = UIView()
@@ -134,6 +136,11 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.backgroundColor = UIColor(designSystemColor: .background)
         view.clipsToBounds = true
         addSubviews()
+        backgroundSubscription = NewTabPageBackgroundStore().publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] settings in
+                self?.backgroundImageView.settings = settings
+            }
         installBlocks()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()

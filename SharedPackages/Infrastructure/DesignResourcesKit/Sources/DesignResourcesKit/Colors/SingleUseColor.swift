@@ -67,6 +67,14 @@ public enum SingleUseColor {
     /// until we move to a more Liquid Glass based look and feel there.
     case toolbarButton
 
+    // Pond artwork follows the standard background palette.
+    case newTabPagePond(NewTabPagePond)
+
+    public enum NewTabPagePond {
+        case sky, haze, water, waterHighlight, waterLine, bank, bankOutline, foreground
+        case lilyPad, lilyPadOutline, reed, reedOutline, reedHighlight, flower, flowerCenter
+    }
+
     // Fire Mode
     case fireModeAccentDark
     case fireModeAccentTertiary

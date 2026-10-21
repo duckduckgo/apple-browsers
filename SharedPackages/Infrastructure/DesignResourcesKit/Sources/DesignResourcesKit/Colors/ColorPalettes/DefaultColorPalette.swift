@@ -346,6 +346,39 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .fireModeFieldBackground: return fireModeFieldBackground
         case .duckAIVoiceCellBackground: return duckAIVoiceCellBackground
         case .duckAIVoiceModeBackground: return duckAIVoiceModeBackground
+        case .newTabPagePond(let color):
+            switch color {
+            case .sky:
+                return DynamicColor(lightColor: .white, darkColor: RebrandingColor.Pondwater.pondwater100)
+            case .haze:
+                return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater10, darkColor: RebrandingColor.Pondwater.pondwater90)
+            case .water:
+                return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater50, darkColor: RebrandingColor.Pondwater.pondwater50)
+            case .waterHighlight:
+                return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: RebrandingColor.Pondwater.pondwater40)
+            case .waterLine:
+                return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater20, darkColor: RebrandingColor.Pondwater.pondwater30)
+            case .bankOutline:
+                return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
+            case .lilyPad:
+                return DynamicColor(staticColor: RebrandingColor.Lilypad.lilypad50)
+            case .lilyPadOutline:
+                return DynamicColor(staticColor: RebrandingColor.Lilypad.lilypad100)
+            case .reedOutline:
+                return DynamicColor(staticColor: RebrandingColor.Pollen.pollen90)
+            case .reedHighlight:
+                return DynamicColor(staticColor: RebrandingColor.Pollen.pollen30)
+            case .flowerCenter:
+                return DynamicColor(staticColor: RebrandingColor.Blossom.blossom50)
+            case .bank:
+                return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad50, darkColor: RebrandingColor.Lilypad.lilypad70)
+            case .foreground:
+                return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad20, darkColor: RebrandingColor.Lilypad.lilypad80)
+            case .reed:
+                return DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
+            case .flower:
+                return DynamicColor(staticColor: .white)
+            }
         case .newTabPageModuleTint:
             return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.03), darkColor: .tint(0.06))
         case .newTabPageSearchCardBackground:

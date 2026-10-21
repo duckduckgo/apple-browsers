@@ -32,6 +32,8 @@ struct NewTabPageCustomizationView: View {
 
     @ObservedObject var model: NewTabPageCustomizationModel
 
+    @FocusState private var isSeedFocused: Bool
+
     let onClose: () -> Void
 
     var body: some View {
@@ -40,6 +42,7 @@ struct NewTabPageCustomizationView: View {
 
             List {
                 sectionsSection
+                backgroundSection
                 keyboardSection
                 allSettingsSection
             }
@@ -88,6 +91,56 @@ struct NewTabPageCustomizationView: View {
                                        image: DesignSystemImages.Glyphs.Size24.chat,
                                        control: .toggle($model.isMessagesSectionVisible))
         }
+    }
+
+    private var backgroundSection: some View {
+        Section {
+            NewTabPageCustomizationRow(title: UserText.newTabPageProceduralBackground,
+                                       control: .toggle($model.isProceduralBackgroundEnabled))
+            if model.isProceduralBackgroundEnabled {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(UserText.newTabPageBackgroundSeed)
+                        .daxBodyRegular()
+                    TextField(UserText.newTabPageBackgroundSeed, text: $model.backgroundSeedDraft)
+                        .daxBodyRegular()
+                        .keyboardType(.numbersAndPunctuation)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                        .focused($isSeedFocused)
+                        .onSubmit(applySeed)
+                        .accessibilityIdentifier("NewTabPageBackgroundSeed")
+                    if !model.isBackgroundSeedValid {
+                        Text(UserText.newTabPageBackgroundSeedInvalid)
+                            .daxFootnoteRegular()
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                    }
+                }
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+                Button(UserText.newTabPageBackgroundApplySeed, action: applySeed)
+                    .daxBodyRegular()
+                    .disabled(!model.isBackgroundSeedValid)
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+                Button(UserText.newTabPageBackgroundRandomize) {
+                    isSeedFocused = false
+                    model.randomizeBackgroundSeed()
+                }
+                .daxBodyRegular()
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+            }
+        } header: {
+            Text(UserText.newTabPageBackgroundTitle)
+        } footer: {
+            Text(UserText.newTabPageBackgroundDescription)
+        }
+        .tint(Color(designSystemColor: .accentPrimary))
+    }
+
+    private func applySeed() {
+        guard model.isBackgroundSeedValid else { return }
+        isSeedFocused = false
+        model.applyBackgroundSeed()
     }
 
     private var keyboardSection: some View {

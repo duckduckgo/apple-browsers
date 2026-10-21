@@ -118,7 +118,6 @@ enum FloatingGlassAppearancePolicy {
 
 class MainViewController: UIViewController {
 
-    let nativeChatPresenter = NativeChatPresenter()
 
     /// iOS may deliver buffered accelerometer data as a spurious shake when returning from background.
     private static let shakeIgnoreIntervalAfterForeground: TimeInterval = 1.0
@@ -5092,14 +5091,38 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChat(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
-        let presentedNatively = nativeChatPresenter.present(request, from: self) { [weak self, weak originatingTab] in
-            guard let self, let originatingTab else { return }
-            self.openAIChatOnWeb(request, from: originatingTab)
-        }
-        if presentedNatively {
-            fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
-        } else {
+        guard DuckAINativeSettings.shared.opensNewChatsNatively,
+              let context = NativeChatContextFactory.context(for: request) else {
             openAIChatOnWeb(request, from: originatingTab)
+            return
+        }
+        fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
+        let chat = NativeTabChat(context: context)
+        chat.onContinueInWeb = { [weak self] in
+            guard let self, let tab = self.currentTab, tab.nativeChat === chat else { return }
+            tab.removeNativeChat()
+            self.openAIChatOnWeb(request, from: tab)
+        }
+        openNativeChatTab(chat, url: request.url.withoutDuckAIPrompt, inNewTab: request.opensNewTab, from: originatingTab)
+    }
+
+    /// Demo branch: a Duck.ai tab whose web view is covered by the native chat.
+    func openNativeChatTab(_ chat: NativeTabChat, url: URL, inNewTab: Bool, from originatingTab: TabViewController?) {
+        if inNewTab || originatingTab == nil {
+            loadUrlInNewTab(url, inheritedAttribution: nil) { [weak self] _ in
+                self?.showNativeChatInCurrentTab(chat)
+            }
+        } else {
+            originatingTab?.load(url: url)
+            showNativeChatInCurrentTab(chat)
+        }
+    }
+
+    private func showNativeChatInCurrentTab(_ chat: NativeTabChat) {
+        guard let tab = currentTab else { return }
+        tab.showNativeChat(chat)
+        if let unifiedToggleInputCoordinator {
+            chat.attach(to: unifiedToggleInputCoordinator)
         }
     }
 
@@ -7792,6 +7815,10 @@ extension MainViewController: TabDelegate {
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource?) {
         recordUserOpenedTab()
+        if DuckAINativeSettings.shared.opensNewChatsNatively, let chat = NativeTabChat.newChat() {
+            openNativeChatTab(chat, url: url, inNewTab: true, from: tab)
+            return
+        }
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
             $0.duckAIEntrySource = entrySource
         }

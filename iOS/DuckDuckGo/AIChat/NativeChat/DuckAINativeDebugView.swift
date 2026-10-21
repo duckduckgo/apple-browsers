@@ -144,16 +144,16 @@ struct DuckAINativeDebugView: View {
         .navigationTitle("Native Duck.ai (demo)")
     }
 
-    private static let presenter = NativeChatPresenter()
-
     @MainActor
     private static func open(opening: Opening?) {
         let page = PageContext(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
                                content: "Duck is the common name for many species of waterfowl in the family Anatidae.")
         guard let context = try? ChatContext(page: page, selections: [], opening: opening),
-              let window = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first,
-              var top = window.rootViewController else { return }
-        while let next = top.presentedViewController { top = next }
-        presenter.present(context, from: top)
+              let main = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?
+                .rootViewController as? MainViewController,
+              let url = URL(string: "https://duck.ai") else { return }
+        main.dismiss(animated: true) {
+            main.openNativeChatTab(NativeTabChat(context: context), url: url, inNewTab: true, from: nil)
+        }
     }
 }

@@ -23,6 +23,8 @@ import SwiftUI
 public enum ChatSurface: Sendable {
     case contextualSheet
     case fullScreen
+    /// Inside a browser tab, whose own chrome supplies the title and input.
+    case tab
 }
 
 /// What the chat asks of the screen that hosts it.

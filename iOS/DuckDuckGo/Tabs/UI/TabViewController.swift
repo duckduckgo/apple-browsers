@@ -162,6 +162,8 @@ class TabViewController: UIViewController {
     /// Driven by `applyContextualOnboardingTopInset(_:)` to clear the floating chrome.
     var containerStackViewTopConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
+    /// Demo branch: set while a native Duck.ai chat covers the web view.
+    var nativeChat: NativeTabChat?
     var webViewContainer: UIView!
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
@@ -1666,6 +1668,9 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        if !url.isDuckAIURL {
+            removeNativeChat()
+        }
         load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: true)
     }
 

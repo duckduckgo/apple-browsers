@@ -873,6 +873,11 @@ private extension MainViewController {
     }
 
     func bindAITabIfPossible(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator, hasExistingChat: Bool) {
+        if let nativeChat = tab.nativeChat {
+            nativeChat.attach(to: coordinator)
+            return
+        }
+        NativeTabChat.detachCurrent()
         if let userScript = tab.userScripts?.aiChatUserScript {
             coordinator.bindToTab(userScript, hasExistingChat: hasExistingChat)
             if hasExistingChat, let chatID = tab.webView.url?.duckAIChatID {
@@ -1421,6 +1426,11 @@ extension MainViewController: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?) {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }
+
+        if let nativeChat = currentTab?.nativeChat, tabAttachmentRequest == nil {
+            nativeChat.session.send(prompt)
+            return
+        }
 
         // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
         // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.

@@ -688,7 +688,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
                 // Recover the token through the recovery coordinator (in the apps: backup, then App Store restore) and return it
                 do {
-                    let recoveredTokenContainer = try await attemptTokenRecovery(deadPrimary: tokenBeforeAttempt.tokenContainer)
+                    let recoveredTokenContainer = try await recoverToken(trigger: .invalidToken, deadPrimary: tokenBeforeAttempt.tokenContainer)
                     updateCachedUserEntitlements(recoveredTokenContainer.decodedAccessToken.subscriptionEntitlements)
                     updateCachedIsUserAuthenticated(true)
                     pixelHandler.handle(pixel: .invalidRefreshTokenRecovered)
@@ -784,14 +784,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         } catch {
             return
         }
-    }
-
-    /// Recovers the current token after its refresh was rejected.
-    /// - Parameter deadPrimary: The token container whose refresh was rejected, if it could be read.
-    /// - Returns: The recovered token container, already stored.
-    /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` when no recovery applies, otherwise the recovery failure.
-    func attemptTokenRecovery(deadPrimary: TokenContainer?) async throws -> TokenContainer {
-        try await recoverToken(trigger: .invalidToken, deadPrimary: deadPrimary)
     }
 
     /// Runs `tokenRecoveryCoordinator` for `trigger` and returns the token it stored.
@@ -900,7 +892,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     /// The cut-off recorded at the last explicit sign-out, or nil if the user never signed out explicitly.
-    /// A backup token whose refresh token was issued at or before it must not be used.
+    /// A backup token whose refresh token was issued at or before this date it must not be used.
     var signOutCutoff: Date? {
         userDefaults.subscriptionSignOutCutoff
     }

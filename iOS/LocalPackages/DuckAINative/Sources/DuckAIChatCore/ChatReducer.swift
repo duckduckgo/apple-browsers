@@ -126,19 +126,27 @@ public extension ChatState {
             return []
         }
 
+        return effects + beginReply(at: replyAt)
+    }
+
+    private mutating func beginReply(at date: Date) -> [ChatEffect] {
         lastID += 1
         let id = MessageID(rawValue: lastID)
+        if case .unsupported(let reason) = availability {
+            phase = .failed(.modelUnavailable(reason: reason))
+            return []
+        }
         switch PromptBuilder.turn(conversation: conversation, messages: messages, budget: budget) {
         case .failure(let error):
             phase = .failed(error)
+            return []
         case .success(let turn):
-            let live = LiveReply(id: id, startedAt: replyAt, turn: turn, stage: .waitingForModel)
+            let live = LiveReply(id: id, startedAt: date, turn: turn, stage: .waitingForModel)
             let scheduled = scheduledReply(live, availability: availability, streamInFlight: streamInFlight)
             phase = .responding(scheduled.live)
             streamInFlight = scheduled.stream
-            effects += scheduled.effects
+            return scheduled.effects
         }
-        return effects
     }
 }
 

@@ -342,6 +342,16 @@ import Testing
         #expect(state.status == .error(.modelUnavailable(reason: "Unloaded")))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openingWithAnUnsupportedProviderFailsInsteadOfWaiting() throws {
+        var state = try Fixture.state(opening: .prompt("Hi"), availability: .unsupported(reason: "MLX requires a device."))
+
+        #expect(state.apply(.opened(at: Fixture.time(0))) == [.prepareProvider])
+        #expect(state.status == .error(.modelUnavailable(reason: "MLX requires a device.")))
+        #expect(state.userMessages.count == 1)
+    }
+
     private func finishReply(_ id: MessageID, text: String, in state: inout ChatState) {
         _ = state.apply(.provider(id, .textDelta(text), at: Fixture.time(1)))
         _ = state.apply(.provider(id, .finished(nil), at: Fixture.time(2)))

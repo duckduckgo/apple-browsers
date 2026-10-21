@@ -36,7 +36,7 @@ final class NativeChatPresenter: NativeChatDelegate {
     }
 
     func present(_ context: ChatContext, from host: UIViewController) {
-        let session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider())
+        let session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider(for: .chat))
         let chat = NativeFullScreenChatViewController(session: session, delegate: self)
         chat.modalPresentationStyle = .fullScreen
         continueInWeb = nil

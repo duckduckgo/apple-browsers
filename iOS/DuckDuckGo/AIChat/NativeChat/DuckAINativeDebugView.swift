@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DuckAIChatMLX
 import DuckAINative
 import SwiftUI
 import UIKit
@@ -100,6 +101,15 @@ struct DuckAINativeDebugView: View {
                 }
                 .pickerStyle(.segmented)
             }
+            Section {
+                taskModelPicker("Summarize", task: .summarize)
+                taskModelPicker("Translate", task: .translate)
+                taskModelPicker("Suggested prompts", task: .suggestedPrompts)
+            } header: {
+                Text("Model per job")
+            } footer: {
+                Text("Chat uses the provider below and the checked MLX model. A tiny model often suits suggested prompts.")
+            }
             MLXModelsDebugSection(settings: settings)
             Section("Provider") {
                 Picker("Provider", selection: $settings.provider) {
@@ -113,6 +123,18 @@ struct DuckAINativeDebugView: View {
             }
         }
         .navigationTitle("Native Duck.ai (demo)")
+    }
+
+    private func taskModelPicker(_ title: String, task: DuckAINativeSettings.LocalTask) -> some View {
+        Picker(title, selection: Binding(get: { settings.taskModels[task] ?? .sameAsChat },
+                                         set: { settings.taskModels[task] = $0 })) {
+            Text("Same as chat").tag(DuckAINativeSettings.TaskModel.sameAsChat)
+            Text("Stub").tag(DuckAINativeSettings.TaskModel.stub)
+            Text("Apple Foundation Models").tag(DuckAINativeSettings.TaskModel.foundationModels)
+            ForEach(ModelCatalog.all) { model in
+                Text(model.displayName).tag(DuckAINativeSettings.TaskModel.mlx(id: model.id))
+            }
+        }
     }
 
     private static let presenter = NativeChatPresenter()

@@ -62,16 +62,34 @@ final class NativeEvalRunModel: ObservableObject {
             let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             let articles = try await EvalArticles.fetch(cacheDirectory: caches.appendingPathComponent("duckai-evals"))
             let cases = EvalSet.make(articles: articles)
-            let provider = NativeChatProviderFactory.makeProvider()
-            await provider.prepare()
-            state = .running(done: 0, total: cases.count * runs)
-            let report = await EvalRunner(provider: provider, metrics: ProcessMetrics())
-                .run(cases, runs: runs, device: UIDevice.current.model, osVersion: UIDevice.current.systemVersion) { done, total in
-                    Task { @MainActor [weak self] in self?.state = .running(done: done, total: total) }
-                }
+            let total = cases.count * runs
+            state = .running(done: 0, total: total)
+            var records: [EvalRecord] = []
+            let startedAt = Date()
+            // Each job runs on the model the debug screen picks for it.
+            for (task, group) in Dictionary(grouping: cases, by: { Self.localTask(for: $0.task) }) {
+                let provider = NativeChatProviderFactory.makeProvider(for: task)
+                await provider.prepare()
+                let done = records.count
+                let report = await EvalRunner(provider: provider, metrics: ProcessMetrics())
+                    .run(group, runs: runs, device: UIDevice.current.model, osVersion: UIDevice.current.systemVersion) { finished, _ in
+                        Task { @MainActor [weak self] in self?.state = .running(done: done + finished, total: total) }
+                    }
+                records += report.records
+            }
+            let report = EvalReport(device: UIDevice.current.model, osVersion: UIDevice.current.systemVersion,
+                                    startedAt: startedAt, records: records)
             state = .finished(files: try save(report: report, cases: cases))
         } catch {
             state = .failed(error.localizedDescription)
+        }
+    }
+
+    private static func localTask(for task: EvalTask) -> DuckAINativeSettings.LocalTask {
+        switch task {
+        case .summarizePage, .summarizeSelection: .summarize
+        case .translatePage, .translateSelection: .translate
+        case .suggestPrompts: .suggestedPrompts
         }
     }
 

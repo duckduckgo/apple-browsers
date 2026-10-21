@@ -48,7 +48,8 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
                                                              page: page,
                                                              selections: actsOnSelection ? sessionState.attachedSelections : [],
                                                              uiLocale: Locale.current.identifier) else { return false }
-        showNativeChat(context, origin: NativeChatOrigin(prompt: suggestion.prompt, isSuggestedPrompt: true))
+        showNativeChat(context, task: Self.task(forSuggestionID: suggestion.id),
+                       origin: NativeChatOrigin(prompt: suggestion.prompt, isSuggestedPrompt: true))
         return true
     }
 
@@ -59,7 +60,7 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
               let context = NativeChatContextFactory.context(prompt: prompt, page: page, selections: sessionState.attachedSelections) else {
             return false
         }
-        showNativeChat(context, origin: NativeChatOrigin(prompt: prompt, isSuggestedPrompt: false))
+        showNativeChat(context, task: .chat, origin: NativeChatOrigin(prompt: prompt, isSuggestedPrompt: false))
         return true
     }
 
@@ -88,8 +89,16 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
         bypassesNativeChat = false
     }
 
-    private func showNativeChat(_ context: ChatContext, origin: NativeChatOrigin) {
-        let session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider())
+    private static func task(forSuggestionID id: String) -> DuckAINativeSettings.LocalTask {
+        switch id {
+        case "summarize-page", "summarize-selection": .summarize
+        case "translate-page", "translate-selection": .translate
+        default: .chat
+        }
+    }
+
+    private func showNativeChat(_ context: ChatContext, task: DuckAINativeSettings.LocalTask, origin: NativeChatOrigin) {
+        let session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider(for: task))
         // The sheet's own input drives the native chat when it has one.
         let chat = DuckAINative.makeChatViewController(session: session,
                                                        surface: .contextualSheet,

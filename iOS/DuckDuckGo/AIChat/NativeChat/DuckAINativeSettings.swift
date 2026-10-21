@@ -32,6 +32,39 @@ final class DuckAINativeSettings: ObservableObject {
         case mlx
     }
 
+    /// The jobs a local model does. Chat uses `provider` and `mlxModelID`; the others can each pick their own model.
+    enum LocalTask: String, CaseIterable {
+        case chat
+        case summarize
+        case translate
+        case suggestedPrompts
+    }
+
+    enum TaskModel: Hashable {
+        case sameAsChat
+        case stub
+        case foundationModels
+        case mlx(id: String)
+
+        init(storedValue: String) {
+            switch storedValue {
+            case "stub": self = .stub
+            case "foundationModels": self = .foundationModels
+            case let value where value.hasPrefix("mlx:"): self = .mlx(id: String(value.dropFirst(4)))
+            default: self = .sameAsChat
+            }
+        }
+
+        var storedValue: String {
+            switch self {
+            case .sameAsChat: "sameAsChat"
+            case .stub: "stub"
+            case .foundationModels: "foundationModels"
+            case .mlx(let id): "mlx:\(id)"
+            }
+        }
+    }
+
     static let shared = DuckAINativeSettings()
 
     @Published var routing: DuckAIRouting {
@@ -45,6 +78,14 @@ final class DuckAINativeSettings: ObservableObject {
     /// Nil picks a model by device memory.
     @Published var mlxModelID: String? {
         didSet { defaults.set(mlxModelID, forKey: Keys.mlxModel) }
+    }
+
+    @Published var taskModels: [LocalTask: TaskModel] {
+        didSet {
+            for (task, model) in taskModels {
+                defaults.set(model.storedValue, forKey: Keys.taskModel(task))
+            }
+        }
     }
 
     @Published var suggestionsBudgetSeconds: Double {
@@ -66,6 +107,9 @@ final class DuckAINativeSettings: ObservableObject {
         provider = defaults.string(forKey: Keys.provider).flatMap(ProviderChoice.init) ?? .automatic
         mlxModelID = defaults.string(forKey: Keys.mlxModel)
         suggestionsBudgetSeconds = defaults.object(forKey: Keys.suggestionsBudget) as? Double ?? 1.5
+        taskModels = Dictionary(uniqueKeysWithValues: LocalTask.allCases.filter { $0 != .chat }.map { task in
+            (task, TaskModel(storedValue: defaults.string(forKey: Keys.taskModel(task)) ?? ""))
+        })
     }
 
     var isFeatureAvailable: Bool {
@@ -102,5 +146,9 @@ final class DuckAINativeSettings: ObservableObject {
         static let provider = "duckAINative.provider"
         static let mlxModel = "duckAINative.mlxModel"
         static let suggestionsBudget = "duckAINative.suggestionsBudget"
+
+        static func taskModel(_ task: LocalTask) -> String {
+            "duckAINative.model.\(task.rawValue)"
+        }
     }
 }

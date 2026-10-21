@@ -50,6 +50,19 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func theDefaultStubCompletesAReplyWhilePreparing() async throws {
+        let provider = StubProvider(configuration: .init(reply: "Hello there", wordsPerSecond: 50))
+        let session = ChatSession(context: try ChatContext(page: nil, selections: [], opening: .prompt("Hi")), provider: provider)
+
+        session.open()
+        await waitUntil { session.state.messages.count == 2 && session.state.streamInFlight == nil }
+
+        #expect(session.state.status == .ready)
+        #expect(session.state.messages.count == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func stopThenSendStartsTheNextReplyAfterTheFirstStreamEnds() async throws {
         let provider = StubProvider(configuration: .init(reply: String(repeating: "word ", count: 400), wordsPerSecond: 200,
                                                          loadTime: .zero, readTime: .zero))

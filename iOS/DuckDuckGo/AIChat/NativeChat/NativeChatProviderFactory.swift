@@ -23,34 +23,45 @@ import DuckAIChatProviders
 import Foundation
 import UIKit
 
-/// One MLX provider per selected model, so a loaded model is shared by every surface until the selection changes.
+/// One MLX provider per model, so a loaded model is shared by every surface and job that uses it.
 @MainActor
 enum NativeChatProviderFactory {
     static let modelStore = ModelStore()
-    private static var mlx: MLXProvider?
+    private static var mlxProviders: [String: MLXProvider] = [:]
 
-    static func makeProvider(_ choice: DuckAINativeSettings.ProviderChoice = DuckAINativeSettings.shared.provider) -> any ChatProvider {
+    /// The provider for one job. Jobs set to "Same as chat" follow the chat's provider and model.
+    static func makeProvider(for task: DuckAINativeSettings.LocalTask) -> any ChatProvider {
+        let model = task == .chat ? .sameAsChat : DuckAINativeSettings.shared.taskModels[task] ?? .sameAsChat
+        let provider: any ChatProvider
+        switch model {
+        case .sameAsChat: provider = chatProvider()
+        case .stub: provider = StubProvider()
+        case .foundationModels: provider = foundationModels() ?? StubProvider()
+        case .mlx(let id): provider = mlxProvider(ModelCatalog.model(withID: id) ?? selectedMLXModel)
+        }
+        return task == .suggestedPrompts && provider is StubProvider ? suggestionsStub() : provider
+    }
+
+    private static func chatProvider(_ choice: DuckAINativeSettings.ProviderChoice = DuckAINativeSettings.shared.provider) -> any ChatProvider {
         switch choice {
         case .stub:
             return StubProvider()
         case .foundationModels:
             return foundationModels() ?? StubProvider()
         case .mlx:
-            return mlxProvider()
+            return mlxProvider(selectedMLXModel)
         case .automatic:
 #if targetEnvironment(simulator)
             return StubProvider()
 #else
-            return mlxProvider()
+            return mlxProvider(selectedMLXModel)
 #endif
         }
     }
 
-    /// Suggested prompts use the chat's provider, except that the stub answers in the shape a suggestions model would,
-    /// so the local path can be seen working without a device.
-    static func makeSuggestionsProvider(_ choice: DuckAINativeSettings.ProviderChoice = DuckAINativeSettings.shared.provider) -> any ChatProvider {
-        let provider = makeProvider(choice)
-        guard provider is StubProvider else { return provider }
+    /// The stub answers suggestion requests in the shape a suggestions model would, so the local path can be seen
+    /// working without a device.
+    private static func suggestionsStub() -> StubProvider {
         let reply = """
         What are the key points of this page?
         Who is this page written for?
@@ -69,16 +80,14 @@ enum NativeChatProviderFactory {
             ?? ModelCatalog.recommended(physicalMemory: ProcessInfo.processInfo.physicalMemory)
     }
 
-    private static func mlxProvider() -> MLXProvider {
-        let model = selectedMLXModel
-        if let mlx, mlx.descriptor.id.rawValue == model.id { return mlx }
-        mlx?.unload()
+    private static func mlxProvider(_ model: Model) -> MLXProvider {
+        if let existing = mlxProviders[model.id] { return existing }
         let provider = MLXProvider(model: model, store: modelStore)
-        mlx = provider
+        mlxProviders[model.id] = provider
         if memoryWarningObserver == nil {
             memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification,
                                                                            object: nil, queue: .main) { _ in
-                Task { @MainActor in mlx?.unload() }
+                Task { @MainActor in mlxProviders.values.forEach { $0.unload() } }
             }
         }
         return provider

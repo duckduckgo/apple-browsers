@@ -42,7 +42,7 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
               input.scope == .page,
               let content = input.pageContent, !content.isEmpty else { return resolved }
 
-        let provider = await NativeChatProviderFactory.makeSuggestionsProvider()
+        let provider = await NativeChatProviderFactory.makeProvider(for: .suggestedPrompts)
         let budget = await DuckAINativeSettings.shared.suggestionsBudgetSeconds
         let generator = SuggestedPromptsGenerator(provider: provider,
                                                   budget: .milliseconds(Int(budget * 1_000)),

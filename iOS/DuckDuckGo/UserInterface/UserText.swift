@@ -2518,15 +2518,19 @@ public struct UserText {
 
     public static let aiChatPastedTextAccessibilityLabel = NotLocalizedString("aichat.pasted.text.accessibility.label", value: "Pasted text", comment: "VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted")
     public static let aiChatPastedTextRemoveAction = NotLocalizedString("aichat.pasted.text.remove", value: "Remove", comment: "VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message")
-    public static let aiChatPastedTextSheetTitle = NotLocalizedString("aichat.pasted.text.sheet.title", value: "Pasted Text", comment: "Title of the sheet that shows and edits a long block of text the user pasted into Duck.ai")
-    public static let aiChatPastedTextFormattingNote = NotLocalizedString("aichat.pasted.text.formatting.note", value: "Formatting may be inconsistent from source.", comment: "Subtitle of the sheet that shows a long block of text the user pasted into Duck.ai")
-    public static func aiChatPastedTextCharacterCount(_ count: Int) -> String {
-        let format = NotLocalizedString("aichat.pasted.text.character.count", value: count == 1 ? "%d character" : "%d characters", comment: "Count line in the Duck.ai pasted-text sheet, giving the size of the pasted text. Not localized until complete locale-specific plural forms are available.")
-        return String.localizedStringWithFormat(format, count)
+    public static let aiChatPastedTextSheetTitle = NotLocalizedString("aichat.pasted.text.sheet.title", value: "Pasted Text", comment: "Title of the sheet that shows a long block of text the user pasted into Duck.ai, when it can be read but not changed")
+    public static let aiChatPastedTextEditSheetTitle = NotLocalizedString("aichat.pasted.text.edit.sheet.title", value: "Edit Text", comment: "Title of the sheet that edits a long block of text the user pasted into Duck.ai")
+    public static let aiChatPastedTextTooLongTitle = NotLocalizedString("aichat.pasted.text.too.long.title", value: "Pasted text exceeds character limit.", comment: "Error shown below the Duck.ai input while a message carrying pasted text is longer than the allowed number of characters")
+    public static let aiChatPastedTextEditAction = NotLocalizedString("aichat.pasted.text.edit", value: "Edit", comment: "Button on the Duck.ai too-long error that opens the pasted text so the user can shorten it")
+    /// `formattedCount` is `count` written compactly, e.g. 1.2k.
+    public static func aiChatPastedTextCharacterCount(_ count: Int, formattedCount: String) -> String {
+        let format = NotLocalizedString("aichat.pasted.text.character.count", value: count == 1 ? "%@ character" : "%@ characters", comment: "Subtitle of the Duck.ai pasted-text sheet giving the size of the pasted text, e.g. 1.2k characters. Not localized until complete locale-specific plural forms are available.")
+        return String(format: format, formattedCount)
     }
-    public static func aiChatPastedTextOverLimitCount(count: Int, limit: Int) -> String {
-        let format = NotLocalizedString("aichat.pasted.text.over.limit.count", value: "%1$d/%2$d characters", comment: "Count line in the Duck.ai pasted-text sheet while the message is over the length limit, e.g. 16800/16000 characters. %1$d is the current character count, %2$d is the most this pasted text may hold")
-        return String(format: format, count, limit)
+    /// The counts are written compactly, e.g. 1.2k of 16k characters.
+    public static func aiChatPastedTextCharacterCount(formattedCount: String, limit: Int, formattedLimit: String) -> String {
+        let format = NotLocalizedString("aichat.pasted.text.character.count.of.limit", value: limit == 1 ? "%1$@ of %2$@ character" : "%1$@ of %2$@ characters", comment: "Subtitle of the Duck.ai pasted-text sheet, e.g. 1.2k of 16k characters. %1$@ is the size of the pasted text, %2$@ the most it may hold. Not localized until complete locale-specific plural forms are available.")
+        return String(format: format, formattedCount, formattedLimit)
     }
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")

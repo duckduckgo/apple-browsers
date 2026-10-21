@@ -130,6 +130,8 @@ struct UTIFooterMessage: Equatable {
     let isDismissible: Bool
     let link: Link?
     let titleFormatting: TitleFormatting?
+    /// A run within `subtitle` the card colours as an error.
+    let subtitleHighlight: String?
 
     init(icon: Icon,
          title: String,
@@ -137,7 +139,8 @@ struct UTIFooterMessage: Equatable {
          primaryAction: PrimaryAction?,
          isDismissible: Bool,
          link: Link? = nil,
-         titleFormatting: TitleFormatting? = nil) {
+         titleFormatting: TitleFormatting? = nil,
+         subtitleHighlight: String? = nil) {
         self.icon = icon
         self.title = title
         self.subtitle = subtitle
@@ -145,6 +148,7 @@ struct UTIFooterMessage: Equatable {
         self.isDismissible = isDismissible
         self.link = link
         self.titleFormatting = titleFormatting
+        self.subtitleHighlight = subtitleHighlight
     }
 }
 

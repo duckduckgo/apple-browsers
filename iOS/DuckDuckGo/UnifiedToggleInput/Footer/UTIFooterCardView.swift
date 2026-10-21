@@ -71,6 +71,7 @@ final class UTIFooterCardView: UIView {
     private var iconSlotWidthConstraint: NSLayoutConstraint?
     private var iconTextGapConstraint: NSLayoutConstraint?
     private var formattedTitleMessage: UTIFooterMessage?
+    private var subtitleMessage: UTIFooterMessage?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -128,7 +129,8 @@ final class UTIFooterCardView: UIView {
         }
 
         subtitleLabel.numberOfLines = message.icon == .modelSwitch ? 3 : (message.primaryAction == nil ? 2 : 1)
-        subtitleLabel.text = message.subtitle
+        subtitleMessage = message
+        applySubtitle()
         subtitleLabel.isHidden = message.subtitle?.isEmpty ?? true
 
         if let primaryAction = message.primaryAction {
@@ -166,6 +168,20 @@ final class UTIFooterCardView: UIView {
 
     private var allIcons: [UIView] {
         [usageRing, alertIcon, infoIcon, modelSwitchIcon, shieldIcon, giftIcon]
+    }
+
+    /// Assigning attributed text also sets `textColor` from its first run, so the base colour is restored every time.
+    private func applySubtitle() {
+        subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
+        subtitleLabel.text = subtitleMessage?.subtitle
+        guard let subtitle = subtitleMessage?.subtitle, let highlight = subtitleMessage?.subtitleHighlight,
+              let range = subtitle.range(of: highlight) else { return }
+        let attributed = NSMutableAttributedString(string: subtitle, attributes: [
+            .font: subtitleLabel.font as Any,
+            .foregroundColor: UIColor(designSystemColor: .textSecondary)
+        ])
+        attributed.addAttribute(.foregroundColor, value: UIColor(designSystemColor: .destructivePrimary), range: NSRange(range, in: subtitle))
+        subtitleLabel.attributedText = attributed
     }
 
     private func applyFormattedTitle() {
@@ -350,7 +366,7 @@ private extension UTIFooterCardView {
     func applyColors() {
         backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
+        applySubtitle()
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
         infoIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)
         modelSwitchIcon.tintColor = UIColor(designSystemColor: .icons)

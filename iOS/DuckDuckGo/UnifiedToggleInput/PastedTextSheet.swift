@@ -19,6 +19,7 @@
 
 import AIChat
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 import UIKit
 
@@ -31,6 +32,11 @@ enum PastedTextSheetMode: Equatable {
 enum PastedTextSheetOutcome: Equatable {
     case saved(AIChatPastedText)
     case unchanged
+}
+
+enum PastedTextSheetSubtitle: Equatable {
+    case size(String)
+    case overLimit(count: Int, limit: Int)
 }
 
 struct PastedTextSheetRules: Equatable {
@@ -50,6 +56,24 @@ struct PastedTextSheetRules: Equatable {
     }
 
     var opensWithKeyboard: Bool { mode != .viewOnly }
+
+    var title: String { mode == .viewOnly ? UserText.aiChatPastedTextSheetTitle : UserText.aiChatPastedTextEditSheetTitle }
+
+    func subtitle(for text: String, locale: Locale = .current) -> PastedTextSheetSubtitle {
+        let count = count(of: text)
+        guard case .editable(let limit) = mode else {
+            return .size(UserText.aiChatPastedTextCharacterCount(count, formattedCount: Self.compact(count, locale: locale)))
+        }
+        guard count <= limit else { return .overLimit(count: count, limit: limit) }
+        return .size(UserText.aiChatPastedTextCharacterCount(formattedCount: Self.compact(count, locale: locale),
+                                                            limit: limit,
+                                                            formattedLimit: Self.compact(limit, locale: locale)))
+    }
+
+    /// The design writes thousands with a lowercase k, e.g. 1.2k, where the formatter writes 1.2K.
+    private static func compact(_ value: Int, locale: Locale) -> String {
+        value.formatted(.number.notation(.compactName).locale(locale)).lowercased(with: locale)
+    }
 
     func outcome(savingText text: String) -> PastedTextSheetOutcome {
         text == original.content ? .unchanged : .saved(AIChatPastedText(content: text))
@@ -75,40 +99,43 @@ struct PastedTextSheetView: View {
 
     var body: some View {
         NavigationView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(UserText.aiChatPastedTextFormattingNote)
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-
-                Group {
-                    if isViewOnly {
-                        PastedTextReadOnlyView(text: text)
-                    } else {
-                        TextEditor(text: $text)
-                            .daxBodyRegular()
-                            .focused($isTextFocused)
-                    }
+            Group {
+                if isViewOnly {
+                    PastedTextReadOnlyView(text: text)
+                } else {
+                    TextEditor(text: $text)
+                        .daxBodyRegular()
+                        .focused($isTextFocused)
                 }
-                .accessibilityIdentifier("PastedTextSheet.TextView")
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(designSystemColor: .lines)))
-
-                Text(countLine)
-                    .daxFootnoteRegular()
-                    .accessibilityIdentifier("PastedTextSheet.Count")
             }
-            .padding(16)
+            .accessibilityIdentifier("PastedTextSheet.TextView")
+            .padding(.horizontal, 16)
             .onAppear { isTextFocused = rules.opensWithKeyboard }
-            .navigationTitle(UserText.aiChatPastedTextSheetTitle)
+            .navigationTitle(rules.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 0) {
+                        Text(rules.title)
+                            .daxHeadline()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                        Text(subtitle)
+                            .daxCaption()
+                            .accessibilityIdentifier("PastedTextSheet.Count")
+                    }
+                }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(isViewOnly ? UserText.navigationTitleDone : UserText.actionCancel, action: onCancel)
-                        .accessibilityIdentifier("PastedTextSheet.Cancel")
+                    Button(action: onCancel) {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                    }
+                    .accessibilityLabel(isViewOnly ? UserText.navigationTitleDone : UserText.actionCancel)
+                    .accessibilityIdentifier("PastedTextSheet.Cancel")
                 }
                 if !isViewOnly {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(UserText.actionSave) { onSave(text) }
+                        saveButton
                             .disabled(!rules.canSave(text))
+                            .accessibilityLabel(UserText.actionSave)
                             .accessibilityIdentifier("PastedTextSheet.Save")
                     }
                 }
@@ -117,20 +144,35 @@ struct PastedTextSheetView: View {
         .navigationViewStyle(.stack)
     }
 
-    private var countLine: AttributedString {
-        let count = rules.count(of: text)
+    @ViewBuilder
+    private var saveButton: some View {
+        let button = Button { onSave(text) } label: {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.check)
+        }
+        if #available(iOS 26.0, *) {
+            button
+                .buttonStyle(.glassProminent)
+                .tint(Color(designSystemColor: .accentPrimary))
+        } else {
+            button
+        }
+    }
+
+    private var subtitle: AttributedString {
         let secondary = Color(designSystemColor: .textSecondary)
-        guard case .editable(let limit) = rules.mode, rules.isOverLimit(text) else {
-            var line = AttributedString(UserText.aiChatPastedTextCharacterCount(count))
+        switch rules.subtitle(for: text) {
+        case .size(let size):
+            var line = AttributedString(size)
             line.foregroundColor = secondary
             return line
+        case .overLimit(let count, let limit):
+            var line = AttributedString(String(format: UserText.aiChatPromptTooLongCountFormat, count, limit))
+            line.foregroundColor = secondary
+            if let range = line.range(of: String(count)) {
+                line[range].foregroundColor = Color(designSystemColor: .destructivePrimary)
+            }
+            return line
         }
-        var line = AttributedString(UserText.aiChatPastedTextOverLimitCount(count: count, limit: limit))
-        line.foregroundColor = secondary
-        if let range = line.range(of: String(count)) {
-            line[range].foregroundColor = Color(designSystemColor: .destructivePrimary)
-        }
-        return line
     }
 }
 

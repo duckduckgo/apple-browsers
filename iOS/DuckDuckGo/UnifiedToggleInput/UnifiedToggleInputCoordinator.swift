@@ -625,7 +625,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 }
             ),
             outputs: .init(
-                onOverLimitChanged: { [weak self] in self?.footerController?.setPromptTooLong($0) },
+                onOverLimitChanged: { [weak self] in self?.footerController?.setPromptTooLong($0, pastedTextToEdit: $1) },
                 onPromptOverLimitChanged: { [weak self] in self?.viewController.isPromptOverLimit = $0 }
             )
         )
@@ -1147,6 +1147,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self?.pixelReporter.reportAttachmentPrivacy(action, kind: kind)
         }
         footerController?.presenter = viewController
+        footerController?.onEditPastedText = { [weak self] id in
+            self?.attachmentController.presentPastedTextSheet(id: id)
+        }
         footerController?.onInputBlockChanged = { [weak self] blocked in
             self?.viewController.isInputBlockedByUsageLimit = blocked
             self?.tabMentionController?.refresh()

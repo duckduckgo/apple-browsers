@@ -37,6 +37,7 @@ final class UTIFooterController {
     /// The disclaimer on screen means the next Ask tap accepts the terms.
     var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
+    var onEditPastedText: ((UUID) -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?
     private let viewModel: DuckAiUsageWarningViewModel?
@@ -57,6 +58,7 @@ final class UTIFooterController {
     private var modelSwitchNotice: CreateImageModelSwitchNotice?
     private var termsOfServiceSendButton: DuckAiTermsOfServiceSendButton = .ask
     private var promptOverLimit: AIChatPromptLength?
+    private var pastedTextToEdit: UUID?
     private var visibleIDs: Set<UTIFooterItem.ID> = []
     private var reportedTermsOfServiceState = (isVisible: false, isInEffect: false)
     private var retainedMessageIDs: Set<UTIFooterItem.ID>?
@@ -167,10 +169,13 @@ final class UTIFooterController {
     }
 
 
-    func setPromptTooLong(_ overLimit: AIChatPromptLength?) {
-        guard promptOverLimit != overLimit else { return }
+    /// `pastedTextToEdit` turns the error into the pasted-text one, whose Edit opens that paste.
+    func setPromptTooLong(_ overLimit: AIChatPromptLength?, pastedTextToEdit: UUID? = nil) {
+        let pastedTextToEdit = overLimit == nil ? nil : pastedTextToEdit
+        guard promptOverLimit != overLimit || self.pastedTextToEdit != pastedTextToEdit else { return }
         if (promptOverLimit == nil) != (overLimit == nil) { releaseWaitingMessages() }
         promptOverLimit = overLimit
+        self.pastedTextToEdit = pastedTextToEdit
         applyCurrentState()
     }
 
@@ -250,6 +255,11 @@ final class UTIFooterController {
 
 
     func performPrimaryAction(_ id: UTIFooterItem.ID) {
+        if id == .promptTooLong {
+            guard visibleIDs.contains(id), let pastedTextToEdit else { return }
+            onEditPastedText?(pastedTextToEdit)
+            return
+        }
         if case .tryForFree = viewModel?.warning?.action, !allowsSubscriptionUpsell() {
             applyCurrentState()
             return
@@ -348,7 +358,8 @@ final class UTIFooterController {
         }
         if let promptOverLimit {
             items.append(.init(id: .promptTooLong,
-                               message: mapper.promptTooLongMessage(count: promptOverLimit.count, limit: promptOverLimit.limit)))
+                               message: mapper.promptTooLongMessage(count: promptOverLimit.count, limit: promptOverLimit.limit,
+                                                                  containsPastedText: pastedTextToEdit != nil)))
         }
         if let modelSwitchNotice { items.append(.init(id: .modelSwitch, message: mapper.message(for: modelSwitchNotice))) }
         if let warning = viewModel?.warning {

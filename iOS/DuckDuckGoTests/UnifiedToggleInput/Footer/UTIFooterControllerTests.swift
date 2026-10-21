@@ -1952,6 +1952,40 @@ final class UTIFooterControllerTests: XCTestCase {
         XCTAssertFalse(sut.isTermsOfServiceInEffect)
     }
 
+    func testEditOnThePastedTextErrorOpensTheGivenPasteAndThePlainErrorHasNoEdit() {
+        let paste = UUID()
+        var edited: [UUID] = []
+        sut.onEditPastedText = { edited.append($0) }
+
+        sut.setPromptTooLong(overLimit)
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(sut.currentMessage?.title, "Please try a shorter message.")
+        XCTAssertNil(sut.currentMessage?.primaryAction)
+        sut.performPrimaryAction(.promptTooLong)
+        XCTAssertEqual(edited, [])
+
+        sut.setPromptTooLong(overLimit, pastedTextToEdit: paste)
+        sut.footerVisibilityChanged(isVisible: true)
+        XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
+        XCTAssertEqual(sut.currentMessage?.title, "Pasted text exceeds character limit.")
+        XCTAssertEqual(sut.currentMessage?.primaryAction?.title, "Edit")
+        sut.performPrimaryAction(.promptTooLong)
+        XCTAssertEqual(edited, [paste])
+    }
+
+    func testEditDoesNothingOnceThePromptIsBackUnderTheLimit() {
+        var edited: [UUID] = []
+        sut.onEditPastedText = { edited.append($0) }
+        sut.setPromptTooLong(overLimit, pastedTextToEdit: UUID())
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.setPromptTooLong(nil, pastedTextToEdit: UUID())
+        sut.performPrimaryAction(.promptTooLong)
+
+        XCTAssertEqual(edited, [])
+        XCTAssertTrue(sut.currentMessages.isEmpty)
+    }
+
     private var overLimit: AIChatPromptLength {
         AIChatPromptLength(count: 16_800, limit: 16_000)
     }

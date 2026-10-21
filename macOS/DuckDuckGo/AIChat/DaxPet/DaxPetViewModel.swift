@@ -30,8 +30,8 @@ protocol DaxPetPromptSubmitting {
 
     /// Whether the browser has a web page open that Duck.ai could summarize.
     var canSummarizeCurrentPage: Bool { get }
-    /// Asks Duck.ai, beside the page, to summarize it; `false` when there's no page to summarize.
-    func summarizeCurrentPage() async -> Bool
+    /// Sends `request` to Duck.ai beside the open page, with the page attached; `false` when there's no page.
+    func askAboutCurrentPage(_ request: String) async -> Bool
     /// Reopens the most recent Duck.ai chat; `false` when there are none.
     func continueLastChat() async -> Bool
 
@@ -62,8 +62,9 @@ final class DaxPetViewModel: ObservableObject {
     @Published private(set) var suggestions: [String] = []
     /// What Dax guesses the user wants done with the drop; the prompt field's hint, sent on a bare Return.
     @Published private(set) var dropAction: DaxPetDropAction?
-    /// The on-device gist of the page open in the browser, offered when the pointer rests on Dax.
-    @Published private(set) var glance: String?
+    /// The on-device gist of the page open in the browser and follow-ups to it, offered when the pointer
+    /// rests on Dax.
+    @Published private(set) var glance: DaxPetPageGlance?
 
     /// Dax won't sum up the same page again for this long.
     var glanceCooldown: TimeInterval = 600
@@ -316,20 +317,20 @@ final class DaxPetViewModel: ObservableObject {
         lastGlance = (page.url, now())
 
         character.mood = .thinking
-        let summary = await intelligence.pageSummary(title: page.title, content: page.text)
+        let pageGlance = await intelligence.pageGlance(title: page.title, content: page.text)
         guard character.mood == .thinking, !isAwaitingAnswer else { return }
         character.mood = .idle
-        guard let summary, !isComposing, speech == nil else { return }
-        glance = summary
+        guard let pageGlance, !isComposing, speech == nil else { return }
+        glance = DaxPetPageGlance(summary: pageGlance.summary, followUps: Array(pageGlance.followUps.prefix(3)))
         let work = DispatchWorkItem { [weak self] in self?.glance = nil }
         glanceWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: work)
     }
 
-    /// From the gist to the full story: Duck.ai summarizes the page beside it.
-    func askAboutGlance() async {
+    /// From the gist to Duck.ai: one of the follow-ups, or a full summary when there are none.
+    func askAboutGlance(_ followUp: String? = nil) async {
         clearGlance()
-        await summarizePage()
+        await ask(followUp ?? UserText.daxPetSummarizePrompt)
     }
 
     private func clearGlance() {
@@ -376,9 +377,13 @@ final class DaxPetViewModel: ObservableObject {
     var canSummarizeCurrentPage: Bool { submitter.canSummarizeCurrentPage }
 
     func summarizePage() async {
+        await ask(UserText.daxPetSummarizePrompt)
+    }
+
+    private func ask(_ request: String) async {
         endComposing()
         hasUnseenAnswer = false
-        if await submitter.summarizeCurrentPage() {
+        if await submitter.askAboutCurrentPage(request) {
             say(nil)
             character.hop()
         } else {

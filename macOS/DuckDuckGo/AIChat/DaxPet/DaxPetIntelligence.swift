@@ -33,8 +33,13 @@ protocol DaxPetIntelligence {
     func variations(of line: String) async -> [String]
     /// What kind of thing was dropped, when there's text to tell from.
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind?
-    /// A one-sentence gist of a web page.
-    func pageSummary(title: String, content: String) async -> String?
+    /// A one-sentence gist of a web page, and what the reader might want to ask about it next.
+    func pageGlance(title: String, content: String) async -> DaxPetPageGlance?
+}
+
+struct DaxPetPageGlance: Equatable {
+    let summary: String
+    let followUps: [String]
 }
 
 enum DaxPetIntelligenceFactory {
@@ -51,7 +56,7 @@ enum DaxPetIntelligenceFactory {
 
 struct DaxPetNoIntelligence: DaxPetIntelligence {
     var isOnDevice: Bool { false }
-    func pageSummary(title: String, content: String) async -> String? { nil }
+    func pageGlance(title: String, content: String) async -> DaxPetPageGlance? { nil }
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String] { [] }
     func variations(of line: String) async -> [String] { [] }
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? { nil }
@@ -140,21 +145,30 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
     }
 
     @Generable
-    struct PageSummary {
+    struct PageGlance {
         @Guide(description: "What the page is about, in one plain sentence of at most fifteen words")
         var summary: String
+        @Guide(description: "Short follow-up requests the reader could send to an AI assistant about this page, each two to five words, without quotes",
+               .count(3))
+        var followUps: [String]
     }
 
-    func pageSummary(title: String, content: String) async -> String? {
+    func pageGlance(title: String, content: String) async -> DaxPetPageGlance? {
         let session = LanguageModelSession(instructions: """
             You are Dax, the DuckDuckGo duck. Tell the user in one short, plain sentence what the web page \
-            they're reading is about. Only use what's on the page. Reply in \(Self.userLanguage).
+            they're reading is about, using only what's on the page. Then suggest specific follow-up requests \
+            they'd likely want to ask about it, phrased as commands like "Compare the prices" or \
+            "Explain the main argument". Reply in \(Self.userLanguage).
             """)
         let page = "Title: \(title)\n\n\(content.prefix(Self.contentLimit))"
-        guard let response = try? await session.respond(to: page, generating: PageSummary.self,
-                                                        options: GenerationOptions(temperature: 0.3)) else { return nil }
+        guard let response = try? await session.respond(to: page, generating: PageGlance.self,
+                                                        options: GenerationOptions(temperature: 0.4)) else { return nil }
         let summary = response.content.summary.trimmingCharacters(in: .whitespacesAndNewlines)
-        return summary.isEmpty ? nil : summary
+        guard !summary.isEmpty else { return nil }
+        let followUps = response.content.followUps
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"“”"))) }
+            .filter { !$0.isEmpty }
+        return DaxPetPageGlance(summary: summary, followUps: followUps)
     }
 
     /// The user's language, by its English name, for the model to answer in.

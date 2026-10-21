@@ -488,10 +488,10 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     var canSummarizeCurrentPage: Bool { currentPage != nil }
 
-    func summarizeCurrentPage() async -> Bool {
+    func askAboutCurrentPage(_ request: String) async -> Bool {
         guard let (windowController, tab) = currentPage else { return false }
         let pageContext = await AIChatUserScriptHandler.extractPageContext(from: tab)
-        let prompt = AIChatNativePrompt.queryPrompt(UserText.daxPetSummarizePrompt,
+        let prompt = AIChatNativePrompt.queryPrompt(request,
                                                     autoSubmit: true,
                                                     pageContext: pageContext.map { .single($0) })
         windowController.window?.makeKeyAndOrderFront(nil)

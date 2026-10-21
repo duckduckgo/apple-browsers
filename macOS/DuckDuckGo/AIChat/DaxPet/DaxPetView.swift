@@ -27,7 +27,8 @@ struct DaxPetView: View {
     enum Metrics {
         static let padding: CGFloat = 8
         static let spacing: CGFloat = 6
-        static let bubbleAreaHeight: CGFloat = 72
+        /// Room for the page gist and two rows of follow-ups, the tallest thing Dax says.
+        static let bubbleAreaHeight: CGFloat = 118
         static let controlsHeight: CGFloat = 36
         static let toolbarSize = CGSize(width: 106, height: 32)
         static let composingWidth: CGFloat = 320
@@ -74,7 +75,7 @@ struct DaxPetView: View {
                     SuggestionChips(suggestions: model.suggestions, onSelect: model.useSuggestion)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 } else if let glance = model.glance {
-                    GlanceBubble(text: glance) { Task { await model.askAboutGlance() } }
+                    GlanceBubble(glance: glance) { followUp in Task { await model.askAboutGlance(followUp) } }
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 } else if let speech = model.speech {
                     SpeechBubble(text: speech)
@@ -119,14 +120,25 @@ private struct SuggestionChips: View {
     let onSelect: (String) -> Void
 
     var body: some View {
+        ChipList(suggestions: suggestions, maximumRows: 2, onSelect: onSelect)
+            .frame(width: DaxPetView.Metrics.composingWidth, height: DaxPetView.Metrics.bubbleAreaHeight, alignment: .bottom)
+    }
+}
+
+/// Requests as chips at their full width, in as many rows as allowed; one click sends one.
+private struct ChipList: View {
+    let suggestions: [String]
+    let maximumRows: Int
+    let onSelect: (String) -> Void
+
+    var body: some View {
         Group {
             if #available(macOS 13, *) {
-                ChipRows(spacing: 6, maximumRows: 2) { chips(suggestions) }
+                ChipRows(spacing: 6, maximumRows: maximumRows) { chips(suggestions) }
             } else {
-                VStack(spacing: 6) { chips(Array(suggestions.prefix(2))) }
+                VStack(spacing: 6) { chips(Array(suggestions.prefix(maximumRows))) }
             }
         }
-        .frame(width: DaxPetView.Metrics.composingWidth, height: DaxPetView.Metrics.bubbleAreaHeight, alignment: .bottom)
         .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
     }
 
@@ -342,38 +354,48 @@ private struct DaxCharacterRepresentable: NSViewRepresentable {
     func updateNSView(_ nsView: DaxCharacterView, context: Context) {}
 }
 
-/// The gist of the open page, with a way to ask Duck.ai for the whole of it.
+/// The gist of the open page, and follow-ups to send Duck.ai about it; `onAsk(nil)` asks for a full summary
+/// when the model had no follow-ups.
 private struct GlanceBubble: View {
-    let text: String
-    let onAsk: () -> Void
+    let glance: DaxPetPageGlance
+    let onAsk: (String?) -> Void
 
     var body: some View {
-        VStack(spacing: 4) {
-            Text(text)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-            Button(action: onAsk) {
-                Text(UserText.daxPetGlanceAsk)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(designSystemColor: .accentPrimary))
+        VStack(spacing: 6) {
+            VStack(spacing: 4) {
+                Text(glance.summary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                if glance.followUps.isEmpty {
+                    Button { onAsk(nil) } label: {
+                        Text(UserText.daxPetGlanceAsk)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(Color(designSystemColor: .accentPrimary))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-            .buttonStyle(.plain)
+            .frame(maxWidth: 280)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color(designSystemColor: .surfacePrimary))
+                    .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
+            )
+
+            if !glance.followUps.isEmpty {
+                ChipList(suggestions: glance.followUps, maximumRows: 2) { onAsk($0) }
+                    .frame(width: DaxPetView.Metrics.composingWidth)
+            }
         }
-        .frame(maxWidth: 280)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color(designSystemColor: .surfacePrimary))
-                .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
-        )
     }
 }
 

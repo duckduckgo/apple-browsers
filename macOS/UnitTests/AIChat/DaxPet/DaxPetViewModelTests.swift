@@ -46,9 +46,10 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     var canSummarizeCurrentPage = true
     var summarizeResult = true
-    var summarizeCount = 0
-    func summarizeCurrentPage() async -> Bool {
-        summarizeCount += 1
+    var pageRequests: [String] = []
+    var summarizeCount: Int { pageRequests.count }
+    func askAboutCurrentPage(_ request: String) async -> Bool {
+        pageRequests.append(request)
         return summarizeResult
     }
 
@@ -76,12 +77,12 @@ private final class StubDaxPetIntelligence: DaxPetIntelligence {
     var variations: [String: [String]] = [:]
     var kind: DaxPetDropKind?
     var isOnDevice = true
-    var pageSummary: String?
+    var pageGlance: DaxPetPageGlance?
     var pageSummaryCount = 0
 
-    func pageSummary(title: String, content: String) async -> String? {
+    func pageGlance(title: String, content: String) async -> DaxPetPageGlance? {
         pageSummaryCount += 1
-        return pageSummary
+        return pageGlance
     }
 
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? {
@@ -534,18 +535,20 @@ final class DaxPetViewModelTests: XCTestCase {
 
     func testWhenThePointerRestsOnDaxThenHeSumsUpTheOpenPage() async {
         let (model, intelligence) = makeModel(suggesting: [])
-        intelligence.pageSummary = "DuckDuckGo explains how it protects privacy."
+        intelligence.pageGlance = DaxPetPageGlance(summary: "DuckDuckGo explains how it protects privacy.",
+                                                   followUps: ["Compare with other browsers", "Explain tracker blocking", "List the features", "One too many"])
         submitter.page = page
 
         await model.glanceAtPage()
 
-        XCTAssertEqual(model.glance, "DuckDuckGo explains how it protects privacy.")
+        XCTAssertEqual(model.glance?.summary, "DuckDuckGo explains how it protects privacy.")
+        XCTAssertEqual(model.glance?.followUps, ["Compare with other browsers", "Explain tracker blocking", "List the features"])
         XCTAssertEqual(model.character.mood, .idle)
     }
 
     func testDaxDoesNotSumUpTheSamePageTwiceInAWhile() async {
         let (model, intelligence) = makeModel(suggesting: [])
-        intelligence.pageSummary = "A page."
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page.", followUps: [])
         submitter.page = page
         var now = Date()
         model.now = { now }
@@ -563,7 +566,7 @@ final class DaxPetViewModelTests: XCTestCase {
 
     func testWithoutTheOnDeviceModelOrAPageThereIsNoGlance() async {
         let (model, intelligence) = makeModel(suggesting: [])
-        intelligence.pageSummary = "A page."
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page.", followUps: [])
 
         await model.glanceAtPage()
         XCTAssertNil(model.glance)
@@ -577,7 +580,7 @@ final class DaxPetViewModelTests: XCTestCase {
 
     func testWhenDaxIsBusyThereIsNoGlance() async {
         let (model, intelligence) = makeModel(suggesting: [])
-        intelligence.pageSummary = "A page."
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page.", followUps: [])
         submitter.page = page
         model.startComposing()
 
@@ -587,21 +590,33 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertEqual(intelligence.pageSummaryCount, 0)
     }
 
-    func testAskingForMoreHandsThePageToDuckAI() async {
+    func testWithoutFollowUpsAskingForMoreGetsTheWholePageSummarized() async {
         let (model, intelligence) = makeModel(suggesting: [])
-        intelligence.pageSummary = "A page."
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page.", followUps: [])
         submitter.page = page
         await model.glanceAtPage()
 
         await model.askAboutGlance()
 
         XCTAssertNil(model.glance)
-        XCTAssertEqual(submitter.summarizeCount, 1)
+        XCTAssertEqual(submitter.pageRequests, [UserText.daxPetSummarizePrompt])
+    }
+
+    func testAChosenFollowUpIsSentToDuckAIWithThePage() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page.", followUps: ["Explain tracker blocking"])
+        submitter.page = page
+        await model.glanceAtPage()
+
+        await model.askAboutGlance("Explain tracker blocking")
+
+        XCTAssertNil(model.glance)
+        XCTAssertEqual(submitter.pageRequests, ["Explain tracker blocking"])
     }
 
     func testOpeningThePromptPutsTheGlanceAway() async {
         let (model, intelligence) = makeModel(suggesting: [])
-        intelligence.pageSummary = "A page."
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page.", followUps: [])
         submitter.page = page
         await model.glanceAtPage()
 

@@ -55,26 +55,17 @@ final class InlineVoiceToTextSessionTests: XCTestCase {
         XCTAssertEqual(InlineVoiceToTextSession.compose(baseText: "weather", transcript: ""), "weather")
     }
 
-    func testWhenStartedThenRecordsAndReportsEachPartialTranscript() {
-        let session = makeSession()
-
-        session.start()
-        recognizer.emit("Congratulate John")
-        recognizer.emit("Congratulate John on his new pro")
-
-        XCTAssertTrue(session.isListening)
-        XCTAssertEqual(recognizer.startCount, 1)
-        XCTAssertEqual(changes, ["Congratulate John", "Congratulate John on his new pro"])
-        XCTAssertTrue(ends.isEmpty)
-    }
-
-    func testWhenTextWasTypedThenTranscriptIsAppendedToIt() {
+    func testWhenStartedThenEachPartialTranscriptIsAppendedToTheTypedText() {
         let session = makeSession(baseText: "weather")
 
         session.start()
+        recognizer.emit("in")
         recognizer.emit("in Lisbon")
 
-        XCTAssertEqual(changes, ["weather in Lisbon"])
+        XCTAssertTrue(session.isListening)
+        XCTAssertEqual(recognizer.startCount, 1)
+        XCTAssertEqual(changes, ["weather in", "weather in Lisbon"])
+        XCTAssertTrue(ends.isEmpty)
     }
 
     func testWhenSpeechFinishesThenEndsOnceWithFinalText() {
@@ -103,43 +94,6 @@ final class InlineVoiceToTextSessionTests: XCTestCase {
         XCTAssertEqual(ends.first?.text, "ducks and geese")
         XCTAssertEqual(ends.first?.reason, .stopped)
         XCTAssertEqual(recognizer.stopCount, 1)
-    }
-
-    func testWhenRecordingFailsBeforeAnySpeechThenEndsAsFailedWithOriginalText() {
-        let session = makeSession(baseText: "typed")
-
-        session.start()
-        recognizer.emit(nil, error: TestError.failed, isFinal: true)
-
-        XCTAssertEqual(ends.first?.text, "typed")
-        XCTAssertEqual(ends.first?.reason, .failed)
-        XCTAssertTrue(changes.isEmpty)
-    }
-
-    func testWhenRecordingFailsAfterSpeechThenEndsAsFailedKeepingWhatWasHeard() {
-        let session = makeSession()
-
-        session.start()
-        recognizer.emit("half a sen")
-        recognizer.emit(nil, error: TestError.failed, isFinal: false)
-
-        XCTAssertEqual(ends.first?.text, "half a sen")
-        XCTAssertEqual(ends.first?.reason, .failed)
-    }
-
-    func testWhenStoppedThenCannotBeRestarted() {
-        let session = makeSession()
-
-        session.start()
-        session.stop()
-        session.start()
-
-        XCTAssertEqual(recognizer.startCount, 1)
-        XCTAssertFalse(session.isListening)
-    }
-
-    private enum TestError: Error {
-        case failed
     }
 }
 

@@ -22,7 +22,7 @@ import os.log
 /// Runs the organizer on the current window and shows the raw proposal, before any UI exists.
 final class TabOrganizerDebugMenu: NSMenu {
 
-    static let contentExcerptLength = 300
+    static let contentExcerptLength = 600
 
     init() {
         super.init(title: "")
@@ -49,14 +49,19 @@ final class TabOrganizerDebugMenu: NSMenu {
         let alert = NSAlert()
         alert.messageText = "Organize tabs"
         alert.informativeText = "What should happen to your tabs?"
-        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        let field = NSTextField(frame: NSRect(x: 0, y: 26, width: 320, height: 24))
         field.placeholderString = "Move my Japan trip to a new window"
-        alert.accessoryView = field
+        let readContent = NSButton(checkboxWithTitle: "Read page content (slower)", target: nil, action: nil)
+        readContent.frame = NSRect(x: 0, y: 0, width: 320, height: 20)
+        let accessory = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 50))
+        accessory.addSubview(field)
+        accessory.addSubview(readContent)
+        alert.accessoryView = accessory
         alert.addButton(withTitle: "Organize")
         alert.addButton(withTitle: "Cancel")
         alert.window.initialFirstResponder = field
         guard alert.runModal() == .alertFirstButtonReturn, !field.stringValue.isEmpty else { return }
-        run(.instruction(field.stringValue), excerptLength: 0)
+        run(.instruction(field.stringValue), excerptLength: readContent.state == .on ? Self.contentExcerptLength : 0)
     }
 
     @MainActor private func run(_ request: TabOrganizerRequest, excerptLength: Int) {
@@ -73,9 +78,12 @@ final class TabOrganizerDebugMenu: NSMenu {
             do {
                 let proposal = try await AppleTabOrganizer().organize(tabs, request: request)
                 let titles = Dictionary(uniqueKeysWithValues: tabs.map { ($0.id, $0.title) })
-                let summary = proposal.groups.map { group in
+                var summary = proposal.groups.map { group in
                     "\(group.name) [\(group.action.rawValue)]\n" + group.tabIDs.map { "  • \(titles[$0] ?? $0)" }.joined(separator: "\n")
                 }.joined(separator: "\n\n")
+                if case .instruction = request, proposal.groups.first?.name == TabOrganizerProposalBuilder.everythingElseGroupName {
+                    summary = "No matching tabs.\n\n" + summary
+                }
                 let elapsed = String(format: "%.1f", Date().timeIntervalSince(start))
                 Logger.aiChat.debug("Tab organizer (\(elapsed)s):\n\(summary)")
                 show("\(tabs.count) tabs, \(elapsed)s\n\n\(summary)")

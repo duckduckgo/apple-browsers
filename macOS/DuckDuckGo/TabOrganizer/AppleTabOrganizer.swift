@@ -53,8 +53,11 @@ final class AppleTabOrganizer: TabOrganizing {
         case .instruction(let text):
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
-            let response = try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content
-            return TabOrganizerProposalBuilder.proposal(from: response.contract, tabs: tabs)
+            let response = try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content.contract
+            if let criterion = response.groupBy {
+                return try await split(response, by: criterion, tabs: tabs)
+            }
+            return TabOrganizerProposalBuilder.proposal(from: response, tabs: tabs)
         }
     }
 
@@ -64,13 +67,31 @@ final class AppleTabOrganizer: TabOrganizing {
     Never name a single site or brand. Use a different category for each suggestion.
     """
 
+    /// Groups the matching tabs by `criterion` with the same two phases as group by topic.
+    private func split(_ response: InstructionResponse, by criterion: String, tabs: [TabSnapshot]) async throws -> TabOrganizerProposal {
+        let matching = TabOrganizerProposalBuilder.proposal(from: response, tabs: tabs).groups.first { $0.name != TabOrganizerProposalBuilder.everythingElseGroupName }
+        let matchingTabs = tabs.filter { matching?.tabIDs.contains($0.id) == true }
+        guard !matchingTabs.isEmpty else { return TabOrganizerProposalBuilder.proposal(from: response, tabs: tabs) }
+
+        let labels = try await topicLabels(for: matchingTabs, criterion: criterion)
+        var groups = TabOrganizerProposalBuilder.proposal(from: labels, tabs: matchingTabs).groups
+        for index in groups.indices {
+            groups[index].action = response.actionForMatching
+        }
+        let others = tabs.map(\.id).filter { id in !matchingTabs.contains { $0.id == id } }
+        if !others.isEmpty {
+            groups.append(ProposedGroup(name: TabOrganizerProposalBuilder.everythingElseGroupName, tabIDs: others, action: response.actionForOthers))
+        }
+        return TabOrganizerProposal(groups: groups)
+    }
+
     static let topicBatchSize = 10
     static let otherTopic = "Other"
 
     /// Two phases, because the model is reliable on short outputs only: first it names a few broad topics
     /// for the whole window, then it assigns tabs to exactly those topics in batches of 10.
-    private func topicLabels(for tabs: [TabSnapshot]) async throws -> TopicResponse {
-        let topics = try await broadTopics(for: tabs)
+    private func topicLabels(for tabs: [TabSnapshot], criterion: String? = nil) async throws -> TopicResponse {
+        let topics = try await broadTopics(for: tabs, criterion: criterion)
         guard !topics.isEmpty else { return TopicResponse(labels: []) }
 
         var labels: [TopicResponse.Label] = []
@@ -88,8 +109,9 @@ final class AppleTabOrganizer: TabOrganizing {
         return TopicResponse(labels: labels.filter { $0.topic != Self.otherTopic })
     }
 
-    private func broadTopics(for tabs: [TabSnapshot]) async throws -> [String] {
-        let session = LanguageModelSession(instructions: Self.topicInstructions)
+    private func broadTopics(for tabs: [TabSnapshot], criterion: String?) async throws -> [String] {
+        let instructions = criterion.map { "You group a person's open browser tabs by \($0). Name each group after its \($0)." }
+        let session = LanguageModelSession(instructions: instructions ?? Self.topicInstructions)
         let response = try await session.respond(to: "Tabs:\n\(Self.tabList(for: tabs))", generating: GeneratedTopicList.self).content
         var seen = Set<String>()
         return response.topics
@@ -223,7 +245,7 @@ struct GeneratedSuggestions {
 @available(macOS 26.0, *)
 @Generable
 struct GeneratedTopicList {
-    @Guide(description: "3 to 7 broad topics, 1 or 2 words each, each covering several tabs", .count(3...7))
+    @Guide(description: "2 to 7 broad topics, 1 or 2 words each, each covering several tabs", .count(2...7))
     var topics: [String]
 }
 
@@ -257,11 +279,15 @@ struct GeneratedInstructionResponse {
     var actionForMatching: GeneratedTabAction
     @Guide(description: "What the request asks to do with all other tabs. keep unless the request says otherwise")
     var actionForOthers: GeneratedTabAction
+    @Guide(description: "When the request asks to separate, split or group the matching tabs, what to group them by, like breed, country or price. Empty otherwise")
+    var groupBy: String
 
     var contract: InstructionResponse {
-        InstructionResponse(name: name,
-                            matchingTabNumbers: matchingTabNumbers,
-                            actionForMatching: actionForMatching.contract,
-                            actionForOthers: actionForOthers.contract)
+        let criterion = groupBy.trimmingCharacters(in: .whitespacesAndNewlines)
+        return InstructionResponse(name: name,
+                                   matchingTabNumbers: matchingTabNumbers,
+                                   actionForMatching: actionForMatching.contract,
+                                   actionForOthers: actionForOthers.contract,
+                                   groupBy: criterion.isEmpty ? nil : criterion)
     }
 }

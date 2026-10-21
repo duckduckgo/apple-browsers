@@ -72,6 +72,7 @@ final class TabOrganizerViewModel: ObservableObject {
     @Published private(set) var suggestions = TabOrganizerViewModel.defaultSuggestions
     @Published private(set) var isLoadingSuggestions = false
     @Published private(set) var cleanupTabIDs: [String] = []
+    @Published private(set) var notice: String?
     @Published var instruction = ""
     @Published var readsPageContent = false
 
@@ -165,8 +166,13 @@ final class TabOrganizerViewModel: ObservableObject {
                 let proposal = try await AppleTabOrganizer().organize(snapshots, request: request)
                 guard !Task.isCancelled else { return }
                 tabs = snapshots
-                groups = proposal.groups
-                selectedTabIDs = Set(proposal.groups.flatMap(\.tabIDs))
+                if case .instruction = request, !groups.isEmpty {
+                    refine(with: proposal)
+                } else {
+                    groups = proposal.groups
+                    selectedTabIDs = Set(proposal.groups.flatMap(\.tabIDs))
+                    notice = proposal.groups.first?.name == TabOrganizerProposalBuilder.everythingElseGroupName ? "No matching tabs" : nil
+                }
                 state = .results
             } catch TabOrganizerError.modelUnavailable {
                 state = .failed("Apple Intelligence isn't available. Turn it on in System Settings ▸ Apple Intelligence & Siri.")
@@ -181,8 +187,36 @@ final class TabOrganizerViewModel: ObservableObject {
 
     // MARK: Reviewing
 
-    var hasNoMatches: Bool {
-        groups.first?.name == TabOrganizerProposalBuilder.everythingElseGroupName
+    /// An instruction on top of existing results only reshapes the tabs it matched: they leave their groups
+    /// and the new groups take the place of the first group they came from. The rest stays as it was.
+    private func refine(with proposal: TabOrganizerProposal) {
+        let everythingElse = proposal.groups.first { $0.name == TabOrganizerProposalBuilder.everythingElseGroupName }
+        let newGroups = proposal.groups.filter { $0.name != TabOrganizerProposalBuilder.everythingElseGroupName }
+        let matched = Set(newGroups.flatMap(\.tabIDs))
+        guard !matched.isEmpty else {
+            notice = "No matching tabs"
+            return
+        }
+
+        var refined: [ProposedGroup] = []
+        var inserted = false
+        for var group in groups {
+            let containsMatched = group.tabIDs.contains(where: matched.contains)
+            group.tabIDs.removeAll(where: matched.contains)
+            if containsMatched, !inserted {
+                refined += newGroups
+                inserted = true
+            }
+            if let action = everythingElse?.action, action != .keep {
+                group.action = action
+            }
+            if !group.tabIDs.isEmpty {
+                refined.append(group)
+            }
+        }
+        groups = inserted ? refined : newGroups + refined
+        selectedTabIDs.formUnion(matched)
+        notice = nil
     }
 
     func isSelected(_ tabID: String) -> Bool {
@@ -392,8 +426,8 @@ struct TabOrganizerView: View {
     private var results: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 4) {
-                if viewModel.hasNoMatches {
-                    Text("No matching tabs").foregroundColor(.secondary).padding(.bottom, 4)
+                if let notice = viewModel.notice {
+                    Text(notice).foregroundColor(.secondary).padding(.bottom, 4)
                 }
                 ForEach(viewModel.groups) { group in
                     VStack(alignment: .leading, spacing: 4) {

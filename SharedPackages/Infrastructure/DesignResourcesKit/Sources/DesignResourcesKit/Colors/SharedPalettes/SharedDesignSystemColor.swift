@@ -77,11 +77,6 @@ public enum SharedDesignSystemColor {
     case vpnYellowForeground
     case vpnYellowForegroundPressed
 
-    // Buttons/Primary
-    case buttonsPrimaryDefault
-    case buttonsPrimaryPressed
-    case buttonsPrimaryText
-
     // Container
     case containerFillPrimary
     case containerFillSecondary

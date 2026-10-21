@@ -155,12 +155,6 @@ struct SlateBlueColorPalette: SharedColorPaletteDefinition {
     static let unifiedInputIconsSecondary = DynamicColor(lightHex: 0x060a0e, lightOpacityHex: 0x99, darkHex: 0xf7fbfd, darkOpacityHex: 0x7a)
     static let unifiedInputTextPrimary = DynamicColor(lightHex: 0x060a0e, lightOpacityHex: 0xf4, darkHex: 0xf7fbfd, darkOpacityHex: 0xf4)
     static let unifiedInputTextSecondary = DynamicColor(lightHex: 0x060a0e, lightOpacityHex: 0x99, darkHex: 0xf7fbfd, darkOpacityHex: 0xa8)
-
-    // MARK: - Not Specialized
-
-    static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
-    static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
 }
 
 #endif

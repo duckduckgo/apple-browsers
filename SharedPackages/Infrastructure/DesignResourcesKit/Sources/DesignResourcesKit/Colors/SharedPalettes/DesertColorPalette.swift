@@ -155,12 +155,6 @@ struct DesertColorPalette: SharedColorPaletteDefinition {
     static let unifiedInputIconsSecondary = DynamicColor(lightHex: 0x17150f, lightOpacityHex: 0xa8, darkHex: 0xfdfaf7, darkOpacityHex: 0x7a)
     static let unifiedInputTextPrimary = DynamicColor(lightHex: 0x17150f, lightOpacityHex: 0xf4, darkHex: 0xfdfcfa, darkOpacityHex: 0xf4)
     static let unifiedInputTextSecondary = DynamicColor(lightHex: 0x17150f, lightOpacityHex: 0x99, darkHex: 0xfefcfb, darkOpacityHex: 0xa8)
-
-    // MARK: - Not Specialized
-
-    static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
-    static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
 }
 
 #endif

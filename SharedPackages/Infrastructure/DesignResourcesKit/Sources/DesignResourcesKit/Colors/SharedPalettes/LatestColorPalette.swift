@@ -158,10 +158,6 @@ struct LatestColorPalette: SharedColorPaletteDefinition {
 
     // MARK: - Not Specialized
 
-    static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
-    static let buttonsPrimaryText = DynamicColor(lightColor: .white, darkColor: .shade(0.84))
-
     static let spinnerStart = DynamicColor(lightHex: 0x000000, lightOpacity: 0.42, darkHex: 0xffffff, darkOpacity: 0.6)
     static let spinnerFinal = DynamicColor(lightColor: .green60, darkColor: .green30)
 }

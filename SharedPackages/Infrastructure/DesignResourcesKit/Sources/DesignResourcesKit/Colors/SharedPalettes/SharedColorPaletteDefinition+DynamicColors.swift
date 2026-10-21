@@ -128,14 +128,6 @@ extension SharedColorPaletteDefinition {
         case .vpnYellowForegroundPressed:
             return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
 
-        /// Buttons/Primary
-        case .buttonsPrimaryDefault:
-            return buttonsPrimaryDefault
-        case .buttonsPrimaryPressed:
-            return buttonsPrimaryPressed
-        case .buttonsPrimaryText:
-            return buttonsPrimaryText
-
         /// Container Colors
         case .containerFillPrimary:
             return containerFillPrimary

@@ -227,6 +227,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAccountCreationAvailable: Bool = true
     @Published public var isAccountRecoveryAvailable: Bool = true
     @Published public var isAIChatSyncEnabled: Bool = false
+    @Published public var isDeviceActivityAvailable: Bool = false
     @Published public var isAppVersionNotSupported: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
 

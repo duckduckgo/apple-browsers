@@ -316,7 +316,7 @@ private final class MentionFixture {
                 return true
             }
         ))
-        controller.pixelSurfaceProvider = { .contextualChat }
+        controller.pixelAttributionProvider = { .init(surface: .contextualChat, pageType: .contextual) }
         controller.onSuggestionsChanged = { [weak self] in
             self?.suggestions = $0
             self?.onUpdate?($0)

@@ -194,6 +194,7 @@ struct HTTPSUpgradeNavigationTracker {
 }
 
 class TabViewController: UIViewController {
+    private var cpmReadinessDocumentIsGET = false
 
     private struct Constants {
         static let frameLoadInterruptedErrorCode = 102
@@ -341,6 +342,7 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
+    private let autofillPromptKeyboardHandler = AutofillPromptKeyboardHandler()
     private(set) lazy var pageSignalsMonitor = PageSignalsMonitor(tld: storageCache.tld,
                                                                   isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) },
                                                                   eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
@@ -361,6 +363,11 @@ class TabViewController: UIViewController {
         AIChatTextSelectionFeature(featureFlagger: featureFlagger,
                                    aiChatSettings: aiChatSettings,
                                    unifiedToggleInputFeature: unifiedToggleInputFeature)
+    private lazy var aiChatContextualAttachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(
+        featureFlagger: featureFlagger,
+        aiChatSettings: aiChatSettings,
+        devicePlatform: devicePlatform
+    )
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -593,6 +600,7 @@ class TabViewController: UIViewController {
     /// The tab's chat identity: written on commit and on settled same-document URL rewrites.
     /// Seeded from the stored link so a recreated controller's reload isn't a chat change.
     private lazy var lastCommittedDuckAIChatID: String? = viewModel.currentAIChatId
+    let duckAIPromptAttribution: DuckAIPromptAttribution
 
     var emailManager: EmailManager? {
         return (parent as? MainViewController)?.emailManager
@@ -694,6 +702,7 @@ class TabViewController: UIViewController {
                                    autoplaySettings: AutoplaySettings,
                                    duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                    duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                   usageContextProvider: UsageContextProviding,
                                    adBlockingAvailability: AdBlockingAvailabilityProviding,
                                    eventHub: EventHubManaging,
                                    webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
@@ -736,6 +745,7 @@ class TabViewController: UIViewController {
                                  autoplaySettings: autoplaySettings,
                                  duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                  duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+                                 usageContextProvider: usageContextProvider,
                                  adBlockingAvailability: adBlockingAvailability,
                                  eventHub: eventHub,
                                  pixelFiring: pixelFiring,
@@ -751,6 +761,7 @@ class TabViewController: UIViewController {
 
     let historyManager: HistoryManaging
     let adBlockingAvailability: AdBlockingAvailabilityProviding
+    let usageContextProvider: UsageContextProviding
 
     let eventHub: EventHubManaging
     let webExtensionManagerProvider: () -> WebExtensionManaging?
@@ -923,6 +934,7 @@ class TabViewController: UIViewController {
             isFireTab: tabModel.fireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            usageContextProvider: usageContextProvider,
             onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
             selectionJourneyScopeID: tabModel.uid,
             tabAttachmentSource: tabAttachmentSource
@@ -972,6 +984,7 @@ class TabViewController: UIViewController {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
          addressBarURLFilter: AddressBarURLFiltering = AddressBarURLFilter(),
+         usageContextProvider: UsageContextProviding,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          eventHub: EventHubManaging,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
@@ -1027,7 +1040,11 @@ class TabViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.devicePlatform = devicePlatform
+        let duckAIPromptAttribution = DuckAIPromptAttribution()
+        self.duckAIPromptAttribution = duckAIPromptAttribution
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings,
+                                                         pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: duckAIPromptAttribution,
+                                                                                                       usageContextProvider: usageContextProvider),
                                                          featureDiscovery: featureDiscovery,
                                                          productSurfaceTelemetry: productSurfaceTelemetry,
                                                          onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
@@ -1042,6 +1059,7 @@ class TabViewController: UIViewController {
         self.sitePermissionsDependenciesProvider = sitePermissionsDependenciesProvider
         self.addressBarURLFilter = addressBarURLFilter
         self.adBlockingAvailability = adBlockingAvailability
+        self.usageContextProvider = usageContextProvider
         self.eventHub = eventHub
         self.webExtensionManagerProvider = webExtensionManagerProvider
         self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider
@@ -1130,7 +1148,7 @@ class TabViewController: UIViewController {
         setSitePermissionsGeolocationActive(true)
         
         registerForResignActive()
-        registerForKeyboardNotifications()
+        registerForCreditCardAutofillKeyboardNotifications()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -1535,6 +1553,9 @@ class TabViewController: UIViewController {
         pageContextRestoredPageNeedsLoad = false
         pageContextProcessTerminated = false
         let isReplacingWebView = webView != nil
+        if isReplacingWebView {
+            cancelPendingAIChatTabAttachmentPrompt()
+        }
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
         let userContentController = UserContentController(
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
@@ -1703,6 +1724,15 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
+        load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: true)
+    }
+
+    private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
+        if case .available = aiChatContextualAttachMoreTabsFeature.state {
+            if initialAIChatPromptSession.willLoad(isInternalRetry: !shouldCancelPendingAIChatTabAttachmentPrompt) {
+                userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
+            }
+        }
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         wasLoadingStoppedExternally = false
@@ -1716,6 +1746,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         addressBarURLFilter.beginUserNavigation()
@@ -1761,6 +1792,7 @@ class TabViewController: UIViewController {
 
     func prepareForDataClearing() {
         freezeMonitor.end(.fire)
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         httpsUpgradeTask?.cancel()
         httpsUpgradeTask = nil
@@ -1936,7 +1968,7 @@ class TabViewController: UIViewController {
     }
     
     private func reissueNavigationWithSearchHeaderParams(for url: URL) {
-        load(url: url.applyingSearchHeaderParams())
+        load(url: url.applyingSearchHeaderParams(), shouldCancelPendingAIChatTabAttachmentPrompt: false)
     }
     
     private func shouldReissueSearch(for url: URL) -> Bool {
@@ -1986,6 +2018,7 @@ class TabViewController: UIViewController {
         cachedRuntimeConfigurationForDomain = [:]
         adBlockingNavigationHandler.handleReload()
         if duckPlayerNavigationHandler.handleReload(webView: webView) == .reload {
+            initialAIChatPromptSession.willRetryFailedNavigation()
             webView.reload()
         }
         delegate?.tabLoadingStateDidChange(tab: self)
@@ -2016,7 +2049,7 @@ class TabViewController: UIViewController {
             }
             if openingTab != nil {
                 stashReopenableStateOnOpener()
-                delegate?.tabDidRequestClose(self)
+                delegate?.tabDidRequestCloseOnBack(self)
                 return
             }
         }
@@ -2045,7 +2078,7 @@ class TabViewController: UIViewController {
 
         if openingTab != nil {
             stashReopenableStateOnOpener()
-            delegate?.tabDidRequestClose(self)
+            delegate?.tabDidRequestCloseOnBack(self)
         }
 
     }
@@ -2058,7 +2091,7 @@ class TabViewController: UIViewController {
             chromeDelegate?.omniBar.endEditing()
         } else if openingTab != nil {
             stashReopenableStateOnOpener()
-            delegate?.tabDidRequestClose(self)
+            delegate?.tabDidRequestCloseOnBack(self)
         } else if let url {
             load(url: url)
         }
@@ -2556,6 +2589,7 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
@@ -2596,6 +2630,27 @@ class TabViewController: UIViewController {
         removeObservers()
         temporaryDownloadForPreviewedFile?.cancel()
         cleanUpBeforeClosing()
+    }
+
+    let initialAIChatPromptSession = AIChatInitialPromptSession()
+
+    var isProtectedFromCacheEviction: Bool {
+        initialAIChatPromptSession.isProtectedFromCacheEviction
+    }
+
+    func prepareInitialAIChatPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                    completion: @escaping (AIChatInitialPromptDelivery?) -> Void) {
+        initialAIChatPromptSession.prepare(prompt, request: request, completion: completion)
+    }
+
+    func setInitialAIChatTabAttachmentPrompt(_ delivery: AIChatInitialPromptDelivery) {
+        userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
+        initialAIChatPromptSession.install(delivery)
+    }
+
+    func cancelPendingAIChatTabAttachmentPrompt() {
+        initialAIChatPromptSession.cancel()
+        userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -2675,6 +2730,8 @@ extension TabViewController: WKNavigationDelegate {
 
         // Before `url = webView.url` — its didSet rewrites `tabModel.link`, poisoning the lazy seed.
         let committedChatID = webView.url?.duckAIChatID
+        duckAIPromptAttribution.pageDidCommit(isDuckAI: webView.url?.isDuckAIURL == true,
+                                              entrySource: tabModel.takeDuckAIEntrySourceForPageLoad())
         let didChangeDuckAIChat = committedChatID != lastCommittedDuckAIChatID
         lastCommittedDuckAIChatID = committedChatID
 
@@ -2718,6 +2775,11 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if #available(iOS 18.4, *), webView === self.webView, navigationResponse.isForMainFrame,
+           let url = navigationResponse.response.url, url.isHttp || url.isHttps {
+            // The Network process can change after action policy. Repair before document-start scripts run.
+            webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
+        }
         if webView === self.webView {
             captureSitePermissionsGeolocationPolicy(from: navigationResponse.response,
                                                      isForMainFrame: navigationResponse.isForMainFrame)
@@ -2857,6 +2919,11 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
+            if initialAIChatPromptSession.didStartNavigation(navigation) {
+                userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
+            }
+        }
         if floatingUIManager.isFloatingUIEnabled {
             floatingPageBackgroundColor = nil
         }
@@ -2880,6 +2947,9 @@ extension TabViewController: WKNavigationDelegate {
             webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
                 .navigationStarted(tabIdentifier: tabModel.uid, navigationKind: navigationKind)
             )
+            webExtensionManagerProvider()?.cpmMessagingHealthMonitor.matchReadinessRecoveryNavigation(tabIdentifier: tabModel.uid) {
+                $0 === navigation
+            }
         }
         sitePermissionsDidStartProvisionalNavigation(webView, navigation: navigation)
         navigationPixelResponder.didStart(navigation)
@@ -2933,6 +3003,9 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = webView.url {
             if #available(iOS 18.4, *), let webExtensionManager = webExtensionManagerProvider() {
+                webExtensionManager.cpmMessagingHealthMonitor.registerReadinessRecoveryDocument(
+                    tabIdentifier: tabModel.uid, webView: webView, isGET: cpmReadinessDocumentIsGET
+                )
                 webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
                     tabIdentifier: tabModel.uid,
                     url: url,
@@ -3395,6 +3468,9 @@ extension TabViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         terminationReloadMonitor.didFail(with: error)
+        if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
+            userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
+        }
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -3450,6 +3526,9 @@ extension TabViewController: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         terminationReloadMonitor.didFail(with: error)
+        if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
+            userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
+        }
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
@@ -3469,6 +3548,10 @@ extension TabViewController: WKNavigationDelegate {
         lastError = error
         let error = error as NSError
         pageSignalsMonitor.didFailProvisionalNavigation(to: error.failedUrl, with: error)
+        // A cancellation is usually the next load replacing this one, which may already carry its own door.
+        if error.code != NSURLErrorCancelled {
+            tabModel.discardDuckAIEntrySourceAwaitingPageLoad()
+        }
 
         // Ignore Frame Load Interrupted that will be caused when a download starts
         if error.code == 102 && error.domain == "WebKitErrorDomain" {
@@ -3568,6 +3651,9 @@ extension TabViewController: WKNavigationDelegate {
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
         let wrappedHandler: (TabNavigationDecision) -> Void = { [weak self] decision in
             if case .allow = decision {
+                if navigationAction.isTargetingMainFrame {
+                    self?.cpmReadinessDocumentIsGET = navigationAction.request.httpMethod == "GET"
+                }
                 self?.navigationPixelResponder.willStart(navigationAction)
             }
             decisionHandler(decision.webKitPolicy)
@@ -3577,6 +3663,7 @@ extension TabViewController: WKNavigationDelegate {
         // Content Blocking retry below, so that retry does not wait on extension startup twice.
         if #available(iOS 18.4, *),
            navigationAction.isTargetingMainFrame,
+           [.http, .https].contains(navigationAction.request.url?.navigationalScheme),
            let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
             webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate] in
                 guard !Task.isCancelled else {
@@ -3804,10 +3891,7 @@ extension TabViewController: WKNavigationDelegate {
             if modifierFlags.contains(.command) {
                 if modifierFlags.contains(.shift) {
                     wrappedHandler(.cancel)
-                    delegate?.tab(self,
-                                  didRequestNewTabForUrl: url,
-                                  openedByPage: false,
-                                  inheritingAttribution: adClickAttributionLogic.state)
+                    delegate?.tab(self, didRequestNewTabForFollowedLink: url, inheritingAttribution: adClickAttributionLogic.state)
                     return
                 } else {
                     wrappedHandler(.cancel)
@@ -4195,7 +4279,13 @@ extension TabViewController: WKNavigationDelegate {
     func dismissKeyboardIfPresent() {
         self.webView.evaluateJavaScript("document.activeElement?.blur()")
     }
-    
+
+    /// A pending field tap can restore focus after blur, so observe keyboard appearances while the prompt is presented.
+    func prepareForAutofillPrompt(_ promptViewController: UIViewController) {
+        autofillPromptKeyboardHandler.startObserving(for: promptViewController, webView: webView)
+        dismissKeyboardIfPresent()
+    }
+
     private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount, source: AutofillSettingsSource) {
         delegate?.tab(self, didRequestAutofillLogins: account, source: source, extensionPromotionManager: extensionPromotionManager)
     }
@@ -4228,20 +4318,17 @@ extension TabViewController: WKNavigationDelegate {
         )
     }
 
-    private func registerForKeyboardNotifications() {
-        guard isCreditCardAutofillEnabled() else {
-            return
+    private func registerForCreditCardAutofillKeyboardNotifications() {
+        if isCreditCardAutofillEnabled() {
+            NotificationCenter.default.addObserver(self,
+                                                   selector: #selector(creditCardAutofillKeyboardDidHide),
+                                                   name: UIResponder.keyboardDidHideNotification,
+                                                   object: nil)
         }
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(keyboardDidHide),
-                                               name: UIResponder.keyboardDidHideNotification,
-                                               object: nil)
     }
 
     private func unregisterFromKeyboardNotifications() {
-        guard isCreditCardAutofillEnabled() else {
-            return
-        }
+        autofillPromptKeyboardHandler.stopObserving()
 
         NotificationCenter.default.removeObserver(
             self,
@@ -4271,7 +4358,7 @@ extension TabViewController: WKNavigationDelegate {
         ActionMessageView.present(message: UserText.autofillSettingsReportNotWorkingSentConfirmation)
     }
 
-    @objc private func keyboardDidHide(_ notification: Notification) {
+    @objc private func creditCardAutofillKeyboardDidHide(_ notification: Notification) {
         if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
             autofillUserScript?.cancelAllPendingReplies()
             cleanupInputAccessoryView()
@@ -4696,6 +4783,7 @@ extension TabViewController: WKUIDelegate {
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
             freezeMonitor.end(.terminated)
         }
@@ -4913,7 +5001,8 @@ extension TabViewController: UIGestureRecognizerDelegate {
         
         requeryLogic.onRefresh()
         if isError || webView.url == nil, let url = url {
-            load(url: url)
+            let retriesInitialPrompt = initialAIChatPromptSession.willRetryFailedNavigation()
+            load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: webView.url != nil && !retriesInitialPrompt)
         } else {
             reload()
         }
@@ -5002,6 +5091,7 @@ extension TabViewController: UserContentControllerDelegate {
                             handler: self.duckAiFireModeStorageHandler)
         }
         aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView, displayMode: .fullTab)
+        userScripts.aiChatUserScript.connectInitialPromptSession(initialAIChatPromptSession)
         aiChatContextualSheetCoordinator.pageContextHandler.resubscribe()
 
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
@@ -5538,9 +5628,6 @@ extension TabViewController: SecureVaultManagerDelegate {
 
     private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
                                                      completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
-
         let creditCardPromptViewController = CreditCardPromptViewController(creditCards: creditCards) { creditCard in
             completionHandler(creditCard)
         }
@@ -5555,6 +5642,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(creditCardPromptViewController)
         self.present(creditCardPromptViewController, animated: true, completion: nil)
     }
 
@@ -5594,9 +5682,6 @@ extension TabViewController: SecureVaultManagerDelegate {
                             promptUserWithGeneratedPassword password: String,
                             completionHandler: @escaping (Bool) -> Void) {
 
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
-
         var responseSent: Bool = false
 
         let sendResponse: (Bool) -> Void = { useGeneratedPassword in
@@ -5619,6 +5704,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(passwordGenerationPromptViewController)
         self.present(passwordGenerationPromptViewController, animated: true)
     }
 
@@ -5629,9 +5715,6 @@ extension TabViewController: SecureVaultManagerDelegate {
                                              useLargeDetent: Bool,
                                              onAccountSelected: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
                                              completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
-
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
 
         var responseSent: Bool = false
 
@@ -5688,6 +5771,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(autofillPromptViewController)
         self.present(autofillPromptViewController, animated: true, completion: nil)
     }
 
@@ -5698,9 +5782,6 @@ extension TabViewController: SecureVaultManagerDelegate {
             completionHandler(false)
             return
         }
-
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
 
         credentialsImportManager.domainPasswordImportLastShownOn = eTLDplus1
 
@@ -5738,6 +5819,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(promptViewController)
         self.present(promptViewController, animated: true) { [weak self] in
             guard let self else { return }
             self.delegate?.tab(self, didShowPrompt: .importPasswordsGoogle)
@@ -5748,9 +5830,6 @@ extension TabViewController: SecureVaultManagerDelegate {
         guard let eTLDplus1 = storageCache.tld.eTLDplus1(url?.host), extensionPromotionManager.domainExtensionPromptLastShownOn != eTLDplus1 else {
             return
         }
-
-        // Ensure keyboard doesn't block prompt
-        dismissKeyboardIfPresent()
 
         extensionPromotionManager.domainExtensionPromptLastShownOn = eTLDplus1
 
@@ -5771,6 +5850,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
 
+        prepareForAutofillPrompt(promptViewController)
         self.present(promptViewController, animated: true) { [weak self] in
             guard let self else { return }
             self.delegate?.tab(self, didShowPrompt: .autofillExtensionPrompt)

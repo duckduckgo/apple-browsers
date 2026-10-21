@@ -16,7 +16,16 @@
       <TestableReference skipped="NO" parallelizable="NO" testExecutionOrdering="lexical">
         <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="4B1AD89C25FC27E200261379" BuildableName="Integration Tests.xctest" BlueprintName="Integration Tests" ReferencedContainer="container:DuckDuckGo-macOS.xcodeproj"/>
         <SelectedTests>
-          <Test Identifier="CPMStableBaseURLIntegrationTests"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testReloadKeepsCPMOriginAndFirstNavigationHealthy"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testFullDataClearReloadWorksFromDisk"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testPersistentCacheReloadKeepsOriginAndMessaging"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testRuntimeKillSwitchAppliesOnNextReloadWithoutChangingLiveContext"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testVersionUpgradeUsesNewInstallationOriginAndKeepsCPMHealthy"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testNetworkCrashCanRecoverWithStableOriginAfterExplicitReload"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testLightweightDataClearReloadStillWorks"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testStorageSurvivesRuntimeRollbackAndReenable"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testWebPageCannotReadStableExtensionResources"/>
+          <Test Identifier="CPMStableBaseURLIntegrationTests/testBackgroundProcessCrashStillRecovers"/>
         </SelectedTests>
       </TestableReference>
     </Testables>

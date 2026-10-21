@@ -70,7 +70,7 @@ private extension PageSignals {
         let failureLines = resourceFailures
             .sorted { $0.key < $1.key }
             .map { domain, errors in
-                let messages = errors.map { "\($0)" }.sorted().joined(separator: ", ")
+                let messages = errors.map { $0.stringValue }.sorted().joined(separator: ", ")
                 return "  \(domain): \(messages)"
             }
 

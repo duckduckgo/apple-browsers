@@ -17,18 +17,19 @@
 //
 
 import PixelKit
+import PrivacyConfig
 import WebExtensions
 
 enum WebExtensionPixel: PixelKit.Event {
 
     // MARK: - Installation
 
-    case installed
-    case installError(error: Error)
+    case installed(extension: WebExtensionPixelExtension)
+    case installError(extension: WebExtensionPixelExtension, error: Error)
 
     // MARK: - Uninstallation
 
-    case uninstalled
+    case uninstalled(extension: WebExtensionPixelExtension)
     case uninstallError(error: Error)
     case uninstalledAll
     case uninstallAllError(error: Error)
@@ -86,6 +87,14 @@ enum WebExtensionPixel: PixelKit.Event {
     // MARK: - Daily State
 
     case dailyAdBlockingState(isEnabled: Bool, analyticsEnabled: Bool)
+    case bitwardenDailyActive(isDefault: Bool)
+
+    // MARK: - Default Password Manager
+
+    case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
+    case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
+
+    case cpmNetworkProcessRecoveryApplied
 
     // MARK: - Debug
 
@@ -163,6 +172,13 @@ enum WebExtensionPixel: PixelKit.Event {
             return "m_mac_web_extension_scriptlet_install_error"
         case .dailyAdBlockingState:
             return "m_mac_web_extension_daily_ad_blocking_state"
+        case .bitwardenDailyActive:
+            return "web_extension_bitwarden_dau_macos"
+        case .defaultPasswordManagerSet:
+            return "web_extension_default_password_manager_set_macos"
+        case .apiCompatibilityGaps(let catalogEntry, _, _, _):
+            // One pixel per catalog extension, so each gets its own once-a-day report.
+            return "web_extension_api_gaps_\(catalogEntry.rawValue.lowercased())_macos"
         case .stateChecked:
             return "web_extension_state_checked_macos"
         case .embeddedNotLoaded:
@@ -174,7 +190,10 @@ enum WebExtensionPixel: PixelKit.Event {
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
         case .debugCPM(let metadata):
+            // Preserve the shared canonical CPM names on both platforms.
             return metadata.name
+        case .cpmNetworkProcessRecoveryApplied:
+            return "web_extension_cpm_network_process_recovery_applied"
         }
     }
 
@@ -206,6 +225,17 @@ enum WebExtensionPixel: PixelKit.Event {
             ]
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             return ["extension_loaded": extensionLoaded ? "true" : "false"]
+        case .installed(let pixelExtension),
+             .installError(let pixelExtension, _),
+             .uninstalled(let pixelExtension),
+             .defaultPasswordManagerSet(let pixelExtension):
+            return ["extension": pixelExtension.parameterValue]
+        case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
+            return ["extension_version": version,
+                    "missing_api_count": String(missingAPICount),
+                    "unsupported_url_count": String(unsupportedURLCount)]
+        case .bitwardenDailyActive(let isDefault):
+            return ["is_default": isDefault ? "true" : "false"]
         case .debugCPM(let metadata):
             return metadata.parameters
         case .reloadError(let parameters):
@@ -217,7 +247,7 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .debugCPM, .reloadError:
+        case .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps:
             return .none
         default:
             return .platformDefault
@@ -274,16 +304,22 @@ private extension DuckDuckGoWebExtensionType {
 @available(macOS 15.4, *)
 struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
     func fire(_ event: WebExtensionPixelEvent) {
         let pixel: WebExtensionPixel
         let frequency: PixelKit.Frequency
         switch event {
-        case .installed:
-            pixel = .installed
-        case .installError(let error):
-            pixel = .installError(error: error)
-        case .uninstalled:
-            pixel = .uninstalled
+        case .installed(let pixelExtension):
+            pixel = .installed(extension: pixelExtension)
+        case .installError(let pixelExtension, let error):
+            pixel = .installError(extension: pixelExtension, error: error)
+        case .uninstalled(let pixelExtension):
+            pixel = .uninstalled(extension: pixelExtension)
         case .uninstallError(let error):
             pixel = .uninstallError(error: error)
         case .uninstalledAll:
@@ -328,10 +364,32 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmMessagingEpisode:
+        case .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
             guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
             pixel = .debugCPM(metadata)
+        case .cpmNetworkProcessRecoveryApplied:
+            pixel = .cpmNetworkProcessRecoveryApplied
+        case .defaultPasswordManagerSet(let pixelExtension):
+            pixel = .defaultPasswordManagerSet(extension: pixelExtension)
+        case .bitwardenDailyActive(let isDefault):
+            pixel = .bitwardenDailyActive(isDefault: isDefault)
+        case .apiCompatibilityGaps(let catalogEntry, let version, let missingAPICount, let unsupportedURLCount):
+            pixel = .apiCompatibilityGaps(extension: catalogEntry, version: version,
+                                          missingAPICount: missingAPICount, unsupportedURLCount: unsupportedURLCount)
         }
+        switch event {
+        case .bitwardenDailyActive, .apiCompatibilityGaps:
+            frequency = .daily
+        case .defaultPasswordManagerSet:
+            frequency = .standard
+        default:
+            frequency = Self.frequency(of: event)
+        }
+        pixelFiring?.fire(pixel, frequency: frequency)
+    }
+
+    private static func frequency(of event: WebExtensionPixelEvent) -> PixelKit.Frequency {
+        let frequency: PixelKit.Frequency
         if case .reloadError = event {
             frequency = .dailyAndCount
         } else if let metadata = CPMWebExtensionPixelMetadata(event: event) {
@@ -339,7 +397,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         } else {
             frequency = .dailyAndStandard
         }
-        PixelKit.fire(pixel, frequency: frequency)
+        return frequency
     }
 }
 

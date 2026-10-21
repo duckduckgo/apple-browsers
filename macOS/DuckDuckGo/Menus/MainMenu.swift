@@ -679,7 +679,10 @@ final class MainMenu: NSMenu {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
-                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                            isBitwardenEnabled: { [privacyConfigurationManager] in
+                                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
+                            }
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {

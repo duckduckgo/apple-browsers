@@ -43,6 +43,11 @@
                 "type": "boolean"
             },
             {
+                "key": "address_bar_toggle_available",
+                "description": "Whether the address bar offers the Search/Duck.ai toggle on this return: Unified Input on iPhone or the iPad address bar, with the toggle setting on. Works on both, unlike unified_input_available.",
+                "type": "boolean"
+            },
+            {
                 "key": "launch_source",
                 "description": "What triggered this foreground: standard, url, shortcut, or user_activity",
                 "type": "string"

@@ -1143,14 +1143,14 @@ final class NavigationBarViewController: NSViewController {
     private func promptToSaveAutofillData(_ data: AutofillData) {
         let autofillPreferences = AutofillPreferences()
 
-        if autofillPreferences.askToSaveUsernamesAndPasswords, let credentials = data.credentials {
+        if autofillPreferences.isUsernamesAndPasswordsAutofillActive, let credentials = data.credentials {
             Logger.passwordManager.debug("Presenting Save Credentials popover")
             popovers.displaySaveCredentials(credentials,
                                             automaticallySaved: data.automaticallySavedCredentials,
                                             backfilled: data.backfilled,
                                             usingView: passwordManagementButton,
                                             withDelegate: self)
-        } else if autofillPreferences.askToSavePaymentMethods, let card = data.creditCard {
+        } else if autofillPreferences.isPaymentMethodsAutofillActive, let card = data.creditCard {
             guard CreditCardValidation.isValidCardNumber(CreditCardValidation.extractDigits(from: card.cardNumber)) else {
                 Logger.autofill.debug("Invalid credit card number, not presenting save popover")
                 return
@@ -1160,7 +1160,7 @@ final class NavigationBarViewController: NSViewController {
             popovers.displaySavePaymentMethod(card,
                                               usingView: passwordManagementButton,
                                               withDelegate: self)
-        } else if autofillPreferences.askToSaveAddresses, let identity = data.identity {
+        } else if autofillPreferences.isAddressesAutofillActive, let identity = data.identity {
             Logger.passwordManager.debug("Presenting Save Identity popover")
             popovers.displaySaveIdentity(identity,
                                          usingView: passwordManagementButton,

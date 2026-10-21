@@ -123,7 +123,10 @@ final class CPMAppIntegrationHarness {
             FeatureFlag.cpmBackgroundDelegateProxy.rawValue: diagnosticsEnabled,
             FeatureFlag.cpmBackgroundGraveyardTreatment.rawValue: false,
             FeatureFlag.cpmStableBaseURL.rawValue: ProcessInfo.processInfo.environment["CPM_APP_INTEGRATION_DISABLE_STABLE_BASE_URL"] != "1",
-            FeatureFlag.cpmMessagingHangRecovery.rawValue: false
+            FeatureFlag.cpmMessagingHangRecovery.rawValue: false,
+            FeatureFlag.cpmNetworkProcessRecovery.rawValue: false,
+            FeatureFlag.cpmBackgroundLoadRecovery.rawValue: false,
+            FeatureFlag.cpmLateBackgroundDocumentRecovery.rawValue: false
         ]
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = dataStore
@@ -184,6 +187,10 @@ final class CPMAppIntegrationHarness {
                 cpmMessagingHealthMonitor: monitor,
                 cpmDiagnosticsRecorder: diagnosticsEnabled ? diagnostics : nil,
                 isCPMMessagingHangRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmMessagingHangRecovery) == true },
+                isCPMNetworkProcessRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmNetworkProcessRecovery) == true },
+                cpmNetworkProcessRecoveryFeatureFlagUpdates: flags.updatesPublisher,
+                isCPMBackgroundLoadRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmBackgroundLoadRecovery) == true },
+                isCPMLateBackgroundDocumentRecoveryEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmLateBackgroundDocumentRecovery) == true },
                 isCPMStableBaseURLEnabled: { [weak flags] in flags?.isFeatureOn(FeatureFlag.cpmStableBaseURL) == true },
                 handlerProvider: CPMAppHandlerProvider(production: handler, native: native)
             )

@@ -21,6 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 import Core
 import Combine
+import FeatureFlags_iOS
 @testable import DDGSync
 import Persistence
 import PixelKit
@@ -100,6 +101,38 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     func testWhenSyncSettingsAreShownThenSyncUIVersionIsV2() {
         XCTAssertEqual(vc.syncUIVersion, "v2")
         XCTAssertEqual(vc.uiVersionParameters, [PixelParameters.uiVersion: "v2"])
+    }
+
+    @MainActor
+    func testDeviceActivityAvailabilityTracksAuditLogFeatureFlagUpdates() async {
+        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
+        XCTAssertFalse(vc.viewModel.isDeviceActivityAvailable)
+
+        let enabled = expectation(description: "Device Activity is enabled when the audit log flag turns on")
+        vc.viewModel.$isDeviceActivityAvailable
+            .filter { $0 }
+            .prefix(1)
+            .sink { _ in enabled.fulfill() }
+            .store(in: &cancellables)
+
+        // Login notifications remain disabled; history is gated only by the audit-log flag.
+        featureFlagger.enabledFeatureFlags = [.syncLoginAuditLog]
+        featureFlagger.triggerUpdate()
+        await fulfillment(of: [enabled], timeout: 1.0)
+        XCTAssertTrue(vc.viewModel.isDeviceActivityAvailable)
+
+        let disabled = expectation(description: "Device Activity is hidden when the audit log flag turns off")
+        vc.viewModel.$isDeviceActivityAvailable
+            .filter { !$0 }
+            .prefix(1)
+            .sink { _ in disabled.fulfill() }
+            .store(in: &cancellables)
+
+        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
+        await fulfillment(of: [disabled], timeout: 1.0)
+        XCTAssertFalse(vc.viewModel.isDeviceActivityAvailable)
     }
 
     @MainActor

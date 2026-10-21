@@ -21,7 +21,8 @@ import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 final class URLTokenValidatorTests {
-    @Test("Token generation produces valid token with expected format")
+    @available(iOS 16, macOS 13, *)
+    @Test("Token generation produces valid token with expected format", .timeLimit(.minutes(1)))
     func testGenerateToken() {
         let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/")!
@@ -30,7 +31,8 @@ final class URLTokenValidatorTests {
         #expect(token.contains(":"), "Token should contain a colon separating the signature and timestamp")
     }
 
-    @Test("Generated token is valid for the original URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Generated token is valid for the original URL", .timeLimit(.minutes(1)))
     func testValidateToken() {
         let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/")!
@@ -40,7 +42,8 @@ final class URLTokenValidatorTests {
         #expect(isValid, "Token should be valid for the given URL")
     }
 
-    @Test("Token is not valid for a different URL")
+    @available(iOS 16, macOS 13, *)
+    @Test("Token is not valid for a different URL", .timeLimit(.minutes(1)))
     func testValidateTokenWithInvalidURL() {
         let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/some-page")!
@@ -51,7 +54,8 @@ final class URLTokenValidatorTests {
         #expect(!isValid, "Token should not be valid for a different URL")
     }
 
-    @Test("Garbage token data is not valid")
+    @available(iOS 16, macOS 13, *)
+    @Test("Garbage token data is not valid", .timeLimit(.minutes(1)))
     func testValidateTokenWithGarbageData() {
         let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/special-page")!
@@ -61,7 +65,8 @@ final class URLTokenValidatorTests {
         #expect(!isValid, "Token should not be valid for the given URL when the token is garbage data")
     }
 
-    @Test("Token with expired timestamp is not valid")
+    @available(iOS 16, macOS 13, *)
+    @Test("Token with expired timestamp is not valid", .timeLimit(.minutes(1)))
     func testValidateTokenWithExpiredTimestamp() throws {
         let validator = URLTokenValidator.shared
         let url = URL(string: "https://example.com/")!

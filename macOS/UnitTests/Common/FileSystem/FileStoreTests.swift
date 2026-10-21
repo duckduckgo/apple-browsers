@@ -30,27 +30,8 @@ final class FileStoreTests {
         return URL.persistenceLocation(for: "FileStoreTest_\(testName)")
     }
 
-    private func removeTestFiles() {
-        // Remove all test files created by this test class
-        let fileManager = FileManager.default
-        let testFiles = [
-            "FileStoreTest_StoringDataWithoutEncryption",
-            "FileStoreTest_ReadingNonExistentData",
-            "FileStoreTest_ReadingDataWithoutEncryption",
-            "FileStoreTest_StoringAndRetrievingEncryptedData",
-            "FileStoreTest_LoadDataFromEncryptedStoreDecryptsByDefault",
-            "FileStoreTest_LoadDataWithoutDecryptionReturnsEncryptedData",
-            "FileStoreTest_OverwritingStoredFiles",
-            "FileStoreTest_CheckingFilePresence",
-            "FileStoreTest_PersistenceLocation"
-        ]
-
-        for fileName in testFiles {
-            try? fileManager.removeItem(at: URL.persistenceLocation(for: fileName))
-        }
-    }
-
-    @Test("Data can be stored without encryption")
+    @available(iOS 16, macOS 13, *)
+    @Test("Data can be stored without encryption", .timeLimit(.minutes(1)))
     func testStoringDataWithoutEncryption() {
         let testFileLocation = getTestFileLocation(for: "StoringDataWithoutEncryption")
         let store = EncryptedFileStore()
@@ -60,7 +41,8 @@ final class FileStoreTests {
         try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    @Test("Reading non-existent data returns nil")
+    @available(iOS 16, macOS 13, *)
+    @Test("Reading non-existent data returns nil", .timeLimit(.minutes(1)))
     func testReadingNonExistentData() {
         let testFileLocation = getTestFileLocation(for: "ReadingNonExistentData")
         let store = EncryptedFileStore()
@@ -69,7 +51,8 @@ final class FileStoreTests {
         #expect(data == nil)
     }
 
-    @Test("Data can be read without encryption")
+    @available(iOS 16, macOS 13, *)
+    @Test("Data can be read without encryption", .timeLimit(.minutes(1)))
     func testReadingDataWithoutEncryption() {
         let testFileLocation = getTestFileLocation(for: "ReadingDataWithoutEncryption")
         let store = EncryptedFileStore()
@@ -81,7 +64,8 @@ final class FileStoreTests {
         try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    @Test("Data can be stored and retrieved with encryption")
+    @available(iOS 16, macOS 13, *)
+    @Test("Data can be stored and retrieved with encryption", .timeLimit(.minutes(1)))
     func testStoringAndRetrievingEncryptedData() throws {
         let testFileLocation = getTestFileLocation(for: "StoringAndRetrievingEncryptedData")
         let keyStore = MockEncryptionKeyStore(generator: EncryptionKeyGenerator(), account: "mock-account")
@@ -102,7 +86,8 @@ final class FileStoreTests {
         try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    @Test("LoadData from encrypted store decrypts by default")
+    @available(iOS 16, macOS 13, *)
+    @Test("LoadData from encrypted store decrypts by default", .timeLimit(.minutes(1)))
     func testThatLoadDataFromEncryptedStoreDecryptsByDefault() throws {
         let testFileLocation = getTestFileLocation(for: "LoadDataFromEncryptedStoreDecryptsByDefault")
         let keyStore = MockEncryptionKeyStore(generator: EncryptionKeyGenerator(), account: "mock-account")
@@ -115,7 +100,8 @@ final class FileStoreTests {
         try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    @Test("LoadData without decryption returns encrypted data")
+    @available(iOS 16, macOS 13, *)
+    @Test("LoadData without decryption returns encrypted data", .timeLimit(.minutes(1)))
     func testWhenLoadDataIsCalledWithoutDecryptionThenDataIsNotDecrypted() throws {
         let testFileLocation = getTestFileLocation(for: "LoadDataWithoutDecryptionReturnsEncryptedData")
         let keyStore = MockEncryptionKeyStore(generator: EncryptionKeyGenerator(), account: "mock-account")
@@ -129,7 +115,8 @@ final class FileStoreTests {
         try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    @Test("Stored files can be overwritten")
+    @available(iOS 16, macOS 13, *)
+    @Test("Stored files can be overwritten", .timeLimit(.minutes(1)))
     func testOverwritingStoredFiles() throws {
         let testFileLocation = getTestFileLocation(for: "OverwritingStoredFiles")
         let keyStore = MockEncryptionKeyStore(generator: EncryptionKeyGenerator(), account: "mock-account")
@@ -145,7 +132,8 @@ final class FileStoreTests {
         try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    @Test("File presence can be checked")
+    @available(iOS 16, macOS 13, *)
+    @Test("File presence can be checked", .timeLimit(.minutes(1)))
     func testCheckingFilePresence() {
         let testFileLocation = getTestFileLocation(for: "CheckingFilePresence")
         let store = EncryptedFileStore()
@@ -156,7 +144,8 @@ final class FileStoreTests {
         try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    @Test("Persistence location is correctly constructed")
+    @available(iOS 16, macOS 13, *)
+    @Test("Persistence location is correctly constructed", .timeLimit(.minutes(1)))
     func testPersistenceLocation() {
         let fileName = "FileStoreTest_PersistenceLocation"
         let location = URL.persistenceLocation(for: fileName)

@@ -44,7 +44,8 @@ final class LaunchOptionsHandlerTests {
 
     // MARK: - isOnboardingCompleted
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusOverriddenDeveloperCompletedTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
         // GIVEN
         let environment = ["ONBOARDING": "false"]
@@ -57,7 +58,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == .overridden(.developer(completed: true)))
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusOverriddenDeveloperCompletedFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
         // GIVEN
         let environment = ["ONBOARDING": "true"]
@@ -70,7 +72,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == .overridden(.developer(completed: false)))
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusOverriddenUITestsCompletedTrueWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsTrue() {
         // GIVEN
         userDefaults.set("true", forKey: "isOnboardingCompleted")
@@ -83,7 +86,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == .overridden(.uiTests(completed: true)))
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusOverriddenCompletedFalseWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsFalse() {
         // GIVEN
         userDefaults.set("false", forKey: "isOnboardingCompleted")
@@ -96,7 +100,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == .overridden(.uiTests(completed: false)))
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusNotOverriddenWhenIsOnboardingCompletedAndDefaultsAndEnvironmentAreNotDefined() {
         // GIVEN
         userDefaults.removeObject(forKey: "isOnboardingCompleted")
@@ -109,7 +114,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == .notOverridden)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionShowsOnboardingWhenNotOverriddenAndOnboardingNotSeen() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
@@ -121,7 +127,8 @@ final class LaunchOptionsHandlerTests {
         #expect(decision.shouldShowOnboarding)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionSkipsOnboardingWhenDeveloperOverrideMarksItCompleted() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
@@ -136,7 +143,8 @@ final class LaunchOptionsHandlerTests {
         #expect(!(decision.shouldShowOnboarding))
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionShowsOnboardingWhenDeveloperOverrideMarksItIncomplete() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
@@ -151,7 +159,8 @@ final class LaunchOptionsHandlerTests {
         #expect(decision.shouldShowOnboarding)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionPersistsUITestCompletionOverride() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
@@ -167,7 +176,8 @@ final class LaunchOptionsHandlerTests {
         #expect(tutorialSettings.hasSeenOnboarding)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionPersistsUITestIncompleteOverride() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
@@ -185,7 +195,8 @@ final class LaunchOptionsHandlerTests {
 
     // MARK: - App Variant
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnAppVariantWhenAppVariantIsCalledAndDefaultsContainsAppVariant() {
         // GIVEN
         userDefaults.set("mb", forKey: "currentAppVariant")
@@ -198,7 +209,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == "mb")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnNilWhenAppVariantIsCalledAndDefaultsDoesNotContainsAppVariant() {
         // GIVEN
         userDefaults.removeObject(forKey: "currentAppVariant")
@@ -211,7 +223,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == nil)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnNilWhenAppVariantIsCalledAndDefaultsContainsNullStringAppVariant() {
         // GIVEN
         userDefaults.set("null", forKey: "currentAppVariant")
@@ -226,7 +239,8 @@ final class LaunchOptionsHandlerTests {
 
     // MARK: - iPad 17.7.7 Issue
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnDeveloperOverriddenCompletedWhenIpadAndOSIs17_7_7() throws {
         // GIVEN
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: true, systemVersion: "17.7.7")
@@ -238,7 +252,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == .overridden(.developer(completed: true)))
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldNotReturnDeveloperOverriddenCompletedWhenIpadAndOSIsNot17_7_7() throws {
         // GIVEN
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: true, systemVersion: "17.7.6")
@@ -250,7 +265,8 @@ final class LaunchOptionsHandlerTests {
         #expect(result == .notOverridden)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldNotReturnDeveloperOverriddenCompletedWhenIsNotIpadAndOSIs17_7_7() {
         // GIVEN
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: false, systemVersion: "17.7.7")
@@ -266,7 +282,8 @@ final class LaunchOptionsHandlerTests {
 
 #if DEBUG
     @MainActor
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenSitePermissionsAreSeededForUITestsThenRecordsCanBeCleared() throws {
         let argumentDomain = userDefaults.volatileDomain(forName: UserDefaults.argumentDomain)
         userDefaults.setVolatileDomain(
@@ -293,7 +310,8 @@ final class LaunchOptionsHandlerTests {
     }
 #endif
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenNoOverridesPassedThenInternalUserNotEnabled() {
         // GIVEN
         let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
@@ -317,7 +335,8 @@ final class LaunchOptionsHandlerTests {
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenFeatureFlagOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
         // GIVEN
         userDefaults.set("true", forKey: "ff.uiTestFeatureFlag")
@@ -343,7 +362,8 @@ final class LaunchOptionsHandlerTests {
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenExperimentCohortOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
         // GIVEN
         userDefaults.set("treatment", forKey: "experiment.uiTestExperiment")
@@ -369,7 +389,8 @@ final class LaunchOptionsHandlerTests {
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenConfigRolloutOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
         // GIVEN
         userDefaults.set("true", forKey: "config.rollout.duckPlayer.enableDuckPlayer")
@@ -395,7 +416,8 @@ final class LaunchOptionsHandlerTests {
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenIsInternalUserArgIsTrueThenInternalUserIsEnabled() {
         // GIVEN
         userDefaults.set("true", forKey: "isInternalUser")
@@ -423,7 +445,8 @@ final class LaunchOptionsHandlerTests {
     /// Verifies the one-way semantics of `-isInternalUser`: the arg can only set the flag to `true`.
     /// Passing `false` (or any non-"true" value) is a no-op. To detect "no-op", the mock starts at `true`
     /// and the assertion checks it stayed `true`. Off is the default state, set by absence of the arg.
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenIsInternalUserArgIsFalseThenInternalUserStoreIsNotModified() {
         // GIVEN
         userDefaults.set("false", forKey: "isInternalUser")

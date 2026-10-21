@@ -24,49 +24,56 @@ import Testing
 
 final class StringExtensionTests {
 
-    @Test("String normalization for autofill removes diacritics")
+    @available(iOS 16, macOS 13, *)
+    @Test("String normalization for autofill removes diacritics", .timeLimit(.minutes(1)))
     func normalizeStringsForAutofillRemovesDiacritics() {
         let stringToNormalize = "Dáx Thê Dûck"
         let normalizedString = stringToNormalize.autofillNormalized()
         #expect(normalizedString == "daxtheduck")
     }
 
-    @Test("String normalization for autofill removes whitespace")
+    @available(iOS 16, macOS 13, *)
+    @Test("String normalization for autofill removes whitespace", .timeLimit(.minutes(1)))
     func normalizeStringsForAutofillRemovesWhitespace() {
         let stringToNormalize = "Dax The Duck"
         let normalizedString = stringToNormalize.autofillNormalized()
         #expect(normalizedString == "daxtheduck")
     }
 
-    @Test("String normalization for autofill removes punctuation")
+    @available(iOS 16, macOS 13, *)
+    @Test("String normalization for autofill removes punctuation", .timeLimit(.minutes(1)))
     func normalizeStringsForAutofillRemovesPunctuation() {
         let stringToNormalize = ",Dax+The_Duck."
         let normalizedString = stringToNormalize.autofillNormalized()
         #expect(normalizedString == "daxtheduck")
     }
 
-    @Test("String normalization for autofill retains numbers")
+    @available(iOS 16, macOS 13, *)
+    @Test("String normalization for autofill retains numbers", .timeLimit(.minutes(1)))
     func normalizeStringsForAutofillRetainsNumbers() {
         let stringToNormalize = "Dax123"
         let normalizedString = stringToNormalize.autofillNormalized()
         #expect(normalizedString == "dax123")
     }
 
-    @Test("String normalization for autofill leaves already normalized strings untouched")
+    @available(iOS 16, macOS 13, *)
+    @Test("String normalization for autofill leaves already normalized strings untouched", .timeLimit(.minutes(1)))
     func normalizeStringsForAutofillLeavesNormalizedStringsUntouched() {
         let stringToNormalize = "firstmiddlelast"
         let normalizedString = stringToNormalize.autofillNormalized()
         #expect(normalizedString == "firstmiddlelast")
     }
 
-    @Test("String normalization for autofill removes emoji")
+    @available(iOS 16, macOS 13, *)
+    @Test("String normalization for autofill removes emoji", .timeLimit(.minutes(1)))
     func normalizeStringsForAutofillRemovesEmoji() {
         let stringToNormalize = "Dax 🤔"
         let normalizedString = stringToNormalize.autofillNormalized()
         #expect(normalizedString == "dax")
     }
 
-    @Test("IPv4 host conversion works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("IPv4 host conversion works correctly", .timeLimit(.minutes(1)))
     func ipv4HostConversion() {
         #expect("1.1.1.1".toIPv4Host == "1.1.1.1")
         #expect("1".toIPv4Host == "0.0.0.1")
@@ -75,7 +82,8 @@ final class StringExtensionTests {
 
     // MARK: - File paths detection
 
-    @Test("String sanitization preserves ObjC class names and Swift type names")
+    @available(iOS 16, macOS 13, *)
+    @Test("String sanitization preserves ObjC class names and Swift type names", .timeLimit(.minutes(1)))
     func sanitizationPreservesClassNames() {
         // Test case 1: ObjC class name with namespace
         #expect("""
@@ -134,14 +142,16 @@ final class StringExtensionTests {
         """)
     }
 
-    @Test("String sanitization removes user file paths")
+    @available(iOS 16, macOS 13, *)
+    @Test("String sanitization removes user file paths", .timeLimit(.minutes(1)))
     func sanitizationRemovesUserFilePaths() {
         let input = "Error in /var/filename.txt In file included from /Volumes/data/framework dir"
         let expected = "Error in <removed> In file included from <removed>"
         #expect(input.sanitized() == expected)
     }
 
-    @Test("String sanitization preserves library names and trims source files")
+    @available(iOS 16, macOS 13, *)
+    @Test("String sanitization preserves library names and trims source files", .timeLimit(.minutes(1)))
     func sanitizationPreservesLibraryNamesAndTrimsSourceFiles() {
         #expect("""
         exception thrown in libobjc.A.dylib:
@@ -357,7 +367,8 @@ final class StringExtensionTests {
         """)
     }
 
-    @Test("Valid hostnames are correctly identified")
+    @available(iOS 16, macOS 13, *)
+    @Test("Valid hostnames are correctly identified", .timeLimit(.minutes(1)))
     func validHostnamesAreCorrectlyIdentified() {
         let validHostnames = [
             "example.com",
@@ -373,7 +384,8 @@ final class StringExtensionTests {
         }
     }
 
-    @Test("Invalid hostnames are correctly identified")
+    @available(iOS 16, macOS 13, *)
+    @Test("Invalid hostnames are correctly identified", .timeLimit(.minutes(1)))
     func invalidHostnamesAreCorrectlyIdentified() {
         let invalidHostnames = [
             "invalid_hostname", // Invalid character
@@ -393,7 +405,8 @@ final class StringExtensionTests {
         }
     }
 
-    @Test("SHA256 hashing works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("SHA256 hashing works correctly", .timeLimit(.minutes(1)))
     func sha256Hashing() {
         let string = "Hello, World! This is a test string."
         let hash = string.sha256
@@ -406,7 +419,8 @@ final class StringExtensionTests {
 
     // MARK: - applyingReplacements
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testApplyingMultipleReplacements() {
         let template = "var a = $A$; var b = $B$; var c = $C$;"
         let result = template.applyingReplacements([
@@ -418,7 +432,8 @@ final class StringExtensionTests {
         #expect(result == "var a = 1; var b = 2; var c = 3;")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testApplyingReplacementsReplacesAllOccurrencesOfRepeatedKey() {
         let template = "var a = $A$; var a2 = $A$;"
         let result = template.applyingReplacements(["$A$": "hello"])
@@ -426,7 +441,8 @@ final class StringExtensionTests {
         #expect(result == "var a = hello; var a2 = hello;")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testApplyingReplacementsDoesNotReExpandValues() {
         let template = "var a = $A$; var b = $B$;"
         let result = template.applyingReplacements([
@@ -437,7 +453,8 @@ final class StringExtensionTests {
         #expect(result == "var a = 1; var b = $A$;")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testApplyingReplacementsWithEmptyDictionary() {
         let template = "var a = $A$;"
         let result = template.applyingReplacements([:])
@@ -445,7 +462,8 @@ final class StringExtensionTests {
         #expect(result == template)
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testApplyingReplacementsIgnoresEmptyKey() {
         let template = "hello"
         let result = template.applyingReplacements([
@@ -456,7 +474,8 @@ final class StringExtensionTests {
         #expect(result == "world")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testApplyingReplacementsHandlesValueMuchLargerThanPlaceholder() {
         let largeValue = String(repeating: "x", count: 1_100_000)
         let template = "before $K$ after"
@@ -471,36 +490,42 @@ final class StringExtensionTests {
 
     // MARK: Short / equal-length strings pass through unchanged
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenStringIsShorterThanMaxLengthThenTruncatedReturnsOriginal() {
         #expect("hello".truncated(to: 10) == "hello")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenStringEqualsMaxLengthThenTruncatedReturnsOriginal() {
         #expect("hello".truncated(to: 5) == "hello")
     }
 
     // MARK: Middle truncation (default)
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenMiddleTruncationNeededThenExactOutputMatches() {
         // maxLength 11: usable=10, headLength=5, tailLength=5  →  "abcde" + "…" + "qrstu" = 11 chars
         #expect("abcdefghijklmnopqrstu".truncated(to: 11) == "abcde…qrstu")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenMiddleTruncationNeededWithEvenMaxLengthThenHeadIsOneLongerThanTail() {
         // maxLength 10: usable=9, headLength=5, tailLength=4  →  "abcde" + "…" + "rstu" = 10 chars
         #expect("abcdefghijklmnopqrstu".truncated(to: 10) == "abcde…rstu")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenMaxLengthIsOneAndMiddleTruncationNeededThenReturnsEllipsis() {
         #expect("hello".truncated(to: 1) == "…")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenMiddleTruncationUsesCustomEllipsisThenExactOutputMatches() {
         // maxLength 11, ellipsis "...", usable=8, headLength=4, tailLength=4  →  "abcd" + "..." + "rstu" = 11 chars
         #expect("abcdefghijklmnopqrstu".truncated(to: 11, ellipsis: "...") == "abcd...rstu")
@@ -508,26 +533,30 @@ final class StringExtensionTests {
 
     // MARK: Tail truncation
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenTailTruncationNeededThenExactOutputMatches() {
         // maxLength 8: usable=7  →  "abcdefg" + "…" = 8 chars
         #expect("abcdefghijklmnopqrstu".truncated(to: 8, position: .tail) == "abcdefg…")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenTailTruncationNeededWithCustomEllipsisThenExactOutputMatches() {
         // maxLength 8, ellipsis "...": usable=5  →  "abcde" + "..." = 8 chars
         #expect("abcdefghijklmnopqrstu".truncated(to: 8, position: .tail, ellipsis: "...") == "abcde...")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenStringEqualsMaxLengthThenTailTruncatedReturnsOriginal() {
         #expect("abcde".truncated(to: 5, position: .tail) == "abcde")
     }
 
     // MARK: Whitespace trimming
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenTrimmingWhitespaceAndMiddleTruncationNeededThenHeadAndTailAreStripped() {
         // Without trimming: head = "abcde     " → trimmed to "abcde", tail = "     vwxyz" → trimmed to "vwxyz"
         // maxLength 20: usable=19, headLength=10, tailLength=9
@@ -536,14 +565,16 @@ final class StringExtensionTests {
         #expect(s.truncated(to: 20, trimmingWhitespace: true) == "abcde…vwxyz")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenTrimmingWhitespaceAndTailTruncationNeededThenHeadIsStripped() {
         // maxLength 10: usable=9  →  raw head = "abcde    " → trimmed "abcde"  →  "abcde…"
         let s = "abcde    " + String(repeating: "x", count: 200)
         #expect(s.truncated(to: 10, position: .tail, trimmingWhitespace: true) == "abcde…")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenNoTrimmingAndMiddleTruncationNeededThenWhitespaceIsKept() {
         // Without trimming the spaces should be preserved in head/tail
         let s = "abcde     " + String(repeating: "x", count: 200) + "     vwxyz"
@@ -551,7 +582,8 @@ final class StringExtensionTests {
         #expect(result == "abcde     …    vwxyz")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenFullyRemovingPercentEncodingThenEscapesAreDecoded() {
         #expect("%2525".fullyRemovingPercentEncoding() == "%")
         #expect("%252520".fullyRemovingPercentEncoding() == " ")
@@ -560,7 +592,8 @@ final class StringExtensionTests {
         #expect("abc".fullyRemovingPercentEncoding() == "abc")
     }
 
-    @Test
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenInputExceedsDecodingCapThenItIsReturnedUnchanged() {
         let longInput = "https://a/" + String(repeating: "%25", count: 5_000)
         #expect(longInput.fullyRemovingPercentEncoding() == longInput)

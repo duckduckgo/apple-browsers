@@ -21,13 +21,15 @@ import VPN
 
 @testable import DuckDuckGo_Privacy_Browser
 
+/// Serialized: every test clears and reads the shared UserDefaults-backed pinning state.
+@Suite(.serialized)
 final class LocalPinningManagerTests {
 
-    func setUp() {
+    init() {
         UserDefaultsWrapper<Any>.clearAll()
     }
 
-    func tearDown() {
+    deinit {
         UserDefaultsWrapper<Any>.clearAll()
     }
 
@@ -35,7 +37,8 @@ final class LocalPinningManagerTests {
         return LocalPinningManager()
     }
 
-    @Test("When toggling pinning for a view and view is not pinned, then view becomes pinned")
+    @available(iOS 16, macOS 13, *)
+    @Test("When toggling pinning for a view and view is not pinned, then view becomes pinned", .timeLimit(.minutes(1)))
     func testWhenTogglingPinningForAView_AndViewIsNotPinned_ThenViewBecomesPinned() {
         let manager = createManager()
 
@@ -48,7 +51,8 @@ final class LocalPinningManagerTests {
         #expect(!manager.isPinned(.bookmarks))
     }
 
-    @Test("When toggling pinning for a view and view is already pinned, then view becomes unpinned")
+    @available(iOS 16, macOS 13, *)
+    @Test("When toggling pinning for a view and view is already pinned, then view becomes unpinned", .timeLimit(.minutes(1)))
     func testWhenTogglingPinningForAView_AndViewIsAlreadyPinned_ThenViewBecomesUnpinned() {
         let manager = createManager()
 
@@ -66,7 +70,8 @@ final class LocalPinningManagerTests {
         #expect(!manager.isPinned(.bookmarks))
     }
 
-    @Test("When changing pinned views, then notification is posted")
+    @available(iOS 16, macOS 13, *)
+    @Test("When changing pinned views, then notification is posted", .timeLimit(.minutes(1)))
     func testWhenChangingPinnedViews_ThenNotificationIsPosted() async {
         await confirmation("Pinned views changed notification") { confirmation in
             NotificationCenter.default.addObserver(forName: .PinnedViewsChanged, object: nil, queue: .main) { _ in

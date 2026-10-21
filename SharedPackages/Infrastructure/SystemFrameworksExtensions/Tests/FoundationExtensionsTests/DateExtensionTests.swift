@@ -22,7 +22,8 @@ import Testing
 
 final class DateExtensionTests {
 
-    @Test("Date components are correctly extracted")
+    @available(iOS 16, macOS 13, *)
+    @Test("Date components are correctly extracted", .timeLimit(.minutes(1)))
     func testComponents() {
         let date = Date()
         let components = date.components
@@ -32,7 +33,8 @@ final class DateExtensionTests {
         #expect(components.year != nil)
     }
 
-    @Test("Week ago date is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Week ago date is correctly calculated", .timeLimit(.minutes(1)))
     func testWeekAgo() {
         let weekAgo = Date.weekAgo
         let expectedDate = Calendar.current.date(byAdding: .weekOfMonth, value: -1, to: Date())!
@@ -40,7 +42,8 @@ final class DateExtensionTests {
         #expect(weekAgo.startOfDay == expectedDate.startOfDay)
     }
 
-    @Test("Month ago date is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Month ago date is correctly calculated", .timeLimit(.minutes(1)))
     func testMonthAgo() {
         let monthAgo = Date.monthAgo
         let expectedDate = Calendar.current.date(byAdding: .month, value: -1, to: Date())!
@@ -48,7 +51,8 @@ final class DateExtensionTests {
         #expect(monthAgo.startOfDay == expectedDate.startOfDay)
     }
 
-    @Test("Year ago date is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Year ago date is correctly calculated", .timeLimit(.minutes(1)))
     func testYearAgo() {
         let yearAgo = Date.yearAgo
         let expectedDate = Calendar.current.date(byAdding: .year, value: -1, to: Date())!
@@ -56,7 +60,8 @@ final class DateExtensionTests {
         #expect(yearAgo.startOfDay == expectedDate.startOfDay)
     }
 
-    @Test("A year from now date is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("A year from now date is correctly calculated", .timeLimit(.minutes(1)))
     func testAYearFromNow() {
         let aYearFromNow = Date.aYearFromNow
         let expectedDate = Calendar.current.date(byAdding: .year, value: 1, to: Date())!
@@ -64,7 +69,8 @@ final class DateExtensionTests {
         #expect(aYearFromNow.startOfDay == expectedDate.startOfDay)
     }
 
-    @Test("Days ago date is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Days ago date is correctly calculated", .timeLimit(.minutes(1)))
     func testDaysAgo() {
         let daysAgo = Date.daysAgo(5)
         let expectedDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())!
@@ -72,7 +78,8 @@ final class DateExtensionTests {
         #expect(daysAgo.startOfDay == expectedDate.startOfDay)
     }
 
-    @Test("Same day comparison works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Same day comparison works correctly", .timeLimit(.minutes(1)))
     func testIsSameDay() {
         let today = Date()
         let sameDay = today
@@ -83,7 +90,8 @@ final class DateExtensionTests {
         #expect(!Date.isSameDay(today, nil))
     }
 
-    @Test("Start of day tomorrow is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Start of day tomorrow is correctly calculated", .timeLimit(.minutes(1)))
     func testStartOfDayTomorrow() {
         let startOfDayTomorrow = Date.startOfDayTomorrow
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
@@ -91,13 +99,15 @@ final class DateExtensionTests {
         #expect(abs(startOfDayTomorrow.timeIntervalSince1970 - Calendar.current.startOfDay(for: tomorrow).timeIntervalSince1970) < 5)
     }
 
-    @Test("Start of day today is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Start of day today is correctly calculated", .timeLimit(.minutes(1)))
     func testStartOfDayToday() {
         let startOfDayToday = Date.startOfDayToday
         #expect(abs(startOfDayToday.timeIntervalSince1970 - Calendar.current.startOfDay(for: Date()).timeIntervalSince1970) < 5)
     }
 
-    @Test("Start of day is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Start of day is correctly calculated", .timeLimit(.minutes(1)))
     func testStartOfDay() {
         let date = Date()
         let startOfDay = date.startOfDay
@@ -105,7 +115,8 @@ final class DateExtensionTests {
         #expect(abs(startOfDay.timeIntervalSince1970 - Calendar.current.startOfDay(for: date).timeIntervalSince1970) < 5)
     }
 
-    @Test("Days ago instance method works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Days ago instance method works correctly", .timeLimit(.minutes(1)))
     func testDaysAgoInstanceMethod() {
         let date = Date()
         let daysAgo = date.daysAgo(3)
@@ -114,7 +125,8 @@ final class DateExtensionTests {
         #expect(daysAgo.startOfDay == expectedDate.startOfDay)
     }
 
-    @Test("Start of minute now is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Start of minute now is correctly calculated", .timeLimit(.minutes(1)))
     func testStartOfMinuteNow() {
         let startOfMinuteNow = Date.startOfMinuteNow
         let now = Calendar.current.date(bySetting: .second, value: 0, of: Date())!
@@ -123,7 +135,8 @@ final class DateExtensionTests {
         #expect(abs(startOfMinuteNow.timeIntervalSince1970 - expectedStart.timeIntervalSince1970) < 0.1)
     }
 
-    @Test("Months with index are correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Months with index are correctly calculated", .timeLimit(.minutes(1)))
     func testMonthsWithIndex() {
         let monthsWithIndex = Date.monthsWithIndex
         let monthSymbols = Calendar.current.monthSymbols
@@ -133,12 +146,14 @@ final class DateExtensionTests {
         #expect(monthsWithIndex.first?.index == 1)
     }
 
-    @Test("Days in month are correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Days in month are correctly calculated", .timeLimit(.minutes(1)))
     func testDaysInMonth() {
         #expect(Date.daysInMonth == Array(1...31))
     }
 
-    @Test("Next ten years are correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Next ten years are correctly calculated", .timeLimit(.minutes(1)))
     func testNextTenYears() {
         let nextTenYears = Date.nextTenYears
         let currentYear = Calendar.current.component(.year, from: Date())
@@ -148,7 +163,8 @@ final class DateExtensionTests {
         #expect(nextTenYears.last == currentYear + 10)
     }
 
-    @Test("Last hundred years are correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Last hundred years are correctly calculated", .timeLimit(.minutes(1)))
     func testLastHundredYears() {
         let lastHundredYears = Date.lastHundredYears
         let currentYear = Calendar.current.component(.year, from: Date())
@@ -158,7 +174,8 @@ final class DateExtensionTests {
         #expect(lastHundredYears.last == currentYear - 100)
     }
 
-    @Test("Day since reference date is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Day since reference date is correctly calculated", .timeLimit(.minutes(1)))
     func testDaySinceReferenceDate() {
         let date = Date()
         let daysSinceReference = Int(date.timeIntervalSinceReferenceDate / TimeInterval.day)
@@ -166,7 +183,8 @@ final class DateExtensionTests {
         #expect(date.daySinceReferenceDate == daysSinceReference)
     }
 
-    @Test("Same day instance method works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Same day instance method works correctly", .timeLimit(.minutes(1)))
     func testIsSameDayInstanceMethod() {
         let today = Date()
         let sameDay = today
@@ -177,7 +195,8 @@ final class DateExtensionTests {
         #expect(!today.isSameDay(nil))
     }
 
-    @Test("Is less than days ago works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Is less than days ago works correctly", .timeLimit(.minutes(1)))
     func testIsLessThanDaysAgo() {
         let recentDate = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
         let olderDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())!
@@ -186,7 +205,8 @@ final class DateExtensionTests {
         #expect(!olderDate.isLessThan(daysAgo: 3))
     }
 
-    @Test("Is less than minutes ago works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Is less than minutes ago works correctly", .timeLimit(.minutes(1)))
     func testIsLessThanMinutesAgo() {
         let recentDate = Calendar.current.date(byAdding: .minute, value: -10, to: Date())!
         let olderDate = Calendar.current.date(byAdding: .minute, value: -30, to: Date())!
@@ -195,43 +215,50 @@ final class DateExtensionTests {
         #expect(!olderDate.isLessThan(minutesAgo: 15))
     }
 
-    @Test("Seconds since now is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Seconds since now is correctly calculated", .timeLimit(.minutes(1)))
     func testSecondsSinceNow() {
         let date = Calendar.current.date(byAdding: .second, value: -30, to: Date())!
         #expect(date.secondsSinceNow() == 30)
     }
 
-    @Test("Minutes since now is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Minutes since now is correctly calculated", .timeLimit(.minutes(1)))
     func testMinutesSinceNow() {
         let date = Calendar.current.date(byAdding: .minute, value: -10, to: Date())!
         #expect(date.minutesSinceNow() == 10)
     }
 
-    @Test("Hours since now is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Hours since now is correctly calculated", .timeLimit(.minutes(1)))
     func testHoursSinceNow() {
         let date = Calendar.current.date(byAdding: .hour, value: -5, to: Date())!
         #expect(date.hoursSinceNow() == 5)
     }
 
-    @Test("Days since now is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Days since now is correctly calculated", .timeLimit(.minutes(1)))
     func testDaysSinceNow() {
         let date = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
         #expect(date.daysSinceNow() == 7)
     }
 
-    @Test("Months since now is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Months since now is correctly calculated", .timeLimit(.minutes(1)))
     func testMonthsSinceNow() {
         let date = Calendar.current.date(byAdding: .month, value: -3, to: Date())!
         #expect(date.monthsSinceNow() == 3)
     }
 
-    @Test("Years since now is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("Years since now is correctly calculated", .timeLimit(.minutes(1)))
     func testYearsSinceNow() {
         let date = Calendar.current.date(byAdding: .year, value: -2, to: Date())!
         #expect(date.yearsSinceNow() == 2)
     }
 
-    @Test("Is in the past works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Is in the past works correctly", .timeLimit(.minutes(1)))
     func testIsInThePast() {
         let pastDate = Date(timeIntervalSinceNow: -100) // 100 seconds ago
         #expect(pastDate.isInThePast())
@@ -240,7 +267,8 @@ final class DateExtensionTests {
         #expect(!futureDate.isInThePast())
     }
 
-    @Test("Is in the future works correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Is in the future works correctly", .timeLimit(.minutes(1)))
     func testIsInTheFuture() {
         let futureDate = Date(timeIntervalSinceNow: 100) // 100 seconds in the future
         #expect(futureDate.isInTheFuture())

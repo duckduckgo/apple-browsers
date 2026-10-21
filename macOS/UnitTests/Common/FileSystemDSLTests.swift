@@ -30,7 +30,8 @@ final class FileSystemDSLTests {
         try? FileManager.default.removeItem(at: directoryURL)
     }
 
-    @Test("Root directory is created and removed when writing file system structure")
+    @available(iOS 16, macOS 13, *)
+    @Test("Root directory is created and removed when writing file system structure", .timeLimit(.minutes(1)))
     func testWhenWritingFileSystemStructure_ThenRootDirectoryIsCreated() throws {
         let rootDirectoryName = getUniqueDirectoryName(for: "RootDirectoryCreated")
         let structure = FileSystem(rootDirectoryName: rootDirectoryName) { }
@@ -45,7 +46,8 @@ final class FileSystemDSLTests {
         #expect(!FileManager.default.fileExists(atPath: expectedURL.path))
     }
 
-    @Test("Nested file system structure is created and removed correctly")
+    @available(iOS 16, macOS 13, *)
+    @Test("Nested file system structure is created and removed correctly", .timeLimit(.minutes(1)))
     func testWhenWritingNestedFileSystemStructure_ThenStructureIsCreated() throws {
         let rootDirectoryName = getUniqueDirectoryName(for: "NestedStructure")
         let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
@@ -101,7 +103,8 @@ final class FileSystemDSLTests {
         #expect(!FileManager.default.fileExists(atPath: expectedURL.path))
     }
 
-    @Test("String file contents are correctly persisted")
+    @available(iOS 16, macOS 13, *)
+    @Test("String file contents are correctly persisted", .timeLimit(.minutes(1)))
     func testWhenPersistingFile_AndFileContentsAreAString_ThenTheFileContentsAreCorrect() throws {
         let rootDirectoryName = getUniqueDirectoryName(for: "StringContents")
         let expectedContents = "Top Level File Contents"
@@ -120,7 +123,8 @@ final class FileSystemDSLTests {
         try structure.removeCreatedFileSystemStructure()
     }
 
-    @Test("Copied file contents are correctly persisted")
+    @available(iOS 16, macOS 13, *)
+    @Test("Copied file contents are correctly persisted", .timeLimit(.minutes(1)))
     func testWhenPersistingFile_AndFileContentsAreCopied_ThenTheFileContentsAreCorrect() throws {
         let rootDirectoryName = getUniqueDirectoryName(for: "CopiedContents")
         let bundle = Bundle(for: FileSystemDSLTests.self)

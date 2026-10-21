@@ -24,21 +24,24 @@ import Testing
 
 final class HashExtensionTests {
     
-    @Test("SHA1 hash of data is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("SHA1 hash of data is correctly calculated", .timeLimit(.minutes(1)))
     func testWhenSha1DataIsCalledThenHashIsCorrect() {
         let result = "Hello World!".data(using: .utf8)?.sha1
         let expectedResult = "2ef7bde608ce5404e97d5f042f95f89f1c232871"
         #expect(expectedResult == result)
     }
     
-    @Test("SHA1 hash of string is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("SHA1 hash of string is correctly calculated", .timeLimit(.minutes(1)))
     func testWhenSha1StringIsCalledThenHashIsCorrect() {
         let result = "Hello World!".sha1
         let expectedResult = "2ef7bde608ce5404e97d5f042f95f89f1c232871"
         #expect(expectedResult == result)
     }
     
-    @Test("SHA256 hash of data is correctly calculated")
+    @available(iOS 16, macOS 13, *)
+    @Test("SHA256 hash of data is correctly calculated", .timeLimit(.minutes(1)))
     func testWhenSha256DataIsCalledThenHashIsCorrect() {
         let result = "Hello World!".data(using: .utf8)?.sha256
         let expectedResult = "7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"

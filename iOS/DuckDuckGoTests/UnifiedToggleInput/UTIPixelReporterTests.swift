@@ -496,12 +496,6 @@ final class UTIPixelReporterTests: XCTestCase {
         XCTAssertEqual(pixelKitMock.actualFireCalls.count, 12)
     }
 
-    func testPastedTextPixelHasAnIPadAddressBarSurfaceValue() {
-        let pixel = UnifiedToggleInputPastedTextPixel(action: .attached, surface: .iPadOmnibar)
-
-        XCTAssertEqual(pixel.parameters, ["surface": "ipad_omnibar"])
-    }
-
     func testRemovingAPastedTextChipReportsThePastedTextRemovedPixel() {
         let reporter = makeReporter { self.context(surface: .duckAI) }
 

@@ -206,7 +206,7 @@ final class UTIPixelReporter {
     }
 
     func reportPastedText(_ action: UnifiedToggleInputPastedTextPixel.Action) {
-        withContext { firing.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: .init($0.surface)), frequency: .dailyAndCount) }
+        withContext { firing.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: $0.surface), frequency: .dailyAndCount) }
     }
 
     // MARK: - Model / reasoning / tools

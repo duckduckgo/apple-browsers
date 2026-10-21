@@ -27,23 +27,8 @@ struct UnifiedToggleInputPastedTextPixel: PixelKit.Event {
         case sheetOpened = "sheet_opened"
     }
 
-    enum Surface: String {
-        case addressBar = "address_bar"
-        case duckAI = "duck_ai"
-        case contextualChat = "contextual_chat"
-        case iPadOmnibar = "ipad_omnibar"
-
-        init(_ surface: UnifiedToggleInputPixelSurface) {
-            switch surface {
-            case .addressBar: self = .addressBar
-            case .duckAI: self = .duckAI
-            case .contextualChat: self = .contextualChat
-            }
-        }
-    }
-
     let action: Action
-    let surface: Surface
+    let surface: UnifiedToggleInputPixelSurface
 
     var name: String { "aichat_unified_input_pasted_text_\(action.rawValue)" }
     var parameters: [String: String]? { ["surface": surface.rawValue] }

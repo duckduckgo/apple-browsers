@@ -201,7 +201,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         case .file, .invalidFile:
             firing.fireDailyAndCount(.unifiedToggleInputFileRemoved, surfaceParameters(surface))
         case .pastedText:
-            firing.fire(UnifiedToggleInputPastedTextPixel(action: .removed, surface: .init(surface)), frequency: .dailyAndCount)
+            firing.fire(UnifiedToggleInputPastedTextPixel(action: .removed, surface: surface), frequency: .dailyAndCount)
         }
     }
 

@@ -195,7 +195,7 @@ final class IPadOmnibarAttachmentController {
     }
 
     private func firePastedTextPixel(_ action: UnifiedToggleInputPastedTextPixel.Action) {
-        pixelFiring?.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: .iPadOmnibar), frequency: .dailyAndCount)
+        pixelFiring?.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: .addressBar), frequency: .dailyAndCount)
     }
 
     // MARK: - Availability

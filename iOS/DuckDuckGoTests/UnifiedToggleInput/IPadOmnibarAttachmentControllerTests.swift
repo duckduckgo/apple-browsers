@@ -1091,7 +1091,7 @@ final class IPadOmnibarAttachmentControllerPastedTextTests: XCTestCase {
         super.tearDown()
     }
 
-    func testAddingPastedTextFiresAttachedPixelForTheIPadOmnibar() {
+    func testAddingPastedTextFiresAttachedPixelForTheAddressBar() {
         var expandRequests = 0
         sut.onExpandRequested = { expandRequests += 1 }
 
@@ -1101,10 +1101,10 @@ final class IPadOmnibarAttachmentControllerPastedTextTests: XCTestCase {
         XCTAssertEqual(sut.encodedAttachments.textPasted?.map(\.content), ["pasted"])
         XCTAssertEqual(expandRequests, 1)
         XCTAssertEqual(firedPixels.map(\.name), ["aichat_unified_input_pasted_text_attached"])
-        XCTAssertEqual(firedPixels.map(\.surface), ["ipad_omnibar"])
+        XCTAssertEqual(firedPixels.map(\.surface), ["address_bar"])
     }
 
-    func testRemovingAChipByTheUserFiresRemovedPixelOnlyForTheIPadOmnibar() throws {
+    func testRemovingAChipByTheUserFiresRemovedPixelOnlyForTheAddressBar() throws {
         sut.addPastedText("pasted")
         let id = try XCTUnwrap(strip.attachments.first?.id)
 
@@ -1116,7 +1116,7 @@ final class IPadOmnibarAttachmentControllerPastedTextTests: XCTestCase {
         strip.removeAttachment(id: secondID, isUserInitiated: true)
 
         XCTAssertEqual(firedPixels.last?.name, "aichat_unified_input_pasted_text_removed")
-        XCTAssertEqual(firedPixels.last?.surface, "ipad_omnibar")
+        XCTAssertEqual(firedPixels.last?.surface, "address_bar")
     }
 
     func testOpeningAndSavingTheSheetReportsOpenedThenEditedAndCallsDismissed() throws {

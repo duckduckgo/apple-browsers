@@ -34043,6 +34043,18 @@
         }
       }
     },
+    "duckai.dax-pet.continue.no-chat" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when he's asked to continue the last Duck.ai chat but there are none",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No chats yet. Ask me something!"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.greeting" : {
       "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when the user opens the field to ask him a question",
       "extractionState" : "extracted_with_value",
@@ -34079,6 +34091,30 @@
         }
       }
     },
+    "duckai.dax-pet.menu.continue-chat" : {
+      "comment" : "Menu item next to Dax, the DuckDuckGo mascot, that reopens the most recent Duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Continue Last Chat"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.menu.summarize" : {
+      "comment" : "Menu item next to Dax, the DuckDuckGo mascot, that asks Duck.ai to summarize the page open in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Summarize This Page"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.open-duck-ai" : {
       "comment" : "Tooltip and menu item that opens Duck.ai in the browser, shown next to Dax, the DuckDuckGo mascot",
       "extractionState" : "extracted_with_value",
@@ -34111,6 +34147,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Send"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.summarize.no-page" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when he's asked to summarize a page but no web page is open in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open a page in the browser and I'll summarize it."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.summarize.prompt" : {
+      "comment" : "Prompt sent to Duck.ai, along with the page's content, when the user asks Dax, the DuckDuckGo mascot, to summarize the page open in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Summarize this page"
           }
         }
       }

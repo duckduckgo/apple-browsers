@@ -83,6 +83,7 @@ final class DaxPetCoordinator: NSObject {
             return NSPoint(x: fieldMinX + DaxPetView.Metrics.promptLeadingInset + min(promptWidth, fieldWidth - 60), y: fieldMidY)
         }
         model.character.onClick = { [weak model] in model?.characterClicked() }
+        model.character.onRightClick = { [weak self] event in self?.showMenu(for: event) }
         model.character.onDragEnded = { [weak self] in
             self?.keepOnScreen()
             self?.savePosition()
@@ -109,6 +110,41 @@ final class DaxPetCoordinator: NSObject {
         model = nil
         pointerTimer?.invalidate()
         pointerTimer = nil
+    }
+
+    // MARK: - Quick actions
+
+    private func showMenu(for event: NSEvent) {
+        guard let model, let view = window?.contentView else { return }
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        let summarize = NSMenuItem(title: UserText.daxPetMenuSummarize, action: #selector(summarizePage), keyEquivalent: "")
+        summarize.isEnabled = model.canSummarizeCurrentPage
+        menu.addItem(summarize)
+        menu.addItem(NSMenuItem(title: UserText.daxPetMenuContinueChat, action: #selector(continueLastChat), keyEquivalent: ""))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: UserText.daxPetOpenDuckAI, action: #selector(openDuckAI), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: UserText.daxPetHide, action: #selector(hide), keyEquivalent: ""))
+        menu.items.forEach { $0.target = self }
+
+        NSMenu.popUpContextMenu(menu, with: event, for: view)
+    }
+
+    @objc private func summarizePage() {
+        Task { await model?.summarizePage() }
+    }
+
+    @objc private func continueLastChat() {
+        Task { await model?.continueLastChat() }
+    }
+
+    @objc private func openDuckAI() {
+        model?.openDuckAI()
+    }
+
+    @objc private func hide() {
+        model?.hide()
     }
 
     // MARK: - Duck.ai answers
@@ -275,9 +311,15 @@ final class DaxPetWindow: NSPanel {
 final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     private let aiChatTabOpener: AIChatTabOpening
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let makeSuggestionsReader: () -> AIChatSuggestionsReading
 
-    init(aiChatTabOpener: AIChatTabOpening) {
+    init(aiChatTabOpener: AIChatTabOpening,
+         windowControllersManager: WindowControllersManagerProtocol,
+         makeSuggestionsReader: @escaping () -> AIChatSuggestionsReading) {
         self.aiChatTabOpener = aiChatTabOpener
+        self.windowControllersManager = windowControllersManager
+        self.makeSuggestionsReader = makeSuggestionsReader
     }
 
     func submit(prompt: String) {
@@ -293,5 +335,42 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     func showBrowser() {
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// The window the user was last in, and the page it shows when that's a web page.
+    private var currentPage: (windowController: MainWindowController, tab: Tab)? {
+        guard let windowController = windowControllersManager.lastKeyMainWindowController,
+              let tab = windowController.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab,
+              tab.content.urlForWebView?.isHttpOrHttps == true else { return nil }
+        return (windowController, tab)
+    }
+
+    var canSummarizeCurrentPage: Bool { currentPage != nil }
+
+    func summarizeCurrentPage() async -> Bool {
+        guard let (windowController, tab) = currentPage else { return false }
+        let pageContext = await AIChatUserScriptHandler.extractPageContext(from: tab)
+        let prompt = AIChatNativePrompt.queryPrompt(UserText.daxPetSummarizePrompt,
+                                                    autoSubmit: true,
+                                                    pageContext: pageContext.map { .single($0) })
+        windowController.window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        windowController.mainViewController.aiChatCoordinator.revealChat(for: prompt)
+        return true
+    }
+
+    func continueLastChat() async -> Bool {
+        let reader = makeSuggestionsReader()
+        defer { reader.tearDown() }
+        let (pinned, recent) = await reader.fetchSuggestions(query: nil, maxChats: 10)
+        guard let chat = Self.mostRecent(pinned + recent) else { return false }
+        aiChatTabOpener.openAIChatTab(with: .existingChat(chatId: chat.chatId), behavior: .newTab(selected: true))
+        NSApp.activate(ignoringOtherApps: true)
+        return true
+    }
+
+    /// The chat touched last, pinned or not; chats without a date count as oldest.
+    static func mostRecent(_ chats: [AIChatSuggestion]) -> AIChatSuggestion? {
+        chats.max { ($0.timestamp ?? .distantPast) < ($1.timestamp ?? .distantPast) }
     }
 }

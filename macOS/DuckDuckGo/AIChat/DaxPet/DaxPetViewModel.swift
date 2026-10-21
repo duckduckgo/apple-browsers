@@ -25,6 +25,13 @@ protocol DaxPetPromptSubmitting {
     func openDuckAI()
     /// Brings the browser forward, where Duck.ai's answer is waiting.
     func showBrowser()
+
+    /// Whether the browser has a web page open that Duck.ai could summarize.
+    var canSummarizeCurrentPage: Bool { get }
+    /// Asks Duck.ai, beside the page, to summarize it; `false` when there's no page to summarize.
+    func summarizeCurrentPage() async -> Bool
+    /// Reopens the most recent Duck.ai chat; `false` when there are none.
+    func continueLastChat() async -> Bool
 }
 
 @MainActor
@@ -191,6 +198,32 @@ final class DaxPetViewModel: ObservableObject {
     func hide() {
         endComposing()
         onHide?()
+    }
+
+    // MARK: - Quick actions
+
+    var canSummarizeCurrentPage: Bool { submitter.canSummarizeCurrentPage }
+
+    func summarizePage() async {
+        endComposing()
+        hasUnseenAnswer = false
+        if await submitter.summarizeCurrentPage() {
+            say(nil)
+            character.hop()
+        } else {
+            say(UserText.daxPetSummarizeNoPage, for: 4)
+        }
+    }
+
+    func continueLastChat() async {
+        endComposing()
+        hasUnseenAnswer = false
+        if await submitter.continueLastChat() {
+            say(nil)
+            character.hop()
+        } else {
+            say(UserText.daxPetContinueNoChat, for: 4)
+        }
     }
 
     /// A prompt this long makes Dax's eyes go wide.

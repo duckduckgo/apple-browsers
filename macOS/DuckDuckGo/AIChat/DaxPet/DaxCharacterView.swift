@@ -67,6 +67,7 @@ final class DaxCharacterView: NSView {
     var lookTarget: NSPoint?
 
     var onClick: (() -> Void)?
+    var onRightClick: ((NSEvent) -> Void)?
     var onDragEnded: (() -> Void)?
 
     private let rig: DaxRig?
@@ -155,10 +156,18 @@ final class DaxCharacterView: NSView {
 
     /// Dragging Dax moves his window; a plain click is his.
     override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.control) {
+            onRightClick?(event)
+            return
+        }
         beginDrag()
         window?.dragOrClick { [weak self] in self?.onClick?() }
         endDrag()
         onDragEnded?()
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        onRightClick?(event)
     }
 
     /// He's picked up: from here on, his window moving means he's being carried.

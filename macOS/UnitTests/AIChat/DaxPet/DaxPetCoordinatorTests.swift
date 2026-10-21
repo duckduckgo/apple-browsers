@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -94,5 +95,30 @@ final class DaxPetCoordinatorTests: XCTestCase {
         _ = tracker.update(.startStreamNewPrompt, on: page)
 
         XCTAssertEqual(tracker.update(.error, on: page), .finished(succeeded: false))
+    }
+
+    // MARK: - Last chat
+
+    private func chat(_ id: String, pinned: Bool = false, at timestamp: Date?) -> AIChatSuggestion {
+        AIChatSuggestion(id: id, title: id, isPinned: pinned, chatId: id, timestamp: timestamp)
+    }
+
+    func testTheLastChatIsTheOneTouchedMostRecentlyPinnedOrNot() {
+        let now = Date()
+        let chats = [chat("pinned-old", pinned: true, at: now.addingTimeInterval(-3600)),
+                     chat("recent", at: now.addingTimeInterval(-60)),
+                     chat("pinned-new", pinned: true, at: now)]
+
+        XCTAssertEqual(DaxPetPromptSubmitter.mostRecent(chats)?.chatId, "pinned-new")
+    }
+
+    func testChatsWithoutADateCountAsOldest() {
+        let chats = [chat("undated", at: nil), chat("dated", at: Date(timeIntervalSince1970: 0))]
+
+        XCTAssertEqual(DaxPetPromptSubmitter.mostRecent(chats)?.chatId, "dated")
+    }
+
+    func testWhenThereAreNoChatsThenThereIsNoLastChat() {
+        XCTAssertNil(DaxPetPromptSubmitter.mostRecent([]))
     }
 }

@@ -2843,7 +2843,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setUpDaxPet() {
         let coordinator = DaxPetCoordinator(preferences: daxPetPreferences,
                                             persistor: DaxPetPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
-                                            submitter: DaxPetPromptSubmitter(aiChatTabOpener: aiChatTabOpener))
+                                            submitter: DaxPetPromptSubmitter(
+                                                aiChatTabOpener: aiChatTabOpener,
+                                                windowControllersManager: windowControllersManager,
+                                                makeSuggestionsReader: { [featureFlagger, privacyFeatures, duckAiNativeStorageHandler] in
+                                                    let privacyConfig = privacyFeatures.contentBlocking.privacyConfigurationManager
+                                                    return AIChatSuggestionsReader(
+                                                        suggestionsReader: SuggestionsReader(
+                                                            featureFlagger: featureFlagger,
+                                                            privacyConfig: privacyConfig,
+                                                            nativeStorageHandler: duckAiNativeStorageHandler,
+                                                            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
+                                                        ),
+                                                        historySettings: AIChatHistorySettings(privacyConfig: privacyConfig)
+                                                    )
+                                                }))
         coordinator.start()
         daxPetCoordinator = coordinator
     }

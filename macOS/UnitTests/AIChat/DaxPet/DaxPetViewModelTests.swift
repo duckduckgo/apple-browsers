@@ -39,6 +39,21 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
     func showBrowser() {
         showBrowserCount += 1
     }
+
+    var canSummarizeCurrentPage = true
+    var summarizeResult = true
+    var summarizeCount = 0
+    func summarizeCurrentPage() async -> Bool {
+        summarizeCount += 1
+        return summarizeResult
+    }
+
+    var continueResult = true
+    var continueCount = 0
+    func continueLastChat() async -> Bool {
+        continueCount += 1
+        return continueResult
+    }
 }
 
 @MainActor
@@ -256,6 +271,49 @@ final class DaxPetViewModelTests: XCTestCase {
 
         XCTAssertEqual(model.character.mood, .thinking)
         XCTAssertTrue(model.isAwaitingAnswer)
+    }
+
+    // MARK: - Quick actions
+
+    func testWhenAskedToSummarizeThenThePageIsHandedToDuckAIAndComposingEnds() async {
+        model.startComposing()
+
+        await model.summarizePage()
+
+        XCTAssertEqual(submitter.summarizeCount, 1)
+        XCTAssertFalse(model.isComposing)
+        XCTAssertNil(model.speech)
+    }
+
+    func testWhenThereIsNoPageToSummarizeThenDaxSaysSo() async {
+        submitter.summarizeResult = false
+
+        await model.summarizePage()
+
+        XCTAssertEqual(model.speech, UserText.daxPetSummarizeNoPage)
+    }
+
+    func testWhenAskedToContinueTheLastChatThenItReopens() async {
+        await model.continueLastChat()
+
+        XCTAssertEqual(submitter.continueCount, 1)
+        XCTAssertNil(model.speech)
+    }
+
+    func testWhenThereIsNoChatToContinueThenDaxSaysSo() async {
+        submitter.continueResult = false
+
+        await model.continueLastChat()
+
+        XCTAssertEqual(model.speech, UserText.daxPetContinueNoChat)
+    }
+
+    func testWhetherAPageCanBeSummarizedComesFromTheBrowser() {
+        submitter.canSummarizeCurrentPage = false
+        XCTAssertFalse(model.canSummarizeCurrentPage)
+
+        submitter.canSummarizeCurrentPage = true
+        XCTAssertTrue(model.canSummarizeCurrentPage)
     }
 
     // MARK: - Typing

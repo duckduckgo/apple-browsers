@@ -23,8 +23,16 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
-        app = XCUIApplication.setUp()
+        let featureFlags: [String: Bool]
+        switch invocation?.selector {
+        case #selector(testDuplicateRestoredBackgroundTab):
+            featureFlags = ["warnBeforeQuit": false, "firstTimeQuitSurvey": false]
+        case #selector(testDuplicateSuspendedBackgroundTab):
+            featureFlags = ["tabSuspension": true, "tabSuspensionDebugging": true]
+        default:
+            featureFlags = [:]
+        }
+        app = XCUIApplication.setUp(featureFlags: featureFlags)
         app.enforceSingleWindow()
         resetPinnedTabs()
     }
@@ -102,9 +110,6 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
     }
 
     func testDuplicateRestoredBackgroundTab() {
-        app.terminate()
-        app = XCUIApplication.setUp(featureFlags: ["warnBeforeQuit": false, "firstTimeQuitSurvey": false])
-        app.enforceSingleWindow()
         app.openPreferencesWindow()
         app.preferencesSetRestorePreviousSession(to: .restoreLastSession)
         app.closePreferencesWindow()
@@ -128,9 +133,6 @@ final class DuplicateTabTests: UITestCase, TabNavigationTestHelpers {
     }
 
     func testDuplicateSuspendedBackgroundTab() {
-        app.terminate()
-        app = XCUIApplication.setUp(featureFlags: ["tabSuspension": true, "tabSuspensionDebugging": true])
-        app.enforceSingleWindow()
         openPage("Suspended Source")
         app.openNewTab()
         openPage("Suspension Active")

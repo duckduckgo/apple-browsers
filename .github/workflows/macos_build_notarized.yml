@@ -294,6 +294,7 @@ jobs:
           macOS/release/archive.log
           macOS/release/export.log
           macOS/release/ui-test-artifact.log
+          macOS/release/notarization*.json
           macOS/release/DerivedData/**/swbuild.tmp.*/Data.noindex/**
         retention-days: 7
         if-no-files-found: warn

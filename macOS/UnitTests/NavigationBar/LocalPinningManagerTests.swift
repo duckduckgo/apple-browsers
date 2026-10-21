@@ -75,9 +75,12 @@ final class LocalPinningManagerTests {
     @Test("When changing pinned views, then notification is posted", .timeLimit(.minutes(1)))
     func testWhenChangingPinnedViews_ThenNotificationIsPosted() async {
         await confirmation("Pinned views changed notification") { confirmation in
-            NotificationCenter.default.addObserver(forName: .PinnedViewsChanged, object: nil, queue: .main) { _ in
+            // queue: nil delivers synchronously on the posting thread, so the
+            // confirmation is recorded before this scope ends.
+            let observer = NotificationCenter.default.addObserver(forName: .PinnedViewsChanged, object: nil, queue: nil) { _ in
                 confirmation()
             }
+            defer { NotificationCenter.default.removeObserver(observer) }
 
             let manager = createManager()
             manager.togglePinning(for: .autofill)

@@ -22,6 +22,9 @@ import DataBrokerProtectionCore
 
 public final class StatusBarMenu: NSObject {
     private let statusItem: NSStatusItem
+    #if DEBUG
+    private var idleCloseTask: Task<Void, Never>?
+    #endif
     private let popover: StatusBarPopover
 
     public override init() {
@@ -53,6 +56,23 @@ public final class StatusBarMenu: NSObject {
         popover.setLivePreviewContent(agentInterface: agentInterface)
         PIRLivePreview.shared.manualControlStarted = { [weak self] in self?.popover.close() }
         PIRLivePreview.shared.automationResumed = { [weak self] in self?.showPopover() }
+        PIRLivePreview.shared.activityChanged = { [weak self] isActive in self?.livePreviewActivityChanged(isActive) }
+    }
+
+    /// Jobs in one run start a few seconds apart, so wait before treating the run as finished.
+    @MainActor
+    private func livePreviewActivityChanged(_ isActive: Bool) {
+        idleCloseTask?.cancel()
+        idleCloseTask = nil
+        guard !isActive else {
+            showPopover()
+            return
+        }
+        idleCloseTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            guard !Task.isCancelled else { return }
+            self?.popover.close()
+        }
     }
     #endif
 

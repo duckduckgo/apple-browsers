@@ -111265,8 +111265,188 @@
         }
       }
     },
+    "sync.close-setup-improved.confirmation.confirm-action" : {
+      "comment" : "Button that confirms closing the Sync setup dialog before the devices finished connecting",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestätigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Confirm"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conferma"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevestigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potwierdź"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подтвердить"
+          }
+        }
+      }
+    },
+    "sync.close-setup-improved.confirmation.go-back-action" : {
+      "comment" : "Button that dismisses the confirmation and returns to the Sync setup dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go Back"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver atrás"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revenir en arrière"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Torna indietro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terug"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wróć"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retroceder"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вернуться"
+          }
+        }
+      }
+    },
+    "sync.close-setup-improved.confirmation.title" : {
+      "comment" : "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Möchtest du wirklich abbrechen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are you sure you want to cancel?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Seguro que quieres cancelar?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu veux vraiment annuler ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuoi davvero annullare?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet je zeker dat je wilt annuleren?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy na pewno chcesz anulować?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tens a certeza de que queres cancelar?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ты точно хочешь отменить?"
+          }
+        }
+      }
+    },
     "sync.close-setup-v2.confirmation.action" : {
-      "comment" : "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)",
+      "comment" : "Button that confirms closing the Sync setup dialog before the devices finished connecting",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -111326,7 +111506,7 @@
       }
     },
     "sync.close-setup-v2.confirmation.message" : {
-      "comment" : "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)",
+      "comment" : "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -111386,7 +111566,7 @@
       }
     },
     "sync.close-setup-v2.confirmation.title" : {
-      "comment" : "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)",
+      "comment" : "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

@@ -27,7 +27,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
 
     func testInactiveSessionUsesSharedSource() {
         let session = AIChatInitialPromptSession()
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
@@ -72,6 +72,67 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         }
         await fulfillment(of: [prepared], timeout: 1)
         XCTAssertEqual(consume(session), prompt)
+    }
+
+    func testPreparedPromptInfoUsesValidatedContextsWithoutConsumingDelivery() async throws {
+        let cases: [(text: String, keepsContext: Bool, autoSubmit: Bool, hasContent: Bool)] = [
+            ("", false, true, false),
+            ("text", false, true, true),
+            ("", true, false, true),
+            ("", true, true, true)
+        ]
+        for scenario in cases {
+            let session = AIChatInitialPromptSession()
+            let original = AIChatNativePrompt.queryPrompt(scenario.text, autoSubmit: scenario.autoSubmit)
+            let context = context("attached")
+            var validations = 0
+            var submissions: [MultiTabAttachmentRequest.SubmissionResult] = []
+            var delivery: AIChatInitialPromptDelivery?
+            let prepared = expectation(description: "Validated prompt prepared")
+            session.prepare(original, request: .init(contexts: { [context] }, didConsume: {}, validate: { contexts in
+                validations += 1
+                return scenario.keepsContext ? contexts : []
+            }, didDispatch: { submissions.append($0) })) {
+                delivery = $0
+                prepared.fulfill()
+            }
+            await fulfillment(of: [prepared], timeout: 1)
+            let result = try XCTUnwrap(delivery)
+            XCTAssertEqual(validations, 1)
+            for _ in 0..<2 {
+                XCTAssertEqual(result.promptInfo.hasContent, scenario.hasContent)
+                XCTAssertEqual(result.promptInfo.autoSubmit, scenario.autoSubmit)
+                XCTAssertEqual(result.promptInfo.hasAutoSubmittedPrompt, scenario.hasContent && scenario.autoSubmit)
+            }
+            XCTAssertTrue(result.hasPendingPrompt)
+            XCTAssertTrue(submissions.isEmpty)
+            session.install(result)
+            let expected = AIChatNativePrompt.queryPrompt(scenario.text, autoSubmit: scenario.autoSubmit,
+                                                          pageContext: scenario.keepsContext ? .multiple([context]) : nil)
+            XCTAssertEqual(consume(session), expected)
+            XCTAssertNil(consume(session))
+            XCTAssertNil(result.consume())
+            XCTAssertEqual(submissions.count, 1)
+            XCTAssertEqual(submissions.first?.deliveredAttachmentCount, scenario.keepsContext ? 1 : 0)
+        }
+    }
+
+    func testDeliveryInfoRemainsImmutableAfterConsumptionAndCancellation() {
+        for cancels in [false, true] {
+            var consumed = 0
+            let delivery = AIChatInitialPromptDelivery(prompt: prompt) { consumed += 1 }
+            let info = delivery.promptInfo
+            XCTAssertTrue(info.hasAutoSubmittedPrompt)
+            XCTAssertEqual(consumed, 0)
+            if cancels {
+                delivery.cancel()
+            } else {
+                XCTAssertEqual(delivery.consume(), prompt)
+            }
+            XCTAssertEqual(delivery.promptInfo, info)
+            XCTAssertNil(delivery.consume())
+            XCTAssertEqual(consumed, cancels ? 0 : 1)
+        }
     }
 
     func testSecondPreparationIsRejectedWithoutReplacingFirst() async {
@@ -148,7 +209,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         await fulfillment(of: [prepared], timeout: 1)
         sender.cancel()
         XCTAssertEqual(consume(recipient), prompt)
-        assertShared(sender.consumeInitialPrompt())
+        assertSharedHandler(sender.consumeInitialPrompt())
     }
 
     func testSameSessionCanInstallDeliveryInsidePreparationCompletion() async {
@@ -170,7 +231,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertTrue(session.isProtectedFromCacheEviction)
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
         XCTAssertFalse(session.isProtectedFromCacheEviction)
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
     }
 
     func testInternalRetryIgnoresFailureBeforeAndAfterReplacementStart() {
@@ -234,7 +295,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
 
         XCTAssertNil(delivery.consume())
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
@@ -251,7 +312,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
         XCTAssertTrue(session.didStartNavigation(DummyWKNavigation()))
 
         XCTAssertNil(delivery.consume())
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
         XCTAssertFalse(session.isProtectedFromCacheEviction)
     }
 
@@ -267,7 +328,7 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
 
         XCTAssertFalse(session.willRetryFailedNavigation())
         XCTAssertNil(delivery.consume())
-        assertShared(session.consumeInitialPrompt())
+        assertSharedHandler(session.consumeInitialPrompt())
     }
 
     func testConsumedPromptIsNotRestoredAfterFailure() {
@@ -502,23 +563,23 @@ final class AIChatInitialPromptSessionTests: XCTestCase {
     }
 
     private func consume(_ session: AIChatInitialPromptSession) -> AIChatNativePrompt? {
-        recipientPrompt(session.consumeInitialPrompt())
+        tabSessionPrompt(session.consumeInitialPrompt())
     }
 
     private func consume(_ connection: AIChatInitialPromptSession.Connection) -> AIChatNativePrompt? {
-        recipientPrompt(connection.consumeInitialPrompt())
+        tabSessionPrompt(connection.consumeInitialPrompt())
     }
 
-    private func recipientPrompt(_ source: AIChatInitialPromptSession.PromptSource) -> AIChatNativePrompt? {
-        guard case .recipient(let prompt) = source else {
+    private func tabSessionPrompt(_ source: AIChatInitialPromptSession.PromptSource) -> AIChatNativePrompt? {
+        guard case .tabSession(let prompt) = source else {
             XCTFail("Recipient must never fall back to shared prompt")
             return nil
         }
         return prompt
     }
 
-    private func assertShared(_ source: AIChatInitialPromptSession.PromptSource) {
-        guard case .shared = source else {
+    private func assertSharedHandler(_ source: AIChatInitialPromptSession.PromptSource) {
+        guard case .sharedHandler = source else {
             XCTFail("Ordinary prompt must use shared source")
             return
         }

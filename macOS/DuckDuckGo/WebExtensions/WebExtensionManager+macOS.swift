@@ -116,6 +116,16 @@ enum WebExtensionManagerFactory {
             isCPMMessagingHangRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
             },
+            isCPMNetworkProcessRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
@@ -124,10 +134,6 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
-            // Bitwarden's catalog entry decides whether a password manager extension may replace DuckDuckGo autofill.
-            isAutofillTakeoverEnabled: {
-                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
-            },
             scriptletConfiguration: scriptletConfiguration
         )
 

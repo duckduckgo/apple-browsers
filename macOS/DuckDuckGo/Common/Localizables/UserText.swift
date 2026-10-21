@@ -67,6 +67,7 @@ struct UserText {
     static let webExtensionNavigationPermission = NotLocalizedString("webExtensions.permissions.navigation", value: "Observe your browsing activity", comment: "Extension webNavigation permission")
     static let webExtensionStoragePermission = NotLocalizedString("webExtensions.permissions.storage", value: "Store extension data on your device", comment: "Extension storage permission")
     static let webExtensionNativeMessagingPermission = NotLocalizedString("webExtensions.permissions.nativeMessaging", value: "Communicate with native applications", comment: "Extension nativeMessaging permission")
+    static let webExtensionPrivacyPermission = NotLocalizedString("webExtensions.permissions.privacy", value: "Change privacy settings, including replacing DuckDuckGo’s password manager", comment: "Extension privacy permission")
 
     // Fire Dialog
     static let fireDialogFireproofSitesManage = NSLocalizedString("fire.dialog.manage", value: "Manage", comment: "Button title to manage Fireproof Sites or related settings")
@@ -1555,13 +1556,13 @@ struct UserText {
         return String(format: message, peerName)
     }
 
-    // Confirmation shown when closing the Sync setup dialog while a device is still being connected (V2 — simplifiedSyncSetupV2).
-    static let syncCloseSetupConfirmationTitleV2 = NSLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationMessageV2 = NSLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationActionV2 = NSLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationTitleImproved = NotLocalizedString("sync.close-setup-improved.confirmation.title", value: "Are you sure you want to cancel?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting")
-    static let syncCloseSetupConfirmationConfirmActionImproved = NotLocalizedString("sync.close-setup-improved.confirmation.confirm-action", value: "Confirm", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting")
-    static let syncCloseSetupConfirmationGoBackActionImproved = NotLocalizedString("sync.close-setup-improved.confirmation.go-back-action", value: "Go Back", comment: "Button that dismisses the confirmation and returns to the Sync setup dialog")
+    // Confirmation shown when closing the Sync setup dialog while a device is still being connected.
+    static let syncCloseSetupConfirmationTitle = NSLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationMessage = NSLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationAction = NSLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationTitleImproved = NSLocalizedString("sync.close-setup-improved.confirmation.title", value: "Are you sure you want to cancel?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationConfirmActionImproved = NSLocalizedString("sync.close-setup-improved.confirmation.confirm-action", value: "Confirm", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationGoBackActionImproved = NSLocalizedString("sync.close-setup-improved.confirmation.go-back-action", value: "Go Back", comment: "Button that dismisses the confirmation and returns to the Sync setup dialog")
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")

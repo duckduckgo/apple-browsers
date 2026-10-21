@@ -39,6 +39,14 @@ final class InstalledWebExtensionStoringMock: InstalledWebExtensionStoring {
         installedExtensions.removeAll { $0.uniqueIdentifier == uniqueIdentifier }
     }
 
+    var updatedExtension: InstalledWebExtension?
+    func update(_ extension: InstalledWebExtension) {
+        updatedExtension = `extension`
+        if let index = installedExtensions.firstIndex(where: { $0.uniqueIdentifier == `extension`.uniqueIdentifier }) {
+            installedExtensions[index] = `extension`
+        }
+    }
+
     func installedExtension(withUniqueIdentifier uniqueIdentifier: String) -> InstalledWebExtension? {
         installedExtensions.first { $0.uniqueIdentifier == uniqueIdentifier }
     }

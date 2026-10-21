@@ -1839,167 +1839,117 @@ public struct UserText {
 
     public static let daxGreetingMonday = NotLocalizedString(
         "new-tab-page.dax-greeting.monday",
-        value: "Let's ease into Monday together.",
+        value: "It’s Monday. Let’s do this.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingWednesday = NotLocalizedString(
-        "new-tab-page.dax-greeting.wednesday",
-        value: "Halfway through the week. You're doing great!",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingFridaySearch = NotLocalizedString(
-        "new-tab-page.dax-greeting.fridaySearch",
-        value: "Friday! One more search before the weekend?",
+    public static let daxGreetingFriday = NotLocalizedString(
+        "new-tab-page.dax-greeting.friday",
+        value: "Almost the weekend.",
         comment: "Dax greeting on the New Tab page.")
 
     public static let daxGreetingFridayDuck = NotLocalizedString(
         "new-tab-page.dax-greeting.fridayDuck",
-        value: "Thank duck it's Friday!!",
+        value: "Thank duck it’s Friday!",
         comment: "English-only Dax greeting on the New Tab page.")
 
-    public static let daxGreetingEarly = NotLocalizedString(
-        "new-tab-page.dax-greeting.early",
-        value: "Quack of dawn, glad you're up.",
+    public static let daxGreetingSunday = NotLocalizedString(
+        "new-tab-page.dax-greeting.sunday",
+        value: "Sunday? I’m still in my PJs.",
         comment: "English-only Dax greeting on the New Tab page.")
 
-    public static let daxGreetingAfternoon = NotLocalizedString(
-        "new-tab-page.dax-greeting.afternoon",
-        value: "Afternoon slump? A quick search might help.",
+    public static let daxGreetingWhereToToday = NotLocalizedString(
+        "new-tab-page.dax-greeting.whereToToday",
+        value: "Where to today?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingEvening = NotLocalizedString(
-        "new-tab-page.dax-greeting.evening",
-        value: "Evening. Got a burning question for me?",
+    public static let daxGreetingNewDayNewTabs = NotLocalizedString(
+        "new-tab-page.dax-greeting.newDayNewTabs",
+        value: "New day, new tabs.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingLate = NotLocalizedString(
-        "new-tab-page.dax-greeting.late",
-        value: "Up late, huh? I never sleep, so ask away.",
+    public static let daxGreetingWhereShouldWeStart = NotLocalizedString(
+        "new-tab-page.dax-greeting.whereShouldWeStart",
+        value: "Where should we start?",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingDark = NotLocalizedString(
-        "new-tab-page.dax-greeting.dark",
-        value: "Dark and cozy in here. Perfect time to search.",
-        comment: "Dax greeting on the New Tab page. Refers to dark mode.")
-
-    public static let daxGreetingLight = NotLocalizedString(
-        "new-tab-page.dax-greeting.light",
-        value: "Bright out here. Should have worn my DDG glasses!",
-        comment: "Dax greeting on the New Tab page. Refers to light mode; DDG means DuckDuckGo.")
-
-    public static let daxGreetingFirstOpen = NotLocalizedString(
-        "new-tab-page.dax-greeting.firstOpen",
-        value: "There you are. Great to see you!",
+    public static let daxGreetingMorning = NotLocalizedString(
+        "new-tab-page.dax-greeting.morning",
+        value: "Morning, sunshine.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingFrequentHabit = NotLocalizedString(
-        "new-tab-page.dax-greeting.frequentHabit",
-        value: "This is becoming a habit. A good one.",
+    public static let daxGreetingStillAwake = NotLocalizedString(
+        "new-tab-page.dax-greeting.stillAwake",
+        value: "Still awake? Me too!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingFrequentSearch = NotLocalizedString(
-        "new-tab-page.dax-greeting.frequentSearch",
-        value: "We've searched a lot together. What's next?",
+    public static let daxGreetingNightOwl = NotLocalizedString(
+        "new-tab-page.dax-greeting.nightOwl",
+        value: "Night owl? Me too.",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingTrackersQuiet = NotLocalizedString(
-        "new-tab-page.dax-greeting.trackersQuiet",
-        value: "I've been blocking trackers quietly. ",
-        comment: "Dax greeting on the New Tab page. Preserve the trailing space.")
-
-    public static let daxGreetingCookies = NotLocalizedString(
-        "new-tab-page.dax-greeting.cookies",
-        value: "Cleared a few cookie pop-ups for you.",
+    public static let daxGreetingYoureBack = NotLocalizedString(
+        "new-tab-page.dax-greeting.youreBack",
+        value: "Hey, you’re back!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingAds = NotLocalizedString(
-        "new-tab-page.dax-greeting.ads",
-        value: "Caught a few ads trying to sneak in today.",
+    public static let daxGreetingGoodbyeAds = NotLocalizedString(
+        "new-tab-page.dax-greeting.goodbyeAds",
+        value: "Goodbye creepy ads!",
         comment: "Dax greeting on the New Tab page.")
 
-    public static let daxGreetingScams = NotLocalizedString(
-        "new-tab-page.dax-greeting.scams",
-        value: "Just like water, scams roll right off my back!",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingTrackersSearch = NotLocalizedString(
-        "new-tab-page.dax-greeting.trackersSearch",
-        value: "Trackers blocked. What should we look for today?",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingTrackersAsk = NotLocalizedString(
-        "new-tab-page.dax-greeting.trackersAsk",
-        value: "Trackers blocked already. Ask me anything.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingCookieBreakfast = NotLocalizedString(
-        "new-tab-page.dax-greeting.cookieBreakfast",
-        value: "Yum! Cookie pop-ups \nare my favorite breakfast.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingCookieLunch = NotLocalizedString(
-        "new-tab-page.dax-greeting.cookieLunch",
-        value: "Yum! Cookie pop-ups \nfor lunch.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingCookieDinner = NotLocalizedString(
-        "new-tab-page.dax-greeting.cookieDinner",
-        value: "I eat cookie pop-ups \nfor dinner.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingWingIt = NotLocalizedString(
-        "new-tab-page.dax-greeting.wingIt",
-        value: "Let's wing it together. Privately.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingDuckIt = NotLocalizedString(
-        "new-tab-page.dax-greeting.duckIt",
-        value: "Duck it! No one's watching.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingReady = NotLocalizedString(
-        "new-tab-page.dax-greeting.ready",
-        value: "Hey, I'm ready whenever you are.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingFeelingDucky = NotLocalizedString(
-        "new-tab-page.dax-greeting.feelingDucky",
-        value: "Feeling ducky? Let's dive in.",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingDiveIn = NotLocalizedString(
-        "new-tab-page.dax-greeting.diveIn",
-        value: "Let's dive into the internet!",
-        comment: "English-only Dax greeting on the New Tab page.")
-
-    public static let daxGreetingChatPrivately = NotLocalizedString(
-        "new-tab-page.dax-greeting.chatPrivately",
-        value: "Hey there, let's chat privately.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingNobodyWatching = NotLocalizedString(
-        "new-tab-page.dax-greeting.nobodyWatching",
-        value: "Search like nobody's watching. Because they're not.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingJustUs = NotLocalizedString(
-        "new-tab-page.dax-greeting.justUs",
-        value: "Just us here. Ask me anything privately.",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingQuestion = NotLocalizedString(
-        "new-tab-page.dax-greeting.question",
-        value: "Hi there! Got a question for me?",
-        comment: "Dax greeting on the New Tab page.")
-
-    public static let daxGreetingSearchOrChat = NotLocalizedString(
-        "new-tab-page.dax-greeting.searchOrChat",
-        value: "Search or chat? I'm here for both.",
-        comment: "Dax greeting on the New Tab page.")
+    public static let daxGreetingAskMe = NotLocalizedString(
+        "new-tab-page.dax-greeting.askMe",
+        value: "Ask me. I won’t tell.",
+        comment: "Dax greeting on the New Tab page. Refers to private AI chat.")
 
     public static let daxGreetingDuckDuckHello = NotLocalizedString(
         "new-tab-page.dax-greeting.duckDuckHello",
-        value: "DuckDuckHello!",
+        value: "Duck Duck Hello!",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingNiceToSeeYou = NotLocalizedString(
+        "new-tab-page.dax-greeting.niceToSeeYou",
+        value: "Nice to see you.",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingReadyWhenYouAre = NotLocalizedString(
+        "new-tab-page.dax-greeting.readyWhenYouAre",
+        value: "Ready when you are.",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingReadyToSearchPrivately = NotLocalizedString(
+        "new-tab-page.dax-greeting.readyToSearchPrivately",
+        value: "Ready to search privately?",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingHeyThere = NotLocalizedString(
+        "new-tab-page.dax-greeting.heyThere",
+        value: "Hey there!",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingWhatsOnYourMind = NotLocalizedString(
+        "new-tab-page.dax-greeting.whatsOnYourMind",
+        value: "What’s on your mind?",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingHowCanIHelp = NotLocalizedString(
+        "new-tab-page.dax-greeting.howCanIHelp",
+        value: "How can I help you today?",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingLetsExplore = NotLocalizedString(
+        "new-tab-page.dax-greeting.letsExplore",
+        value: "Let’s explore.",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingLetsDoThis = NotLocalizedString(
+        "new-tab-page.dax-greeting.letsDoThis",
+        value: "Let’s do this!",
+        comment: "Dax greeting on the New Tab page.")
+
+    public static let daxGreetingReadyToDiveIn = NotLocalizedString(
+        "new-tab-page.dax-greeting.readyToDiveIn",
+        value: "Ready to dive in?",
         comment: "English-only Dax greeting on the New Tab page.")
 
     // MARK: - New Tab Page customization
@@ -2562,6 +2512,9 @@ public struct UserText {
     }
 
     public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
+
+    public static let aiChatPromptTooLongTitle = NotLocalizedString("aichat.prompt.too.long.title", value: "Please try a shorter message.", comment: "Error shown below the Duck.ai input while the message is longer than the allowed number of characters")
+    public static let aiChatPromptTooLongCountFormat = NotLocalizedString("aichat.prompt.too.long.count", value: "%1$d/%2$d", comment: "Character count below the Duck.ai too-long message error, e.g. 16800/16000. %1$d is the message's character count, %2$d is the maximum allowed")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")

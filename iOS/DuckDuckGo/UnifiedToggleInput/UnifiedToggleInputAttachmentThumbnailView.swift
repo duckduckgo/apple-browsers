@@ -276,6 +276,8 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             configureFile(fileName: fileAttachment.fileName, validationMessage: fileAttachment.validationMessage)
         case .tab(let tabAttachment):
             configureTab(title: tabAttachment.title, favicon: tabAttachment.favicon)
+        case .pastedText:
+            break
         }
         applyAppearance()
     }

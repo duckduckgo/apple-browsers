@@ -220,6 +220,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
     private var attachmentController: UTIAttachmentController!
+    private var isPastedTextEnabled: Bool { featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) }
     private var tabAttachmentContext: MultiTabAttachmentContext?
     private var tabAttachmentPreparations: [UUID: MultiTabAttachmentPreparation] = [:]
     private var transferredTabAttachmentIDs = Set<UUID>()
@@ -292,8 +293,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         footerController?.isTermsOfServiceVisible == true
     }
 
+    private var isTermsOfServiceInEffect: Bool {
+        footerController?.isTermsOfServiceInEffect == true
+    }
+
     private var submitsAIChatPromptOnKeyboardReturn: Bool {
-        (isOmnibarNewAIChatPrompt || isContextualChatState) && !isTermsOfServiceDisclaimerShown
+        (isOmnibarNewAIChatPrompt || isContextualChatState) && !isTermsOfServiceInEffect
     }
 
     private var usesReturnKeySubmitButtonStyle: Bool {
@@ -301,7 +306,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private var usesFloatingReturnKey: Bool {
-        isOmnibarEditing && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt && !isTermsOfServiceDisclaimerShown
+        isOmnibarEditing && isInputVisibleForKeyboard && isOmnibarNewAIChatPrompt && !isTermsOfServiceInEffect
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -754,6 +759,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: already active, skipping re-apply")
             return
         }
+        // Before the snapshot, so the edited prompt isn't saved as the outgoing tab's draft.
+        endEditMode(collapses: false)
         if let previous {
             let snapshot = snapshotCurrentState()
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: flushing previous tab [\(previous)] — \(snapshot.summary)")
@@ -982,10 +989,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private var editContinuation: CheckedContinuation<EditPromptReply, Never>?
     private var editHasResponsesToLose = false
+    private var editCarriesPastedText = false
 
     func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply {
         resolveEdit(.cancelled)
         pixelReporter.reportEditReceived()
+        editCarriesPastedText = isPastedTextEnabled && request.attachments.textPasted?.isEmpty == false
         beginEditMode(prompt: request.prompt,
                       attachments: makeAttachments(from: request),
                       hasResponsesToLose: request.hasResponsesToLose)
@@ -1008,22 +1017,24 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         synchronizeTabAttachmentPreparations()
     }
 
-    func endEditMode() {
+    /// `collapses: false` when the caller sets the display state itself, e.g. on a tab change.
+    func endEditMode(collapses: Bool = true) {
         guard isEditing else { return }
-        exitEditMode(reply: .cancelled)
+        exitEditMode(reply: .cancelled, collapses: collapses)
         pixelReporter.reportEditCancelled()
     }
 
     /// Shared teardown for leaving edit mode: resolves the pending edit with `reply` and resets the
     /// input. Callers fire the matching pixel, so submit-driven teardown isn't also counted as a cancel.
-    private func exitEditMode(reply: EditPromptReply) {
+    private func exitEditMode(reply: EditPromptReply, collapses: Bool = true) {
         guard isEditing else { return }
         clearAttachments()
         isEditing = false
+        editCarriesPastedText = false
         resolveEdit(reply)
         resetToolsSelection()
         setText("")
-        showCollapsed()
+        if collapses { showCollapsed() }
     }
 
     private func resolveEdit(_ reply: EditPromptReply) {
@@ -1034,7 +1045,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func makeAttachments(from request: EditPromptRequest) -> [UnifiedToggleInputAttachment] {
         var attachments: [UnifiedToggleInputAttachment] = []
-        for image in request.images ?? [] {
+        for image in request.attachments.images ?? [] {
             guard let data = Data(base64Encoded: image.data), let uiImage = UIImage(data: data) else { continue }
             let fileName = "image.\(image.format == "png" ? "png" : "jpg")"
             attachments.append(.image(AIChatImageAttachment(image: uiImage,
@@ -1042,11 +1053,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                                             originalEncodedData: data,
                                                             originalFormat: image.format)))
         }
-        for file in request.files ?? [] {
+        for file in request.attachments.files ?? [] {
             guard let data = Data(base64Encoded: file.data) else { continue }
             attachments.append(.file(UnifiedToggleInputAttachmentPresenter.makeFileAttachment(data: data,
                                                                                               fileName: file.fileName,
                                                                                               mimeType: file.mimeType)))
+        }
+        if editCarriesPastedText {
+            for pastedText in request.attachments.textPasted ?? [] {
+                attachments.append(.pastedText(AIChatPastedText(content: pastedText.content)))
+            }
         }
         return attachments
     }
@@ -1188,6 +1204,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
+        endEditMode(collapses: false)
         cancelPendingOmnibarFocus()
         keyboardMonitor.disarm()
         displayState = .hidden
@@ -1636,7 +1653,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         clearStoreEntryAfterSubmission()
         showCollapsed()
         let didSendBridgeMessage = userScript.canDispatchBridgeMessages
-        userScript.submitPrompt(text, images: nil, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
+        userScript.submitPrompt(text, attachments: .none, modelId: configuration.modelId, reasoningEffort: configuration.reasoningEffort)
         recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: didSendBridgeMessage)
         featureDiscovery.markDuckAIPromptSubmitted()
     }
@@ -2253,16 +2270,14 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
 
         if isEditing {
-            let images = selectedModelSupportsImageUpload
-                ? (UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments) ?? [])
-                : nil
-            let files = selectedModelSupportsFileUpload
-                ? (UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments) ?? [])
-                : nil
+            let attachments = UnifiedToggleInputAttachmentEncoder.encodeForEdit(viewController.currentAttachments,
+                                                                                imagesSupported: selectedModelSupportsImageUpload,
+                                                                                filesSupported: selectedModelSupportsFileUpload,
+                                                                                carriesPastedText: editCarriesPastedText)
             _ = acceptTermsOfServiceIfAskTapped(trigger)
             footerController?.recordPromptSubmitted()
             pixelReporter.reportEditSubmitted()
-            exitEditMode(reply: .submit(prompt: text, images: images, files: files))
+            exitEditMode(reply: .submit(prompt: text, attachments: attachments))
             return
         }
 
@@ -2295,19 +2310,16 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             attachmentsSelected: !viewController.currentAttachments.isEmpty
         )
 
-        let images = selectedModelSupportsImageUpload
-            ? UnifiedToggleInputImageEncoder.encode(viewController.currentAttachments)
-            : nil
-        let files = selectedModelSupportsFileUpload
-            ? UnifiedToggleInputFileEncoder.encode(viewController.currentAttachments)
-            : nil
+        let attachments = UnifiedToggleInputAttachmentEncoder.encode(viewController.currentAttachments,
+                                                                     imagesSupported: selectedModelSupportsImageUpload,
+                                                                     filesSupported: selectedModelSupportsFileUpload)
 
         let tabAttachmentRequest = isContextualChatState
             ? userScript?.attachedTabContextsProvider?()
             : takeTabAttachmentRequest()
         if !isContextualChatState, userScript == nil, let tabAttachmentRequest {
             let prompt = AIChatNativePrompt.queryPrompt(text, autoSubmit: true, toolChoice: tools?.map(\.rawValue),
-                                                       images: images, files: files, modelId: configuration.modelId,
+                                                       attachments: attachments, modelId: configuration.modelId,
                                                        reasoningEffort: configuration.reasoningEffort)
                 .withTermsAccepted(termsAccepted)
             prepareInitialPrompt(prompt, request: tabAttachmentRequest)
@@ -2315,7 +2327,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
-        deliverAIChatPrompt(text: text, images: images, files: files, configuration: configuration, tools: tools,
+        deliverAIChatPrompt(text: text, attachments: attachments, configuration: configuration, tools: tools,
                             termsAccepted: termsAccepted, userScript: userScript, tabAttachmentRequest: tabAttachmentRequest)
         // After delivery, so every pixel this submission fires (including the contextual
         // ones fired during delivery) still reads the pre-submission first-prompt state.
@@ -2375,8 +2387,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     private func deliverAIChatPrompt(text: String,
-                                     images: [AIChatNativePrompt.NativePromptImage]?,
-                                     files: [AIChatNativePrompt.NativePromptFile]?,
+                                     attachments: AIChatPromptAttachments,
                                      configuration: PromptSubmissionConfiguration,
                                      tools: [AIChatRAGTool]?,
                                      termsAccepted: Bool,
@@ -2389,8 +2400,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                 modelId: configuration.modelId,
                 tools: tools,
                 reasoningEffort: configuration.reasoningEffort,
-                images: images,
-                files: files,
+                attachments: attachments,
                 termsAccepted: termsAccepted
             )
             delegate?.unifiedToggleInputDidSubmitDuckAIPrompt(origin: pixelReporter.currentPromptOrigin())
@@ -2419,7 +2429,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         }
         if let userScript {
             let origin = pixelReporter.currentPromptOrigin()
-            userScript.submitPrompt(text, images: images, files: files, modelId: configuration.modelId, tools: tools,
+            userScript.submitPrompt(text, attachments: attachments, modelId: configuration.modelId, tools: tools,
                                     reasoningEffort: configuration.reasoningEffort, tabAttachmentRequest: tabAttachmentRequest,
                                     termsAccepted: termsAccepted,
                                     onPromptDispatched: { [weak self] in
@@ -2428,7 +2438,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             })
         } else {
             delegate?.unifiedToggleInputDidSubmitPrompt(text, modelId: configuration.modelId, tools: tools, reasoningEffort: configuration.reasoningEffort,
-                                                        images: images, files: files, termsAccepted: termsAccepted,
+                                                        attachments: attachments, termsAccepted: termsAccepted,
                                                         tabAttachmentRequest: tabAttachmentRequest)
             recordDuckAIPromptDelivered(wasQueued: false, didSendBridgeMessage: nil)
         }
@@ -2686,7 +2696,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func syncTermsOfServiceSendButtonToHandler() {
-        viewController.handler.termsOfServiceSendButton = isTermsOfServiceDisclaimerShown ? termsOfServiceSendButton : nil
+        viewController.handler.termsOfServiceSendButton = isTermsOfServiceInEffect ? termsOfServiceSendButton : nil
         viewController.handler.reservesTermsOfServiceSendButton = footerController?.isTermsOfServicePending == true
     }
 
@@ -2696,6 +2706,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func resetSessionState() {
+        endEditMode(collapses: false)
         isNewChatPending = false
         aiChatStatus = .unknown
         attachmentUsage = nil

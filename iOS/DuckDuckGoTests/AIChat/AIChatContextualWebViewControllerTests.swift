@@ -36,7 +36,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         let collected = expectation(description: "Captured request collected")
         var collectionCount = 0
         script.attachedTabContextsProvider = { XCTFail("Queued prompt must not read a later draft"); return nil }
-        sut.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+        sut.submitPrompt("first", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil,
                          tabAttachmentRequest: .init(contexts: {
             collectionCount += 1
             collected.fulfill()
@@ -55,7 +55,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     func testCancelledQueuedPromptCannotCollectAfterReadiness() async {
         let sut = makeAttachmentSubmissionController()
         var cancelled = false
-        sut.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+        sut.submitPrompt("first", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil,
                          tabAttachmentRequest: .init(contexts: { XCTFail("Cancelled prompt must not collect"); return [] },
                                                      didConsume: {}, cancel: { cancelled = true }))
         sut.cancelPendingTabAttachmentPrompt()
@@ -72,7 +72,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     func testQueuedRequestIsReleasedOnControllerTeardown() async {
         var sut: AIChatContextualWebViewController? = makeAttachmentSubmissionController()
         let released = expectation(description: "Queued request released")
-        sut?.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+        sut?.submitPrompt("first", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil,
                           tabAttachmentRequest: .init(contexts: { XCTFail("Discarded request must not collect"); return [] },
                                                       didConsume: {}, cancel: { released.fulfill() }))
         sut = nil
@@ -156,7 +156,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             // Cancellation also releases the request before its suspended task finishes.
             if outcome != .cancelled { finished.fulfill() }
         })
-        sut.submitPrompt("prompt", images: nil, files: nil, modelId: nil, tools: nil,
+        sut.submitPrompt("prompt", attachments: .none, modelId: nil, tools: nil,
                          reasoningEffort: nil, tabAttachmentRequest: request)
         if queued {
             XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, 1, file: file, line: line)

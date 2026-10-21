@@ -233,6 +233,12 @@ public final class WebExtensionLoader: WebExtensionLoading {
             throw WebExtensionLoaderError.failedToFindContextForIdentifier(identifier: identifier)
         }
 
+        // WebKit crashes if an extension's popup finishes closing after the extension unloads. The popup
+        // can belong to the extension's default action or to a tab's own action.
+        context.action(for: nil)?.closePopup()
+        for case let tab as any WKWebExtensionTab in context.openTabs {
+            context.action(for: tab)?.closePopup()
+        }
         try controller.unloadCopyingErrors(context)
         permissionController?.didUnload(identifier)
     }

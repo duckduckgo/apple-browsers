@@ -64,6 +64,13 @@ extension WKWebExtensionController {
 @available(macOS 15.4, iOS 18.4, *)
 extension WKWebExtensionContext {
 
+    /// Callback variant for readiness observation, without retaining the context in a suspended task.
+    func loadBackgroundContentCopyingErrors(completionHandler: @escaping (Swift.Error?) -> Void) {
+        loadBackgroundContent { error in
+            completionHandler(error.map(NSError.webKitSafe))
+        }
+    }
+
     func loadBackgroundContentCopyingErrors() async throws {
         do {
             try await loadBackgroundContent()

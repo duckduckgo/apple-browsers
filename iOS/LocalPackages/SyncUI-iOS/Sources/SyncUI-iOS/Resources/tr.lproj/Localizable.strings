@@ -160,6 +160,12 @@
 /* Title on the sync-setup prompt asking whether to sync with another device or just this device */
 "sync.simplified.another.device.v2.title" = "Bu cihazı yakındaki bir bilgisayarla senkronize edin.";
 
+/* Body on the sync-setup prompt explaining that the user can sync this device only and pair another device later */
+"sync.simplified.another.device.v3.body" = "Şu anda başka bir cihazınız yok mu? Yalnızca bu cihazı senkronize edin ve daha sonra başka bir cihazla senkronizasyon yapın.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v3.title" = "Yakınlarda başka cihazınız var mı? Cihazlarınızı senkronize edin.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Yer imlerine eklediğiniz web sitelerinden simgeler yükler. İndirilen simgeler ağınıza açık olur.";
 
@@ -183,6 +189,12 @@
 
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Kurtarma Kodunu Kopyala";
+
+/* Alert button that confirms turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.action" = "Kalıcı Olarak Sil";
+
+/* Title of the alert confirming turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.title" = "Bu İşlem Geri Alınamaz.";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Senkronizasyonu Kapatın ve Sunucu Verilerini Silin";
@@ -247,11 +259,17 @@
 /* Footer caption shown under the Remove Device button on the manage device screen */
 "sync.simplified.manage.device.remove.footer" = "Bu cihazı kaldırırsanız, artık senkronize edilen verilerinize erişemeyecektir.";
 
+/* Footer caption shown under the Remove Device button on the manage device screen. Parameter is the device name */
+"sync.simplified.manage.device.remove.footer.named" = "\"%@\" artık diğer cihazlardaki senkronize edilen verilerinize erişemeyecek.";
+
 /* Status label shown under a device name on the manage device screen when the device is synced */
 "sync.simplified.manage.device.status.synced" = "Senkronize edildi";
 
 /* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
 "sync.simplified.manage.device.turn.off.footer" = "Bu özellik kapatılırsa, bu cihaz artık senkronize edilen verilerinize erişemeyecektir.";
+
+/* Footer caption shown under the Sync This Device toggle on the manage this device screen. Parameter is the device name */
+"sync.simplified.manage.device.turn.off.footer.named" = "Bu özellik kapatılırsa \"%@\" diğer cihazlardaki senkronize edilmiş verilerinize artık erişemeyecek.";
 
 /* My Devices section header shown when Sync & Backup is enabled */
 "sync.simplified.my.devices.section.header" = "Cihazlarım";
@@ -274,6 +292,15 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Bu cihaza erişiminizi kaybettiğinizde verilerinizi kurtarmak için bu kodu kullanın. Sync & Backup verileri 18 ay kullanılmadıktan sonra kurtarılamaz. [Daha Fazla Bilgi](%@)";
 
+/* Confirmation alert button to remove a device from Sync & Backup */
+"sync.simplified.remove.device.confirm.action" = "Kaldır";
+
+/* Confirmation alert message when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.message" = "\"%@\" artık senkronize edilmiş verilerinize erişemeyecek. Yer işaretleriniz, otomatik doldurma verileriniz ve Duck.ai sohbetleriniz cihazlarınızda kalmaya devam edecek.";
+
+/* Confirmation alert title when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.title" = "%@, Sync & Backup'tan kaldırılsın mı?";
+
 /* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo Uygulaması";
 
@@ -292,14 +319,29 @@
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Kodu Paylaş";
 
+/* Button on the scan-QR tab that opens the app's iOS Settings so the user can allow camera access */
+"sync.simplified.scan.v2.camera.denied.button" = "İzinleri Değiştir";
+
+/* Message on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.message" = "QR kodunu tarayarak senkronize etmek istiyorsanız kamera izinleri gerekiyor.";
+
+/* Title on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.title" = "DuckDuckGo'ya kamera erişimi gerekiyor.";
+
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Kapat";
 
 /* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "Masaüstü için DuckDuckGo";
 
+/* Button on the scan-QR intro animation card that dismisses the card and reveals the camera scanner */
+"sync.simplified.scan.v2.qr.got.it.button" = "Anladım";
+
 /* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Senkronize etmek için QR kodunu tara.";
+
+/* Scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. **...** marks the parts shown in the primary text color. \\n is a line break. */
+"sync.simplified.scan.v2.qr.instruction" = "%@ uygulamasında,\n**Sync & Backup** › **Başka Bir Cihazla Senkronize Et** bölümüne gidin";
 
 /* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
 "sync.simplified.scan.v2.qr.open.app" = "%@ uygulamasını aç";
@@ -340,6 +382,27 @@
 /* Sync & Backup enabled / disabled toggle title, referring to the current device */
 "sync.simplified.toggle.title.this.device" = "Bu Cihazı Senkronize Et";
 
+/* Button on the turn off Sync & Backup sheet that turns off sync and deletes the server data */
+"sync.simplified.turn.off.sheet.delete.button" = "Sunucu Verilerini Kapat ve Sil";
+
+/* Message of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.delete.message" = "Sync & Backup kullanan tüm cihazların bağlantısı kesilecek ve senkronize edilen verileriniz sunucudan silinecektir.";
+
+/* Toggle label on the turn off Sync & Backup sheet to also delete the synced data from the server */
+"sync.simplified.turn.off.sheet.delete.toggle" = "Sunucu verileri de silinsin mi?";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is off */
+"sync.simplified.turn.off.sheet.delete.toggle.off.footer" = "Sync & Backup'ı kapatıp sunucudaki tüm senkronize edilmiş verileri silin ve kurtarma kodunu devre dışı bırakın.";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is on */
+"sync.simplified.turn.off.sheet.delete.toggle.on.footer" = "Sync & Backup'ı kapatır ve senkronize edilmiş verilerinizi sunucudan siler.";
+
+/* Title of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.title" = "Sync & Backup kapatılsın mı?";
+
+/* Sync settings action button title that opens the options to turn off Sync & Backup */
+"sync.simplified.turn.off.sync.button" = "Sync & Backup'ı Kapat";
+
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Başka Bir Cihazla Senkronize Et";
 
@@ -360,3 +423,4 @@
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Senkronizasyon Geliştirme ortamını kullanıyorsunuz";
+

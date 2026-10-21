@@ -282,6 +282,33 @@ final class SyncSettingsViewControllerPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Setup authentication results fire the authentication result pixel with result and source",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (SyncSettingsViewModel.SetupAuthenticationResult.succeeded, SyncSettingsViewModel.SetupAuthenticationSource.settingsNotSynced,
+             ["result": "succeeded", "source": "settings_not_synced"]),
+            (.failed, .settingsSynced, ["result": "failed", "source": "settings_synced"]),
+            (.unconfigured, .thisDevice, ["result": "unconfigured", "source": "this_device"]),
+            (.succeeded, .recover, ["result": "succeeded", "source": "recover"]),
+            (.failed, .deepLink, ["result": "failed", "source": "deep_link"])
+          ])
+    func setupAuthenticationResultFiresPixel(result: SyncSettingsViewModel.SetupAuthenticationResult,
+                                             source: SyncSettingsViewModel.SetupAuthenticationSource,
+                                             expectedParameters: [String: String]) {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+
+        vc.fireSyncSetupPixel(event: .authenticationResult(result, source: source))
+
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == "sync_setup_authentication_result" &&
+            $0.pixel.parameters == expectedParameters &&
+            ($0.additionalParameters ?? [:]).isEmpty &&
+            $0.includeAppVersionParameter == true
+        })
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Turning off sync without a confirmation fires the sync disabled pixel", .timeLimit(.minutes(1)))
     func disablingSyncFiresSyncDisabledPixel() async {
         let vc = makeViewController(source: nil, enabledFeatureFlags: [])
@@ -360,6 +387,37 @@ final class SyncSettingsViewControllerPixelTests {
         #expect(!pixelKitMock.actualFireCalls.contains {
             $0.pixel.name == SyncDeviceDetailsPixel.otherDeviceRemoveDeviceConfirmed.name
         })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Sync setup flow version follows local capability flags", .timeLimit(.minutes(1)), arguments: [
+        ([FeatureFlag](), "v1"),
+        ([.syncCanUseV2ConnectFlow], "v2"),
+        ([.syncCanUseV2ConnectFlow, .syncCanUseExchangeV2Point1], "v2.1"),
+        ([.syncCanUseExchangeV2Point1], "v1")
+    ])
+    func setupFlowVersion(flags: [FeatureFlag], expected: String) {
+        let vc = makeViewController(source: "test_source", enabledFeatureFlags: flags)
+        #expect(vc.syncSetupPixelFlowVersion == expected)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Join report fires the matching count and daily pixel", .timeLimit(.minutes(1)), arguments: [true, false])
+    func joinReportPixel(didSucceed: Bool) {
+        let vc = makeViewController(source: nil, enabledFeatureFlags: [])
+        let report = PairingV2JoinReport(hostHasAccount: false, hostKind: .thirdParty,
+                                        joinerHasAccount: true, joinerKind: .ddg,
+                                        protocolVersion: "2.1", didSucceed: didSucceed)
+
+        vc.controllerDidSendPairingV2JoinReport(report)
+
+        let call = pixelKitMock.actualFireCalls.last
+        #expect(call?.pixel.name == "sync_setup_joiner_recovery_code_done_\(didSucceed ? "success" : "failed")")
+        #expect(call?.frequency == .dailyAndCount)
+        #expect(call?.pixel.parameters == [
+            "host_has_account": "false", "host_kind": "3party",
+            "joiner_has_account": "true", "joiner_kind": "ddg", "protocol_version": "2.1"
+        ])
     }
 
     private func makeViewController(source: String?, enabledFeatureFlags: [FeatureFlag]) -> SyncSettingsViewController {

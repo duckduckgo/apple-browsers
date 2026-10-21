@@ -112,24 +112,24 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
 
     func testWhenNoAttachmentsThenEncodedPayloadsNil() {
         XCTAssertFalse(sut.hasAttachments)
-        XCTAssertNil(sut.encodedImages)
-        XCTAssertNil(sut.encodedFiles)
+        XCTAssertNil(sut.encodedAttachments.images)
+        XCTAssertNil(sut.encodedAttachments.files)
     }
 
     func testWhenImageAttachedThenEncodedImagesReturnedAndFilesNil() {
         strip.addAttachment(.image(AIChatImageAttachment(image: makeImage(), fileName: "photo.jpg")))
 
         XCTAssertTrue(sut.hasAttachments)
-        XCTAssertEqual(sut.encodedImages?.count, 1)
-        XCTAssertNil(sut.encodedFiles)
+        XCTAssertEqual(sut.encodedAttachments.images?.count, 1)
+        XCTAssertNil(sut.encodedAttachments.files)
     }
 
     func testWhenFileAttachedThenEncodedFilesReturnedAndImagesNil() {
         strip.addAttachment(.file(makeFileAttachment()))
 
         XCTAssertTrue(sut.hasAttachments)
-        XCTAssertEqual(sut.encodedFiles?.count, 1)
-        XCTAssertNil(sut.encodedImages)
+        XCTAssertEqual(sut.encodedAttachments.files?.count, 1)
+        XCTAssertNil(sut.encodedAttachments.images)
     }
 
     func testWhenInvalidFileAttachedThenNotEncoded() {
@@ -143,8 +143,8 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
         ))
 
         XCTAssertTrue(sut.hasAttachments)
-        XCTAssertNil(sut.encodedFiles)
-        XCTAssertNil(sut.encodedImages)
+        XCTAssertNil(sut.encodedAttachments.files)
+        XCTAssertNil(sut.encodedAttachments.images)
     }
 
     // MARK: - Reset
@@ -768,7 +768,7 @@ final class IPadOmnibarDraftTests: XCTestCase {
             }
 
             XCTAssertEqual(delegate.promptQuery, "Submitted prompt", "Legacy: \(usesLegacyTextField)")
-            XCTAssertEqual(delegate.promptControlValues?.selectedFiles?.map(\.fileName), ["origin.pdf"], "Legacy: \(usesLegacyTextField)")
+            XCTAssertEqual(delegate.promptControlValues?.selectedAttachments.files?.map(\.fileName), ["origin.pdf"], "Legacy: \(usesLegacyTextField)")
             XCTAssertEqual(view.aiChatTextView.text, "Destination draft", "Legacy: \(usesLegacyTextField)")
             XCTAssertEqual(view.attachmentsStripView.attachments.map(\.fileName), ["destination.pdf"], "Legacy: \(usesLegacyTextField)")
             controller.bindIPadDraft(to: origin)

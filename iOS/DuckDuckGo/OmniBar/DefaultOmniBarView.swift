@@ -73,8 +73,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
     private var textAreaTopPaddingConstraint: NSLayoutConstraint?
     private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
+    private var searchAreaPreferredHeightConstraint: NSLayoutConstraint?
     private var stackViewLeadingConstraint: NSLayoutConstraint?
     private var stackViewTrailingConstraint: NSLayoutConstraint?
+    private var compactSearchAreaAlignmentConstraints: [NSLayoutConstraint] = []
 
     let fieldContainerLayoutGuide = UILayoutGuide()
 
@@ -246,8 +248,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private func applyLayoutMode(_ newMode: OmniBarLayoutMode) {
         layoutMode = newMode
         let showButtons = newMode != .compact
-        leadingButtonsContainer.isHidden = !showButtons
-        trailingButtonsContainer.isHidden = !showButtons
+        if showButtons {
+            NSLayoutConstraint.deactivate(compactSearchAreaAlignmentConstraints)
+            leadingButtonsContainer.isHidden = false
+            trailingButtonsContainer.isHidden = false
+        } else {
+            leadingButtonsContainer.isHidden = true
+            trailingButtonsContainer.isHidden = true
+            NSLayoutConstraint.activate(compactSearchAreaAlignmentConstraints)
+        }
         readableSearchAreaWidthConstraint?.isActive = showButtons && newMode == .expandedPad
         largeSizeSpacingConstraint?.isActive = showButtons
 
@@ -769,6 +778,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private lazy var glassEffect: UIVisualEffectView = makeGlassEffectView(configuration: desiredGlassConfiguration)
     private var glassEffectConfiguration: FloatingFieldGlassConfiguration?
     private var pageGlassInterfaceStyle: UIUserInterfaceStyle?
+    private lazy var materialRefreshScheduler = FloatingMaterialRefreshScheduler(view: self)
 
     private var desiredGlassConfiguration: FloatingFieldGlassConfiguration {
         FloatingFieldGlassConfiguration(
@@ -864,6 +874,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             self.searchAreaShadowView = shadowView
         }
         super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
+        notificationContainer.fieldView = searchAreaContainerView
 
         setUpSubviews()
         setUpConstraints()
@@ -872,6 +883,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         setUpAccessibility()
 
         setUpInitialState()
+        NSLayoutConstraint.activate(compactSearchAreaAlignmentConstraints)
         updateActiveState()
         updateVerticalSpacing()
     }
@@ -892,6 +904,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             makeOpaque()
             return
         }
+        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshMaterialAppearance() }) else { return }
         if isBottomFloatingField, !isFloatingMinimalChromeBar, fireMode {
             makeOpaque()
             return
@@ -953,7 +966,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
                 setFieldBackgroundColor(.clear)
             }
 
-            searchAreaContainerView.layoutIfNeeded()
+            searchAreaContainerView.setNeedsLayout()
         }
     }
 
@@ -986,7 +999,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         if let interfaceStyle {
             pageGlassInterfaceStyle = interfaceStyle
         }
-        glassEffectConfiguration = nil
+        guard !materialRefreshScheduler.deferIfNeeded({ [weak self] in self?.refreshMaterialAppearance() }) else { return }
         updateFireModeAppearance()
     }
 
@@ -999,6 +1012,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         } else {
             removeMinimalChromeButtonGlass()
         }
+        applyButtonContainersInterfaceStyle()
         makeGlass()
         applyPageGlassInterfaceStyle()
         setNeedsLayout()
@@ -1128,7 +1142,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         chromeContentContainerView.addSubview(attachButton)
         chromeContentContainerView.addSubview(attachmentsStripView)
         addSubview(activeOutlineView)
-        addLayoutGuide(fieldContainerLayoutGuide)
+        chromeContentContainerView.addLayoutGuide(fieldContainerLayoutGuide)
     }
 
     private func setUpConstraints() {
@@ -1155,6 +1169,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         stackViewLeadingConstraint = leadingConstraint
         stackViewTrailingConstraint = trailingConstraint
         if isFloatingUIEnabled {
+            compactSearchAreaAlignmentConstraints = [
+                searchAreaAlignmentView.leadingAnchor.constraint(equalTo: stackView.leadingAnchor),
+                searchAreaAlignmentView.trailingAnchor.constraint(equalTo: stackView.trailingAnchor),
+                searchAreaAlignmentView.topAnchor.constraint(equalTo: stackView.topAnchor),
+                searchAreaAlignmentView.bottomAnchor.constraint(equalTo: stackView.bottomAnchor)
+            ]
             floatingHostToContainerConstraints = [
                 floatingGlassContentHostView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
                 floatingGlassContentHostView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
@@ -1166,6 +1186,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             floatingHostToContainerConstraints = []
         }
         let chromeContentContainerView = self.chromeContentContainerView
+
+        if isFloatingUIEnabled {
+            let height = searchAreaView.heightAnchor.constraint(equalToConstant: OmniBarMetrics.itemSize).withPriority(.defaultHigh)
+            height.isActive = true
+            searchAreaPreferredHeightConstraint = height
+        }
 
         NSLayoutConstraint.activate([
             leadingConstraint,
@@ -1375,15 +1401,24 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         let style: UIUserInterfaceStyle = fireMode ? .dark : .unspecified
         searchAreaContainerView.subviews.forEach { $0.overrideUserInterfaceStyle = style }
-        // Stack siblings of searchAreaContainerView, so the loop above misses them — same override needed.
-        leadingButtonsContainer.overrideUserInterfaceStyle = style
-        trailingButtonsContainer.overrideUserInterfaceStyle = style
+        // Keep the system style so the fire tint matches the button glass.
+        if shouldUseFloatingTopGlass, glassEffect.superview === searchAreaContainerView {
+            glassEffect.overrideUserInterfaceStyle = .unspecified
+        }
+        applyButtonContainersInterfaceStyle()
         if isFloatingUIEnabled {
             floatingGlassContentHostView.overrideUserInterfaceStyle = style
         }
         refreshMinimalChromeGlassTint()
         applyPageGlassInterfaceStyle()
         progressView?.updateFireModeAppearance(fireMode: fireMode)
+    }
+
+    /// Dark only on the minimal-chrome bar's fire-tinted glass; elsewhere (e.g. iPad) the buttons sit on the light toolbar.
+    private func applyButtonContainersInterfaceStyle() {
+        let style: UIUserInterfaceStyle = fireMode && isFloatingMinimalChromeBar ? .dark : .unspecified
+        leadingButtonsContainer.overrideUserInterfaceStyle = style
+        trailingButtonsContainer.overrideUserInterfaceStyle = style
     }
 
     private func applyPageGlassInterfaceStyle() {
@@ -1520,6 +1555,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
         textAreaTopPaddingConstraint?.constant = topPadding
         textAreaBottomPaddingConstraint?.constant = -bottomPadding
+        searchAreaPreferredHeightConstraint?.constant = isBottomFloatingField ? Metrics.floatingEmbeddedHeight : OmniBarMetrics.itemSize
         updateFireModeAppearance()
     }
 
@@ -1785,7 +1821,9 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func applyOmnibarCornerStyle() {
         let cornerRadius: CGFloat
-        if isFloatingUIEnabled && isUsingSmallTopSpacing {
+        if isBottomFloatingField && !isSearchAreaExpanded {
+            cornerRadius = Metrics.floatingEmbeddedHeight / 2
+        } else if isFloatingUIEnabled && isUsingSmallTopSpacing {
             cornerRadius = max(searchAreaContainerView.bounds.height / 2, Metrics.cornerRadius)
         } else {
             cornerRadius = Metrics.cornerRadius
@@ -2155,10 +2193,12 @@ extension DefaultOmniBarView {
     }
 
     func setUpExpandedSearchAreaConstraints() {
+        let chromeContentContainerView = self.chromeContentContainerView
+
         // Expanded, the text view stops above the button row (see `applyExpansionConstraints`); when
         // attachments are present this is swapped for `textViewBottomToStripConstraint` so it stops above the strip.
         let textBottomToContainer = aiChatTextView.bottomAnchor.constraint(
-            equalTo: searchAreaContainerView.bottomAnchor,
+            equalTo: chromeContentContainerView.bottomAnchor,
             constant: -Metrics.duckAITextViewBottomPadding
         )
         textViewBottomToContainerConstraint = textBottomToContainer
@@ -2179,8 +2219,8 @@ extension DefaultOmniBarView {
             aiChatTextView.trailingAnchor.constraint(equalTo: searchAreaView.textField.trailingAnchor),
             textBottomToContainer,
 
-            aiChatSendButton.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
-            aiChatSendButton.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatSendButton.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor, constant: -Metrics.duckAITextViewBottomPadding),
+            aiChatSendButton.bottomAnchor.constraint(equalTo: chromeContentContainerView.bottomAnchor, constant: -Metrics.duckAITextViewBottomPadding),
             aiChatSendButtonWidthConstraint,
             aiChatSendButton.heightAnchor.constraint(equalToConstant: Metrics.sendButtonSize),
 
@@ -2195,7 +2235,7 @@ extension DefaultOmniBarView {
             reasoningPickerButton.heightAnchor.constraint(equalToConstant: Metrics.reasoningPickerChipSize),
             reasoningPickerButton.leadingAnchor.constraint(greaterThanOrEqualTo: aiChatTextView.leadingAnchor),
 
-            attachButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
+            attachButton.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor, constant: Metrics.duckAITextViewBottomPadding),
             attachButton.centerYAnchor.constraint(equalTo: aiChatSendButton.centerYAnchor),
             attachButton.widthAnchor.constraint(equalToConstant: Metrics.attachButtonSize),
             attachButton.heightAnchor.constraint(equalToConstant: Metrics.attachButtonSize),
@@ -2209,8 +2249,8 @@ extension DefaultOmniBarView {
             selectedToolChipView.leadingAnchor.constraint(equalTo: toolPickerButton.trailingAnchor, constant: Metrics.toolPickerToSelectedToolChipSpacing),
             selectedToolChipView.trailingAnchor.constraint(lessThanOrEqualTo: reasoningPickerButton.leadingAnchor, constant: -Metrics.toolPickerToSelectedToolChipSpacing),
 
-            attachmentsStripView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            attachmentsStripView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            attachmentsStripView.leadingAnchor.constraint(equalTo: chromeContentContainerView.leadingAnchor),
+            attachmentsStripView.trailingAnchor.constraint(equalTo: chromeContentContainerView.trailingAnchor),
             attachmentsStripView.bottomAnchor.constraint(equalTo: aiChatSendButton.topAnchor, constant: -Metrics.attachmentsStripToButtonRowSpacing),
             stripHeight,
         ])
@@ -2226,7 +2266,7 @@ extension DefaultOmniBarView {
         toolPickerLeadingToAttachConstraint = toolPickerLeadingToAttach
 
         let toolPickerLeadingToContainer = toolPickerButton.leadingAnchor.constraint(
-            equalTo: searchAreaContainerView.leadingAnchor,
+            equalTo: chromeContentContainerView.leadingAnchor,
             constant: Metrics.duckAITextViewBottomPadding
         )
         toolPickerLeadingToContainerConstraint = toolPickerLeadingToContainer
@@ -2241,11 +2281,11 @@ extension DefaultOmniBarView {
         bottomGTE.isActive = false
         searchFieldBottomGTEConstraint = bottomGTE
 
-        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor)
+        let centerY = searchAreaView.centerYAnchor.constraint(equalTo: chromeContentContainerView.centerYAnchor)
         centerY.isActive = true
         searchAreaCenterYConstraint = centerY
 
-        let topPin = searchAreaView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor)
+        let topPin = searchAreaView.topAnchor.constraint(equalTo: chromeContentContainerView.topAnchor)
         topPin.isActive = false
         searchAreaTopPinConstraint = topPin
 
@@ -2681,33 +2721,6 @@ final class ResignSuppressingTextView: UITextView {
 }
 
 #if DEBUG
-final class RebrandPreviewOverride: ObservableObject {
-    private let isRebranded: Bool
-    private let previousAppRebrand: () -> Bool
-    private let previousDesignSystemRebrand: () -> Bool
-    private let previousPalette: ColorPalette
-
-    init(isRebranded: Bool) {
-        self.isRebranded = isRebranded
-        previousAppRebrand = AppRebrand.isAppRebranded
-        previousDesignSystemRebrand = DesignSystemRebrand.isAppRebranded
-        previousPalette = DesignSystemPalette.current
-        apply()
-    }
-
-    func apply() {
-        AppRebrand.isAppRebranded = { [isRebranded] in isRebranded }
-        DesignSystemRebrand.isAppRebranded = { [isRebranded] in isRebranded }
-        DesignSystemPalette.current = isRebranded ? .rebranded : .default
-    }
-
-    deinit {
-        AppRebrand.isAppRebranded = previousAppRebrand
-        DesignSystemRebrand.isAppRebranded = previousDesignSystemRebrand
-        DesignSystemPalette.current = previousPalette
-    }
-}
-
 /// Bridges the UIKit ``DefaultOmniBarView`` into SwiftUI so it can be shown in a `#Preview`.
 private struct DefaultOmniBarViewRepresentable: UIViewRepresentable {
     let omniBarView: DefaultOmniBarView
@@ -2717,25 +2730,14 @@ private struct DefaultOmniBarViewRepresentable: UIViewRepresentable {
 }
 
 private struct DefaultOmniBarViewGallery: View {
-    @StateObject private var rebrandOverride: RebrandPreviewOverride
-
-    init(isRebranded: Bool) {
-        _rebrandOverride = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
-    }
-
     var body: some View {
-        rebrandOverride.apply()
-        return DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
+        DefaultOmniBarViewRepresentable(omniBarView: DefaultOmniBarView(isFloatingUIEnabled: false))
             .frame(width: 360, height: 60)
             .padding()
     }
 }
 
-#Preview("Address bar / Legacy") {
-    DefaultOmniBarViewGallery(isRebranded: false)
-}
-
-#Preview("Address bar / Rebranded") {
-    DefaultOmniBarViewGallery(isRebranded: true)
+#Preview("Address bar") {
+    DefaultOmniBarViewGallery()
 }
 #endif

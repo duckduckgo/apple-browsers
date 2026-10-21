@@ -31,11 +31,17 @@ struct PostIdleSessionInstrumentationTests {
         func advance(by seconds: TimeInterval) { now = now.addingTimeInterval(seconds) }
     }
 
-    private func makeSUT() -> (DefaultPostIdleSessionInstrumentation, WideEventMock, MockClock) {
+    private final class MockUsageContextProvider: UsageContextProviding {
+        var currentContext = UsageContext(hardwareKeyboard: false, layout: .regular)
+        var currentWindowMode: UsageContext.WindowMode { .fullScreen }
+    }
+
+    private func makeSUT(usageContextProvider: UsageContextProviding = MockUsageContextProvider()) -> (DefaultPostIdleSessionInstrumentation, WideEventMock, MockClock) {
         let wideEvent = WideEventMock()
         let clock = MockClock()
         let sut = DefaultPostIdleSessionInstrumentation(
             wideEvent: wideEvent,
+            usageContextProvider: usageContextProvider,
             dateProvider: { clock.now }
         )
         return (sut, wideEvent, clock)
@@ -95,7 +101,7 @@ struct PostIdleSessionInstrumentationTests {
         sut.pageEngaged()
         sut.toggleUsed()
         sut.backPressed()
-        sut.openingScreenChanged()
+        sut.afterInactivitySettingsOpened()
         sut.closeTabTapped()
         sut.burnTabTapped()
         #expect(wideEvent.updates.isEmpty)
@@ -142,6 +148,40 @@ struct PostIdleSessionInstrumentationTests {
         #expect(startedData(wideEvent) == nil)
         #expect(startedReturnData(wideEvent)?.landedOn == .serp)
         #expect(startedReturnData(wideEvent)?.afterIdle == false)
+    }
+
+    @available(iOS 16, *)
+    @Test("The usage context at session start is reported on both flows", .timeLimit(.minutes(1)))
+    func usageContextIsReportedOnBothFlows() {
+        let provider = MockUsageContextProvider()
+        provider.currentContext = UsageContext(hardwareKeyboard: true, layout: .compact)
+        let (sut, wideEvent, _) = makeSUT(usageContextProvider: provider)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+
+        let returnParams = startedReturnData(wideEvent)?.jsonParameters()
+        let postIdleParams = startedData(wideEvent)?.jsonParameters()
+        for params in [returnParams, postIdleParams] {
+            #expect(params?["feature.data.ext.layout"] as? String == "compact")
+            #expect(params?["feature.data.ext.hardware_keyboard"] as? Bool == true)
+        }
+    }
+
+    @available(iOS 16, *)
+    @Test("The usage context when the session ends replaces the one from its start", .timeLimit(.minutes(1)))
+    func usageContextIsRefreshedOnCompletion() {
+        let provider = MockUsageContextProvider()
+        let (sut, wideEvent, _) = makeSUT(usageContextProvider: provider)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+
+        provider.currentContext = UsageContext(hardwareKeyboard: true, layout: .compact)
+        sut.sessionEnded(reason: .searchSubmitted)
+
+        let returnParams = lastReturnCompletion(wideEvent)?.0.jsonParameters()
+        let postIdleParams = lastCompletion(wideEvent)?.0.jsonParameters()
+        for params in [returnParams, postIdleParams] {
+            #expect(params?["feature.data.ext.layout"] as? String == "compact")
+            #expect(params?["feature.data.ext.hardware_keyboard"] as? Bool == true)
+        }
     }
 
     @available(iOS 16, *)
@@ -303,15 +343,17 @@ struct PostIdleSessionInstrumentationTests {
     }
 
     @available(iOS 16, *)
-    @Test("openingScreenChanged sets flag and marks first interaction", .timeLimit(.minutes(1)))
-    func openingScreenChangedSetsFlagsAndFirstInteraction() {
+    @Test("afterInactivitySettingsOpened sets the flag and marks first interaction without ending the session", .timeLimit(.minutes(1)))
+    func afterInactivitySettingsOpenedSetsFlagAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
         sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
         clock.advance(by: 0.75)
-        sut.openingScreenChanged()
+        sut.afterInactivitySettingsOpened()
 
-        #expect(lastUpdate(wideEvent)?.openingScreenChanged == true)
+        #expect(lastUpdate(wideEvent)?.afterInactivitySettingsOpened == true)
         #expect(lastUpdate(wideEvent)?.firstInteractionInterval.end == clock.now)
+        #expect(lastReturnUpdate(wideEvent)?.afterInactivitySettingsOpened == true)
+        #expect(wideEvent.completions.isEmpty)
     }
 
     @available(iOS 16, *)
@@ -527,6 +569,39 @@ struct PostIdleSessionInstrumentationTests {
         sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
         sut.sessionEnded(reason: .returnToPageTapped)
         #expect(lastCompletion(wideEvent)?.0.statusReason == .returnToPageTapped)
+    }
+
+    @available(iOS 16, *)
+    @Test("Tab change and data clearing reasons complete both flows as success with the same reason",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (ReturnSessionWideEventData.StatusReason.tabSelected, PostIdleSessionWideEventData.StatusReason.tabSelected),
+            (.tabOpened, .tabOpened),
+            (.tabClosed, .tabClosed),
+            (.tabSwiped, .tabSwiped),
+            (.dataCleared, .dataCleared),
+          ])
+    func tabChangeAndDataClearingReasonsCompleteBothFlows(reason: ReturnSessionWideEventData.StatusReason,
+                                                          postIdleReason: PostIdleSessionWideEventData.StatusReason) {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionEnded(reason: reason)
+
+        #expect(reason.postIdleReason == postIdleReason)
+        #expect(lastReturnCompletion(wideEvent)?.1 == .success(reason: reason.rawValue))
+        #expect(lastCompletion(wideEvent)?.1 == .success(reason: postIdleReason.rawValue))
+    }
+
+    @available(iOS 16, *)
+    @Test("The first reason wins: a later sessionEnded is a no-op", .timeLimit(.minutes(1)))
+    func firstReasonWins() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionEnded(reason: .tabSwitcherSelected)
+        sut.sessionEnded(reason: .tabSelected)
+
+        #expect(wideEvent.completions.count == 2)
+        #expect(lastReturnCompletion(wideEvent)?.0.statusReason == .tabSwitcherSelected)
     }
 
     @available(iOS 16, *)

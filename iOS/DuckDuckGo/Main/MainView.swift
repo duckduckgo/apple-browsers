@@ -373,11 +373,23 @@ extension MainViewFactory {
         superview.addSubview(coordinator.contentContainer)
     }
 
-    final class StatusBackgroundView: UIVisualEffectView { }
+    final class StatusBackgroundView: UIVisualEffectView {
+        func addScrollEdgeRegion() {
+            // Transparent image supplies scroll-edge bounds.
+            let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
+            let region = UIImageView(image: image)
+            region.frame = contentView.bounds
+            region.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            region.isUserInteractionEnabled = false
+            region.isAccessibilityElement = false
+            contentView.addSubview(region)
+        }
+    }
     private func createStatusBackground() {
         let view = StatusBackgroundView(effect: nil)
         if floatingUIManager.isFloatingUIEnabled {
             view.backgroundColor = .clear
+            view.addScrollEdgeRegion()
         } else {
             view.backgroundColor = UIColor(designSystemColor: .background)
         }

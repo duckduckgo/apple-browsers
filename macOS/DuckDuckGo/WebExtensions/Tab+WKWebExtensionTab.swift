@@ -59,7 +59,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     func webView(for context: WKWebExtensionContext) -> WKWebView? {
-        return webView
+        return webExtensionPageWebView ?? webView
     }
 
     func title(for context: WKWebExtensionContext) -> String? {

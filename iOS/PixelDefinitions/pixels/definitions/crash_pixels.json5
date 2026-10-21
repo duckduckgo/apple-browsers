@@ -1,4 +1,75 @@
 {
+    "m_d_crash": {
+        "description": "Fires once per crash of the main app, reported by MetricKit on a later launch. Crashes older than 7 days are not reported. App extension crashes fire m_d_crash_<extension> instead.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+    },
+    "m_d_crash_daily": {
+        "description": "Fires at most once per day when MetricKit reports a crash of the main app. App extension crashes fire m_d_crash_<extension>_daily instead.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["crashAppVersion"]
+    },
+    "m_d_crash_openaction2": {
+        "description": "Fires once per crash of the OpenAction2 action extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+    },
+    "m_d_crash_shareextension": {
+        "description": "Fires once per crash of the Share extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+    },
+    "m_d_crash_credentialextension": {
+        "description": "Fires once per crash of the Credential Provider extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+    },
+    "m_d_crash_networkextension": {
+        "description": "Fires once per crash of the VPN network extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+    },
+    "m_d_crash_widgets": {
+        "description": "Fires once per crash of the Widgets extension, reported by MetricKit on a later launch of the main app. The daily variant fires at most once per day and sends only appVersion. Crashes older than 7 days are not reported.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": ["crashAppVersion", "crashFirst", "crashCode", "crashType", "crashSignal", "crashTerminationReason"]
+    },
+    "m_d_crash_on_handlers_setup": {
+        "description": "Fires when the app crashed on the previous launch while setting up crash handlers.",
+        "owners": ["bwaresiak"],
+        "triggers": ["exception"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_d_bookmarks_could_not_load_database": {
         "description": "Fires when bookmarks database failed to load.",
         "owners": ["jaceklyp", "bwaresiak"],

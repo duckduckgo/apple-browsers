@@ -105,6 +105,13 @@ final class WebExtensionAPICompatibilityMessageHandlerTests: XCTestCase {
         XCTAssertEqual(lines, [])
     }
 
+    func testWhenAPageClaimsUnsupportedURLDirectly_ThenItIsDropped() {
+        handler.handle(body: ["kind": "unsupportedURL", "api": "tabs.query"],
+                       originProtocol: "webkit-extension", originHost: "loaded")
+
+        XCTAssertEqual(lines, [])
+    }
+
     func testWhenTheBodyIsNotAReport_ThenItIsDropped() {
         for body: Any in ["text", 1, ["kind": 1], ["kind": "stubbed"], ["kind": "unknown", "api": "a.b"], ["kind": "stubbed", "api": "https://x.y"]] {
             handler.handle(body: body, originProtocol: "webkit-extension", originHost: "loaded")
@@ -120,6 +127,17 @@ final class WebExtensionAPICompatibilityMessageHandlerTests: XCTestCase {
 
         XCTAssertEqual(lines, ["stubbed chrome.notifications.create ext=Bitwarden v=2025.1.0",
                                "stubbed chrome.notifications.clear ext=Bitwarden v=2025.1.0"])
+    }
+
+    func testWhenAnIssueIsLogged_ThenItIsPassedOnWithThePageURLForTheGapCounts() {
+        var issues: [(WebExtensionAPICompatibilityClassifier.Issue, URL)] = []
+        handler.onIssue = { issues.append(($0, $1)) }
+
+        handler.handle(body: stubbedReport, originProtocol: "webkit-extension", originHost: "other")
+        handler.handle(body: stubbedReport, originProtocol: "webkit-extension", originHost: "loaded")
+
+        XCTAssertEqual(issues.map(\.0), [.init(kind: .stubbed, api: "chrome.notifications.create")])
+        XCTAssertEqual(issues.map(\.1), [URL(string: "webkit-extension://loaded/")])
     }
 
     private var stubbedReport: [String: Any] {

@@ -146,7 +146,8 @@ private extension RemoteMessagingConfigMatcher {
 
                 if userPercentile > messagePercentile {
                     Logger.remoteMessaging.info("\(type.percentileFailMessage) for entity with ID \(entityID, privacy: .public)")
-                    return .fail
+                    result = .fail
+                    continue
                 }
             }
 

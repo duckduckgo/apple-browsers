@@ -23,7 +23,6 @@ import UIKit
 class MainViewCoordinator {
 
     enum Constants {
-        static let inlineInputDismissHandoffStart: CGFloat = 0.65
         static let tabBarContainerHeight: CGFloat = 40
         // Aligns top chrome with window controls.
         static let windowControlsRowTopSpacing: CGFloat = 4
@@ -96,6 +95,7 @@ class MainViewCoordinator {
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
+    private(set) var isWebInputEditing = false
     private(set) var isInMinimalChromeLayout = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
@@ -108,6 +108,18 @@ class MainViewCoordinator {
 
     func setFloatingUIEnabled(_ enabled: Bool) {
         isFloatingUIEnabled = enabled
+        if !enabled {
+            setWebInputEditing(false)
+        }
+    }
+
+    @discardableResult
+    func setWebInputEditing(_ editing: Bool) -> Bool {
+        let editing = editing && isFloatingUIEnabled
+        guard isWebInputEditing != editing else { return false }
+        isWebInputEditing = editing
+        applyNavigationBarContainerVisibility(updatesInteraction: false)
+        return true
     }
 
     func setMinimalChromeLayout(_ enabled: Bool) {
@@ -154,7 +166,9 @@ class MainViewCoordinator {
     }
 
     private func applyNavigationBarContainerVisibility(updatesInteraction: Bool) {
-        navigationBarContainer.isHidden = isNavigationBarContainerHiddenByLayout || newTabPageInputPresentation.hidesNavigationContainer
+        navigationBarContainer.isHidden = isNavigationBarContainerHiddenByLayout
+            || newTabPageInputPresentation.hidesNavigationContainer
+            || (isWebInputEditing && addressBarPosition.isBottom)
         if newTabPageInputPresentation.hidesNavigationContainer {
             navigationBarContainer.isUserInteractionEnabled = false
         } else if updatesInteraction {
@@ -170,7 +184,13 @@ class MainViewCoordinator {
     }
 
     // The default after creating the hiearchy is top
-    var addressBarPosition: AddressBarPosition = .top
+    var addressBarPosition: AddressBarPosition = .top {
+        didSet {
+            if navigationBarContainer != nil {
+                applyNavigationBarContainerVisibility(updatesInteraction: false)
+            }
+        }
+    }
 
     var standardNavigationBarContainerHeight: CGFloat {
         omniBar.barView.expectedHeight
@@ -307,7 +327,7 @@ class MainViewCoordinator {
                 applyOmnibarHostedInNavigationContainerPose()
                 return
             }
-            toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
+            guard attachOmnibarToToolbar() else { return }
             constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
             omniBar.barView.makeGlass()
             toolbar.refreshMaterialBackdrop()
@@ -329,13 +349,26 @@ class MainViewCoordinator {
         ) else { return }
         guard !toolbar.isHostingOmnibarView(omniBar.barView) else { return }
 
-        toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight)
+        guard attachOmnibarToToolbar() else { return }
         constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: omniBar.barView.expectedHeight, isFloating: isFloatingUIEnabled)
         omniBar.barView.alpha = 1
         omniBar.barView.isUserInteractionEnabled = true
         setNavigationBarContainerHidden(true)
         superview.bringSubviewToFront(toolbar)
         isOmnibarInToolbar = true
+    }
+
+    /// Hosts the omnibar in the floating toolbar, or returns it to the nav container when the toolbar can't keep it.
+    /// - Returns: Whether the toolbar hosts the omnibar afterwards.
+    private func attachOmnibarToToolbar() -> Bool {
+        guard toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight) else {
+            // The toolbar has already applied its detachment pose; only the height constraint is ours.
+            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+            applyOmnibarHostedInNavigationContainerPose()
+            isOmnibarInToolbar = false
+            return false
+        }
+        return true
     }
 
     func showTopSlideContainer() {
@@ -617,22 +650,13 @@ class MainViewCoordinator {
             case .omnibar:
                 self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
             case .inlineInput:
-                break
-            }
-            additionalAnimations?()
-        }
-        if transition == .inlineInput {
-            // Keep the moving input solid, then briefly blend into its resting counterpart.
-            // A full-duration page fade exposes both favorites grids throughout the movement.
-            animator.addAnimations({ [weak self] in
                 self?.unifiedToggleInputContainer.alpha = 0
-                // The focused host stops above the toolbar. Keep its full-screen backdrop
-                // until the handoff so the pond cannot appear early along the bottom edge.
                 if self?.isFloatingUIEnabled == true {
                     self?.focusedStateBackground.alpha = 0
                 }
                 inlineInputHandoffAnimations?()
-            }, delayFactor: Constants.inlineInputDismissHandoffStart)
+            }
+            additionalAnimations?()
         }
         animator.addCompletion { [weak self] position in
             guard let self else { return }

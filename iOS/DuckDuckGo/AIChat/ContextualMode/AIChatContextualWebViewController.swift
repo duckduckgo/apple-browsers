@@ -43,8 +43,7 @@ final class AIChatContextualWebViewController: UIViewController {
 
     private struct PendingRichPrompt {
         let prompt: String
-        let images: [AIChatNativePrompt.NativePromptImage]?
-        let files: [AIChatNativePrompt.NativePromptFile]?
+        let attachments: AIChatPromptAttachments
         let modelId: String?
         let tools: [AIChatRAGTool]?
         let pageContext: AIChatPageContextData?
@@ -65,12 +64,14 @@ final class AIChatContextualWebViewController: UIViewController {
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let isFireTab: Bool
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private let usageContextProvider: UsageContextProviding
     private var downloadHandler: DownloadHandling
     private let pixelHandler: AIChatContextualModePixelFiring
     private let debugSettings: AIChatDebugSettingsHandling
     private let userAgentManager: UserAgentManaging
     private let utiHostInstaller: ((AIChatContextualWebViewController) -> AIChatContextualUTIHost?)?
     private var utiHost: AIChatContextualUTIHost?
+    private var promptFlowReporter: ContextualDuckAIPromptFlowReporting?
     private var chatPersistenceCancellable: AnyCancellable?
     private var webViewBottomConstraint: NSLayoutConstraint?
 
@@ -159,6 +160,7 @@ final class AIChatContextualWebViewController: UIViewController {
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          isFireTab: Bool = false,
          duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         usageContextProvider: UsageContextProviding,
          downloadHandler: DownloadHandling,
          getPageContext: PageContextAsyncProvider?,
          pixelHandler: AIChatContextualModePixelFiring,
@@ -174,6 +176,7 @@ final class AIChatContextualWebViewController: UIViewController {
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.isFireTab = isFireTab
         self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.usageContextProvider = usageContextProvider
         self.downloadHandler = downloadHandler
         self.pixelHandler = pixelHandler
         self.debugSettings = debugSettings
@@ -183,6 +186,8 @@ final class AIChatContextualWebViewController: UIViewController {
         let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, pixelFiring: PixelKit.shared)
         self.aiChatContentHandler = AIChatContentHandler(
             aiChatSettings: aiChatSettings,
+            pixelMetricHandler: AIChatPixelMetricHandler(promptContextProvider: ContextualChatPromptPixelContext(),
+                                                         usageContextProvider: usageContextProvider),
             featureDiscovery: featureDiscovery,
             productSurfaceTelemetry: productSurfaceTelemetry,
             onboardingActivationRecorder: onboardingActivationRecorder,
@@ -207,6 +212,7 @@ final class AIChatContextualWebViewController: UIViewController {
         if shouldInstallUTIHost, let utiHostInstaller {
             utiHost = utiHostInstaller(self)
         }
+        promptFlowReporter = utiHost ?? makeStandalonePromptFlowReporter()
         aiChatContentHandler.fireAIChatTelemetry()
         setupURLObservation()
         setupDownloadHandler()
@@ -221,10 +227,11 @@ final class AIChatContextualWebViewController: UIViewController {
 
     deinit {
         let request = pendingRichPrompt?.tabAttachmentRequest
+        let contentHandler = aiChatContentHandler
         Task { @MainActor in
             request?.cancel()
+            contentHandler.cancelPendingTabContextSubmission()
         }
-        aiChatContentHandler.cancelPendingTabContextSubmission()
         urlObservation?.invalidate()
     }
 
@@ -252,8 +259,7 @@ final class AIChatContextualWebViewController: UIViewController {
     }
 
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData? = nil,
@@ -262,7 +268,7 @@ final class AIChatContextualWebViewController: UIViewController {
                       termsAccepted: Bool = false) {
         Logger.aiChat.debug("[ContextualWebVC] submit rich prompt called - isPageReady: \(self.isPageReady), isContentHandlerReady: \(self.isContentHandlerReady)")
         if canDeliverPrompt {
-            aiChatContentHandler.submitPrompt(prompt, images: images, files: files, modelId: modelId, tools: tools,
+            aiChatContentHandler.submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
                                              pageContext: pageContext, reasoningEffort: reasoningEffort,
                                              tabAttachmentRequest: tabAttachmentRequest, termsAccepted: termsAccepted,
                                              onPromptDispatched: { [weak self] in
@@ -272,8 +278,7 @@ final class AIChatContextualWebViewController: UIViewController {
             utiHost?.promptDeliveryUpdated(wasQueued: true, didSendBridgeMessage: nil)
             pendingRichPrompt?.tabAttachmentRequest?.cancel()
             pendingRichPrompt = PendingRichPrompt(prompt: prompt,
-                                                  images: images,
-                                                  files: files,
+                                                  attachments: attachments,
                                                   modelId: modelId,
                                                   tools: tools,
                                                   pageContext: pageContext,
@@ -480,8 +485,7 @@ final class AIChatContextualWebViewController: UIViewController {
     private func submitPromptNow(_ richPrompt: PendingRichPrompt) {
         Logger.aiChat.debug("[ContextualWebVC] Submitting pending rich prompt now")
         aiChatContentHandler.submitPrompt(richPrompt.prompt,
-                                         images: richPrompt.images,
-                                         files: richPrompt.files,
+                                         attachments: richPrompt.attachments,
                                          modelId: richPrompt.modelId,
                                          tools: richPrompt.tools,
                                          pageContext: richPrompt.pageContext,
@@ -605,7 +609,7 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
         let nsError = error as NSError
         guard nsError.code != NSURLErrorCancelled || nsError.domain != NSURLErrorDomain else { return }
 
-        utiHost?.pageLoadFailed(error: error)
+        promptFlowReporter?.pageLoadFailed(error: error)
     }
 }
 
@@ -614,14 +618,24 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
 extension AIChatContextualWebViewController {
 
     func notifySheetDismissed() {
-        utiHost?.sheetDismissed()
+        promptFlowReporter?.sheetDismissed()
     }
 
     func notifyInitialNativePromptSubmitted(hasPageContext: Bool) {
-        utiHost?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
+        promptFlowReporter?.initialNativePromptSubmitted(hasPageContext: hasPageContext)
     }
 
     func notifyFrontendPromptSubmissionAcknowledged() {
-        utiHost?.frontendSubmissionAcknowledged()
+        promptFlowReporter?.frontendSubmissionAcknowledged()
+    }
+
+    func notifyChatStatusChanged(_ status: AIChatStatusValue) {
+        promptFlowReporter?.chatStatusChanged(status)
+    }
+
+    private func makeStandalonePromptFlowReporter() -> ContextualDuckAIPromptFlowReporting {
+        let instrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                                    usageContextProvider: usageContextProvider)
+        return ContextualDuckAIPromptFlowReporter(instrumentation: instrumentation, isFireMode: isFireTab)
     }
 }

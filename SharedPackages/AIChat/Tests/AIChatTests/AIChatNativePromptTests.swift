@@ -354,7 +354,7 @@ struct AIChatNativePromptTests {
         let images = [
             AIChatNativePrompt.NativePromptImage(data: "base64data", format: "png")
         ]
-        let prompt = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, images: images, modelId: "gpt-4o")
+        let prompt = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, attachments: AIChatPromptAttachments(images: images), modelId: "gpt-4o")
         let jsonDict = try encodePrompt(prompt)
 
         let queryDict = try #require(jsonDict["query"] as? [String: Any])
@@ -427,7 +427,7 @@ struct AIChatNativePromptTests {
         let prompt = try decodePrompt(from: json)
 
         let images = [AIChatNativePrompt.NativePromptImage(data: "base64data", format: "png")]
-        let expected = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, images: images, modelId: "gpt-4o")
+        let expected = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, attachments: AIChatPromptAttachments(images: images), modelId: "gpt-4o")
         #expect(prompt == expected)
     }
 
@@ -495,7 +495,7 @@ struct AIChatNativePromptTests {
             AIChatNativePrompt.NativePromptImage(data: "img1", format: "png"),
             AIChatNativePrompt.NativePromptImage(data: "img2", format: "png"),
         ]
-        let prompt = AIChatNativePrompt.queryPrompt("Compare these", autoSubmit: true, images: images)
+        let prompt = AIChatNativePrompt.queryPrompt("Compare these", autoSubmit: true, attachments: AIChatPromptAttachments(images: images))
         let jsonDict = try encodePrompt(prompt)
 
         let queryDict = try #require(jsonDict["query"] as? [String: Any])
@@ -510,7 +510,7 @@ struct AIChatNativePromptTests {
         let files = [
             AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")
         ]
-        let prompt = AIChatNativePrompt.queryPrompt("Summarize this file", autoSubmit: true, files: files, modelId: "gpt-4o")
+        let prompt = AIChatNativePrompt.queryPrompt("Summarize this file", autoSubmit: true, attachments: AIChatPromptAttachments(files: files), modelId: "gpt-4o")
         let jsonDict = try encodePrompt(prompt)
 
         let queryDict = try #require(jsonDict["query"] as? [String: Any])
@@ -529,7 +529,7 @@ struct AIChatNativePromptTests {
         let files = [
             AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")
         ]
-        let prompt = AIChatNativePrompt.queryPrompt("Compare these attachments", autoSubmit: true, images: images, files: files, modelId: "gpt-5-mini")
+        let prompt = AIChatNativePrompt.queryPrompt("Compare these attachments", autoSubmit: true, attachments: AIChatPromptAttachments(images: images, files: files), modelId: "gpt-5-mini")
         let jsonDict = try encodePrompt(prompt)
 
         let queryDict = try #require(jsonDict["query"] as? [String: Any])
@@ -563,7 +563,7 @@ struct AIChatNativePromptTests {
 
         let prompt = try decodePrompt(from: json)
         let files = [AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")]
-        let expected = AIChatNativePrompt.queryPrompt("Summarize this file", autoSubmit: true, files: files)
+        let expected = AIChatNativePrompt.queryPrompt("Summarize this file", autoSubmit: true, attachments: AIChatPromptAttachments(files: files))
         #expect(prompt == expected)
     }
 

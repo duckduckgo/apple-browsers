@@ -29,6 +29,7 @@ final class ModalPromptCoordinationManagerDeferredTests {
     private let schedulerMock = MockModalPromptScheduler()
     private let presenterMock = MockModalPromptPresenter()
     private let arbiter = PromoQueueLeaseArbiter()
+    private let exposureReporter = MockPromptExposureReporter()
 
     init() {
         cooldownManagerMock.cooldownInfoToReturn = .notInCoolDown
@@ -45,6 +46,8 @@ final class ModalPromptCoordinationManagerDeferredTests {
 
         sut.presentModalPromptIfNeeded(from: presenterMock, with: lease)
 
+        #expect(exposureReporter.shownPrompts.isEmpty)
+        #expect(exposureReporter.finishedPrompts.isEmpty)
         #expect(!schedulerMock.didCallSchedule)
         #expect(!presenterMock.didCallPresent)
         #expect(!provider.didCallProvideModalPrompt)
@@ -158,6 +161,8 @@ final class ModalPromptCoordinationManagerDeferredTests {
 
         #expect(sut.redeemDeferredModal())
         #expect(!sut.redeemDeferredModal())
+        #expect(exposureReporter.shownPrompts.isEmpty)
+        #expect(exposureReporter.finishedPrompts == [.modal])
     }
 
 
@@ -173,6 +178,8 @@ final class ModalPromptCoordinationManagerDeferredTests {
 
         sut.releaseDeferredModal()
 
+        #expect(exposureReporter.shownPrompts.isEmpty)
+        #expect(exposureReporter.finishedPrompts.isEmpty)
         #expect(!cooldownManagerMock.didCallRecordLastPromptPresentationTimestamp)
         #expect(provider.didCallDidReleaseDeferredSlot)
         #expect(!provider.didCallDidPresentModal)
@@ -209,6 +216,8 @@ final class ModalPromptCoordinationManagerDeferredTests {
 
         sut.presentModalPromptIfNeeded(from: presenterMock)
 
+        #expect(exposureReporter.shownPrompts.isEmpty)
+        #expect(exposureReporter.finishedPrompts.isEmpty)
         #expect(!schedulerMock.didCallSchedule)
         #expect(!presenterMock.didCallPresent)
         #expect(sut.modalAttemptPhase == .idle)
@@ -245,7 +254,8 @@ final class ModalPromptCoordinationManagerDeferredTests {
             providers: providers,
             cooldownManager: cooldownManagerMock,
             onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: true),
-            modalPromptScheduling: schedulerMock
+            modalPromptScheduling: schedulerMock,
+            promptExposureReporter: exposureReporter
         )
     }
 

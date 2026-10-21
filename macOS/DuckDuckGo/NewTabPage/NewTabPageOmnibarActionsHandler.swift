@@ -226,8 +226,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         let nativePrompt = AIChatNativePrompt.queryPrompt(chat,
                                                           autoSubmit: true,
                                                           toolChoice: toolChoice,
-                                                          images: nativeImages,
-                                                          files: nativeFiles,
+                                                          attachments: AIChatPromptAttachments(images: nativeImages, files: nativeFiles),
                                                           modelId: modelId,
                                                           pageContext: pageContextPayload,
                                                           mode: mode,
@@ -297,7 +296,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     @MainActor
     func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
         AttachmentPrivacyDisclosurePixelFirer(surface: .newTabPage).fireLearnMoreTapped(kind: .init(kind))
-        windowControllersManager.show(url: .aiChatPrivacy, tabId: nil, source: .ui, newTab: true, selected: true)
+        windowControllersManager.show(url: .aiChatUploadFilesAndImagesPrivacy, tabId: nil, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor

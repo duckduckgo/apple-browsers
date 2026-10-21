@@ -201,12 +201,8 @@ final class IPadOmnibarAttachmentController {
         currentAttachments.contains(where: \.isInvalid)
     }
 
-    var encodedImages: [AIChatNativePrompt.NativePromptImage]? {
-        UnifiedToggleInputImageEncoder.encode(currentAttachments)
-    }
-
-    var encodedFiles: [AIChatNativePrompt.NativePromptFile]? {
-        UnifiedToggleInputFileEncoder.encode(currentAttachments)
+    var encodedAttachments: AIChatPromptAttachments {
+        UnifiedToggleInputAttachmentEncoder.encode(currentAttachments, imagesSupported: true, filesSupported: true)
     }
 
     func resetSelection() {

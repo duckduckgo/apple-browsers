@@ -154,6 +154,9 @@ protocol OmniBarDelegate: AnyObject {
 
     /// The page behind the address bar, for the `page_type` param on prompt pixels.
     func currentPromptPageType() -> UnifiedToggleInputPromptPageType
+
+    /// Keyboard and layout context for prompt pixels.
+    func currentUsageContext() -> UsageContext?
 }
 
 extension OmniBarDelegate {
@@ -164,6 +167,10 @@ extension OmniBarDelegate {
 
     func currentPromptPageType() -> UnifiedToggleInputPromptPageType {
         .unknown
+    }
+
+    func currentUsageContext() -> UsageContext? {
+        nil
     }
 
     func onOmniQueryUpdated(_ query: String) {

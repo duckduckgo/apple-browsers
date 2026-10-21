@@ -23,6 +23,7 @@ import FoundationExtensions
 import DDGSync
 import Bookmarks
 import AIChat
+import BrowserServicesKit
 import PixelKit
 import WideEvent
 import Persistence
@@ -47,6 +48,11 @@ struct FireRequest {
         static let data = Options(rawValue: 1 << 1)
         static let aiChats = Options(rawValue: 1 << 2)
         static let all: Options = [.tabs, .data, .aiChats]
+    }
+
+    var deletesDuckAIChats: Bool {
+        if case .tab = scope { return true }
+        return options.contains(.aiChats)
     }
     
     enum Trigger {
@@ -334,7 +340,7 @@ class FireExecutor: FireExecuting {
             fireModeStorageController?.syncWithCurrentFireModeID()
         }
 
-        await clearAppSwitcherSnapshots()
+        await runAsWideEventStep(.clearAppSwitcherSnapshots, clearAppSwitcherSnapshots)
 
         // Notify delegate that we finished
         await didFinishBurning(fireRequest: request)
@@ -346,7 +352,15 @@ class FireExecutor: FireExecuting {
     }
     
     // MARK: - General Helpers
-    
+
+    /// Names a step that has no outcome to report, so a Fire that stops inside it shows where.
+    @MainActor
+    private func runAsWideEventStep(_ action: DataClearingWideEventData.Action, _ work: @MainActor () async -> Void) async {
+        dataClearingWideEventService?.start(action)
+        await work()
+        dataClearingWideEventService?.finish(action)
+    }
+
     private func cancelOngoingDownloadsIfNeeded(_ request: FireRequest) {
         guard case .all = request.scope,
               request.options.contains(.tabs),
@@ -502,7 +516,9 @@ class FireExecutor: FireExecuting {
                           applicationState: DataStoreWarmup.ApplicationState,
                           domainResult: Result<[String], Error>?) async {
         await dataStoreWarmupWorker.setApplicationState(applicationState)
-        await dataStoreWarmupWorker.execute(scope: scope, domainResult: domainResult, fireModeCapability: fireModeCapability)
+        await runAsWideEventStep(.warmUpWebsiteDataStore) {
+            await dataStoreWarmupWorker.execute(scope: scope, domainResult: domainResult, fireModeCapability: fireModeCapability)
+        }
         
         let measurement = pixelsReporter.beginMeasurement()
 

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import SwiftUI
 import DesignResourcesKit
 
@@ -54,19 +55,21 @@ private struct DynamicWidthButtonStyle: ButtonStyle {
 public struct BookmarksEmptyStateView: View {
     @ObservedObject private var syncButtonModel = SyncDeviceButtonModel()
     @State private var maxButtonWidth: CGFloat = 0
+    @State private var isPromoActive = false
     let content: BookmarksEmptyStateContent
+    let isPromoActivePublisher: AnyPublisher<Bool, Never>
     let onImportClicked: () -> Void
     let onSyncClicked: () -> Void
 
-    private var isAppRebranded: Bool {
-        DesignSystemRebrand.isAppRebranded()
+    private var showsPromoContent: Bool {
+        !content.isPromo || isPromoActive
     }
 
     public var body: some View {
         VStack(spacing: 16) {
             Spacer()
 
-            if let image = content.image(isAppRebranded: isAppRebranded) {
+            if let image = content.image {
                 Image(nsImage: image)
                     .accessibilityIdentifier(BookmarksEmptyStateContent.imageAccessibilityIdentifier)
             }
@@ -79,16 +82,18 @@ public struct BookmarksEmptyStateView: View {
                     .frame(width: 300)
                     .accessibilityIdentifier(BookmarksEmptyStateContent.titleAccessibilityIdentifier)
 
-                Text(content.description)
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(.labelColor))
-                    .multilineTextAlignment(.center)
-                    .frame(width: 300)
-                    .accessibilityIdentifier(BookmarksEmptyStateContent.descriptionAccessibilityIdentifier)
+                if showsPromoContent {
+                    Text(content.description)
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(.labelColor))
+                        .multilineTextAlignment(.center)
+                        .frame(width: 300)
+                        .accessibilityIdentifier(BookmarksEmptyStateContent.descriptionAccessibilityIdentifier)
+                }
             }
 
             HStack(spacing: 10) {
-                if !content.shouldHideSyncButton, syncButtonModel.shouldShowSyncButton {
+                if showsPromoContent, !content.shouldHideSyncButton, syncButtonModel.shouldShowSyncButton {
                     Button(UserText.bookmarksEmptyStateSyncButtonTitle) {
                         onSyncClicked()
                     }
@@ -99,15 +104,15 @@ public struct BookmarksEmptyStateView: View {
                         textColor: .buttonsSecondaryFillText
                     ))
                 }
-                if !content.shouldHideImportButton {
+                if showsPromoContent, !content.shouldHideImportButton {
                     Button(UserText.bookmarksEmptyStateImportButtonTitle) {
                         onImportClicked()
                     }
                     .buttonStyle(DynamicWidthButtonStyle(
                         maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
-                        defaultBackgroundColor: isAppRebranded ? .accentPrimary : .buttonsPrimaryDefault,
-                        pressedBackgroundColor: isAppRebranded ? .accentSecondary : .buttonsPrimaryPressed,
-                        textColor: isAppRebranded ? .accentContentPrimary : .buttonsPrimaryText
+                        defaultBackgroundColor: .accentPrimary,
+                        pressedBackgroundColor: .accentSecondary,
+                        textColor: .accentContentPrimary
                     ))
                 }
             }
@@ -118,6 +123,7 @@ public struct BookmarksEmptyStateView: View {
             Spacer()
         }
         .frame(width: 300, height: 383)
+        .onReceive(isPromoActivePublisher) { isPromoActive = $0 }
     }
 }
 

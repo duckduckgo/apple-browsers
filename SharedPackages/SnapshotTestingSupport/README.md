@@ -166,6 +166,7 @@ Each image name carries the recording environment as a suffix so references are 
 - Missing references are recorded automatically (`.missing` mode).
 - `record: true` on a specific call records that assertion.
 - `GENERATE_SNAPSHOTS=1` in the test scheme's env records everything.
+- `REQUIRE_SNAPSHOT_REFERENCES=1` turns off automatic recording (`.never` mode), so a missing reference fails the assertion on every attempt. The iOS and macOS PR checks set it through `TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES`; otherwise a missing reference recorded on the first attempt would make the `-retry-tests-on-failure` retry pass. `record: true` and `GENERATE_SNAPSHOTS` still take precedence.
 
 After re-recording, inspect every diff and commit only the intentional ones.
 
@@ -181,7 +182,6 @@ The `iOS Browser` scheme sets it to `0`, so iOS snapshots run locally and in CI.
 - Function names that start with `test` keep `#function`-derived snapshot paths consistent with the legacy XCTest convention.
 - One `@Suite` per view test file; one `@Test` per view configuration.
 - `*_PreviewMocks.swift` under `#if DEBUG` for preview-only mocks.
-- This package doesn't know about the design system. To render the **rebranded** design, apply `.applyRebranding()` (from `UIComponents`) inside the `PreviewSnapshots` closure, so both previews and snapshots pick it up.
 
 ## Examples in the repo
 

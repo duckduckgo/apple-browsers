@@ -36,7 +36,8 @@ struct AppReturnInstrumentationTests {
         effectiveOption: AfterInactivityOption = .newTab,
         thresholdSeconds: Int = 1800,
         unifiedInputAvailable: Bool = false,
-        toggleEnabled: Bool = false
+        toggleEnabled: Bool = false,
+        isPad: Bool = false
     ) -> (DefaultAppReturnInstrumentation, PixelCollector) {
         let eligibility = MockIdleReturnEligibilityManager()
         eligibility.isFeatureAvailableResult = featureAvailable
@@ -47,6 +48,7 @@ struct AppReturnInstrumentationTests {
             eligibilityManager: eligibility,
             isUnifiedInputAvailable: { unifiedInputAvailable },
             isToggleEnabled: { toggleEnabled },
+            isPad: isPad,
             now: { Self.now },
             fireDailyAndCount: { event, params in
                 collector.fired.append((event.name, params))
@@ -154,6 +156,19 @@ struct AppReturnInstrumentationTests {
 
         #expect(collector.fired.first?.params["unified_input_available"] == "true")
         #expect(collector.fired.first?.params["toggle_enabled"] == "true")
+    }
+
+    @available(iOS 16, *)
+    @Test("The address-bar toggle counts as available on iPad and with Unified Input, when the setting is on",
+          .timeLimit(.minutes(1)),
+          arguments: [(false, false, true, "false"), (true, false, true, "true"), (false, true, true, "true"), (false, true, false, "false")])
+    func addressBarToggleAvailability(unifiedInputAvailable: Bool, isPad: Bool, toggleEnabled: Bool, expected: String) {
+        let (sut, collector) = makeSUT(unifiedInputAvailable: unifiedInputAvailable, toggleEnabled: toggleEnabled, isPad: isPad)
+
+        sut.recordAppForeground(lastBackgroundDate: nil,
+                                launchAction: .standardLaunch(lastBackgroundDate: nil, isFirstForeground: true))
+
+        #expect(collector.fired.first?.params["address_bar_toggle_available"] == expected)
     }
 
     // MARK: - PETAL tag

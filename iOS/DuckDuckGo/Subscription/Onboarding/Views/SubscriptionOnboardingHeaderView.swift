@@ -116,23 +116,17 @@ private struct SubscriptionOnboardingHeaderViewPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingHeaderViewPreview()
-    }
+    SubscriptionOnboardingHeaderViewPreview()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingHeaderViewPreview()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingHeaderViewPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingHeaderViewPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingHeaderViewPreview()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

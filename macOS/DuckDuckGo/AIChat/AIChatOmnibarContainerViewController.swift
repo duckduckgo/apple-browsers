@@ -1420,7 +1420,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         if let stagedAttachmentKind {
             attachmentPrivacyPixelFirer.fireLearnMoreTapped(kind: stagedAttachmentKind)
         }
-        Application.appDelegate.windowControllersManager.show(url: URL.aiChatPrivacy,
+        Application.appDelegate.windowControllersManager.show(url: URL.aiChatUploadFilesAndImagesPrivacy,
                                                               source: .ui,
                                                               newTab: true,
                                                               selected: true)
@@ -2742,7 +2742,6 @@ final class AIChatOmnibarContainerViewController: NSViewController {
             backgroundView.borderColor = .clear
         }
 
-        submitButton.layer?.cornerRadius = Constants.submitButtonCornerRadius
         // Colour is set dynamically by applySubmitButtonAppearance based on enabled state.
         // Route through `updateSubmitButtonState(for:)` so voice mode is preserved on theme
         // changes — calling `applySubmitButtonAppearance` directly with the legacy
@@ -2750,11 +2749,11 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         updateSubmitButtonState(for: omnibarController.currentText)
 
         let toolButtonTintColor = NSColor(designSystemColor: .textPrimary)
-        // Focus-ring colour follows the active theme's primary accent, the same source the
-        // search/AI toggle uses, so all controls in the duck.ai address bar agree on the glow.
-        // (The submit button is excluded — it uses AppKit's native focus ring, which can't
-        // be themed without a deeper rewrite.)
-        let focusRingColor = colorsProvider.accentPrimaryColor
+
+        // Focus-ring colour matches the search/AI toggle, including the Fire Window accent.
+        let focusRingColor = colorsProvider.addressBarActiveBorderColor(isBurner: burnerMode.isBurner)
+
+        submitButton.focusRingColor = focusRingColor
         toolsButton.tintColor = toolButtonTintColor
         toolsButton.hoverBackgroundColor = NSColor(resource: .buttonMouseOver)
         toolsButton.pressedBackgroundColor = NSColor(resource: .buttonMouseDown)
@@ -2820,59 +2819,6 @@ extension AIChatOmnibarContainerViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
         applyTheme(theme: theme)
-    }
-}
-
-// MARK: - AIChatSubmitButton
-
-/// Specialised submit button that participates in the omnibar's tab cycle when in voice
-/// mode. In submit mode the textarea's Enter handles submission, so the button is skipped
-/// in keyboard navigation; in voice mode there is no Enter shortcut on empty input, so users
-/// need to be able to Tab onto this button and press Enter/Space to start the voice session.
-///
-/// Mirrors the keyboard handling in `AIChatOmnibarToolButton`: Tab calls a callback (so the
-/// container VC can route focus back to the textarea), Enter/Space triggers the button's
-/// action via `NSButton`'s built-in behavior.
-final class AIChatSubmitButton: MouseOverButton {
-
-    /// Set by the container VC. When non-nil, `Tab` advances focus via this callback instead
-    /// of the default first-responder chain.
-    var onTabPressed: (() -> Void)?
-
-    override func keyDown(with event: NSEvent) {
-        switch event.keyCode {
-        case 48: // Tab
-            if let onTabPressed {
-                onTabPressed()
-            } else {
-                super.keyDown(with: event)
-            }
-        case 49, 36: // Space, Return — trigger the button's action manually.
-            // NSButton's default keyDown doesn't reliably fire the action when the button
-            // uses a custom layer-drawn appearance (`bezelStyle = .shadowlessSquare`, no border).
-            if isEnabled, let action, let target {
-                NSApp.sendAction(action, to: target, from: self)
-            }
-        default:
-            super.keyDown(with: event)
-        }
-    }
-
-    // The visible button is a rounded layer drawn by `MouseOverButton`'s hover tracking area.
-    // AppKit's default focus ring fits the image content, which makes it hug the icon instead
-    // of the rounded button frame. Overriding the mask + bounds makes the focus ring match the
-    // button's actual shape.
-    //
-    // Note: the ring colour is the system `controlAccentColor`, so it does *not* follow the
-    // in-app theme switcher (Pink etc.) the way the other AIChat controls do. AppKit's focus
-    // ring colour can't be overridden without taking ownership of the entire focus-ring render
-    // path on an NSButton subclass — left as a known limitation for a separate PR.
-    override var focusRingMaskBounds: NSRect {
-        bounds
-    }
-
-    override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius).fill()
     }
 }
 

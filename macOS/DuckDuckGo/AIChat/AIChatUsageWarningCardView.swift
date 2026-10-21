@@ -625,7 +625,7 @@ final class AIChatUsageWarningCardView: NSView {
     private static func attributedAttachmentPrivacyDisclosure() -> NSAttributedString {
         attributedDisclosure(format: UserText.aiChatAttachmentPrivacyDisclosureFormat,
                              linkText: UserText.aiChatAttachmentPrivacyLearnMore,
-                             url: URL.aiChatPrivacy)
+                             url: URL.aiChatUploadFilesAndImagesPrivacy)
     }
 
     private static func attributedDisclosure(format: String, linkText: String, url: URL) -> NSAttributedString {

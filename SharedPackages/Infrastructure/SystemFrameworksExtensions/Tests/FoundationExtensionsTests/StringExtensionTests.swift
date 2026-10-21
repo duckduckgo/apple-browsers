@@ -502,11 +502,13 @@ final class StringExtensionTests {
         #expect("hello".truncated(to: 5) == "hello")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenStringHasMultiScalarCharactersThenLengthIsMeasuredInCharacters() {
         let family = "👨‍👩‍👧‍👦"
-        XCTAssertEqual(String(repeating: family, count: 5).truncated(to: 5), String(repeating: family, count: 5))
-        XCTAssertEqual(String(repeating: "e\u{301}", count: 5).truncated(to: 5), String(repeating: "e\u{301}", count: 5))
-        XCTAssertEqual(String(repeating: family, count: 6).truncated(to: 5, position: .tail), "\(family)\(family)\(family)\(family)…")
+        #expect(String(repeating: family, count: 5).truncated(to: 5) == String(repeating: family, count: 5))
+        #expect(String(repeating: "e\u{301}", count: 5).truncated(to: 5) == String(repeating: "e\u{301}", count: 5))
+        #expect(String(repeating: family, count: 6).truncated(to: 5, position: .tail) == "\(family)\(family)\(family)\(family)…")
     }
 
     // MARK: Middle truncation (default)

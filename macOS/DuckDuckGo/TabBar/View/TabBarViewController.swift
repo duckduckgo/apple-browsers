@@ -84,6 +84,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var pinnedTabsCollectionCancellable: AnyCancellable?
     private var fireButtonMouseOverCancellable: AnyCancellable?
     private var aiChatChromeSidebarFeatureFlagCancellable: AnyCancellable?
+    private var tabOrganizerButton: MouseOverButton?
+    private var tabOrganizerFeatureFlagCancellable: AnyCancellable?
     private var duckAIChromeLayoutCancellable: AnyCancellable?
     private var aiChatSidebarPresenceCancellable: AnyCancellable?
     private var aiChatFloatingStateCancellable: AnyCancellable?
@@ -633,6 +635,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         subscribeToSelectionIndex()
         setupConstraints()
         setupFireButton()
+        setupTabOrganizerButton()
         subscribeToChromeSidebarFeatureFlag()
         subscribeToDuckAIChromeLayoutChanges()
         subscribeToDuckAIChromeButtonsVisibilityChanges()
@@ -830,6 +833,37 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         fireButtonWidthConstraint.constant = theme.tabBarButtonSize
         fireButtonHeightConstraint.constant = theme.tabBarButtonSize
+    }
+
+    private func setupTabOrganizerButton() {
+        let button = MouseOverButton(frame: .zero)
+        configureBarButton(button,
+                           image: NSImage(systemSymbolName: "sparkles", accessibilityDescription: nil) ?? NSImage(),
+                           target: self,
+                           action: #selector(tabOrganizerButtonAction(_:)))
+        button.toolTip = "Organize tabs"
+        button.setAccessibilityIdentifier("TabBarViewController.tabOrganizerButton")
+        button.setCornerRadius(theme.toolbarButtonsCornerRadius)
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: theme.tabBarButtonSize),
+            button.heightAnchor.constraint(equalToConstant: theme.tabBarButtonSize)
+        ])
+        let fireButtonIndex = rightSideStackView.arrangedSubviews.firstIndex(of: fireButton) ?? rightSideStackView.arrangedSubviews.count
+        rightSideStackView.insertArrangedSubview(button, at: fireButtonIndex)
+        tabOrganizerButton = button
+
+        tabOrganizerFeatureFlagCancellable = featureFlagger.updatesPublisher
+            .prepend(())
+            .map { [weak self] in self?.featureFlagger.isFeatureOn(.aiTabOrganizer) ?? false }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                self?.tabOrganizerButton?.isHidden = !isEnabled || self?.isFireWindow == true
+            }
+    }
+
+    @objc private func tabOrganizerButtonAction(_ sender: NSButton) {
+        TabOrganizerPopover.show(relativeTo: sender, tabCollectionViewModel: tabCollectionViewModel)
     }
 
     private func setupDuckAIChromeSegmentedControl() {

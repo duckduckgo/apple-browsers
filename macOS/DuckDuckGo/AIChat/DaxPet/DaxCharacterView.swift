@@ -74,10 +74,12 @@ final class DaxCharacterView: NSView {
         }
     }
 
-    /// Off for a little walk, and back.
+    /// Off for a little walk inside his window, and back; the window itself never moves.
     var isStrolling: Bool { stroll != nil }
-    /// A stroll ended, back where he started or wherever it was cut short.
-    var onStrollEnded: (() -> Void)?
+    /// How far he may walk either way from the middle of his view.
+    var strollRoom: CGFloat = 0
+    /// How far from the middle of his view he's drawn, in points.
+    private(set) var strollOffset: CGFloat = 0
 
     private(set) var isAsleep = false {
         didSet { if isAsleep != oldValue { onSleepChange?(isAsleep) } }
@@ -151,7 +153,6 @@ final class DaxCharacterView: NSView {
 
     private struct Stroll {
         enum Leg { case out, pause, back }
-        let start: NSPoint
         let distance: CGFloat
         var leg = Leg.out
         var travelled: CGFloat = 0
@@ -331,8 +332,8 @@ final class DaxCharacterView: NSView {
 
     /// Walks `distance` points along the floor (negative is left), looks around, and walks back.
     func stroll(by distance: CGFloat) {
-        guard !reduceMotion(), let origin = window?.frame.origin, distance != 0 else { return }
-        stroll = Stroll(start: origin, distance: distance)
+        guard !reduceMotion(), distance != 0 else { return }
+        stroll = Stroll(distance: max(-strollRoom, min(strollRoom, distance)))
         turn(left: distance < 0)
     }
 
@@ -342,6 +343,8 @@ final class DaxCharacterView: NSView {
 
     private func updateStroll() {
         guard var current = stroll else {
+            // Cut short, he hurries back to his spot.
+            strollOffset = abs(strollOffset) < 0.5 ? 0 : strollOffset * 0.75
             if time >= nextStrollTime {
                 nextStrollTime = time + .random(in: Self.strollInterval)
                 if canStroll, let distance = strollDistance() { stroll(by: distance) }
@@ -349,7 +352,7 @@ final class DaxCharacterView: NSView {
             stepPhase = 0
             return
         }
-        guard canStroll, let window else {
+        guard canStroll else {
             endStroll()
             return
         }
@@ -358,9 +361,8 @@ final class DaxCharacterView: NSView {
         case .out, .back:
             current.travelled = min(current.travelled + Self.strollSpeed / 30, abs(current.distance))
             stepPhase += 2 * .pi * 2.2 / 30
-            // Placed from the start each time: windows snap to pixels, and the rounding would add up.
             let offset = current.leg == .out ? current.travelled : abs(current.distance) - current.travelled
-            window.setFrameOrigin(NSPoint(x: current.start.x + offset * (current.distance > 0 ? 1 : -1), y: current.start.y))
+            strollOffset = offset * (current.distance > 0 ? 1 : -1)
             if current.leg == .back, current.travelled >= abs(current.distance) {
                 stroll = current
                 endStroll()
@@ -384,19 +386,18 @@ final class DaxCharacterView: NSView {
     private func endStroll() {
         stroll = nil
         stepPhase = 0
-        onStrollEnded?()
     }
 
-    /// A few steps towards the roomier side, if there's room for them on his screen.
+    /// A few steps either way, as far as his window allows.
     private func strollDistance() -> CGFloat? {
-        guard let window, let screen = window.screen?.visibleFrame else { return nil }
-        let frame = window.convertToScreen(convert(bounds, to: nil))
-        let roomLeft = frame.minX - screen.minX - Self.wallDistance
-        let roomRight = screen.maxX - frame.maxX - Self.wallDistance
-        let room = max(roomLeft, roomRight)
-        guard room >= 30 else { return nil }
-        let distance = min(room, .random(in: 40...90))
-        return roomRight >= roomLeft ? distance : -distance
+        guard strollRoom >= 30 else { return nil }
+        let distance = min(strollRoom, .random(in: 40...90))
+        return Bool.random() ? distance : -distance
+    }
+
+    /// Where he's drawn on screen, which is off his view's frame while he strolls.
+    private var frameOnScreen: NSRect? {
+        window.map { $0.convertToScreen(convert(bounds, to: nil)).offsetBy(dx: strollOffset, dy: 0) }
     }
 
     // MARK: - Typing
@@ -588,7 +589,8 @@ final class DaxCharacterView: NSView {
         var eyes = NSPoint(x: (DaxRig.eyesCenter.x - DaxRig.bodyRect.minX) * scale,
                            y: bounds.height - (DaxRig.eyesCenter.y - DaxRig.bodyRect.minY) * scale)
         if facingLeft { eyes.x = bounds.width - eyes.x }
-        let eyesOnScreen = window.convertPoint(toScreen: convert(eyes, to: nil))
+        var eyesOnScreen = window.convertPoint(toScreen: convert(eyes, to: nil))
+        eyesOnScreen.x += strollOffset
         let delta = CGPoint(x: point.x - eyesOnScreen.x, y: point.y - eyesOnScreen.y)
         let distance = hypot(delta.x, delta.y)
         guard distance > 1 else { return .zero }
@@ -646,9 +648,8 @@ final class DaxCharacterView: NSView {
         let mouse = mouseLocation()
         defer { lastPettingMouseLocation = mouse }
         // While he's carried, the cursor moves with him.
-        if let window, let last = lastPettingMouseLocation, !isBeingDragged {
-            let frameOnScreen = window.convertToScreen(convert(bounds, to: nil))
-            if frameOnScreen.contains(mouse) {
+        if let last = lastPettingMouseLocation, !isBeingDragged {
+            if frameOnScreen?.contains(mouse) == true {
                 petting = min(petting + abs(mouse.x - last.x) / 150, 2)
             }
         }
@@ -687,11 +688,10 @@ final class DaxCharacterView: NSView {
     nonisolated static let wallDistance: CGFloat = 40
 
     private func updateWallProximity() {
-        guard let window, let screen = window.screen?.visibleFrame else {
+        guard let screen = window?.screen?.visibleFrame, let frame = frameOnScreen else {
             wallProximity = 0
             return
         }
-        let frame = window.convertToScreen(convert(bounds, to: nil))
         let left = max(0, 1 - (frame.minX - screen.minX) / Self.wallDistance)
         let right = max(0, 1 - (screen.maxX - frame.maxX) / Self.wallDistance)
         wallProximity = min(right, 1) - min(left, 1)
@@ -808,7 +808,7 @@ final class DaxCharacterView: NSView {
         let tilt = motion ? dragTilt + wallProximity * 0.06 : 0
 
         let pivot = CGPoint(x: bounds.midX, y: 0)
-        var transform = CATransform3DMakeTranslation(pivot.x, pivot.y + bounceHeight, 0)
+        var transform = CATransform3DMakeTranslation(pivot.x + strollOffset, pivot.y + bounceHeight, 0)
         transform = CATransform3DRotate(transform, sway + tilt, 0, 0, 1)
         transform = CATransform3DScale(transform, flip * (1 + squash * 0.6), 1 + breathing - squash, 1)
         transform = CATransform3DTranslate(transform, -pivot.x, -pivot.y, 0)

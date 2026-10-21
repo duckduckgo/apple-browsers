@@ -92,7 +92,8 @@ final class DaxPetCoordinator: NSObject {
             let items = DaxPetDroppedItem.items(from: pasteboard)
             Task { await model?.receive(items) }
         }
-        model.character.onStrollEnded = { [weak self] in self?.savePosition() }
+        // He strolls within his window, out to where the prompt field would end.
+        model.character.strollRoom = (DaxPetView.Metrics.composingWidth - DaxCharacterView.preferredSize.width) / 2
         model.character.onDragEnded = { [weak self] in
             self?.keepOnScreen()
             self?.savePosition()
@@ -234,8 +235,9 @@ final class DaxPetCoordinator: NSObject {
         let mouse = NSEvent.mouseLocation
         let point = NSPoint(x: mouse.x - window.frame.minX, y: mouse.y - window.frame.minY)
 
-        let isOverCharacter = DaxPetView.Metrics.characterFrame().contains(point)
-        var interactiveFrames = [DaxPetView.Metrics.characterFrame(), DaxPetView.Metrics.controlsFrame(isComposing: model.isComposing)]
+        let characterFrame = DaxPetView.Metrics.characterFrame().offsetBy(dx: model.character.strollOffset, dy: 0)
+        let isOverCharacter = characterFrame.contains(point)
+        var interactiveFrames = [characterFrame, DaxPetView.Metrics.controlsFrame(isComposing: model.isComposing)]
         if model.speech != nil {
             interactiveFrames.append(DaxPetView.Metrics.bubbleFrame())
         }

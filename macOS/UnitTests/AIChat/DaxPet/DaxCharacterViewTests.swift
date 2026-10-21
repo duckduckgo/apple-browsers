@@ -291,49 +291,63 @@ final class DaxCharacterViewTests: XCTestCase {
 
     // MARK: - Strolls
 
-    func testWhenStrollingThenDaxWalksOutAndComesBackToHisSpot() throws {
+    func testWhenStrollingThenDaxWalksOutAndBackWithoutMovingHisWindow() throws {
         character = makeLivelyCharacter()
+        character.strollRoom = 100
         let start = try showCharacter(nearLeftEdgeBy: 300).origin
-        var ended = 0
-        character.onStrollEnded = { ended += 1 }
 
         character.stroll(by: 30)
         var furthest: CGFloat = 0
         for _ in 0..<300 where character.isStrolling {
             character.step()
-            furthest = max(furthest, (window?.frame.minX ?? 0) - start.x)
+            furthest = max(furthest, character.strollOffset)
+            XCTAssertEqual(window?.frame.origin, start)
         }
 
-        XCTAssertEqual(furthest, 30, accuracy: 0.5)
+        XCTAssertEqual(furthest, 30, accuracy: 0.001)
         XCTAssertFalse(character.isStrolling)
-        XCTAssertEqual(window?.frame.origin, start)
-        XCTAssertEqual(ended, 1)
+        XCTAssertEqual(character.strollOffset, 0)
     }
 
     func testWhenStrollingLeftThenDaxWalksLeft() throws {
         character = makeLivelyCharacter()
-        let start = try showCharacter(nearLeftEdgeBy: 300).origin
+        character.strollRoom = 100
+        _ = try showCharacter(nearLeftEdgeBy: 300)
 
         character.stroll(by: -30)
         for _ in 0..<10 { character.step() }
 
-        XCTAssertLessThan(window?.frame.minX ?? 0, start.x)
+        XCTAssertLessThan(character.strollOffset, 0)
     }
 
-    func testWhenSomethingHappensMidStrollThenDaxStopsWhereHeIs() throws {
+    func testDaxNeverStrollsFurtherThanHisRoom() throws {
         character = makeLivelyCharacter()
-        let start = try showCharacter(nearLeftEdgeBy: 300).origin
-        var ended = 0
-        character.onStrollEnded = { ended += 1 }
+        character.strollRoom = 20
+        _ = try showCharacter(nearLeftEdgeBy: 300)
+
+        character.stroll(by: 80)
+        var furthest: CGFloat = 0
+        for _ in 0..<300 where character.isStrolling {
+            character.step()
+            furthest = max(furthest, character.strollOffset)
+        }
+
+        XCTAssertEqual(furthest, 20, accuracy: 0.001)
+    }
+
+    func testWhenSomethingHappensMidStrollThenDaxHurriesBackToHisSpot() throws {
+        character = makeLivelyCharacter()
+        character.strollRoom = 100
+        _ = try showCharacter(nearLeftEdgeBy: 300)
         character.stroll(by: 60)
-        for _ in 0..<10 { character.step() }
+        for _ in 0..<20 { character.step() }
+        XCTAssertGreaterThan(character.strollOffset, 0)
 
         character.mood = .listening
-        character.step()
+        for _ in 0..<30 { character.step() }
 
         XCTAssertFalse(character.isStrolling)
-        XCTAssertNotEqual(window?.frame.origin, start)
-        XCTAssertEqual(ended, 1)
+        XCTAssertEqual(character.strollOffset, 0)
     }
 
     func testWhenMotionIsReducedThenDaxNeverStrolls() throws {

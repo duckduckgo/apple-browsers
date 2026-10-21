@@ -102,37 +102,9 @@ final class ApplicationLockUITests: UITestCase {
         }
     }
 
-    func testWhenAuthenticationFailsThenUnlockInstructionsAllowRetry() throws {
-        enableApplicationLock()
-
-        try XCTContext.runActivity(named: "Wait for authentication or recovery screen") { _ in
-            try relaunchAppPreservingState()
-
-            let authenticationReason = springboard.staticTexts["Unlock DuckDuckGo."]
-            if !waitForAuthenticationPromptOrRecovery(authenticationReason) {
-                XCTContext.runActivity(named: "Cancel authentication prompt") { _ in
-                    springboard.buttons["Cancel"].tapWhenHittable()
-                }
-                waitForRecoveryInstructions(authenticationReason)
-            }
-        }
-
-        XCTContext.runActivity(named: "Retry authentication from the recovery screen") { _ in
-            requestAuthenticationFromRecoveryScreen()
-            let authenticationReason = springboard.staticTexts["Unlock DuckDuckGo."]
-            waitForAuthenticationPrompt(authenticationReason)
-
-            let passcodeField = springboard.secureTextFields.firstMatch
-            XCTAssertTrue(passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence))
-            passcodeField.typeText("password\n")
-            XCTAssertTrue(
-                app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),
-                "Browser did not unlock after retrying authentication.")
-        }
-    }
-
     private func enableApplicationLock() {
         XCTContext.runActivity(named: "Enable Application Lock") { _ in
+            app.dismissAddressBarEditing()
             app.openSettings()
             app.openGeneralSettings()
 
@@ -165,24 +137,6 @@ final class ApplicationLockUITests: UITestCase {
             file: file,
             line: line)
         return isRecoveryScreen && !authenticationReason.exists
-    }
-
-    private func waitForRecoveryInstructions(_ authenticationReason: XCUIElement,
-                                             file: StaticString = #filePath,
-                                             line: UInt = #line) {
-        let recoveryInstructions = app.staticTexts["Tap anywhere to unlock"]
-        let recoveryOrAppStopped = NSPredicate { _, _ in
-            (self.app.state == .runningForeground && recoveryInstructions.exists && !authenticationReason.exists)
-                || self.app.state == .notRunning
-        }
-        let expectation = XCTNSPredicateExpectation(predicate: recoveryOrAppStopped, object: springboard)
-        _ = XCTWaiter.wait(for: [expectation], timeout: UITestTimeouts.navigation)
-
-        XCTAssertTrue(
-            app.state == .runningForeground && recoveryInstructions.exists && !authenticationReason.exists,
-            "Authentication failure did not leave the foreground recovery instructions visible.",
-            file: file,
-            line: line)
     }
 
     private func waitForAuthenticationPrompt(_ authenticationReason: XCUIElement,

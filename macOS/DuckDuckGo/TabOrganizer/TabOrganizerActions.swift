@@ -49,8 +49,41 @@ struct TabOrganizerActions {
         ids.compactMap { id in unpinnedTabs.first { $0.uuid == id } }
     }
 
+    /// Unpinned duplicates (same URL; the current tab, else the leftmost, stays) and empty new tabs. No AI.
+    func cleanupCandidateIDs() -> [String] {
+        let selectedID = tabCollectionViewModel.selectedTabViewModel?.tab.uuid
+        var keptByURL: [URL: String] = [:]
+        var candidates: [String] = []
+        var hasKeptNewTab = false
+
+        for tab in unpinnedTabs {
+            switch tab.content {
+            case .newtab:
+                if tab.uuid == selectedID, !hasKeptNewTab {
+                    hasKeptNewTab = true
+                } else {
+                    candidates.append(tab.uuid)
+                }
+            case .url(let url, _, _):
+                guard let keptID = keptByURL[url] else {
+                    keptByURL[url] = tab.uuid
+                    continue
+                }
+                if tab.uuid == selectedID {
+                    candidates.append(keptID)
+                    keptByURL[url] = tab.uuid
+                } else {
+                    candidates.append(tab.uuid)
+                }
+            default:
+                continue
+            }
+        }
+        return candidates
+    }
+
     /// Goes through `close(at:)` so Reopen Closed Tab can bring them back.
-    private func close(_ ids: [String]) {
+    func close(_ ids: [String]) {
         for tab in unpinnedTabs(withIDs: ids) {
             if let index = tabCollectionViewModel.indexInAllTabs(of: tab) {
                 tabCollectionViewModel.close(at: index)

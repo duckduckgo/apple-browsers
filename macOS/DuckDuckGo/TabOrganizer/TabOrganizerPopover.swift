@@ -60,6 +60,7 @@ final class TabOrganizerViewModel: ObservableObject {
     @Published private(set) var selectedTabIDs: Set<String> = []
     @Published private(set) var suggestions = TabOrganizerViewModel.defaultSuggestions
     @Published private(set) var isLoadingSuggestions = false
+    @Published private(set) var cleanupTabIDs: [String] = []
     @Published var instruction = ""
     @Published var readsPageContent = false
 
@@ -73,7 +74,17 @@ final class TabOrganizerViewModel: ObservableObject {
         tabs = TabSnapshotProvider.snapshots(in: tabCollectionViewModel)
         let allTabs = (tabCollectionViewModel.pinnedTabsCollection?.tabs ?? []) + tabCollectionViewModel.tabCollection.tabs
         favicons = Dictionary(allTabs.compactMap { tab in tab.favicon.map { (tab.uuid, $0) } }, uniquingKeysWith: { first, _ in first })
+        cleanupTabIDs = TabOrganizerActions(tabCollectionViewModel: tabCollectionViewModel).cleanupCandidateIDs()
         loadSuggestions()
+    }
+
+    func closeCleanupTabs() {
+        TabOrganizerActions(tabCollectionViewModel: tabCollectionViewModel).close(cleanupTabIDs)
+        cleanupTabIDs = []
+        tabs = TabSnapshotProvider.snapshots(in: tabCollectionViewModel)
+        if case .results = state {
+            startOver()
+        }
     }
 
     private func loadSuggestions() {
@@ -294,6 +305,18 @@ struct TabOrganizerView: View {
             Toggle("Look inside pages (slower)", isOn: $viewModel.readsPageContent)
                 .toggleStyle(.checkbox)
                 .font(.caption)
+
+            if !viewModel.cleanupTabIDs.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.on.square")
+                    Text("\(viewModel.cleanupTabIDs.count) duplicate or empty tabs")
+                    Spacer()
+                    Button("Close", action: viewModel.closeCleanupTabs)
+                        .controlSize(.small)
+                }
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
+            }
         }
     }
 

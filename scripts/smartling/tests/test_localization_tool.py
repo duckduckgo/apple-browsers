@@ -213,6 +213,21 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.outcome, 'review_required')
         self.assertIn('no maximum USD price', result.reason)
 
+    async def testWhenEstimateHasSeveralUSDPricesThenReviewIsRequired(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 200, 'priceMax': 300},
+                {'currencyCode': 'USD', 'priceMin': 250, 'priceMax': 400},
+            ],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('2 USD prices', result.reason)
+        self.assertEqual(client.authorized_jobs, [])
+
     async def testWhenEstimateFailsThenReviewIsRequired(self):
         client = FakeSmartlingClient(estimate_status='FAILED')
 
@@ -229,7 +244,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.outcome, 'review_required')
         self.assertIn('timed out', result.reason)
 
-    async def testWhenPendingJobWithPrefixExistsThenReviewIsRequiredWithoutCreatingAJob(self):
+    async def testWhenPendingJobWithPrefixExistsThenItIsReportedWithoutCreatingAJob(self):
         client = FakeSmartlingClient(pending_jobs=[{
             'jobName': 'Nightly iOS - 2026-08-03',
             'translationJobUid': 'pending-job',
@@ -237,7 +252,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
 
         result = await self.run_submit(client)
 
-        self.assertEqual(result.outcome, 'review_required')
+        self.assertEqual(result.outcome, 'pending_review')
         self.assertEqual(result.job_id, 'pending-job')
         self.assertEqual(result.job_name, 'Nightly iOS - 2026-08-03')
         self.assertIsNone(result.total_strings)

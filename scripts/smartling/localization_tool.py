@@ -414,8 +414,11 @@ def parse_estimate(report: Dict) -> tuple[int, Decimal]:
 
     if not usd_prices:
         raise RuntimeError("Smartling estimate has no maximum USD price")
+    # One USD entry is the job's total. Several could be parts to add up, so don't guess.
+    if len(usd_prices) > 1:
+        raise RuntimeError(f"Smartling estimate has {len(usd_prices)} USD prices, expected one total")
 
-    return total_strings, max(usd_prices)
+    return total_strings, usd_prices[0]
 
 
 async def run_submit(client: SmartlingClient,
@@ -442,8 +445,9 @@ async def run_submit(client: SmartlingClient,
         if pending_job:
             job_id = pending_job.get('translationJobUid') or pending_job.get('jobUid', '')
             log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
+            # The run that left this job waiting already opened a review task, so don't open another.
             return SubmitResult(
-                outcome='review_required',
+                outcome='pending_review',
                 job_id=job_id,
                 job_name=pending_job['jobName'],
                 reason=f"'{pending_job['jobName']}' is still awaiting authorization, so no new job was created"
@@ -637,7 +641,7 @@ async def submit_command(args):
         summary += f" ({result.reason})"
     if result.failed:
         annotate('error', summary)
-    elif result.outcome == 'review_required':
+    elif result.outcome in {'review_required', 'pending_review'}:
         annotate('warning', summary)
     else:
         annotate('notice', summary)

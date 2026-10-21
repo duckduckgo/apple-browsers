@@ -45,7 +45,11 @@ final class AIChatScreenshotCaptureService {
         let asksMacOS = !permission.hasAskedMacOS
         NSAlert.screenRecordingPermission(asksMacOS: asksMacOS).beginSheetModal(for: window) { [weak self] response in
             guard response == .OK else { return }
-            self?.acceptPermissionAlert(asksMacOS: asksMacOS)
+            // Once the sheet has closed: closing it orders the browser window front, over macOS's prompt,
+            // which is a normal window of another app.
+            DispatchQueue.main.async {
+                self?.acceptPermissionAlert(asksMacOS: asksMacOS)
+            }
         }
     }
 

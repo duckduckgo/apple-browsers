@@ -920,7 +920,7 @@ struct FireDialogView: ModalView {
                 .frame(height: 24)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(isHovered && isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color.clear)
+                        .fill(isHovered && isEnabled ? Color(designSystemColor: .controlsFillSecondary) : Color.clear)
                 )
         }
     }

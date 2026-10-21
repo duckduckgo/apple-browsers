@@ -2537,7 +2537,16 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     /// SF Symbol placeholder until a designed Reader glyph exists in DesignResourcesKitIcons.
-    private static let readerModeIcon = NSImage(systemSymbolName: "doc.plaintext", accessibilityDescription: nil)
+    /// Drawn into a plain image because a symbol image gives the button vertical alignment insets,
+    /// which make its frame (and the hover background) taller than its size constraints.
+    private static let readerModeIcon: NSImage? = NSImage(systemSymbolName: "doc.plaintext", accessibilityDescription: nil).map { symbol in
+        let image = NSImage(size: symbol.size, flipped: false) { rect in
+            symbol.draw(in: rect)
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
 
     private func updateReaderModeButton() {
         let state = featureFlagger.isFeatureOn(.readerMode) ? tabViewModel?.tab.readerMode?.state : nil

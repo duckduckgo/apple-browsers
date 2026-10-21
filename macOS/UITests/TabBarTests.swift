@@ -156,6 +156,28 @@ class TabBarTests: UITestCase {
         XCTAssertTrue(contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Context menu should appear on control click")
     }
 
+    // Regression for duplicate tabs not appearing in the tab bar (#4512).
+    // Asana: https://app.asana.com/0/0/1214147700081496
+    func testDuplicateTabAppearsInTabBarViaWindowMenu() {
+        continueAfterFailure = false
+        app.openSite(pageTitle: "DuplicateTabTest")
+
+        let tabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
+        XCTAssertTrue(
+            tabs.element(boundBy: 0).waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Initial tab should be visible in the tab bar"
+        )
+        let initialCount = tabs.count
+        XCTAssertGreaterThanOrEqual(initialCount, 1, "Should have at least 1 tab before duplicating")
+
+        app.menuItems["Duplicate Tab"].click()
+
+        XCTAssertTrue(
+            tabs.wait(for: \.count, equals: initialCount + 1, timeout: UITests.Timeouts.elementExistence),
+            "Tab bar should show \(initialCount + 1) tabs after duplicating, found \(tabs.count)"
+        )
+    }
+
     // MARK: - Utilities
 
     private func resetPinnedTabs() {

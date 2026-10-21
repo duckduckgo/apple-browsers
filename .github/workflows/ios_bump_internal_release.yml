@@ -34,7 +34,7 @@ jobs:
     name: Validate Input Conditions
 
     # Avoid automation pushes (GHA_ELEVATED_PERMISSIONS_TOKEN) triggering another bump
-    if: github.event_name != 'push' || github.actor != 'daxmobile'
+    if: github.event_name != 'push' || github.actor != vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER
     runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 10
 
@@ -48,6 +48,13 @@ jobs:
       release-branch: ${{ steps.prepare-release-bump.outputs.release_branch }}
 
     steps:
+
+      # Without the variable the guard above can't skip automation pushes, so stop instead of bumping repeatedly
+      - name: Assert GHA_ELEVATED_PERMISSIONS_TOKEN_USER is set
+        if: vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER == ''
+        run: |
+          echo "::error::GHA_ELEVATED_PERMISSIONS_TOKEN_USER repository variable is not set"
+          exit 1
 
       - name: Check out the code
         uses: actions/checkout@v6

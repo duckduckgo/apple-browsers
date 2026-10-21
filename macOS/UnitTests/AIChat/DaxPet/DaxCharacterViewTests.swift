@@ -149,4 +149,53 @@ final class DaxCharacterViewTests: XCTestCase {
 
         XCTAssertEqual(loved, 1)
     }
+
+    // MARK: - Dragging
+
+    func testWhenCarriedToTheRightThenDaxLeansBack() {
+        _ = showCharacter()
+        character.beginDrag()
+
+        for _ in 0..<5 {
+            window?.setFrameOrigin(NSPoint(x: (window?.frame.minX ?? 0) + 20, y: 200))
+            character.step()
+        }
+
+        XCTAssertTrue(character.isBeingDragged)
+        XCTAssertGreaterThan(character.dragTilt, 0.1)
+    }
+
+    func testWhenCarriedToTheLeftThenDaxLeansTheOtherWay() {
+        _ = showCharacter()
+        character.beginDrag()
+
+        for _ in 0..<5 {
+            window?.setFrameOrigin(NSPoint(x: (window?.frame.minX ?? 0) - 20, y: 200))
+            character.step()
+        }
+
+        XCTAssertLessThan(character.dragTilt, -0.1)
+    }
+
+    func testWhenPutDownThenDaxStraightensUp() {
+        _ = showCharacter()
+        character.beginDrag()
+        window?.setFrameOrigin(NSPoint(x: 300, y: 200))
+        character.step()
+
+        character.endDrag()
+        for _ in 0..<60 { character.step() }
+
+        XCTAssertFalse(character.isBeingDragged)
+        XCTAssertEqual(character.dragTilt, 0, accuracy: 0.01)
+    }
+
+    func testWhenCarriedThenTheCursorMovingWithHimIsNotPetting() {
+        let frame = showCharacter()
+        character.beginDrag()
+
+        pet(frames: 30, over: frame)
+
+        XCTAssertFalse(character.isBeingPetted)
+    }
 }

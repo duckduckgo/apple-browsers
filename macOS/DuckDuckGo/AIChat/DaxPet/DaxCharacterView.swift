@@ -54,6 +54,10 @@ final class DaxCharacterView: NSView {
     /// A good, long pet.
     var onLovedPetting: (() -> Void)?
 
+    private(set) var isBeingDragged = false
+    /// How far he leans against the direction he's carried in, in radians.
+    private(set) var dragTilt: CGFloat = 0
+
     /// Where Dax looks, in screen coordinates. `nil` lets the cursor lead.
     var lookTarget: NSPoint?
 
@@ -90,6 +94,9 @@ final class DaxCharacterView: NSView {
     private var pettingStartTime: TimeInterval?
     private var lastLovedPettingTime: TimeInterval = -.infinity
     private var lastPettingMouseLocation: NSPoint?
+    private var dragStartOrigin: NSPoint?
+    private var lastDragOrigin: NSPoint?
+    private var landingStartTime: TimeInterval?
 
     init(rig: DaxRig? = DaxRig(),
          reduceMotion: @escaping () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion },
@@ -139,8 +146,30 @@ final class DaxCharacterView: NSView {
 
     /// Dragging Dax moves his window; a plain click is his.
     override func mouseDown(with event: NSEvent) {
+        beginDrag()
         window?.dragOrClick { [weak self] in self?.onClick?() }
+        endDrag()
         onDragEnded?()
+    }
+
+    /// He's picked up: from here on, his window moving means he's being carried.
+    func beginDrag() {
+        isBeingDragged = true
+        dragStartOrigin = window?.frame.origin
+        lastDragOrigin = dragStartOrigin
+    }
+
+    /// Put down: only a real move ends in a landing.
+    func endDrag() {
+        defer {
+            isBeingDragged = false
+            dragStartOrigin = nil
+            lastDragOrigin = nil
+        }
+        guard isBeingDragged, let start = dragStartOrigin, let origin = window?.frame.origin, origin != start else { return }
+        guard !reduceMotion() else { return }
+        landingStartTime = time
+        hop()
     }
 
     // MARK: - Gestures
@@ -219,6 +248,7 @@ final class DaxCharacterView: NSView {
 
         updateSleep()
         updatePetting()
+        updateDrag()
         updateEyes()
         updateEyelids()
         updateBody()
@@ -239,6 +269,9 @@ final class DaxCharacterView: NSView {
         switch mood {
         case _ where isAsleep:
             target = CGPoint(x: 0, y: -0.4)
+        case _ where isBeingDragged:
+            // Peering down at the drop.
+            target = CGPoint(x: 0, y: -0.7)
         case _ where isBeingPetted:
             // Blissfully up.
             target = CGPoint(x: 0, y: 0.5)
@@ -254,7 +287,7 @@ final class DaxCharacterView: NSView {
         }
 
         // Face whichever side the action is on, with some hysteresis so he doesn't flicker.
-        if mood != .thinking, !isAsleep, !isBeingPetted {
+        if mood != .thinking, !isAsleep, !isBeingPetted, !isBeingDragged {
             if target.x < -0.55, !facingLeft { turn(left: true) }
             if target.x > 0.55, facingLeft { turn(left: false) }
         }
@@ -329,7 +362,8 @@ final class DaxCharacterView: NSView {
     private func updatePetting() {
         let mouse = mouseLocation()
         defer { lastPettingMouseLocation = mouse }
-        if let window, let last = lastPettingMouseLocation {
+        // While he's carried, the cursor moves with him.
+        if let window, let last = lastPettingMouseLocation, !isBeingDragged {
             let frameOnScreen = window.convertToScreen(convert(bounds, to: nil))
             if frameOnScreen.contains(mouse) {
                 petting = min(petting + abs(mouse.x - last.x) / 150, 2)
@@ -352,6 +386,18 @@ final class DaxCharacterView: NSView {
         }
     }
 
+    // MARK: - Dragging
+
+    private func updateDrag() {
+        var desiredTilt: CGFloat = 0
+        if isBeingDragged, let origin = window?.frame.origin, let last = lastDragOrigin {
+            // Points per frame; his top trails behind as he's swung around.
+            desiredTilt = max(-0.3, min(0.3, (origin.x - last.x) / 60))
+            lastDragOrigin = origin
+        }
+        dragTilt += (desiredTilt - dragTilt) * (isBeingDragged ? 0.25 : 0.15)
+    }
+
     private func updateEyelids() {
         if let start = startleStartTime {
             // Eyes wide with surprise.
@@ -362,6 +408,11 @@ final class DaxCharacterView: NSView {
                 face.eyelids = -0.25 * sin(progress * .pi)
                 return
             }
+        }
+        if isBeingDragged {
+            // Whoa!
+            face.eyelids = -0.25
+            return
         }
         if isBeingPetted {
             // A happy squint.
@@ -411,10 +462,18 @@ final class DaxCharacterView: NSView {
         flip += ((facingLeft ? -1 : 1) - flip) * 0.35
 
         // Pivot at Dax's feet, centred.
+        // Squashed flat on landing, springing back up.
+        var squash: CGFloat = 0
+        if let start = landingStartTime {
+            let progress = (time - start) / 0.3
+            if progress >= 1 { landingStartTime = nil } else { squash = sin(progress * .pi) * 0.14 }
+        }
+        let tilt = motion ? dragTilt : 0
+
         let pivot = CGPoint(x: bounds.midX, y: 0)
         var transform = CATransform3DMakeTranslation(pivot.x, pivot.y + bounceHeight, 0)
-        transform = CATransform3DRotate(transform, sway, 0, 0, 1)
-        transform = CATransform3DScale(transform, flip, 1 + breathing, 1)
+        transform = CATransform3DRotate(transform, sway + tilt, 0, 0, 1)
+        transform = CATransform3DScale(transform, flip * (1 + squash * 0.6), 1 + breathing - squash, 1)
         transform = CATransform3DTranslate(transform, -pivot.x, -pivot.y, 0)
         CATransaction.begin()
         CATransaction.setDisableActions(true)

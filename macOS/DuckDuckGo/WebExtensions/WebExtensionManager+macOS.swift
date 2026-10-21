@@ -99,6 +99,10 @@ enum WebExtensionManagerFactory {
             installationStore: installationStore,
             prompter: WebExtensionPermissionPrompt(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
         ) : nil
+        // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
+        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+            ? NativeMessagingHandler(installationStore: installationStore)
+            : nil
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(),
@@ -118,6 +122,12 @@ enum WebExtensionManagerFactory {
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
+            nativeMessagingHandler: nativeMessagingHandler,
+            keyValueStore: keyValueStore,
+            // Bitwarden's catalog entry decides whether a password manager extension may replace DuckDuckGo autofill.
+            isAutofillTakeoverEnabled: {
+                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
+            },
             scriptletConfiguration: scriptletConfiguration
         )
 

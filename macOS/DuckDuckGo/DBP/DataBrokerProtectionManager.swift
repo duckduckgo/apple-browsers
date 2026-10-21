@@ -28,10 +28,17 @@ import LoginItems
 import NetworkProtectionIPC
 import PixelKit
 import Subscription
+#if DEBUG
+import os.log
+#endif
 
 public final class DataBrokerProtectionManager {
 
     static let shared = DataBrokerProtectionManager()
+
+#if DEBUG
+    @MainActor private var debugLaunchTask: Task<Void, Never>?
+#endif
 
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler()
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
@@ -176,3 +183,158 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
         authenticationManager.isUserEligibleForFreeTrial
     }
 }
+
+#if DEBUG
+@MainActor
+extension DataBrokerProtectionManager {
+    enum DebugLaunchError: Error {
+        case unavailableDataManager
+        case missingProfile
+        case agentDidNotStop
+        case agentNotReady
+        case commandFailed
+        case commandTimedOut
+    }
+
+    func handleDebugLaunch() -> Bool {
+        do {
+            guard let options = try PIRDebugLaunchOptions.parse() else { return false }
+            guard debugLaunchTask == nil else { return true }
+            debugLaunchTask = Task {
+                do {
+                    try await runDebugLaunch(options)
+                    Logger.dataBrokerProtection.log("PIR debug launch completed; agent event delivered.")
+                } catch {
+                    let failure = error as NSError
+                    Logger.dataBrokerProtection.error("PIR debug launch failed: \(failure.domain, privacy: .public), code \(failure.code, privacy: .public).")
+                }
+            }
+        } catch {
+            Logger.dataBrokerProtection.error("PIR debug launch options rejected: \(error.localizedDescription, privacy: .public)")
+        }
+        return true
+    }
+
+    func waitForDebugLaunch() async {
+        await debugLaunchTask?.value
+    }
+
+    private func runDebugLaunch(_ options: PIRDebugLaunchOptions) async throws {
+        // 1. Decide whether to preserve, seed, or replace the stored profile.
+        Logger.dataBrokerProtection.log("PIR debug launch: reading stored profile.")
+        guard let dataManager else { throw DebugLaunchError.unavailableDataManager }
+        let existingProfile = try dataManager.fetchProfile()
+        let shouldReset = options.profileSetup?.resetBeforeSeeding == true
+        let profileToSave = existingProfile == nil || shouldReset ? options.profileSetup?.profile : nil
+        if options.profileSetup != nil, profileToSave == nil {
+            Logger.dataBrokerProtection.log("PIR debug launch: preserving existing profile and history; fixture skipped.")
+        }
+        guard existingProfile != nil || profileToSave != nil else {
+            Logger.dataBrokerProtection.error("PIR debug launch: server requires a saved profile or valid fixture.")
+            throw DebugLaunchError.missingProfile
+        }
+
+        // 2. Stop the background agent before changing its data.
+        Logger.dataBrokerProtection.log("PIR debug launch: stopping background agent.")
+        try await stopDebugAgent()
+
+        // 3. Clear PIR data and freemium state if reset was requested.
+        let freemiumState = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
+        if shouldReset {
+            Logger.dataBrokerProtection.log("PIR debug launch: resetting PIR data and Freemium state.")
+            try dataManager.removeAllDataForDebugLaunch()
+            DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
+            freemiumState.resetAllState()
+            NotificationCenter.default.post(name: .freemiumDBPResetForDebugLaunch, object: nil)
+        }
+        // 4. Save the fixture and activate freemium for unauthenticated users if needed.
+        if let profileToSave {
+            Logger.dataBrokerProtection.log("PIR debug launch: saving fixture.")
+            if !(await authenticationManager.isUserAuthenticated) {
+                freemiumState.didActivate = true
+            }
+            try await dataManager.saveProfile(profileToSave)
+        }
+
+        // 5. Enable the background agent and wait for it to answer XPC.
+        Logger.dataBrokerProtection.log("PIR debug launch: enabling background agent.")
+        try await LoginItem.dbpBackgroundAgent.enable()
+        NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
+        try await Self.waitForDebugAgentReady { completion in
+            self.ipcClient.performDebugLaunchCommand(.readiness, completion: completion)
+        }
+        // 6. Start the debug server if requested.
+        if options.startServer {
+            Logger.dataBrokerProtection.log("PIR debug launch: starting debug server.")
+            guard try await Self.debugReply({ ipcClient.performDebugLaunchCommand(.startServer, completion: $0) }) else {
+                throw DebugLaunchError.commandFailed
+            }
+        }
+        // 7. Notify the agent to process the saved or existing profile.
+        Logger.dataBrokerProtection.log("PIR debug launch: delivering agent event.")
+        let delivered = try await Self.debugReply { completion in
+            if profileToSave != nil {
+                ipcClient.profileSaved { completion($0 == nil) }
+            } else {
+                ipcClient.appLaunched { completion($0 == nil) }
+            }
+        }
+        guard delivered else { throw DebugLaunchError.commandFailed }
+    }
+
+    private func stopDebugAgent() async throws {
+        let agent = LoginItem.dbpBackgroundAgent
+        let status = await agent.status()
+        if status == .notRegistered || status == .notFound {
+            if let application = agent.application, !application.terminate() {
+                throw DebugLaunchError.agentDidNotStop
+            }
+        } else {
+            try await agent.disable()
+        }
+        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        while agent.isRunning {
+            guard ProcessInfo.processInfo.systemUptime < deadline else { throw DebugLaunchError.agentDidNotStop }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
+    }
+
+    static func waitForDebugAgentReady(
+        timeout: TimeInterval = 15,
+        retryInterval: TimeInterval = 5,
+        probe: @escaping (@escaping (Bool) -> Void) -> Void
+    ) async throws {
+        Logger.dataBrokerProtection.log("PIR debug launch: waiting for agent readiness.")
+        try await withTimeout(timeout, throwing: DebugLaunchError.agentNotReady) {
+            for attempt in 0..<3 {
+                try Task.checkCancellation()
+                do {
+                    if try await debugReply(timeout: timeout, probe) { return }
+                } catch DebugLaunchError.commandTimedOut {
+                    throw DebugLaunchError.agentNotReady
+                }
+                if attempt < 2, retryInterval > 0 {
+                    try await Task.sleep(interval: retryInterval)
+                }
+            }
+            throw DebugLaunchError.agentNotReady
+        }
+    }
+
+    private static func debugReply(timeout: TimeInterval = 5, _ request: (@escaping (Bool) -> Void) -> Void) async throws -> Bool {
+        let stream = AsyncStream<Bool>(bufferingPolicy: .bufferingOldest(1)) { continuation in
+            request { value in
+                continuation.yield(value)
+                continuation.finish()
+            }
+        }
+        return try await withTimeout(timeout, throwing: DebugLaunchError.commandTimedOut) {
+            var iterator = stream.makeAsyncIterator()
+            let reply = await iterator.next()
+            try Task.checkCancellation()
+            return reply ?? false
+        }
+    }
+}
+#endif

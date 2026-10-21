@@ -293,6 +293,17 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
         store?.handleFavoritesAfterDisablingSync()
     }
 
+    func bookmarksCount() -> Int {
+        store?.bookmarksCount() ?? (bookmarks ?? []).reduce(0) { $0 + Self.bookmarksCount(in: $1) }
+    }
+
+    private static func bookmarksCount(in entity: BaseBookmarkEntity) -> Int {
+        if let folder = entity as? BookmarkFolder {
+            return folder.children.reduce(0) { $0 + bookmarksCount(in: $1) }
+        }
+        return entity is Bookmark ? 1 : 0
+    }
+
     struct MockBookmarkEntity: BookmarkEntityProtocol {
         var uuid: String?
         var parent: () -> BookmarkEntityProtocol?

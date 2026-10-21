@@ -120,26 +120,20 @@ private extension WelcomeCard {
 #if DEBUG
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

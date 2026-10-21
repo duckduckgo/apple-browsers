@@ -60,7 +60,8 @@ final class PromoCoordinationServiceTests {
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -81,7 +82,8 @@ final class PromoCoordinationServiceTests {
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -106,7 +108,8 @@ final class PromoCoordinationServiceTests {
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -127,7 +130,8 @@ final class PromoCoordinationServiceTests {
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -150,7 +154,8 @@ final class PromoCoordinationServiceTests {
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -171,7 +176,8 @@ final class PromoCoordinationServiceTests {
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN
@@ -213,7 +219,8 @@ final class PromoCoordinationServiceTests {
         let manager = ModalPromptCoordinationManager(
             providers: providers.ordered,
             cooldownManager: MockPromptCooldownManager(),
-            onboardingStatusProvider: contextualOnboardingMock
+            onboardingStatusProvider: contextualOnboardingMock,
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         sut = PromoCoordinationService(
@@ -222,7 +229,8 @@ final class PromoCoordinationServiceTests {
             mode: .legacy,
             promoQueueLeaseArbiter: promoQueueLeaseArbiter,
             promoQueueCooldownPolicy: promoQueueCooldownPolicy,
-            appRatingPromptCoordinator: MockAppRatingPromptCoordinator()
+            appRatingPromptCoordinator: MockAppRatingPromptCoordinator(),
+            promptExposureReporter: MockPromptExposureReporter()
         )
 
         // WHEN

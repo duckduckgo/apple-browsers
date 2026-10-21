@@ -71,7 +71,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.brave, .passwords):
         NSLocalizedString("import.csv.instructions.brave.new", value: """
@@ -86,7 +86,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuHamburger16
+        NSImage(resource: .menuHamburger16)
 
     case (.chromium, .passwords),
         (.edge, .passwords):
@@ -102,7 +102,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.coccoc, .passwords):
         NSLocalizedString("import.csv.instructions.coccoc.new", value: """
@@ -115,7 +115,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         %3$@ - menu icon
         **bold text**; _italic text_
         """)
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.opera, .passwords):
         NSLocalizedString("import.csv.instructions.opera.new", value: """
@@ -141,7 +141,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         %3$@ - menu button icon
         **bold text**; _italic text_
         """)
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.operaGX, .passwords):
         NSLocalizedString("import.csv.instructions.operagx.new", value: """
@@ -156,7 +156,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.yandex, .passwords):
         NSLocalizedString("import.csv.instructions.yandex.new", value: """
@@ -172,8 +172,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuHamburger16
-        NSImage.menuVertical16
+        NSImage(resource: .menuHamburger16)
+        NSImage(resource: .menuVertical16)
 
     case (.brave, .bookmarks),
         (.chrome, .bookmarks),
@@ -192,7 +192,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.vivaldi, .bookmarks):
         NSLocalizedString("import.html.instructions.vivaldi.new", value: """
@@ -245,7 +245,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.safari, .passwords), (.safariTechnologyPreview, .passwords):
         if #available(macOS 15.2, *) {
@@ -292,8 +292,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuHamburger16
-        NSImage.menuHorizontal16
+        NSImage(resource: .menuHamburger16)
+        NSImage(resource: .menuHorizontal16)
 
     case (.firefox, .bookmarks), (.tor, .bookmarks):
         NSLocalizedString("import.html.instructions.firefox.new", value: """
@@ -308,7 +308,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.importExport16
+        NSImage(resource: .importExport16)
 
     case (.onePassword8, .passwords):
         NSLocalizedString("import.csv.instructions.onePassword8.new", value: """

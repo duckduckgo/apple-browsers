@@ -121,7 +121,7 @@ final class FeedbackViewController: NSViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.alignment = .center
         label.font = .systemFont(ofSize: 15, weight: .semibold)
-        label.textColor = .greyText
+        label.textColor = NSColor(resource: .greyText)
         label.setContentHuggingPriority(.init(251), for: .horizontal)
         label.setContentHuggingPriority(.init(750), for: .vertical)
         return label
@@ -132,7 +132,7 @@ final class FeedbackViewController: NSViewController {
         let view = NSView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
 
         // MARK: Header
-        let headerView = ColorView(frame: .zero, backgroundColor: .firePopoverPanelBackground)
+        let headerView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .firePopoverPanelBackground))
         headerView.translatesAutoresizingMaskIntoConstraints = false
 
         titleLabel = makeCenteredTitleLabel("")
@@ -154,7 +154,7 @@ final class FeedbackViewController: NSViewController {
 
         let thankYouImageView = NSImageView()
         thankYouImageView.translatesAutoresizingMaskIntoConstraints = false
-        thankYouImageView.image = .thankYou
+        thankYouImageView.image = NSImage(resource: .thankYou)
         thankYouImageView.imageScaling = .scaleProportionallyDown
         thankYouImageView.imageAlignment = .alignLeft
         thankYouImageView.refusesFirstResponder = true
@@ -177,7 +177,7 @@ final class FeedbackViewController: NSViewController {
         thankYouView.addSubview(feedbackHelpsLabel)
 
         // MARK: Content
-        contentView = ColorView(frame: .zero, backgroundColor: .interfaceBackground)
+        contentView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .interfaceBackground))
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
         pickOptionMenuItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -254,7 +254,7 @@ final class FeedbackViewController: NSViewController {
         unsupportedOsView.translatesAutoresizingMaskIntoConstraints = false
         unsupportedOsView.isHidden = true
 
-        let footerView = ColorView(frame: .zero, backgroundColor: .interfaceBackground)
+        let footerView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .interfaceBackground))
         footerView.translatesAutoresizingMaskIntoConstraints = false
 
         submitButton = makeDialogButton(title: "", action: #selector(submitButtonAction(_:)))

@@ -36,7 +36,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertNil(message.primaryAction)
         XCTAssertFalse(message.isDismissible)
         XCTAssertEqual(message.link?.text, "Learn more")
-        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy")
+        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files")
     }
 
     func testAttachmentPrivacyInsertsTranslatedLinkAtLocalizedPlaceholder() {
@@ -210,6 +210,17 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
         XCTAssertTrue(message.title.contains(link.text))
         XCTAssertEqual(link.url, URL(string: "https://duckduckgo.com/duckai/privacy-terms"))
+    }
+
+    /// Matches the web: the disclaimer names the button the user taps, "Create" while Create Image is selected.
+    func test_termsOfServiceMessage_namesTheSendButton() throws {
+        let ask = sut.termsOfServiceMessage(sendButton: .ask)
+        let create = sut.termsOfServiceMessage(sendButton: .create)
+
+        XCTAssertTrue(ask.title.contains("'Ask'"))
+        XCTAssertTrue(create.title.contains("'Create'"))
+        XCTAssertFalse(create.title.contains("'Ask'"))
+        XCTAssertEqual(create.link, ask.link)
     }
 
     func test_termsOfServiceMessage_showsTheShieldAndNoResetLine() {

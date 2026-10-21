@@ -24,11 +24,13 @@ import DesignResourcesKitIcons
 
 #if DEBUG
 import PreviewSnapshots
+import UIComponents
 #endif
 
 struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel {
 
     @EnvironmentObject var model: ViewModel
+    @State private var isSyncWithAnotherDevicePending = false
 
     @State var isVisible = false
 
@@ -52,8 +54,10 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
             SyncedDevicesSeparatorV2()
 
             Button {
+                isSyncWithAnotherDevicePending = true
                 Task {
                     await model.syncWithAnotherDevicePressed()
+                    isSyncWithAnotherDevicePending = false
                 }
             } label: {
                 HStack(spacing: 6) {
@@ -63,8 +67,8 @@ struct SyncedDevicesViewV2<ViewModel>: View where ViewModel: ManagementViewModel
                     Text(UserText.beginSyncButtonV2)
                 }
             }
-            .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable))
-            .disabled(!model.isConnectingDevicesAvailable)
+            .buttonStyle(SyncWithAnotherDeviceButtonStyleV2(enabled: model.isConnectingDevicesAvailable && !isSyncWithAnotherDevicePending))
+            .disabled(!model.isConnectingDevicesAvailable || isSyncWithAnotherDevicePending)
             .padding(8)
         }
         .syncRoundedBorder(cornerRadius: 12)
@@ -91,6 +95,7 @@ struct SyncedDevicesViewV2_Previews: PreviewProvider {
                 .frame(width: 512)
                 .padding()
                 .background(Color(nsColor: .windowBackgroundColor))
+                .applyRebranding()
         }
     )
 }

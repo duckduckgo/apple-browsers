@@ -28,7 +28,11 @@ final class PopoverInfoViewController: NSHostingController<InfoView> {
 
     let onDismiss: (() -> Void)?
     let autoDismissDuration: TimeInterval
-    private var timer: Timer?
+    private var timer: Timer? {
+        willSet {
+            timer?.invalidate()
+        }
+    }
     private var trackingArea: NSTrackingArea?
 
     init(message: String,
@@ -52,7 +56,6 @@ final class PopoverInfoViewController: NSHostingController<InfoView> {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        scheduleAutoDismiss()
         createTrackingArea()
     }
 
@@ -91,7 +94,6 @@ final class PopoverInfoViewController: NSHostingController<InfoView> {
     }
 
     func scheduleAutoDismiss() {
-        cancelAutoDismiss()
         timer = Timer.scheduledTimer(withTimeInterval: autoDismissDuration, repeats: false) { [weak self] _ in
             guard let self = self else { return }
             self.presentingViewController?.dismiss(self)
@@ -140,6 +142,7 @@ struct InfoView: View {
             .frame(width: 250, alignment: .leading)
             .frame(minHeight: 22)
             .lineLimit(nil)
+            .accessibilityIdentifier("PopoverInfoView.text")
     }
 }
 

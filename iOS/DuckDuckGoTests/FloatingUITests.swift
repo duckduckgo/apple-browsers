@@ -1097,6 +1097,53 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertEqual(trailingEdge, fieldFrame.maxX - inset, accuracy: 0.5)
     }
 
+    func testWhenFieldLayoutChangesThenNotificationsKeepUniformPadding() throws {
+        let types: [OmniBarNotificationType] = [.trackersBlocked(count: 12), .cookiePopupManaged]
+        for isFloating in [false, true] {
+            let barView = makeBarView(isFloatingUIEnabled: isFloating)
+            let controller = UIViewController()
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            window.rootViewController = controller
+            controller.view.addSubview(barView)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+
+            for isBottom in [false, true] {
+                barView.isUsingSmallTopSpacing = isBottom
+                barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+                window.layoutIfNeeded()
+                barView.layoutIfNeeded()
+
+                let field = try XCTUnwrap(barView.searchContainer)
+                let container = try XCTUnwrap(barView.notificationContainer)
+
+                for type in types {
+                    container.prepareAnimation(type, in: controller)
+                    window.layoutIfNeeded()
+                    barView.layoutIfNeeded()
+                    let fieldFrame = barView.convert(field.bounds, from: field)
+                    let containerFrame = barView.convert(container.bounds, from: container)
+                    let notification = try XCTUnwrap(container.currentNotificationController).rootView
+                    let verticalInset = (fieldFrame.height - notification.lozengeHeight) / 2
+                    XCTAssertEqual(verticalInset, OmniBarMetrics.notificationLozengeInset, accuracy: 0.01)
+                    XCTAssertEqual(containerFrame.minX, fieldFrame.minX, accuracy: 0.01)
+                    XCTAssertEqual(containerFrame.midY, fieldFrame.midY, accuracy: 0.01,
+                                   "floating=\(isFloating), bottom=\(isBottom), type=\(type), field=\(fieldFrame), notification=\(containerFrame)")
+                    barView.isExpandedPhoneLayout = true
+                    window.layoutIfNeeded()
+                    barView.layoutIfNeeded()
+                    let updatedNotification = try XCTUnwrap(container.currentNotificationController).rootView
+                    XCTAssertEqual((field.bounds.height - updatedNotification.lozengeHeight) / 2,
+                                   OmniBarMetrics.notificationLozengeInset, accuracy: 0.01)
+                    barView.isExpandedPhoneLayout = false
+                    window.layoutIfNeeded()
+                    barView.layoutIfNeeded()
+                    container.removePreviousNotification()
+                }
+            }
+        }
+    }
+
     func testWhenNonFloatingIPadSearchAreaExpandsThenModeToggleDoesNotOverlapBottomControls() throws {
         let barView = makeBarView(isFloatingUIEnabled: false)
         barView.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
@@ -1228,15 +1275,39 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
     }
 
-    func testWhenTopMaterialAppearanceRefreshesThenGlassViewIsRebuilt() throws {
+    func testWhenTopMaterialAppearanceIsUnchangedThenRefreshPreservesGlassViewAndConstraints() throws {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
         barView.layoutIfNeeded()
         let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+        let constraints = barView.searchContainer.constraints.filter { $0.firstItem as? UIView === glassView }
 
-        barView.refreshMaterialAppearance()
+        for _ in 0..<10 {
+            barView.refreshMaterialAppearance()
+        }
 
-        XCTAssertFalse(firstGlassView(in: barView.searchContainer) === glassView)
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
+        XCTAssertFalse(constraints.isEmpty)
+        XCTAssertTrue(constraints.allSatisfy { $0.isActive })
+    }
+
+    func testWhenInterfaceStyleChangesThenGlassViewIsRebuiltOnce() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.overrideUserInterfaceStyle = .light
+        window.addSubview(barView)
+        window.layoutIfNeeded()
+        barView.refreshMaterialAppearance(interfaceStyle: .light)
+        let originalGlass = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        window.overrideUserInterfaceStyle = .dark
+        window.layoutIfNeeded()
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+        let updatedGlass = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        XCTAssertFalse(originalGlass === updatedGlass)
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === updatedGlass)
     }
 
     func testWhenFireModeChangesThenGlassViewIsRebuilt() throws {
@@ -1426,6 +1497,27 @@ final class FloatingDomainCapsuleControllerTests: XCTestCase {
         XCTAssertEqual(button?.alpha ?? 0, 1, accuracy: 0.001)
         // Capsule hugs the domain label, so it is far narrower than the bar.
         XCTAssertLessThan(button?.bounds.width ?? .greatestFiniteMagnitude, expandedFrame.width / 2)
+    }
+
+    func testWhenContainerResizesThenBottomCapsuleRemainsCenteredAndAboveTheBottomEdge() throws {
+        let button = try XCTUnwrap(update(barsVisibilityPercent: 0, addressBarPosition: .bottom))
+        containerView.frame = CGRect(x: 0, y: 0, width: 844, height: 390)
+        containerView.layoutIfNeeded()
+
+        let bottomPadding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(
+            safeAreaBottom: containerView.safeAreaInsets.bottom)
+        XCTAssertEqual(button.frame.midX, containerView.bounds.midX, accuracy: 1 / window.screen.scale)
+        XCTAssertEqual(button.frame.maxY, containerView.bounds.maxY - bottomPadding, accuracy: 1 / window.screen.scale)
+        XCTAssertLessThanOrEqual(button.bounds.width, containerView.bounds.width - 32)
+    }
+
+    func testWhenContainerResizesThenTopCapsuleRemainsCenteredAndAtTheTopEdge() throws {
+        let button = try XCTUnwrap(update(barsVisibilityPercent: 0, addressBarPosition: .top))
+        containerView.frame = CGRect(x: 0, y: 0, width: 844, height: 390)
+        containerView.layoutIfNeeded()
+
+        XCTAssertEqual(button.frame.midX, containerView.bounds.midX, accuracy: 1 / window.screen.scale)
+        XCTAssertEqual(button.frame.minY, expandedFrame.minY, accuracy: 1 / window.screen.scale)
     }
 
     func testWhenTopBarsHiddenThenPillKeepsTheBarsTopEdge() {
@@ -1650,6 +1742,64 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
 
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
 
+    @available(iOS 26, *)
+    func testFloatingChromeKeepsWebKitAndScrollInsetsStableUntilEachEndpoint() {
+        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger())
+        tab.floatingUIManager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+        tab.loadViewIfNeeded()
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        tab.chromeDelegate = chrome
+        let expanded = UIEdgeInsets(top: 90, left: 0, bottom: 140, right: 0)
+        let collapsed = UIEdgeInsets(top: 50, left: 0, bottom: 55, right: 0)
+        chrome.obscuredContentInsets = expanded
+        tab.updateWebViewBottomAnchor(for: 1)
+        XCTAssertEqual(tab.webView.obscuredContentInsets, expanded)
+
+        for (endpoint, insets) in [(CGFloat(0), collapsed), (CGFloat(1), expanded)] {
+            let previous = tab.webView.obscuredContentInsets
+            chrome.obscuredContentInsets = insets
+            for progress: CGFloat in [0.2, 0.5, 0.8] {
+                tab.updateWebViewBottomAnchor(for: progress)
+                XCTAssertEqual(tab.webView.obscuredContentInsets, previous)
+                XCTAssertEqual(tab.webView.scrollView.contentInset, previous)
+                XCTAssertEqual(tab.webView.scrollView.verticalScrollIndicatorInsets, insets)
+            }
+            tab.updateWebViewBottomAnchor(for: endpoint)
+            XCTAssertEqual(tab.webView.obscuredContentInsets, insets)
+            XCTAssertEqual(tab.webView.scrollView.contentInset, insets)
+        }
+    }
+
+    func testTopBounceDefersInsetsUntilScrollingSettlesOrMovesBackIntoPage() {
+        let scrollView = BounceScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset.top = 97.33333333333334
+
+        for state in [BounceScrollView.State.tracking, .dragging, .decelerating, .idle] {
+            scrollView.state = state
+            for offsetY: CGFloat in [-156, -97.33333333333333, -96] {
+                scrollView.contentOffset.y = offsetY
+                XCTAssertEqual(WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(scrollView),
+                               state != .idle && offsetY < -97,
+                               "state=\(state), offsetY=\(offsetY)")
+            }
+        }
+    }
+
+    private final class BounceScrollView: UIScrollView {
+        enum State { case idle, tracking, dragging, decelerating }
+        var state: State = .idle
+
+        override var isTracking: Bool { state == .tracking }
+        override var isDragging: Bool { state == .dragging }
+        override var isDecelerating: Bool { state == .decelerating }
+    }
+
     func testWhenManagingInsetsThenAutomaticAdjustmentIsDisabledAndCanBeRestored() {
         let scrollView = UIScrollView()
         scrollView.contentInsetAdjustmentBehavior = .automatic
@@ -1678,14 +1828,57 @@ final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
     }
 
     func testWhenPinnedToTopThenUpdatingInsetsPreservesPinnedPosition() {
-        let scrollView = UIScrollView()
-        scrollView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
-        scrollView.contentOffset = CGPoint(x: 0, y: -20)
+        let topInset: CGFloat = 97.33333333333334
+        for offsetY in [-topInset, -97.33333333333333] {
+            let scrollView = UIScrollView()
+            scrollView.contentInsetAdjustmentBehavior = .never
+            scrollView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
+            scrollView.contentOffset = CGPoint(x: 0, y: offsetY)
 
-        WebViewScrollViewInsetUpdater.update(scrollView,
-                                             insets: UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0))
+            WebViewScrollViewInsetUpdater.update(scrollView,
+                                                 insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0),
+                                                 isFloatingUIEnabled: true)
 
-        XCTAssertEqual(scrollView.contentOffset.y, -50)
+            XCTAssertEqual(scrollView.contentOffset.y, -122)
+        }
+    }
+
+    func testInsetTopToleranceIsOnlyUsedForFloatingUI() {
+        let topInset: CGFloat = 97
+        for isFloatingUIEnabled in [false, true] {
+            for offsetY in [-topInset, -topInset + 0.0005] {
+                let scrollView = InsetScrollView()
+                scrollView.contentInset.top = topInset
+                scrollView.contentOffset = CGPoint(x: 0, y: offsetY)
+
+                WebViewScrollViewInsetUpdater.update(scrollView,
+                                                     insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0),
+                                                     isFloatingUIEnabled: isFloatingUIEnabled)
+
+                XCTAssertEqual(scrollView.contentOffset.y, isFloatingUIEnabled || offsetY == -topInset ? -122 : offsetY)
+            }
+        }
+    }
+
+    private final class InsetScrollView: UIScrollView {
+        private var storedInsets = UIEdgeInsets.zero
+        private var storedOffset = CGPoint.zero
+
+        override var contentInset: UIEdgeInsets {
+            get { storedInsets }
+            set { storedInsets = newValue }
+        }
+
+        override var adjustedContentInset: UIEdgeInsets { storedInsets }
+
+        override var contentOffset: CGPoint {
+            get { storedOffset }
+            set { storedOffset = newValue }
+        }
+
+        override func setContentOffset(_ contentOffset: CGPoint, animated: Bool) {
+            self.contentOffset = contentOffset
+        }
     }
 
     func testWhenNotPinnedToTopThenUpdatingInsetsPreservesContentOffset() {
@@ -1934,5 +2127,71 @@ final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
         XCTAssertNil(outgoingView.layer.mask)
         XCTAssertNil(incomingView.layer.mask)
         XCTAssertNil(incomingView.superview)
+    }
+}
+
+final class ChromeMorphAnimatorTests: XCTestCase {
+
+    func testSkippedFramesStillCompleteWithinTraversalDuration() {
+        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+        var values: [CGFloat] = []
+        var completions = 0
+        animator.setTarget(0, onProgress: { values.append($0) }, onComplete: { completions += 1 })
+
+        animator.advance(timestamp: 10, targetTimestamp: 10.05)
+        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
+        XCTAssertEqual(animator.currentValue, 1.0 / 6, accuracy: 0.001)
+        animator.advance(timestamp: 10.30, targetTimestamp: 10.35)
+
+        XCTAssertEqual(values.last, 0)
+        XCTAssertEqual(completions, 1)
+        XCTAssertFalse(animator.isAnimating)
+    }
+
+    func testReversingDirectionPreservesTheDisplayedValueAndFrameClock() {
+        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+        var obsoleteCompletions = 0
+        var completions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { obsoleteCompletions += 1 })
+        animator.advance(timestamp: 10, targetTimestamp: 10.15)
+        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
+
+        animator.setTarget(1, onProgress: { _ in }, onComplete: { completions += 1 })
+        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
+        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
+        XCTAssertEqual(animator.currentValue, 5.0 / 6, accuracy: 0.001)
+        animator.advance(timestamp: 10.30, targetTimestamp: 10.35)
+
+        XCTAssertEqual(animator.currentValue, 1)
+        XCTAssertEqual(obsoleteCompletions, 0)
+        XCTAssertEqual(completions, 1)
+    }
+
+    func testJumpDiscardsThePreviousClockAndCompletion() {
+        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+        var obsoleteCompletions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { obsoleteCompletions += 1 })
+        animator.advance(timestamp: 10, targetTimestamp: 10.1)
+        animator.jump(to: 1)
+        animator.advance(timestamp: 20, targetTimestamp: 20.1)
+        XCTAssertEqual(animator.currentValue, 1)
+
+        animator.setTarget(0, onProgress: { _ in }, onComplete: {})
+        animator.advance(timestamp: 30, targetTimestamp: 30.15)
+        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
+        XCTAssertEqual(obsoleteCompletions, 0)
+        animator.cancel()
+    }
+
+    func testTraversalDurationOverrideAppliesOnlyToThatLeg() {
+        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+        animator.setTarget(0, fullTraversalDuration: 1, onProgress: { _ in }, onComplete: {})
+        animator.advance(timestamp: 10, targetTimestamp: 10.15)
+        XCTAssertEqual(animator.currentValue, 0.85, accuracy: 0.001)
+
+        animator.setTarget(1, onProgress: { _ in }, onComplete: {})
+        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
+        XCTAssertEqual(animator.currentValue, 1)
+        XCTAssertFalse(animator.isAnimating)
     }
 }

@@ -70,21 +70,21 @@ struct SettingsRootView: View {
             if #available(iOS 18.2, *) {
                 if viewModel.shouldShowSetAsDefaultBrowser || viewModel.shouldShowImportPasswords {
                     SettingsCompleteSetupView()
-                        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 }
             }
             SettingsPrivacyProtectionsView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsSubscriptionView().environmentObject(subscriptionNavigationCoordinator)
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsMainSettingsView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsNextStepsView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsOthersView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             SettingsDebugView()
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
         .navigationBarTitle(UserText.settingsTitle, displayMode: .inline)
         .navigationBarItems(trailing: Button(UserText.navigationTitleDone) {
@@ -234,9 +234,10 @@ struct SettingsRootView: View {
     /// Navigation Views for DeepLink and programmatic navigation
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
-        case .dbp:
+        case .dbp(let freeScanEntryPoint):
             if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
-                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider,
+                                                                 freeScanEntryPoint: freeScanEntryPoint)
                     .edgesIgnoringSafeArea(.bottom)
             } else {
                 SubscriptionPIRMoveToDesktopView()

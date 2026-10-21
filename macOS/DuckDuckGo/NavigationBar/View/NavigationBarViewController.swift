@@ -799,7 +799,8 @@ final class NavigationBarViewController: NSViewController {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
                                                            themeManager: themeManager,
                                                            container: menuButtons,
-                                                           isPrivateWindow: tabCollectionViewModel.isBurner)
+                                                           isPrivateWindow: tabCollectionViewModel.isBurner,
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
         }
@@ -966,7 +967,7 @@ final class NavigationBarViewController: NSViewController {
         }
 
         if popovers.isPasswordManagementDirty {
-            passwordManagementButton.image = .passwordManagementDirty
+            passwordManagementButton.image = NSImage(resource: .passwordManagementDirty)
             return
         }
 
@@ -1047,7 +1048,7 @@ final class NavigationBarViewController: NSViewController {
 #if DEBUG
         if Self.forceShowButtonsInPopup && isInPopUpWindow {
             downloadsButton.isHidden = false
-            downloadsButton.image = .downloads
+            downloadsButton.image = NSImage(resource: .downloads)
             return
         }
 #endif
@@ -1058,7 +1059,7 @@ final class NavigationBarViewController: NSViewController {
 
         let fireWindowSession = FireWindowSessionRef(window: view.window)
         let hasActiveDownloads = downloadListCoordinator.hasActiveDownloads(for: fireWindowSession)
-        downloadsButton.image = hasActiveDownloads ? .downloadsActive : .downloads
+        downloadsButton.image = hasActiveDownloads ? NSImage(resource: .downloadsActive) : NSImage(resource: .downloads)
 
         let hasDownloads = downloadListCoordinator.hasDownloads(for: fireWindowSession)
         if !hasDownloads {
@@ -1142,14 +1143,14 @@ final class NavigationBarViewController: NSViewController {
     private func promptToSaveAutofillData(_ data: AutofillData) {
         let autofillPreferences = AutofillPreferences()
 
-        if autofillPreferences.askToSaveUsernamesAndPasswords, let credentials = data.credentials {
+        if autofillPreferences.isUsernamesAndPasswordsAutofillActive, let credentials = data.credentials {
             Logger.passwordManager.debug("Presenting Save Credentials popover")
             popovers.displaySaveCredentials(credentials,
                                             automaticallySaved: data.automaticallySavedCredentials,
                                             backfilled: data.backfilled,
                                             usingView: passwordManagementButton,
                                             withDelegate: self)
-        } else if autofillPreferences.askToSavePaymentMethods, let card = data.creditCard {
+        } else if autofillPreferences.isPaymentMethodsAutofillActive, let card = data.creditCard {
             guard CreditCardValidation.isValidCardNumber(CreditCardValidation.extractDigits(from: card.cardNumber)) else {
                 Logger.autofill.debug("Invalid credit card number, not presenting save popover")
                 return
@@ -1159,7 +1160,7 @@ final class NavigationBarViewController: NSViewController {
             popovers.displaySavePaymentMethod(card,
                                               usingView: passwordManagementButton,
                                               withDelegate: self)
-        } else if autofillPreferences.askToSaveAddresses, let identity = data.identity {
+        } else if autofillPreferences.isAddressesAutofillActive, let identity = data.identity {
             Logger.passwordManager.debug("Presenting Save Identity popover")
             popovers.displaySaveIdentity(identity,
                                          usingView: passwordManagementButton,
@@ -1508,11 +1509,13 @@ final class NavigationBarViewController: NSViewController {
             })
     }
 
-    /// Web extension buttons apply to a web page only, so tabs that show native content hide them.
+    /// Web extension buttons show on web pages and the New Tab page. Other tabs with native content hide them.
     private func updateWebExtensionButtonsVisibility(for content: TabContent) {
         guard #available(macOS 15.4, *),
               let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
-        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView
+        let isNewTab = if case .newtab = content { true } else { false }
+        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView || isNewTab
+        updater.refreshActions()
     }
 
     private func subscribeToDownloads() {
@@ -1604,7 +1607,7 @@ final class NavigationBarViewController: NSViewController {
         selectedTabViewModel.$isLoading
             .removeDuplicates()
             .sink { [weak refreshOrStopButton] isLoading in
-                refreshOrStopButton?.image = isLoading ? .stop : .refresh
+                refreshOrStopButton?.image = isLoading ? NSImage(resource: .stop) : NSImage(resource: .refresh)
                 refreshOrStopButton?.setAccessibilityTitle(isLoading ? UserText.mainMenuViewStop : UserText.reloadPage)
                 refreshOrStopButton?.toolTip = isLoading ? ShortcutTooltip.stopLoading.value : ShortcutTooltip.reload.value
             }
@@ -1828,15 +1831,12 @@ final class NavigationBarViewController: NSViewController {
 
     @objc private func showLoginAutosavedFeedback(_ sender: Notification) {
         guard view.window?.isKeyWindow == true,
-              let account = sender.object as? SecureVaultModels.WebsiteAccount else { return }
-
-        guard let domain = account.domain else {
-            return
-        }
+              let account = sender.object as? SecureVaultModels.WebsiteAccount,
+              let domain = account.domain else { return }
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: .passwordManagement, buttonText: UserText.passwordManagerAutosaveButtonText) { [weak self] in
+            let popoverMessage = PopoverMessageViewController(message: UserText.passwordManagerAutosavePopoverText(domain: domain), image: NSImage(resource: .passwordManagement), buttonText: UserText.passwordManagerAutosaveButtonText) { [weak self] in
                 self?.showPasswordManagerPopover(selectedWebsiteAccount: account)
             } onDismiss: { [weak self] in
                 guard let self else { return }
@@ -1860,12 +1860,12 @@ final class NavigationBarViewController: NSViewController {
 
     @objc private func showAutoconsentFeedback(_ sender: Notification) {
         DispatchQueue.main.async { [weak self] in
-            guard self?.view.window?.isKeyWindow == true,
+            guard let self,
+                  self.view.window?.isKeyWindow == true,
                   let topUrl = sender.userInfo?["topUrl"] as? URL,
                   let isCosmetic = sender.userInfo?["isCosmetic"] as? Bool else { return }
 
-            guard let self = self,
-                  self.tabCollectionViewModel.selectedTabViewModel?.tab.url == topUrl,
+            guard self.tabCollectionViewModel.selectedTabViewModel?.tab.url == topUrl,
                   self.addressBarViewController?.addressBarButtonsViewController?.shouldSuppressForAdBlocking(url: topUrl) != true else { return }
 
             let animationType: NavigationBarBadgeAnimationView.AnimationType = isCosmetic ? .cookiePopupHidden : .cookiePopupManaged
@@ -2080,7 +2080,7 @@ final class NavigationBarViewController: NSViewController {
             if isAIChatButtonInOverflowMenu {
                 let aiChatItem = NSMenuItem(title: ShortcutTooltip.newAIChatTab.value, action: #selector(overflowMenuRequestedAIChat), keyEquivalent: "")
                     .targetting(self)
-                    .withImage(.aiChat, visibleOnMacOS27: true)
+                    .withImage(NSImage(resource: .aiChat), visibleOnMacOS27: true)
                 overflowButton.menu?.addItem(aiChatItem)
             }
             overflowButton.isHidden = false
@@ -2533,7 +2533,8 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu) {
         let aiChatURL = AIChatRemoteSettings().aiChatURL
-        showTab(.aiChat(aiChatURL))
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.moreOptionsMenuOpenDuckAI)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .url(aiChatURL), behavior: .newTab(selected: true))
     }
 
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu) {
@@ -2756,7 +2757,7 @@ extension NavigationBarViewController: AutofillToolbarPinningPromoPresenting {
                                                                     withDelegate: self,
                                                                     ctaCallback: { [weak self] didAddShortcut in
                 guard let self else { return }
-                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned : .ignored())
+                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned() : .ignored())
                 if didAddShortcut {
                     pinningManager.pin(.autofill)
                 }

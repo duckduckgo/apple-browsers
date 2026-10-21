@@ -679,7 +679,10 @@ final class MainMenu: NSMenu {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
-                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                            isBitwardenEnabled: { [privacyConfigurationManager] in
+                                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
+                            }
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
@@ -1090,6 +1093,7 @@ final class MainMenu: NSMenu {
             SubscriptionPromoDebugMenu()
             AdBlockingDebugMenu()
             FireDialogDebugMenu()
+            SiteBreakageDebugMenu(networkSignalsProvider: Application.appDelegate.networkSignalsProvider)
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")

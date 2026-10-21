@@ -72,7 +72,7 @@ struct AutofillSurveyView: View {
             .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
         .background(RoundedRectangle(cornerRadius: 8.0)
-            .foregroundColor(Color(singleUseColor: .groupedListContentBackground))
+            .foregroundColor(Color(designSystemColor: .surfaceTertiary))
         )
         .padding([.horizontal, .top], 20)
         .padding(.bottom, 30)

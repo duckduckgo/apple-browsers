@@ -200,6 +200,21 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
     }
 
+    var tabAttachmentsRequirePromptText: Bool {
+        get { inputBarView.tabAttachmentsRequirePromptText }
+        set { inputBarView.tabAttachmentsRequirePromptText = newValue }
+    }
+
+    var isPreparingInitialPrompt: Bool {
+        get { inputBarView.isPreparingInitialPrompt }
+        set { inputBarView.isPreparingInitialPrompt = newValue }
+    }
+
+    var isInputFrozenForInitialPromptPreparation: Bool {
+        get { inputBarView.isInputFrozenForInitialPromptPreparation }
+        set { inputBarView.isInputFrozenForInitialPromptPreparation = newValue }
+    }
+
     /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
     /// controls that would offer one.
     var isInputBlockedByUsageLimit: Bool = false {
@@ -221,6 +236,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     var modelName: String {
         get { inputBarView.modelName }
         set { inputBarView.modelName = newValue }
+    }
+
+    var modelIcon: UIImage? {
+        get { inputBarView.modelIcon }
+        set { inputBarView.modelIcon = newValue }
     }
 
     var modelPickerMenu: UIMenu? {

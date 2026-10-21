@@ -106,7 +106,7 @@ final class SaveIdentityViewController: NSViewController {
         openPreferencesButton.setButtonType(.momentaryChange)
         openPreferencesButton.isBordered = false
         openPreferencesButton.bezelStyle = .rounded
-        openPreferencesButton.image = .settings16
+        openPreferencesButton.image = NSImage(resource: .settings16)
         openPreferencesButton.imagePosition = .imageOnly
         openPreferencesButton.title = ""
         openPreferencesButton.imageScaling = .scaleProportionallyDown
@@ -121,7 +121,7 @@ final class SaveIdentityViewController: NSViewController {
 
         let identityIcon = NSImageView()
         identityIcon.translatesAutoresizingMaskIntoConstraints = false
-        identityIcon.image = .identity
+        identityIcon.image = NSImage(resource: .identity)
         identityIcon.imageScaling = .scaleProportionallyDown
         identityIcon.imageAlignment = .alignLeft
         identityIcon.refusesFirstResponder = true

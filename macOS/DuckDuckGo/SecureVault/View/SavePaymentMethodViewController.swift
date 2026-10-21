@@ -66,7 +66,7 @@ final class SavePaymentMethodViewController: NSViewController {
 
         let logoImageView = NSImageView()
         logoImageView.translatesAutoresizingMaskIntoConstraints = false
-        logoImageView.image = .daxLockScreenLogo
+        logoImageView.image = NSImage(resource: .daxLockScreenLogo)
         logoImageView.imageScaling = .scaleProportionallyDown
         logoImageView.imageAlignment = .alignLeft
         logoImageView.refusesFirstResponder = true
@@ -81,7 +81,7 @@ final class SavePaymentMethodViewController: NSViewController {
         openPreferencesButton.setButtonType(.momentaryChange)
         openPreferencesButton.isBordered = false
         openPreferencesButton.bezelStyle = .rounded
-        openPreferencesButton.image = .settings16
+        openPreferencesButton.image = NSImage(resource: .settings16)
         openPreferencesButton.imagePosition = .imageOnly
         openPreferencesButton.title = ""
         openPreferencesButton.imageScaling = .scaleProportionallyDown
@@ -104,7 +104,7 @@ final class SavePaymentMethodViewController: NSViewController {
 
         cardIconImageView = NSImageView()
         cardIconImageView.translatesAutoresizingMaskIntoConstraints = false
-        cardIconImageView.image = .card
+        cardIconImageView.image = NSImage(resource: .card)
         cardIconImageView.imageScaling = .scaleProportionallyDown
         cardIconImageView.imageAlignment = .alignLeft
         cardIconImageView.refusesFirstResponder = true

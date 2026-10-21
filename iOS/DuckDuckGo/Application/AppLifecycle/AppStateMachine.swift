@@ -30,6 +30,19 @@ enum AppEvent {
     case willEnterForeground
     case willConnectToWindow(window: UIWindow)
 
+    /// The case name without associated values, for pixels. `String(describing:)` would include the window's
+    /// description: a memory address and the screen size.
+    var name: String {
+        switch self {
+        case .didFinishLaunching: return "didFinishLaunching"
+        case .didBecomeActive: return "didBecomeActive"
+        case .didEnterBackground: return "didEnterBackground"
+        case .willResignActive: return "willResignActive"
+        case .willEnterForeground: return "willEnterForeground"
+        case .willConnectToWindow: return "willConnectToWindow"
+        }
+    }
+
 }
 
 enum AppAction {
@@ -153,7 +166,14 @@ struct DefaultTerminatingStateFactory: TerminatingStateFactory {
 @MainActor
 final class AppStateMachine {
 
-    private(set) var currentState: AppState
+    private(set) var currentState: AppState {
+        didSet {
+            switch currentState {
+            case .foreground, .background: launchBreadcrumb.clear()
+            default: break
+            }
+        }
+    }
 
     /// Buffers the most recent action for the `Foreground` state. Cleared in foreground and background.
     /// Only the latest action is retained; any new action overwrites the previous one.
@@ -165,14 +185,25 @@ final class AppStateMachine {
     /// consecutive scene connections reuse the same window or receive a new one.
     private var lastConnectedWindowIdentifier: ObjectIdentifier?
 
-    private let terminatingStateFactory: TerminatingStateFactory
+    /// Only the first drop carries the step launch was stuck at; later ones repeat on every app switch.
+    private var hasReportedDroppedEvent = false
 
-    init(initialState: AppState, terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory()) {
+    private let terminatingStateFactory: TerminatingStateFactory
+    private let launchBreadcrumb: LaunchBreadcrumb
+
+    init(initialState: AppState,
+         terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory(),
+         launchBreadcrumb: LaunchBreadcrumb = LaunchBreadcrumb()) {
         self.currentState = initialState
         self.terminatingStateFactory = terminatingStateFactory
+        self.launchBreadcrumb = launchBreadcrumb
     }
 
     func handle(_ event: AppEvent) {
+        // Before dispatching, so a window dropped in `initializing` or `launching` still counts.
+        if case .willConnectToWindow = event {
+            launchBreadcrumb.markSceneConnected()
+        }
         switch currentState {
         case .initializing(let initializing):
             respond(to: event, in: initializing)
@@ -204,9 +235,13 @@ final class AppStateMachine {
         if isTesting {
             currentState = .simulated(Simulated())
         } else {
+            launchBreadcrumb.startLaunch()
             do {
-                currentState = try .launching(initializing.makeLaunchingState())
+                let launching = try initializing.makeLaunchingState()
+                launchBreadcrumb.mark(.launched)
+                currentState = .launching(launching)
             } catch {
+                launchBreadcrumb.mark(.terminating)
                 currentState = .terminating(terminatingStateFactory.makeTerminatingState(error: error))
             }
         }
@@ -216,7 +251,9 @@ final class AppStateMachine {
         switch event {
         case .willConnectToWindow(let window):
             storeWindowIdentifier(window)
+            launchBreadcrumb.mark(.windowConnected)
             let connected = launching.makeConnectedState(window: window, actionToHandle: actionToHandle)
+            launchBreadcrumb.mark(.uiAttached)
             currentState = .connected(connected)
         default:
             handleUnexpectedEvent(event, for: .launching(launching))
@@ -241,7 +278,7 @@ final class AppStateMachine {
             // This has been fixed on Apple side for scenes and is always called after the scene connects.
             // However, we only transition to Foreground after didBecomeActive, since both events occur in sequence.
             // We may revisit this if any UI glitches appear, as some work could potentially happen earlier in willEnterForeground.
-            break
+            launchBreadcrumb.mark(.enteringForeground)
         case .willConnectToWindow(let window):
             let windowChanged = lastConnectedWindowIdentifier != ObjectIdentifier(window)
             storeWindowIdentifier(window)
@@ -310,11 +347,133 @@ final class AppStateMachine {
     }
 
     private func handleUnexpectedEvent(_ event: AppEvent, for state: AppState) {
-        Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(state.name))] state!")
+        Logger.lifecycle.error("🔴 Unexpected [\(event.name)] event while in [\(state.name)] state!")
         PixelKit.fire(Pixel.Event.appDidTransitionToUnexpectedState,
                       frequency: .dailyAndCount,
                       options: .parameters([PixelParameters.appState: state.name,
-                                                                PixelParameters.appEvent: String(describing: event)]))
+                                                                PixelParameters.appEvent: event.name]))
+        switch state {
+        case .initializing, .launching:
+            guard !hasReportedDroppedEvent else { break }
+            hasReportedDroppedEvent = true
+            launchBreadcrumb.reportDroppedEvent(event, in: state)
+        case .connected, .foreground, .background, .terminating, .simulated:
+            break
+        }
+    }
+
+}
+
+enum LaunchBreadcrumbPixel: PixelKit.Event {
+
+    case previousLaunchIncomplete(breadcrumb: [String: String])
+    case eventDroppedDuringLaunch(event: String, state: String, step: String)
+
+    var name: String {
+        switch self {
+        case .previousLaunchIncomplete: return "app-lifecycle_previous-launch-incomplete-2"
+        case .eventDroppedDuringLaunch: return "app-lifecycle_event-dropped-during-launch"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .previousLaunchIncomplete(let breadcrumb): return breadcrumb
+        case .eventDroppedDuringLaunch(let event, let state, let step): return [PixelParameters.appEvent: event, PixelParameters.appState: state, "step": step]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
+
+}
+
+/// The last launch step reached, kept until the app reaches Foreground or Background. One left over at the next launch
+/// means that launch never finished, e.g. a black screen the user had to force quit, a hang, or a kill during launch.
+struct LaunchBreadcrumb {
+
+    /// Launch steps in the order they run. `Launching.init` marks the steps between `launchingStarted` and `launched`.
+    enum Step: String {
+        case launchingStarted = "launching-started"
+        case keyValueStore = "key-value-store"
+        case persistentStores = "persistent-stores"
+        case sync
+        case contentBlocking = "content-blocking"
+        case mainCoordinator = "main-coordinator"
+        case launched
+        case windowConnected = "window-connected"
+        case uiAttached = "ui-attached"
+        case enteringForeground = "entering-foreground"
+        case terminating
+    }
+
+    static let key = "com.duckduckgo.app-lifecycle.launch-breadcrumb"
+    static let pendingReportKey = "com.duckduckgo.app-lifecycle.launch-breadcrumb.pending-report"
+    static let sceneConnectedKey = "com.duckduckgo.app-lifecycle.launch-breadcrumb.scene-connected"
+
+    private let store: UserDefaults
+    private let pixelFiring: () -> (any PixelKitFiring)?
+
+    init(store: UserDefaults = .standard,
+         pixelFiring: @escaping () -> (any PixelKitFiring)? = { PixelKit.shared }) {
+        self.store = store
+        self.pixelFiring = pixelFiring
+    }
+
+    var current: [String: String]? {
+        store.dictionary(forKey: Self.key) as? [String: String]
+    }
+
+    var pendingReport: [String: String]? {
+        store.dictionary(forKey: Self.pendingReportKey) as? [String: String]
+    }
+
+    var sceneConnected: Bool {
+        store.bool(forKey: Self.sceneConnectedKey)
+    }
+
+    /// Starts a new launch. A breadcrumb left by the previous launch is kept for `reportIncompleteLaunch()`, so it
+    /// survives even if this launch hangs or crashes before reporting it.
+    ///
+    /// A background launch (fetch, `BGTask`) finishes launching without a scene and is later killed while suspended.
+    /// That is not a failure, so a breadcrumb at `launched` without a scene is dropped. With a scene, the same
+    /// breadcrumb means the window was never attached, e.g. the black screen after a dropped `willConnectToWindow`.
+    func startLaunch() {
+        if let current, current["step"] != Step.launched.rawValue || sceneConnected {
+            store.set(current, forKey: Self.pendingReportKey)
+        }
+        store.removeObject(forKey: Self.sceneConnectedKey)
+        mark(.launchingStarted)
+    }
+
+    func markSceneConnected() {
+        store.set(true, forKey: Self.sceneConnectedKey)
+    }
+
+    func mark(_ step: Step) {
+        store.set(["step": step.rawValue], forKey: Self.key)
+    }
+
+    func clear() {
+        store.removeObject(forKey: Self.key)
+        store.removeObject(forKey: Self.sceneConnectedKey)
+    }
+
+    /// Reports a launch that never finished. Called as early as PixelKit allows, so a launch that fails every time
+    /// still reports the one before it.
+    func reportIncompleteLaunch() {
+        guard let pendingReport else { return }
+        store.removeObject(forKey: Self.pendingReportKey)
+        pixelFiring()?.fire(LaunchBreadcrumbPixel.previousLaunchIncomplete(breadcrumb: pendingReport), frequency: .dailyAndCount)
+    }
+
+    /// Reports a lifecycle event the state machine dropped while launching, with the launch step reached at that
+    /// moment. An event arriving during `Launching.init` means it spun the run loop at that step; a dropped
+    /// `willConnectToWindow` leaves the app without UI.
+    func reportDroppedEvent(_ event: AppEvent, in state: AppState) {
+        let step = current?["step"] ?? "none"
+        pixelFiring()?.fire(LaunchBreadcrumbPixel.eventDroppedDuringLaunch(event: event.name, state: state.name, step: step),
+                            frequency: .dailyAndCount)
     }
 
 }

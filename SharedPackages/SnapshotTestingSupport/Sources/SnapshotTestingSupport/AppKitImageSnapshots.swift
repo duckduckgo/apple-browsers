@@ -27,6 +27,7 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
@@ -48,6 +49,7 @@ public func assertImageSnapshot(
             assertSnapshot(
                 of: view,
                 as: .image(
+                    precision: precision,
                     perceptualPrecision: perceptualPrecision,
                     size: snapshotSize
                 ),
@@ -69,6 +71,7 @@ public func assertImageSnapshot(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
@@ -81,6 +84,7 @@ public func assertImageSnapshot(
         strategy: strategy,
         size: size,
         record: record,
+        precision: precision,
         perceptualPrecision: perceptualPrecision,
         fileID: fileID,
         file: file,
@@ -95,6 +99,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
     strategy: SnapshotImageStrategy = .allAppearances,
     size: SnapshotImageSize,
     record: Bool = false,
+    precision: Float = 0.9999,
     perceptualPrecision: Float = 0.98,
     fileID: StaticString = #fileID,
     file: StaticString = #filePath,
@@ -118,6 +123,7 @@ public func assertImageSnapshot<Value: SwiftUI.View>(
             configuration: configuration,
             size: size,
             record: record,
+            precision: precision,
             perceptualPrecision: perceptualPrecision,
             fileID: fileID,
             file: file,
@@ -192,6 +198,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     configuration: SnapshotImageConfiguration,
     size: SnapshotImageSize,
     record: Bool,
+    precision: Float,
     perceptualPrecision: Float,
     fileID: StaticString,
     file: StaticString,
@@ -210,6 +217,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
         assertSnapshot(
             of: viewController.view,
             as: .image(
+                precision: precision,
                 perceptualPrecision: perceptualPrecision,
                 size: snapshotSize
             ),

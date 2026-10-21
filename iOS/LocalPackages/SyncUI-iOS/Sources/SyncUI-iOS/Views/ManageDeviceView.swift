@@ -118,7 +118,7 @@ struct ManageDeviceView: View {
                 }
                 .accessibility(identifier: "deviceName")
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     private var syncToggleSection: some View {
@@ -136,9 +136,18 @@ struct ManageDeviceView: View {
                     .accessibility(identifier: "SyncThisDeviceToggle")
             }
         } footer: {
-            Text(UserText.simplifiedManageDeviceTurnOffFooter)
+            Text(turnOffFooter)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+        .removeDeviceConfirmationAlert(isPresented: $model.isThisDeviceTurnOffConfirmationVisible,
+                                       deviceName: editModel.name,
+                                       isImprovedPairingFlowEnabled: model.isImprovedPairingFlowEnabled) {
+            model.thisDeviceDetailsTurnOffSyncConfirmed()
+        }
+    }
+
+    private var turnOffFooter: String {
+        model.isImprovedPairingFlowEnabled ? UserText.simplifiedManageDeviceTurnOffFooter(editModel.name) : UserText.simplifiedManageDeviceTurnOffFooter
     }
 
     private var syncToggleBinding: Binding<Bool> {
@@ -146,7 +155,7 @@ struct ManageDeviceView: View {
             model.isSyncEnabled
         } set: { newValue in
             if !newValue {
-                model.disableSyncToggleTapped()
+                model.thisDeviceDetailsTurnOffSyncTapped()
             }
         }
     }
@@ -163,6 +172,7 @@ struct ManageDeviceView: View {
     private var removeSection: some View {
         Section {
             Button(role: .destructive) {
+                model.otherDeviceDetailsRemoveDeviceTapped()
                 isShowingRemoveConfirmation = true
             } label: {
                 Text(UserText.removeDeviceButton)
@@ -171,25 +181,29 @@ struct ManageDeviceView: View {
             }
             .accessibility(identifier: "removeDevice")
         } footer: {
-            Text(UserText.simplifiedManageDeviceRemoveFooter)
+            Text(removeFooter)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
-        .alert(UserText.removeDeviceTitle, isPresented: $isShowingRemoveConfirmation) {
-            Button(UserText.cancelButton, role: .cancel) {}
-            Button(UserText.removeDeviceButton, role: .destructive) {
-                model.createRemoveDeviceModel(device).remove()
-                dismiss()
-            }
-        } message: {
-            Text(UserText.removeDeviceMessage(device.name))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+        .removeDeviceConfirmationAlert(isPresented: $isShowingRemoveConfirmation,
+                                       deviceName: device.name,
+                                       isImprovedPairingFlowEnabled: model.isImprovedPairingFlowEnabled) {
+            model.createRemoveDeviceModel(device).remove()
+            dismiss()
         }
+    }
+
+    private var removeFooter: String {
+        model.isImprovedPairingFlowEnabled ? UserText.simplifiedManageDeviceRemoveFooter(device.name) : UserText.simplifiedManageDeviceRemoveFooter
     }
 }
 
 private extension SyncSettingsViewModel.Device {
 
     var syncedIllustrationName: String {
-        type == "desktop" ? "Desktop-Sync-Added-128" : "Mobile-Sync-Added-128"
+        if isThirdParty || isUnknownType {
+            return "Browser-V2-Synced-Feature-128"
+        }
+        return type == "desktop" ? "Desktop-Sync-Added-128" : "Mobile-Sync-Added-128"
     }
 }
 
@@ -200,7 +214,8 @@ private extension SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
             isOnDevEnvironment: { false },
             switchToProdEnvironment: {},
-            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled,
+            isImprovedPairingFlowEnabled: true
         )
         model.isSyncEnabled = isSyncEnabled
         return model
@@ -208,46 +223,38 @@ private extension SyncSettingsViewModel {
 }
 
 #Preview("Other Device – Desktop") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ManageDeviceView(
-                model: .managePreview(),
-                device: .init(id: "2", name: "macOS Ventura", type: "desktop", isThisDevice: false)
-            )
-        }
+    NavigationView {
+        ManageDeviceView(
+            model: .managePreview(),
+            device: .init(id: "2", name: "macOS Ventura", type: "desktop", isThisDevice: false)
+        )
     }
 }
 
 #Preview("Other Device – Mobile") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ManageDeviceView(
-                model: .managePreview(),
-                device: .init(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
-            )
-        }
+    NavigationView {
+        ManageDeviceView(
+            model: .managePreview(),
+            device: .init(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
+        )
     }
 }
 
 #Preview("This Device – Sync On") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ManageDeviceView(
-                model: .managePreview(isSyncEnabled: true),
-                device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
-            )
-        }
+    NavigationView {
+        ManageDeviceView(
+            model: .managePreview(isSyncEnabled: true),
+            device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
+        )
     }
 }
 
 #Preview("This Device – Sync Off") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ManageDeviceView(
-                model: .managePreview(isSyncEnabled: false),
-                device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
-            )
-        }
+    NavigationView {
+        ManageDeviceView(
+            model: .managePreview(isSyncEnabled: false),
+            device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
+        )
     }
 }
 

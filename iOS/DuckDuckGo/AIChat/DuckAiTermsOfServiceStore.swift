@@ -48,9 +48,13 @@ struct DuckAiTermsOfServiceStore {
     /// Sending from an input that showed the disclaimer. The web reports the same acceptance once the
     /// prompt reaches it, and that report must not read as a repeat.
     func recordAcceptedInNativeInput() {
-        guard !hasAccepted else { return }
-        keyValueStore.set(true, forKey: Key.hasAccepted.rawValue)
-        keyValueStore.set(true, forKey: Key.isAwaitingWebReport.rawValue)
+        recordAcceptedNatively()
+    }
+
+    /// Chats on the device prove an earlier acceptance. A page that loaded before they arrived can still
+    /// show its own card, and accepting there must not read as a repeat either.
+    func recordAcceptedFromExistingChats() {
+        recordAcceptedNatively()
     }
 
     @discardableResult
@@ -60,6 +64,12 @@ struct DuckAiTermsOfServiceStore {
         keyValueStore.removeObject(forKey: Key.isAwaitingWebReport.rawValue)
         keyValueStore.set(true, forKey: Key.hasAccepted.rawValue)
         return wasAccepted && !wasAwaitingWebReport ? .alreadyAccepted : .firstAcceptance
+    }
+
+    private func recordAcceptedNatively() {
+        guard !hasAccepted else { return }
+        keyValueStore.set(true, forKey: Key.hasAccepted.rawValue)
+        keyValueStore.set(true, forKey: Key.isAwaitingWebReport.rawValue)
     }
 
 #if DEBUG || ALPHA

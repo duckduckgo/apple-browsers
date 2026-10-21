@@ -58,6 +58,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case getMigrationInfo
     case clearMigrationData
 
+    /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
+    case getAIChats
+
     case voiceSessionStarted
     case voiceSessionEnded
 
@@ -155,5 +158,25 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
 
     /// Pushed (native→FE) when the chat's owner tab navigates, so the FE can refresh its view of the page.
     case aiChatTabChanged
+
+    // MARK: - Bonus offer
+
+    /// Requested (FE→native) when Duck.ai loads. Native replies with the stored bonus record (if any stored) and the install facts.
+    case getAIChatBonusRecord
+
+    /// Requested (FE→native) when the user taps Claim. Native mints a Bonus ID for `campaignName`, stores it and replies with the record.
+    case getAIChatNewBonusRecord
+
+    /// Posted (FE→native) with the result of a `/redeem` call. Native applies it only if its Bonus ID matches the stored one, and ignores it otherwise.
+    case aiChatBonusRedeemOutcome
+
+    /// Posted (FE→native) when the activation modal is closed without claiming.
+    case aiChatBonusDismiss
+
+    /// Posted (FE→native) when the boost expired, was opted out of or was replaced by a subscription.
+    case aiChatBonusEnd
+
+    /// Pushed (native→FE) to every Duck.ai tab after the bonus record changes.
+    case submitAIChatBonusRecord
 }
 // swiftlint:enable inclusive_language

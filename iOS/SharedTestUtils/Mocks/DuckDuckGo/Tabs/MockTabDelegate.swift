@@ -25,6 +25,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import EventHub
 import PrivacyDashboard
+import PixelKit
 import PrivacyConfig
 @_spi(Testing) import Persistence
 import Subscription
@@ -63,6 +64,8 @@ final class MockTabDelegate: TabDelegate {
     func tabDidRequestAppRatingPrompt(_ tab: TabViewController) {
         didRequestAppRatingPromptCallCount += 1
     }
+
+    func tab(_ tab: TabViewController, didShowPrompt id: PromptExposureID) {}
 
     private(set) var didRequestLoadQueryCalled = false
     private(set) var capturedQuery: String?
@@ -216,13 +219,15 @@ extension TabViewController {
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
         sitePermissionsEnabled: Bool = false,
+        specialErrorPageNavigationHandler: SpecialErrorPageManaging = DummySpecialErrorPageNavigationHandler(),
         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never> = PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
         link: Link = Link(title: nil, url: .ddg),
         fireTab: Bool = false,
         interactionStateData: Data? = nil,
         initialRequest: URLRequest? = nil,
-        consumeCookies: Bool = false
+        consumeCookies: Bool = false,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
             model: .init(link: link, fireTab: fireTab),
@@ -245,7 +250,7 @@ extension TabViewController {
             fireproofing: MockFireproofing(),
             favicons: Favicons(),
             tabInteractionStateSource: MockTabInteractionStateSource(),
-            specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
+            specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
             featureDiscovery: MockFeatureDiscovery(),
             keyValueStore: MockKeyValueFileStore(),
             daxDialogsManager: MockDaxDialogsManager(),
@@ -255,9 +260,11 @@ extension TabViewController {
             voiceSearchHelper: MockVoiceSearchHelper(),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             autoplaySettings: MockAutoplaySettings(),
+            usageContextProvider: UsageContextProvider(),
             adBlockingAvailability: StubAdBlockingAvailability(),
             eventHub: StubEventHub(),
             webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
+            pixelFiring: pixelFiring,
             sitePermissionsEnabled: sitePermissionsEnabled
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), interactionStateData: interactionStateData,

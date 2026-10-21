@@ -26,7 +26,7 @@ protocol ReturnSessionInteractionData: AnyObject {
     var pageEngaged: Bool { get set }
     var toggleUsed: Bool { get set }
     var backPressed: Bool { get set }
-    var openingScreenChanged: Bool { get set }
+    var afterInactivitySettingsOpened: Bool { get set }
     var closeTabTapped: Bool { get set }
     var burnTabTapped: Bool { get set }
 }
@@ -54,6 +54,9 @@ protocol PostIdleSessionInstrumentation: AnyObject {
                         afterIdleSurface: PostIdleSessionWideEventData.Surface?,
                         focused: Bool)
 
+    /// Records automatic address-bar focus on arrival without counting it as an interaction.
+    func keyboardRaisedOnArrival()
+
     /// User scrolled or activated an in-page link. Idempotent within a session.
     func pageEngaged()
 
@@ -63,8 +66,8 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// User pressed back / cancel from the landing surface.
     func backPressed()
 
-    /// User changed the Opening Screen option from the escape hatch's settings menu.
-    func openingScreenChanged()
+    /// User opened Settings → General from the escape hatch's "After Inactivity" menu item.
+    func afterInactivitySettingsOpened()
 
     /// User closed the open tab from the escape hatch's menu. Idempotent within a session.
     func closeTabTapped()
@@ -95,6 +98,7 @@ extension PostIdleSessionInstrumentation {
 final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentation {
 
     private let wideEvent: WideEventManaging
+    private let usageContextProvider: UsageContextProviding
     private let dateProvider: () -> Date
     private var returnSessionID: String?
     private var postIdleSessionID: String?
@@ -103,8 +107,10 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
     private var pendingTimeAwayMs: Int?
 
     init(wideEvent: WideEventManaging,
+         usageContextProvider: UsageContextProviding = UsageContextProvider(),
          dateProvider: @escaping () -> Date = { Date() }) {
         self.wideEvent = wideEvent
+        self.usageContextProvider = usageContextProvider
         self.dateProvider = dateProvider
     }
 
@@ -134,6 +140,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
                                                     startedAt: startedAt,
                                                     timeAwayMs: pendingTimeAwayMs,
                                                     focused: focused)
+        returnData.record(usageContextProvider.currentContext)
         pendingTimeAwayMs = nil
         returnSessionID = returnData.globalData.id
         pageEngagedSent = false
@@ -141,8 +148,19 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
         guard let afterIdleSurface else { return }
         let postIdleData = PostIdleSessionWideEventData(surface: afterIdleSurface, startedAt: startedAt)
+        postIdleData.record(usageContextProvider.currentContext)
         postIdleSessionID = postIdleData.globalData.id
         wideEvent.startFlow(postIdleData)
+    }
+
+    func keyboardRaisedOnArrival() {
+        guard let globalID = returnSessionID,
+              let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID),
+              data.firstInteractionInterval.end == nil,
+              !data.focused else { return }
+        wideEvent.updateFlow(globalID: globalID) { (data: inout ReturnSessionWideEventData) in
+            data.focused = true
+        }
     }
 
     func pageEngaged() {
@@ -159,8 +177,8 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         recordInteraction { $0.backPressed = true }
     }
 
-    func openingScreenChanged() {
-        recordInteraction { $0.openingScreenChanged = true }
+    func afterInactivitySettingsOpened() {
+        recordInteraction { $0.afterInactivitySettingsOpened = true }
     }
 
     func closeTabTapped() {
@@ -192,6 +210,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
            let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID) {
             data.statusReason = .appBackgrounded
             data.sessionInterval.end = now
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
         }
         returnSessionID = nil
@@ -200,6 +219,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
            let data = wideEvent.getFlowData(PostIdleSessionWideEventData.self, globalID: globalID) {
             data.statusReason = .appBackgrounded
             data.sessionInterval.end = now
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
         }
         postIdleSessionID = nil
@@ -216,6 +236,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
             data.promptOrigin = reason == .aiPromptSubmitted ? promptOrigin?.rawValue : nil
             data.sessionInterval.end = now
             markFirstInteractionIfNeeded(on: data, at: now)
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })
         }
         returnSessionID = nil
@@ -228,6 +249,7 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
             data.statusReason = postIdleReason
             data.sessionInterval.end = now
             markFirstInteractionIfNeeded(on: data, at: now)
+            data.record(usageContextProvider.currentContext)
             wideEvent.completeFlow(data, status: .success(reason: postIdleReason.rawValue), onComplete: { _, _ in })
         }
         postIdleSessionID = nil

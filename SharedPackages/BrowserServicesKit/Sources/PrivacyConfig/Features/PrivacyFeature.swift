@@ -86,6 +86,7 @@ public enum PrivacyFeature: String {
     case webExtensions
     case chromeWebstorePatching
     case extensionManagement
+    case extensionsCatalog
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
@@ -115,6 +116,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Hang reporting feature flag
     case hangReporting
+
+    /// Cancels WebKit's pending passkey request before WebKit starts the next one
+    case passkeyRequestCancellation
 
     /// App rebranding feature flag
     case appRebranding
@@ -406,6 +410,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
 
+    /// Controls the attachment privacy disclosure in Duck.ai on iPad.
+    case iPadAttachmentPrivacy
+
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
 
@@ -505,6 +512,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
 
+    /// Lets the duckduckgo.com homepage list the user's Duck.ai chats under its chat box.
+    case homepageChatSuggestions
+
     /// macOS only. Routes duck.ai voice-chat microphone permission entirely through native:
     /// auto-grants per-site mic permission at launch, locks the Permission Center row,
     /// surfaces a "System microphone disabled" warning when the OS has denied access, and
@@ -547,8 +557,18 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
 
+    /// Promotes the Duck.ai launcher (prompt bar) to users who chat often but haven't turned it on.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
+    case launcherPromo
+
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
     case nativeTermsOfService
+
+    case dragPromptBar
+
+    /// Enables the Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
+    case chatLimitExtensionPromo
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -590,9 +610,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
-
-    /// Global switch to disable advanced card ordering for the Next Steps List widget
-    case nextStepsListAdvancedCardOrdering
 
     /// Enables deleting history-based search suggestions from the New Tab Page omnibar
     case searchSuggestionsDeletion
@@ -670,10 +687,14 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
     case canUseExchangeV2Point1
+    case canSendExchangeChannelSecret
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
     case simplifiedSyncSetupV2
+
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
+    case improvedPairingFlow
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
@@ -831,7 +852,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-    case dataDirectoryAccess
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {
@@ -865,6 +885,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmMessagingHangRecovery
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
+    /// Controls native messaging between web extensions and host apps on macOS.
+    case nativeMessaging
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -925,6 +947,18 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the VPN toolbar upsell button and dot badge promos.
     case vpnUpsellPromo
+
+    /// Kill switch for the "Sync your bookmarks" promo.
+    case syncSetupBookmarksPromo
+
+    /// Kill switch for the "Sync your autofill data" promo.
+    case syncSetupAutofillPromo
+
+    /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
+    case bookmarksBarSyncPromo
+
+    /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
+    case bookmarkAddedSyncPromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {
@@ -979,5 +1013,12 @@ public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extensionManagement }
 
     case isLaunchedExtensions
-    case curatedExtensions
+}
+
+public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionsCatalog }
+
+    case bitwarden
+    case onePassword
+    case lastPass
 }

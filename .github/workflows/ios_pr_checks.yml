@@ -15,12 +15,6 @@ on:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - '.github/**'
-      - '.xcode-version'
-      - 'SharedPackages/**'
-      - 'iOS/**'
-      - 'scripts/translation-pr-checks/**'
   schedule:
     - cron: '10,35,50 4,5,6 * * *'
   workflow_call:
@@ -67,6 +61,13 @@ jobs:
   should-run-checks:
     name: Determine if checks should run
     uses: ./.github/workflows/should_run_pr_checks.yml
+    with:
+      paths: |
+        .github/**
+        .xcode-version
+        SharedPackages/**
+        iOS/**
+        scripts/translation-pr-checks/**
 
   shellcheck:
 
@@ -103,11 +104,11 @@ jobs:
     needs: should-run-checks
     if: needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: [image:osx-tahoe-26, general-purpose]
+    runs-on: [image:osx-tahoe-27, general-purpose]
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
-      RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
     outputs:
@@ -185,7 +186,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5"
+        preferred-versions: "27.0"
 
     - name: Record simulator runtime diagnostics
       continue-on-error: true
@@ -209,10 +210,13 @@ jobs:
         # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
         # This forces DEBUG on for the package build. Read in SyncUI-iOS/Package.swift.
         SPM_FORCE_DEBUG: "1"
+        TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES: "1"
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
+        # Avoid Xcode's verbose simulator collection for runtime warnings in passing tests.
+        # Keep the console log, result bundle, and crash reports for failed runs.
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -222,6 +226,7 @@ jobs:
           -skipMacroValidation \
           -test-iterations 3 \
           -retry-tests-on-failure \
+          -collect-test-diagnostics never \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
@@ -275,6 +280,15 @@ jobs:
           iOS/xcodebuild.log
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
+
+    - name: Report snapshot failures
+      if: always() && steps.run-unit-tests.outcome == 'failure'
+      uses: ./.github/actions/snapshot-failure-report
+      with:
+        working-directory: iOS
+        xcresult: DerivedData/Logs/Test/iOS-UnitTests.xcresult
+        report-name: ios-snapshot-failures.html
+        title: iOS Snapshot Failures
 
     - name: Upload crash reports
       uses: actions/upload-artifact@v6
@@ -343,11 +357,11 @@ jobs:
       inputs.skip-release != true &&
       needs.should-run-checks.outputs.should_run == 'true'
 
-    runs-on: [image:osx-tahoe-26, general-purpose]
+    runs-on: [image:osx-tahoe-27, general-purpose]
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
-      RUNS_ON: image:osx-tahoe-26,general-purpose # keep this in sync with runs-on above
+      RUNS_ON: image:osx-tahoe-27,general-purpose # keep this in sync with runs-on above
 
     outputs:
       changed_files: ${{ steps.changed-strings-files.outputs.changed_files }}
@@ -421,7 +435,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5"
+        preferred-versions: "27.0"
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -635,3 +649,19 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
           github-token: ${{ secrets.APPLE_GH_RO_PAT }}
+
+  # The only job required by branch protection for this workflow.
+  # It always runs and fails if any job it depends on failed or was cancelled, so skipped jobs pass
+  # and a failing should-run-checks blocks the merge instead of skipping the tests unnoticed.
+  pr-checks-result:
+    name: iOS PR Checks Result
+    needs: [should-run-checks, unit-tests, release-build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check whether a required job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        working-directory: .
+        run: |
+          echo "Required job results: ${{ join(needs.*.result, ', ') }}"
+          exit 1

@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Συνεχίστε τη συνεδρία του Sync & Backup για να επαναφέρετε τους σελιδοδείκτες, τους κωδικούς πρόσβασης και άλλα στοιχεία ή συνεχίστε με μια νέα ρύθμιση.";
 
@@ -85,9 +82,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Λήψη των εικονιδίων που λείπουν;";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Αυτόματη λήψη εικονιδίων";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Συνεχίστε την ανάπτυξη";
 
@@ -166,8 +160,17 @@
 /* Title on the sync-setup prompt asking whether to sync with another device or just this device */
 "sync.simplified.another.device.v2.title" = "Συγχρονισμός αυτής της συσκευής με κοντινό υπολογιστή.";
 
+/* Body on the sync-setup prompt explaining that the user can sync this device only and pair another device later */
+"sync.simplified.another.device.v3.body" = "Δεν έχετε άλλη συσκευή αυτή τη στιγμή; Συγχρονίστε μόνο αυτή τη συσκευή και συγχρονίστε με μια άλλη αργότερα.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v3.title" = "Έχετε κάποια άλλη συσκευή κοντά; Συγχρονίστε τις συσκευές σας.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Φορτώνει εικονίδια από ιστότοπους που έχετε προσθέσει σελιδοδείκτες. Οι λήψεις εικονιδίων αποκαλύπτονται στο δίκτυό σας.";
+
+/* Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks */
+"sync.simplified.bookmarks.section.fetch-favicons.title" = "Φόρτωση εικονιδίων σελιδοδείκτη";
 
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Σελιδοδείκτες";
@@ -175,11 +178,23 @@
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Χρησιμοποίησε τους ίδιους σελιδοδείκτες αγαπημένων σε κινητό και υπολογιστή.";
 
+/* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
+"sync.simplified.bookmarks.section.unified-favorites.title" = "Κοινοποίηση αγαπημένων σε όλες τις συσκευές";
+
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Ελέγξτε την άλλη συσκευή σας.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Το Sync & Backup είναι κρυπτογραφημένο από άκρο σε άκρο σε όλες τις συσκευές σου.";
 
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Αντιγραφή κωδικού ανάκτησης";
+
+/* Alert button that confirms turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.action" = "Οριστική διαγραφή";
+
+/* Title of the alert confirming turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.title" = "Δεν μπορείτε να αναιρέσετε αυτήν την ενέργεια.";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Απενεργοποίηση συγχρονισμού και διαγραφή δεδομένων διακομιστή";
@@ -214,8 +229,8 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Υπόδειγμα κωδικού:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Άνοιξε την άλλη";
+/* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.enter.code.open.app" = "Άνοιξε το άλλο σου %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Επικόλληση κωδικού συγχρονισμού";
@@ -244,11 +259,17 @@
 /* Footer caption shown under the Remove Device button on the manage device screen */
 "sync.simplified.manage.device.remove.footer" = "Αυτή η συσκευή δεν θα μπορεί πλέον να έχει πρόσβαση στα συγχρονισμένα δεδομένα σου αν την αφαιρέσεις.";
 
+/* Footer caption shown under the Remove Device button on the manage device screen. Parameter is the device name */
+"sync.simplified.manage.device.remove.footer.named" = "Το «%@» δεν θα μπορεί πλέον να έχει πρόσβαση στα συγχρονισμένα δεδομένα σας σε άλλες συσκευές.";
+
 /* Status label shown under a device name on the manage device screen when the device is synced */
 "sync.simplified.manage.device.status.synced" = "Συγχρονισμένη";
 
 /* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
 "sync.simplified.manage.device.turn.off.footer" = "Αυτή η συσκευή δεν θα μπορεί πλέον να έχει πρόσβαση στα συγχρονισμένα δεδομένα σου αν αυτό απενεργοποιηθεί.";
+
+/* Footer caption shown under the Sync This Device toggle on the manage this device screen. Parameter is the device name */
+"sync.simplified.manage.device.turn.off.footer.named" = "Το «%@» δεν θα μπορεί πλέον να έχει πρόσβαση στα συγχρονισμένα δεδομένα σας σε άλλες συσκευές αν αυτό απενεργοποιηθεί.";
 
 /* My Devices section header shown when Sync & Backup is enabled */
 "sync.simplified.my.devices.section.header" = "Οι συσκευές μου";
@@ -271,7 +292,16 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Χρησιμοποιήστε αυτόν τον κωδικό ώστε να επαναφέρετε τα δεδομένα σας σε περίπτωση που χάσετε την πρόσβαση σε αυτήν τη συσκευή. Δεν είναι δυνατή η ανάκτηση δεδομένων Sync & Backup έπειτα από 18 μήνες αδράνειας. [Μάθετε περισσότερα](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Confirmation alert button to remove a device from Sync & Backup */
+"sync.simplified.remove.device.confirm.action" = "Αφαίρεση";
+
+/* Confirmation alert message when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.message" = "Το «%@» δεν θα μπορεί πλέον να έχει πρόσβαση στα συγχρονισμένα δεδομένα σας. Οι σελιδοδείκτες, τα δεδομένα αυτόματης συμπλήρωσης και οι συνομιλίες στο Duck.ai θα παραμείνουν στις συσκευές σας.";
+
+/* Confirmation alert title when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.title" = "Κατάργηση του %@ από το Sync & Backup;";
+
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "Εφαρμογή DuckDuckGo";
 
 /* Status text when connecting devices to sync */
@@ -289,17 +319,32 @@
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Κοινή χρήση κωδικού";
 
+/* Button on the scan-QR tab that opens the app's iOS Settings so the user can allow camera access */
+"sync.simplified.scan.v2.camera.denied.button" = "Αλλαγή δικαιωμάτων";
+
+/* Message on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.message" = "Απαιτούνται δικαιώματα πρόσβασης στην κάμερα εάν θέλετε να συγχρονίσετε τη σάρωση του κωδικού QR.";
+
+/* Title on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.title" = "Το DuckDuckGo χρειάζεται πρόσβαση στην κάμερά σας.";
+
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Κλείσιμο";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo για υπολογιστές";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Button on the scan-QR intro animation card that dismisses the card and reveals the camera scanner */
+"sync.simplified.scan.v2.qr.got.it.button" = "Το κατάλαβα";
+
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Σάρωσε τον κωδικό QR για συγχρονισμό.";
 
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Άνοιγμα";
+/* Scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. **...** marks the parts shown in the primary text color. \\n is a line break. */
+"sync.simplified.scan.v2.qr.instruction" = "Στο %@,\nμεταβείτε στο **Sync & Backup** › **Συγχρονισμός με άλλη συσκευή**";
+
+/* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.scan.v2.qr.open.app" = "Άνοιξε το %@";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Είμαι έτοιμος για σάρωση";
@@ -322,8 +367,8 @@
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Αντιγραφή κωδικού κειμένου";
 
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "Σε μια άλλη συσκευή, άνοιξε το";
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "Σε μια άλλη συσκευή, άνοιξε το %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Πήγαινε στο **Sync & Backup** › **Συγχρονισμός με άλλη συσκευή** και σάρωσε αυτόν τον κωδικό:";
@@ -336,6 +381,27 @@
 
 /* Sync & Backup enabled / disabled toggle title, referring to the current device */
 "sync.simplified.toggle.title.this.device" = "Συγχρονισμός αυτής της συσκευής";
+
+/* Button on the turn off Sync & Backup sheet that turns off sync and deletes the server data */
+"sync.simplified.turn.off.sheet.delete.button" = "Απενεργοποίηση και διαγραφή δεδομένων διακομιστή";
+
+/* Message of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.delete.message" = "Όλες οι συσκευές που χρησιμοποιούν το Sync & Backup θα αποσυνδεθούν και τα συγχρονισμένα δεδομένα σας θα διαγραφούν από τον διακομιστή.";
+
+/* Toggle label on the turn off Sync & Backup sheet to also delete the synced data from the server */
+"sync.simplified.turn.off.sheet.delete.toggle" = "Διαγραφή και των δεδομένων διακομιστή;";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is off */
+"sync.simplified.turn.off.sheet.delete.toggle.off.footer" = "Απενεργοποίηση του Sync & Backup και διαγραφή όλων των συγχρονισμένων δεδομένων από τον διακομιστή και απενεργοποίηση του κωδικού ανάκτησής σας.";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is on */
+"sync.simplified.turn.off.sheet.delete.toggle.on.footer" = "Απενεργοποιεί το Sync & Backup και διαγράφει τα συγχρονισμένα δεδομένα σας από τον διακομιστή.";
+
+/* Title of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.title" = "Απενεργοποίηση Sync & Backup;";
+
+/* Sync settings action button title that opens the options to turn off Sync & Backup */
+"sync.simplified.turn.off.sync.button" = "Απενεργοποίηση Sync & Backup";
 
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Συγχρονισμός με άλλη συσκευή";
@@ -354,9 +420,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Αυτή η συσκευή";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Ενοποίηση αγαπημένων σε όλες τις συσκευές";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Χρησιμοποιείτε περιβάλλον Ανάπτυξης συγχρονισμού";

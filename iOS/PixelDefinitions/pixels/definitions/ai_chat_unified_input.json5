@@ -357,6 +357,13 @@
             }
         ]
     },
+    "autocomplete_duckai_shown": {
+        "description": "Fires when the Duck.ai-mode suggestion list comes on screen with rows, at most once per address-bar focus (iPhone Unified Input and the iPad popover). The denominator for the m_autocomplete_duckai_click_* pixels.",
+        "owners": ["jaceklyp"],
+        "triggers": ["impression"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "m_autocomplete_duckai_click_website": {
         "description": "Fires when user clicks on a website suggestion in the Duck.ai autocomplete suggestion list.",
         "owners": ["pikorddg"],
@@ -422,9 +429,11 @@
             "appVersion",
             "aichat_first_prompt_new_install",
             "unified_input_page_type",
+            "usage_layout",
+            "usage_hardware_keyboard",
             {
                 "key": "default_mode",
-                "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch. Absent on iPad's address-bar toggle path, which has no Search-side counterpart — filter on it being present for any Search-vs-Duck.ai ratio.",
+                "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch. Absent before iPad's address bar reported it; filter on it being present for any Search-vs-Duck.ai ratio.",
                 "type": "string",
                 "enum": ["search", "duckAI", "lastUsed"]
             },
@@ -443,10 +452,14 @@
                     "browsing_menu_webpage",
                     "tab_switcher",
                     "tabs_bar_button",
+                    "new_tab_long_press_menu",
                     "chat_history_new_chat",
                     "chat_history_open_chat",
+                    "chat_history_view_all",
                     "voice",
                     "onboarding",
+                    "subscription_onboarding",
+                    "paid_settings",
                     "direct_url",
                     "serp",
                     "icon_shortcut",
@@ -457,7 +470,13 @@
                     "widget_lock_screen",
                     "widget_control_center",
                     "siri",
-                    "deep_link_other"
+                    "deep_link_other",
+                    "browsing_menu_duckai",
+                    "duck_ai_new_chat",
+                    "tab_switcher_existing_chat",
+                    "tabs_bar_existing_chat",
+                    "return_to_chat_card",
+                    "ddg_homepage"
                 ]
             },
             "unified_input_surface",
@@ -489,6 +508,11 @@
                 "type": "boolean"
             },
             {
+                "key": "has_tab_attachment",
+                "description": "Whether an explicitly selected tab attachment was present at submission time.",
+                "type": "boolean"
+            },
+            {
                 "key": "has_text",
                 "description": "Whether the input contained non-whitespace text at submission time. Combined with attachment flags allows deriving attachment-only submits.",
                 "type": "boolean"
@@ -496,13 +520,21 @@
         ]
     },
     "m_aichat_unified_input_query_submitted": {
-        "description": "Fires on every Search submission in the unified toggle input — the Search-side denominator for m_aichat_unified_input_prompt_submitted. Not fired on iPad's address-bar toggle path, so filter on default_mode being present for any Search-vs-Duck.ai ratio.",
+        "description": "Fires on every Search submission in the unified toggle input and the iPad address bar (typed, a suggestion tapped or picked with the keyboard, an address typed in Duck.ai mode, or the Search DuckDuckGo row in Duck.ai mode). On iPad query_type follows what the address bar loads — the Search-side denominator for m_aichat_unified_input_prompt_submitted. Filter on default_mode being present for any Search-vs-Duck.ai ratio.",
         "owners": ["Bunn"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             "unified_input_page_type",
+            {
+                "key": "query_type",
+                "description": "search for a search, url for an address the user typed or picked, so addresses can be filtered out without changing existing counts.",
+                "type": "string",
+                "enum": ["search", "url"]
+            },
+            "usage_layout",
+            "usage_hardware_keyboard",
             {
                 "key": "default_mode",
                 "description": "The user's Opening-mode setting, for telling an accepted default apart from a switch.",
@@ -599,28 +631,28 @@
         "parameters": ["appVersion"]
     },
     "aichat_unified_input_attachment_privacy_image_shown": {
-        "description": "Fires once per attachment privacy card appearance in the Unified Toggle Input. The first valid attachment was an image when this appearance began.",
+        "description": "Fires once per attachment privacy card appearance in the Unified Toggle Input or iPad address bar. The first valid attachment was an image when this appearance began.",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
     "aichat_unified_input_attachment_privacy_image_learn_more_tapped": {
-        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input. The first valid attachment staged at the time of the tap is an image.",
+        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input or iPad address bar. The first valid attachment staged at the time of the tap is an image.",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
     "aichat_unified_input_attachment_privacy_file_shown": {
-        "description": "Fires once per attachment privacy card appearance in the Unified Toggle Input. The first valid attachment was a file when this appearance began.",
+        "description": "Fires once per attachment privacy card appearance in the Unified Toggle Input or iPad address bar. The first valid attachment was a file when this appearance began.",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface"]
     },
     "aichat_unified_input_attachment_privacy_file_learn_more_tapped": {
-        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input. The first valid attachment staged at the time of the tap is a file.",
+        "description": "Fires when the user taps the inline Learn more link on the attachment privacy card in the Unified Toggle Input or iPad address bar. The first valid attachment staged at the time of the tap is a file.",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],

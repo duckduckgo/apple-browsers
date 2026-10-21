@@ -173,8 +173,36 @@ final class UTIPixelReporter {
         withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
     }
 
+    func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
+                             attribution: MultiTabPixelAttribution? = nil) {
+        guard let attribution = attribution ?? currentTabPixelAttribution() else { return }
+        firing.fire(MultiTabAttachmentPixel(action: action, source: source, attribution: attribution), frequency: .dailyAndCount)
+    }
+
+    func currentTabPixelAttribution() -> MultiTabPixelAttribution? {
+        guard let context = context() else { return nil }
+        return MultiTabPixelAttribution(surface: context.surface, pageType: context.pageType)
+    }
+
+    /// Snapshot attribution before asynchronous collection; delivery must outlive the input coordinator.
+    func makeTabSubmissionReporter(requestedTabCount: Int) -> (MultiTabAttachmentRequest.SubmissionResult) -> Void {
+        guard requestedTabCount > 0, let attribution = currentTabPixelAttribution() else { return { _ in } }
+        return { [firing] result in
+            if result.deliveredAttachmentCount > 0 {
+                firing.fire(MultiTabSentPixel(count: result.totalTabCount, attribution: attribution), frequency: .dailyAndCount)
+            }
+            if result.deliveredAttachmentCount < requestedTabCount {
+                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.deliveredAttachmentCount == 0 ? .all : .partial
+                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, attribution: attribution), frequency: .dailyAndCount)
+            }
+        }
+    }
+
     func reportAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(
+                for: attachment, surface: $0.surface, pageType: $0.pageType, firing: firing)
+        }
     }
 
     // MARK: - Model / reasoning / tools
@@ -250,13 +278,14 @@ final class UTIPixelReporter {
         }
     }
 
-    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode, queryType: UnifiedToggleInputQueryType) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
                 surface: $0.surface,
                 pageType: $0.pageType,
                 isToggleVisible: $0.isToggleVisible,
                 defaultMode: defaultOmnibarMode,
+                queryType: queryType,
                 firing: firing
             )
         }

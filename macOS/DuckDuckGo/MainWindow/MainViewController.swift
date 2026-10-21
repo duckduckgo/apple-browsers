@@ -359,7 +359,8 @@ final class MainViewController: NSViewController {
             themeManager: themeManager,
             omnibarController: aiChatOmnibarController,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            burnerMode: tabCollectionViewModel.burnerMode
+            burnerMode: tabCollectionViewModel.burnerMode,
+            launcherPromo: NSApp.delegateTyped.duckAiLauncherPromo
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
@@ -582,6 +583,8 @@ final class MainViewController: NSViewController {
 
         aiChatOmnibarContainerViewController.setShadowVisible(false)
         aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
+        // Esc, a click outside and a switch to another Duck.ai tab close the input without `cleanup()`.
+        aiChatOmnibarContainerViewController.omnibarController.inputOutcomeMeasurement.inputClosed()
         mainView.updateAIChatOmnibarContainerHeight(0, animated: true)
         mainView.isAIChatOmnibarContainerShown = false
         aiChatOmnibarTextContainerViewController.stopEventMonitoring()
@@ -743,6 +746,9 @@ final class MainViewController: NSViewController {
         }
     }
 
+    // `loadView()` attaches the bar before its visibility is known, so attachment alone can't tell when it first shows.
+    private var wasBookmarksBarShown = false
+
     // Can be updated via keyboard shortcut so needs to be internal visibility
     func updateBookmarksBarViewVisibility(visible showBookmarksBar: Bool) {
         if showBookmarksBar {
@@ -756,6 +762,11 @@ final class MainViewController: NSViewController {
             bookmarksBarViewController.removeFromParent()
             bookmarksBarViewController.view.removeFromSuperview()
         }
+
+        if showBookmarksBar, !wasBookmarksBarShown {
+            NotificationCenter.default.post(name: .bookmarksBarShown, object: self)
+        }
+        wasBookmarksBarShown = showBookmarksBar
 
         mainView.isBookmarksBarShown = showBookmarksBar
         mainView.layoutSubtreeIfNeeded()
@@ -773,16 +784,16 @@ final class MainViewController: NSViewController {
         NSAppearance.withAppAppearance {
             if theme.addToolbarShadow {
                 if mainView.isBannerViewShown {
-                    mainView.divider.backgroundColor = .bannerViewDivider
+                    mainView.divider.backgroundColor = NSColor(resource: .bannerViewDivider)
                 } else {
                     mainView.divider.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
                 }
             } else {
                 let backgroundColor: NSColor = {
                     if mainView.isBannerViewShown {
-                        return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                        return bookmarksBarIsVisible ? NSColor(resource: .bookmarkBarBackground) : NSColor(resource: .addressBarSolidSeparator)
                     } else {
-                        return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                        return (bookmarksBarIsVisible || isHomePage) ? NSColor(resource: .bookmarkBarBackground) : NSColor(resource: .addressBarSolidSeparator)
                     }
                 }()
 

@@ -181,6 +181,10 @@ extension MainViewController {
             daxDialogsManager.setAsChatFirstPath()
         }
         daxDialogsManager.setFireEducationMessageSeen()
+        OnboardingResumeCheckpointStore.clearCompletedDuckAIAnswerStepIfNeeded(
+            in: onboardingResumeStepStore,
+            fireEducationMessageSeen: true
+        )
         setDuckAIFireControlsLocked(false)
         if !aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             aiChatSettings.enableAIChatSearchInputUserSettings(enable: true)
@@ -241,6 +245,13 @@ extension MainViewController {
     // MARK: App resume
 
     func restorePendingDuckAIAnswerStepIfNeeded() {
+        if OnboardingResumeCheckpointStore.clearCompletedDuckAIAnswerStepIfNeeded(
+            in: onboardingResumeStepStore,
+            fireEducationMessageSeen: daxDialogsManager.fireEducationMessageSeen
+        ) {
+            return
+        }
+
         // `.duckAIAnswerStep` (default flow) and `.interludeDuckAI` (tailored flow) describe the same
         // physical state — the Fire onboarding is mid-flight and needs its AI tab + Fire dialog restored.
         guard
@@ -270,7 +281,7 @@ extension MainViewController {
             Logger.general.error("DuckAI onboarding resume missing stored prompt; opening AI Chat without a prompt")
         }
         if let tabToClose = currentTab?.tabModel {
-            closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false)
+            closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false, allowingKeyboard: false)
         }
         openAIChat(source: .onboarding, query, autoSend: query.map { !$0.isEmpty } ?? false, flowType: .mobileAppOnboarding)
     }

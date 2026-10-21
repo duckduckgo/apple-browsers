@@ -14,7 +14,7 @@ on:
     inputs:
       runner:
         # A workflow_call input cannot be an array, so the caller passes toJSON of its label list.
-        description: "JSON array of runner labels, as a string. Examples: '[\"macos-15-xlarge\"]', '[\"image:osx-tahoe-26\",\"ui-tests\"]'."
+        description: "JSON array of runner labels, as a string. Examples: '[\"macos-15-xlarge\"]', '[\"image:osx-tahoe-27\",\"ui-tests\"]'."
         required: true
         type: string
       os-version:
@@ -76,6 +76,9 @@ jobs:
       extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
       # Keeps artifact names of the App Store legs apart from the DMG ones when both run in the same workflow run
       artifact-suffix: ${{ inputs.build-type == 'appstore' && '-appstore' || '' }}
+      # Job identity for result markers. notify-failure in macos_ui_tests.yml parses these names
+      # (see scripts/ui_tests_rerun_report.sh), so test class names must not contain '-'.
+      result-marker-job: ui-result-macos-ui-${{ inputs.build-type == 'appstore' && 'appstore-' || '' }}${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
       TEST_PLAN: ${{ inputs.test-plan }}
 
     steps:
@@ -115,6 +118,14 @@ jobs:
     - name: Install screenresolution
       if: inputs.os-version != '14'
       run: brew install screenresolution
+
+    - name: Ensure GNU timeout is available
+      shell: bash
+      timeout-minutes: 5
+      run: |
+        if ! command -v gtimeout >/dev/null && ! command -v timeout >/dev/null; then
+          brew install coreutils
+        fi
 
     - name: Change screen resolution
       if: inputs.os-version != '14'
@@ -195,19 +206,34 @@ jobs:
         echo $! > log_stream.pid
 
     - name: Resolve package dependencies
+      id: resolve-packages
       working-directory: macOS
+      shell: bash
+      timeout-minutes: 30
+      env:
+        RESOLVE_SCHEME: ${{ env.scheme }}
       run: |
         max_attempts=5
         retry_delay=10
+        TIMEOUT_BIN="$(command -v gtimeout || command -v timeout)"
 
         for attempt in $(seq 1 $max_attempts); do
+          attempt_directory="package-resolution/attempt-${attempt}"
+          mkdir -p "$attempt_directory"
           echo "Attempt $attempt of $max_attempts"
-          if xcodebuild -resolvePackageDependencies \
-            -scheme "${{ env.scheme }}" \
+          if "$TIMEOUT_BIN" --verbose --kill-after=10s 5m \
+            xcodebuild -resolvePackageDependencies \
+            -scheme "$RESOLVE_SCHEME" \
             -derivedDataPath DerivedData \
-            2>&1 | tee resolve.log; then
+            2>&1 | tee "$attempt_directory/resolve.log"; then
             echo "Package resolution succeeded"
             exit 0
+          else
+            status=$?
+            echo "Package resolution exited with status $status (attempt $attempt)"
+            if [[ $status -eq 130 || $status -eq 143 ]]; then
+              exit "$status"
+            fi
           fi
 
           if [[ $attempt -lt $max_attempts ]]; then
@@ -217,6 +243,14 @@ jobs:
         done
         echo "Package resolution failed after $max_attempts attempts"
         exit 1
+
+    - name: Upload package resolution logs
+      if: always() && steps.resolve-packages.outcome != 'skipped'
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: "package-resolution-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
+        path: macOS/package-resolution/
+        retention-days: 7
 
     - name: Restore Xcode Compilation Cache
       if: runner.environment != 'self-hosted'
@@ -365,19 +399,40 @@ jobs:
         if-no-files-found: warn
         retention-days: 1
 
-    - name: Mark user-mode failure
-      if: failure() || cancelled()
+    # Result markers let notify-failure in macos_ui_tests.yml report each job's latest result.
+    # Attempt 1 marks only failures. A re-run also marks a pass when this job failed in any
+    # earlier attempt, so a re-run that fixes the job is reported as passing.
+    - name: Download earlier failure markers for this job
+      if: always() && github.run_attempt > 1 && job.status == 'success'
+      uses: actions/download-artifact@v7
+      with:
+        pattern: ${{ env.result-marker-job }}-attempt*-fail
+        path: ${{ runner.temp }}/earlier-failure-markers
+
+    - name: Decide result marker
+      id: result-marker
+      if: always() && (job.status != 'success' || github.run_attempt > 1)
       working-directory: ${{ github.workspace }}
+      env:
+        RESULT_MARKER_JOB: ${{ env.result-marker-job }}
+        ATTEMPT: ${{ github.run_attempt }}
+        RESULT: ${{ job.status == 'success' && 'pass' || 'fail' }}
+        EARLIER_FAILURE_MARKERS: ${{ runner.temp }}/earlier-failure-markers
       run: |
-        mkdir -p failure-marker
-        echo "macos-ui:${{ inputs.user-mode }}:${{ inputs.test }}:${{ inputs.os-version }}" > failure-marker/marker.txt
-    - name: Upload failure marker
-      if: failure() || cancelled()
+        # This attempt's marker isn't uploaded yet, so anything downloaded is from an earlier attempt.
+        if [[ "$RESULT" == "fail" ]] || [[ -n "$(ls -A "$EARLIER_FAILURE_MARKERS" 2>/dev/null)" ]]; then
+          mkdir -p "$RUNNER_TEMP/result-marker"
+          echo "macos-ui:${{ inputs.user-mode }}:${{ inputs.test }}:${{ inputs.os-version }}" > "$RUNNER_TEMP/result-marker/marker.txt"
+          echo "name=${RESULT_MARKER_JOB}-attempt${ATTEMPT}-${RESULT}" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Upload result marker
+      if: always() && steps.result-marker.outputs.name != ''
       uses: ./.github/actions/upload-artifact-with-retry
       with:
-        name: failure-marker-macos-ui-${{ inputs.build-type == 'appstore' && 'appstore-' || '' }}${{ inputs.user-mode }}-${{ inputs.test }}-${{ inputs.os-version }}
-        path: failure-marker/
-        retention-days: 1
+        name: ${{ steps.result-marker.outputs.name }}
+        path: ${{ runner.temp }}/result-marker/
+        retention-days: 5
 
     - name: Organize logs for upload
       if: failure() || cancelled()

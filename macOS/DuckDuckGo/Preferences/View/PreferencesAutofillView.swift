@@ -87,10 +87,16 @@ extension Preferences {
                     }
 
                     Text(UserText.autofillContentStoredSecurelyInfo)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(Color(.textSecondary))
                 }
 
-                if !NSApp.isSandboxed {
+                if let managingExtension = model.managingExtension {
+                    // SECTION 1: Password Manager, taken over by an extension. Shown in every build,
+                    // since an extension can take autofill over in App Store builds too.
+                    PreferencePaneSection(UserText.autofillPasswordManager) {
+                        managingExtensionView(managingExtension)
+                    }
+                } else if !NSApp.isSandboxed {
                     // SECTION 1: Password Manager
                     PreferencePaneSection(UserText.autofillPasswordManager) {
                         VStack(alignment: .leading, spacing: 6) {
@@ -124,15 +130,18 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 2: Ask to Save:
-                PreferencePaneSection {
-                    TextMenuItemHeader(UserText.autofillAskToSave)
-                    VStack(alignment: .leading, spacing: 6) {
-                        ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
-                        ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
-                        ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
+                // SECTION 2: Ask to Save. Hidden while an extension manages autofill: DuckDuckGo neither
+                // saves nor autofills anything then.
+                if model.managingExtension == nil {
+                    PreferencePaneSection {
+                        TextMenuItemHeader(UserText.autofillAskToSave)
+                        VStack(alignment: .leading, spacing: 6) {
+                            ToggleMenuItem(UserText.autofillPasswords, isOn: $model.askToSaveUsernamesAndPasswords)
+                            ToggleMenuItem(UserText.autofillAddresses, isOn: $model.askToSaveAddresses)
+                            ToggleMenuItem(UserText.autofillCreditCards, isOn: $model.askToSavePaymentMethods)
+                        }
+                        TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                     }
-                    TextMenuItemCaption(UserText.autofillAskToSaveExplanation)
                 }
 
                 // SECTION 3: Reset excluded (aka never prompt to save) sites:
@@ -199,6 +208,9 @@ extension Preferences {
             .onReceive(bitwardenStatusPublisher) { status in
                 bitwardenStatus = status
             }
+            .onAppear {
+                model.viewDidAppear()
+            }
         }
 
         @ViewBuilder
@@ -209,6 +221,25 @@ extension Preferences {
             .pickerStyle(.radioGroup)
             .rebrandedControlTint()
             .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+        }
+
+        /// The extension that took autofill over: who, and a way to give it back.
+        @ViewBuilder
+        private func managingExtensionView(_ managingExtension: AutofillManagingExtension) -> some View {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    if let icon = managingExtension.icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 16, height: 16)
+                    }
+                    Text(UserText.autofillManagedByExtension(managingExtension.name))
+                }
+                TextMenuItemCaption(UserText.autofillManagedByExtensionExplanation(managingExtension.name))
+                Button(UserText.autofillUseDuckDuckGoInstead) {
+                    model.useDuckDuckGoInstead()
+                }
+            }
         }
 
         // MARK: - Password Manager Availability Methods

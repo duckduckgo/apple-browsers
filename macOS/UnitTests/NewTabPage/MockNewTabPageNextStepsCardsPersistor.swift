@@ -28,7 +28,6 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
     var dailyVisibleStack: [NewTabPageDataModel.CardID]?
     var visibleStackDayIdentifier: Int?
     var firstCardLevel: NewTabPageDataModel.CardLevel = .level1
-    var isFirstSession: Bool = true
     var ntpImpressionCount: Int = 0
 
     func timesShown(for card: NewTabPageDataModel.CardID) -> Int {
@@ -64,7 +63,6 @@ final class MockNewTabPageNextStepsCardsPersistor: NewTabPageNextStepsCardsPersi
         dailyVisibleStack = nil
         visibleStackDayIdentifier = nil
         firstCardLevel = .level1
-        isFirstSession = true
         ntpImpressionCount = 0
     }
 }

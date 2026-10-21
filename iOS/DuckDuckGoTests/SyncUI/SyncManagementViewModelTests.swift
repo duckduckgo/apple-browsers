@@ -152,6 +152,8 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
     // MARK: Delegate functions
 
+    var isUserAuthenticationPromptNeeded: Bool { false }
+
     func authenticateUser() async throws {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
@@ -165,6 +167,11 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
 
     func simplifiedConfirmAndDisableSync() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
+    }
+
+    func disableSync() async -> Bool {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
         return true
     }
@@ -194,6 +201,11 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
 
     func confirmAndDeleteAllData() async -> Bool {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+        return true
+    }
+
+    func deleteAllData() async -> Bool {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
         return true
     }

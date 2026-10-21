@@ -60,8 +60,12 @@ final class TabBarRemoteMessageViewModel: ObservableObject {
         Task { await tabBarRemoteActiveMessage.onMessageDismissed() }
     }
 
-    func markTabBarRemoteMessageAsShown() {
-        Task { await tabBarRemoteActiveMessage.markRemoteMessageAsShown() }
+    func refreshRemoteMessageForPresentation() {
+        tabBarRemoteActiveMessage.refreshRemoteMessageForPresentation()
+    }
+
+    func markTabBarRemoteMessageAsShown(withID messageID: String) {
+        Task { await tabBarRemoteActiveMessage.markRemoteMessageAsShown(withID: messageID) }
     }
 }
 
@@ -87,7 +91,8 @@ private extension RemoteMessageModel {
                               let primaryAction):
 
             if case .survey(let value) = primaryAction, let surveyURL = URL(string: value) {
-                return .init(buttonTitle: titleText,
+                return .init(id: id,
+                             buttonTitle: titleText,
                              popupTitle: primaryActionText,
                              popupSubtitle: descriptionText,
                              surveyURL: surveyURL)

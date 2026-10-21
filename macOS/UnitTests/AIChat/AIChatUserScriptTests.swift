@@ -307,7 +307,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
     var isFireWindowProvider: (() -> Bool)?
+    var isSidebarProvider: (() -> Bool)?
     var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
+    var directNavigationFallback: AIChatConversationSource?
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
         self.messageHandling = messageHandling
@@ -474,7 +476,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didSubmitAIChatPageContext = true
     }
 
-    func resetConversationSourceForNewDocument() {}
+    func resetConversationSourceForNewDocument() {
+        directNavigationFallback = nil
+    }
 
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
         didSubmitAIChatSelectionContext = true
@@ -560,6 +564,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
     func customizeResponsesModalClosed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    func getAIChats(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         return nil
     }
 }

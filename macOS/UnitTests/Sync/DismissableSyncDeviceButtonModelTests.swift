@@ -17,347 +17,253 @@
 //
 
 import Combine
-import DDGSync
-import FeatureFlags_macOS
 @_spi(Testing) import Persistence
-import PrivacyConfig
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class DismissableSyncDeviceButtonModelTests: XCTestCase {
 
-    private var mockKeyValueStore: MockKeyValueStore!
-    private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockSyncLauncher: MockSyncDeviceFlowLauncher!
-    private var authStateSubject: PassthroughSubject<SyncAuthState, Never>!
+    private var promo: MockSyncDeviceButtonPromo!
+    private var syncLauncher: MockSyncDeviceFlowLauncher!
+    private var pixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
-        mockKeyValueStore = MockKeyValueStore()
-        mockFeatureFlagger = MockFeatureFlagger()
-        mockSyncLauncher = MockSyncDeviceFlowLauncher()
-        authStateSubject = PassthroughSubject<SyncAuthState, Never>()
+        promo = MockSyncDeviceButtonPromo()
+        syncLauncher = MockSyncDeviceFlowLauncher()
+        pixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
-        mockKeyValueStore = nil
-        mockFeatureFlagger = nil
-        mockSyncLauncher = nil
-        authStateSubject = nil
+        pixelFiring = nil
+        syncLauncher = nil
+        promo = nil
         super.tearDown()
     }
 
-    // MARK: - Initialization Tests
+    // MARK: - Visibility
 
-    func testInit_ProperInitialization() {
-        let model = createModel(source: .bookmarksBar)
-
-        XCTAssertFalse(model.shouldShowSyncButton)
-    }
-
-    // MARK: - Auth State Change Tests
-
-    func testAuthStateChange_InactiveWithAllConditionsMet_ShowsButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarkAdded)
-
-        let expectation = expectation(description: "shouldShowSyncButton should be true")
-        let cancellable = model.$shouldShowSyncButton
-            .sink { value in
-                if value {
-                    expectation.fulfill()
-                }
-            }
-
-        authStateSubject.send(.inactive)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-    }
-
-    func testAuthStateChange_NotInactive_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarkAdded)
-
-        let expectation = expectation(description: "shouldShowSyncButton should be false")
-        let cancellable = model.$shouldShowSyncButton
-            .sink { value in
-                if !value {
-                    expectation.fulfill()
-                }
-            }
-
-        authStateSubject.send(.active)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-    }
-
-    func testAuthStateChange_InactiveButDismissed_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed")
-        let model = createModel(source: .bookmarkAdded)
-
-        let expectation = expectation(description: "shouldShowSyncButton should remain false")
-        let cancellable = model.$shouldShowSyncButton
-            .dropFirst() // Skip initial value
-            .sink { value in
-                if !value {
-                    expectation.fulfill()
-                }
-            }
-
-        authStateSubject.send(.inactive)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-    }
-
-    func testAuthStateChange_InactiveButCountLimitReached_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        mockKeyValueStore.set(5, forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount")
-        let model = createModel(source: .bookmarkAdded)
-
-        let expectation = expectation(description: "shouldShowSyncButton should remain false")
-        let cancellable = model.$shouldShowSyncButton
-            .dropFirst() // Skip initial value
-            .sink { value in
-                if !value {
-                    expectation.fulfill()
-                }
-            }
-
-        authStateSubject.send(.inactive)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-    }
-
-    func testAuthStateChange_InactiveButDateExpired_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let expiredDate = Date().addingTimeInterval(-8 * 24 * 60 * 60) // 8 days ago
-        mockKeyValueStore.set(expiredDate, forKey: "com.duckduckgo.bookmarkFirstPresentedCount")
-        let model = createModel(source: .bookmarksBar)
-
-        let expectation = expectation(description: "shouldShowSyncButton should remain false")
-        let cancellable = model.$shouldShowSyncButton
-            .dropFirst() // Skip initial value
-            .sink { value in
-                if !value {
-                    expectation.fulfill()
-                }
-            }
-
-        authStateSubject.send(.inactive)
-
-        wait(for: [expectation], timeout: 1.0)
-        cancellable.cancel()
-    }
-
-    func testAuthStateChange_InactiveButFeatureFlagOff_HidesButton() {
-        for enabledFeatureFlags in [[], [FeatureFlag.newSyncEntryPoints], [FeatureFlag.syncFeatureLevel3]] {
-            mockFeatureFlagger.enableFeatures(enabledFeatureFlags)
-            let model = createModel(source: .bookmarkAdded)
-
-            let expectation = expectation(description: "shouldShowSyncButton should be true")
-            let cancellable = model.$shouldShowSyncButton
-                .dropFirst() // Skip initial value
-                .sink { value in
-                    expectation.fulfill()
-                    if value {
-                        XCTFail("Sync button should not be visible")
-                    }
-                }
-
-            authStateSubject.send(.inactive)
-
-            wait(for: [expectation], timeout: 1.0)
-            cancellable.cancel()
-            mockFeatureFlagger.enabledFeatureFlags = []
-        }
-    }
-
-    // MARK: - viewDidLoad Tests
-
-    func testViewDidLoad_FeatureFlagsDisabled_HidesButton() {
-        // Feature flags disabled by default in mock
-        let model = createModel(source: .bookmarkAdded)
-        authStateSubject.send(.inactive)
-
-        model.viewDidLoad()
+    func testWhenCreatedWithInactivePromoThenSyncButtonIsHidden() {
+        let model = makeModel()
 
         XCTAssertFalse(model.shouldShowSyncButton)
     }
 
-    func testViewDidLoad_AuthStateNotInactive_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarkAdded)
-        authStateSubject.send(.active)
+    func testWhenPromoActiveChangesThenSyncButtonFollowsIt() {
+        // Given
+        let model = makeModel()
 
-        model.viewDidLoad()
+        // When
+        promo.isPromoActiveSubject.send(true)
 
-        XCTAssertFalse(model.shouldShowSyncButton)
-    }
-
-    func testViewDidLoad_AlreadyDismissed_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed")
-        let model = createModel(source: .bookmarkAdded)
-        authStateSubject.send(.inactive)
-
-        model.viewDidLoad()
-
-        XCTAssertFalse(model.shouldShowSyncButton)
-    }
-
-    func testViewDidLoad_CountLimitReached_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarkAdded)
-        waitForInitialInactiveStateToEnableSyncButton(on: model)
-        mockKeyValueStore.set(5, forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount")
+        // Then
         XCTAssertTrue(model.shouldShowSyncButton)
 
-        // First call should increment to 5 and reach limit
-        model.viewDidLoad()
+        // When
+        promo.isPromoActiveSubject.send(false)
 
+        // Then
         XCTAssertFalse(model.shouldShowSyncButton)
     }
 
-    func testViewDidLoad_DateExpired_HidesButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarksBar)
-        waitForInitialInactiveStateToEnableSyncButton(on: model)
+    func testWhenPromoIsAlreadyActiveThenSyncButtonIsShownOnCreation() {
+        // Given
+        promo.isPromoActiveSubject.send(true)
 
-        let expiredDate = Date().addingTimeInterval(-8 * 24 * 60 * 60) // 8 days ago
-        mockKeyValueStore.set(expiredDate, forKey: "com.duckduckgo.bookmarkFirstPresentedCount")
+        // When
+        let model = makeModel()
 
-        model.viewDidLoad()
-
-        XCTAssertFalse(model.shouldShowSyncButton)
-    }
-
-    func testViewDidLoad_AllConditionsMet_ShowsButton() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarkAdded)
-
-        waitForInitialInactiveStateToEnableSyncButton(on: model)
-
-        // Now test viewDidLoad - should remain true
-        model.viewDidLoad()
-
+        // Then
         XCTAssertTrue(model.shouldShowSyncButton)
     }
 
-    func testViewDidLoad_BookmarksBar_SetsFirstSeenDate() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarksBar)
+    // MARK: - Displayed pixel
 
-        waitForInitialInactiveStateToEnableSyncButton(on: model)
+    func testWhenPromoBecomesActiveWithoutPanelThenDisplayedPixelWaitsForButtonToAppear() {
+        // Given
+        let model = makeModel(source: .bookmarksBar)
 
-        // Now test viewDidLoad - should remain true and set date
-        model.viewDidLoad()
+        // When
+        promo.isPromoActiveSubject.send(true)
+
+        // Then
         XCTAssertTrue(model.shouldShowSyncButton)
-        XCTAssertNotNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkFirstPresentedCount"))
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
-    func testViewDidLoad_BookmarkAdded_IncrementsCount() {
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
-        let model = createModel(source: .bookmarkAdded)
+    func testWhenSyncButtonAppearsRepeatedlyThenDisplayedPixelFiresOnce() {
+        // Given
+        let model = makeModel(source: .bookmarksBar)
 
-        waitForInitialInactiveStateToEnableSyncButton(on: model)
+        // When
+        model.syncButtonDidAppear()
+        model.syncButtonDidAppear()
 
-        // Now test viewDidLoad - should remain true and increment count
-        model.viewDidLoad()
-        XCTAssertTrue(model.shouldShowSyncButton)
-        XCTAssertEqual(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount") as? Int, 1)
+        // Then
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarksBar"])
     }
 
-    // MARK: - Action Tests
+    func testWhenPanelAppearsWhilePromoIsActiveThenDisplayedPixelFires() {
+        // Given
+        promo.isPromoActiveSubject.send(true)
+        let model = makeModel()
 
-    func testSyncButtonAction_CallsSyncLauncher() {
-        let model = createModel(source: .bookmarkAdded)
+        // When
+        model.bookmarkPanelDidAppear()
 
-        model.syncButtonAction()
-
-        XCTAssertTrue(mockSyncLauncher.startDeviceSyncFlowCalled)
+        // Then
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarkAdded"])
     }
 
-    func testDismissSyncButtonAction_HidesButtonAndStoresState() {
-        let model = createModel(source: .bookmarkAdded)
-        // First show the button
-        mockFeatureFlagger.enableFeatures([.newSyncEntryPoints, .syncFeatureLevel3])
+    func testWhenPanelAppearsWhilePromoIsInactiveThenDisplayedPixelWaitsUntilPromoBecomesActive() {
+        // Given
+        let model = makeModel()
 
-        waitForInitialInactiveStateToEnableSyncButton(on: model)
+        // When
+        model.bookmarkPanelDidAppear()
 
+        // Then
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+
+        // When
+        promo.isPromoActiveSubject.send(true)
+
+        // Then
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarkAdded"])
+    }
+
+    func testWhenButtonIsShownAgainInTheSamePanelThenDisplayedPixelFiresOnce() {
+        // Given
+        let model = makeModel()
+        model.bookmarkPanelDidAppear()
+
+        // When
+        promo.isPromoActiveSubject.send(true)
+        promo.isPromoActiveSubject.send(false)
+        promo.isPromoActiveSubject.send(true)
+
+        // Then
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
+    }
+
+    func testWhenPanelDidAppearIsReportedTwiceThenDisplayedPixelFiresOnce() {
+        // Given
+        promo.isPromoActiveSubject.send(true)
+        let model = makeModel()
+
+        // When
+        model.bookmarkPanelDidAppear()
+        model.bookmarkPanelDidAppear()
+
+        // Then
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
+    }
+
+    // MARK: - Forwarding to the promo
+
+    func testWhenViewDisappearsThenPromoIsTold() {
+        // Given
+        let model = makeModel()
+
+        // When
+        model.viewDidDisappear()
+
+        // Then
+        XCTAssertEqual(promo.syncButtonSurfaceClosedCount, 1)
+        XCTAssertEqual(promo.syncButtonDismissedCount, 0)
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    func testWhenSyncButtonIsDismissedThenButtonHidesAndPromoIsToldAndDismissedPixelFires() {
+        // Given
+        promo.isPromoActiveSubject.send(true)
+        let model = makeModel()
+
+        // When
         model.dismissSyncButtonAction()
 
+        // Then
         XCTAssertFalse(model.shouldShowSyncButton)
-        XCTAssertEqual(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed") as? Bool, true)
+        XCTAssertEqual(promo.syncButtonDismissedCount, 1)
+        XCTAssertEqual(promo.syncButtonSurfaceClosedCount, 0)
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDismissed.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarkAdded"])
     }
 
-    // MARK: - State Management Tests
+    func testWhenSyncButtonIsTappedThenSetupStartsAndConfirmedPixelFires() {
+        // Given
+        let model = makeModel()
 
-    func testResetAllState_ClearsAllKeys() {
-        // Set up some state
-        mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarksBarSyncPromoDismissed")
-        mockKeyValueStore.set(true, forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed")
-        mockKeyValueStore.set(Date(), forKey: "com.duckduckgo.bookmarkFirstPresentedCount")
-        mockKeyValueStore.set(3, forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount")
+        // When
+        model.syncButtonAction()
 
-        DismissableSyncDeviceButtonModel.resetAllState(from: mockKeyValueStore)
-
-        XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarksBarSyncPromoDismissed"))
-        XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed"))
-        XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkFirstPresentedCount"))
-        XCTAssertNil(mockKeyValueStore.object(forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount"))
+        // Then
+        XCTAssertEqual(promo.syncSetupStartedCount, 1)
+        XCTAssertEqual(syncLauncher.startDeviceSyncFlowSources, [.bookmarkAdded])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoConfirmed.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarkAdded"])
     }
 
-    // MARK: - Helper Methods
+    func testWhenBookmarksBarSyncButtonIsTappedThenSetupStartsFromBookmarksBar() {
+        // Given
+        let model = makeModel(source: .bookmarksBar)
 
-    private func createModel(source: DismissableSyncDeviceButtonModel.DismissableSyncDevicePromoSource) -> DismissableSyncDeviceButtonModel {
-        return DismissableSyncDeviceButtonModel(
+        // When
+        model.syncButtonAction()
+
+        // Then
+        XCTAssertEqual(promo.syncSetupStartedCount, 1)
+        XCTAssertEqual(syncLauncher.startDeviceSyncFlowSources, [.bookmarksBar])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarksBar"])
+    }
+
+    // MARK: - Debug reset
+
+    func testWhenStateIsResetThenAllLegacyKeysAreCleared() {
+        // Given
+        let keyValueStore = InMemoryKeyValueStore()
+        keyValueStore.set(true, forKey: UserDefaultsKeys.bookmarksBarSyncPromoDismissed.rawValue)
+        keyValueStore.set(Date(), forKey: UserDefaultsKeys.bookmarksBarSyncPromoFirstPresentedDate.rawValue)
+        keyValueStore.set(true, forKey: UserDefaultsKeys.bookmarkAddedSyncPromoDismissed.rawValue)
+        keyValueStore.set(3, forKey: UserDefaultsKeys.bookmarkAddedSyncPromoPresentedCount.rawValue)
+
+        // When
+        DismissableSyncDeviceButtonModel.resetAllState(from: keyValueStore)
+
+        // Then
+        XCTAssertNil(keyValueStore.object(forKey: "com.duckduckgo.bookmarksBarSyncPromoDismissed"))
+        XCTAssertNil(keyValueStore.object(forKey: "com.duckduckgo.bookmarkFirstPresentedCount"))
+        XCTAssertNil(keyValueStore.object(forKey: "com.duckduckgo.bookmarkAddedSyncPromoDismissed"))
+        XCTAssertNil(keyValueStore.object(forKey: "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount"))
+    }
+
+    // MARK: - Helpers
+
+    private func makeModel(source: DismissableSyncDeviceButtonModel.DismissableSyncDevicePromoSource = .bookmarkAdded) -> DismissableSyncDeviceButtonModel {
+        DismissableSyncDeviceButtonModel(
             source: source,
-            keyValueStore: mockKeyValueStore,
-            authStatePublisher: authStateSubject.eraseToAnyPublisher(),
-            initialAuthState: .initializing,
-            syncLauncher: mockSyncLauncher,
-            featureFlagger: mockFeatureFlagger
+            syncLauncher: syncLauncher,
+            pixelFiring: pixelFiring,
+            notificationCenter: NotificationCenter(),
+            promo: promo
         )
-    }
-
-    func waitForInitialInactiveStateToEnableSyncButton(on model: DismissableSyncDeviceButtonModel) {
-        let setupExpectation = expectation(description: "shouldShowSyncButton should be true after auth state change")
-        let setupCancellable = model.$shouldShowSyncButton
-            .sink { value in
-                if value {
-                    setupExpectation.fulfill()
-                }
-            }
-
-        authStateSubject.send(.inactive)
-        wait(for: [setupExpectation], timeout: 1.0)
-        setupCancellable.cancel()
     }
 }
 
 // MARK: - Mock Classes
 
-private class MockSyncDeviceFlowLauncher: SyncDeviceFlowLaunching {
+final class MockSyncDeviceFlowLauncher: SyncDeviceFlowLaunching {
     var startDeviceSyncFlowCalled = false
+    private(set) var startDeviceSyncFlowSources: [SyncDeviceButtonTouchpoint] = []
 
     func startDeviceSyncFlow(source: SyncDeviceButtonTouchpoint, completion: (() -> Void)?) {
         startDeviceSyncFlowCalled = true
+        startDeviceSyncFlowSources.append(source)
         completion?()
-    }
-}
-
-// MARK: - Date Extension for Testing
-
-private extension Date {
-    func isLessThan(daysAgo days: Int) -> Bool {
-        let timeInterval = TimeInterval(days * 24 * 60 * 60)
-        let daysAgoDate = Date().addingTimeInterval(-timeInterval)
-        return self > daysAgoDate
     }
 }

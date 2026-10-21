@@ -84,6 +84,19 @@ final class DuckAiTermsOfServiceStoreTests: XCTestCase {
         XCTAssertEqual(sut.recordWebReport(), .alreadyAccepted)
     }
 
+    func testWhenAcceptedFromExistingChatsThenTermsAreAccepted() {
+        sut.recordAcceptedFromExistingChats()
+
+        XCTAssertTrue(sut.hasAccepted)
+    }
+
+    /// A page that loaded before synced chats arrived can still show its card, and accepting there is the same acceptance.
+    func testWhenWebReportsAfterAnAcceptanceFromExistingChatsThenItIsNotARepeat() {
+        sut.recordAcceptedFromExistingChats()
+
+        XCTAssertEqual(sut.recordWebReport(), .firstAcceptance)
+    }
+
     /// Already accepted on the web, so the native send owes the web no report.
     func testWhenAcceptedInNativeInputAfterTheWebThenTheNextWebReportIsARepeat() {
         sut.recordWebReport()

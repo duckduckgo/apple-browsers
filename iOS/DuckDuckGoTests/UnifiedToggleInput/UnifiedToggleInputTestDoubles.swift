@@ -24,6 +24,7 @@ import AIChat
 final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
     private(set) var submissionStartedScopes: [DuckAIWideEventFlowScope] = []
     private(set) var submissionStartedModelIds: [String?] = []
+    private(set) var submissionStartedPageContextFlags: [Bool] = []
     private(set) var tabSwitchedAwayCalls: [TabUID] = []
     private(set) var promptInterpretedAsURLScopes: [DuckAIWideEventFlowScope] = []
     private(set) var promptDeliveryUpdates: [(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?)] = []
@@ -44,6 +45,7 @@ final class MockDuckAIWideEventInstrumentation: DuckAIWideEventInstrumentation {
                            attachmentsSelected: Bool) {
         submissionStartedScopes.append(scope)
         submissionStartedModelIds.append(modelId)
+        submissionStartedPageContextFlags.append(hasPageContext)
     }
     func promptDeliveryUpdated(scope: DuckAIWideEventFlowScope, wasQueued: Bool?, didSendBridgeMessage: Bool?) {
         promptDeliveryUpdates.append((scope, wasQueued, didSendBridgeMessage))

@@ -45,7 +45,7 @@ struct DataBrokerProtectionErrorView: View {
         VStack(alignment: .center, spacing: 16) {
 
             HStack {
-                Image("DaxLockScreenLogo")
+                Image(.daxLockScreenLogo)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 32, height: 32)
@@ -57,7 +57,7 @@ struct DataBrokerProtectionErrorView: View {
             .padding(.bottom, 25)
 
             HStack {
-                Image("dbp-error-info")
+                Image(.dbpErrorInfo)
                     .resizable()
                     .frame(width: 24, height: 24)
 

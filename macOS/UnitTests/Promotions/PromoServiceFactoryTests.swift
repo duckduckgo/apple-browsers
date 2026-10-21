@@ -253,7 +253,41 @@ extension PromoServiceFactoryTests {
                 featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState()),
+            syncSetupBookmarksPromoManager: .makeForTesting(content: .bookmarks),
+            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill),
+            bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                isBookmarksBarSettingOn: { true },
+                notificationCenter: NotificationCenter(),
+                legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            ),
+            bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                storage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
             )
+        )
+    }
+}
+
+extension SyncPromoManager {
+
+    static func makeForTesting(content: SyncPromoContent) -> SyncPromoManager {
+        SyncPromoManager(
+            content: content,
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            syncService: nil,
+            contentCountProvider: { 0 },
+            isDuckDuckGoPasswordManager: { false },
+            legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+            openSyncSettings: { },
+            recordResult: { _, _ in }
         )
     }
 }

@@ -31,6 +31,7 @@ import FeatureFlags_macOS
 import History
 import HistoryView
 import os.log
+import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyDashboard
@@ -345,7 +346,6 @@ extension AppDelegate {
             },
             preselectedCategory: category,
             preselectedSubCategory: subcategory,
-            isAppRebranded: Application.appDelegate.themeManager.isAppRebranded,
             onClose: {
                 window?.close()
             },
@@ -394,7 +394,6 @@ extension AppDelegate {
         var window: NSWindow?
 
         let formView = RequestNewFeatureFormFlowView(
-            isAppRebranded: Application.appDelegate.themeManager.isAppRebranded,
             onClose: {
                 window?.close()
             },
@@ -862,7 +861,11 @@ extension AppDelegate {
 
     @MainActor
     @objc func resetSyncPromoPrompts(_ sender: Any?) {
-        SyncPromoManager().resetPromos()
+        let legacyStorage = KeyedStorage<SyncPromoLegacySettings>(storage: UserDefaults.standard)
+        legacyStorage.bookmarksDismissedDate = nil
+        legacyStorage.passwordsDismissedDate = nil
+        promoService?.undismiss(promoId: PromoServiceFactory.syncSetupBookmarksPromoID, clearHistory: true)
+        promoService?.undismiss(promoId: PromoServiceFactory.syncSetupAutofillPromoID, clearHistory: true)
         DismissableSyncDeviceButtonModel.resetAllState(from: UserDefaults.standard)
     }
 
@@ -1054,8 +1057,17 @@ extension AppDelegate {
 
 extension MainViewController {
 
+    private var isWindowClosingAndBurning: Bool {
+        (view.window?.windowController as? MainWindowController)?.isClosingAndBurning == true
+    }
+
     /// Finds currently active Tab even if it's playing a Full Screen video
     private func getActiveTabAndIndex() -> (tab: Tab, index: TabIndex)? {
+        // A Fire Window can remain key during its closing animation after its last tab is removed.
+        guard !isWindowClosingAndBurning else {
+            return nil
+        }
+
         var tab: Tab? {
             // popup windows don‘t get to lastKeyMainWindowController so try getting their WindowController directly from a key window
             if let window = self.view.window,
@@ -1408,7 +1420,8 @@ extension MainViewController {
         if tabBarViewController.isDuckAIChatPresented {
             tabBarViewController.closeDuckAIChat()
         } else {
-            tabBarViewController.openDuckAISidebarWithPageAttachment()
+            tabBarViewController.openDuckAISidebarWithPageAttachment(conversationSource: .mainMenuAskAboutPage,
+                                                                     sidebarOpenSource: .mainMenuAskAboutPage)
         }
     }
 
@@ -1561,6 +1574,30 @@ extension MainViewController {
     @objc func inspectPermissions(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .url(.permissions, source: .ui))
+    }
+
+    @objc func debugShowPageSignals(_ sender: Any?) {
+        let signals = tabCollectionViewModel.selectedTabViewModel?.tab.pageSignals?.pageSignals
+        let alert = PageSignalsAlert(signals: signals)
+        alert.runModal()
+    }
+
+    @objc func debugVerifyDNSBlocking(_ sender: Any?) {
+        let host = tabCollectionViewModel.selectedTabViewModel?.tab.content.urlForWebView?.host
+
+        Task { @MainActor in
+            let alert = NSAlert()
+            alert.messageText = "DNS Blocking"
+
+            if let host {
+                let resolution = await DNSBlockDetector().resolution(for: host)
+                alert.informativeText = "\(host): \(resolution.rawValue)"
+            } else {
+                alert.informativeText = "The current tab has no site loaded."
+            }
+
+            await alert.runModal()
+        }
     }
 
     @objc func debugShowCookiePopupProtectionOptInDialog(_ sender: Any?) {
@@ -1909,6 +1946,10 @@ extension MainViewController {
 extension MainViewController: NSMenuItemValidation {
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        guard !isWindowClosingAndBurning else {
+            return false
+        }
+
         guard fireViewController.fireViewModel.fire.burningData == nil else {
             return true
         }

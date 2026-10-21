@@ -18,7 +18,6 @@
 
 import Cocoa
 import History
-import DesignResourcesKit
 import DesignResourcesKitIcons
 
 final class BackForwardListItemViewModel {
@@ -76,15 +75,15 @@ final class BackForwardListItemViewModel {
     var image: NSImage? {
         switch backForwardListItem.url {
         case .newtab:
-            return .homeFavicon
+            return NSImage(resource: .homeFavicon)
         case .settings:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : .settingsMulticolor16Legacy
+            return DesignSystemImages.Color.Size16.settings
         case .bookmarks:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder
+            return DesignSystemImages.Color.Size16.bookmarksNew
         case .history:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : .historyFaviconLegacy
+            return DesignSystemImages.Color.Size16.history
         case let url where url?.isDuckPlayer == true:
-            return .duckPlayer
+            return NSImage(resource: .duckPlayer)
         default:
             break
         }
@@ -95,7 +94,7 @@ final class BackForwardListItemViewModel {
             return image
         }
 
-        return .globeMulticolor16
+        return NSImage(resource: .globeMulticolor16)
     }
 
     var state: NSControl.StateValue {

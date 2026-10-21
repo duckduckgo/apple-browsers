@@ -170,11 +170,15 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         let sut = UnifiedToggleInputView(handler: handler)
         let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Submit", in: sut))
 
-        handler.usesAskSubmitButton = true
+        handler.termsOfServiceSendButton = .ask
         flushMainQueue()
         XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAIAskButtonTitle)
 
-        handler.usesAskSubmitButton = false
+        handler.termsOfServiceSendButton = .create
+        flushMainQueue()
+        XCTAssertEqual(submitButton.title(for: .normal), UserText.duckAICreateButtonTitle)
+
+        handler.termsOfServiceSendButton = nil
         flushMainQueue()
         XCTAssertNil(submitButton.title(for: .normal))
     }
@@ -291,9 +295,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     func test_flankedPillCentresTrailingButtonsOnItsTallerCard() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
-        sut.frame = CGRect(x: 0, y: 0, width: 402, height: 120)
+        sut.frame = CGRect(x: 0, y: 0, width: 402, height: UnifiedToggleInputView.aiTabCollapsedFooterHeight)
 
         let buttons = try XCTUnwrap(firstDescendant(of: SwitchBarButtonsView.self, in: sut))
+        let textEntry = try XCTUnwrap(buttons.superview as? SwitchBarTextEntryView)
 
         sut.applyCardLayout(.collapsed, animated: false)
         sut.layoutIfNeeded()
@@ -301,6 +306,8 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
         sut.applyCardLayout(.flanked, animated: false)
         sut.layoutIfNeeded()
+        textEntry.setNeedsLayout()
+        textEntry.layoutIfNeeded()
         XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
     }
 

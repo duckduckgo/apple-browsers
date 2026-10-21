@@ -410,7 +410,7 @@ private class TabBarViewModelMock: TabBarViewModel {
 
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never>
 
-    init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false, loading: Bool = false, error: WKError? = nil) {
+    init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = NSImage(resource: .aDark), tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false, pinned: Bool = false, loading: Bool = false, error: WKError? = nil) {
         self.width = width
         self.title = title
         self.favicon = favicon

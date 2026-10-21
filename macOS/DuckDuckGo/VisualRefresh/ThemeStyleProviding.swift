@@ -89,7 +89,7 @@ struct ThemeStyle: ThemeStyleProviding {
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
-            fireWindowGraphic: .burnerWindowGraphicNew,
+            fireWindowGraphic: NSImage(resource: .burnerWindowGraphicNew),
             addressBarStyleProvider: AddressBarStyleProvidingFactory.buildStyleProvider(),
             navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(),
             tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette),

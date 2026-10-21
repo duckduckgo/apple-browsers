@@ -823,6 +823,41 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(wideEvent.completions.isEmpty)
     }
 
+    // MARK: - Usage context and the standalone sheet reporter
+
+    private struct FixedUsageContextProvider: UsageContextProviding {
+        let currentContext = UsageContext(hardwareKeyboard: true, layout: .regular)
+        let currentWindowMode: UsageContext.WindowMode = .fullScreen
+    }
+
+    @available(iOS 16, *)
+    @Test("A started flow records the device layout and hardware keyboard", .timeLimit(.minutes(1)))
+    func startedFlowRecordsUsageContext() {
+        let wideEvent = WideEventMock()
+        let sut = DefaultDuckAIWideEventInstrumentation(wideEvent: wideEvent, usageContextProvider: FixedUsageContextProvider())
+        startPromptSubmission(on: Self.activeTab, sut: sut)
+
+        let parameters = lastStartedData(wideEvent)?.jsonParameters()
+        #expect(parameters?["feature.data.ext.device.layout"] as? String == "regular")
+        #expect(parameters?["feature.data.ext.device.hardware_keyboard"] as? Bool == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("The sheet's standalone reporter completes its native prompt as SUCCESS", .timeLimit(.minutes(1)))
+    func standaloneSheetReporterCompletesNativePrompt() {
+        let (instrumentation, wideEvent, _) = makeSUT()
+        let reporter = ContextualDuckAIPromptFlowReporter(instrumentation: instrumentation, isFireMode: false)
+
+        reporter.initialNativePromptSubmitted(hasPageContext: true)
+        reporter.frontendSubmissionAcknowledged()
+        reporter.chatStatusChanged(.loading)
+        reporter.chatStatusChanged(.ready)
+
+        #expect(lastStartedData(wideEvent)?.entryPoint == .contextualChat)
+        #expect(lastStartedData(wideEvent)?.origin == "contextual_chat")
+        #expect(lastCompletion(wideEvent)?.1 == .success())
+    }
+
     // MARK: - Event data
 
     @available(iOS 16, *)
@@ -831,7 +866,7 @@ struct DuckAIWideEventInstrumentationTests {
         #expect(DuckAIPromptWideEventData.metadata.pixelName == "duckai_prompt")
         #expect(DuckAIPromptWideEventData.metadata.featureName == "duckai-prompt")
         #expect(DuckAIPromptWideEventData.metadata.type == "ios-duckai-prompt")
-        #expect(DuckAIPromptWideEventData.metadata.version == "1.2.0")
+        #expect(DuckAIPromptWideEventData.metadata.version == "1.3.0")
     }
 
     @available(iOS 16, *)

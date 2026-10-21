@@ -1,6 +1,3 @@
-/* No comment provided by engineer. */
-"%@\n%@" = "%@\n%@";
-
 /* Auto-Restore Ready Sheet - Description */
 "auto.restore.ready.description" = "Atsāc Sync & Backup sesiju, lai atjaunotu grāmatzīmes, paroles un citus datus, vai turpini ar jaunu iestatīšanu.";
 
@@ -85,9 +82,6 @@
 /* Fetch Favicons Onboarding - Title */
 "fetch.favicons.onboarding.title" = "Lejupielādēt trūkstošās ikonas?";
 
-/* Options - Fetch Favicons Title */
-"fetch.favicons.option.title" = "Automātiski lejupielādēt ikonas";
-
 /* No comment provided by engineer. */
 "Keep Development" = "Paturēt izstrādi";
 
@@ -166,8 +160,17 @@
 /* Title on the sync-setup prompt asking whether to sync with another device or just this device */
 "sync.simplified.another.device.v2.title" = "Sinhronizē šo ierīci ar tuvumā esošu datoru.";
 
+/* Body on the sync-setup prompt explaining that the user can sync this device only and pair another device later */
+"sync.simplified.another.device.v3.body" = "Pašlaik nav citas ierīces? Sinhronizē tikai šo ierīci un vēlāk sinhronizē ar citu.";
+
+/* Title on the sync-setup prompt asking whether to sync with another device or just this device */
+"sync.simplified.another.device.v3.title" = "Vai tev tuvumā ir kāda cita ierīce? Sinhronizē savas ierīces.";
+
 /* Caption displayed on 'auto-download bookmarks icons' toggle. */
 "sync.simplified.bookmarks.section.fetch-favicons.caption" = "Ielādē ikonas no vietnēm, kurām esi pievienojis grāmatzīmi. Ikonu lejupielādes ir atklātas tavam tīklam.";
+
+/* Title of the toggle in the sync settings bookmarks section that loads icons for synced bookmarks */
+"sync.simplified.bookmarks.section.fetch-favicons.title" = "Ielādēt grāmatzīmju ikonas";
 
 /* Bookmarks section header in sync settings */
 "sync.simplified.bookmarks.section.header" = "Grāmatzīmes";
@@ -175,11 +178,23 @@
 /* Caption displayed on 'unify favorites' toggle. */
 "sync.simplified.bookmarks.section.unified-favorites.caption" = "Izmanto vienas un tās pašas izlases grāmatzīmes gan mobilajā ierīcē, gan galddatorā.";
 
+/* Title of the toggle in the sync settings bookmarks section that shares favorites across devices */
+"sync.simplified.bookmarks.section.unified-favorites.title" = "Kopīgot izlasi visās ierīcēs";
+
+/* Title shown when Sync setup is still waiting for the other device to finish */
+"sync.simplified.connecting.v2.check-other-device.title" = "Pārbaudi otru ierīci.";
+
 /* Title shown on the connecting screen while Sync & Backup is being set up on this device */
 "sync.simplified.connecting.v2.title" = "Sync & Backup ir pilnībā šifrēta visās tavās ierīcēs.";
 
 /* Sync settings 'Copy Recovery Code' button */
 "sync.simplified.copy.recovery.code.button" = "Kopēt atkopšanas kodu";
+
+/* Alert button that confirms turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.action" = "Neatgriezeniski dzēst";
+
+/* Title of the alert confirming turning off Sync & Backup and deleting the server data */
+"sync.simplified.delete.server.data.confirm.title" = "Šo darbību nevar atsaukt.";
 
 /* Sync settings action button title to turn off sync and delete server data */
 "sync.simplified.delete.sync.data.button" = "Izslēgt sinhronizāciju un dzēst servera datus";
@@ -214,8 +229,8 @@
 /* Label above the example sync code placeholder on the enter-code tab */
 "sync.simplified.enter.code.example.label" = "Koda piemērs:";
 
-/* First part of the enter-code instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.enter.code.open" = "Atver savā citā";
+/* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.enter.code.open.app" = "Atver savu citu %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Ielīmēt sinhronizācijas kodu";
@@ -244,11 +259,17 @@
 /* Footer caption shown under the Remove Device button on the manage device screen */
 "sync.simplified.manage.device.remove.footer" = "Ja noņemsi šo ierīci, tā vairs nevarēs piekļūt taviem sinhronizētajiem datiem.";
 
+/* Footer caption shown under the Remove Device button on the manage device screen. Parameter is the device name */
+"sync.simplified.manage.device.remove.footer.named" = "\"%@\" vairs nevarēs piekļūt taviem sinhronizētajiem datiem citās ierīcēs.";
+
 /* Status label shown under a device name on the manage device screen when the device is synced */
 "sync.simplified.manage.device.status.synced" = "Sinhronizēts";
 
 /* Footer caption shown under the Sync & Backup This Device toggle on the manage this device screen */
 "sync.simplified.manage.device.turn.off.footer" = "Ja šī opcija tiks izslēgta, šī ierīce vairs nevarēs piekļūt taviem sinhronizētajiem datiem.";
+
+/* Footer caption shown under the Sync This Device toggle on the manage this device screen. Parameter is the device name */
+"sync.simplified.manage.device.turn.off.footer.named" = "Ja šī opcija tiks izslēgta, \"%@\" vairs nevarēs piekļūt taviem sinhronizētajiem datiem citās ierīcēs.";
 
 /* My Devices section header shown when Sync & Backup is enabled */
 "sync.simplified.my.devices.section.header" = "Manas ierīces";
@@ -271,11 +292,20 @@
 /* Sync settings data recovery section footer. %@ is replaced with the URL. */
 "sync.simplified.recovery.section.footer" = "Izmanto šo kodu, lai atjaunotu datus, ja esi zaudējis piekļuvi šai ierīcei. Sync & Backup datus nevar atgūt pēc 18 mēnešu neaktivitātes. [Uzzināt vairāk](%@)";
 
-/* Part of instruction prompt referring to the DuckDuckGo app. */
+/* Confirmation alert button to remove a device from Sync & Backup */
+"sync.simplified.remove.device.confirm.action" = "Noņemt";
+
+/* Confirmation alert message when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.message" = "\"%@\" vairs nevarēs piekļūt taviem sinhronizētajiem datiem. Grāmatzīmes, automātiskās aizpildīšanas dati un Duck.ai sarunas paliks tavās ierīcēs.";
+
+/* Confirmation alert title when removing a device from Sync & Backup. Parameter is the device name */
+"sync.simplified.remove.device.confirm.title" = "Vai noņemt %@ no Sync & Backup?";
+
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo lietotne";
 
 /* Status text when connecting devices to sync */
-"sync.simplified.scan-or-view-code.connecting.status" = "Savieno...";
+"sync.simplified.scan-or-view-code.connecting.status" = "Notiek savienojuma izveide…";
 
 /* Message of the reminder shown after the user copies the sync code. */
 "sync.simplified.scan-or-view-code.copy-confirmation.message" = "Pēc koda ielīmēšanas atgriezies pie šīs ierīces.";
@@ -289,17 +319,32 @@
 /* Title of button to share a sync code */
 "sync.simplified.scan-or-view-code.share" = "Kopīgot kodu";
 
+/* Button on the scan-QR tab that opens the app's iOS Settings so the user can allow camera access */
+"sync.simplified.scan.v2.camera.denied.button" = "Mainīt atļaujas";
+
+/* Message on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.message" = "Ja vēlies sinhronizēt, skenējot kvadrātkodu, nepieciešama atļauja piekļūt kamerai.";
+
+/* Title on the scan-QR tab when camera access is denied */
+"sync.simplified.scan.v2.camera.denied.title" = "DuckDuckGo ir nepieciešama piekļuve tavai kamerai.";
+
 /* Close button in the scan screen navigation bar */
 "sync.simplified.scan.v2.close.button" = "Aizvērt";
 
-/* Chip label on the scan-QR tab referring to the DuckDuckGo desktop app */
+/* Name of the DuckDuckGo desktop app, inserted into the first scan-QR instruction (Open %@) */
 "sync.simplified.scan.v2.qr.app.name" = "DuckDuckGo datoram";
 
-/* Heading overlaid on the camera on the scan-QR tab of the scan screen */
+/* Button on the scan-QR intro animation card that dismisses the card and reveals the camera scanner */
+"sync.simplified.scan.v2.qr.got.it.button" = "Sapratu";
+
+/* Heading overlaid on the camera on the scan-QR tab */
 "sync.simplified.scan.v2.qr.heading" = "Skenē kvadrātkodu, lai sinhronizētu.";
 
-/* First part of the scan-QR instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.scan.v2.qr.open" = "Atvērt";
+/* Scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. **...** marks the parts shown in the primary text color. \\n is a line break. */
+"sync.simplified.scan.v2.qr.instruction" = "Lietotnē %@,\ndodies uz **Sync & Backup** › **Sinhronizēt ar citu ierīci**";
+
+/* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.scan.v2.qr.open.app" = "Atver %@";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "Esmu gatavs skenēt";
@@ -322,8 +367,8 @@
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Kopēt teksta kodu";
 
-/* First part of the sync-code sheet instructions, followed by a DuckDuckGo app chip */
-"sync.simplified.sync.code.sheet.open" = "Citā ierīcē atver";
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "Citā ierīcē atver %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Dodies uz **Sync & Backup** › **Sinhronizēt ar citu ierīci** un skenē šo kodu:";
@@ -336,6 +381,27 @@
 
 /* Sync & Backup enabled / disabled toggle title, referring to the current device */
 "sync.simplified.toggle.title.this.device" = "Sinhronizēt šo ierīci";
+
+/* Button on the turn off Sync & Backup sheet that turns off sync and deletes the server data */
+"sync.simplified.turn.off.sheet.delete.button" = "Izslēgt un dzēst servera datus";
+
+/* Message of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.delete.message" = "Visas ierīces, kas izmanto Sync & Backup, tiks atvienotas, un tavi sinhronizētie dati tiks dzēsti no servera.";
+
+/* Toggle label on the turn off Sync & Backup sheet to also delete the synced data from the server */
+"sync.simplified.turn.off.sheet.delete.toggle" = "Vai dzēst arī servera datus?";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is off */
+"sync.simplified.turn.off.sheet.delete.toggle.off.footer" = "Izslēdz Sync & Backup, izdzēs visus sinhronizētos datus no servera un deaktivizē savu atkopšanas kodu.";
+
+/* Caption under the delete server data toggle on the turn off Sync & Backup sheet while the toggle is on */
+"sync.simplified.turn.off.sheet.delete.toggle.on.footer" = "Izslēdzot Sync & Backup, no servera tiek dzēsti tavi sinhronizētie dati.";
+
+/* Title of the turn off Sync & Backup sheet when deleting server data is selected */
+"sync.simplified.turn.off.sheet.title" = "Izslēgt Sync & Backup?";
+
+/* Sync settings action button title that opens the options to turn off Sync & Backup */
+"sync.simplified.turn.off.sync.button" = "Izslēgt Sync & Backup";
 
 /* Sync With Another Device sync setup button label */
 "sync.simplified.with.another.device.button" = "Sinhronizēt ar citu ierīci";
@@ -354,9 +420,6 @@
 
 /* Synced Devices - This Device Label */
 "synced.devices.this.device.label" = "Šī ierīce";
-
-/* Options - Unify Favorites Title */
-"unified.favorites.title" = "Izlases apvienošana visās ierīcēs";
 
 /* No comment provided by engineer. */
 "You're using Sync Development environment" = "Jūs izmantojat Sync Development vidi";

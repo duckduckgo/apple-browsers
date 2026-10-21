@@ -346,7 +346,7 @@ final class UTIFooterControllerTests: XCTestCase {
 
     func testAttachedTabDoesNotTriggerFileUploadPrivacy() {
         let attachment = UnifiedToggleInputAttachment.tab(.init(tabId: "page-tab", title: "Page",
-                                                                 url: URL(string: "https://example.com")!))
+                                                                 url: URL(string: "https://example.com")!, source: .recentTabs))
         XCTAssertNil(UTIAttachmentPrivacyKind(attachment: attachment))
     }
 
@@ -1567,6 +1567,28 @@ final class UTIFooterControllerTests: XCTestCase {
         sut.refresh()
 
         XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage())
+    }
+
+    func test_setTermsOfServiceSendButton_namesTheButtonTheUserWillTap() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+
+        sut.setTermsOfServiceSendButton(.create)
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage(sendButton: .create))
+
+        sut.setTermsOfServiceSendButton(.ask)
+        XCTAssertEqual(presenter.appliedMessages.last, UTIFooterMessageMapper().termsOfServiceMessage(sendButton: .ask))
+    }
+
+    func test_setTermsOfServiceSendButton_keepsTheDisclaimerOnScreenForTheAcceptingTap() {
+        sut = makeSUT(viewModel: viewModel, termsOfServiceStore: termsStore)
+        sut.refresh()
+        sut.footerVisibilityChanged(isVisible: true)
+
+        sut.setTermsOfServiceSendButton(.create)
+
+        XCTAssertTrue(sut.isTermsOfServiceVisible)
+        XCTAssertTrue(sut.acceptTermsIfDisclaimerShown())
     }
 
     func test_refresh_presentsNothingOnceTheTermsAreAccepted() {

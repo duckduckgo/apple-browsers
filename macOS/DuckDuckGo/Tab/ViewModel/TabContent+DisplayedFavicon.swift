@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import DesignResourcesKit
 import DesignResourcesKitIcons
 import FeatureFlags_macOS
 import MaliciousSiteProtection
@@ -48,34 +47,34 @@ extension TabContent {
         // Handle special content types and URLs
         switch self {
         case .dataBrokerProtection:
-            return .personalInformationRemovalMulticolor16
+            return NSImage(resource: .personalInformationRemovalMulticolor16)
 
         case .newtab where isBurner:
             return DesignSystemImages.Glyphs.Size16.fireTab
 
         case .newtab:
-            return .homeFavicon
+            return NSImage(resource: .homeFavicon)
 
         case .settings:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : .settingsMulticolor16Legacy
+            return DesignSystemImages.Color.Size16.settings
 
         case .bookmarks:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder
+            return DesignSystemImages.Color.Size16.bookmarksNew
 
         case .onboarding:
-            return .onboardingDax
+            return NSImage(resource: .onboardingDax)
 
         case .history:
-            return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : .historyFaviconLegacy
+            return DesignSystemImages.Color.Size16.history
 
         case .subscription:
-            return DesignSystemRebrand.isAppRebranded() ?  DesignSystemImages.Color.Size16.subscription : .privacyProLegacy
+            return DesignSystemImages.Color.Size16.subscription
 
         case .identityTheftRestoration:
-            return .identityTheftRestorationMulticolor16
+            return NSImage(resource: .identityTheftRestorationMulticolor16)
 
         case .releaseNotes:
-            return .homeFavicon
+            return NSImage(resource: .homeFavicon)
 
         case .aiChat:
             return DesignSystemImages.Color.Size16.duckAI
@@ -83,13 +82,13 @@ extension TabContent {
         case .url(let url, _, _):
             // Handle special URL types
             if url.isHistory {
-                return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : .historyFaviconLegacy
+                return DesignSystemImages.Color.Size16.history
             } else if url.isDuckPlayer {
-                return .duckPlayerSettings
+                return NSImage(resource: .duckPlayerSettings)
             } else if url.isDuckAIURL {
                 return DesignSystemImages.Color.Size16.duckAI
             } else if url.isEmailProtection {
-                return DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : .emailProtectionIconLegacy
+                return DesignSystemImages.Color.Size16.emailProtection
             }
 
             // For regular URLs, return the actual favicon if available
@@ -106,18 +105,18 @@ extension TabContent {
     private static func errorFavicon(for error: Error) -> NSImage {
         // Handle certificate errors and malicious sites
         if let urlError = error as? URLError, urlError.code == .serverCertificateUntrusted {
-            return .redAlertCircle16
+            return NSImage(resource: .redAlertCircle16)
         } else if let maliciousError = error as? MaliciousSiteError {
             switch maliciousError.code {
             case .phishing, .malware, .scam:
-                return .redAlertCircle16
+                return NSImage(resource: .redAlertCircle16)
             }
         } else if (error as NSError).isWebContentProcessTerminated {
-            return .alertCircleColor16
+            return NSImage(resource: .alertCircleColor16)
         }
 
         // Default error favicon
-        return .alertCircleColor16
+        return NSImage(resource: .alertCircleColor16)
     }
 }
 

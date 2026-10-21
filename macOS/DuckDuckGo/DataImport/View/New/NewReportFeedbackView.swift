@@ -41,7 +41,7 @@ struct NewReportFeedbackView: View {
                              focusRingType: .exterior,
                              isFocusedOnAppear: true)
             .frame(height: 114)
-            .shadow(color: Color.addressBarShadow, radius: 1, x: 0, y: 1)
+            .shadow(color: Color(.addressBarShadow), radius: 1, x: 0, y: 1)
             .overlay(
                 VStack(alignment: .leading) {
                     HStack(alignment: .top) {

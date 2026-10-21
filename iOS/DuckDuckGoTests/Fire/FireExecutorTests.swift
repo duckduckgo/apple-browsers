@@ -291,8 +291,7 @@ final class FireExecutorTests: XCTestCase {
 
     // MARK: - App Switcher Snapshot Tests
 
-    func testWhenFeatureIsEnabledAndSingleTabIsBurnedThenAppSwitcherSnapshotCleanupFollowsTabWorkAndPrecedesCompletion() async {
-        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+    func testWhenSingleTabIsBurnedThenAppSwitcherSnapshotCleanupFollowsTabWorkAndPrecedesCompletion() async {
         var didClearSnapshots = false
         let executor = makeFireExecutor {
             XCTAssertTrue(self.mockDelegate.didFinishBurningTabsCalled)
@@ -304,17 +303,6 @@ final class FireExecutorTests: XCTestCase {
 
         XCTAssertTrue(didClearSnapshots)
         XCTAssertTrue(mockDelegate.didFinishBurningCalled)
-    }
-
-    func testWhenFeatureIsDisabledThenBurnDoesNotClearAppSwitcherSnapshots() async {
-        var didClearSnapshots = false
-        let executor = makeFireExecutor {
-            didClearSnapshots = true
-        }
-
-        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
-
-        XCTAssertFalse(didClearSnapshots)
     }
 
     // MARK: - Data store warm-up
@@ -434,8 +422,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
     }
 
-    func testWhenFeatureIsEnabledAndDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
-        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
+    func testWhenDirectAIChatBurnsSucceedThenAppSwitcherSnapshotsAreCleared() async {
         var cleanupCallCount = 0
         let executor = makeFireExecutor {
             cleanupCallCount += 1
@@ -449,7 +436,6 @@ final class FireExecutorTests: XCTestCase {
     }
 
     func testWhenDirectAIChatBurnFailsThenAppSwitcherSnapshotsAreNotCleared() async {
-        mockFeatureFlagger.enabledFeatureFlags.append(.appSwitcherSnapshotClearing)
         mockHistoryCleaner.deleteAIChatResult = .failure(NSError(domain: "test", code: 1))
         var didClearSnapshots = false
         let executor = makeFireExecutor {
@@ -995,6 +981,24 @@ final class FireExecutorTests: XCTestCase {
 
         let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
         XCTAssertNotNil(eventData.clearAIChatHistoryWarmupWaitMilliseconds)
+    }
+
+    func testWhenDataIsBurnedThenWideEventRecordsTheWebsiteDataWarmupAsAStep() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.warmUpWebsiteDataStoreDuration?.end)
+    }
+
+    func testWhenBurnFinishesThenWideEventRecordsTheAppSwitcherSnapshotClearingAsAStep() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.clearAppSwitcherSnapshotsDuration?.end)
     }
 
     func testWhenAIChatClearSucceededFirstTimeThenWideEventRecordsNoRetry() async throws {

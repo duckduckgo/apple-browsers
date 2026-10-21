@@ -36,6 +36,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case openAiChat = "omnibar_openAiChat"
         case viewAllAIChats = "omnibar_viewAllAIChats"
         case openCustomizeResponses = "omnibar_openCustomizeResponses"
+        case openPrivacyTerms = "omnibar_openPrivacyTerms"
         case setCustomizeResponsesActive = "omnibar_setCustomizeResponsesActive"
         case getOpenTabs = "omnibar_getOpenTabs"
         case getTabContent = "omnibar_getTabContent"
@@ -49,6 +50,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case attachmentPrivacyDisclaimerShown = "omnibar_attachmentPrivacyDisclaimerShown"
         case openAttachmentPrivacyLearnMore = "omnibar_openAttachmentPrivacyLearnMore"
         case selectUsageLimitsCta = "omnibar_selectUsageLimitsCta"
+        case launcherPromoShown = "omnibar_launcherPromoShown"
+        case selectLauncherPromoCta = "omnibar_selectLauncherPromoCta"
+        case dismissLauncherPromo = "omnibar_dismissLauncherPromo"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
@@ -92,7 +96,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.isSearchSuggestionDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.attachmentPrivacyDisclaimerPublisher.eraseToAnyPublisher()
+            configProvider.requiresAiTermsAcceptancePublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.attachmentPrivacyDisclaimerPublisher.eraseToAnyPublisher(),
+            configProvider.launcherPromoPublisher.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -131,6 +137,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
             MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) },
             MessageName.openCustomizeResponses.rawValue: { [weak self] in try await self?.openCustomizeResponses(params: $0, original: $1) },
+            MessageName.openPrivacyTerms.rawValue: { [weak self] in try await self?.openPrivacyTerms(params: $0, original: $1) },
             MessageName.setCustomizeResponsesActive.rawValue: { [weak self] in try await self?.setCustomizeResponsesActive(params: $0, original: $1) },
             MessageName.getOpenTabs.rawValue: { [weak self] in try await self?.getOpenTabs(params: $0, original: $1) },
             MessageName.getTabContent.rawValue: { [weak self] in try await self?.getTabContent(params: $0, original: $1) },
@@ -143,7 +150,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.dismissUsageLimits.rawValue: { [weak self] in try await self?.dismissUsageLimits(params: $0, original: $1) },
             MessageName.attachmentPrivacyDisclaimerShown.rawValue: { [weak self] in try await self?.attachmentPrivacyDisclaimerShown(params: $0, original: $1) },
             MessageName.openAttachmentPrivacyLearnMore.rawValue: { [weak self] in try await self?.openAttachmentPrivacyLearnMore(params: $0, original: $1) },
-            MessageName.selectUsageLimitsCta.rawValue: { [weak self] in try await self?.selectUsageLimitsCta(params: $0, original: $1) }
+            MessageName.selectUsageLimitsCta.rawValue: { [weak self] in try await self?.selectUsageLimitsCta(params: $0, original: $1) },
+            MessageName.launcherPromoShown.rawValue: { [weak self] in try await self?.launcherPromoShown(params: $0, original: $1) },
+            MessageName.selectLauncherPromoCta.rawValue: { [weak self] in try await self?.selectLauncherPromoCta(params: $0, original: $1) },
+            MessageName.dismissLauncherPromo.rawValue: { [weak self] in try await self?.dismissLauncherPromo(params: $0, original: $1) }
         ])
     }
 
@@ -182,7 +192,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             showAttachmentPrivacyDisclaimer: configProvider.showAttachmentPrivacyDisclaimer,
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
-            usageLimits: configProvider.usageLimits()
+            usageLimits: configProvider.usageLimits(),
+            requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
+            launcherPromo: configProvider.launcherPromo()
         )
     }
 
@@ -269,7 +281,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             showAttachmentPrivacyDisclaimer: configProvider.showAttachmentPrivacyDisclaimer,
             enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
             createImageModelSwitch: createImageModelSwitch,
-            usageLimits: configProvider.usageLimits()
+            usageLimits: configProvider.usageLimits(),
+            requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
+            launcherPromo: configProvider.launcherPromo()
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -337,8 +351,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             toolChoice: toolChoice,
             reasoningEffort: isUpdatedImageGenerationSubmission ? nil : reasoningEffortForSubmission(action: action),
             pageContexts: action.pageContext,
-            files: action.files
+            files: action.files,
+            aiTermsAccepted: action.aiTermsAccepted == true
         )
+        if action.launcherPromoVisible == true {
+            configProvider.launcherPromoIgnored()
+        }
         return nil
     }
 
@@ -414,6 +432,24 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         if outcome == .requiresSubscriptionUpsell {
             await subscriptionDialogPresenter?.showSubscriptionUpsellDialog(source: .usageLimit)
         }
+        return nil
+    }
+
+    @MainActor
+    private func launcherPromoShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        configProvider.launcherPromoShown()
+        return nil
+    }
+
+    @MainActor
+    private func selectLauncherPromoCta(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        configProvider.selectLauncherPromoCta()
+        return nil
+    }
+
+    @MainActor
+    private func dismissLauncherPromo(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        configProvider.dismissLauncherPromo()
         return nil
     }
 
@@ -503,6 +539,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     @MainActor
     private func openCustomizeResponses(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         actionHandler.openCustomizeResponses()
+        return nil
+    }
+
+    @MainActor
+    private func openPrivacyTerms(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        actionHandler.openPrivacyTerms()
         return nil
     }
 

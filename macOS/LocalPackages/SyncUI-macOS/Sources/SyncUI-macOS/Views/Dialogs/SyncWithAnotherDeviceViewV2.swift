@@ -23,6 +23,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 #if DEBUG
 import PreviewSnapshots
+import UIComponents
 #endif
 
 struct SyncWithAnotherDeviceViewV2: View {
@@ -182,27 +183,27 @@ struct SyncWithAnotherDeviceViewV2: View {
         VStack(alignment: .leading, spacing: 10) {
             InstructionStepV2(
                 number: 1,
-                prefix: UserText.syncWithAnotherDeviceScanStep1PrefixV2,
+                format: UserText.syncWithAnotherDeviceScanStep1V2,
                 detail: UserText.syncWithAnotherDeviceScanStep1DetailV2,
                 showsAppIcon: true
             )
 
             InstructionStepV2(
                 number: 2,
-                prefix: UserText.syncWithAnotherDeviceStep2PrefixV2,
+                format: UserText.syncWithAnotherDeviceStep2V2,
                 detail: UserText.syncWithAnotherDeviceStep2DetailV2
             )
 
             InstructionStepV2(
                 number: 3,
-                prefix: selectedTab == .scanCode
+                text: selectedTab == .scanCode
                     ? UserText.syncWithAnotherDeviceScanStep3V2
                     : UserText.syncWithAnotherDeviceEnterStep3V2
             )
 
             InstructionStepV2(
                 number: 4,
-                prefix: UserText.syncWithAnotherDeviceStep4V2
+                text: UserText.syncWithAnotherDeviceStep4V2
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -357,26 +358,40 @@ struct SyncWithAnotherDeviceViewV2: View {
 
 private struct InstructionStepV2: View {
     let number: Int
-    let prefix: String
-    var detail: String?
-    var showsAppIcon: Bool = false
+    let text: Text
 
-    private var detailSeparator: String {
-        prefix.hasSuffix("'") || prefix.hasSuffix("’") ? "" : " "
+    init(number: Int, text: String) {
+        self.number = number
+        self.text = Text(text)
+            .foregroundColor(Color(designSystemColor: .textSecondary))
     }
 
-    private var text: Text {
-        let prefix = Text(prefix)
-            .foregroundColor(Color(designSystemColor: .textSecondary))
+    init(number: Int, format: String, detail: String, showsAppIcon: Bool = false) {
+        self.number = number
 
-        guard let detail else {
-            return prefix
+        let parts = format.components(separatedBy: "%@")
+        let prefix = parts.first ?? ""
+        let suffix = parts.dropFirst().joined()
+
+        var detailText = Text(detail)
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+        if showsAppIcon {
+            detailText = detailText
+                + Text(verbatim: "\u{00A0}")
+                + Text(Image(nsImage: Self.appIcon))
+                    .baselineOffset(-4)
         }
 
-        return prefix
-            + Text(verbatim: detailSeparator)
-            + Text(detail)
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+        self.text = Text(prefix)
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            + detailText
+            + Text(suffix)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+    }
+
+    private static let appIcon = NSImage(size: NSSize(width: 16, height: 16), flipped: false) { rect in
+        DesignSystemImages.Color.Size24.appDuckDuckGo.draw(in: rect)
+        return true
     }
 
     var body: some View {
@@ -392,18 +407,9 @@ private struct InstructionStepV2: View {
             .frame(width: 16, height: 16)
             .frame(width: 24, alignment: .leading)
 
-            HStack(alignment: .center, spacing: 4) {
-                text
-                    .font(.system(size: 12))
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if showsAppIcon {
-                    Image(nsImage: DesignSystemImages.Color.Size24.appDuckDuckGo)
-                        .resizable()
-                        .frame(width: 16, height: 16)
-                        .accessibilityHidden(true)
-                }
-            }
+            text
+                .font(.system(size: 12))
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -449,6 +455,7 @@ struct SyncWithAnotherDeviceViewV2_Previews: PreviewProvider {
             .environmentObject(RecoveryCodeViewModel())
             .padding()
             .background(Color(nsColor: .windowBackgroundColor))
+            .applyRebranding()
         }
     )
 }

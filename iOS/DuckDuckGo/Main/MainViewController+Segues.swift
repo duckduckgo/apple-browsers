@@ -344,8 +344,8 @@ extension MainViewController {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings(completion: {
-            $0.triggerDeepLinkNavigation(to: .dbp)
-        }, deepLinkTarget: .dbp)
+            $0.triggerDeepLinkNavigation(to: .dbp())
+        }, deepLinkTarget: .dbp())
     }
 
     func segueToPIRWithSubscriptionCheck() {
@@ -357,9 +357,17 @@ extension MainViewController {
             let hasEntitlement = (try? await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)) ?? false
 
             if hasEntitlement || freemiumPIREligibilityChecker.canShowEntryPoint() {
+                let freeScanEntryPoint: FreemiumDBPEntryPoint?
+                if hasEntitlement {
+                    freeScanEntryPoint = nil
+                } else if freemiumDBPUserStateManager.firstScanResult == nil {
+                    freeScanEntryPoint = .freeScanBanner
+                } else {
+                    freeScanEntryPoint = .viewResultsBanner
+                }
                 launchSettings(completion: {
-                    $0.triggerDeepLinkNavigation(to: .dbp)
-                }, deepLinkTarget: .dbp)
+                    $0.triggerDeepLinkNavigation(to: .dbp(freeScanEntryPoint: freeScanEntryPoint))
+                }, deepLinkTarget: .dbp(freeScanEntryPoint: freeScanEntryPoint))
             } else {
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
@@ -501,6 +509,7 @@ extension MainViewController {
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
                                                             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                                                            daxGreetingDebugging: daxGreetingService,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
                                                             promoCoordinationCooldownResetter: promoCoordinationService)
@@ -636,7 +645,8 @@ extension MainViewController {
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
-            promoCoordinationCooldownResetter: self.promoCoordinationService))
+            promoCoordinationCooldownResetter: self.promoCoordinationService,
+            daxGreetingDebugging: self.daxGreetingService))
 
         debug.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
 

@@ -87,26 +87,12 @@ let temporarilyAllowedMisplacedFiles: Set<String> = [
     // Stage F: remove UserDefaultsWrapper after KeyedStoring migration.
     "DuckDuckGo/Common/Utilities/UserDefaultsWrapper.swift",
 
-    // Remaining helper and extension sources outside their target directories.
-    "DuckDuckGo/NetworkProtection/AppAndExtensionTargets/AppAndExtensionAndNotificationTargets/Bundle+VPN.swift",
-    "DuckDuckGo/NetworkProtection/AppAndExtensionTargets/AppAndExtensionAndNotificationTargets/NetworkProtectionOptionKeyExtension.swift",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/NetworkProtectionControllerErrorStore.swift",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/NetworkProtectionTunnelController.swift",
-    "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionTargets/MacPacketTunnelProvider.swift",
-    "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionTargets/MacTransparentProxyProvider.swift",
-    "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionTargets/NetworkProtectionNotificationsPresenterFactory.swift",
-    "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionTargets/Pixels/VPNFailureRecoveryPixel.swift",
-    "DuckDuckGo/NetworkProtection/NetworkExtensionTargets/SystemExtensionAndNotificationTargets/Bundle+NetworkProtectionExtensions.swift",
-    "DuckDuckGo/Subscription/SubscriptionManager+StandardConfiguration.swift",
-
     // Shared app icons, VPN assets, configuration, and localizations.
     "DuckDuckGo/AppIcons/AppIcon-Alpha.icon",
     "DuckDuckGo/AppIcons/AppIcon-Debug.icon",
     "DuckDuckGo/AppIcons/AppIcon-Review.icon",
     "DuckDuckGo/AppIcons/AppIcon.icon",
     "DuckDuckGo/ContentBlocker/Resources/macos-config.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/privacypro_devices_legacy.json",
-    "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/sparkleloop_wide_legacy.json",
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/upsell_devices_loop.json",
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/upsell_devices_reveal.json",
     "DuckDuckGo/NetworkProtection/AppTargets/BothAppTargets/Assets/vpn-animation.json",
@@ -280,14 +266,15 @@ struct TargetSourcesChecker: BuildToolPlugin, XcodeBuildToolPlugin {
             return ["DuckDuckGo"]
         case "tests-server":
             return ["tests-server"]
+        // HelperTargetsShared holds sources compiled into more than one helper target, never into the app.
         case "DuckDuckGoDBPBackgroundAgent", "DuckDuckGoDBPBackgroundAgentAppStore":
-            return ["DuckDuckGoDBPBackgroundAgent"]
+            return ["DuckDuckGoDBPBackgroundAgent", "HelperTargetsShared"]
         case "DuckDuckGoVPN", "DuckDuckGoVPNAppStore", "VPNProxyExtension":
-            return [targetName == "VPNProxyExtension" ? "VPNProxyExtension" : "DuckDuckGoVPN"]
+            return [targetName == "VPNProxyExtension" ? "VPNProxyExtension" : "DuckDuckGoVPN", "HelperTargetsShared"]
         case "DuckDuckGoVPNSysexAppStore", "NetworkProtectionSystemExtension":
-            return ["NetworkProtectionSystemExtension"]
+            return ["NetworkProtectionSystemExtension", "HelperTargetsShared"]
         case "NetworkProtectionAppExtension":
-            return ["NetworkProtectionAppExtension"]
+            return ["NetworkProtectionAppExtension", "HelperTargetsShared"]
         default:
             return nil
         }

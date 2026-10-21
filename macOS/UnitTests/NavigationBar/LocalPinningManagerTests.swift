@@ -16,20 +16,18 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Testing
 import VPN
 
 @testable import DuckDuckGo_Privacy_Browser
 
-final class LocalPinningManagerTests: XCTestCase {
+final class LocalPinningManagerTests {
 
-    override func setUp() {
-        super.setUp()
+    func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
     }
 
-    override func tearDown() {
-        super.tearDown()
+    func tearDown() {
         UserDefaultsWrapper<Any>.clearAll()
     }
 
@@ -37,42 +35,47 @@ final class LocalPinningManagerTests: XCTestCase {
         return LocalPinningManager()
     }
 
+    @Test("When toggling pinning for a view and view is not pinned, then view becomes pinned")
     func testWhenTogglingPinningForAView_AndViewIsNotPinned_ThenViewBecomesPinned() {
         let manager = createManager()
 
-        XCTAssertFalse(manager.isPinned(.autofill))
-        XCTAssertFalse(manager.isPinned(.bookmarks))
+        #expect(!manager.isPinned(.autofill))
+        #expect(!manager.isPinned(.bookmarks))
 
         manager.togglePinning(for: .autofill)
 
-        XCTAssertTrue(manager.isPinned(.autofill))
-        XCTAssertFalse(manager.isPinned(.bookmarks))
+        #expect(manager.isPinned(.autofill))
+        #expect(!manager.isPinned(.bookmarks))
     }
 
+    @Test("When toggling pinning for a view and view is already pinned, then view becomes unpinned")
     func testWhenTogglingPinningForAView_AndViewIsAlreadyPinned_ThenViewBecomesUnpinned() {
         let manager = createManager()
 
-        XCTAssertFalse(manager.isPinned(.autofill))
-        XCTAssertFalse(manager.isPinned(.bookmarks))
+        #expect(!manager.isPinned(.autofill))
+        #expect(!manager.isPinned(.bookmarks))
 
         manager.togglePinning(for: .autofill)
 
-        XCTAssertTrue(manager.isPinned(.autofill))
-        XCTAssertFalse(manager.isPinned(.bookmarks))
+        #expect(manager.isPinned(.autofill))
+        #expect(!manager.isPinned(.bookmarks))
 
         manager.togglePinning(for: .autofill)
 
-        XCTAssertFalse(manager.isPinned(.autofill))
-        XCTAssertFalse(manager.isPinned(.bookmarks))
+        #expect(!manager.isPinned(.autofill))
+        #expect(!manager.isPinned(.bookmarks))
     }
 
-    func testWhenChangingPinnedViews_ThenNotificationIsPosted() {
-        expectation(forNotification: .PinnedViewsChanged, object: nil)
+    @Test("When changing pinned views, then notification is posted")
+    func testWhenChangingPinnedViews_ThenNotificationIsPosted() async {
+        await confirmation("Pinned views changed notification") { confirmation in
+            NotificationCenter.default.addObserver(forName: .PinnedViewsChanged, object: nil, queue: .main) { _ in
+                confirmation()
+            }
 
-        let manager = createManager()
-        manager.togglePinning(for: .autofill)
-
-        waitForExpectations(timeout: 1.0)
+            let manager = createManager()
+            manager.togglePinning(for: .autofill)
+        }
     }
 
 }

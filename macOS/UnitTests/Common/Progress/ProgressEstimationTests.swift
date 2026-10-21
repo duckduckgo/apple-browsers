@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
-final class ProgressEstimationTests: XCTestCase {
+final class ProgressEstimationTests {
     typealias Event = LoadingProgressView.ProgressEvent
 
     let milestones = [
@@ -31,22 +31,21 @@ final class ProgressEstimationTests: XCTestCase {
         Event(progress: 1.00, interval: 20.0)
     ]
 
-    override var allowedNonNilVariables: Set<String> {
-        ["milestones"]
-    }
-
+    @Test("Initial progress estimation is correct when progress is started")
     func testWhenProgressIsStartedEstimationIsInitial() {
         let event = Event.nextStep(for: 0.0, lastProgressEvent: nil, milestones: milestones)
 
-        XCTAssertEqual(event, Event(progress: milestones[0].progress, interval: LoadingProgressView.Constants.animationDuration))
+        #expect(event == Event(progress: milestones[0].progress, interval: LoadingProgressView.Constants.animationDuration))
     }
 
+    @Test("No next step is returned when progress is finished")
     func testWhenProgressIsFinishedThenNoNextStep() {
         let event = Event.nextStep(for: 1.0, lastProgressEvent: Event(progress: 0.8, interval: 1.1), milestones: milestones)
 
-        XCTAssertNil(event)
+        #expect(event == nil)
     }
 
+    @Test("Next estimated event matches the next milestone")
     func testNextEstimatedEventMatchesNextMilestone() {
         var sum: CFTimeInterval = 0.0
         for (idx, milestone) in milestones[..<milestones.index(before: milestones.endIndex)].enumerated() {
@@ -55,56 +54,62 @@ final class ProgressEstimationTests: XCTestCase {
                                        lastProgressEvent: Event(progress: milestone.progress, interval: sum),
                                        milestones: milestones)
 
-            XCTAssertEqual(event, milestones[idx + 1])
+            #expect(event == milestones[idx + 1])
         }
     }
 
+    @Test("Estimation is shorter when progress moves faster")
     func testWhenProgressMovesFasterEstimationIsShorter() {
         let event = Event.nextStep(for: 0.65, lastProgressEvent: Event(progress: 0.65, interval: 18.0 / 9.0), milestones: milestones)
 
-        XCTAssertEqual(event, Event(progress: 0.8, interval: 5.0 / 9.0))
+        #expect(event == Event(progress: 0.8, interval: 5.0 / 9.0))
     }
 
+    @Test("Estimation is shorter when progress moves faster (second case)")
     func testWhenProgressMovesFasterEstimationIsShorter2() {
         let event = Event.nextStep(for: 0.7, lastProgressEvent: Event(progress: 0.5, interval: 5.0), milestones: milestones)
 
-        XCTAssertEqual(event?.progress, 0.8)
+        #expect(event?.progress == 0.8)
         let expectedInterval = (5.0 * 0.666 /* 33% passed from 0.6 to 0.7 */)
             * (5.0 / 9.0 /* expected (3.0 + 40% of 15.0 = 9) passed in actual 5 sec */ )
-        XCTAssertEqual(Int(expectedInterval * 100), Int(event!.interval * 100))
+        #expect(Int(expectedInterval * 100) == Int(event!.interval * 100))
     }
 
+    @Test("Estimation is not too short when progress moves too fast")
     func testWhenProgressMovesTooFastEstimationIsNotTooShort() {
         let event = Event.nextStep(for: 0.85, lastProgressEvent: Event(progress: 0.65, interval: 18.0 / 11.0), milestones: milestones)
 
-        XCTAssertEqual(event, Event(progress: 1.0, interval: milestones.last!.interval * LoadingProgressView.Constants.minMultiplier))
+        #expect(event == Event(progress: 1.0, interval: milestones.last!.interval * LoadingProgressView.Constants.minMultiplier))
     }
 
+    @Test("Estimation is longer when progress moves slower")
     func testWhenProgressMovesSlowerEstimationIsLonger() {
         let event = Event.nextStep(for: 0.65, lastProgressEvent: Event(progress: 0.65, interval: 18.0 * 9.0), milestones: milestones)
 
-        XCTAssertEqual(event, Event(progress: 0.8, interval: 5.0 * 9.0))
+        #expect(event == Event(progress: 0.8, interval: 5.0 * 9.0))
     }
 
+    @Test("Estimation is longer when progress moves slower (second case)")
     func testWhenProgressMovesSlowerEstimationIsLonger2() {
         let event = Event.nextStep(for: 0.9, lastProgressEvent: Event(progress: 0.7, interval: 60.0), milestones: milestones)
 
-        XCTAssertEqual(event?.progress, 1.0)
+        #expect(event?.progress == 1.0)
         let expectedInterval = (20.0 * 0.666 /* 33% passed from 0.0.85 to 0.9 */)
             * (60.0 / 19.65 /* expected (18.0 + 33% of 5.0 ~= 19.65) passed in actual 60 sec */ )
-        XCTAssertEqual(Int(expectedInterval * 100), Int(event!.interval * 100))
+        #expect(Int(expectedInterval * 100) == Int(event!.interval * 100))
     }
 
+    @Test("Estimation is not too long when progress moves too slow")
     func testWhenProgressMovesTooSlowEstimationIsNotTooLong() {
         let event = Event.nextStep(for: 0.4, lastProgressEvent: Event(progress: 0.3, interval: 180), milestones: milestones)
 
-        XCTAssertEqual(event, Event(progress: 0.65, interval: 150.0))
+        #expect(event == Event(progress: 0.65, interval: 150.0))
     }
 
+    @Test("Default estimation is used when no progress events exist")
     func testWhenNoProgressEventsEstimationIsDefault() {
         let event = Event.nextStep(for: 0.85, lastProgressEvent: nil, milestones: milestones)
 
-        XCTAssertEqual(event, Event(progress: 1.0, interval: milestones.last!.interval))
+        #expect(event == Event(progress: 1.0, interval: milestones.last!.interval))
     }
-
 }

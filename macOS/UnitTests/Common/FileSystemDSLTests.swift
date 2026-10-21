@@ -17,39 +17,37 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
-final class FileSystemDSLTests: XCTestCase {
-
-    private let rootDirectoryName = UUID().uuidString
-
-    override func setUp() {
-        super.setUp()
-        let defaultRootDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
-        try? FileManager.default.removeItem(at: defaultRootDirectoryURL)
+final class FileSystemDSLTests {
+    private func getUniqueDirectoryName(for testName: String) -> String {
+        return "FileSystemDSL_\(testName)_\(UUID().uuidString)"
     }
 
-    override func tearDown() {
-        super.tearDown()
-        let defaultRootDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
-        try? FileManager.default.removeItem(at: defaultRootDirectoryURL)
+    private func removeDirectory(named directoryName: String) {
+        let directoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(directoryName)
+        try? FileManager.default.removeItem(at: directoryURL)
     }
 
+    @Test("Root directory is created and removed when writing file system structure")
     func testWhenWritingFileSystemStructure_ThenRootDirectoryIsCreated() throws {
+        let rootDirectoryName = getUniqueDirectoryName(for: "RootDirectoryCreated")
         let structure = FileSystem(rootDirectoryName: rootDirectoryName) { }
 
         let expectedURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: expectedURL.path))
+        #expect(!FileManager.default.fileExists(atPath: expectedURL.path))
 
         try structure.writeToTemporaryDirectory()
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL.path))
+        #expect(FileManager.default.fileExists(atPath: expectedURL.path))
 
         try structure.removeCreatedFileSystemStructure()
-        XCTAssertFalse(FileManager.default.fileExists(atPath: expectedURL.path))
+        #expect(!FileManager.default.fileExists(atPath: expectedURL.path))
     }
 
+    @Test("Nested file system structure is created and removed correctly")
     func testWhenWritingNestedFileSystemStructure_ThenStructureIsCreated() throws {
+        let rootDirectoryName = getUniqueDirectoryName(for: "NestedStructure")
         let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
             File("top-level-file", contents: .string(""))
 
@@ -68,42 +66,44 @@ final class FileSystemDSLTests: XCTestCase {
         }
 
         let expectedURL = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName)
-        XCTAssertFalse(FileManager.default.fileExists(atPath: expectedURL.path))
+        #expect(!FileManager.default.fileExists(atPath: expectedURL.path))
 
         try structure.writeToTemporaryDirectory()
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL.path))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL.appendingPathComponent("top-level-file").path))
+        #expect(FileManager.default.fileExists(atPath: expectedURL.path))
+        #expect(FileManager.default.fileExists(atPath: expectedURL.appendingPathComponent("top-level-file").path))
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL.appendingPathComponent("folder-1").path))
+        #expect(FileManager.default.fileExists(atPath: expectedURL.appendingPathComponent("folder-1").path))
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL
+        #expect(FileManager.default.fileExists(atPath: expectedURL
             .appendingPathComponent("folder-1")
             .appendingPathComponent("nested-file").path))
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL
+        #expect(FileManager.default.fileExists(atPath: expectedURL
             .appendingPathComponent("folder-1")
             .appendingPathComponent("nested-folder").path))
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL
+        #expect(FileManager.default.fileExists(atPath: expectedURL
             .appendingPathComponent("folder-1")
             .appendingPathComponent("nested-folder")
             .appendingPathComponent("even-deeper-file").path))
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL.appendingPathComponent("folder-2").path))
+        #expect(FileManager.default.fileExists(atPath: expectedURL.appendingPathComponent("folder-2").path))
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL
+        #expect(FileManager.default.fileExists(atPath: expectedURL
             .appendingPathComponent("folder-2")
             .appendingPathComponent("second-nested-file").path))
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedURL
+        #expect(FileManager.default.fileExists(atPath: expectedURL
             .appendingPathComponent("folder-2")
             .appendingPathComponent("third-nested-file").path))
 
         try structure.removeCreatedFileSystemStructure()
-        XCTAssertFalse(FileManager.default.fileExists(atPath: expectedURL.path))
+        #expect(!FileManager.default.fileExists(atPath: expectedURL.path))
     }
 
+    @Test("String file contents are correctly persisted")
     func testWhenPersistingFile_AndFileContentsAreAString_ThenTheFileContentsAreCorrect() throws {
+        let rootDirectoryName = getUniqueDirectoryName(for: "StringContents")
         let expectedContents = "Top Level File Contents"
 
         let structure = FileSystem(rootDirectoryName: rootDirectoryName) {
@@ -115,12 +115,14 @@ final class FileSystemDSLTests: XCTestCase {
         let filePath = FileManager.default.temporaryDirectory.appendingPathComponent(rootDirectoryName).appendingPathComponent("top-level-file")
         let contents = try String(contentsOf: filePath)
 
-        XCTAssertEqual(contents, expectedContents)
+        #expect(contents == expectedContents)
 
         try structure.removeCreatedFileSystemStructure()
     }
 
+    @Test("Copied file contents are correctly persisted")
     func testWhenPersistingFile_AndFileContentsAreCopied_ThenTheFileContentsAreCorrect() throws {
+        let rootDirectoryName = getUniqueDirectoryName(for: "CopiedContents")
         let bundle = Bundle(for: FileSystemDSLTests.self)
         let bundleFileURL = bundle.resourceURL!.appendingPathComponent("DataImportResources/TestFirefoxData/No Primary Password/key4.db")
 
@@ -134,9 +136,8 @@ final class FileSystemDSLTests: XCTestCase {
         let bundleFileContents = try Data(contentsOf: bundleFileURL)
         let copiedFileContents = try Data(contentsOf: copiedFileURL)
 
-        XCTAssertEqual(bundleFileContents, copiedFileContents)
+        #expect(bundleFileContents == copiedFileContents)
 
         try structure.removeCreatedFileSystemStructure()
     }
-
 }

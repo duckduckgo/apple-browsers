@@ -192,8 +192,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Whether the web view is currently visible (vs native input being visible)
     var isWebViewVisible = false
     var nativeChatViewController: UIViewController?
-    /// A `ChatSession`; typed loosely so this file need not import the native chat package.
-    var nativeChatSession: AnyObject?
+    /// A `NativeChatInputBinding`; typed loosely so this file need not import the native chat package.
+    var nativeChatBinding: AnyObject?
     var nativeChatOrigin: NativeChatOrigin?
     var bypassesNativeChat = false
 

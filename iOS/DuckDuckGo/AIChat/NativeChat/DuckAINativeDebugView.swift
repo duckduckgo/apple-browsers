@@ -91,6 +91,16 @@ struct DuckAINativeDebugView: View {
             } footer: {
                 Text("Runs every case through the selected provider, keeps the device awake, and saves report.json and cases.json for scripts/duckai-native-evals/judge.py.")
             }
+            Section("Suggested prompts budget") {
+                Picker("Budget", selection: $settings.suggestionsBudgetSeconds) {
+                    Text("1.5 s").tag(1.5)
+                    Text("3 s").tag(3.0)
+                    Text("5 s").tag(5.0)
+                    Text("10 s").tag(10.0)
+                }
+                .pickerStyle(.segmented)
+            }
+            MLXModelsDebugSection(settings: settings)
             Section("Provider") {
                 Picker("Provider", selection: $settings.provider) {
                     Text("Automatic").tag(DuckAINativeSettings.ProviderChoice.automatic)

@@ -42,6 +42,15 @@ final class DuckAINativeSettings: ObservableObject {
         didSet { defaults.set(provider.rawValue, forKey: Keys.provider) }
     }
 
+    /// Nil picks a model by device memory.
+    @Published var mlxModelID: String? {
+        didSet { defaults.set(mlxModelID, forKey: Keys.mlxModel) }
+    }
+
+    @Published var suggestionsBudgetSeconds: Double {
+        didSet { defaults.set(suggestionsBudgetSeconds, forKey: Keys.suggestionsBudget) }
+    }
+
     private let defaults: UserDefaults
     private let featureFlagger: FeatureFlagger
 
@@ -55,6 +64,8 @@ final class DuckAINativeSettings: ObservableObject {
             selectionActions: defaults.string(forKey: Keys.selectionActions).flatMap(DuckAIRouting.Action.init) ?? .web
         )
         provider = defaults.string(forKey: Keys.provider).flatMap(ProviderChoice.init) ?? .automatic
+        mlxModelID = defaults.string(forKey: Keys.mlxModel)
+        suggestionsBudgetSeconds = defaults.object(forKey: Keys.suggestionsBudget) as? Double ?? 1.5
     }
 
     var isFeatureAvailable: Bool {
@@ -89,5 +100,7 @@ final class DuckAINativeSettings: ObservableObject {
         static let pageActions = "duckAINative.pageActions"
         static let selectionActions = "duckAINative.selectionActions"
         static let provider = "duckAINative.provider"
+        static let mlxModel = "duckAINative.mlxModel"
+        static let suggestionsBudget = "duckAINative.suggestionsBudget"
     }
 }

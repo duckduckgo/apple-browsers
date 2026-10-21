@@ -43,7 +43,9 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
               let content = input.pageContent, !content.isEmpty else { return resolved }
 
         let provider = await NativeChatProviderFactory.makeSuggestionsProvider()
+        let budget = await DuckAINativeSettings.shared.suggestionsBudgetSeconds
         let generator = SuggestedPromptsGenerator(provider: provider,
+                                                  budget: .milliseconds(Int(budget * 1_000)),
                                                   uiLanguageName: ContextualSuggestionsMatcher.languageDisplayName(input.uiLocale))
         let page = PageSnapshot(title: input.pageTitle ?? "", url: input.url.flatMap(URL.init(string:)), content: content, language: nil)
         let started = ContinuousClock.now

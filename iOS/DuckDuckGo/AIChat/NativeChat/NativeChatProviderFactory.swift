@@ -23,10 +23,10 @@ import DuckAIChatProviders
 import Foundation
 import UIKit
 
-/// One MLX provider for the app's lifetime, so a loaded model is shared by every surface.
+/// One MLX provider per selected model, so a loaded model is shared by every surface until the selection changes.
 @MainActor
 enum NativeChatProviderFactory {
-    private static let modelStore = ModelStore()
+    static let modelStore = ModelStore()
     private static var mlx: MLXProvider?
 
     static func makeProvider(_ choice: DuckAINativeSettings.ProviderChoice = DuckAINativeSettings.shared.provider) -> any ChatProvider {
@@ -64,13 +64,22 @@ enum NativeChatProviderFactory {
 
     private static var memoryWarningObserver: NSObjectProtocol?
 
+    static var selectedMLXModel: Model {
+        DuckAINativeSettings.shared.mlxModelID.flatMap(ModelCatalog.model(withID:))
+            ?? ModelCatalog.recommended(physicalMemory: ProcessInfo.processInfo.physicalMemory)
+    }
+
     private static func mlxProvider() -> MLXProvider {
-        if let mlx { return mlx }
-        let provider = MLXProvider(store: modelStore)
+        let model = selectedMLXModel
+        if let mlx, mlx.descriptor.id.rawValue == model.id { return mlx }
+        mlx?.unload()
+        let provider = MLXProvider(model: model, store: modelStore)
         mlx = provider
-        memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification,
-                                                                       object: nil, queue: .main) { _ in
-            provider.unload()
+        if memoryWarningObserver == nil {
+            memoryWarningObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification,
+                                                                           object: nil, queue: .main) { _ in
+                Task { @MainActor in mlx?.unload() }
+            }
         }
         return provider
     }

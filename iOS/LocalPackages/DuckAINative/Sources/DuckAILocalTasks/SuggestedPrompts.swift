@@ -56,39 +56,59 @@ public enum SuggestedPromptsResult: Equatable, Sendable {
 /// One-shot suggested prompts for the contextual sheet, from any `ChatProvider`.
 public struct SuggestedPromptsGenerator: Sendable {
     public static let defaultBudget: Duration = .milliseconds(1_500)
+    public static let defaultLoadBudget: Duration = .seconds(10)
 
     private let provider: any ChatProvider
     private let budget: Duration
+    private let loadBudget: Duration
     private let maxSuggestions: Int
     private let uiLanguageName: String
 
     /// `uiLanguageName` is the language suggestions are written in, e.g. "English".
     public init(provider: any ChatProvider,
                 budget: Duration = SuggestedPromptsGenerator.defaultBudget,
+                loadBudget: Duration = SuggestedPromptsGenerator.defaultLoadBudget,
                 maxSuggestions: Int = 4,
                 uiLanguageName: String) {
         self.provider = provider
         self.budget = budget
+        self.loadBudget = loadBudget
         self.maxSuggestions = maxSuggestions
         self.uiLanguageName = uiLanguageName
     }
 
-    /// Streams one reply and parses it, returning as soon as `maxSuggestions` whole lines have arrived. When `budget` elapses first, raises the reply's `StopSignal` and returns
+    /// Streams one reply and parses it, returning as soon as `maxSuggestions` whole lines have arrived. `budget` starts when
+    /// the model starts reading the page, so loading it does not count; `loadBudget` caps the wait before that. When a budget elapses first, raises the reply's `StopSignal` and returns
     /// `.timedOut` at once; the provider drains on its own (Core's stop contract). Never throws.
     public func suggestions(for page: PageSnapshot) async -> SuggestedPromptsResult {
         let stop = StopSignal()
         let turn = SuggestedPromptsPrompt.turn(for: page, count: maxSuggestions, uiLanguageName: uiLanguageName)
         let (results, continuation) = AsyncStream<SuggestedPromptsResult>.makeStream()
+        let (reading, readingContinuation) = AsyncStream<Void>.makeStream()
         Task.detached {
-            continuation.yield(await result(for: turn, stop: stop))
+            continuation.yield(await result(for: turn, stop: stop, onReading: { readingContinuation.finish() }))
             continuation.finish()
+            readingContinuation.finish()
         }
-        let timeout = Task.detached {
-            do {
-                try await Task.sleep(for: budget)
-            } catch {
-                return
+        let timeout = Task.detached { [budget, loadBudget] in
+            // Loading the model is excluded from `budget`; it has its own, longer cap.
+            let startedReading = await withTaskGroup(of: Bool.self) { group in
+                group.addTask {
+                    for await _ in reading {}
+                    return !Task.isCancelled
+                }
+                group.addTask {
+                    try? await Task.sleep(for: loadBudget)
+                    return false
+                }
+                let first = await group.next() ?? false
+                group.cancelAll()
+                return first
             }
+            if startedReading {
+                try? await Task.sleep(for: budget)
+            }
+            guard !Task.isCancelled else { return }
             stop.raise()
             continuation.yield(.timedOut)
             continuation.finish()
@@ -99,14 +119,17 @@ public struct SuggestedPromptsGenerator: Sendable {
         return result
     }
 
-    private func result(for turn: ProviderTurn, stop: StopSignal) async -> SuggestedPromptsResult {
+    private func result(for turn: ProviderTurn, stop: StopSignal, onReading: () -> Void) async -> SuggestedPromptsResult {
         var raw = ""
         var stats: GenerationStats?
         var refused = false
         do {
             for try await event in provider.reply(to: turn, stop: stop) {
                 switch event {
+                case .stage(.readingInput):
+                    onReading()
                 case .textDelta(let text):
+                    onReading()
                     raw += text
                     // Models often keep writing past the suggestions; stop as soon as enough whole lines have arrived.
                     if let lastNewline = raw.lastIndex(of: "\n") {

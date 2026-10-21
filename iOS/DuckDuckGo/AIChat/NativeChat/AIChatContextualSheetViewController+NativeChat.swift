@@ -19,7 +19,6 @@
 
 import AIChat
 import DuckAINative
-import Observation
 import UIKit
 
 /// What the native chat was started from, so "Continue in Duck.ai" can replay it on the web.
@@ -67,13 +66,13 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
     /// New Chat, or leaving for the web. Puts the sheet's own input back.
     func tearDownNativeChat() {
         guard nativeChatViewController != nil else { return }
-        (nativeChatSession as? ChatSession)?.close()
+        if let binding = nativeChatBinding as? NativeChatInputBinding {
+            binding.session.close()
+            binding.unbind()
+        }
         nativeChatViewController = nil
-        nativeChatSession = nil
+        nativeChatBinding = nil
         nativeChatOrigin = nil
-        persistentUTIHost?.nativeChatPromptSink = nil
-        persistentUTIHost?.nativeChatStopHandler = nil
-        persistentUTIHost?.setNativeChatStatus(.ready)
         showNativeInputUI()
     }
 
@@ -96,12 +95,7 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
                                                        surface: .contextualSheet,
                                                        showsComposer: persistentUTIHost == nil,
                                                        delegate: self)
-        if let persistentUTIHost {
-            persistentUTIHost.nativeChatPromptSink = { [weak session] prompt in session?.send(prompt) }
-            persistentUTIHost.nativeChatStopHandler = { [weak session] in session?.stop() }
-            observeStatus(of: session)
-        }
-        nativeChatSession = session
+        nativeChatBinding = persistentUTIHost.map { NativeChatInputBinding(host: $0, session: session) }
         removeCurrentChildViewController()
         isWebViewVisible = false
         nativeChatViewController = chat
@@ -113,27 +107,5 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
         sessionState.consumeAttachedSelections(ids: sessionState.attachedSelections.map { $0.id })
         sessionState.beginChatForUTISubmission()
         expandToLargeDetent()
-    }
-
-    /// Mirrors the session's status into the sheet's input, so it shows Stop while a reply is generating.
-    private func observeStatus(of session: ChatSession) {
-        let status = withObservationTracking {
-            session.state.status
-        } onChange: { [weak self, weak session] in
-            Task { @MainActor in
-                guard let self, let session, self.nativeChatSession === session else { return }
-                self.observeStatus(of: session)
-            }
-        }
-        persistentUTIHost?.setNativeChatStatus(Self.inputStatus(for: status))
-    }
-
-    private static func inputStatus(for status: ChatStatus) -> AIChatStatusValue {
-        switch status {
-        case .ready: .ready
-        case .loading: .loading
-        case .streaming: .streaming
-        case .error: .error
-        }
     }
 }

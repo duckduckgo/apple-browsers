@@ -106,6 +106,31 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func modelLoadingDoesNotCountAgainstTheBudget() async {
+        let provider = StubProvider(configuration: .init(reply: "What do ducks eat?\nHow long do ducks live?\n", wordsPerSecond: 200,
+                                                         loadTime: .milliseconds(600), readTime: .zero))
+        let generator = SuggestedPromptsGenerator(provider: provider, budget: .milliseconds(300), uiLanguageName: "English")
+
+        guard case .generated = await generator.suggestions(for: page) else {
+            Issue.record("a slow load must not use up the budget")
+            return
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func aModelThatNeverStartsReadingTimesOutAfterTheLoadBudget() async {
+        let provider = StubProvider(configuration: .init(reply: "What do ducks eat?\n", loadTime: .seconds(30)))
+        let generator = SuggestedPromptsGenerator(provider: provider, budget: .milliseconds(100), loadBudget: .milliseconds(200),
+                                                  uiLanguageName: "English")
+        let started = ContinuousClock.now
+
+        #expect(await generator.suggestions(for: page) == .timedOut)
+        #expect(started.duration(to: .now) < .seconds(2))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func aSlowModelTimesOutWithinTheBudget() async {
         let generator = SuggestedPromptsGenerator(provider: stub(String(repeating: "word ", count: 200), wordsPerSecond: 5),
                                                   budget: .milliseconds(150), uiLanguageName: "English")

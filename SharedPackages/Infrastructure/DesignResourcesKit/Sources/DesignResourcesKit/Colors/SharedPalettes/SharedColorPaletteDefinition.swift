@@ -128,7 +128,8 @@ protocol SharedColorPaletteDefinition {
     static var destructiveContentPrimary: DynamicColor { get }
     static var destructiveContentSecondary: DynamicColor { get }
     static var destructiveContentTertiary: DynamicColor { get }
-    static var destructiveGlow: DynamicColor { get }
+    static var destructiveGlowPrimary: DynamicColor { get }
+    static var destructiveGlowSecondary: DynamicColor { get }
     static var destructivePrimary: DynamicColor { get }
     static var destructiveSecondary: DynamicColor { get }
     static var destructiveTertiary: DynamicColor { get }

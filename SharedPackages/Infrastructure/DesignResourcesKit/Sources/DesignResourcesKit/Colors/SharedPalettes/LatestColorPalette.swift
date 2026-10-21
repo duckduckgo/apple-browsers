@@ -158,8 +158,6 @@ struct LatestColorPalette: SharedColorPaletteDefinition {
 
     // MARK: - Not Specialized
 
-    static let destructiveGlow = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
-
     static let alertGreen = DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)
     static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
 

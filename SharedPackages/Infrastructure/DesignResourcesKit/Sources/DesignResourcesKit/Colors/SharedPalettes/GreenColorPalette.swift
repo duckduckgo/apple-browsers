@@ -156,10 +156,6 @@ struct GreenColorPalette: SharedColorPaletteDefinition {
     static let unifiedInputTextPrimary = DynamicColor(lightHex: 0x041c03, lightOpacityHex: 0xf4, darkHex: 0xf2f8f4, darkOpacityHex: 0xf4)
     static let unifiedInputTextSecondary = DynamicColor(lightHex: 0x041c03, lightOpacityHex: 0x99, darkHex: 0xf2f8f4, darkOpacityHex: 0xa8)
 
-    // MARK: - Inherited from LatestColorPalette
-
-    static let destructiveGlow = DynamicColor(lightHex: 0xee1025, lightOpacityHex: 0x33, darkHex: 0xee1025, darkOpacityHex: 0x33)
-
     // MARK: - Not Specialized
 
     static let alertGreen = DynamicColor(lightColor: RebrandingColor.Green.green40, darkColor: RebrandingColor.Green.green40)

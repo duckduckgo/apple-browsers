@@ -208,8 +208,10 @@ extension SharedColorPaletteDefinition {
             return destructiveContentSecondary
         case .destructiveContentTertiary:
             return destructiveContentTertiary
-        case .destructiveGlow:
-            return destructiveGlow
+        case .destructiveGlowPrimary:
+            return destructiveGlowPrimary
+        case .destructiveGlowSecondary:
+            return destructiveGlowSecondary
         case .destructivePrimary:
             return destructivePrimary
         case .destructiveSecondary:

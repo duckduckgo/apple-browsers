@@ -125,7 +125,8 @@ public enum SharedDesignSystemColor {
     case destructiveContentPrimary
     case destructiveContentSecondary
     case destructiveContentTertiary
-    case destructiveGlow
+    case destructiveGlowPrimary
+    case destructiveGlowSecondary
     case destructivePrimary
     case destructiveSecondary
     case destructiveTertiary

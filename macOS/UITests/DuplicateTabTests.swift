@@ -47,7 +47,7 @@ class DuplicateTabTests: UITestCase {
         let initialCount = tabs.count
         XCTAssertGreaterThanOrEqual(initialCount, 1, "Should have at least 1 tab before duplicating")
 
-        app.menuItems["Duplicate Tab"].tap()
+        app.menuItems["Duplicate Tab"].click()
 
         // Bug: the duplicate tab is created in the model but never appears in the tab bar
         XCTAssertTrue(

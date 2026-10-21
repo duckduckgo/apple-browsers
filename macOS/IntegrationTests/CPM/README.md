@@ -132,3 +132,14 @@ fresh origin, native/page replies and real browser.storage.local persistence. It
 the owned store and registry. Window, Tab and browser-controller deallocation guards remain on.
 Both phases must pass for ON and OFF. Missing error 6 is a failed reproduction, never a pass.
 A failed prepare that never reaches the checkpoint cannot count as a reproduced metadata bug.
+
+
+Verified error-6 review fix (`a9f841cf83`) on macOS 27.0 (26A428), Xcode 27.0 (27A266a):
+all four prepare/resume stages passed with no failures or skips, with real error 6 after owned
+background SIGKILL and different app PIDs. ON used the saved replacement origin; OFF did not
+persist an error-triggered replacement. Real extension storage survived both relaunches, both
+reply paths were healthy, both owned stores were removed, and all 5,222 signed app/XCTest
+entries matched before and after every stage. The previous PR code reproduced missing origin
+metadata and reuse on the next app launch; that full restart itself restored messaging.
+Raw before/after xcresults and observations are retained under
+`/private/tmp/cpm-p3-restart-20261022/baseline-results` and `fixed-relaunch-results`.

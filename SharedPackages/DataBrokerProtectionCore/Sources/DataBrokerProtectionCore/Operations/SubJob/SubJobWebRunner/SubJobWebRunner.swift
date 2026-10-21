@@ -165,6 +165,11 @@ public extension SubJobWebRunning {
         #if os(macOS) && DEBUG
         if let handler = webViewHandler as? DataBrokerProtectionWebViewHandler {
             await handler.updateLivePreviewActivity(for: action.actionType, stepType: stepType)
+            // A form fill waits for its email, below, so the cursor types the value that will be used.
+            await handler.updateLivePreviewTarget(for: action is FillFormAction ? nil : action, profileQuery: context.profileQuery)
+            if let actionsHandler {
+                await handler.updateLivePreviewChecklist(actionsHandler, profileQuery: context.profileQuery)
+            }
         }
         #endif
 
@@ -351,6 +356,14 @@ public extension SubJobWebRunning {
         }
 
         #if os(macOS) && DEBUG
+        if action is FillFormAction, let handler = webViewHandler as? DataBrokerProtectionWebViewHandler {
+            await handler.updateLivePreviewTarget(for: action, profileQuery: context.profileQuery,
+                                                  email: fetchedEmail ?? extractedProfile?.email)
+        }
+        let previewDelay = PIRLivePreviewTargetQuery.presentationDelay(for: action, alreadyWaited: action is ClickAction ? clickAwaitTime : 0)
+        if previewDelay > 0 {
+            try? await Task.sleep(nanoseconds: UInt64(previewDelay * 1_000_000_000))
+        }
         guard await permitsAutomation(epoch) else { return }
         #endif
         let request: CCFRequestData = .userData(

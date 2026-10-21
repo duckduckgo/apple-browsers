@@ -17,34 +17,35 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import Core
 import Persistence
 import PrivacyConfig
 import SitePermissions
 @testable import DuckDuckGo
 
-final class LaunchOptionsHandlerTests: XCTestCase {
+@Suite(.serialized)
+final class LaunchOptionsHandlerTests {
     private static let suiteName = "testing_launchOptionsHandler"
-    private var userDefaults: UserDefaults!
+    private let userDefaults: UserDefaults
 
     private class MockInternalUserStore: InternalUserStoring {
         var isInternalUser: Bool = false
     }
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        userDefaults = UserDefaults(suiteName: Self.suiteName)
+    init() {
+        userDefaults = UserDefaults(suiteName: Self.suiteName)!
     }
 
-    override func tearDownWithError() throws {
+    deinit {
         userDefaults.removePersistentDomain(forName: Self.suiteName)
-        userDefaults = nil
-        try super.tearDownWithError()
     }
 
     // MARK: - isOnboardingCompleted
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusOverriddenDeveloperCompletedTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
         // GIVEN
         let environment = ["ONBOARDING": "false"]
@@ -54,9 +55,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(.developer(completed: true)))
+        #expect(result == .overridden(.developer(completed: true)))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusOverriddenDeveloperCompletedFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
         // GIVEN
         let environment = ["ONBOARDING": "true"]
@@ -66,9 +69,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(.developer(completed: false)))
+        #expect(result == .overridden(.developer(completed: false)))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusOverriddenUITestsCompletedTrueWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsTrue() {
         // GIVEN
         userDefaults.set("true", forKey: "isOnboardingCompleted")
@@ -78,9 +83,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(.uiTests(completed: true)))
+        #expect(result == .overridden(.uiTests(completed: true)))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusOverriddenCompletedFalseWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsFalse() {
         // GIVEN
         userDefaults.set("false", forKey: "isOnboardingCompleted")
@@ -90,9 +97,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(.uiTests(completed: false)))
+        #expect(result == .overridden(.uiTests(completed: false)))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnStatusNotOverriddenWhenIsOnboardingCompletedAndDefaultsAndEnvironmentAreNotDefined() {
         // GIVEN
         userDefaults.removeObject(forKey: "isOnboardingCompleted")
@@ -102,9 +111,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .notOverridden)
+        #expect(result == .notOverridden)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionShowsOnboardingWhenNotOverriddenAndOnboardingNotSeen() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
@@ -113,9 +124,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let decision = StartupOnboardingDecision(onboardingStatus: .notOverridden, tutorialSettings: tutorialSettings)
 
         // THEN
-        XCTAssertTrue(decision.shouldShowOnboarding)
+        #expect(decision.shouldShowOnboarding)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionSkipsOnboardingWhenDeveloperOverrideMarksItCompleted() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
@@ -127,9 +140,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         )
 
         // THEN
-        XCTAssertFalse(decision.shouldShowOnboarding)
+        #expect(!(decision.shouldShowOnboarding))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionShowsOnboardingWhenDeveloperOverrideMarksItIncomplete() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
@@ -141,9 +156,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         )
 
         // THEN
-        XCTAssertTrue(decision.shouldShowOnboarding)
+        #expect(decision.shouldShowOnboarding)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionPersistsUITestCompletionOverride() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
@@ -155,10 +172,12 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         )
 
         // THEN
-        XCTAssertFalse(decision.shouldShowOnboarding)
-        XCTAssertTrue(tutorialSettings.hasSeenOnboarding)
+        #expect(!(decision.shouldShowOnboarding))
+        #expect(tutorialSettings.hasSeenOnboarding)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testStartupOnboardingDecisionPersistsUITestIncompleteOverride() {
         // GIVEN
         let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: true)
@@ -170,12 +189,14 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         )
 
         // THEN
-        XCTAssertTrue(decision.shouldShowOnboarding)
-        XCTAssertFalse(tutorialSettings.hasSeenOnboarding)
+        #expect(decision.shouldShowOnboarding)
+        #expect(!(tutorialSettings.hasSeenOnboarding))
     }
 
     // MARK: - App Variant
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnAppVariantWhenAppVariantIsCalledAndDefaultsContainsAppVariant() {
         // GIVEN
         userDefaults.set("mb", forKey: "currentAppVariant")
@@ -185,9 +206,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.appVariantName
 
         // THEN
-        XCTAssertEqual(result, "mb")
+        #expect(result == "mb")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnNilWhenAppVariantIsCalledAndDefaultsDoesNotContainsAppVariant() {
         // GIVEN
         userDefaults.removeObject(forKey: "currentAppVariant")
@@ -197,9 +220,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.appVariantName
 
         // THEN
-        XCTAssertNil(result)
+        #expect(result == nil)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnNilWhenAppVariantIsCalledAndDefaultsContainsNullStringAppVariant() {
         // GIVEN
         userDefaults.set("null", forKey: "currentAppVariant")
@@ -209,11 +234,13 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.appVariantName
 
         // THEN
-        XCTAssertNil(result)
+        #expect(result == nil)
     }
 
     // MARK: - iPad 17.7.7 Issue
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldReturnDeveloperOverriddenCompletedWhenIpadAndOSIs17_7_7() throws {
         // GIVEN
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: true, systemVersion: "17.7.7")
@@ -222,9 +249,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(.developer(completed: true)))
+        #expect(result == .overridden(.developer(completed: true)))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldNotReturnDeveloperOverriddenCompletedWhenIpadAndOSIsNot17_7_7() throws {
         // GIVEN
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: true, systemVersion: "17.7.6")
@@ -233,9 +262,11 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .notOverridden)
+        #expect(result == .notOverridden)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testShouldNotReturnDeveloperOverriddenCompletedWhenIsNotIpadAndOSIs17_7_7() {
         // GIVEN
         let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults, isIpad: false, systemVersion: "17.7.7")
@@ -244,13 +275,15 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .notOverridden)
+        #expect(result == .notOverridden)
     }
 
     // MARK: - UI Test Overrides
 
 #if DEBUG
     @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenSitePermissionsAreSeededForUITestsThenRecordsCanBeCleared() throws {
         let argumentDomain = userDefaults.volatileDomain(forName: UserDefaults.argumentDomain)
         userDefaults.setVolatileDomain(
@@ -258,25 +291,27 @@ final class LaunchOptionsHandlerTests: XCTestCase {
             forName: UserDefaults.argumentDomain)
         defer { userDefaults.setVolatileDomain(argumentDomain, forName: UserDefaults.argumentDomain) }
         let store = SitePermissionsStore(storage: userDefaults.keyedStoring())
-        let url = try XCTUnwrap(URL(string: "https://example.com"))
-        let site = try XCTUnwrap(SitePermissionKey(committedURL: url))
+        let url = try #require(URL(string: "https://example.com"))
+        let site = try #require(SitePermissionKey(committedURL: url))
 
         let normalLaunch = LaunchOptionsHandler(
             environment: [:], userDefaults: userDefaults, arguments: [], internalUserStore: MockInternalUserStore())
         normalLaunch.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
-        XCTAssertTrue(store.storedSites.isEmpty)
+        #expect(store.storedSites.isEmpty)
 
         let testLaunch = LaunchOptionsHandler(
             environment: ["UITEST_MODE": "1"], userDefaults: userDefaults, arguments: [], internalUserStore: MockInternalUserStore())
         testLaunch.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
-        XCTAssertEqual(store.decision(for: .camera, at: site), .allow)
+        #expect(store.decision(for: .camera, at: site) == .allow)
 
         store.clearSitePermissions()
-        XCTAssertTrue(store.storedSites.isEmpty)
-        XCTAssertNotNil(userDefaults.dictionary(forKey: "sitePermissionsTestSeed"))
+        #expect(store.storedSites.isEmpty)
+        #expect(userDefaults.dictionary(forKey: "sitePermissionsTestSeed") != nil)
     }
 #endif
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenNoOverridesPassedThenInternalUserNotEnabled() {
         // GIVEN
         let featureFlagStore = UserDefaults(suiteName: "testing_featureFlags")!
@@ -293,13 +328,15 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN - No overrides applied, internal user should NOT be enabled
-        XCTAssertFalse(mockInternalUserStore.isInternalUser)
+        #expect(!(mockInternalUserStore.isInternalUser))
 
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenFeatureFlagOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
         // GIVEN
         userDefaults.set("true", forKey: "ff.uiTestFeatureFlag")
@@ -317,14 +354,16 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN
-        XCTAssertTrue(featureFlagStore.bool(forKey: "localOverrideUiTestFeatureFlag"))
-        XCTAssertFalse(mockInternalUserStore.isInternalUser)
+        #expect(featureFlagStore.bool(forKey: "localOverrideUiTestFeatureFlag"))
+        #expect(!(mockInternalUserStore.isInternalUser))
 
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenExperimentCohortOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
         // GIVEN
         userDefaults.set("treatment", forKey: "experiment.uiTestExperiment")
@@ -342,14 +381,16 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN
-        XCTAssertEqual(featureFlagStore.string(forKey: "localOverrideUiTestExperiment_cohort"), "treatment")
-        XCTAssertFalse(mockInternalUserStore.isInternalUser)
+        #expect(featureFlagStore.string(forKey: "localOverrideUiTestExperiment_cohort") == "treatment")
+        #expect(!(mockInternalUserStore.isInternalUser))
 
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenConfigRolloutOverrideIsPassedThenItIsAppliedWithoutEnablingInternalUser() {
         // GIVEN
         userDefaults.set("true", forKey: "config.rollout.duckPlayer.enableDuckPlayer")
@@ -367,14 +408,16 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN
-        XCTAssertTrue(configStore.bool(forKey: "config.duckPlayer.enableDuckPlayer.enabled"))
-        XCTAssertFalse(mockInternalUserStore.isInternalUser)
+        #expect(configStore.bool(forKey: "config.duckPlayer.enableDuckPlayer.enabled"))
+        #expect(!(mockInternalUserStore.isInternalUser))
 
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
         configStore.removePersistentDomain(forName: "testing_configRollout")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenIsInternalUserArgIsTrueThenInternalUserIsEnabled() {
         // GIVEN
         userDefaults.set("true", forKey: "isInternalUser")
@@ -392,7 +435,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN
-        XCTAssertTrue(mockInternalUserStore.isInternalUser)
+        #expect(mockInternalUserStore.isInternalUser)
 
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")
@@ -402,6 +445,8 @@ final class LaunchOptionsHandlerTests: XCTestCase {
     /// Verifies the one-way semantics of `-isInternalUser`: the arg can only set the flag to `true`.
     /// Passing `false` (or any non-"true" value) is a no-op. To detect "no-op", the mock starts at `true`
     /// and the assertion checks it stayed `true`. Off is the default state, set by absence of the arg.
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func testWhenIsInternalUserArgIsFalseThenInternalUserStoreIsNotModified() {
         // GIVEN
         userDefaults.set("false", forKey: "isInternalUser")
@@ -420,7 +465,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         sut.applyUITestOverrides(featureFlagOverrideStore: featureFlagStore, configRolloutStore: configStore)
 
         // THEN
-        XCTAssertTrue(mockInternalUserStore.isInternalUser)
+        #expect(mockInternalUserStore.isInternalUser)
 
         // Cleanup
         featureFlagStore.removePersistentDomain(forName: "testing_featureFlags")

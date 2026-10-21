@@ -96,16 +96,19 @@ finish() {
 		} >> "$GITHUB_STEP_SUMMARY"
 	fi
 
-	if [ "$OUTCOME" = "error" ]; then
-		exit 1
-	fi
-	exit 0
+	case "$OUTCOME" in
+		error|status_error) exit 1 ;;
+		*) exit 0 ;;
+	esac
 }
 
 echo "Release branch: $RELEASE_BRANCH"
 echo "Smartling files: ${FILE_URIS[*]}"
 
-if [ "$IGNORE_EXISTING_PR" != "true" ]; then
+OPEN_PR_URL=""
+if [ "$IGNORE_EXISTING_PR" = "true" ]; then
+	OPEN_PR_URL="$(gh pr list --head "$IMPORT_BRANCH" --state open --limit 1 --json url --jq '.[].url')"
+else
 	existing_pr="$(gh pr list --head "$IMPORT_BRANCH" --state all --limit 1 --json state,url --jq '.[] | "\(.state) \(.url)"')"
 	if [ -n "$existing_pr" ]; then
 		PR_URL="${existing_pr#* }"
@@ -130,7 +133,7 @@ REASON="$(jq -r '.reason' "$RESULT_FILE")"
 case "$status_outcome" in
 	ready) ;;
 	not_ready) finish not_ready "$STRINGS_LEFT of $TOTAL_STRINGS string translations are not completed yet" ;;
-	*) finish error ;;
+	*) finish status_error ;;
 esac
 
 if [ -n "$(git status --porcelain)" ]; then
@@ -168,6 +171,12 @@ git checkout -B "$IMPORT_BRANCH"
 git add -A -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstrings'
 git commit -m "Import $PLATFORM $VERSION translations from Smartling"
 git push --force origin "HEAD:refs/heads/$IMPORT_BRANCH"
+
+if [ -n "$OPEN_PR_URL" ]; then
+	PR_URL="$OPEN_PR_URL"
+	echo "✅ Updated $PR_URL"
+	finish pr_updated "The open translations pull request now has this import"
+fi
 
 if [ -n "$JOB_ID" ]; then
 	job_line="- Smartling job: [$JOB_NAME](https://dashboard.smartling.com/app/projects/$SMARTLING_PROJECT_ID/account-jobs/$SMARTLING_PROJECT_ID:$JOB_ID)"

@@ -165,7 +165,7 @@ jobs:
         if: >-
           always() && steps.release.outputs.is_wednesday == 'true' &&
           steps.script.outputs.available == 'true' &&
-          (steps.import.outcome == 'failure' || steps.import.outputs.outcome == 'not_ready')
+          (steps.import.outputs.outcome == 'not_ready' || steps.import.outputs.outcome == 'status_error')
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: create-asana-task
@@ -178,5 +178,5 @@ jobs:
             Job: ${{ steps.import.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.import.outputs.job_id) || 'no release job found' }} (${{ steps.import.outputs.job_status || 'unknown status' }}).
             String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}.
             Incomplete locales: ${{ steps.import.outputs.incomplete_locales || 'unavailable' }}.
-            Reason: ${{ steps.import.outputs.reason || 'The release import failed' }}.
+            Reason: ${{ steps.import.outputs.reason }}.
             Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

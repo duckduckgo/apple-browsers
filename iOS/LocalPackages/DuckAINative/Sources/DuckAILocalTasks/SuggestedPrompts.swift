@@ -76,7 +76,50 @@ public struct SuggestedPromptsGenerator: Sendable {
     /// Streams one reply and parses it. When `budget` elapses first, raises the reply's `StopSignal` and returns
     /// `.timedOut` at once; the provider drains on its own (Core's stop contract). Never throws.
     public func suggestions(for page: PageSnapshot) async -> SuggestedPromptsResult {
-        fatalError("not implemented")
+        let stop = StopSignal()
+        let turn = SuggestedPromptsPrompt.turn(for: page, count: maxSuggestions, uiLanguageName: uiLanguageName)
+        let (results, continuation) = AsyncStream<SuggestedPromptsResult>.makeStream()
+        Task.detached {
+            continuation.yield(await result(for: turn, stop: stop))
+            continuation.finish()
+        }
+        let timeout = Task.detached {
+            do {
+                try await Task.sleep(for: budget)
+            } catch {
+                return
+            }
+            stop.raise()
+            continuation.yield(.timedOut)
+            continuation.finish()
+        }
+        var iterator = results.makeAsyncIterator()
+        let result = await iterator.next() ?? .timedOut
+        timeout.cancel()
+        return result
+    }
+
+    private func result(for turn: ProviderTurn, stop: StopSignal) async -> SuggestedPromptsResult {
+        var raw = ""
+        var stats: GenerationStats?
+        var refused = false
+        do {
+            for try await event in provider.reply(to: turn, stop: stop) {
+                switch event {
+                case .textDelta(let text): raw += text
+                case .refusal: refused = true
+                case .finished(let generationStats): stats = generationStats
+                case .stage, .reasoningDelta: break
+                }
+            }
+        } catch let error as ChatError {
+            return .failed(error)
+        } catch {
+            return .failed(.unknown(String(describing: error)))
+        }
+        if refused { return .unusable(raw: "") }
+        let parsed = SuggestedPromptsPrompt.parse(raw, max: maxSuggestions)
+        return parsed.isEmpty ? .unusable(raw: raw.trimmingCharacters(in: .whitespacesAndNewlines)) : .generated(parsed, stats: stats)
     }
 }
 
@@ -90,13 +133,35 @@ public enum SuggestedPromptsPrompt {
     /// `contentCharacterLimit` characters of content. `maxOutputTokens` is 160. `history` is empty.
     public static func turn(for page: PageSnapshot, count: Int, uiLanguageName: String,
                             conversation: ConversationID = ConversationID()) -> ProviderTurn {
-        fatalError("not implemented")
+        let instructions = """
+        Write exactly \(count) short questions or requests a reader of this page might ask an assistant.
+        Write in \(uiLanguageName), one suggestion per line, with no numbering, bullets or preamble.
+        """
+        var lines = ["Title: \(page.title)"]
+        if let url = page.url { lines.append("URL: \(url.absoluteString)") }
+        lines.append("Content: \(page.content.prefix(contentCharacterLimit))")
+        let input = lines.joined(separator: "\n")
+        let estimatedInputTokens = Int((Double((instructions + input).count) / 3.5).rounded(.up))
+        return ProviderTurn(conversation: conversation, instructions: instructions, history: [], input: input,
+                            maxOutputTokens: 160, estimatedInputTokens: estimatedInputTokens)
     }
 
     /// Lenient: one suggestion per non-empty line. Strips bullets ("-", "*", "•"), numbering ("1.", "1)"), surrounding
     /// quotes and whitespace. Drops lines that are headings or preambles (ending in ":"), shorter than 8 or longer than
     /// 80 characters, and case-insensitive duplicates. Keeps order and returns at most `max`.
     public static func parse(_ raw: String, max: Int) -> [SuggestedPrompt] {
-        fatalError("not implemented")
+        guard max > 0 else { return [] }
+        let surroundingCharacters = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"'“”‘’"))
+        var seen: Set<String> = []
+        var suggestions: [SuggestedPrompt] = []
+        for line in raw.components(separatedBy: .newlines) {
+            let text = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: #"^(?:[-*•]\s*|\d+[.)]\s*)"#, with: "", options: .regularExpression)
+                .trimmingCharacters(in: surroundingCharacters)
+            guard (8...80).contains(text.count), !text.hasSuffix(":"), seen.insert(text.lowercased()).inserted else { continue }
+            suggestions.append(SuggestedPrompt(text))
+            if suggestions.count == max { break }
+        }
+        return suggestions
     }
 }

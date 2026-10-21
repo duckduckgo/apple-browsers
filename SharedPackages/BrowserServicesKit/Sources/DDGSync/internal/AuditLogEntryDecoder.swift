@@ -18,7 +18,47 @@
 
 import Foundation
 
-enum AuditLogEventType: String, Equatable {
+/// Caches the initial key-load result, including failures, and allows one forced refresh per audit-log page.
+/// The fetch loop uses this instance sequentially; it is intentionally not Sendable.
+final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
+    enum Error: Swift.Error {
+        case forcedRefreshAlreadyAttempted
+    }
+
+    private let manager: any AccountInfoKeyProviding
+    private var initialKeyResult: Result<AccountInfoKey, Swift.Error>?
+    private var didAttemptForcedRefresh = false
+
+    init(manager: any AccountInfoKeyProviding) {
+        self.manager = manager
+    }
+
+    func loadKey(for account: SyncAccount) async throws -> AccountInfoKey {
+        if let initialKeyResult {
+            return try initialKeyResult.get()
+        }
+        do {
+            let key = try await manager.loadKey(for: account)
+            initialKeyResult = .success(key)
+            return key
+        } catch {
+            initialKeyResult = .failure(error)
+            throw error
+        }
+    }
+
+    func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey {
+        guard !didAttemptForcedRefresh else {
+            throw Error.forcedRefreshAlreadyAttempted
+        }
+        didAttemptForcedRefresh = true
+        let key = try await manager.refreshKey(for: account)
+        initialKeyResult = .success(key)
+        return key
+    }
+}
+
+enum AuditLogEventType: String {
     case login
     case logout
 }
@@ -29,13 +69,12 @@ struct AuditLogEvent {
     let occurredAt: Date
     let device: RegisteredDevice
     let actor: RegisteredDevice?
-    let deviceMapping: RegisteredDeviceDebugInfo?
-    let actorMapping: RegisteredDeviceDebugInfo?
 }
 
 enum AuditLogUnreadableReason {
     case keyUnavailable
     case keyIDMismatch
+    case missingKeyID
     case decryptionFailed
     case invalidPayload
 }
@@ -70,11 +109,11 @@ struct AuditLogEntryDecoder {
         let actor: RegisteredDeviceEntry?
     }
 
-    private let accountInfoKeys: (any AccountInfoKeyManaging)?
+    private let accountInfoKeys: (any AccountInfoKeyProviding)?
     private let deviceMapper: any RegisteredDeviceMapping
     private let jweCompactCodec: JWECompactCodec
 
-    init(accountInfoKeys: (any AccountInfoKeyManaging)?,
+    init(accountInfoKeys: (any AccountInfoKeyProviding)?,
          deviceMapper: any RegisteredDeviceMapping,
          jweCompactCodec: JWECompactCodec = JWECompactCodec()) {
         self.accountInfoKeys = accountInfoKeys
@@ -106,9 +145,11 @@ struct AuditLogEntryDecoder {
 
         let snapshots = [payload.device] + (payload.actor.map { [$0] } ?? [])
         try Task.checkCancellation()
+        // Audit-log snapshots describe historical events and use the unified payload schema regardless of the current device-list flag.
         let mapping = await deviceMapper.registeredDevicesWithRepairState(from: snapshots,
                                                                            account: account,
-                                                                           isUnifiedReadEnabled: true)
+                                                                           isUnifiedReadEnabled: true,
+                                                                           accountInfoKeyProvider: accountInfoKeys)
         try Task.checkCancellation()
         guard let device = mapping.devices.first else {
             return .unreadable(id: entry.id, reason: .invalidPayload)
@@ -117,18 +158,21 @@ struct AuditLogEntryDecoder {
         guard payload.actor == nil || actor != nil else {
             return .unreadable(id: entry.id, reason: .invalidPayload)
         }
-        let actorMapping = payload.actor == nil ? nil : mapping.debugDevices.dropFirst().first
-
         return .decoded(AuditLogEvent(id: entry.id,
                                       type: type,
                                       occurredAt: occurredAt,
                                       device: device,
-                                      actor: actor,
-                                      deviceMapping: mapping.debugDevices.first,
-                                      actorMapping: actorMapping))
+                                      actor: actor))
     }
 
     private func decryptPayload(for entry: AuditLogEntry, account: SyncAccount) async throws -> PayloadDecryptionResult {
+        do {
+            guard try jweCompactCodec.protectedKeyID(in: entry.payload) != nil else {
+                return .unreadable(.missingKeyID)
+            }
+        } catch {
+            return .unreadable(.decryptionFailed)
+        }
         guard let accountInfoKeys else {
             return .unreadable(.keyUnavailable)
         }
@@ -154,7 +198,7 @@ struct AuditLogEntryDecoder {
 
     private func decryptPayloadAfterKeyRefresh(for entry: AuditLogEntry,
                                                account: SyncAccount,
-                                               accountInfoKeys: any AccountInfoKeyManaging) async throws -> PayloadDecryptionResult {
+                                               accountInfoKeys: any AccountInfoKeyProviding) async throws -> PayloadDecryptionResult {
         let refreshedKey: AccountInfoKey
         do {
             refreshedKey = try await accountInfoKeys.refreshKey(for: account)
@@ -176,6 +220,7 @@ struct AuditLogEntryDecoder {
     }
 
     private func interpret(_ payloadData: Data) -> PayloadInterpretation {
+        // Read type first so unknown event types can be skipped without decoding the rest of the payload.
         guard let typeProbe = try? JSONDecoder.snakeCaseKeys.decode(TypeProbe.self, from: payloadData) else {
             return .invalid
         }

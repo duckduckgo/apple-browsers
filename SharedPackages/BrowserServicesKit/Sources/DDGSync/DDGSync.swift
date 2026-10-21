@@ -358,76 +358,18 @@ public class DDGSync: DDGSyncing {
         }
     }
 
-    public func fetchAuditLogForDebug() async throws -> AuditLogDebugSummary {
+    public func auditLogDumpForDebug() async throws -> String {
         guard let account = try dependencies.secureStore.account() else {
             throw SyncError.accountNotFound
         }
 
         do {
             let page = try await dependencies.account.fetchAuditLog(for: account, cursor: nil, limit: nil)
-            return AuditLogDebugSummary(entryCount: page.entries.count,
-                                        hasAfterCursor: page.after?.isEmpty == false,
-                                        hasBeforeCursor: page.before != nil)
+            var description = ""
+            dump(page, to: &description)
+            return description
         } catch {
             throw handleUnauthenticatedAndMap(error)
-        }
-    }
-
-    public func fetchAuditLogEntriesForDebug() async throws -> AuditLogDebugEntries {
-        guard let account = try dependencies.secureStore.account() else {
-            throw SyncError.accountNotFound
-        }
-
-        do {
-            let page = try await dependencies.account.fetchAuditLog(for: account, cursor: nil, limit: nil)
-            let outcomes = try await dependencies.account.decodeAuditLogEntriesForDebug(page.entries, for: account)
-            let formattedEntries = zip(page.entries, outcomes)
-                .map { formatAuditLogEntry($0.0, outcome: $0.1) }
-                .joined(separator: "\n\n")
-            return AuditLogDebugEntries(entryCount: page.entries.count,
-                                        hasAfterCursor: !page.after.isEmpty,
-                                        hasBeforeCursor: page.before != nil,
-                                        formattedEntries: formattedEntries)
-        } catch {
-            throw handleUnauthenticatedAndMap(error)
-        }
-    }
-
-    private func formatAuditLogEntry(_ entry: AuditLogEntry, outcome: AuditLogEntryDecodingResult) -> String {
-        let envelope = "ID: \(entry.id)\nVersion: \(entry.version)\nPayload: encrypted (omitted)"
-        switch outcome {
-        case .decoded(let event):
-            let timestampFormatter = ISO8601DateFormatter()
-            timestampFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            let actor = event.actor.map { "\nActor: \(formatAuditLogDevice($0, mapping: event.actorMapping))" } ?? ""
-            return "\(envelope)\nStatus: Decoded\nType: \(event.type.rawValue)\nOccurred at: \(timestampFormatter.string(from: event.occurredAt))\nDevice: \(formatAuditLogDevice(event.device, mapping: event.deviceMapping))\(actor)"
-        case .unsupportedVersion(_, let version):
-            return "\(envelope)\nStatus: Unsupported version (\(version))"
-        case .unknownType(_, let type):
-            return "\(envelope)\nStatus: Unknown event type (\(type))"
-        case .unreadable(_, let reason):
-            return "\(envelope)\nStatus: Unreadable (\(auditLogUnreadableReasonDescription(reason)))"
-        }
-    }
-
-    private func formatAuditLogDevice(_ device: RegisteredDevice, mapping: RegisteredDeviceDebugInfo?) -> String {
-        var details = "\(device.name) • \(device.type) • \(device.id)"
-        if let mapping {
-            details += " [\(mapping.source.rawValue)"
-            if let issue = mapping.deviceInfoIssue {
-                details += "; \(issue)"
-            }
-            details += "]"
-        }
-        return details
-    }
-
-    private func auditLogUnreadableReasonDescription(_ reason: AuditLogUnreadableReason) -> String {
-        switch reason {
-        case .keyUnavailable: return "account_info key unavailable"
-        case .keyIDMismatch: return "JWE key ID does not match a held key"
-        case .decryptionFailed: return "payload decryption failed"
-        case .invalidPayload: return "decrypted payload is invalid"
         }
     }
 

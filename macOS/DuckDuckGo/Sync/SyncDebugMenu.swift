@@ -43,7 +43,7 @@ final class SyncDebugMenu: NSMenu {
                 .withAccessibilityIdentifier("SyncDebugMenu.ensureAccountInfoKey")
             NSMenuItem(title: "Validate account_info key", action: #selector(validateAccountInfoKey), target: self)
                 .withAccessibilityIdentifier("SyncDebugMenu.validateAccountInfoKey")
-            NSMenuItem(title: "Fetch audit log", action: #selector(fetchAuditLog), target: self)
+            NSMenuItem(title: "Fetch decoded audit log", action: #selector(fetchAuditLogDump), target: self)
                 .withAccessibilityIdentifier("SyncDebugMenu.fetchAuditLog")
             NSMenuItem.separator()
 
@@ -202,15 +202,14 @@ final class SyncDebugMenu: NSMenu {
         }
     }
 
-    @objc private func fetchAuditLog() {
+    @objc private func fetchAuditLogDump() {
         Task { @MainActor [weak self] in
             guard let self, let syncService = NSApp.delegateTyped.syncService else { return }
             do {
-                let summary = try await syncService.fetchAuditLogForDebug()
-                let message = "Fetched \(summary.entryCount) entries. Newer cursor: \(summary.hasAfterCursor ? "available" : "none"). Older page: \(summary.hasBeforeCursor ? "available" : "none")."
-                await showAlert(title: "Audit Log Fetch Succeeded", message: message)
+                let report = try await syncService.auditLogDumpForDebug()
+                await showAuditLog(report)
             } catch {
-                await showAlert(title: "Unable to Fetch Audit Log", message: String(reflecting: error))
+                await showAlert(title: "Unable to Fetch Decoded Audit Log", message: String(reflecting: error))
             }
         }
     }
@@ -220,6 +219,31 @@ final class SyncDebugMenu: NSMenu {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        await alert.runModal()
+    }
+
+    @MainActor
+    private func showAuditLog(_ report: String) async {
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 560, height: 360))
+        scrollView.hasVerticalScroller = true
+        scrollView.borderType = .bezelBorder
+
+        let textView = NSTextView(frame: scrollView.contentView.bounds)
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        textView.string = report
+        textView.autoresizingMask = [.width]
+        textView.textContainer?.containerSize = NSSize(width: scrollView.contentView.bounds.width, height: .greatestFiniteMagnitude)
+        textView.textContainer?.widthTracksTextView = true
+        scrollView.documentView = textView
+
+        let alert = NSAlert()
+        alert.messageText = "Decoded Audit Log Entries"
+        alert.accessoryView = scrollView
         alert.addButton(withTitle: "OK")
         await alert.runModal()
     }

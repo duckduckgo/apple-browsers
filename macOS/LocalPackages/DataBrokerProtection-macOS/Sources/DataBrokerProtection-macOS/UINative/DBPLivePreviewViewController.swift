@@ -38,7 +38,7 @@ public final class DBPLivePreviewViewController: NSViewController {
     }
 
     /// The design's modal: the broker page on the left under a browser bar, the steps panel on the right.
-    public static let maximumSize = NSSize(width: 1385, height: 784)
+    public static let maximumSize = NSSize(width: 1500, height: 900)
     private static let sidebarWidth: CGFloat = 480
     private static let browserBarHeight: CGFloat = 40
 

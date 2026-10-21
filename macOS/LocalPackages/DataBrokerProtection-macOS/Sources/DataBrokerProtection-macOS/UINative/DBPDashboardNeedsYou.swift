@@ -253,18 +253,18 @@ private final class PreviewOverlayView: NSView {
     }
 
     // Sized by frame, not constraints, so the card never limits how small or large the window can get.
-    // As in the design: fill the dashboard with a 32pt margin, up to the design's size.
+    // Fill the dashboard with a 24pt margin, up to the maximum size.
     override func layout() {
         super.layout()
         let maximum = DBPLivePreviewViewController.maximumSize
-        let size = CGSize(width: max(0, min(maximum.width, bounds.width - 64)), height: max(0, min(maximum.height, bounds.height - 64)))
+        let size = CGSize(width: max(0, min(maximum.width, bounds.width - 48)), height: max(0, min(maximum.height, bounds.height - 48)))
         shadowHost.frame = CGRect(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2,
                                   width: size.width, height: size.height).integral
     }
 
     // The scrim takes every click so the dashboard behind it stays inert, like a modal.
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard !isHidden, alphaValue > 0 else { return nil }
+        guard !isHidden else { return nil }
         return super.hitTest(point) ?? self
     }
 
@@ -273,7 +273,7 @@ private final class PreviewOverlayView: NSView {
 
     func show(starting brokerName: String?) {
         hideTask?.cancel()
-        alphaValue = 1
+        shadowHost.alphaValue = 1
         isHidden = false
         preview.showStarting(brokerName: brokerName)
     }
@@ -283,12 +283,12 @@ private final class PreviewOverlayView: NSView {
         isHidden = true
     }
 
-    // While the user helps in the page's own window, step out of the way; come back when the agent resumes.
+    // While the user helps in the page's own window, the card steps out of the way and the dim stays as it is.
     // Fading keeps the preview polling, which hiding would stop, so it still notices the resume.
     private func userControlChanged(_ isUserControlling: Bool) {
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.2
-            animator().alphaValue = isUserControlling ? 0 : 1
+            shadowHost.animator().alphaValue = isUserControlling ? 0 : 1
         }
     }
 

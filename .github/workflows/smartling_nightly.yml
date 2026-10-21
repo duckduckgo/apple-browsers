@@ -1,9 +1,10 @@
 name: Smartling - Nightly Jobs
 
-# Manual only for now. A follow-up adds `schedule:` (every day, weekends included);
-# the platform matrix and the limit below already handle scheduled runs, which have no inputs.
-# To test without authorizing anything, run it with auto_authorize_max_usd set to 0.
+# Runs every night, weekends included, for both platforms with the default limit.
+# To test without authorizing anything, run it manually with auto_authorize_max_usd set to 0.
 on:
+  schedule:
+    - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
       platform:

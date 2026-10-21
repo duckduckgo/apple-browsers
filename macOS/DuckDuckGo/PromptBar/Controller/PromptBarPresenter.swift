@@ -141,6 +141,8 @@ final class PromptBarPresenter: PromptBarPresenting {
 
     func toggle(source: PromptBarPresentationSource) {
         if isVisible {
+            // Like a click outside: a screenshot capture, tool menu or sheet would outlive the hidden bar.
+            guard !content.isPresentingAuxiliaryUI else { return }
             dismiss(reason: source.toggleDismissReason)
         } else {
             show(source: source)

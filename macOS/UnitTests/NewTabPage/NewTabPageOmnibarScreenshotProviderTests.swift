@@ -119,6 +119,27 @@ struct NewTabPageOmnibarScreenshotProviderTests {
         #expect(pixels.actualFireCalls.first?.frequency == .dailyAndCount)
     }
 
+    @available(macOS 13, *)
+    @Test("The page's image and screenshot telemetry fires the matching pixel, and drops values it doesn't know", .timeLimit(.minutes(1)))
+    func pageTelemetryFiresTheMatchingPixel() {
+        let cases: [(event: NewTabPageDataModel.TelemetryEvent, name: String?, parameters: [String: String])] = [
+            (.omnibarImageAttached(source: "paste"), "aichat_ntp_image_attached", ["source": "paste"]),
+            (.omnibarImageRemoved(source: "screenshot"), "aichat_ntp_image_removed", ["source": "screenshot"]),
+            (.omnibarScreenshotTaken(kind: "window"), "aichat_ntp_screenshot_taken", ["kind": "window"]),
+            (.omnibarScreenshotRemoved, "aichat_ntp_screenshot_removed", [:]),
+            (.omnibarScreenshotFailed(reason: "denied"), "aichat_ntp_screenshot_failed", ["reason": "denied"]),
+            (.omnibarScreenshotFailed(reason: "unknown"), nil, [:])
+        ]
+        for testCase in cases {
+            let pixels = PixelKitMock()
+            NewTabPageConfigurationEventHandler(pixelFiring: pixels).fire(.newTabPageTelemetry(payload: testCase.event))
+
+            #expect(pixels.actualFireCalls.map(\.pixel.name) == (testCase.name.map { [$0] } ?? []), "\(testCase.event)")
+            #expect((pixels.actualFireCalls.first?.pixel.parameters ?? [:]) == testCase.parameters, "\(testCase.event)")
+            #expect(pixels.actualFireCalls.allSatisfy { $0.frequency == .dailyAndCount })
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeFeatureFlagger(enabled: Bool) -> MockFeatureFlagger {

@@ -55,6 +55,8 @@ protocol OmniBar: AnyObject {
     func enterPadState()
 
     func startBrowsing()
+    /// Use after a loading-state refresh has already rendered the current interface.
+    func startBrowsingIfNeeded()
     func stopBrowsing()
     func startLoading()
     func stopLoading()
@@ -106,6 +108,10 @@ protocol OmniBar: AnyObject {
 }
 
 extension OmniBar {
+    func startBrowsingIfNeeded() {
+        startBrowsing()
+    }
+
     var isInputFirstResponder: Bool {
         barView.textField.isFirstResponder || (barView as? ExpandableOmniBarView)?.aiChatTextView.isFirstResponder == true
     }

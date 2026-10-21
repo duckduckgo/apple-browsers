@@ -784,6 +784,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: already active, skipping re-apply")
             return
         }
+        // Before the snapshot, so the edited prompt isn't saved as the outgoing tab's draft.
+        endEditMode(collapses: false)
         if let previous {
             let snapshot = snapshotCurrentState()
             Logger.unifiedInputState.debug("activateForTab [\(uid)]: flushing previous tab [\(previous)] — \(snapshot.summary)")
@@ -1040,15 +1042,16 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         synchronizeTabAttachmentPreparations()
     }
 
-    func endEditMode() {
+    /// `collapses: false` when the caller sets the display state itself, e.g. on a tab change.
+    func endEditMode(collapses: Bool = true) {
         guard isEditing else { return }
-        exitEditMode(reply: .cancelled)
+        exitEditMode(reply: .cancelled, collapses: collapses)
         pixelReporter.reportEditCancelled()
     }
 
     /// Shared teardown for leaving edit mode: resolves the pending edit with `reply` and resets the
     /// input. Callers fire the matching pixel, so submit-driven teardown isn't also counted as a cancel.
-    private func exitEditMode(reply: EditPromptReply) {
+    private func exitEditMode(reply: EditPromptReply, collapses: Bool = true) {
         guard isEditing else { return }
         clearAttachments()
         isEditing = false
@@ -1056,7 +1059,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         resolveEdit(reply)
         resetToolsSelection()
         setText("")
-        showCollapsed()
+        if collapses { showCollapsed() }
     }
 
     private func resolveEdit(_ reply: EditPromptReply) {
@@ -1227,6 +1230,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hide() {
+        endEditMode(collapses: false)
         cancelPendingOmnibarFocus()
         keyboardMonitor.disarm()
         displayState = .hidden
@@ -2738,6 +2742,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func resetSessionState() {
+        endEditMode(collapses: false)
         isNewChatPending = false
         aiChatStatus = .unknown
         attachmentUsage = nil

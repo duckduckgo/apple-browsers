@@ -156,7 +156,8 @@ extension MainViewController {
         ToolbarVisibilityDecision.resolve(.init(
             isCurrentTabUsingUnifiedInputAIChrome: isCurrentTabUsingUnifiedInputAIChrome,
             isLargeWidth: AppWidthObserver.shared.isLargeWidth,
-            isInMinimalChromeLayout: isInMinimalChromeLayout
+            isInMinimalChromeLayout: isInMinimalChromeLayout,
+            isFloatingWebInputEditing: viewCoordinator.isWebInputEditing
         ))
     }
 
@@ -245,13 +246,14 @@ extension MainViewController {
             return
         }
 
+        let isRefreshingCurrentTab = coordinator.currentTabUID == tab.tabModel.uid
         activateUnifiedToggleInput(for: tab.tabModel)
 
-        let action = refreshAction(for: tab, coordinator: coordinator)
+        let action = refreshAction(for: tab, coordinator: coordinator, isRefreshingCurrentTab: isRefreshingCurrentTab)
 
         switch action {
-        case .unbindInactiveNonAITab:
-            refreshInactiveNonAITab(tab: tab, coordinator: coordinator)
+        case .unbindInactiveNonAITab(let needsLayoutRefresh):
+            refreshInactiveNonAITab(needsLayoutRefresh: needsLayoutRefresh)
             tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
             return
         case .refreshAITab(let behavior):
@@ -383,7 +385,7 @@ extension MainViewController {
 // MARK: - UTI Refresh-Action Decision (pure)
 
 enum UnifiedToggleInputRefreshAction: Equatable {
-    case unbindInactiveNonAITab
+    case unbindInactiveNonAITab(needsLayoutRefresh: Bool)
     case refreshAITab(AITabRefreshBehavior)
     case refreshNonAITab
     /// The coordinator is mid-omnibar session on a non-AI tab — leave it alone.
@@ -407,6 +409,9 @@ struct UnifiedToggleInputRefreshActionInputs: Equatable {
     let coordinatorHasSubmittedPrompt: Bool
     let isAITabChatHeaderContainerHidden: Bool
     let isNavigationChromeHidden: Bool
+    let isFloatingUIEnabled: Bool
+    let isRefreshingCurrentTab: Bool
+    let isAddressBarPositionCurrent: Bool
 }
 
 extension MainViewController {
@@ -423,7 +428,11 @@ extension MainViewController {
 
         if !inputs.tabIsAITab {
             if !inputs.coordinatorIsActive && inputs.isAITabChatHeaderContainerHidden {
-                return .unbindInactiveNonAITab
+                let needsLayoutRefresh = !inputs.isFloatingUIEnabled
+                    || !inputs.isRefreshingCurrentTab
+                    || inputs.isNavigationChromeHidden
+                    || !inputs.isAddressBarPositionCurrent
+                return .unbindInactiveNonAITab(needsLayoutRefresh: needsLayoutRefresh)
             }
             if inputs.coordinatorIsOmnibarSession {
                 return .preserveOmnibarSession
@@ -770,7 +779,7 @@ private extension MainViewController {
             .store(in: &unifiedToggleInputCancellables)
     }
 
-    func refreshAction(for tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) -> UnifiedToggleInputRefreshAction {
+    func refreshAction(for tab: TabViewController, coordinator: UnifiedToggleInputCoordinator, isRefreshingCurrentTab: Bool) -> UnifiedToggleInputRefreshAction {
         let inputs = UnifiedToggleInputRefreshActionInputs(
             tabIsAITab: tab.isAITab,
             tabURL: tab.url,
@@ -782,22 +791,33 @@ private extension MainViewController {
             coordinatorIsOmnibarSession: coordinator.isOmnibarSession,
             coordinatorHasSubmittedPrompt: coordinator.hasSubmittedPrompt,
             isAITabChatHeaderContainerHidden: viewCoordinator.aiChatTabChatHeaderContainer.isHidden,
-            isNavigationChromeHidden: viewCoordinator.isNavigationChromeHidden
+            isNavigationChromeHidden: viewCoordinator.isNavigationChromeHidden,
+            isFloatingUIEnabled: isFloatingUIEnabled,
+            isRefreshingCurrentTab: isRefreshingCurrentTab,
+            isAddressBarPositionCurrent: viewCoordinator.addressBarPosition == appSettings.currentAddressBarPosition
         )
         return MainViewController.decideRefreshAction(for: inputs)
     }
 
-    func refreshInactiveNonAITab(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator) {
-        viewCoordinator.hideAITabChrome()
+    func refreshInactiveNonAITab(needsLayoutRefresh: Bool) {
+        // Loading callbacks for the same web tab must not cancel chrome animations or
+        // reload the swipe collection while the user is scrolling.
+        if needsLayoutRefresh {
+            viewCoordinator.hideAITabChrome()
+        }
         applyUnifiedInputChromeBackground(.standardChrome)
-        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
-        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        if needsLayoutRefresh {
+            viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+            refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
         // Reconcile toolbar against the now-non-AI current tab. Skip `showBars()` here (unlike
         // `refreshNonAITab`) — at app launch this runs before `SwipeTabsCoordinator`'s
         // collection is ready and would assert.
         reconcileToolbarVisibilityForCurrentTab()
         reconcileAIChromeForCurrentTab()
-        restoreCurrentBarsVisibilityAfterLayoutRefresh()
+        if needsLayoutRefresh {
+            restoreCurrentBarsVisibilityAfterLayoutRefresh()
+        }
     }
 
     func refreshAITab(

@@ -39,17 +39,30 @@ public protocol SubscriptionPixelHandling {
 
 public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
 
-    // Environment
+    // MARK: - Environment and App Store
+
     static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment?
     static func save(subscriptionEnvironment: SubscriptionEnvironment, userDefaults: UserDefaults)
     var currentEnvironment: SubscriptionEnvironment { get }
 
+    @available(iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
+
+    /// If the user can purchase a subscription or not
+    var hasAppStoreProductsAvailable: Bool { get }
+
+    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
+    /// Also emits when the initial product fetch finishes, even if availability is unchanged.
+    var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
+
+    /// Whether the initial App Store product fetch has finished, including an empty result or failure.
+    var hasResolvedAppStoreProducts: Bool { get }
+
+    var currentStorefrontRegion: SubscriptionRegion { get }
+
+    // MARK: - Subscription retrieval and caching
+
     /// Tries to get an authentication token and the subscription
     func loadInitialData() async
-
-    /// Restores the current token from the backup when none is stored, then refreshes the cached subscription.
-    /// Does nothing when a token is stored, no recovery is configured, or the restore fails.
-    func restoreMissingTokenIfPossible() async
 
     /// Retrieve the purchased subscription.
     /// - Parameter forceRefresh: When `true`, skips the cache and fetches the subscription from the remote backend. When `false`, returns the cached subscription if available, otherwise fetches remotely.
@@ -61,27 +74,32 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// - Returns: true is a subscription (expired or not) is present, false otherwise.
     func isSubscriptionPresent() -> Bool
 
+    /// Ingests a subscription by enriching it with tier features, caching it, and posting a change notification.
+    func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription
+
     /// Tries to activate a subscription using a platform signature
     /// - Parameter lastTransactionJWSRepresentation: A platform signature coming from the AppStore
     /// - Returns: A subscription if found
     /// - Throws: An error if the access token is not available or something goes wrong in the api requests
     func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription?
 
-    /// If the user can purchase a subscription or not
-    var hasAppStoreProductsAvailable: Bool { get }
+    /// Removes the subscription cache, this will trigger a remote fetch the next time `getSubscription(...)` is called
+    func clearSubscriptionCache()
 
-    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
-    /// Also emits when the initial product fetch finishes, even if availability is unchanged.
-    var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
-
-    /// Whether the initial App Store product fetch has finished, including an empty result or failure.
-    var hasResolvedAppStoreProducts: Bool { get }
     func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
     func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error>
 
-    @available(iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
+    // MARK: - Purchase
+
+    /// Confirm a purchase with a platform signature
+    func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription
+
+    /// Checks if the user is eligible for a free trial.
+    func isUserEligibleForFreeTrial() -> Bool
+
+    // MARK: - URLs
 
     /// Subscription feature related URL that matches current environment
     func url(for type: SubscriptionURL) -> URL
@@ -92,6 +110,8 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     func getCustomerPortalURL() async throws -> URL
 
+    // MARK: - Authentication state
+
     /// The user email
     var userEmail: String? { get }
 
@@ -99,19 +119,38 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// This does not refresh tokens, update caches, or fall back to cached authentication state.
     func localTokenState() -> LocalSubscriptionTokenState
 
+    // MARK: - Tokens
+
+    /// Get a token container accordingly to the policy
+    /// - Parameter policy: The policy that will be used to get the token, it effects the tokens source and validity
+    /// - Returns: The TokenContainer
+    /// - Throws: A `SubscriptionManagerError`.
+    ///     `noTokenAvailable` if the TokenContainer is not present.
+    ///     `errorRetrievingTokenContainer(error:...)` in case of any error retrieving, refreshing or creating the TokenContainer, this can be caused by networking issues or keychain errors etc.
+    @discardableResult
+    func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer
+
+    // MARK: - Token recovery
+
+    /// Restores the current token from the backup when none is stored, then refreshes the cached subscription.
+    /// Does nothing when a token is stored, no recovery is configured, or the restore fails.
+    func restoreMissingTokenIfPossible() async
+
+    // MARK: - Token adoption
+
+    /// Adopt a token provided by the FE during a Subscription purchase
+    func adopt(accessToken: String, refreshToken: String) async throws
+
+    /// Adopt a token provided by an external entity, typically the main app when this is used by the VPN
+    func adopt(tokenContainer: TokenContainer) async throws
+
+    // MARK: - Sign-out and session cleanup
+
     /// Sign out the user, clear and invalidate the access token and clear the subscription cache
     func signOut(notifyUI: Bool, userInitiated: Bool) async
 
-    /// Removes the subscription cache, this will trigger a remote fetch the next time `getSubscription(...)` is called
-    func clearSubscriptionCache()
-
-    /// Ingests a subscription by enriching it with tier features, caching it, and posting a change notification.
-    func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription
-
-    /// Confirm a purchase with a platform signature
-    func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription
-
-    var currentStorefrontRegion: SubscriptionRegion { get }
+    /// Remove the stored token container and the legacy token
+    func removeLocalAccount() throws
 
     // MARK: - Features
 
@@ -132,28 +171,6 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     /// This is more efficient than calling `isFeatureEnabled` multiple times.
     func getAllEntitlementStatus() async -> EntitlementStatus
 
-    // MARK: - Token Management
-
-    /// Get a token container accordingly to the policy
-    /// - Parameter policy: The policy that will be used to get the token, it effects the tokens source and validity
-    /// - Returns: The TokenContainer
-    /// - Throws: A `SubscriptionManagerError`.
-    ///     `noTokenAvailable` if the TokenContainer is not present.
-    ///     `errorRetrievingTokenContainer(error:...)` in case of any error retrieving, refreshing or creating the TokenContainer, this can be caused by networking issues or keychain errors etc.
-    @discardableResult
-    func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer
-
-    /// Adopt a token provided by the FE during a Subscription purchase
-    func adopt(accessToken: String, refreshToken: String) async throws
-
-    /// Adopt a token provided by an external entity, typically the main app when this is used by the VPN
-    func adopt(tokenContainer: TokenContainer) async throws
-
-    /// Remove the stored token container and the legacy token
-    func removeLocalAccount() throws
-
-    /// Checks if the user is eligible for a free trial.
-    func isUserEligibleForFreeTrial() -> Bool
 }
 
 // MARK: -  Utilities
@@ -297,26 +314,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public var hasAppStoreProductsAvailable: Bool {
-        guard let storePurchaseManager = _storePurchaseManager else { return false }
-        return storePurchaseManager.areProductsAvailable || (userDefaults.cachedHasAppStoreProductsAvailable ?? false)
-    }
-
-    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
-    /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
-    /// Also emits after the initial fetch resolves and its result is cached.
-    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
-        hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
-    }
-
-    @available(iOS 15.0, *)
-    public func storePurchaseManager() -> StorePurchaseManager {
-        return _storePurchaseManager!
-    }
-
-    // MARK: Load and Save SubscriptionEnvironment
+    // MARK: - Environment and App Store
 
     static private let subscriptionEnvironmentStorageKey = "com.duckduckgo.subscription.environment"
+
     static public func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment? {
         if let savedData = userDefaults.object(forKey: Self.subscriptionEnvironmentStorageKey) as? Data {
             let decoder = JSONDecoder()
@@ -334,8 +335,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    // MARK: - Environment
-
     @available(iOS 15.0, *) private func setupForAppStore() {
         storePurchaseManager().areProductsAvailablePublisher
             .sink { [weak self] value in
@@ -352,7 +351,33 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    // MARK: - Subscription Retrieval and Caching
+    @available(iOS 15.0, *)
+    public func storePurchaseManager() -> StorePurchaseManager {
+        return _storePurchaseManager!
+    }
+
+    public var hasAppStoreProductsAvailable: Bool {
+        guard let storePurchaseManager = _storePurchaseManager else { return false }
+        return storePurchaseManager.areProductsAvailable || (userDefaults.cachedHasAppStoreProductsAvailable ?? false)
+    }
+
+    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
+    /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
+    /// Also emits after the initial fetch resolves and its result is cached.
+    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> {
+        hasAppStoreProductsAvailableSubject.eraseToAnyPublisher()
+    }
+
+    public var currentStorefrontRegion: SubscriptionRegion {
+        switch currentEnvironment.purchasePlatform {
+        case .appStore:
+            return storePurchaseManager().currentStorefrontRegion
+        case .stripe:
+            return .usa
+        }
+    }
+
+    // MARK: - Subscription retrieval and caching
 
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
@@ -370,19 +395,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         } catch {
             Logger.subscription.error("Failed to load initial subscription data: \(error, privacy: .public)")
         }
-    }
-
-    /// Returns the cached subscription if available, firing the isActive pixel as a side effect.
-    /// When no cache exists, throws `fallbackError` so callers propagate the appropriate error.
-    private func cachedSubscriptionOrThrow(_ fallbackError: Error) async throws -> DuckDuckGoSubscription {
-        guard let cached = await subscriptionCachingService.get() else {
-            throw fallbackError
-        }
-        if cached.isActive {
-            pixelHandler.handle(pixel: .subscriptionIsActive)
-            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
-        }
-        return cached
     }
 
     @discardableResult
@@ -459,6 +471,29 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         return subscription
     }
 
+    /// Returns the cached subscription if available, firing the isActive pixel as a side effect.
+    /// When no cache exists, throws `fallbackError` so callers propagate the appropriate error.
+    private func cachedSubscriptionOrThrow(_ fallbackError: Error) async throws -> DuckDuckGoSubscription {
+        guard let cached = await subscriptionCachingService.get() else {
+            throw fallbackError
+        }
+        if cached.isActive {
+            pixelHandler.handle(pixel: .subscriptionIsActive)
+            pixelHandler.handle(pixel: .osDistributionActiveSubscription)
+        }
+        return cached
+    }
+
+    /// Enriches a subscription with tier features fetched from the backend.
+    private func enrichSubscriptionWithFeatures(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
+        Logger.subscription.log("Getting features for subscription: \(subscription.productId, privacy: .public)")
+        let featuresResponse = try await subscriptionEndpointService.getSubscriptionTierFeatures(for: [subscription.productId])
+        let features = featuresResponse.features[subscription.productId]?.map { $0.product } ?? []
+        var enrichedSubscription = subscription
+        enrichedSubscription.features = features
+        return enrichedSubscription
+    }
+
     public func isSubscriptionPresent() -> Bool {
         subscriptionCachingService.isPresent
     }
@@ -491,6 +526,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
+    public func clearSubscriptionCache() {
+        subscriptionCachingService.reset()
+    }
+
     public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
         try await subscriptionEndpointService.getTierProducts(region: region, platform: platform)
     }
@@ -500,18 +539,32 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         return await tierOptionsProvider.subscriptionTierOptions(includeProTier: includeProTier, currentSubscription: subscription)
     }
 
-    public func clearSubscriptionCache() {
-        subscriptionCachingService.reset()
+    // MARK: - Purchase
+
+    public func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription {
+        Logger.subscription.log("Confirming Purchase...")
+        let accessToken = try await getTokenContainer(policy: .localValid).accessToken
+        let confirmation = try await subscriptionEndpointService.confirmPurchase(accessToken: accessToken,
+                                                                                 signature: signature,
+                                                                                 experimentAttribution: experimentAttribution)
+        let subscription = try await ingestSubscription(confirmation.subscription)
+        Logger.subscription.log("Purchase confirmed!")
+        return subscription
     }
 
-    /// Enriches a subscription with tier features fetched from the backend.
-    private func enrichSubscriptionWithFeatures(_ subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
-        Logger.subscription.log("Getting features for subscription: \(subscription.productId, privacy: .public)")
-        let featuresResponse = try await subscriptionEndpointService.getSubscriptionTierFeatures(for: [subscription.productId])
-        let features = featuresResponse.features[subscription.productId]?.map { $0.product } ?? []
-        var enrichedSubscription = subscription
-        enrichedSubscription.features = features
-        return enrichedSubscription
+    /// Checks if the user is eligible for a free trial.
+    ///
+    /// Returns `true` for Stripe-based purchases
+    /// or delegates to the store purchase manager for App Store purchases.
+    ///
+    /// - Returns:
+    ///   - `true` for Stripe platform
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store.
+    public func isUserEligibleForFreeTrial() -> Bool {
+        if currentEnvironment.purchasePlatform == .stripe {
+            return true
+        }
+        return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 
     // MARK: - URLs
@@ -555,7 +608,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         return url
     }
 
-    // MARK: - User
+    // MARK: - Authentication state
+
     public var isUserAuthenticated: Bool {
         do {
             let tokenContainer = try oAuthClient.currentTokenContainer()
@@ -563,6 +617,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         } catch {
             return cachedIsUserAuthenticated
         }
+    }
+
+    public var userEmail: String? {
+        return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
     }
 
     public func localTokenState() -> LocalSubscriptionTokenState {
@@ -577,29 +635,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             return .present(tokenContainer)
         } catch {
             return .readError
-        }
-    }
-
-    public var userEmail: String? {
-        return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
-    }
-
-    var cachedUserEntitlements: [SubscriptionEntitlement] {
-        userDefaults.userEntitlements
-    }
-
-    private func updateCachedUserEntitlements(_ newEntitlements: [SubscriptionEntitlement], userInitiated: Bool = false) {
-        let currentCachedUserEntitlements = self.userDefaults.userEntitlements
-        self.userDefaults.userEntitlements = newEntitlements
-
-        // Send notification when entitlements change
-        if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newEntitlements) {
-            Logger.subscription.log("Entitlements changed - New \(String(describing: newEntitlements), privacy: .public) Old \(String(describing: currentCachedUserEntitlements), privacy: .public)")
-            let payload = EntitlementsDidChangePayload(entitlements: newEntitlements)
-
-            var userInfo = payload.notificationUserInfo
-            userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] = userInitiated
-            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: userInfo)
         }
     }
 
@@ -627,6 +662,27 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             self.updateCachedUserEntitlements([], userInitiated: userInitiated)
         }
     }
+
+    var cachedUserEntitlements: [SubscriptionEntitlement] {
+        userDefaults.userEntitlements
+    }
+
+    private func updateCachedUserEntitlements(_ newEntitlements: [SubscriptionEntitlement], userInitiated: Bool = false) {
+        let currentCachedUserEntitlements = self.userDefaults.userEntitlements
+        self.userDefaults.userEntitlements = newEntitlements
+
+        // Send notification when entitlements change
+        if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newEntitlements) {
+            Logger.subscription.log("Entitlements changed - New \(String(describing: newEntitlements), privacy: .public) Old \(String(describing: currentCachedUserEntitlements), privacy: .public)")
+            let payload = EntitlementsDidChangePayload(entitlements: newEntitlements)
+
+            var userInfo = payload.notificationUserInfo
+            userInfo[EntitlementsDidChangePayload.userInitiatedEntitlementChangeKey] = userInitiated
+            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: userInfo)
+        }
+    }
+
+    // MARK: - Tokens
 
     @discardableResult public func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         Logger.subscriptionTokensManagement.log("Get tokens \(policy.description, privacy: .public)")
@@ -753,38 +809,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                 capturedAt: Date())
     }
 
-    private func automaticallySignOut(recoveryOutcome: SubscriptionAutomaticSignOutPixelData.RecoveryOutcome,
-                                      failedRequest: FailedTokenRequestState,
-                                      triggeringError: Error,
-                                      notifyUI: Bool) async {
-        await clearSession(notifyUI: notifyUI, userInitiated: false, revokeOnServer: false)
-
-        let data = SubscriptionAutomaticSignOutPixelData(recoveryOutcome: recoveryOutcome,
-                                                         policy: failedRequest.policy,
-                                                         tokenBeforeAttempt: failedRequest.tokenBeforeAttempt,
-                                                         tokenAfterAttempt: failedRequest.tokenAfterAttempt,
-                                                         cachedSubscription: failedRequest.cachedSubscription,
-                                                         localTokenStateAfterSignOut: localTokenState(),
-                                                         now: failedRequest.capturedAt)
-        pixelHandler.handle(pixel: .automaticSignOut(data, triggeringError))
-    }
-
-    /// Restores the missing current token from the backup before an account is created, ignoring the missing-token retry pause.
-    /// - Throws: `SubscriptionManagerError.errorRetrievingTokenContainer` when the restore failed for a temporary reason,
-    ///   so no account is created while a backup that could still restore the session is stored. Otherwise nothing is thrown.
-    private func restoreBeforeAccountCreation() async throws {
-        do {
-            _ = try await recoverToken(trigger: .accountCreation, deadPrimary: nil)
-            Logger.subscriptionTokensManagement.log("Restored the missing token before creating an account")
-        } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
-            return
-        } catch let error where BackupTokenRecovery.isTemporary(error) {
-            Logger.subscriptionTokensManagement.error("Backup restore failed before creating an account, not creating one: \(String(describing: error), privacy: .public)")
-            throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
-        } catch {
-            return
-        }
-    }
+    // MARK: - Token recovery
 
     /// Runs `tokenRecoveryCoordinator` for `trigger` and returns the token it stored.
     /// - Parameters:
@@ -811,6 +836,40 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
         return currentTokenContainer
     }
+
+    /// Restores the missing current token from the backup before an account is created, ignoring the missing-token retry pause.
+    /// - Throws: `SubscriptionManagerError.errorRetrievingTokenContainer` when the restore failed for a temporary reason,
+    ///   so no account is created while a backup that could still restore the session is stored. Otherwise nothing is thrown.
+    private func restoreBeforeAccountCreation() async throws {
+        do {
+            _ = try await recoverToken(trigger: .accountCreation, deadPrimary: nil)
+            Logger.subscriptionTokensManagement.log("Restored the missing token before creating an account")
+        } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
+            return
+        } catch let error where BackupTokenRecovery.isTemporary(error) {
+            Logger.subscriptionTokensManagement.error("Backup restore failed before creating an account, not creating one: \(String(describing: error), privacy: .public)")
+            throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
+        } catch {
+            return
+        }
+    }
+
+    public func restoreMissingTokenIfPossible() async {
+        guard await restoreMissingToken() != nil else { return }
+        _ = try? await getSubscription(forceRefresh: true)
+    }
+
+    /// Restores the current token from the backup when none is stored, and updates the cached entitlements and authentication state.
+    /// - Returns: The restored token container, or nil when a token is stored, no recovery is configured, or the restore fails.
+    private func restoreMissingToken() async -> TokenContainer? {
+        guard tokenRecoveryCoordinator != nil, localTokenSnapshot() == .missing else { return nil }
+        guard let restored = try? await recoverToken(trigger: .missingToken, deadPrimary: nil) else { return nil }
+        updateCachedUserEntitlements(restored.decodedAccessToken.subscriptionEntitlements)
+        updateCachedIsUserAuthenticated(true)
+        return restored
+    }
+
+    // MARK: - Token adoption
 
     public func adopt(accessToken: String, refreshToken: String) async throws {
         Logger.subscriptionTokensManagement.log("Adopting and decoding token container")
@@ -866,29 +925,32 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
+    // MARK: - Sign-out and session cleanup
+
+    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
+        await clearSession(notifyUI: notifyUI, userInitiated: userInitiated, revokeOnServer: true)
+    }
+
     public func removeLocalAccount() throws {
         Logger.subscriptionTokensManagement.log("Removing local account")
             updateCachedIsUserAuthenticated(false)
         try oAuthClient.removeLocalAccount()
     }
 
-    public func signOut(notifyUI: Bool, userInitiated: Bool) async {
-        await clearSession(notifyUI: notifyUI, userInitiated: userInitiated, revokeOnServer: true)
-    }
+    private func automaticallySignOut(recoveryOutcome: SubscriptionAutomaticSignOutPixelData.RecoveryOutcome,
+                                      failedRequest: FailedTokenRequestState,
+                                      triggeringError: Error,
+                                      notifyUI: Bool) async {
+        await clearSession(notifyUI: notifyUI, userInitiated: false, revokeOnServer: false)
 
-    public func restoreMissingTokenIfPossible() async {
-        guard await restoreMissingToken() != nil else { return }
-        _ = try? await getSubscription(forceRefresh: true)
-    }
-
-    /// Restores the current token from the backup when none is stored, and updates the cached entitlements and authentication state.
-    /// - Returns: The restored token container, or nil when a token is stored, no recovery is configured, or the restore fails.
-    private func restoreMissingToken() async -> TokenContainer? {
-        guard tokenRecoveryCoordinator != nil, localTokenSnapshot() == .missing else { return nil }
-        guard let restored = try? await recoverToken(trigger: .missingToken, deadPrimary: nil) else { return nil }
-        updateCachedUserEntitlements(restored.decodedAccessToken.subscriptionEntitlements)
-        updateCachedIsUserAuthenticated(true)
-        return restored
+        let data = SubscriptionAutomaticSignOutPixelData(recoveryOutcome: recoveryOutcome,
+                                                         policy: failedRequest.policy,
+                                                         tokenBeforeAttempt: failedRequest.tokenBeforeAttempt,
+                                                         tokenAfterAttempt: failedRequest.tokenAfterAttempt,
+                                                         cachedSubscription: failedRequest.cachedSubscription,
+                                                         localTokenStateAfterSignOut: localTokenState(),
+                                                         now: failedRequest.capturedAt)
+        pixelHandler.handle(pixel: .automaticSignOut(data, triggeringError))
     }
 
     /// The cut-off recorded at the last explicit sign-out, or nil if the user never signed out explicitly.
@@ -956,26 +1018,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public func confirmPurchase(signature: String, experimentAttribution: PurchaseExperimentAttribution?) async throws -> DuckDuckGoSubscription {
-        Logger.subscription.log("Confirming Purchase...")
-        let accessToken = try await getTokenContainer(policy: .localValid).accessToken
-        let confirmation = try await subscriptionEndpointService.confirmPurchase(accessToken: accessToken,
-                                                                                 signature: signature,
-                                                                                 experimentAttribution: experimentAttribution)
-        let subscription = try await ingestSubscription(confirmation.subscription)
-        Logger.subscription.log("Purchase confirmed!")
-        return subscription
-    }
-
-    public var currentStorefrontRegion: SubscriptionRegion {
-        switch currentEnvironment.purchasePlatform {
-        case .appStore:
-            return storePurchaseManager().currentStorefrontRegion
-        case .stripe:
-            return .usa
-        }
-    }
-
     // MARK: - Features
 
     public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionEntitlement] {
@@ -1010,21 +1052,6 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             Logger.subscription.error("Failed to read user entitlements from keychain: \(error, privacy: .public)")
             return EntitlementStatus(enabledEntitlements: self.cachedUserEntitlements)
         }
-    }
-
-    /// Checks if the user is eligible for a free trial.
-    ///
-    /// Returns `true` for Stripe-based purchases
-    /// or delegates to the store purchase manager for App Store purchases.
-    ///
-    /// - Returns:
-    ///   - `true` for Stripe platform
-    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store.
-    public func isUserEligibleForFreeTrial() -> Bool {
-        if currentEnvironment.purchasePlatform == .stripe {
-            return true
-        }
-        return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 
 }
